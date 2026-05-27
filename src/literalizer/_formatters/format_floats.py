@@ -9,8 +9,14 @@ def format_float_repr(value: float) -> str:
 
     This produces the shortest representation that round-trips:
     ``1500.0`` stays as ``"1500.0"``, ``0.001`` as ``"0.001"``.
+
+    The redundant ``+`` sign Python emits on positive exponents
+    (``1e+16``) is stripped to ``1e16``. No target language's literal
+    grammar requires the explicit ``+``, and at least one (Gleam's
+    Erlang target) rejects it, so the unsigned form is the safe
+    common denominator.
     """
-    return repr(value)
+    return repr(value).replace("e+", "e")
 
 
 @beartype
@@ -21,7 +27,8 @@ def format_float_scientific(value: float) -> str:
 
     Trailing zeros in the coefficient are stripped so the output is
     compact, but a trailing ``.0`` is preserved to keep the value
-    recognizable as a float.
+    recognizable as a float. The redundant ``+`` sign on positive
+    exponents is dropped (see :func:`format_float_repr`).
     """
     raw = f"{value:e}"
     mantissa, exponent_part = raw.split(sep="e")

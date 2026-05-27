@@ -1,0 +1,1 @@
+Strip the redundant ``+`` sign from positive float exponents so emitted literals read ``1e308`` rather than ``1e+308``; this fixes Gleam emission of near-``DBL_MAX`` values, whose parser rejects the explicit ``+``.

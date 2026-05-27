@@ -21,11 +21,15 @@ Three top-level keys are excluded from the comparison:
   the literalized program parses the literal as a ``double`` (``1e+26``),
   same shape as the Go, TypeScript, Zig, Swift, Rust, D, and C++
   exclusions.
-* ``float_large_exponent`` — Lua 5.4's default float-to-string format
-  is ``%.14g``, which rounds ``1.7976931348623157e+308`` down to
-  ``1.7976931348623e+308`` and loses the trailing significant digits;
-  ``dkjson`` uses ``tostring`` for number encoding so it inherits that
-  precision floor.
+* ``float_large_exponent`` — this is a target-runtime serializer limit,
+  not a literalizer formatter limit.  The literalizer emits a valid Lua
+  numeric literal that the Lua interpreter parses to exactly
+  ``1.7976931348623157e308``; round-tripping then fails when ``dkjson``
+  re-encodes via ``tostring``, which uses Lua 5.4's ``%.14g`` default
+  and rounds the value to ``1.7976931348623e+308``, losing trailing
+  significant digits.  Picking a JSON encoder with higher precision
+  (or formatting numbers via ``string.format`` with ``%.17g`` before
+  encoding) is outside the literalizer's scope.
 * ``empty_object`` — Lua represents both arrays and objects as bare
   tables and an empty ``{}`` is genuinely ambiguous, so ``dkjson``
   serializes the empty-object value as ``[]`` instead of ``{}``.  Same
