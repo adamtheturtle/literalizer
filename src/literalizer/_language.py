@@ -23,6 +23,7 @@ from literalizer._formatters.type_inference import (
     RecordShape,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import UnrepresentableEmptyDictError
 
 
 @dataclasses.dataclass(frozen=True)
@@ -2208,6 +2209,52 @@ no_validate_spec_for_data: Callable[["Language", Value], None] = (
 """Shared callable for languages with no spec/data constraints to
 check.
 """
+
+
+@beartype
+def _data_has_empty_dict(*, data: Value) -> bool:
+    """Return ``True`` if *data* contains an empty mapping anywhere.
+
+    Descends into lists, sets, and dict values.  Dict keys are scalars
+    so cannot themselves be empty mappings.
+    """
+    match data:
+        case dict() if len(data) == 0:
+            return True
+        case dict():
+            return any(_data_has_empty_dict(data=v) for v in data.values())
+        case list() | set():
+            return any(_data_has_empty_dict(data=item) for item in data)
+        case _:
+            return False
+
+
+@beartype
+def make_empty_dict_rejector(
+    *, language_name: str
+) -> Callable[["Language", Value], None]:
+    """Return a ``validate_spec_for_data`` that raises
+    :class:`~literalizer.exceptions.UnrepresentableEmptyDictError` if
+    *data* contains an empty mapping at any depth.
+
+    Used by languages whose runtime representation cannot distinguish
+    an empty mapping from an empty sequence (Lua, PHP, R).
+    """
+
+    @beartype
+    def _validate(self: "Language", data: Value) -> None:
+        """Raise if *data* contains an empty dict at any depth."""
+        del self
+        if _data_has_empty_dict(data=data):
+            msg = (
+                f"{language_name} cannot represent an empty dict "
+                "distinctly from an empty list; both serialize to the "
+                "same runtime collection so the mapping/sequence "
+                "distinction is lost on round-trip."
+            )
+            raise UnrepresentableEmptyDictError(msg)
+
+    return _validate
 
 
 @beartype

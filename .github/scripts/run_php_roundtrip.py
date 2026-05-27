@@ -17,8 +17,11 @@ cannot represent them losslessly:
   integer and is widened to ``float``, so ``json_encode`` re-emits it
   as ``1.0e+26``.
 * ``empty_object`` -- PHP has a single sequence/map array type, so an
-  empty associative array is indistinguishable from an empty list and
-  ``json_encode`` emits it as ``[]`` rather than ``{}``.
+  empty associative array is indistinguishable from an empty list; the
+  literalizer raises
+  :class:`literalizer.exceptions.UnrepresentableEmptyDictError` on this
+  language and the field is trimmed from the input *before*
+  literalization.
 """
 
 import shutil
@@ -34,9 +37,13 @@ _EXCLUDED_KEYS = ("biginteger", "empty_object")
 
 def _build_program(json_text: str) -> str:
     """Return a runnable PHP program literalized from *json_text*."""
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=Php(),
-        json_text=json_text,
+        json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )

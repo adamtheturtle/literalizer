@@ -68,6 +68,7 @@ from literalizer._language import (
     identity_call_statement,
     identity_call_target,
     identity_constructor_target,
+    make_empty_dict_rejector,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -77,7 +78,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -429,7 +429,7 @@ class Lua(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    validate_spec_for_data = make_empty_dict_rejector(language_name="Lua")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

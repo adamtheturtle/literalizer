@@ -76,6 +76,7 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_statement,
+    make_empty_dict_rejector,
     never_inhibits_consuming_form,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -86,7 +87,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -484,7 +484,7 @@ class Php(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    validate_spec_for_data = make_empty_dict_rejector(language_name="PHP")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

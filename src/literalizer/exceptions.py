@@ -220,6 +220,19 @@ class UnrepresentableIntegerError(Exception):
     """
 
 
+class UnrepresentableEmptyDictError(Exception):
+    """Raised when an empty dict is passed to a target language whose
+    runtime cannot distinguish an empty mapping from an empty sequence.
+
+    Lua, PHP, and R encode both empty arrays and empty objects with the
+    same surface syntax (``{}``, ``[]``, and ``list()`` respectively),
+    so the JSON encoders in their ecosystems serialize an empty mapping
+    as ``[]``.  The literalizer refuses to emit a literal that cannot
+    round-trip rather than silently lose the mapping/sequence
+    distinction.
+    """
+
+
 class UnrepresentableSpecialFloatError(Exception):
     """Raised when a non-finite float (``inf``, ``-inf``, or ``nan``)
     is passed to a target language whose runtime cannot produce IEEE

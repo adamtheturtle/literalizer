@@ -22,6 +22,7 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
+    UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     UnrepresentableIntegerError,
     VariableNameNotSupportedError,
@@ -120,6 +121,11 @@ def test_golden_file(
                     pytest.skip(
                         f"{lang_name} cannot represent integer in this input",
                     )
+                except UnrepresentableEmptyDictError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_name} cannot represent an empty dict",
+                    )
                 except HeterogeneousCollectionError:
                     golden_path.unlink(missing_ok=True)
                     pytest.skip(
@@ -207,6 +213,11 @@ def test_golden_file_combined_variable_forms(
                     pytest.skip(
                         f"{lang_cls.__name__} cannot represent integer in "
                         "this input"
+                    )
+                except UnrepresentableEmptyDictError:
+                    golden_path.unlink(missing_ok=True)
+                    pytest.skip(
+                        f"{lang_cls.__name__} cannot represent an empty dict"
                     )
                 except HeterogeneousCollectionError:
                     golden_path.unlink(missing_ok=True)
@@ -300,6 +311,9 @@ def test_format_variant_golden_file(
             except UnrepresentableIntegerError:
                 golden_path.unlink(missing_ok=True)
                 pytest.skip("Format cannot represent integer in this input")
+            except UnrepresentableEmptyDictError:
+                golden_path.unlink(missing_ok=True)
+                pytest.skip("Format cannot represent an empty dict")
             except NullInCollectionError:
                 pytest.skip("Format rejects null elements in this input")
             except HeterogeneousCollectionError:
