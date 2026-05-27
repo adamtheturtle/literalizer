@@ -6,6 +6,6 @@ val my_data : val_t = SList [
     SReal 1.0,
     SReal 1500.0,
     SReal 0.001,
-    SReal 1.0e+16
+    SReal 1.0E16
 ]
 val _ = my_data
