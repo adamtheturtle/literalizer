@@ -609,6 +609,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Elm,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="PureScript_json_type_argonaut_json",
+            spec=make_spec(
+                lang_cls=PureScript,
+                json_type=PureScript.json_types.ARGONAUT_JSON,
+            ),
+            lang_cls=PureScript,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2824,6 +2833,20 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="scalar_datetime",
                 variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="PureScript_json_type_argonaut_json_existing",
+                variant=Variant(
+                    name="PureScript_json_type_argonaut_json_existing",
+                    spec=make_spec(
+                        lang_cls=PureScript,
+                        json_type=PureScript.json_types.ARGONAUT_JSON,
+                    ),
+                    lang_cls=PureScript,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.ExistingVariable(name="my_data"),
             ),
         )
     )
