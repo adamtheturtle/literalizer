@@ -613,7 +613,7 @@ def _hoist_purescript_imports(preamble: str) -> str:
     preserving the relative order of non-import lines.
     """
     lines = preamble.split(sep="\n")
-    # ``dict.fromkeys`` deduplicates while preserving first-seen order;
+    # ``dict.fromkeys`` drops repeats while preserving first-seen order;
     # using ``list(dict.fromkeys(...))`` keeps the helper branch-free so
     # coverage does not depend on a fixture that happens to assemble two
     # of the same import line.
