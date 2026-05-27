@@ -101,8 +101,9 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, and D support this through the
-``json_type`` constructor argument (D's polarity is reversed; see below):
+Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, PureScript, Erlang,
+and D support this through the ``json_type`` constructor argument (D's
+polarity is reversed; see below):
 
 .. code-block:: python
 
@@ -454,6 +455,34 @@ This emits idiomatic ``elm/json`` ``Json.Encode.bool``,
 so no walker is needed before ``Json.Encode.encode 0`` and
 heterogeneous collections are accepted.  Dict keys must be strings so
 they remain valid JSON object keys.
+
+PureScript exposes the same option through
+``PureScript.json_types.ARGONAUT_JSON``:
+
+.. code-block:: python
+
+   """Render PureScript data as Argonaut Json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import PureScript
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=PureScript(
+           json_type=PureScript.json_types.ARGONAUT_JSON,
+       ),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits a ``fromRight jsonNull (jsonParser "...")`` expression that
+parses the embedded JSON document at runtime, so the rendered binding
+has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's
+narrow custom ``Val`` algebraic type, and can hold the heterogeneous
+values that ``Val``'s closed set of constructors rejects.  Dict keys
+must be strings so they remain valid JSON object keys, and special
+floats (``NaN``, ``+Infinity``, ``-Infinity``) are rejected because
+JSON has no syntax for them.
 
 Erlang exposes the same option through
 ``Erlang.json_types.OTP_JSON``:

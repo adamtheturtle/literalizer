@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -37,6 +38,7 @@ from literalizer._formatters.format_integers import (
     I64_MIN,
     format_integer_hex,
 )
+from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -77,11 +79,12 @@ from literalizer._language import (
     no_pygments_name,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
+    UnrepresentableInputError,
     UnrepresentableIntegerError,
+    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -598,6 +601,32 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
 
 
 @beartype
+def _hoist_purescript_imports(preamble: str) -> str:
+    """Move every ``import ...`` line to the top of *preamble* and
+    drop duplicates.
+
+    PureScript rejects ``import`` declarations that appear after any
+    other declaration.  Call-binding and ``json_type`` preambles can
+    interleave imports with stub declarations (or repeat
+    ``import Prelude`` in both halves of a composed preamble); this
+    helper restores a single block of imports at the top while
+    preserving the relative order of non-import lines.
+    """
+    lines = preamble.split(sep="\n")
+    # ``dict.fromkeys`` drops repeats while preserving first-seen order;
+    # using ``list(dict.fromkeys(...))`` keeps the helper branch-free so
+    # coverage does not depend on a fixture that happens to assemble two
+    # of the same import line.
+    imports = list(
+        dict.fromkeys(line for line in lines if line.startswith("import ")),
+    )
+    if not imports:
+        return preamble
+    other = [line for line in lines if not line.startswith("import ")]
+    return "\n".join([*imports, *other])
+
+
+@beartype
 def _build_purescript_call_output(
     preamble: str,
     decl_part: str,
@@ -607,7 +636,8 @@ def _build_purescript_call_output(
     """Build a complete PureScript module string for call mode.
 
     Ensures ``import Prelude`` is present (needed for ``Unit`` and
-    ``unit``) and wraps the call expressions in a ``let … in unit``
+    ``unit``), hoists every ``import`` line above the declarations in
+    *decl_part*, and wraps the call expressions in a ``let … in unit``
     block.  *decl_part* is an optional newline-prefixed block of
     module-scope declarations to insert before ``main``.
     """
@@ -615,6 +645,7 @@ def _build_purescript_call_output(
         preamble = (
             "import Prelude\n" + preamble if preamble else "import Prelude"
         )
+    preamble = _hoist_purescript_imports(preamble=preamble)
     return (
         "module Check where\n\n\n"
         + preamble
@@ -629,28 +660,6 @@ def _build_purescript_call_output(
         + indent
         + "unit"
     )
-
-
-@beartype
-def _hoist_purescript_prelude_import(preamble: str) -> str:
-    """Collapse repeated ``import Prelude`` lines into a single import
-    that precedes every declaration.
-
-    A call stub bound to a variable needs ``import Prelude`` for its
-    ``Unit`` return type, and data that itself requires Prelude
-    (negative numbers, special floats) makes
-    :func:`_build_purescript_body_preamble` emit its own
-    ``import Prelude``.  Concatenated naively the second import lands
-    after the stub declarations, which PureScript rejects because
-    imports must precede all declarations.  Drop every
-    ``import Prelude`` line and, when at least one was present, re-emit
-    a single one at the top.
-    """
-    lines = preamble.split(sep="\n")
-    kept = [line for line in lines if line != "import Prelude"]
-    if len(kept) == len(lines):
-        return preamble
-    return "\n".join(["import Prelude", *kept])
 
 
 _INT_BASE: dict[str, Callable[[int], str]] = {
@@ -671,6 +680,137 @@ _BYTES_FORMATTERS: dict[
     "HEX": _build_purescript_bytes_hex,
     "BASE64": _build_purescript_bytes_base64,
 }
+
+
+# Imports emitted under ``json_type=ARGONAUT_JSON``.  The data flows
+# through a single ``jsonParser`` call, so the generated module only
+# needs Argonaut's ``Json`` type, the parser entry point, and
+# ``Data.Either.fromRight`` for the (statically unreachable) failure arm.
+_ARGONAUT_JSON_BODY_PREAMBLE: tuple[str, ...] = (
+    "import Data.Argonaut.Core (Json, jsonNull)",
+    "import Data.Argonaut.Parser (jsonParser)",
+    "import Data.Either (fromRight)",
+)
+
+
+# Sequence/dict/set/ordered-map format definitions used while ``json_type`` is
+# active.  The framework still walks the data to produce a formatted
+# value, but that string is discarded by
+# :func:`_format_purescript_json_declaration` and friends in favor of a
+# fresh :func:`format_json_value_text` of the raw data.  These
+# format definitions only need to be permissive enough that the format
+# pass does not error on heterogeneous data or nulls inside containers.
+_ARGONAUT_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_ARGONAUT_JSON_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+_ARGONAUT_JSON_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+_ARGONAUT_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _argonaut_value_body_preamble(
+    _types: frozenset[type], _data: Value, /
+) -> tuple[str, ...]:
+    """Return the ``Data.Argonaut.Core`` import preamble lines."""
+    return _ARGONAUT_JSON_BODY_PREAMBLE
+
+
+@beartype
+def _argonaut_parse_expression(data: Value) -> str:
+    """Render a ``fromRight jsonNull (jsonParser "...")`` expression.
+
+    ``jsonParser`` returns ``Either String Json``.  The literalizer
+    always emits a JSON document produced by :func:`json.dumps`, so the
+    ``Left`` branch is statically unreachable; ``fromRight jsonNull`` is
+    used instead of a partial ``fromRight'`` to keep the generated
+    module free of ``unsafePartial``.
+    """
+    json_text = format_json_value_text(data=data)
+    purescript_literal = format_string_backslash_control(
+        value=json_text,
+        control_char_fmt="\\x{:06x}",
+    )
+    return f"fromRight jsonNull (jsonParser {purescript_literal})"
+
+
+@beartype
+def _format_purescript_json_declaration(
+    name: str,
+    _value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a ``Json`` declaration backed by ``jsonParser``."""
+    expression = _argonaut_parse_expression(data=data)
+    return f"{name} :: Json\n{name} = {expression}"
+
+
+@beartype
+def _format_purescript_json_assignment(
+    name: str,
+    _value: str,
+    data: Value,
+) -> str:
+    """Format a ``Json`` assignment backed by ``jsonParser``.
+
+    PureScript top-level bindings are immutable, so an
+    ``ExistingVariable`` assignment at module scope is just another
+    binding.  Emit it with the same ``name :: Json`` signature as the
+    declaration form so the rendered file keeps the ``Json`` import
+    live and matches the declaration's shape.
+    """
+    expression = _argonaut_parse_expression(data=data)
+    return f"{name} :: Json\n{name} = {expression}"
+
+
+@beartype
+def _format_purescript_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as a ``Json`` parse expression.
+
+    PureScript curried calls parenthesize each argument so the inner
+    ``fromRight ...`` application is not parsed as additional arguments
+    to the outer call.
+    """
+    return f"({_argonaut_parse_expression(data=raw_value)})"
 
 
 @beartype
@@ -974,6 +1114,16 @@ class PureScript(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for PureScript."""
+
+        ARGONAUT_JSON = "Data.Argonaut.Core.Json"
+        """``Data.Argonaut.Core.Json`` -- the dynamic JSON value type
+        from the ``argonaut-core`` package.
+        """
+
+    json_types = JsonTypes
+
     class VersionFormats(enum.Enum):
         """Version options for PureScript."""
 
@@ -990,7 +1140,53 @@ class PureScript(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        Under :attr:`json_type` the data must round-trip through a JSON
+        document, so walk *data* to reject non-string dict keys and
+        non-finite floats -- both inputs JSON cannot represent.
+        """
+        if self._json_type_active:
+            self._validate_json_value(data)
+
+    def _validate_json_value(self, data: Value, /) -> None:
+        """Reject inputs that JSON cannot represent under
+        ``json_type``.
+        """
+        match data:
+            case bool():
+                return
+            case float() if math.isinf(data) or math.isnan(data):
+                msg = (
+                    "PureScript json_type=ARGONAUT_JSON cannot represent "
+                    "the special float value "
+                    f"{data!r} because JSON has no syntax for NaN or "
+                    "infinity."
+                )
+                raise UnrepresentableSpecialFloatError(msg)
+            case OrderedMap() | dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "PureScript json_type=ARGONAUT_JSON can only "
+                            "represent dict keys as JSON object "
+                            f"strings, not {type(key).__name__}."
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value(item)
+            case _:
+                return
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether PureScript should render via
+        ``Data.Argonaut.Core.Json``.
+        """
+        return self.json_type is not None
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1041,9 +1237,11 @@ class PureScript(metaclass=LanguageCls):
             )
         # An inference-bound call result contributes its own
         # ``import Prelude`` (for the stub's ``Unit``) on top of any
-        # ``import Prelude`` the data already required; collapse them so
-        # a single import stays ahead of every declaration.
-        preamble = _hoist_purescript_prelude_import(preamble=preamble)
+        # ``import Prelude`` the data already required, and under
+        # ``json_type`` the Argonaut imports must also precede the
+        # stub declarations; hoist every import to the top of the
+        # preamble.
+        preamble = _hoist_purescript_imports(preamble=preamble)
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
     @staticmethod
@@ -1088,6 +1286,7 @@ class PureScript(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # ``V0_15`` (PureScript 0.15.x) matches the ``purescript: 0.15.15``
     # pin in the ``lint-haskell-family`` job of
     # ``.github/workflows/lint.yml``; keep them in sync.
@@ -1125,6 +1324,8 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_purescript_json_assignment
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
@@ -1134,7 +1335,17 @@ class PureScript(metaclass=LanguageCls):
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
+        """Return the heterogeneous-behavior config.
+
+        Under :attr:`json_type` heterogeneous scalars all flow through
+        the JSON text, so the framework's scalar-uniformity checks are
+        skipped.
+        """
+        if self._json_type_active:
+            return dataclasses.replace(
+                self.heterogeneous_strategy.value,
+                skip_scalar_checks=True,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1158,12 +1369,24 @@ class PureScript(metaclass=LanguageCls):
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
         tuple[str, ...],
     ]:
-        """Return stub declarations for a call expression."""
-        return _build_purescript_call_stub(type_name=self.type_name)
+        """Return stub declarations for a call expression.
+
+        Under :attr:`json_type` the stub's parameter types are ``Json``
+        rather than the generated ``Val`` ADT.
+        """
+        stub_type_name = "Json" if self._json_type_active else self.type_name
+        return _build_purescript_call_stub(type_name=stub_type_name)
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Wrap each formatted call argument in parentheses."""
+        """Wrap each formatted call argument in parentheses.
+
+        Under :attr:`json_type` the argument is rendered as a ``Json``
+        value produced by ``jsonParser`` instead of the framework's
+        formatted ``Val`` literal.
+        """
+        if self._json_type_active:
+            return _format_purescript_json_call_arg
         return _purescript_format_call_arg
 
     @cached_property
@@ -1258,6 +1481,8 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return _ARGONAUT_JSON_SEQUENCE_CONFIG
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
@@ -1266,11 +1491,15 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self._json_type_active:
+            return _ARGONAUT_JSON_SEQUENCE_CONFIG.sequence_open
         return self._seq_open
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _ARGONAUT_JSON_SET_CONFIG
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
@@ -1286,6 +1515,8 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _ARGONAUT_JSON_DICT_CONFIG
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
@@ -1387,6 +1618,8 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _ARGONAUT_JSON_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
@@ -1405,6 +1638,8 @@ class PureScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        if self._json_type_active:
+            return _format_purescript_json_declaration
         _base_declaration = self.declaration_style.value.formatter
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
@@ -1463,7 +1698,16 @@ class PureScript(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map."""
+        """Compute body-preamble lines from the scalar map.
+
+        Under :attr:`json_type` the body preamble is reduced to the
+        ``Data.Argonaut.Core``, ``Data.Argonaut.Parser``, and
+        ``Data.Either`` imports needed by the ``jsonParser``-backed
+        binding, so the custom ``Val`` algebraic type and its
+        ``Tuple`` helper are not emitted.
+        """
+        if self._json_type_active:
+            return _argonaut_value_body_preamble
         return _build_purescript_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
