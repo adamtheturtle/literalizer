@@ -17,7 +17,7 @@ my_data = HList [
     1.0,
     1500.0,
     0.001,
-    1e16
+    1.0e16
     ]
 main :: IO ()
 main = seq my_data (return ())

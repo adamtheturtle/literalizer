@@ -8,7 +8,7 @@ let my_data : val_t = OList [
     OFloat 1.0;
     OFloat 1500.0;
     OFloat 0.001;
-    OFloat 1e16
+    OFloat 1.0e16
 ]
 
 end

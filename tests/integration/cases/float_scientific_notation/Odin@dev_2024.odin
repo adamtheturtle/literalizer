@@ -7,7 +7,7 @@ my_data := [dynamic]any{
 	1.0,
 	1500.0,
 	0.001,
-	1e16,
+	1.0e16,
 }
 _ = my_data
 }

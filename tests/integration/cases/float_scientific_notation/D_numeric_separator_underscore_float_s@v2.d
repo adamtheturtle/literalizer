@@ -5,6 +5,6 @@ auto my_data = JSONValue([
     JSONValue(1.0),
     JSONValue(1500.0),
     JSONValue(0.001),
-    JSONValue(1e16),
+    JSONValue(1.0e16),
 ]);
 }

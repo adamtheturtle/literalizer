@@ -6,7 +6,7 @@ Module Check
             1.0,
             1500.0,
             0.001,
-            1e16
+            1.0e16
         }
     End Sub
     Sub _assignment()
@@ -16,7 +16,7 @@ Module Check
             1.0,
             1500.0,
             0.001,
-            1e16
+            1.0e16
         }
     End Sub
 End Module

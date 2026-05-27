@@ -5,7 +5,7 @@ procedure Main is
         AFloat (1.0),
         AFloat (1500.0),
         AFloat (0.001),
-        AFloat (1e16)
+        AFloat (1.0e16)
     ];
 begin
     null;

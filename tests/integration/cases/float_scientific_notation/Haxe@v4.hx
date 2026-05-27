@@ -5,7 +5,7 @@ class Fixture_float_scientific_notation_Haxe {
             1.0,
             1500.0,
             0.001,
-            1e16,
+            1.0e16,
         ] : Array<Dynamic>);
     }
 }

@@ -24,6 +24,6 @@ program main
         freal(1.0), &
         freal(1500.0), &
         freal(0.001), &
-        freal(1e16) &
+        freal(1.0e16) &
     ])
 end program main
