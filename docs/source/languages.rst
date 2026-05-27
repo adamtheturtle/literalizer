@@ -517,6 +517,38 @@ a set, an ordered map, or a non-record dict, are rejected with
 already renders record-shaped dicts as generated ``struct`` literals,
 which conflicts with narrow mode's associative-array form.
 
+Empty mappings on Lua, PHP, and R
+---------------------------------
+
+Lua, PHP, and R have a single runtime collection type that cannot
+distinguish an empty mapping from an empty sequence: Lua's table, PHP's
+array, and R's ``list()`` all serialize an empty mapping the same way
+their JSON encoders serialize an empty sequence (typically ``[]``).
+``literalize`` refuses to emit a literal that cannot round-trip and
+raises :class:`~literalizer.exceptions.UnrepresentableEmptyDictError`
+on the three languages whenever an empty mapping appears at any depth
+in the input.  Empty sequences are unambiguous and are still accepted.
+
+.. code-block:: python
+
+   """Lua, PHP, and R reject empty mappings."""
+
+   import contextlib
+   import json
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.exceptions import UnrepresentableEmptyDictError
+   from literalizer.languages import Lua
+
+   # Strip or replace the empty mapping before retrying on a real input.
+   with contextlib.suppress(UnrepresentableEmptyDictError):
+       literalize(
+           source=json.dumps(obj={"outer": {}}),
+           input_format=InputFormat.JSON,
+           language=Lua(),
+           variable_form=NewVariable(name="my_data"),
+       )
+
 Custom language implementations
 -------------------------------
 

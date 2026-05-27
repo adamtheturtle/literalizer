@@ -27,9 +27,10 @@ Three top-level keys are excluded from the comparison:
   ``dkjson`` uses ``tostring`` for number encoding so it inherits that
   precision floor.
 * ``empty_object`` — Lua represents both arrays and objects as bare
-  tables and an empty ``{}`` is genuinely ambiguous, so ``dkjson``
-  serializes the empty-object value as ``[]`` instead of ``{}``.  Same
-  shape as the R exclusion.
+  tables and an empty ``{}`` is genuinely ambiguous, so the literalizer
+  raises :class:`literalizer.exceptions.UnrepresentableEmptyDictError`
+  on this language.  The field is trimmed from the input *before*
+  literalization (same shape as the PHP and R exclusions).
 """
 
 import shutil
@@ -45,9 +46,13 @@ _EXCLUDED_KEYS = ("biginteger", "float_large_exponent", "empty_object")
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Lua program literalized from *json_text*."""
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=Lua(),
-        json_text=json_text,
+        json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
