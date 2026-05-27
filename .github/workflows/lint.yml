@@ -83,7 +83,7 @@ jobs:
       # release; the action picks the LuaRocks version compatible with
       # the Lua installed above.  See ``.github/scripts/run_lua_roundtrip.py``.
       - name: Install LuaRocks
-        uses: leafo/gh-actions-luarocks@v5
+        uses: leafo/gh-actions-luarocks@v6
       # ``dkjson`` is the pure-Lua JSON library used by
       # ``.github/scripts/run_lua_roundtrip.py``; pinned to a ``2.x``
       # release.  Installed into the per-job tree provisioned above so

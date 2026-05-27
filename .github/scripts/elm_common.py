@@ -16,8 +16,13 @@ ELM_JSON = json.dumps(
         "source-directories": ["src"],
         "elm-version": "0.19.1",
         "dependencies": {
-            "direct": {"elm/core": "1.0.5"},
-            "indirect": {"elm/json": "1.1.3"},
+            # ``elm/json`` is promoted to a direct dependency so the
+            # ``Elm(json_type=JSON_ENCODE_VALUE)`` fixtures'
+            # ``import Json.Encode`` resolves under ``lint-elm`` and
+            # ``lint-elm-run``; ``run_elm_roundtrip.py`` mirrors this
+            # same dependency set.
+            "direct": {"elm/core": "1.0.5", "elm/json": "1.1.3"},
+            "indirect": {},
         },
         "test-dependencies": {"direct": {}, "indirect": {}},
     },

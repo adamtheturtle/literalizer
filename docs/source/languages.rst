@@ -101,9 +101,9 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, Nim, Haskell, Zig, C++, OCaml, PureScript, and D support this
-through the ``json_type`` constructor argument (D's polarity is
-reversed; see below):
+Scala, C#, Nim, Haskell, Zig, C++, OCaml, Elm, PureScript, and D
+support this through the ``json_type`` constructor argument (D's
+polarity is reversed; see below):
 
 .. code-block:: python
 
@@ -340,6 +340,33 @@ remain valid JSON object keys, and the input must not encode the
 raw-string terminator sequence ``)json"`` (e.g. through a dict key
 ending in ``)json``).
 
+Gleam exposes the same option through
+``Gleam.json_types.GLEAM_JSON_JSON``:
+
+.. code-block:: python
+
+   """Render Gleam data using the gleam_json builder type."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Gleam
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``gleam_json`` builder calls such as ``json.int(1)``,
+``json.string("red")``, ``json.preprocessed_array([...])``, and
+``json.object([#("k", v), ...])`` so each binding has the static type
+``gleam/json.Json``, ready to feed straight into ``json.to_string``.
+An ``import gleam/json`` line is added at file scope and the generated
+``GVal`` ADT is dropped.  Dict keys must be strings so they remain
+valid JSON object keys, and non-finite floats are rejected because
+the Erlang target has no expression that evaluates to a non-finite
+float.
+
 OCaml exposes the same option through ``OCaml.json_types.YOJSON_SAFE_T``:
 
 .. code-block:: python
@@ -375,6 +402,33 @@ integers that exceed OCaml's native ``int`` range route through the
 ``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON
 number) instead of raising.  Dict keys must be strings so they remain
 valid JSON object keys.
+
+Elm exposes the same option through
+``Elm.json_types.JSON_ENCODE_VALUE``:
+
+.. code-block:: python
+
+   """Render Elm data as a Json.Encode.Value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Elm
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits idiomatic ``elm/json`` ``Json.Encode.bool``,
+``Json.Encode.int``, ``Json.Encode.string``,
+``Json.Encode.list identity [ ... ]``, and
+``Json.Encode.object [ ( "k", ... ) ]`` calls and adds an
+``import Json.Encode`` line.  The rendered binding has the static type
+``Json.Encode.Value`` rather than Elm's narrow per-fixture ``Val`` ADT,
+so no walker is needed before ``Json.Encode.encode 0`` and
+heterogeneous collections are accepted.  Dict keys must be strings so
+they remain valid JSON object keys.
 
 PureScript exposes the same option through
 ``PureScript.json_types.ARGONAUT_JSON``:
