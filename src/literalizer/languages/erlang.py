@@ -76,11 +76,13 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -88,6 +90,88 @@ def _format_bytes(value: bytes) -> str:
     """Format bytes as an Erlang binary literal."""
     parts = ", ".join(f"{b}" for b in value)
     return f"<<{parts}>>"
+
+
+@beartype
+def _wrap_utf8_binary(quoted: str) -> str:
+    """Wrap an already-double-quoted literal in ``<<".."/utf8>>``.
+
+    Erlang's standard ``json:encode/1`` rejects the default ``"..."``
+    string form (a list of code points): map keys would parse as lists
+    rather than strings, and string values would emit as arrays of
+    integers.  Under the
+    ``OTP_JSON`` json_type every textual scalar (strings, ISO date /
+    datetime / time strings, base64-encoded bytes) is wrapped in a
+    UTF-8 binary literal so the standard ``json`` module accepts the
+    rendered value directly.
+    """
+    return f"<<{quoted}/utf8>>"
+
+
+@beartype
+def _format_string_otp_json(value: str) -> str:
+    """Format a string as an Erlang UTF-8 binary literal."""
+    return _wrap_utf8_binary(quoted=format_string_backslash(value))
+
+
+@beartype
+def _format_bytes_otp_json(value: bytes) -> str:
+    """Format bytes as a base64-encoded UTF-8 binary literal.
+
+    The default :func:`_format_bytes` emits a raw byte binary
+    (``<<1, 2, 3>>``), which Erlang's ``json:encode/1`` rejects unless
+    the bytes happen to form valid UTF-8.  Base64 is a JSON-safe ASCII
+    encoding that round-trips arbitrary bytes through any JSON
+    transport.
+    """
+    return _wrap_utf8_binary(quoted=format_bytes_base64(value=value))
+
+
+@beartype
+def _format_date_otp_json(value: datetime.date) -> str:
+    """Format a date as an ISO 8601 UTF-8 binary literal."""
+    return _wrap_utf8_binary(quoted=format_date_iso(value=value))
+
+
+@beartype
+def _format_datetime_otp_json(value: datetime.datetime) -> str:
+    """Format a datetime as an ISO 8601 UTF-8 binary literal."""
+    return _wrap_utf8_binary(quoted=format_datetime_iso(value=value))
+
+
+@beartype
+def _format_time_otp_json(value: datetime.time) -> str:
+    """Format a time as an ISO 8601 UTF-8 binary literal."""
+    return _wrap_utf8_binary(quoted=format_time_iso(value=value))
+
+
+@beartype
+def _validate_erlang_otp_json_data(*, data: Value) -> None:
+    """Reject inputs ``OTP_JSON`` rendering cannot represent.
+
+    Erlang's ``json:encode/1`` map keys must be JSON-encodable
+    scalars; under :attr:`Erlang.json_type` the literalizer emits
+    every textual scalar as a UTF-8 binary, so non-string keys
+    (atoms, integers, tuples) would round-trip as something other
+    than the user's original key.  The default Erlang renderer still
+    accepts those keys.
+    """
+    match data:
+        case dict():
+            for key, value in data.items():
+                if not isinstance(key, str):
+                    msg = (
+                        "Erlang(json_type=OTP_JSON) cannot represent "
+                        f"dict key {key!r}: json:encode/1 requires "
+                        "string keys."
+                    )
+                    raise UnrepresentableInputError(msg)
+                _validate_erlang_otp_json_data(data=value)
+        case list() | set():
+            for item in data:
+                _validate_erlang_otp_json_data(data=item)
+        case _:
+            return
 
 
 @beartype
@@ -483,6 +567,21 @@ class Erlang(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Erlang."""
+
+        OTP_JSON = enum.auto()
+        """Erlang's built-in ``json`` module (``OTP_27`` and later).
+
+        Renders strings, ISO dates / datetimes / times, and bytes
+        (base64-encoded) as UTF-8 binary literals so
+        ``json:encode/1`` accepts the value directly.  Null is emitted
+        as the bare atom ``null``; sets render as JSON arrays.  Dict
+        keys must be strings (validated upfront).
+        """
+
+    json_types = JsonTypes
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
@@ -491,8 +590,6 @@ class Erlang(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
-
-    validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -616,9 +713,9 @@ class Erlang(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     language_version: VersionFormats = VersionFormats.OTP_25
+    json_type: JsonTypes | None = None
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "undefined"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -633,8 +730,38 @@ class Erlang(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """``True`` when ``OTP_JSON`` rendering is selected."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """Null literal: ``null`` under ``OTP_JSON``, ``undefined``
+        otherwise.
+
+        Erlang's ``json:encode/1`` rejects the bare atom ``undefined``
+        (it is not in the documented set of accepted scalars) but
+        encodes ``null`` as JSON ``null``.
+        """
+        if self._json_type_active:
+            return "null"
+        return "undefined"
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate Erlang-specific data/format combinations.
+
+        Under :attr:`json_type` every dict key must be a string so the
+        rendered map keys (UTF-8 binaries) match what Erlang's
+        ``json:encode/1`` expects.
+        """
+        if self._json_type_active:
+            _validate_erlang_otp_json_data(data=data)
+
+    @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
+        if self._json_type_active:
+            return _format_string_otp_json
         return format_string_backslash
 
     @cached_property
@@ -763,6 +890,15 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            # Erlang's ``json:encode/1`` has no set type: render sets
+            # as JSON arrays (Erlang lists) the same as sequences.
+            return dataclasses.replace(
+                self.set_format.value,
+                set_open=fixed_open(open_str="["),
+                close="]",
+                empty_set="[]",
+            )
         return self.set_format.value
 
     @cached_property
@@ -794,21 +930,29 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self._json_type_active:
+            return _format_bytes_otp_json
         return self.bytes_format
 
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return _format_date_otp_json
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self._json_type_active:
+            return _format_datetime_otp_json
         return self.datetime_format
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._json_type_active:
+            return _format_time_otp_json
         return format_time_iso
 
     @cached_property
