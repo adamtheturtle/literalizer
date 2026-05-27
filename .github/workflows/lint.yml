@@ -1136,6 +1136,22 @@ jobs:
           python3 -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
           elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
 
+      # `uv` is needed by the `Elixir roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> Elixir -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the Elixir toolchain (`elixir` on
+      # PATH, Elixir 1.18's built-in `JSON` module available); `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_elixir_roundtrip.py`.
+      - name: Elixir roundtrip
+        run: uv run python .github/scripts/run_elixir_roundtrip.py
+
   lint-erlang:
     runs-on: ubuntu-latest
     # Every Erlang fixture on disk carries the tag from
