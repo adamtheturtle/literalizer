@@ -600,6 +600,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=OCaml,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Elm_json_type_json_encode_value",
+            spec=make_spec(
+                lang_cls=Elm,
+                json_type=Elm.json_types.JSON_ENCODE_VALUE,
+            ),
+            lang_cls=Elm,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2727,6 +2736,94 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=wrap_variable_form(),
+            ),
+            # Covers the ``false_literal`` cached property on Elm under
+            # ``JSON_ENCODE_VALUE``: none of the shared
+            # ``VARIANT_CASES["json_type"]`` inputs contain a ``False``
+            # value.
+            VariantCase(
+                variant_name="Elm_json_type_json_encode_value_bool_list",
+                variant=Variant(
+                    name="Elm_json_type_json_encode_value_bool_list",
+                    spec=make_spec(
+                        lang_cls=Elm,
+                        json_type=Elm.json_types.JSON_ENCODE_VALUE,
+                    ),
+                    lang_cls=Elm,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="bool_list",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            # Covers the negative-numeric paren-wrap arm of
+            # ``_format_elm_json_with_ctor`` (positive numerals pass
+            # through bare; the shared ``json_type`` inputs only carry
+            # positives).
+            VariantCase(
+                variant_name=("Elm_json_type_json_encode_value_negative_int"),
+                variant=Variant(
+                    name=("Elm_json_type_json_encode_value_negative_int"),
+                    spec=make_spec(
+                        lang_cls=Elm,
+                        json_type=Elm.json_types.JSON_ENCODE_VALUE,
+                    ),
+                    lang_cls=Elm,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_int_negative_large",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            # Covers the ``inf``/``nan`` arms of the JSON-mode float
+            # formatter on Elm.
+            VariantCase(
+                variant_name=(
+                    "Elm_json_type_json_encode_value_float_specials"
+                ),
+                variant=Variant(
+                    name=("Elm_json_type_json_encode_value_float_specials"),
+                    spec=make_spec(
+                        lang_cls=Elm,
+                        json_type=Elm.json_types.JSON_ENCODE_VALUE,
+                    ),
+                    lang_cls=Elm,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="float_special_values",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            # Covers ``bytes_format=BASE64`` under JSON mode (the
+            # default JSON variant uses ``HEX``).
+            VariantCase(
+                variant_name=("Elm_json_type_json_encode_value_base64"),
+                variant=Variant(
+                    name=("Elm_json_type_json_encode_value_base64"),
+                    spec=make_spec(
+                        lang_cls=Elm,
+                        json_type=Elm.json_types.JSON_ENCODE_VALUE,
+                        bytes_format=Elm.bytes_formats.BASE64,
+                    ),
+                    lang_cls=Elm,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="binary",
+                variable_form=literalizer.NewVariable(name="my_data"),
+            ),
+            # Covers ``datetime_format=EPOCH`` under JSON mode (datetime
+            # rendered as ``Json.Encode.int`` of Unix epoch seconds).
+            VariantCase(
+                variant_name=("Elm_json_type_json_encode_value_epoch"),
+                variant=Variant(
+                    name=("Elm_json_type_json_encode_value_epoch"),
+                    spec=make_spec(
+                        lang_cls=Elm,
+                        json_type=Elm.json_types.JSON_ENCODE_VALUE,
+                        datetime_format=Elm.datetime_formats.EPOCH,
+                    ),
+                    lang_cls=Elm,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_datetime",
+                variable_form=literalizer.NewVariable(name="my_data"),
             ),
         )
     )

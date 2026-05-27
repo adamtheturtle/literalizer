@@ -101,7 +101,7 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, F#, Nim, Haskell, Zig, C++, and D support this through the
+Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, and D support this through the
 ``json_type`` constructor argument (D's polarity is reversed; see below):
 
 .. code-block:: python
@@ -427,6 +427,33 @@ integers that exceed OCaml's native ``int`` range route through the
 ``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON
 number) instead of raising.  Dict keys must be strings so they remain
 valid JSON object keys.
+
+Elm exposes the same option through
+``Elm.json_types.JSON_ENCODE_VALUE``:
+
+.. code-block:: python
+
+   """Render Elm data as a Json.Encode.Value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Elm
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits idiomatic ``elm/json`` ``Json.Encode.bool``,
+``Json.Encode.int``, ``Json.Encode.string``,
+``Json.Encode.list identity [ ... ]``, and
+``Json.Encode.object [ ( "k", ... ) ]`` calls and adds an
+``import Json.Encode`` line.  The rendered binding has the static type
+``Json.Encode.Value`` rather than Elm's narrow per-fixture ``Val`` ADT,
+so no walker is needed before ``Json.Encode.encode 0`` and
+heterogeneous collections are accepted.  Dict keys must be strings so
+they remain valid JSON object keys.
 
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``

@@ -1,0 +1,1 @@
+Add ``Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE)`` to render values as idiomatic ``elm/json`` ``Json.Encode.*`` calls producing a ``Json.Encode.Value`` directly, replacing the per-fixture ``Val`` ADT.
