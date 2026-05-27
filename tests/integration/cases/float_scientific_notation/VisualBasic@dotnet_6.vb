@@ -5,6 +5,6 @@ Module Check
         1.0,
         1500.0,
         0.001,
-        1.0e16
+        1.0e+16
     }
 End Module

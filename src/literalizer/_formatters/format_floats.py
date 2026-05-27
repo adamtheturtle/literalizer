@@ -10,19 +10,17 @@ def format_float_repr(value: float) -> str:
     This produces the shortest representation that round-trips:
     ``1500.0`` stays as ``"1500.0"``, ``0.001`` as ``"0.001"``.
 
-    Two normalizations are applied so the output is valid across every
-    backend, not just Python:
-
-    * The redundant ``+`` on positive exponents (``1e+16``) is stripped.
-      No target language's literal grammar requires the ``+``, and at
-      least one (Gleam's Erlang target) rejects it.
-    * When ``repr`` emits scientific notation without a dotted mantissa
-      (``1e+16`` -> ``1e16``), a ``.0`` is inserted so the result reads
-      ``1.0e16``.  Ada, Cobol, Elixir, Erlang, Gleam, Nix, ... require
-      a ``.`` in the mantissa to parse a numeric literal as a float
-      rather than as an integer or identifier.
+    When ``repr`` emits scientific notation without a dotted mantissa
+    (``1e+16``), a ``.0`` is inserted so the result reads ``1.0e+16``.
+    Several languages -- Ada, Cobol, Elixir, Erlang, Gleam, Nix, YAML
+    -- require a ``.`` in the mantissa to parse a numeric literal as a
+    float rather than as an integer, identifier, or string.  The
+    redundant ``+`` on positive exponents is kept because YAML's
+    resolver regex requires it to recognize the literal as a float;
+    languages that reject the ``+`` (currently only Gleam) override
+    :meth:`format_float` to strip it.
     """
-    raw = repr(value).replace("e+", "e")
+    raw = repr(value)
     if "e" in raw:
         mantissa, _, exponent = raw.partition("e")
         if "." not in mantissa:
@@ -38,8 +36,7 @@ def format_float_scientific(value: float) -> str:
 
     Trailing zeros in the coefficient are stripped so the output is
     compact, but a trailing ``.0`` is preserved to keep the value
-    recognizable as a float. The redundant ``+`` sign on positive
-    exponents is dropped (see :func:`format_float_repr`).
+    recognizable as a float.
     """
     raw = f"{value:e}"
     mantissa, exponent_part = raw.split(sep="e")

@@ -90,16 +90,22 @@ Float emission scope
 --------------------
 
 |project| emits a syntactically valid source literal for any finite
-IEEE 754 ``double`` the target language accepts (the redundant ``+``
-on positive exponents is stripped, so output reads ``1e308`` rather
-than ``1e+308``; no target language's literal grammar requires the
-``+``).  Whether a round-trip through a *target ecosystem's* JSON
-encoder preserves edge values such as ``DBL_MAX`` is governed by
-that ecosystem's encoder (precision, integer-vs-float rendering,
-``Inf`` coercion) and is out of scope for the formatter.  Special
-floats (``inf`` / ``nan``) follow each language's
-``supports_special_floats`` policy; targets that have no expression
-for them (e.g. Gleam's Erlang target) raise
+IEEE 754 ``double`` the target language accepts.  Scientific-notation
+output always uses a dotted mantissa (``1.0e+16`` rather than
+``1e+16``) so the result parses as a float in languages whose
+grammars reject a bare integer mantissa (Ada, Cobol, Elixir, Erlang,
+Gleam, Nix, YAML).  Gleam additionally strips the ``+`` from positive
+exponents because its parser rejects the explicit sign; other
+languages keep the ``+`` because YAML's resolver regex requires it to
+recognize the literal as a float.
+
+Whether a round-trip through a *target ecosystem's* JSON encoder
+preserves edge values such as ``DBL_MAX`` is governed by that
+ecosystem's encoder (precision, integer-vs-float rendering, ``Inf``
+coercion) and is out of scope for the formatter.  Special floats
+(``inf`` / ``nan``) follow each language's ``supports_special_floats``
+policy; targets that have no expression for them (e.g. Gleam's Erlang
+target) raise
 :class:`~literalizer.exceptions.UnrepresentableSpecialFloatError`.
 
 Heterogeneous values

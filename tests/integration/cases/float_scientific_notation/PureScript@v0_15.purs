@@ -12,5 +12,5 @@ my_data = PList [
     PFloat 1.0,
     PFloat 1500.0,
     PFloat 0.001,
-    PFloat 1.0e16
+    PFloat 1.0e+16
     ]
