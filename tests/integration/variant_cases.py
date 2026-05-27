@@ -26,6 +26,7 @@ from literalizer.languages import (
     Dart,
     Dhall,
     Elm,
+    Erlang,
     Fortran,
     FSharp,
     Gleam,
@@ -607,6 +608,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=Elm.json_types.JSON_ENCODE_VALUE,
             ),
             lang_cls=Elm,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Erlang_json_type_otp_json",
+            spec=make_spec(
+                lang_cls=Erlang,
+                json_type=Erlang.json_types.OTP_JSON,
+            ),
+            lang_cls=Erlang,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
     ]

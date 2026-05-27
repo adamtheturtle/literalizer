@@ -455,6 +455,33 @@ so no walker is needed before ``Json.Encode.encode 0`` and
 heterogeneous collections are accepted.  Dict keys must be strings so
 they remain valid JSON object keys.
 
+Erlang exposes the same option through
+``Erlang.json_types.OTP_JSON``:
+
+.. code-block:: python
+
+   """Render Erlang data for Erlang's built-in json module."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Erlang
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Erlang(json_type=Erlang.json_types.OTP_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits string values, dict keys, ISO 8601 dates / datetimes /
+times, and base64-encoded bytes as UTF-8 binary literals
+(``<<"..."/utf8>>``) rather than Erlang's default ``"..."`` string
+form (a list of code points), since Erlang's ``json:encode/1``
+(available since ``OTP_27``) rejects the list form as a map key and
+emits list-form string values as arrays of integers.  Null renders
+as the bare atom ``null`` (rather than ``undefined``), and sets
+render as JSON arrays.  Dict keys must be strings so they remain
+valid JSON object keys.
+
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``
 constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``

@@ -1,10 +1,13 @@
 """Erlang JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to an Erlang
-``MyData = #{...},`` map binding, wrap it in an ``escript`` whose
-``main/1`` normalizes Erlang charlist strings/keys to UTF-8 binaries
-and prints ``json:encode(...)`` on standard output, run it under
-``escript``, and hand the emitted JSON to :func:`roundtrip_common.verify`.
+``MyData = #{...},`` map binding using the ``OTP_JSON`` json_type so
+every string, ISO date / datetime / time, and base64-encoded bytes
+value renders as a UTF-8 binary literal (``<<"..."/utf8>>``) and
+``null`` is the bare atom ``null``.  Wrap the binding in an
+``escript`` whose ``main/1`` prints ``json:encode(MyData)`` on
+standard output, run it under ``escript``, and hand the emitted JSON
+to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Erlang roundtrip`` step of the
 ``lint-erlang`` job in ``.github/workflows/lint.yml``, because that job
@@ -13,13 +16,9 @@ input and comparison logic as the other per-language round-trip helpers.
 
 The serializer is OTP 27's built-in ``json`` module rather than a
 hand-rolled encoder (matching the preference expressed in the issue
-notes).  The default ``json`` encoder rejects Erlang charlists as map
-keys and emits charlist string values as arrays of integers, so the
-program first deep-normalizes the literalized data: charlist map keys
-and printable charlist values become UTF-8 binaries, while non-printable
-lists (e.g. ``[1, 2, 3]``) stay lists.  The non-empty guard on
-``io_lib:printable_unicode_list/1`` keeps ``[]`` (an ``empty_array``)
-from being mistakenly converted to ``<<>>``.
+notes).  Under ``OTP_JSON`` the rendered value is already in the shape
+``json:encode/1`` accepts (binary keys, binary string values, ``null``
+atom), so no normalization walker is needed.
 """
 
 import shutil
@@ -31,30 +30,17 @@ from literalizer.languages import Erlang
 _VAR_NAME = "myData"
 _LABEL = "Erlang"
 
-_NORMALIZE_AND_ENCODE = """\
+_ENCODE = """\
     ok = io:setopts(standard_io, [{encoding, unicode}]),
-    Json = json:encode(normalize(MyData)),
+    Json = json:encode(MyData),
     ok = io:put_chars(Json).
-
-normalize(M) when is_map(M) ->
-    maps:from_list(
-      [{to_binary_key(K), normalize(V)} || {K, V} <- maps:to_list(M)]);
-normalize(L) when is_list(L) ->
-    case L =/= [] andalso io_lib:printable_unicode_list(L) of
-        true -> unicode:characters_to_binary(L);
-        false -> [normalize(X) || X <- L]
-    end;
-normalize(X) -> X.
-
-to_binary_key(K) when is_list(K) -> unicode:characters_to_binary(K);
-to_binary_key(K) -> K.
 """
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Erlang escript literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Erlang(),
+        language=Erlang(json_type=Erlang.json_types.OTP_JSON),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
@@ -66,7 +52,7 @@ def _build_program(json_text: str) -> str:
         "\n"
         "main(_) ->\n"
         f"    {indented_decl}\n"
-        f"{_NORMALIZE_AND_ENCODE}"
+        f"{_ENCODE}"
     )
 
 
