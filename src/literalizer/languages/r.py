@@ -69,7 +69,6 @@ from literalizer._language import (
     identity_call_statement,
     identity_call_target,
     identity_constructor_target,
-    make_empty_dict_rejector,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -79,6 +78,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    reject_empty_dicts,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -475,7 +475,10 @@ class R(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = make_empty_dict_rejector(language_name="R")
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject inputs containing an empty mapping on R."""
+        reject_empty_dicts(data=data, language_name="R")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

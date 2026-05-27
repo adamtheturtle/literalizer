@@ -108,18 +108,19 @@ def _skip_unrepresentable(
 ) -> NoReturn:
     """Skip the current test with a message keyed off the caught error.
 
-    For matching entries whose third tuple field is ``True``, the
-    golden file is removed first so a stale fixture cannot pose as a
-    real failure on the next run.  Re-raises the caught error if its
-    type does not appear in *reasons* so unexpected ones still
-    surface.
+    Callers pair their ``except`` tuple with the same reasons table,
+    so the lookup below is total by construction; ``StopIteration``
+    propagating out of this helper would indicate a divergence between
+    the two.  For matching entries whose third tuple field is ``True``
+    the golden file is removed first so a stale fixture cannot pose
+    as a real failure on the next run.
     """
-    for exc_type, reason, unlink in reasons:
-        if isinstance(exc, exc_type):
-            if unlink:
-                golden_path.unlink(missing_ok=True)
-            pytest.skip(f"{prefix} {reason}")
-    raise exc
+    _, reason, unlink = next(
+        entry for entry in reasons if isinstance(exc, entry[0])
+    )
+    if unlink:
+        golden_path.unlink(missing_ok=True)
+    pytest.skip(f"{prefix} {reason}")
 
 
 @pytest.mark.parametrize(

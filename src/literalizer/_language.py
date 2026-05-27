@@ -2230,31 +2230,22 @@ def _data_has_empty_dict(*, data: Value) -> bool:
 
 
 @beartype
-def make_empty_dict_rejector(
-    *, language_name: str
-) -> Callable[["Language", Value], None]:
-    """Return a ``validate_spec_for_data`` that raises
-    :class:`~literalizer.exceptions.UnrepresentableEmptyDictError` if
-    *data* contains an empty mapping at any depth.
+def reject_empty_dicts(*, data: Value, language_name: str) -> None:
+    """Raise :class:`~literalizer.exceptions.UnrepresentableEmptyDictError`
+    if *data* contains an empty mapping at any depth.
 
-    Used by languages whose runtime representation cannot distinguish
-    an empty mapping from an empty sequence (Lua, PHP, R).
+    Used by ``validate_spec_for_data`` on languages whose runtime
+    representation cannot distinguish an empty mapping from an empty
+    sequence (Lua, PHP, R).
     """
-
-    @beartype
-    def _validate(self: "Language", data: Value) -> None:
-        """Raise if *data* contains an empty dict at any depth."""
-        del self
-        if _data_has_empty_dict(data=data):
-            msg = (
-                f"{language_name} cannot represent an empty dict "
-                "distinctly from an empty list; both serialize to the "
-                "same runtime collection so the mapping/sequence "
-                "distinction is lost on round-trip."
-            )
-            raise UnrepresentableEmptyDictError(msg)
-
-    return _validate
+    if _data_has_empty_dict(data=data):
+        msg = (
+            f"{language_name} cannot represent an empty dict "
+            "distinctly from an empty list; both serialize to the "
+            "same runtime collection so the mapping/sequence "
+            "distinction is lost on round-trip."
+        )
+        raise UnrepresentableEmptyDictError(msg)
 
 
 @beartype
