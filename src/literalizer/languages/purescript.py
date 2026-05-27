@@ -613,16 +613,16 @@ def _hoist_purescript_imports(preamble: str) -> str:
     preserving the relative order of non-import lines.
     """
     lines = preamble.split(sep="\n")
-    imports: list[str] = []
-    other: list[str] = []
-    for line in lines:
-        if line.startswith("import "):
-            if line not in imports:
-                imports.append(line)
-        else:
-            other.append(line)
+    # ``dict.fromkeys`` deduplicates while preserving first-seen order;
+    # using ``list(dict.fromkeys(...))`` keeps the helper branch-free so
+    # coverage does not depend on a fixture that happens to assemble two
+    # of the same import line.
+    imports = list(
+        dict.fromkeys(line for line in lines if line.startswith("import ")),
+    )
     if not imports:
         return preamble
+    other = [line for line in lines if not line.startswith("import ")]
     return "\n".join([*imports, *other])
 
 
