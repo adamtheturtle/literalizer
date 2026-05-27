@@ -4,13 +4,15 @@ procedure Main is
         AFloat (0.0),
         AFloat (1.0),
         AFloat (1500.0),
-        AFloat (0.001)
+        AFloat (0.001),
+        AFloat (1e16)
     ];
 begin
     my_data := AList'[
         AFloat (0.0),
         AFloat (1.0),
         AFloat (1500.0),
-        AFloat (0.001)
+        AFloat (0.001),
+        AFloat (1e16)
     ];
 end Main;

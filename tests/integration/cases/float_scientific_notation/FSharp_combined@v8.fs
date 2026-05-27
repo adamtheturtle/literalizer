@@ -8,7 +8,8 @@ let private _mainDeclaration () =
         FFloat 0.0;
         FFloat 1.0;
         FFloat 1500.0;
-        FFloat 0.001
+        FFloat 0.001;
+        FFloat 1e16
     ]
     ignore my_data
 
@@ -17,6 +18,7 @@ let private _mainAssignment () =
         FFloat 0.0;
         FFloat 1.0;
         FFloat 1500.0;
-        FFloat 0.001
+        FFloat 0.001;
+        FFloat 1e16
     ]
     ignore my_data

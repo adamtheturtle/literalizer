@@ -16,7 +16,8 @@ PROC main ()
         MOBILE LIT(lit.float; 0.0(REAL32)),
         MOBILE LIT(lit.float; 1.0(REAL32)),
         MOBILE LIT(lit.float; 1500.0(REAL32)),
-        MOBILE LIT(lit.float; 0.001(REAL32))
+        MOBILE LIT(lit.float; 0.001(REAL32)),
+        MOBILE LIT(lit.float; 1e16(REAL32))
     ]):
     SEQ
         SKIP

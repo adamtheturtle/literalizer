@@ -16,12 +16,14 @@ pub fn main() void {
         .{ .float = 1.0 },
         .{ .float = 1500.0 },
         .{ .float = 0.001 },
+        .{ .float = 1e16 },
     }};
     my_data = .{ .arr = &.{
         .{ .float = 0.0 },
         .{ .float = 1.0 },
         .{ .float = 1500.0 },
         .{ .float = 0.001 },
+        .{ .float = 1e16 },
     }};
     my_data = .nil;
 }

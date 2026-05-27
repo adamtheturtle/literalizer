@@ -15,7 +15,8 @@ static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_REAL, i: 0, r: 0.000000, s: ""},
     _VVal'{tag: _VVAL_REAL, i: 0, r: 1.000000, s: ""},
     _VVal'{tag: _VVAL_REAL, i: 0, r: 1500.000000, s: ""},
-    _VVal'{tag: _VVAL_REAL, i: 0, r: 0.001000, s: ""}
+    _VVal'{tag: _VVAL_REAL, i: 0, r: 0.001000, s: ""},
+    _VVal'{tag: _VVAL_REAL, i: 0, r: 10000000000000000.000000, s: ""}
 };
 end
 endmodule
