@@ -101,7 +101,7 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, Nim, Haskell, Zig, C++, OCaml, Elm, and D support this through the
+Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, and D support this through the
 ``json_type`` constructor argument (D's polarity is reversed; see below):
 
 .. code-block:: python
@@ -238,6 +238,32 @@ switches date / datetime / time values to ISO 8601 strings so they
 remain valid JSON.  The ``const`` modifier is rejected because the JSON
 constructors and the implicit ``(JsonNode?)`` cast applied to scalars
 are runtime expressions, not C# constant initializers.
+
+F# exposes the same option through
+``FSharp.json_types.SYSTEM_TEXT_JSON_NODE``:
+
+.. code-block:: python
+
+   """Render F# data as a System.Text.Json.Nodes value tree."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import FSharp
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=FSharp(json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``JsonObject(dict [ ... ])`` / ``JsonArray([| ... |])``
+expressions wrapping per-scalar ``JsonValue.Create(...)`` constructors,
+widened to ``JsonNode`` so heterogeneous children type-infer uniformly.
+The mode opens ``System.Text.Json.Nodes`` inside the generated module,
+relaxes F#'s homogeneous collection checks, switches dates, datetimes,
+and times to ISO 8601 strings (unless ``datetime_format`` is ``EPOCH``),
+and requires dict keys to be strings so they remain valid JSON object
+keys.
 
 Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
 

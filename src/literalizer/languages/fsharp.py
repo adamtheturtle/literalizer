@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_fsharp,
+    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     declaration_formatter_ignoring_modifiers,
@@ -38,6 +39,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     data_has_out_of_range_int,
     format_integer_binary,
     format_integer_hex,
@@ -85,10 +87,13 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    UnrepresentableIntegerError,
+)
 
 
 @beartype
@@ -149,6 +154,101 @@ def _build_fsharp_entry_formatter(
 
 
 _format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
+
+
+_FSHARP_JSON_USING = "open System.Text.Json.Nodes"
+_FSHARP_JSON_OBJECT_OPEN = "JsonObject(dict ["
+_FSHARP_JSON_OBJECT_CLOSE = "])"
+_FSHARP_JSON_ARRAY_OPEN = "JsonArray([|"
+_FSHARP_JSON_ARRAY_CLOSE = "|])"
+_FSHARP_JSON_EMPTY_OBJECT = "JsonObject()"
+_FSHARP_JSON_EMPTY_ARRAY = "JsonArray()"
+
+
+@beartype
+def _fsharp_json_wrap(formatted: str) -> str:
+    """Coerce a rendered F# expression to the ``JsonNode`` base class.
+
+    ``JsonObject`` / ``JsonArray`` literals and ``null`` are already
+    valid ``JsonNode`` expressions; a scalar literal is wrapped in
+    ``JsonValue.Create`` first so it becomes a ``JsonValue`` (a class
+    that derives from ``JsonNode``) before the cast.  An explicit
+    ``:> JsonNode`` cast is added in every case so heterogeneous
+    collections type-infer as ``IDictionary<string, JsonNode>`` /
+    ``JsonNode array``.
+    """
+    if formatted.startswith(
+        (
+            _FSHARP_JSON_OBJECT_OPEN,
+            _FSHARP_JSON_ARRAY_OPEN,
+            _FSHARP_JSON_EMPTY_OBJECT,
+            _FSHARP_JSON_EMPTY_ARRAY,
+        )
+    ):
+        return f"({formatted} :> JsonNode)"
+    if formatted == "null":
+        return "(null :> JsonNode)"
+    return f"(JsonValue.Create({formatted}) :> JsonNode)"
+
+
+@beartype
+def _format_fsharp_json_entry(_original: Value, formatted: str) -> str:
+    """Wrap a sequence / set / dict entry for ``JsonArray`` /
+    ``JsonObject``.
+    """
+    return _fsharp_json_wrap(formatted=formatted)
+
+
+@beartype
+def _format_fsharp_json_call_arg(_original: Value, formatted: str, /) -> str:
+    """Wrap a direct F# call argument as ``JsonNode``."""
+    return _fsharp_json_wrap(formatted=formatted)
+
+
+@beartype
+def _fsharp_json_top_level(formatted: str) -> str:
+    """Render the top-level right-hand side of a ``JsonNode`` binding.
+
+    Collection literals (``JsonObject(...)``, ``JsonArray(...)``) and
+    ``null`` assign directly to a ``JsonNode``-annotated binding via
+    subsumption; a scalar literal is wrapped in ``JsonValue.Create``
+    so the binding holds a ``JsonValue`` (a class derived from
+    ``JsonNode``) rather than a raw primitive that F# would refuse to
+    widen.
+    """
+    if formatted.startswith(
+        (
+            _FSHARP_JSON_OBJECT_OPEN,
+            _FSHARP_JSON_ARRAY_OPEN,
+            _FSHARP_JSON_EMPTY_OBJECT,
+            _FSHARP_JSON_EMPTY_ARRAY,
+        )
+    ):
+        return formatted
+    if formatted == "null":
+        return "null"
+    return f"JsonValue.Create({formatted})"
+
+
+@beartype
+def _format_fsharp_json_assignment(name: str, value: str, _data: Value) -> str:
+    """Assign a rendered literal to an F# ``JsonNode`` binding."""
+    return f"let {name}: JsonNode = {_fsharp_json_top_level(formatted=value)}"
+
+
+@beartype
+def _build_fsharp_json_declaration_inner(
+    *,
+    keyword: str,
+) -> Callable[[str, str, Value], str]:
+    """Build a new F# ``JsonNode`` declaration formatter."""
+
+    def _format(name: str, value: str, _data: Value) -> str:
+        """Format a JSON-backed declaration."""
+        rhs = _fsharp_json_top_level(formatted=value)
+        return f"{keyword} {name}: JsonNode = {rhs}"
+
+    return _format
 
 
 @beartype
@@ -325,10 +425,20 @@ class FSharp(metaclass=LanguageCls):
             Defaults to ``"F"``, producing constructors like ``FNull``,
             ``FBool``, ``FInt``, etc.
 
+        json_type: When set to
+            ``json_types.SYSTEM_TEXT_JSON_NODE``, render values through
+            ``System.Text.Json.Nodes.JsonNode`` (``JsonObject`` /
+            ``JsonArray`` / ``JsonValue.Create``) instead of the generated
+            tagged ``Val`` discriminated union.  Dates / datetimes /
+            times switch to ISO 8601 strings (unless ``datetime_format``
+            is ``EPOCH``), heterogeneous collections are accepted, and
+            non-string dict keys are rejected because JSON object keys
+            must be strings.
+
     Notes:
-        The generated ``Val`` discriminated union does not round-trip
-        through ``System.Text.Json.JsonSerializer.Serialize`` (with or
-        without ``FSharp.SystemTextJson``) without a custom
+        The default tagged ``Val`` discriminated union does not
+        round-trip through ``System.Text.Json.JsonSerializer.Serialize``
+        (with or without ``FSharp.SystemTextJson``) without a custom
         ``JsonConverter<Val>``.  Two pitfalls:
 
         * The map case is emitted as ``FMap of (string * Val) list``, a
@@ -342,9 +452,9 @@ class FSharp(metaclass=LanguageCls):
           reproduced on 1.3.13 and 1.4.36).
 
         Users serializing ``Val`` to JSON must walk the constructors
-        explicitly; ``.github/scripts/run_fsharp_roundtrip.py`` ships a
-        ``writeVal`` ``match`` on top of ``Utf8JsonWriter`` that can be
-        used as a starting point.
+        explicitly; selecting ``json_type=SYSTEM_TEXT_JSON_NODE`` avoids
+        the ``Val`` union entirely so a single ``.ToJsonString()`` call
+        round-trips the rendered value.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -643,6 +753,16 @@ class FSharp(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for F#."""
+
+        SYSTEM_TEXT_JSON_NODE = "JsonNode"
+        """``System.Text.Json.Nodes.JsonNode``, the built-in .NET JSON
+        document object model.
+        """
+
+    json_types = JsonTypes
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
@@ -653,7 +773,33 @@ class FSharp(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate F#-specific data / format combinations.
+
+        Under ``json_type`` only dict keys that are strings can be
+        represented as JSON object keys, so a non-string dict key is
+        rejected up-front.
+        """
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for ``JsonNode`` output."""
+        match data:
+            case dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "F# json_type can only represent dict keys "
+                            f"as JSON object strings, not {type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -736,6 +882,7 @@ class FSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # Keep in sync with the `--langversion:` flag passed to the FSharp
     # linter in `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V8
@@ -766,7 +913,17 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
+        """Return the heterogeneous-behavior config.
+
+        ``json_type`` relaxes scalar-type checks unconditionally because
+        ``JsonObject`` / ``JsonArray`` accept heterogeneous ``JsonNode``
+        children by construction.
+        """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -801,8 +958,13 @@ class FSharp(metaclass=LanguageCls):
 
         Curried calls parenthesize each argument so that constructor
         applications are not parsed as additional arguments to the outer
-        call.
+        call.  Under ``json_type`` every argument is wrapped as a
+        ``JsonNode`` (via ``JsonValue.Create`` and an explicit ``:>
+        JsonNode`` widening cast) so the underlying stub receives a
+        JSON value.
         """
+        if self._json_type_active:
+            return _format_fsharp_json_call_arg
         if isinstance(self.call_style.value, CommandCallStyle):
             return _fsharp_format_call_arg
         return identity_call_arg
@@ -877,23 +1039,50 @@ class FSharp(metaclass=LanguageCls):
         return _build_fsharp_entry_formatter(prefix=self.constructor_prefix)
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """Whether F# should render through ``JsonNode``."""
+        return self.json_type is not None
+
+    @cached_property
     def null_literal(self) -> str:
         """Literal representing ``None``."""
+        if self._json_type_active:
+            return "null"
         return f"{self.constructor_prefix}Null"
 
     @cached_property
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self._json_type_active:
+            return "true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self._json_type_active:
+            return "false"
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_type_active:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(open_str=_FSHARP_JSON_ARRAY_OPEN),
+                close=_FSHARP_JSON_ARRAY_CLOSE,
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=False,
+                empty_sequence=_FSHARP_JSON_EMPTY_ARRAY,
+                preamble_lines=(),
+                format_entry=_format_fsharp_json_entry,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type="JsonNode",
+                narrowed_empty_form=None,
+            )
         fmt = self.sequence_format.value
         if self.sequence_format.name == "ARRAY":
             return fmt
@@ -912,6 +1101,16 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return SetFormatConfig(
+                set_open=fixed_open(open_str=_FSHARP_JSON_ARRAY_OPEN),
+                close=_FSHARP_JSON_ARRAY_CLOSE,
+                empty_set=_FSHARP_JSON_EMPTY_ARRAY,
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=False,
+            )
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
@@ -922,6 +1121,18 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str=_FSHARP_JSON_OBJECT_OPEN),
+                close=_FSHARP_JSON_OBJECT_CLOSE,
+                format_entry=tuple_dict_entry(
+                    format_value=_format_fsharp_json_entry,
+                ),
+                empty_dict=_FSHARP_JSON_EMPTY_OBJECT,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=False,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Map [",
@@ -949,11 +1160,32 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return format_date_iso
         return self.date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Callable that formats a datetime as a string literal.
+
+        Under ``json_type`` the EPOCH branch emits a bare ``int64``
+        literal (e.g. ``1705320600L``) rather than the tagged ``FInt
+        ...`` constructor used outside json mode: the ``Val``
+        discriminated union does not exist under ``json_type``, and the
+        entry / top-level formatter is responsible for wrapping the
+        literal with ``JsonValue.Create`` so it becomes a ``JsonNode``.
+        """
+        if self._json_type_active:
+            if self.datetime_format.value.type_produced is int:
+                format_integer = self.format_integer
+
+                def _format_json_epoch(value: datetime.datetime) -> str:
+                    """Return an epoch-seconds ``int64`` literal."""
+                    formatted = format_datetime_epoch(value=value)
+                    return format_integer(int(formatted))
+
+                return _format_json_epoch
+            return format_datetime_iso
         if self.datetime_format.name == "EPOCH":
             return _build_fsharp_datetime_epoch(
                 prefix=self.constructor_prefix,
@@ -963,6 +1195,8 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._json_type_active:
+            return format_time_iso
         return format_time_fsharp
 
     @cached_property
@@ -972,7 +1206,35 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
+        """Callable that formats an int value as a literal.
+
+        Under ``json_type`` integers carry an explicit F# suffix
+        (``L`` for signed-64-bit, ``UL`` for values one beyond
+        ``Int64.MaxValue`` up through ``UInt64.MaxValue``) so the
+        ``JsonValue.Create`` overload set can resolve unambiguously to
+        ``long`` / ``ulong``.  Negative values below ``Int64.MinValue``
+        and positive values above ``UInt64.MaxValue`` have no
+        ``JsonValue.Create`` overload and are rejected up-front rather
+        than emitted as a literal F# would refuse to compile.
+        """
+        if self._json_type_active:
+            base = self.integer_format
+
+            def _format(value: int) -> str:
+                """Return a json-mode integer literal."""
+                rendered = base(value)
+                if I64_MIN <= value <= I64_MAX:
+                    return f"{rendered}L"
+                if 0 <= value <= U64_MAX:
+                    return f"{rendered}UL"
+                msg = (
+                    f"F# json_type cannot represent integer {value}: "
+                    "JsonValue.Create has no overload for values outside "
+                    "the Int64 / UInt64 ranges."
+                )
+                raise UnrepresentableIntegerError(msg)
+
+            return _format
         return make_overflow_suffix_formatter(
             base=self.integer_format,
             min_value=I64_MIN,
@@ -983,11 +1245,15 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one sequence entry."""
+        if self._json_type_active:
+            return _format_fsharp_json_entry
         return self._entry_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one set entry."""
+        if self._json_type_active:
+            return _format_fsharp_json_entry
         return self._entry_formatter
 
     @cached_property
@@ -998,6 +1264,14 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(
+                    open_str=_FSHARP_JSON_OBJECT_OPEN,
+                ),
+                close=_FSHARP_JSON_OBJECT_CLOSE,
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Map [",
@@ -1009,6 +1283,8 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
+        if self._json_type_active:
+            return tuple_dict_entry(format_value=_format_fsharp_json_entry)
         return tuple_dict_entry(format_value=self._entry_formatter)
 
     @cached_property
@@ -1031,6 +1307,12 @@ class FSharp(metaclass=LanguageCls):
             if self.declaration_style.value.supports_redefinition
             else "let"
         )
+        if self._json_type_active:
+            return declaration_formatter_ignoring_modifiers(
+                formatter=_build_fsharp_json_declaration_inner(
+                    keyword=keyword,
+                ),
+            )
         return declaration_formatter_ignoring_modifiers(
             formatter=_build_fsharp_declaration(
                 template=(
@@ -1047,6 +1329,8 @@ class FSharp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
+        if self._json_type_active:
+            return _format_fsharp_json_assignment
         return _build_fsharp_declaration(
             template="let {name}: {declared_type} = {wrapped}",
             sequence_declared_type=self._sequence_declared_type,
@@ -1137,9 +1421,26 @@ class FSharp(metaclass=LanguageCls):
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map.
 
+        Under ``json_type`` the file always ``open``s the
+        ``System.Text.Json.Nodes`` types inside the module body so
+        the ``JsonObject`` / ``JsonArray`` / ``JsonValue`` constructors
+        resolve; the F# ``module`` declaration must be the first
+        non-blank line, which rules out the file-level preamble that
+        other languages use for an equivalent import.
+
         Swaps ``int64`` to ``bigint`` in the ``FInt`` variant when the
         data contains an integer outside signed 64-bit range.
         """
+        if self._json_type_active:
+
+            @beartype
+            def _json_body_preamble(
+                _types: frozenset[type], _data: Value, /
+            ) -> tuple[str, ...]:
+                """Return the JsonNode ``open`` directive."""
+                return (_FSHARP_JSON_USING,)
+
+            return _json_body_preamble
         static_compute = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,

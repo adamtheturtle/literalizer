@@ -574,6 +574,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="FSharp_json_type_json_node",
+            spec=make_spec(
+                lang_cls=FSharp,
+                json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+            ),
+            lang_cls=FSharp,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="Gleam_json_type_gleam_json_json",
             spec=make_spec(
                 lang_cls=Gleam,
@@ -2608,6 +2617,66 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_combined",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_combined",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                        declaration_style=(
+                            FSharp.declaration_styles.LET_MUTABLE
+                        ),
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_null",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_null",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_null",
+                variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_bool_list",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_bool_list",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="bool_list",
+                variable_form=wrap_variable_form(),
+            ),
+            VariantCase(
+                variant_name="FSharp_json_type_json_node_epoch_dt",
+                variant=Variant(
+                    name="FSharp_json_type_json_node_epoch_dt",
+                    spec=make_spec(
+                        lang_cls=FSharp,
+                        json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
+                        datetime_format=FSharp.datetime_formats.EPOCH,
+                    ),
+                    lang_cls=FSharp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="scalar_datetime",
+                variable_form=wrap_variable_form(),
             ),
             VariantCase(
                 variant_name="Gleam_json_type_gleam_json_json_datetime_epoch",
