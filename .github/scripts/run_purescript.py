@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from purescript_common import PRELUDE_JS, PRELUDE_PURS
+from purescript_common import write_lint_environment
 
 # Dynamically import the compiled ``Check`` module so Node runs its
 # top-level bindings. PureScript compiles each top-level value into a
@@ -30,7 +30,7 @@ def _run_fixture(
     filename: str,
     tmpdir: Path,
     check_path: Path,
-    prelude_purs: Path,
+    env_purs_paths: list[Path],
     output_dir: Path,
     purs_path: str,
     node_path: str,
@@ -46,7 +46,7 @@ def _run_fixture(
             purs_path,
             "compile",
             check_path.as_posix(),
-            prelude_purs.as_posix(),
+            *(p.as_posix() for p in env_purs_paths),
             "-o",
             output_dir.as_posix(),
         ],
@@ -82,10 +82,7 @@ def main() -> None:
     failed = False
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
-        prelude_purs = tmpdir / "Prelude.purs"
-        prelude_js = tmpdir / "Prelude.js"
-        prelude_purs.write_text(data=PRELUDE_PURS, encoding="utf-8")
-        prelude_js.write_text(data=PRELUDE_JS, encoding="utf-8")
+        env_purs_paths = write_lint_environment(tmpdir=tmpdir)
         check_path = tmpdir / "Check.purs"
         output_dir = tmpdir / "output"
         for filename in filenames:
@@ -93,7 +90,7 @@ def main() -> None:
                 filename=filename,
                 tmpdir=tmpdir,
                 check_path=check_path,
-                prelude_purs=prelude_purs,
+                env_purs_paths=env_purs_paths,
                 output_dir=output_dir,
                 purs_path=purs_path,
                 node_path=node_path,
