@@ -13,6 +13,7 @@ member so the loop runs once per language and case.
 """
 
 from pathlib import Path
+from typing import NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -57,6 +58,68 @@ from .variant_cases import (
     variant_languages,
     wrap_variable_form,
 )
+
+_SkipReasons = tuple[tuple[type[Exception], str, bool], ...]
+
+_LANG_SKIP_REASONS: _SkipReasons = (
+    (
+        UnrepresentableIntegerError,
+        "cannot represent integer in this input",
+        True,
+    ),
+    (UnrepresentableEmptyDictError, "cannot represent an empty dict", True),
+    (
+        HeterogeneousCollectionError,
+        "cannot represent this heterogeneous input",
+        True,
+    ),
+    (NullInCollectionError, "cannot represent null in a collection", True),
+    (UnrepresentableInputError, "cannot represent this input", True),
+)
+
+_VARIANT_SKIP_REASONS: _SkipReasons = (
+    (
+        UnrepresentableIntegerError,
+        "cannot represent integer in this input",
+        True,
+    ),
+    (UnrepresentableEmptyDictError, "cannot represent an empty dict", True),
+    (NullInCollectionError, "rejects null elements in this input", False),
+    (
+        HeterogeneousCollectionError,
+        "cannot represent this heterogeneous input",
+        True,
+    ),
+    (
+        IncompatibleFormatsError,
+        "combination cannot represent this input",
+        True,
+    ),
+    (UnrepresentableInputError, "cannot represent this input", True),
+)
+
+
+def _skip_unrepresentable(
+    *,
+    exc: Exception,
+    reasons: _SkipReasons,
+    golden_path: Path,
+    prefix: str,
+) -> NoReturn:
+    """Skip the current test with a message keyed off the caught error.
+
+    For matching entries whose third tuple field is ``True``, the
+    golden file is removed first so a stale fixture cannot pose as a
+    real failure on the next run.  Re-raises the caught error if its
+    type does not appear in *reasons* so unexpected ones still
+    surface.
+    """
+    for exc_type, reason, unlink in reasons:
+        if isinstance(exc, exc_type):
+            if unlink:
+                golden_path.unlink(missing_ok=True)
+            pytest.skip(f"{prefix} {reason}")
+    raise exc
 
 
 @pytest.mark.parametrize(
@@ -116,31 +179,18 @@ def test_golden_file(
                             variable_form=None,
                             wrap_in_file=True,
                         )
-                except UnrepresentableIntegerError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_name} cannot represent integer in this input",
-                    )
-                except UnrepresentableEmptyDictError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_name} cannot represent an empty dict",
-                    )
-                except HeterogeneousCollectionError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_name} cannot represent this heterogeneous "
-                        "input",
-                    )
-                except NullInCollectionError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_name} cannot represent null in a collection",
-                    )
-                except UnrepresentableInputError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_name} cannot represent this input",
+                except (
+                    UnrepresentableIntegerError,
+                    UnrepresentableEmptyDictError,
+                    HeterogeneousCollectionError,
+                    NullInCollectionError,
+                    UnrepresentableInputError,
+                ) as exc:
+                    _skip_unrepresentable(
+                        exc=exc,
+                        reasons=_LANG_SKIP_REASONS,
+                        golden_path=golden_path,
+                        prefix=lang_name,
                     )
                 # newline="" prevents Python text-mode from converting
                 # \r\n to \n on Windows, which would corrupt golden
@@ -308,23 +358,20 @@ def test_format_variant_golden_file(
                         wrap_in_file=True,
                         collection_layout=variant.collection_layout,
                     )
-            except UnrepresentableIntegerError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent integer in this input")
-            except UnrepresentableEmptyDictError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent an empty dict")
-            except NullInCollectionError:
-                pytest.skip("Format rejects null elements in this input")
-            except HeterogeneousCollectionError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent this heterogeneous input")
-            except IncompatibleFormatsError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format combination cannot represent this input")
-            except UnrepresentableInputError:
-                golden_path.unlink(missing_ok=True)
-                pytest.skip("Format cannot represent this input")
+            except (
+                UnrepresentableIntegerError,
+                UnrepresentableEmptyDictError,
+                NullInCollectionError,
+                HeterogeneousCollectionError,
+                IncompatibleFormatsError,
+                UnrepresentableInputError,
+            ) as exc:
+                _skip_unrepresentable(
+                    exc=exc,
+                    reasons=_VARIANT_SKIP_REASONS,
+                    golden_path=golden_path,
+                    prefix="Format",
+                )
             file_regression.check(
                 contents=result.code + "\n",
                 encoding="utf-8",
