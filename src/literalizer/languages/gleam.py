@@ -1499,6 +1499,10 @@ class Gleam(metaclass=LanguageCls):
         Non-finite values raise :class:`UnrepresentableSpecialFloatError`
         because Gleam's Erlang target has no expression that evaluates
         to a non-finite float.
+
+        The redundant ``+`` Python's ``repr`` emits on positive
+        exponents (``1.0e+16``) is stripped because Gleam's parser
+        rejects it with ``This float is missing an exponent``.
         """
         finite: Callable[[float], str]
         if self._json_type_active:
@@ -1522,7 +1526,7 @@ class Gleam(metaclass=LanguageCls):
                     "the Erlang target."
                 )
                 raise UnrepresentableSpecialFloatError(msg)
-            return finite(value)
+            return finite(value).replace("e+", "e")
 
         return _format
 

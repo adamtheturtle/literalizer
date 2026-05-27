@@ -23,6 +23,7 @@ program main
         freal(0.0), &
         freal(1.0), &
         freal(1.5e3), &
-        freal(1.0e-3) &
+        freal(1.0e-3), &
+        freal(1.0e16) &
     ])
 end program main

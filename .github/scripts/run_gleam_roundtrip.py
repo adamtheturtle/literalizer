@@ -19,14 +19,6 @@ other per-language round-trip helpers.
 The serializer is ``gleam_json``'s built-in encoder.  The literalizer
 emits ``json.Json`` builder calls directly, so the previous hand-rolled
 ``GVal`` -> ``Json`` walker has gone away.
-
-The shared input's ``float_large_exponent`` field is excluded from
-the comparison: Gleam's float literal grammar rejects the explicit
-``+`` sign Python's ``repr`` emits for large exponents (``1.0e+308``
-fails with ``This float is missing an exponent``).  Trimming the
-field before literalization keeps the generated program inside what
-the Gleam compiler accepts; this is a literalizer-side concern that
-will be tracked separately rather than worked around here.
 """
 
 import os
@@ -42,18 +34,13 @@ from literalizer.languages import Gleam
 
 _VAR_NAME = "my_data"
 _LABEL = "Gleam"
-_EXCLUDED_KEYS = ("float_large_exponent",)
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Gleam module literalized from *json_text*."""
-    trimmed = roundtrip_common.trim_keys(
-        json_text=json_text,
-        excluded_keys=_EXCLUDED_KEYS,
-    )
     result = roundtrip_common.literalize_new_variable(
         language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
-        json_text=trimmed,
+        json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=1,
     )
@@ -103,7 +90,7 @@ def main() -> None:
         roundtrip_common.verify(
             label=_LABEL,
             produced_json=result.stdout,
-            exclude_keys=_EXCLUDED_KEYS,
+            exclude_keys=(),
         )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

@@ -20,6 +20,7 @@ CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.f = 1.000000}),
     ((CVal){.f = 1500.000000}),
     ((CVal){.f = 0.001000}),
+    ((CVal){.f = 10000000000000000.000000}),
 }});
     (void)my_data;
     return 0;

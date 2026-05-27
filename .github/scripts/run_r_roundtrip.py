@@ -18,9 +18,13 @@ Three top-level keys are excluded from the comparison:
 * ``biginteger`` — its 26-digit value overflows R's double-precision
   numeric, same shape as the Go, TypeScript, Zig, Swift, Rust, D, and
   C++ exclusions.
-* ``float_large_exponent`` — R's parser rounds the literal
-  ``1.7976931348623157e+308`` up to ``Inf``, which ``jsonlite`` then
-  serializes as the JSON string ``"Inf"`` rather than a number.
+* ``float_large_exponent`` — target-runtime limit, not a literalizer
+  formatter limit.  The R parser silently rounds the literal
+  ``1.7976931348623157e308`` up to ``Inf``, which ``jsonlite`` then
+  serializes as the JSON string ``"Inf"`` rather than a number; the
+  emitted source itself is a valid R numeric literal.  Working around
+  R's parser behaviour for near-``DBL_MAX`` values is outside the
+  literalizer's scope.
 * ``empty_object`` — R represents both arrays and objects as ``list()``
   and an empty unnamed ``list()`` is genuinely ambiguous, so the
   literalizer raises

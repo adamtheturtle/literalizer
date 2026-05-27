@@ -7,5 +7,6 @@ let my_data: Val = FList [
     FFloat 0.000000;
     FFloat 1.000000;
     FFloat 1500.000000;
-    FFloat 0.001000
+    FFloat 0.001000;
+    FFloat 10000000000000000.000000
 ]

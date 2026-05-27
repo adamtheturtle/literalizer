@@ -5,6 +5,7 @@ class Fixture_float_scientific_notation_Haxe_float_format_fixed_s {
             1.000000,
             1500.000000,
             0.001000,
+            10000000000000000.000000,
         ] : Array<Dynamic>);
     }
 }

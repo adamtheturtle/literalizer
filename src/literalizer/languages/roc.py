@@ -284,8 +284,13 @@ def _build_roc_integer_formatter(
 def _apply_roc_float(
     value: float, prefix: str, inner: Callable[[float], str]
 ) -> str:
-    """Format a float with a ``{prefix}Float`` constructor."""
-    return f"{prefix}Float {inner(value)}"
+    """Format a float with a ``{prefix}Float`` constructor.
+
+    The redundant ``+`` Python's ``repr`` emits on positive exponents
+    (``1.0e+16``) is stripped because the Roc parser rejects it -- the
+    sign character is not part of a Roc float literal exponent.
+    """
+    return f"{prefix}Float {inner(value).replace('e+', 'e')}"
 
 
 @beartype

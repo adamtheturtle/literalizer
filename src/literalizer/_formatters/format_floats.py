@@ -9,8 +9,23 @@ def format_float_repr(value: float) -> str:
 
     This produces the shortest representation that round-trips:
     ``1500.0`` stays as ``"1500.0"``, ``0.001`` as ``"0.001"``.
+
+    When ``repr`` emits scientific notation without a dotted mantissa
+    (``1e+16``), a ``.0`` is inserted so the result reads ``1.0e+16``.
+    Several languages -- Ada, Cobol, Elixir, Erlang, Gleam, Nix, YAML
+    -- require a ``.`` in the mantissa to parse a numeric literal as a
+    float rather than as an integer, identifier, or string.  The
+    redundant ``+`` on positive exponents is kept because YAML's
+    resolver regex requires it to recognize the literal as a float;
+    languages that reject the ``+`` (currently only Gleam) override
+    :meth:`format_float` to strip it.
     """
-    return repr(value)
+    raw = repr(value)
+    if "e" in raw:
+        mantissa, _, exponent = raw.partition("e")
+        if "." not in mantissa:
+            return f"{mantissa}.0e{exponent}"
+    return raw
 
 
 @beartype
