@@ -33,13 +33,15 @@ slightly above ``DBL_MAX`` and Python's ``json.loads`` then parses it
 as ``inf``.  Every smaller float in the shared input still
 round-trips.
 
-The shared input's ``empty_object`` field is also excluded.  The Ada
-backend writes empty maps as ``AMap'[]`` and empty lists as ``AList'[]``,
-both of which resolve to the same ``A_Val`` private type with one shared
-``Aggregate`` aspect, so the ``Empty`` function the aggregate calls
-cannot tell the two empties apart at run time.  Non-empty maps and lists
-are distinguished by whether their first item is an ``AEntry``, so every
-other shape in the shared input round-trips losslessly.
+The shared input's ``empty_object`` field is also excluded: the Ada
+backend's ``validate_spec_for_data`` raises
+:class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on
+empty mappings (because the unified ``A_Val`` aggregate cannot
+distinguish an empty ``AMap'[]`` from an empty ``AList'[]`` at run
+time), so trimming the key keeps the roundtrip driver runnable.
+Non-empty maps and lists are distinguished by whether their first
+item is an ``AEntry``, so every other shape in the shared input
+round-trips losslessly.
 """
 
 import shutil
