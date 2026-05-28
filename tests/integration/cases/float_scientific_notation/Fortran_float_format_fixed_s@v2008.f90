@@ -23,6 +23,7 @@ program main
         freal(0.000000_real64), &
         freal(1.000000_real64), &
         freal(1500.000000_real64), &
-        freal(0.001000_real64) &
+        freal(0.001000_real64), &
+        freal(10000000000000000.000000_real64) &
     ])
 end program main

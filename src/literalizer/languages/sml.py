@@ -115,11 +115,18 @@ def _sml_negate_int(
 def _apply_sml_negate_float(
     value: float, formatter: Callable[[float], str]
 ) -> str:
-    """Format a float, replacing ``-`` with ``~``."""
+    """Format a float, replacing ``-`` with ``~``.
+
+    Scientific-notation output from Python's ``repr`` uses a lower-case
+    ``e`` and an explicit ``+`` on positive exponents (``1.0e+16``);
+    SML's float grammar requires upper-case ``E``, rejects the ``+``,
+    and uses ``~`` for a negative exponent, so the exponent marker is
+    normalized here.
+    """
     result = formatter(value)
     if result.startswith("-"):
-        return "~" + result[1:]
-    return result
+        result = "~" + result[1:]
+    return result.replace("e-", "E~").replace("e+", "E").replace("e", "E")
 
 
 @beartype

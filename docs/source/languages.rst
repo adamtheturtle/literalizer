@@ -86,6 +86,28 @@ for the ``time.Date(...)`` constructor.
 Each ``__init__`` parameter has a sensible default, so you only need to
 specify the options you want to change.
 
+Float emission scope
+--------------------
+
+|project| emits a syntactically valid source literal for any finite
+IEEE 754 ``double`` the target language accepts.  Scientific-notation
+output always uses a dotted mantissa (``1.0e+16`` rather than
+``1e+16``) so the result parses as a float in languages whose
+grammars reject a bare integer mantissa (Ada, Cobol, Elixir, Erlang,
+Gleam, Nix, YAML).  Gleam additionally strips the ``+`` from positive
+exponents because its parser rejects the explicit sign; other
+languages keep the ``+`` because YAML's resolver regex requires it to
+recognize the literal as a float.
+
+Whether a round-trip through a *target ecosystem's* JSON encoder
+preserves edge values such as ``DBL_MAX`` is governed by that
+ecosystem's encoder (precision, integer-vs-float rendering, ``Inf``
+coercion) and is out of scope for the formatter.  Special floats
+(``inf`` / ``nan``) follow each language's ``supports_special_floats``
+policy; targets that have no expression for them (e.g. Gleam's Erlang
+target) raise
+:class:`~literalizer.exceptions.UnrepresentableSpecialFloatError`.
+
 Heterogeneous values
 --------------------
 
@@ -101,8 +123,9 @@ JSON value types
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
-Scala, C#, Nim, Haskell, Zig, C++, and D support this through the
-``json_type`` constructor argument (D's polarity is reversed; see below):
+Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, PureScript, Erlang,
+and D support this through the ``json_type`` constructor argument (D's
+polarity is reversed; see below):
 
 .. code-block:: python
 
@@ -239,6 +262,32 @@ remain valid JSON.  The ``const`` modifier is rejected because the JSON
 constructors and the implicit ``(JsonNode?)`` cast applied to scalars
 are runtime expressions, not C# constant initializers.
 
+F# exposes the same option through
+``FSharp.json_types.SYSTEM_TEXT_JSON_NODE``:
+
+.. code-block:: python
+
+   """Render F# data as a System.Text.Json.Nodes value tree."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import FSharp
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=FSharp(json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``JsonObject(dict [ ... ])`` / ``JsonArray([| ... |])``
+expressions wrapping per-scalar ``JsonValue.Create(...)`` constructors,
+widened to ``JsonNode`` so heterogeneous children type-infer uniformly.
+The mode opens ``System.Text.Json.Nodes`` inside the generated module,
+relaxes F#'s homogeneous collection checks, switches dates, datetimes,
+and times to ISO 8601 strings (unless ``datetime_format`` is ``EPOCH``),
+and requires dict keys to be strings so they remain valid JSON object
+keys.
+
 Nim exposes the same option through ``Nim.json_types.JSON_NODE``:
 
 .. code-block:: python
@@ -339,6 +388,151 @@ remain valid JSON object keys, and the input must not encode the
 raw-string terminator sequence ``)json"`` (e.g. through a dict key
 ending in ``)json``).
 
+Gleam exposes the same option through
+``Gleam.json_types.GLEAM_JSON_JSON``:
+
+.. code-block:: python
+
+   """Render Gleam data using the gleam_json builder type."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Gleam
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``gleam_json`` builder calls such as ``json.int(1)``,
+``json.string("red")``, ``json.preprocessed_array([...])``, and
+``json.object([#("k", v), ...])`` so each binding has the static type
+``gleam/json.Json``, ready to feed straight into ``json.to_string``.
+An ``import gleam/json`` line is added at file scope and the generated
+``GVal`` ADT is dropped.  Dict keys must be strings so they remain
+valid JSON object keys, and non-finite floats are rejected because
+the Erlang target has no expression that evaluates to a non-finite
+float.
+
+OCaml exposes the same option through ``OCaml.json_types.YOJSON_SAFE_T``:
+
+.. code-block:: python
+
+   """Render OCaml data as a ``Yojson.Safe.t`` polymorphic variant."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import OCaml
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits ``Yojson.Safe.t`` polymorphic-variant literals directly,
+keyed by the standard ``yojson`` tag set (``Bool``, ``Int``,
+``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``), so
+the rendered binding has the static type ``Yojson.Safe.t`` instead of
+OCaml's generated ``val_t`` algebraic type, and the ``type val_t = ...``
+preamble drops out entirely:
+
+.. code-block:: ocaml
+
+   let payload : Yojson.Safe.t = `Assoc [
+       ("id", `Int 1);
+       ("tags", `List [`String "red"; `Int 2])
+   ]
+
+Dates, datetimes, times, and bytes fold into JSON-friendly strings;
+integers that exceed OCaml's native ``int`` range route through the
+``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON
+number) instead of raising.  Dict keys must be strings so they remain
+valid JSON object keys.
+
+Elm exposes the same option through
+``Elm.json_types.JSON_ENCODE_VALUE``:
+
+.. code-block:: python
+
+   """Render Elm data as a Json.Encode.Value."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Elm
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits idiomatic ``elm/json`` ``Json.Encode.bool``,
+``Json.Encode.int``, ``Json.Encode.string``,
+``Json.Encode.list identity [ ... ]``, and
+``Json.Encode.object [ ( "k", ... ) ]`` calls and adds an
+``import Json.Encode`` line.  The rendered binding has the static type
+``Json.Encode.Value`` rather than Elm's narrow per-fixture ``Val`` ADT,
+so no walker is needed before ``Json.Encode.encode 0`` and
+heterogeneous collections are accepted.  Dict keys must be strings so
+they remain valid JSON object keys.
+
+PureScript exposes the same option through
+``PureScript.json_types.ARGONAUT_JSON``:
+
+.. code-block:: python
+
+   """Render PureScript data as Argonaut Json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import PureScript
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=PureScript(
+           json_type=PureScript.json_types.ARGONAUT_JSON,
+       ),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits a ``fromRight jsonNull (jsonParser "...")`` expression that
+parses the embedded JSON document at runtime, so the rendered binding
+has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's
+narrow custom ``Val`` algebraic type, and can hold the heterogeneous
+values that ``Val``'s closed set of constructors rejects.  Dict keys
+must be strings so they remain valid JSON object keys, and special
+floats (``NaN``, ``+Infinity``, ``-Infinity``) are rejected because
+JSON has no syntax for them.
+
+Erlang exposes the same option through
+``Erlang.json_types.OTP_JSON``:
+
+.. code-block:: python
+
+   """Render Erlang data for Erlang's built-in json module."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Erlang
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Erlang(json_type=Erlang.json_types.OTP_JSON),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits string values, dict keys, ISO 8601 dates / datetimes /
+times, and base64-encoded bytes as UTF-8 binary literals
+(``<<"..."/utf8>>``) rather than Erlang's default ``"..."`` string
+form (a list of code points), since Erlang's ``json:encode/1``
+(available since ``OTP_27``) rejects the list form as a map key and
+emits list-form string values as arrays of integers.  Null renders
+as the bare atom ``null`` (rather than ``undefined``), and sets
+render as JSON arrays.  Dict keys must be strings so they remain
+valid JSON object keys.
+
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``
 constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``
@@ -371,6 +565,43 @@ a set, an ordered map, or a non-record dict, are rejected with
 ``RECORD`` ``heterogeneous_strategy`` is also rejected because it
 already renders record-shaped dicts as generated ``struct`` literals,
 which conflicts with narrow mode's associative-array form.
+
+Empty mappings on Ada, Lua, PHP, and R
+--------------------------------------
+
+Ada, Lua, PHP, and R all have a runtime representation that cannot
+distinguish an empty mapping from an empty sequence.  Lua's table,
+PHP's array, and R's ``list()`` each serialize an empty mapping the
+same way their JSON encoders serialize an empty sequence (typically
+``[]``).  The Ada literalizer's unified ``A_Val`` aggregate likewise
+collapses an empty ``AMap'[]`` and an empty ``AList'[]`` to the same
+runtime value, so the mapping/sequence distinction is lost on
+round-trip.  ``literalize`` refuses to emit a literal that cannot
+round-trip and raises
+:class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on
+those four languages whenever an empty mapping appears at any depth
+in the input.  Empty sequences are unambiguous and are still
+accepted.
+
+.. code-block:: python
+
+   """Ada, Lua, PHP, and R reject empty mappings."""
+
+   import contextlib
+   import json
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.exceptions import UnrepresentableEmptyDictError
+   from literalizer.languages import Lua
+
+   # Strip or replace the empty mapping before retrying on a real input.
+   with contextlib.suppress(UnrepresentableEmptyDictError):
+       literalize(
+           source=json.dumps(obj={"outer": {}}),
+           input_format=InputFormat.JSON,
+           language=Lua(),
+           variable_form=NewVariable(name="my_data"),
+       )
 
 Custom language implementations
 -------------------------------

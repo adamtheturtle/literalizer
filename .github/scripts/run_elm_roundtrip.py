@@ -1,12 +1,12 @@
 """Elm JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to an Elm
-``myData : Val`` declaration, wrap it in a tiny ``port`` module that
-walks the generated ``Val`` ADT into a ``Json.Encode.Value`` and ships
-the serialized JSON back to a Node wrapper through a port, compile that
-module with ``elm make``, run the emitted JavaScript under Node so the
-port subscription writes the JSON to stdout, and hand the result to
-:func:`roundtrip_common.verify`.
+``myData : Json.Encode.Value`` declaration via
+``Elm(json_type=JSON_ENCODE_VALUE)``, wrap it in a tiny ``port`` module
+that serializes ``myData`` straight through ``Json.Encode.encode`` and
+ships the JSON to stdout via a port, compile that module with ``elm
+make``, run the emitted JavaScript under Node so the port subscription
+writes the JSON, and hand the result to :func:`roundtrip_common.verify`.
 
 This lives here, driven by a step of the ``lint-elm-run`` job in
 ``.github/workflows/lint.yml``, because that job is where the ``elm``
@@ -20,43 +20,22 @@ its 26-digit value overflows the Elm ``Int`` range (Elm ``Int`` is a JS
 finite ``Int``).  Same shape as the Go, TypeScript, Zig, and Rust
 exclusions.
 
-The literalized output uses the custom ``Val`` ADT defined in
-``src/literalizer/languages/elm.py``; there is no off-the-shelf
-serializer for it, so the ``valToJson`` walker below maps each
-constructor to the matching ``Json.Encode`` call.  The standard
-``elm/json`` library does the actual JSON formatting once the ADT has
-been translated.
+Under ``json_type=JSON_ENCODE_VALUE`` the literalized output is already
+a :class:`Json.Encode.Value` built from idiomatic ``Json.Encode.*``
+calls.  No ``Val`` ADT or walker is needed: ``Json.Encode.encode 0``
+serializes the declared value directly.
 """
 
-import json
 import shutil
 
 import roundtrip_common
+from elm_common import ELM_JSON
 
 from literalizer.languages import Elm
 
 _VAR_NAME = "myData"
 _LABEL = "Elm"
 _EXCLUDED_KEYS = ("biginteger",)
-
-# elm.json with ``elm/json`` promoted to a direct dependency so
-# ``import Json.Encode`` resolves; the rest mirrors the shared
-# ``ELM_JSON`` from ``elm_common.py``.
-_ELM_JSON = json.dumps(
-    obj={
-        "type": "application",
-        "source-directories": ["src"],
-        "elm-version": "0.19.1",
-        "dependencies": {
-            "direct": {
-                "elm/core": "1.0.5",
-                "elm/json": "1.1.3",
-            },
-            "indirect": {},
-        },
-        "test-dependencies": {"direct": {}, "indirect": {}},
-    },
-)
 
 # Node wrapper.  ``Elm.Main.init`` returns synchronously; the runtime
 # processes the ``init`` ``Cmd`` (which calls ``output``) on the next
@@ -70,68 +49,15 @@ app.ports.output.subscribe((s) => {
 });
 """
 
-# Encoder mapping each ``Val`` constructor to ``Json.Encode``.  Covers
-# all eight constructors the Elm backend can emit, not just the ones
-# present in the trimmed input, so the encoder stays valid if the
-# fixture later grows ``ENull`` / ``ESet`` cases.
-_VAL_TO_JSON = """\
-valToJson : Val -> Encode.Value
-valToJson v =
-    case v of
-        ENull ->
-            Encode.null
-
-        EBool b ->
-            Encode.bool b
-
-        EInt i ->
-            Encode.int i
-
-        EFloat f ->
-            Encode.float f
-
-        EStr s ->
-            Encode.string s
-
-        EList xs ->
-            Encode.list valToJson xs
-
-        EDict kvs ->
-            Encode.object (List.map (\\( k, w ) -> ( k, valToJson w )) kvs)
-
-        ESet xs ->
-            Encode.list valToJson xs
-"""
-
-# Full ``Val`` type with every constructor.  Replaces the body_preamble
-# the Elm backend would otherwise emit (which only lists the
-# constructors actually used by the data) so ``valToJson`` above can
-# pattern-match the full surface.
-_VAL_TYPE = """\
-type Val
-    = ENull
-    | EBool Bool
-    | EInt Int
-    | EFloat Float
-    | EStr String
-    | EList (List Val)
-    | EDict (List ( String, Val ))
-    | ESet (List Val)
-"""
-
 _MAIN_TEMPLATE = """\
 port module Main exposing (main)
 
-import Json.Encode as Encode
+import Json.Encode
 import Platform
 
 
-{val_type}
-
 {declaration}
 
-
-{val_to_json}
 
 port output : String -> Cmd msg
 
@@ -139,7 +65,7 @@ port output : String -> Cmd msg
 main : Program () () Never
 main =
     Platform.worker
-        {{ init = \\_ -> ( (), output (Encode.encode 0 (valToJson {var})) )
+        {{ init = \\_ -> ( (), output (Json.Encode.encode 0 {var}) )
         , update = \\_ m -> ( m, Cmd.none )
         , subscriptions = \\_ -> Sub.none
         }}
@@ -153,22 +79,20 @@ def _build_main(json_text: str) -> str:
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Elm(),
+        language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
     # ``result.code`` for Elm starts with the body_preamble (the
-    # ``type Val ...`` declaration restricted to used constructors);
-    # strip it so the full ``_VAL_TYPE`` below is the sole definition.
+    # ``import Json.Encode`` line under ``json_type``); strip it so the
+    # template's single import is the only one.
     body_preamble_text = "\n".join(result.body_preamble)
     declaration = result.code
     if declaration.startswith(body_preamble_text):
         declaration = declaration[len(body_preamble_text) :].lstrip("\n")
     return _MAIN_TEMPLATE.format(
-        val_type=_VAL_TYPE,
         declaration=declaration,
-        val_to_json=_VAL_TO_JSON,
         var=_VAR_NAME,
     )
 
@@ -194,7 +118,7 @@ def main() -> None:
         ],
         excluded_keys=_EXCLUDED_KEYS,
         extra_files={
-            "elm.json": _ELM_JSON,
+            "elm.json": ELM_JSON,
             "run.js": _RUN_JS,
         },
     )

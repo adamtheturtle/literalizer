@@ -18,6 +18,7 @@ from literalizer._formatters.collection_openers import (
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
     format_date_iso,
+    format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
 )
@@ -75,6 +76,7 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
+    no_data_preamble,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -518,6 +520,128 @@ def _build_gleam_data_dependent_preamble(
     return _compute
 
 
+# ``gleam_json`` builder prefixes for ``json_type=GLEAM_JSON_JSON``.
+_GLEAM_JSON_IMPORT: tuple[str, ...] = ("import gleam/json",)
+_GLEAM_JSON_TRUE: str = "json.bool(True)"
+_GLEAM_JSON_FALSE: str = "json.bool(False)"
+_GLEAM_JSON_NULL: str = "json.null()"
+_GLEAM_JSON_STRING_OPEN: str = "json.string("
+
+
+@beartype
+def _format_gleam_json_string(value: str) -> str:
+    """Format a string as a ``json.string("...")`` builder call."""
+    escaped = format_string_backslash(value)
+    return f"{_GLEAM_JSON_STRING_OPEN}{escaped})"
+
+
+@beartype
+def _format_gleam_json_integer_factory(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return an integer formatter that emits ``json.int(<n>)`` calls."""
+
+    def _format(value: int) -> str:
+        """Format an integer via the underlying base formatter."""
+        return f"json.int({base(value)})"
+
+    return _format
+
+
+@beartype
+def _format_gleam_json_float_factory(
+    inner: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Return a float formatter that emits ``json.float(<n>)`` calls."""
+
+    def _format(value: float) -> str:
+        """Format a float via the underlying base formatter."""
+        return f"json.float({inner(value)})"
+
+    return _format
+
+
+@beartype
+def _format_gleam_json_date(value: datetime.date) -> str:
+    """Format a date as a ``json.string("...")`` ISO 8601 builder call."""
+    return f"{_GLEAM_JSON_STRING_OPEN}{format_date_iso(value=value)})"
+
+
+@beartype
+def _format_gleam_json_time(value: datetime.time) -> str:
+    """Format a time as a ``json.string("...")`` ISO 8601 builder call."""
+    return f"{_GLEAM_JSON_STRING_OPEN}{format_time_iso(value=value)})"
+
+
+@beartype
+def _format_gleam_json_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as a ``json.string("...")`` ISO 8601 builder
+    call.
+    """
+    return f"{_GLEAM_JSON_STRING_OPEN}{format_datetime_iso(value=value)})"
+
+
+@beartype
+def _format_gleam_json_datetime_epoch(value: datetime.datetime) -> str:
+    """Format a datetime as a ``json.int(<epoch>)`` builder call."""
+    return f"json.int({format_datetime_epoch(value=value)})"
+
+
+@beartype
+def _format_gleam_json_bytes_hex(value: bytes) -> str:
+    """Format bytes as a ``json.string("<hex>")`` builder call."""
+    return f"{_GLEAM_JSON_STRING_OPEN}{format_bytes_hex(value=value)})"
+
+
+@beartype
+def _format_gleam_json_bytes_base64(value: bytes) -> str:
+    """Format bytes as a ``json.string("<base64>")`` builder call."""
+    return f"{_GLEAM_JSON_STRING_OPEN}{format_bytes_base64(value=value)})"
+
+
+_GLEAM_JSON_BYTES_FORMATTERS: dict[str, Callable[[bytes], str]] = {
+    "HEX": _format_gleam_json_bytes_hex,
+    "BASE64": _format_gleam_json_bytes_base64,
+}
+
+
+@beartype
+def _apply_gleam_json_dict_entry(
+    key: str,
+    _raw_value: Value,
+    formatted_value: str,
+) -> str:
+    """Format a dict entry as ``#("key", value)`` for ``json.object``.
+
+    Dict keys are formatted as ``json.string("k")`` builder calls by
+    :func:`_format_gleam_json_string`, but ``json.object`` expects bare
+    string keys inside its ``#(key, value)`` pairs, so the builder
+    wrapping is stripped here.
+    """
+    bare_key = key.removeprefix(_GLEAM_JSON_STRING_OPEN).removesuffix(")")
+    return f"#({bare_key}, {formatted_value})"
+
+
+@beartype
+def _gleam_json_call_preamble_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return Gleam module-level function stubs for a call target.
+
+    Under the ``GLEAM_JSON_JSON`` JSON value mode every argument is a
+    ``json.Json`` builder expression, so the stub's parameter types are
+    fixed at ``json.Json`` (not the polymorphic type variables the
+    default ``GVal`` stub uses).
+    """
+    flat_name = "_".join(parts)
+    param_list = ", ".join(f"_{p}: json.Json" for p in params)
+    return (f"pub fn {flat_name}({param_list}) -> Nil {{ Nil }}",)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Gleam(metaclass=LanguageCls):
@@ -906,6 +1030,14 @@ class Gleam(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Gleam."""
+
+        GLEAM_JSON_JSON = "gleam/json.Json"
+        """The ``gleam_json`` package's ``Json`` builder type."""
+
+    json_types = JsonTypes
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -988,6 +1120,7 @@ class Gleam(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     language_version: VersionFormats = VersionFormats.V1
     indent: str = "  "
     type_name: str = "GVal"
@@ -1000,7 +1133,6 @@ class Gleam(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
@@ -1020,8 +1152,33 @@ class Gleam(metaclass=LanguageCls):
         return passthrough_set_entry
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether the ``gleam_json.Json`` builder mode is set."""
+        return self.json_type is not None
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """File-scope preamble.
+
+        Under :attr:`json_type` an ``import gleam/json`` line is added
+        so the rendered builder calls resolve.  The default ``GVal``
+        ADT mode needs no static preamble; its tagged ADT declaration
+        is emitted by :attr:`data_dependent_preamble` instead.
+        """
+        if self._json_type_active:
+            return _GLEAM_JSON_IMPORT
+        return ()
+
+    @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
-        """Return the ``pub type`` declaration tailored to *data*."""
+        """Return the ``pub type`` declaration tailored to *data*.
+
+        Under :attr:`json_type` the rendered values flow through the
+        ``gleam_json`` builder API and no ``GVal`` ADT is needed, so the
+        preamble is empty.
+        """
+        if self._json_type_active:
+            return no_data_preamble
         return _build_gleam_data_dependent_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
@@ -1030,7 +1187,17 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the heterogeneous-behavior config."""
+        """Return the heterogeneous-behavior config.
+
+        Under :attr:`json_type` every value is wrapped in a
+        ``json.Json`` builder call so scalar uniformity is irrelevant
+        across container elements.
+        """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1065,6 +1232,8 @@ class Gleam(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return file-scope stubs for a call expression."""
+        if self._json_type_active:
+            return _gleam_json_call_preamble_stub
         return _gleam_call_preamble_stub
 
     @cached_property
@@ -1122,26 +1291,59 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def null_literal(self) -> str:
         """Literal representing ``None``."""
+        if self._json_type_active:
+            return _GLEAM_JSON_NULL
         return f"{self.constructor_prefix}Null"
 
     @cached_property
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self._json_type_active:
+            return _GLEAM_JSON_TRUE
         return f"{self.constructor_prefix}Bool(True)"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self._json_type_active:
+            return _GLEAM_JSON_FALSE
         return f"{self.constructor_prefix}Bool(False)"
 
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
+        if self._json_type_active:
+            return _apply_gleam_json_dict_entry
         return _build_gleam_dict_entry(prefix=self.constructor_prefix)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
+        """Configuration for the chosen sequence format.
+
+        Under :attr:`json_type` sequences are rendered as
+        ``json.preprocessed_array([...])`` builder calls since each
+        element is already a ``json.Json`` value; the typed
+        ``json.array(of:)`` overload would require a uniform element
+        encoder which the heterogeneous-input case cannot supply.
+        """
+        if self._json_type_active:
+            return SequenceFormatConfig(
+                sequence_open=fixed_open(
+                    open_str="json.preprocessed_array([",
+                ),
+                close="])",
+                supports_heterogeneity=True,
+                single_element_trailing_comma=False,
+                supports_trailing_comma=True,
+                empty_sequence="json.preprocessed_array([])",
+                preamble_lines=(),
+                format_entry=passthrough_sequence_entry,
+                typed_opener_fallback=None,
+                uses_typed_literal_for_scalars=False,
+                requires_uniform_record_shapes=False,
+                declared_type=None,
+                narrowed_empty_form=None,
+            )
         fmt = self.sequence_format.value
         if self.sequence_format.name == "LIST":
             return dataclasses.replace(
@@ -1159,7 +1361,25 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        Under :attr:`json_type` sets become
+        ``json.preprocessed_array([...])`` builder calls; JSON has no
+        set type so the closest builder is the heterogeneous array
+        constructor.
+        """
+        if self._json_type_active:
+            return SetFormatConfig(
+                set_open=fixed_open(
+                    open_str="json.preprocessed_array([",
+                ),
+                close="])",
+                empty_set="json.preprocessed_array([])",
+                preamble_lines=(),
+                set_opener_template="",
+                supports_heterogeneity=True,
+                supports_trailing_comma=True,
+            )
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
@@ -1169,7 +1389,23 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        Under :attr:`json_type` dicts are rendered as
+        ``json.object([#("k", v), ...])`` builder calls; the entry
+        formatter strips the ``json.string(...)`` wrapping the key
+        formatter applied so each pair's key is a bare string literal.
+        """
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="json.object(["),
+                close="])",
+                format_entry=self._dict_entry,
+                empty_dict="json.object([])",
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict([",
@@ -1190,6 +1426,8 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self._json_type_active:
+            return _GLEAM_JSON_BYTES_FORMATTERS[self.bytes_format.name]
         if self.constructor_prefix == "G":
             return self.bytes_format
         return _GLEAM_BYTES_FORMATTERS[self.bytes_format.name](
@@ -1199,6 +1437,8 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_type_active:
+            return _format_gleam_json_date
         if self.constructor_prefix == "G":
             return self.date_format
         return _build_gleam_date_iso(prefix=self.constructor_prefix)
@@ -1206,6 +1446,10 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self._json_type_active:
+            if self.datetime_format.name == "EPOCH":
+                return _format_gleam_json_datetime_epoch
+            return _format_gleam_json_datetime_iso
         if self.datetime_format.name == "EPOCH":
             return _build_gleam_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "G":
@@ -1215,11 +1459,15 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._json_type_active:
+            return _format_gleam_json_time
         return _build_gleam_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
+        if self._json_type_active:
+            return _format_gleam_json_string
         if self.constructor_prefix == "G":
             return _format_gleam_string
         return _build_gleam_str_formatter(prefix=self.constructor_prefix)
@@ -1227,6 +1475,11 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self._json_type_active:
+            base = _GLEAM_INT_BASE[
+                (self.integer_format.name, self.numeric_separator.name)
+            ]
+            return _format_gleam_json_integer_factory(base=base)
         if self.constructor_prefix == "G":
             return self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
@@ -1246,9 +1499,17 @@ class Gleam(metaclass=LanguageCls):
         Non-finite values raise :class:`UnrepresentableSpecialFloatError`
         because Gleam's Erlang target has no expression that evaluates
         to a non-finite float.
+
+        The redundant ``+`` Python's ``repr`` emits on positive
+        exponents (``1.0e+16``) is stripped because Gleam's parser
+        rejects it with ``This float is missing an exponent``.
         """
         finite: Callable[[float], str]
-        if self.constructor_prefix == "G":
+        if self._json_type_active:
+            finite = _format_gleam_json_float_factory(
+                inner=_GLEAM_FLOAT_BASE[self.float_format.name],
+            )
+        elif self.constructor_prefix == "G":
             finite = self.float_format
         else:
             finite = _build_gleam_float_wrapper(
@@ -1265,7 +1526,7 @@ class Gleam(metaclass=LanguageCls):
                     "the Erlang target."
                 )
                 raise UnrepresentableSpecialFloatError(msg)
-            return finite(value)
+            return finite(value).replace("e+", "e")
 
         return _format
 
@@ -1277,6 +1538,12 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return OrderedMapFormatConfig(
+                ordered_map_open=fixed_open(open_str="json.object(["),
+                close="])",
+                preamble_lines=(),
+            )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict([",
@@ -1294,14 +1561,33 @@ class Gleam(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under :attr:`json_type` the binding carries an explicit
+        ``: json.Json`` annotation so the static type matches the
+        ``gleam_json`` builder's return type and downstream encoders
+        like ``json.to_string`` resolve without inference.
+        """
+        if self._json_type_active:
+            return variable_declaration_formatter(
+                template="let {name}: json.Json = {value}",
+            )
         return self.declaration_style.value.formatter
 
     @cached_property
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
-        """Callable that formats an assignment to an existing variable."""
+        """Callable that formats an assignment to an existing variable.
+
+        Under :attr:`json_type` the assignment also carries the
+        ``: json.Json`` annotation so a shadowed binding keeps the
+        builder static type explicit.
+        """
+        if self._json_type_active:
+            return variable_formatter(
+                template="let {name}: json.Json = {value}",
+            )
         return variable_formatter(template="let {name} = {value}")
 
     @cached_property

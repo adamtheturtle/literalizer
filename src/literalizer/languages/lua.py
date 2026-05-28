@@ -77,7 +77,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
+    reject_empty_dicts,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -429,7 +429,10 @@ class Lua(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject inputs containing an empty mapping on Lua."""
+        reject_empty_dicts(data=data, language_name="Lua")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

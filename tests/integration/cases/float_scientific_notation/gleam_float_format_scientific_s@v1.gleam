@@ -9,6 +9,7 @@ pub fn main() {
     GFloat(1.0),
     GFloat(1.5e3),
     GFloat(1.0e-3),
+    GFloat(1.0e16),
   ])
   let _ = my_data
 }

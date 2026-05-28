@@ -72,10 +72,12 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -499,6 +501,181 @@ def _elm_platform_worker_suffix(indent: str) -> str:
     )
 
 
+# ----- Json.Encode.Value rendering helpers -----
+#
+# When ``Elm(json_type=JsonTypes.JSON_ENCODE_VALUE)`` is active, every
+# value is rendered as a direct ``Json.Encode.*`` function application
+# rather than wrapped in the per-fixture ``Val`` ADT.  The output is
+# idiomatic ``elm/json`` code; no walker is needed to convert it to a
+# JSON document at runtime.
+
+_JSON_ENC_NULL = "Json.Encode.null"
+_JSON_ENC_TRUE = "Json.Encode.bool True"
+_JSON_ENC_FALSE = "Json.Encode.bool False"
+_JSON_ENC_LIST_OPEN = "Json.Encode.list identity ["
+_JSON_ENC_OBJECT_OPEN = "Json.Encode.object ["
+_JSON_ENCODE_VALUE_TYPE = "Json.Encode.Value"
+
+
+@beartype
+def _format_elm_json_with_ctor(formatted: str, ctor: str) -> str:
+    """Apply ``ctor`` to a ``formatted`` numeric literal.
+
+    Elm parses ``Json.Encode.int -3`` as the subtraction
+    ``Json.Encode.int - 3``, so negative numeric arguments are wrapped in
+    parentheses; positive numerals pass through bare.
+    """
+    if formatted.startswith("-"):
+        return f"{ctor} ({formatted})"
+    return f"{ctor} {formatted}"
+
+
+@beartype
+def _build_elm_json_int_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Build an integer formatter producing ``Json.Encode.int <n>``."""
+
+    def _format(value: int) -> str:
+        """Apply the ``Json.Encode.int`` constructor."""
+        return _format_elm_json_with_ctor(
+            formatted=base(value), ctor="Json.Encode.int"
+        )
+
+    return _format
+
+
+@beartype
+def _build_elm_json_float_formatter(
+    inner: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Build a float formatter producing ``Json.Encode.float <n>``."""
+
+    def _format(value: float) -> str:
+        """Apply the ``Json.Encode.float`` constructor."""
+        return _format_elm_json_with_ctor(
+            formatted=inner(value), ctor="Json.Encode.float"
+        )
+
+    return _format
+
+
+@beartype
+def _format_elm_json_string(value: str) -> str:
+    """Format a string as ``Json.Encode.string "..."``."""
+    escaped = format_string_backslash_control(
+        value=value,
+        control_char_fmt="\\u{{{:04x}}}",
+    )
+    return f"Json.Encode.string {escaped}"
+
+
+@beartype
+def _format_elm_json_date_iso(value: datetime.date) -> str:
+    """Format a date as ``Json.Encode.string`` of its ISO 8601 form."""
+    return f"Json.Encode.string {format_date_iso(value=value)}"
+
+
+@beartype
+def _format_elm_json_time_iso(value: datetime.time) -> str:
+    """Format a time as ``Json.Encode.string`` of its ISO 8601 form."""
+    return f"Json.Encode.string {format_time_iso(value=value)}"
+
+
+@beartype
+def _format_elm_json_datetime_iso(value: datetime.datetime) -> str:
+    """Format a datetime as ``Json.Encode.string`` of its ISO form."""
+    return f"Json.Encode.string {format_datetime_iso(value=value)}"
+
+
+@beartype
+def _format_elm_json_bytes_hex(value: bytes) -> str:
+    """Format bytes as ``Json.Encode.string`` of their hex form."""
+    return f"Json.Encode.string {format_bytes_hex(value=value)}"
+
+
+@beartype
+def _format_elm_json_bytes_base64(value: bytes) -> str:
+    """Format bytes as ``Json.Encode.string`` of their base64 form."""
+    return f"Json.Encode.string {format_bytes_base64(value=value)}"
+
+
+_JSON_BYTES_FORMATTERS: dict[str, Callable[[bytes], str]] = {
+    "HEX": _format_elm_json_bytes_hex,
+    "BASE64": _format_elm_json_bytes_base64,
+}
+
+
+@beartype
+def _elm_json_dict_entry(
+    key: str, _raw_value: Value, formatted_value: str
+) -> str:
+    """Format one ``Json.Encode.object`` entry as ``( "k", v )``.
+
+    The framework has already formatted the key with the
+    ``Json.Encode.string`` constructor, so strip that prefix to keep the
+    bare quoted string that ``Json.Encode.object`` requires.
+    """
+    raw_key = key.removeprefix("Json.Encode.string ")
+    return f"({raw_key}, {formatted_value})"
+
+
+@beartype
+def _validate_elm_json_data(*, data: Value) -> None:
+    """Reject inputs ``Json.Encode.Value`` rendering cannot represent.
+
+    ``Json.Encode.object`` keys must be strings.  Walks the data
+    recursively so a non-string key nested inside a collection is caught
+    upfront, before rendering.
+    """
+    match data:
+        case dict():
+            for key, value in data.items():
+                if not isinstance(key, str):
+                    msg = (
+                        "Elm(json_type=JSON_ENCODE_VALUE) cannot represent "
+                        f"dict key {key!r}: Json.Encode.object keys must be "
+                        "strings."
+                    )
+                    raise UnrepresentableInputError(msg)
+                _validate_elm_json_data(data=value)
+        case list() | set():
+            for item in data:
+                _validate_elm_json_data(data=item)
+        case _:
+            return
+
+
+@beartype
+def _elm_json_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return Elm call stubs typed as returning ``Json.Encode.Value``.
+
+    Under ``json_type`` the bound call must agree with the surrounding
+    ``Json.Encode.Value`` annotation, so the curried stub's return type
+    is ``Json.Encode.Value`` rather than ``()``.  The implementation
+    returns ``Json.Encode.null`` so the placeholder type-checks.
+    """
+    flat_name = _elm_flatten_dotted(parts=parts)
+    parameter_count = len(params)
+    type_variables = [
+        _elm_type_var(index=position) for position in range(parameter_count)
+    ]
+    type_signature = (
+        f"{flat_name} : "
+        f"{' -> '.join([*type_variables, _JSON_ENCODE_VALUE_TYPE])}"
+    )
+    implementation = (
+        f"{flat_name} {' '.join(['_'] * parameter_count)} = {_JSON_ENC_NULL}"
+    )
+    return (type_signature, implementation)
+
+
 @beartype
 def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
@@ -818,6 +995,23 @@ class Elm(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
+    class JsonTypes(enum.Enum):
+        """JSON value type options for Elm."""
+
+        JSON_ENCODE_VALUE = enum.auto()
+        """Render values directly as ``elm/json`` ``Json.Encode.*`` calls
+        producing :class:`Json.Encode.Value`.
+
+        With this mode the generated module contains no ``Val`` ADT and
+        no walker: every literal is an idiomatic ``Json.Encode.bool``,
+        ``Json.Encode.int``, ``Json.Encode.string``,
+        ``Json.Encode.list identity [ ... ]``,
+        ``Json.Encode.object [ ( "k", ... ) ]`` etc., and feeds straight
+        into ``Json.Encode.encode 0`` for serialization.
+        """
+
+    json_types = JsonTypes
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,
@@ -827,7 +1021,19 @@ class Elm(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @cached_property
+    def _json_active(self) -> bool:
+        """``True`` when ``Json.Encode.Value`` rendering is selected."""
+        return self.json_type is not None
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate Elm-specific data/format combinations.
+
+        Under :attr:`json_type` every dict key must be a string because
+        ``Json.Encode.object`` only admits string keys.
+        """
+        if self._json_active:
+            _validate_elm_json_data(data=data)
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
@@ -956,6 +1162,7 @@ class Elm(metaclass=LanguageCls):
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "E"
+    json_type: JsonTypes | None = None
 
     indent_closing_delimiter: ClassVar[bool] = True
     element_separator: ClassVar[str] = ", "
@@ -1014,7 +1221,15 @@ class Elm(metaclass=LanguageCls):
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
         tuple[str, ...],
     ]:
-        """Return stub declarations for a call expression."""
+        """Return stub declarations for a call expression.
+
+        Under :attr:`json_type` the stub returns
+        ``Json.Encode.Value`` (and defaults to ``Json.Encode.null``) so
+        the bound call type-checks against the ``Json.Encode.Value``
+        annotation on the enclosing declaration.
+        """
+        if self._json_active:
+            return _elm_json_call_stub
         return _elm_call_stub
 
     @cached_property
@@ -1085,21 +1300,34 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def null_literal(self) -> str:
         """Literal representing ``None``."""
+        if self._json_active:
+            return _JSON_ENC_NULL
         return f"{self.constructor_prefix}Null"
 
     @cached_property
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self._json_active:
+            return _JSON_ENC_TRUE
         return f"{self.constructor_prefix}Bool True"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self._json_active:
+            return _JSON_ENC_FALSE
         return f"{self.constructor_prefix}Bool False"
 
     @cached_property
     def _seq_open(self) -> Callable[[list[Value]], str]:
-        """Shared sequence opener with configured constructor prefix."""
+        """Shared sequence opener.
+
+        Under :attr:`json_type` lists render as
+        ``Json.Encode.list identity [...]``; otherwise the configured
+        ADT ``{prefix}List [...]`` form applies.
+        """
+        if self._json_active:
+            return fixed_open(open_str=_JSON_ENC_LIST_OPEN)
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1107,6 +1335,8 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
+        if self._json_active:
+            return _elm_json_dict_entry
         return _build_elm_dict_entry(prefix=self.constructor_prefix)
 
     @cached_property
@@ -1119,7 +1349,18 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        Under :attr:`json_type` sets render as a JSON array
+        (``Json.Encode.list identity [...]``) because JSON has no set
+        type; otherwise the configured ADT ``{prefix}Set [...]`` form
+        applies.
+        """
+        if self._json_active:
+            return dataclasses.replace(
+                self.set_format.value,
+                set_open=fixed_open(open_str=_JSON_ENC_LIST_OPEN),
+            )
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
@@ -1134,11 +1375,19 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        Under :attr:`json_type` dicts render as
+        ``Json.Encode.object [ ( "k", v ) ]`` rather than the ADT
+        ``{prefix}Dict [ ( "k", v ) ]`` form.
+        """
+        open_str = (
+            _JSON_ENC_OBJECT_OPEN
+            if self._json_active
+            else f"{self.constructor_prefix}Dict ["
+        )
         return DictFormatConfig(
-            dict_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Dict [",
-            ),
+            dict_open=fixed_open(open_str=open_str),
             close="]",
             format_entry=self._dict_entry,
             empty_dict=None,
@@ -1155,6 +1404,8 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self._json_active:
+            return _JSON_BYTES_FORMATTERS[self.bytes_format.name]
         if self.constructor_prefix == "E":
             return self.bytes_format
         return _BYTES_FORMATTERS[self.bytes_format.name](
@@ -1164,6 +1415,8 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self._json_active:
+            return _format_elm_json_date_iso
         if self.constructor_prefix == "E":
             return self.date_format
         return _build_elm_date_iso(prefix=self.constructor_prefix)
@@ -1171,6 +1424,12 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self._json_active:
+            if self.datetime_format.name == "EPOCH":
+                return datetime_epoch_formatter(
+                    format_integer=_build_elm_json_int_formatter(base=str),
+                )
+            return _format_elm_json_datetime_iso
         if self.datetime_format.name == "EPOCH":
             return _build_elm_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "E":
@@ -1180,11 +1439,15 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self._json_active:
+            return _format_elm_json_time_iso
         return _build_elm_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
+        if self._json_active:
+            return _format_elm_json_string
         if self.constructor_prefix == "E":
             return _format_elm_string
         return _build_elm_str_formatter(prefix=self.constructor_prefix)
@@ -1192,6 +1455,10 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self._json_active:
+            return _build_elm_json_int_formatter(
+                base=_INT_BASE[self.integer_format.name],
+            )
         if self.constructor_prefix == "E":
             return self.integer_format
         return _build_elm_integer_formatter(
@@ -1202,6 +1469,8 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
+        if self._json_active:
+            return self._json_format_float
         if self.constructor_prefix == "E":
             return self.float_format
         _pos_inf = f"{self.constructor_prefix}Float (1 / 0)"
@@ -1231,10 +1500,13 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        open_str = (
+            _JSON_ENC_OBJECT_OPEN
+            if self._json_active
+            else f"{self.constructor_prefix}Dict ["
+        )
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Dict [",
-            ),
+            ordered_map_open=fixed_open(open_str=open_str),
             close="]",
             preamble_lines=(),
         )
@@ -1248,8 +1520,29 @@ class Elm(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under :attr:`json_type` the annotation is the flat
+        ``Json.Encode.Value`` regardless of whether the top-level shape
+        is a list, dict, set, or scalar; every literal flows through the
+        same ``Json.Encode.*`` constructor pipeline.
+        """
         _base_declaration = self.declaration_style.value.formatter
+        if self._json_active:
+
+            @beartype
+            def _elm_json_declaration(
+                name: str,
+                value: str,
+                data: Value,
+                _modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format a ``Json.Encode.Value`` declaration."""
+                base = _base_declaration(name, value, data, _modifiers)
+                return f"{name} : {_JSON_ENCODE_VALUE_TYPE}\n{base}"
+
+            return _elm_json_declaration
+
         _raw_declared = self.sequence_format.value.declared_type
         _type_name = self.type_name
         _sequence_declared_type = (
@@ -1337,10 +1630,46 @@ class Elm(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines using Elm type declaration."""
+        """Compute body-preamble lines.
+
+        Under :attr:`json_type` the preamble is a single
+        ``import Json.Encode`` line; otherwise the per-fixture ``Val``
+        ADT declaration is emitted with only the constructors actually
+        referenced by the data.
+        """
+        if self._json_active:
+
+            def _json_preamble(
+                _types: frozenset[type], _data: Value, /
+            ) -> tuple[str, ...]:
+                """Return the single ``import Json.Encode`` line."""
+                return ("import Json.Encode",)
+
+            return _json_preamble
         return _build_elm_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
             indent=self.indent,
         )
+
+    @cached_property
+    def _json_format_float(self) -> Callable[[float], str]:
+        """Float formatter for :attr:`json_type` mode."""
+        _finite = _build_elm_json_float_formatter(
+            inner=_FLOAT_BASE[self.float_format.name],
+        )
+        _pos_inf = "Json.Encode.float (1 / 0)"
+        _neg_inf = "Json.Encode.float (-(1 / 0))"
+        _nan_val = "Json.Encode.float (0 / 0)"
+
+        @beartype
+        def _format(value: float) -> str:
+            """Format a float, handling inf and nan."""
+            if math.isinf(value):
+                return _neg_inf if value < 0 else _pos_inf
+            if math.isnan(value):
+                return _nan_val
+            return _finite(value)
+
+        return _format

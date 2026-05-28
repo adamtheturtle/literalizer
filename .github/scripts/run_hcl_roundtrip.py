@@ -18,12 +18,16 @@ the existing ``Lint Hcl`` syntax check that uses the same ``hcl2json``
 dependency.  It shares the same input and comparison logic as the
 other per-language round-trip helpers.
 
-``float_large_exponent`` is excluded from the comparison because
-``hcl2json`` emits ``1.7976931348623157e+308`` as a fully-expanded
-309-digit integer literal in its JSON output, and parsing that integer
-back through Python's ``json`` yields a value that does not compare
-equal to the original ``float`` (large ints are not equal to floats of
-the same magnitude when the rounded conversion would lose bits).
+``float_large_exponent`` is excluded from the comparison because of a
+target-runtime serializer limit, not a literalizer formatter limit.
+The literalizer emits a valid HCL numeric literal; ``hcl2json`` then
+re-emits ``1.7976931348623157e308`` as a fully-expanded 309-digit
+integer literal in its JSON output, and parsing that integer back
+through Python's ``json`` yields a value that does not compare equal
+to the original ``float`` (large ints are not equal to floats of the
+same magnitude when the rounded conversion would lose bits).
+Changing ``hcl2json``'s number serialization is outside the
+literalizer's scope.
 """
 
 import json

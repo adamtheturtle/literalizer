@@ -4,7 +4,8 @@ procedure Main is
         AFloat (0.000000),
         AFloat (1.000000),
         AFloat (1500.000000),
-        AFloat (0.001000)
+        AFloat (0.001000),
+        AFloat (10000000000000000.000000)
     ];
 begin
     null;

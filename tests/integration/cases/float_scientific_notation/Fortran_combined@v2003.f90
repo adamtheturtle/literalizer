@@ -24,7 +24,8 @@ subroutine main_declaration()
         freal(0.0_real64), &
         freal(1.0_real64), &
         freal(1500.0_real64), &
-        freal(0.001_real64) &
+        freal(0.001_real64), &
+        freal(1.0e+16_real64) &
     ])
 end subroutine main_declaration
 
@@ -36,7 +37,8 @@ subroutine main_assignment()
         freal(0.0_real64), &
         freal(1.0_real64), &
         freal(1500.0_real64), &
-        freal(0.001_real64) &
+        freal(0.001_real64), &
+        freal(1.0e+16_real64) &
     ])
 end subroutine main_assignment
 

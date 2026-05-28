@@ -18,13 +18,19 @@ Three top-level keys are excluded from the comparison:
 * ``biginteger`` — its 26-digit value overflows R's double-precision
   numeric, same shape as the Go, TypeScript, Zig, Swift, Rust, D, and
   C++ exclusions.
-* ``float_large_exponent`` — R's parser rounds the literal
-  ``1.7976931348623157e+308`` up to ``Inf``, which ``jsonlite`` then
-  serializes as the JSON string ``"Inf"`` rather than a number.
+* ``float_large_exponent`` — target-runtime limit, not a literalizer
+  formatter limit.  The R parser silently rounds the literal
+  ``1.7976931348623157e308`` up to ``Inf``, which ``jsonlite`` then
+  serializes as the JSON string ``"Inf"`` rather than a number; the
+  emitted source itself is a valid R numeric literal.  Working around
+  R's parser behaviour for near-``DBL_MAX`` values is outside the
+  literalizer's scope.
 * ``empty_object`` — R represents both arrays and objects as ``list()``
-  and an empty unnamed ``list()`` is genuinely ambiguous, so
-  ``jsonlite`` serializes the empty-object value as ``[]`` instead of
-  ``{}``.
+  and an empty unnamed ``list()`` is genuinely ambiguous, so the
+  literalizer raises
+  :class:`literalizer.exceptions.UnrepresentableEmptyDictError` on this
+  language and the field is trimmed from the input *before*
+  literalization (same shape as the Lua and PHP exclusions).
 """
 
 import os
@@ -46,8 +52,12 @@ _EXCLUDED_KEYS = ("biginteger", "float_large_exponent", "empty_object")
 
 def _build_program(json_text: str) -> str:
     """Return a runnable R program literalized from *json_text*."""
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = literalize(
-        source=json_text,
+        source=trimmed_json,
         input_format=InputFormat.JSON,
         language=R(),
         pre_indent_level=0,

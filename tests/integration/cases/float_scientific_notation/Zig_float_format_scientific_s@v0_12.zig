@@ -16,6 +16,7 @@ pub fn main() void {
         .{ .float = 1.0 },
         .{ .float = 1.5e3 },
         .{ .float = 1.0e-3 },
+        .{ .float = 1.0e16 },
     }};
     _ = my_data;
 }

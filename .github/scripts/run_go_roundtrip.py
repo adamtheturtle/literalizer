@@ -10,12 +10,13 @@ This lives here, driven by a step of the ``lint-go`` job in
 toolchain is invoked.  It shares the same input and comparison logic as
 the other per-language round-trip helpers.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-its 26-digit value overflows ``uint64`` (the widest Go integer literal
-type the literalizer emits), so the program would not compile if the
-field were kept.  Every other field round-trips through ``encoding/json``
-losslessly under the parsed-value comparison in
-:func:`roundtrip_common.verify`.
+The shared input's ``biginteger`` field is trimmed before
+literalization: its 26-digit value overflows ``uint64`` (the widest Go
+integer literal type the literalizer emits), so the literalizer raises
+:class:`literalizer.exceptions.UnrepresentableIntegerError` rather than
+emitting a ``uint64(...)`` conversion the Go compiler would reject.
+Every other field round-trips through ``encoding/json`` losslessly
+under the parsed-value comparison in :func:`roundtrip_common.verify`.
 """
 
 import shutil

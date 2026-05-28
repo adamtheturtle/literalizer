@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from purescript_common import PRELUDE_JS, PRELUDE_PURS
+from purescript_common import write_lint_environment
 
 
 def main() -> None:
@@ -14,10 +14,7 @@ def main() -> None:
     filename = sys.argv[1]
     purs_path: str = shutil.which(cmd="purs") or "purs"
     with tempfile.TemporaryDirectory() as tmpdir:
-        prelude_purs = Path(tmpdir) / "Prelude.purs"
-        prelude_js = Path(tmpdir) / "Prelude.js"
-        prelude_purs.write_text(data=PRELUDE_PURS, encoding="utf-8")
-        prelude_js.write_text(data=PRELUDE_JS, encoding="utf-8")
+        env_purs_paths = write_lint_environment(tmpdir=Path(tmpdir))
         output_dir = Path(tmpdir) / "output"
 
         result = subprocess.run(
@@ -25,7 +22,7 @@ def main() -> None:
                 purs_path,
                 "compile",
                 filename,
-                prelude_purs.as_posix(),
+                *(p.as_posix() for p in env_purs_paths),
                 "-o",
                 output_dir.as_posix(),
             ],

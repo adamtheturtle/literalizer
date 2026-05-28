@@ -9,6 +9,7 @@ from literalizer.exceptions import UnrepresentableIntegerError
 
 I64_MAX = 2**63 - 1
 I64_MIN = -(2**63)
+U64_MAX = 2**64 - 1
 
 
 @beartype
@@ -305,23 +306,34 @@ def make_unsigned_overflow_fallback(
 
 
 @beartype
-def _format_positive_ull(value: int) -> str:
-    """Format a non-negative integer with a ``ULL`` suffix."""
-    return f"{value}ULL"
-
-
-@beartype
 def make_ull_fallback(
     *,
     language_name: str,
 ) -> Callable[[int], str]:
     """Return a fallback that formats positive overflow values with a
-    ``ULL`` suffix and raises for negative overflow.
+    ``ULL`` suffix and raises for negative overflow or for positive
+    values above the unsigned 64-bit range.
 
     Shared by C and C++ where signed 64-bit literals are rejected above
     ``LLONG_MAX`` and ``unsigned long long`` holds positive values up to
-    ``ULLONG_MAX``.
+    ``ULLONG_MAX``.  Values above ``ULLONG_MAX`` have no native literal
+    so we raise ``UnrepresentableIntegerError`` rather than emit code
+    the compiler will reject.
     """
+
+    @beartype
+    def _format_positive_ull(value: int) -> str:
+        """Format a non-negative integer with a ``ULL`` suffix, raising
+        for values above ``ULLONG_MAX``.
+        """
+        if value > U64_MAX:
+            msg = (
+                f"{language_name} cannot represent integer {value} above "
+                "the unsigned 64-bit range."
+            )
+            raise UnrepresentableIntegerError(msg)
+        return f"{value}ULL"
+
     return make_unsigned_overflow_fallback(
         format_positive=_format_positive_ull,
         language_name=language_name,

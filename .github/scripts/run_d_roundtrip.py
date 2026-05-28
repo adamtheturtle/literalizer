@@ -12,11 +12,14 @@ This lives here, driven by a step of the ``lint-d`` job in
 toolchain (``dmd``) is already installed.  It shares the same input and
 comparison logic as the other per-language round-trip helpers.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-its 26-digit value overflows D's 64-bit ``long`` (the widest integer the
-``JSONValue`` integer node can carry), so the program would not compile
-if the field were kept.  Same shape as the Go, TypeScript, Zig, Swift
-and Rust exclusions.
+The shared input's ``biginteger`` field is trimmed before
+literalization: its 26-digit value overflows D's unsigned 64-bit
+``ulong`` (the widest integer the ``JSONValue`` integer node can carry
+and the widest literal the D backend emits via a ``UL`` suffix), so the
+literalizer raises
+:class:`literalizer.exceptions.UnrepresentableIntegerError` rather than
+emit a decimal literal ``dmd`` would reject.  Same shape as the Go,
+TypeScript, Zig, Swift and Rust exclusions.
 """
 
 import shutil

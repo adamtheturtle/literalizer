@@ -42,6 +42,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     I64_MAX,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -106,7 +107,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import InvalidRecordNameError
+from literalizer.exceptions import (
+    InvalidRecordNameError,
+    UnrepresentableIntegerError,
+)
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
@@ -119,8 +123,16 @@ def _format_go_uint64_positive(value: int) -> str:
     A Go integer constant without an explicit type can hold arbitrary
     size, but its default promotion to ``int`` overflows.  Wrapping in
     ``uint64(...)`` forces a typed conversion and accepts values up to
-    ``math.MaxUint64``.
+    ``math.MaxUint64``.  Values above ``math.MaxUint64`` have no native
+    literal type and raise ``UnrepresentableIntegerError`` rather than
+    emit a ``uint64(...)`` conversion the compiler will reject.
     """
+    if value > U64_MAX:
+        msg = (
+            f"Go cannot represent integer {value} above the unsigned "
+            "64-bit range."
+        )
+        raise UnrepresentableIntegerError(msg)
     return f"uint64({value})"
 
 
