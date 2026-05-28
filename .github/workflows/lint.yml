@@ -129,6 +129,19 @@ jobs:
           packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
             guile-3.0
           version: 1.0
+      # The Forth Foundation Library (FFL) supplies the ``jos`` JSON
+      # output-stream module used by
+      # ``.github/scripts/run_forth_roundtrip.py``; Forth itself ships
+      # no JSON serializer.  FFL is a source-only library, so the
+      # checkout is pinned to a specific commit for reproducibility
+      # (the repo is dormant: ``753d418`` from 2017 is its latest
+      # commit) and the script reaches it via the exported
+      # ``LITERALIZER_FFL_PATH``.
+      - name: Install FFL
+        run: |-
+          git clone https://github.com/irdvo/ffl.git /tmp/ffl
+          git -C /tmp/ffl checkout --quiet 753d418081a48afe8c86196261fda3299d93ac98
+          echo "LITERALIZER_FFL_PATH=/tmp/ffl" >> "$GITHUB_ENV"
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
         # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
@@ -417,6 +430,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth && test -s /tmp/files-forth
           xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
+
+      # Basic JSON -> Forth -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `gforth` toolchain on PATH;
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.
+      # See `.github/scripts/run_forth_roundtrip.py`.
+      - name: Forth roundtrip
+        run: uv run python .github/scripts/run_forth_roundtrip.py
 
       # Invoke ``guile-3.0`` directly rather than ``guile`` because
       # cache-apt-pkgs-action does not replay the package's
