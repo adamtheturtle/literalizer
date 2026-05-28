@@ -3,6 +3,113 @@ Changelog
 
 .. towncrier release notes start
 
+2026.05.28
+----------
+
+- Add Ruby, TypeScript, Haskell, Perl, PHP, Go, Zig, C#, Scala, Swift, Kotlin, Rust, D, TOML, Elm, OCaml, YAML, Julia, R, and Groovy JSON round-trip checks to CI using the shared round-trip fixture.
+
+- Add ``Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)`` to render values through ``serde_json::json!`` instead of Rust's narrow collection types.
+
+- Add ``Perl(bool_format=...)`` so booleans can round-trip through JSON and YAML libraries.  The default ``Perl.BoolFormats.INTEGER`` keeps the historic bare ``1`` / ``0`` output; ``JSON_PP_REF`` renders ``\1`` / ``\0`` scalar references (the conventional form used by ``JSON::PP``, ``JSON::XS``, ``Cpanel::JSON::XS``, and ``Mojo::JSON``); ``JSON_PP_SINGLETON`` renders the ``JSON::PP::true`` / ``JSON::PP::false`` blessed singletons with a ``use JSON::PP;`` preamble.
+
+- Add ``Cpp(json_type=Cpp.json_types.NLOHMANN_JSON)`` to render values through ``nlohmann::json::parse`` instead of C++'s narrow ``std::vector`` / ``std::map`` / ``std::unordered_map`` collection types.
+
+- Add ``Java(json_type=Java.json_types.JACKSON_JSON_NODE)`` to render values through Jackson's ``ObjectMapper.readTree`` so the binding has the static type ``com.fasterxml.jackson.databind.JsonNode`` instead of Java's narrow ``List`` / ``Map`` types.
+
+- Add ``CSharp(json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE)`` to render values through ``System.Text.Json.Nodes.JsonNode`` instead of C#'s narrow collection types.
+
+- Add ``Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT)`` to render values through ``Json.parseToJsonElement`` so the binding has the static type ``kotlinx.serialization.json.JsonElement`` instead of Kotlin's narrow ``List`` / ``Map`` types.
+
+- Add ``Scala(json_type=Scala.json_types.CIRCE)`` to render values through Circe ``Json.obj`` / ``Json.arr`` / ``Json.fromXxx`` instead of Scala's narrow collection types.
+
+- Add ``Haskell(json_type=Haskell.json_types.AESON_VALUE)`` to render values through the ``aesonQQ`` quasi-quote bracket from ``Data.Aeson.QQ`` so the binding has the static type ``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val`` algebraic type.
+
+- Add ``Zig(json_type=Zig.json_types.STD_JSON_VALUE)`` to render values through ``std.json.parseFromSlice`` so the binding has the static type ``std.json.Value`` instead of Zig's narrow ``ZVal`` tagged union.
+
+- Add ``Nim(json_type=Nim.json_types.JSON_NODE)`` to render values through the standard-library ``json.JsonNode`` and the ``%*`` macro instead of Nim's narrow collection types.
+
+- Add ``Crystal(json_type=Crystal.json_types.JSON_ANY)`` to render values through ``JSON.parse(%(...))`` into Crystal's standard-library ``JSON::Any`` instead of native ``Array`` and ``Hash`` collections.
+
+- Add ``D(json_type=None)`` to render D data through narrow native collections (raw scalars, ``T[]`` arrays, ``V[K]`` associative arrays) instead of the default ``std.json.JSONValue`` wrapper, giving D users the same two-mode choice the other ``json_type``-supporting languages have.  D's polarity is reversed: ``json_type=D.json_types.STD_JSON_VALUE`` (the default) matches the other languages' opt-in JSON value rendering, while ``json_type=None`` matches their typed-collection defaults.
+
+- Add an opt-in ``Perl.string_formats.DOUBLE_UTF8`` variant that emits non-ASCII characters literally in double-quoted strings and contributes ``use utf8;`` to the file preamble whenever the literalized value contains a non-ASCII string.
+
+- Add an Ada JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Clojure JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Common Lisp JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Crystal JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Dart JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Dhall JSON round-trip check to CI using a scalar-only subset of the shared round-trip fixture.
+
+- Add an Elixir JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add an Erlang JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Forth JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add an F# JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Gleam JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add an HCL JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Lua JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Nim JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add an Objective-C JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add an Odin JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Racket JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Raku JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Roc JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Standard ML JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Tcl JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a V JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Visual Basic JSON round-trip check to CI using the shared round-trip fixture.
+
+- Add a Wren JSON round-trip check to CI using the shared round-trip fixture.
+
+- Replace the hand-rolled JSON encoder in the Java round-trip CI check with Jackson's ``ObjectMapper``.
+
+- The Kotlin JSON round-trip CI check now serializes via Jackson's ``ObjectMapper`` instead of a hand-rolled ``toJsonElement`` walker over heterogeneous ``Any?`` plus primitive-array types.
+
+- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Lua, PHP, and R language specifications.  These languages have a single runtime collection type that cannot distinguish an empty mapping from an empty sequence, so emitting an empty-table literal would silently lose the mapping/sequence distinction on round-trip through any JSON encoder.  The new exception is exposed from :mod:`literalizer.exceptions`.
+
+- Raise ``UnrepresentableIntegerError`` at literalize time for integers outside the target language's representable range on the Go, TypeScript, Rust, D, and C++ language specifications, replacing silent emission of literals the target compiler would reject or silently truncate.  Go and D now emit a ``UL``/``uint64(...)`` literal for positives up to ``ulong.max``/``math.MaxUint64`` and raise above that; C++ retains its existing ``ULL`` fallback and now raises above ``ULLONG_MAX``; Rust raises above the ``i128`` range; TypeScript raises above ``Number.MAX_SAFE_INTEGER`` (``2**53 - 1``).
+
+- Always emit a dotted mantissa in float scientific-notation literals (``1.0e+16`` rather than ``1e+16``) so the output parses as a float in Ada, Cobol, Elixir, Erlang, Gleam, Nix, and YAML.  Gleam additionally strips the ``+`` from positive exponents to satisfy its parser, which lets ``Gleam``'s JSON round-trip handle the full IEEE 754 ``double`` range.
+
+- Internal: rewrite the Kotlin and Zig JSON round-trip scripts on top of the ``KOTLINX_JSON_ELEMENT`` and ``STD_JSON_VALUE`` ``json_type`` strategies, dropping the bespoke ``Any?``-to-``JsonElement`` and ``ZVal``-to-``std.json.Value`` walkers.  ``std.json.Value.number_string`` preserves the 26-digit ``biginteger`` field end-to-end on Zig, so that exclusion is dropped there; ``kotlinx.serialization``'s ``parseToJsonElement`` still collapses it to a ``Double``, so the Kotlin exclusion is retained.
+
+- Add ``Erlang(json_type=Erlang.json_types.OTP_JSON)`` to render strings, ISO dates, datetimes, times, and base64-encoded bytes as UTF-8 binary literals (``<<"..."/utf8>>``), null as the bare atom ``null``, and sets as JSON arrays, so the rendered value feeds straight into Erlang's built-in ``json:encode/1`` (available since ``OTP_27``) without a normalization pass.
+
+- Add ``OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T)`` to render values directly as ``Yojson.Safe.t`` polymorphic-variant literals (``Bool``, ``Int``, ``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``) so the binding has the static type ``Yojson.Safe.t`` instead of OCaml's generated ``val_t`` algebraic type; arbitrary-precision integers route through the ``Intlit`` escape hatch.
+
+- Document the F# ``Val`` discriminated union's JSON serialization limitations: the ``FMap`` tuple-list shape (chosen to preserve insertion order) and ``FSharp.SystemTextJson``'s ``Untagged`` encoding both prevent ``System.Text.Json.JsonSerializer.Serialize`` from producing valid JSON without a custom converter.  The ``FSharp`` language module now describes both pitfalls and points users at the ``writeVal`` helper in ``.github/scripts/run_fsharp_roundtrip.py`` as a starting template.
+
+- Add ``Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE)`` to render values as idiomatic ``elm/json`` ``Json.Encode.*`` calls producing a ``Json.Encode.Value`` directly, replacing the per-fixture ``Val`` ADT.
+
+- Add ``FSharp(json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE)`` to render values through ``System.Text.Json.Nodes.JsonNode`` instead of F#'s generated tagged ``Val`` discriminated union.
+
+- Add ``Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON)`` to render values directly as ``gleam_json`` builder calls (``json.object``, ``json.preprocessed_array``, ``json.int``, ``json.string``, ...) so the binding has the static type ``gleam/json.Json`` instead of Gleam's generated ``GVal`` tagged ADT.
+
+- Add ``PureScript(json_type=PureScript.json_types.ARGONAUT_JSON)`` to render values through a ``fromRight jsonNull (jsonParser "...")`` expression so the binding has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's narrow custom ``Val`` algebraic type.
+
+- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Ada language specification.  The Ada literalizer's unified ``A_Val`` aggregate cannot distinguish an empty ``AMap'[]`` from an empty ``AList'[]`` at run time, so emitting an empty-mapping literal would silently lose the mapping/sequence distinction on round-trip.  Ada now joins Lua, PHP, and R in raising rather than emitting an ambiguous literal.
+
 2026.05.21.1
 ------------
 

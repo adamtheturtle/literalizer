@@ -1,1 +1,0 @@
-Add ``Crystal(json_type=Crystal.json_types.JSON_ANY)`` to render values through ``JSON.parse(%(...))`` into Crystal's standard-library ``JSON::Any`` instead of native ``Array`` and ``Hash`` collections.

@@ -1,1 +1,0 @@
-Add ``Haskell(json_type=Haskell.json_types.AESON_VALUE)`` to render values through the ``aesonQQ`` quasi-quote bracket from ``Data.Aeson.QQ`` so the binding has the static type ``Data.Aeson.Value`` instead of Haskell's narrow custom ``Val`` algebraic type.

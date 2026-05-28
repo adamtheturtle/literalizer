@@ -1,1 +1,0 @@
-Add ``FSharp(json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE)`` to render values through ``System.Text.Json.Nodes.JsonNode`` instead of F#'s generated tagged ``Val`` discriminated union.

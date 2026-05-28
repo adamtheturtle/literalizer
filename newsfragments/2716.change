@@ -1,1 +1,0 @@
-Add ``Erlang(json_type=Erlang.json_types.OTP_JSON)`` to render strings, ISO dates, datetimes, times, and base64-encoded bytes as UTF-8 binary literals (``<<"..."/utf8>>``), null as the bare atom ``null``, and sets as JSON arrays, so the rendered value feeds straight into Erlang's built-in ``json:encode/1`` (available since ``OTP_27``) without a normalization pass.

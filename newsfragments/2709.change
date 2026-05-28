@@ -1,1 +1,0 @@
-The Kotlin JSON round-trip CI check now serializes via Jackson's ``ObjectMapper`` instead of a hand-rolled ``toJsonElement`` walker over heterogeneous ``Any?`` plus primitive-array types.

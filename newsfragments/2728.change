@@ -1,1 +1,0 @@
-Add ``Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON)`` to render values directly as ``gleam_json`` builder calls (``json.object``, ``json.preprocessed_array``, ``json.int``, ``json.string``, ...) so the binding has the static type ``gleam/json.Json`` instead of Gleam's generated ``GVal`` tagged ADT.

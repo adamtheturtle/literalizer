@@ -1,1 +1,0 @@
-Add ``Java(json_type=Java.json_types.JACKSON_JSON_NODE)`` to render values through Jackson's ``ObjectMapper.readTree`` so the binding has the static type ``com.fasterxml.jackson.databind.JsonNode`` instead of Java's narrow ``List`` / ``Map`` types.

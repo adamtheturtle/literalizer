@@ -1,1 +1,0 @@
-Add ``PureScript(json_type=PureScript.json_types.ARGONAUT_JSON)`` to render values through a ``fromRight jsonNull (jsonParser "...")`` expression so the binding has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's narrow custom ``Val`` algebraic type.

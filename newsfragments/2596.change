@@ -1,1 +1,0 @@
-Add ``Nim(json_type=Nim.json_types.JSON_NODE)`` to render values through the standard-library ``json.JsonNode`` and the ``%*`` macro instead of Nim's narrow collection types.

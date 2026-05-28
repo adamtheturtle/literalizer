@@ -1,1 +1,0 @@
-Add ``Zig(json_type=Zig.json_types.STD_JSON_VALUE)`` to render values through ``std.json.parseFromSlice`` so the binding has the static type ``std.json.Value`` instead of Zig's narrow ``ZVal`` tagged union.

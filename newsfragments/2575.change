@@ -1,1 +1,0 @@
-Add ``Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)`` to render values through ``serde_json::json!`` instead of Rust's narrow collection types.

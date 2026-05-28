@@ -1,1 +1,0 @@
-Always emit a dotted mantissa in float scientific-notation literals (``1.0e+16`` rather than ``1e+16``) so the output parses as a float in Ada, Cobol, Elixir, Erlang, Gleam, Nix, and YAML.  Gleam additionally strips the ``+`` from positive exponents to satisfy its parser, which lets ``Gleam``'s JSON round-trip handle the full IEEE 754 ``double`` range.

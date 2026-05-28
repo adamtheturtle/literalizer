@@ -1,1 +1,0 @@
-Add ``Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT)`` to render values through ``Json.parseToJsonElement`` so the binding has the static type ``kotlinx.serialization.json.JsonElement`` instead of Kotlin's narrow ``List`` / ``Map`` types.

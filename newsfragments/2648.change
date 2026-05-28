@@ -1,1 +1,0 @@
-Add a Dhall JSON round-trip check to CI using a scalar-only subset of the shared round-trip fixture.
