@@ -1,6 +1,7 @@
 module fval_m
   implicit none
   integer, parameter :: int64 = selected_int_kind(18)
+  integer, parameter :: real64 = selected_real_kind(15, 307)
   type :: fval_t
     integer :: t = 0
   end type fval_t
@@ -8,7 +9,7 @@ contains
   function fnull() result(v); type(fval_t) :: v; end function
   function fbool(b) result(v); logical, intent(in) :: b; type(fval_t) :: v; end function
   function fint(n) result(v); integer(kind=int64), intent(in) :: n; type(fval_t) :: v; end function
-  function freal(x) result(v); real, intent(in) :: x; type(fval_t) :: v; end function
+  function freal(x) result(v); real(kind=real64), intent(in) :: x; type(fval_t) :: v; end function
   function fstr(s) result(v); character(len=*), intent(in) :: s; type(fval_t) :: v; end function
   function flist(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function fmap(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
@@ -21,7 +22,7 @@ program main
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('a', fint(1_int64)), &
-        fentry('b', freal(2.5)), &
+        fentry('b', freal(2.5_real64)), &
         fentry('c', fint(3_int64)) &
     ])
 end program main

@@ -1,0 +1,1 @@
+Add a Fortran JSON round-trip check to CI using the shared round-trip fixture, and switch the Fortran language module to emit ``real(real64)`` literals (with the matching ``freal`` constructor signature in the ``fval_m`` preamble) so that double-precision values like ``1.7976931348623157e+308`` are no longer silently truncated to single precision.

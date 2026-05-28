@@ -81,6 +81,27 @@ def _format_fortran_datetime_epoch(value: datetime.datetime, /) -> str:
     return f"{format_datetime_epoch(value=value)}_int64"
 
 
+def _suffix_real64(
+    formatter: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Wrap *formatter* so its output is tagged with the ``_real64`` kind.
+
+    The ``freal`` constructor declared in :attr:`Fortran.static_body_preamble`
+    takes ``real(kind=real64)``, so every emitted finite-float literal needs
+    the kind suffix; without it a value like ``1.7976931348623157e+308``
+    would overflow the default single-precision real range at parse time.
+    """
+
+    @beartype
+    def _suffixed(value: float, /) -> str:
+        """Apply *formatter* and tag the result with the ``_real64``
+        kind.
+        """
+        return f"{formatter(value)}_real64"
+
+    return _suffixed
+
+
 @beartype
 def _apply_fortran_entry(
     *,
@@ -524,15 +545,25 @@ class Fortran(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="ieee_value(0.0, ieee_positive_inf)",
-        negative_infinity="ieee_value(0.0, ieee_negative_inf)",
-        nan="ieee_value(0.0, ieee_quiet_nan)",
+        positive_infinity=("ieee_value(0.0_real64, ieee_positive_inf)"),
+        negative_infinity=("ieee_value(0.0_real64, ieee_negative_inf)"),
+        nan="ieee_value(0.0_real64, ieee_quiet_nan)",
     ):
-        """Float format options."""
+        """Float format options.
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        Every finite literal is emitted with the ``_real64`` kind suffix
+        so that values like ``1.7976931348623157e+308`` (which exceed the
+        default single-precision real range) parse correctly and so that
+        ``3.14`` is not silently rounded to single precision before being
+        passed to the ``freal(real(real64))`` constructor declared in
+        :attr:`static_body_preamble`.
+        """
+
+        REPR = enum.member(value=_suffix_real64(formatter=format_float_repr))
+        SCIENTIFIC = enum.member(
+            value=_suffix_real64(formatter=format_float_scientific)
+        )
+        FIXED = enum.member(value=_suffix_real64(formatter=format_float_fixed))
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -625,11 +656,12 @@ class Fortran(metaclass=LanguageCls):
         """Version options for Fortran.
 
         * ``VersionFormats.V2003`` — target Fortran 2003; the ``int64``
-          kind is defined locally via ``selected_int_kind`` because
-          Fortran 2003's ``iso_fortran_env`` has no such named constant.
+          and ``real64`` kinds are defined locally via
+          ``selected_int_kind`` / ``selected_real_kind`` because
+          Fortran 2003's ``iso_fortran_env`` has no such named constants.
         * ``VersionFormats.V2008`` — target Fortran 2008; the ``int64``
-          kind is imported from the intrinsic ``iso_fortran_env``
-          module.
+          and ``real64`` kinds are imported from the intrinsic
+          ``iso_fortran_env`` module.
         """
 
         V2003 = enum.auto()
@@ -1204,26 +1236,29 @@ class Fortran(metaclass=LanguageCls):
     def static_body_preamble(self) -> Sequence[str]:
         """Static body-preamble lines emitted once per file.
 
-        Fortran 2008 imports the ``int64`` kind from the intrinsic
-        ``iso_fortran_env`` module.  That named constant did not exist
-        in Fortran 2003's ``iso_fortran_env``, so the 2003 target
-        instead defines an equivalent kind parameter with
+        Fortran 2008 imports the ``int64`` and ``real64`` kinds from the
+        intrinsic ``iso_fortran_env`` module.  Those named constants did
+        not exist in Fortran 2003's ``iso_fortran_env``, so the 2003
+        target instead defines equivalent kind parameters with
         ``selected_int_kind(18)`` (18 decimal digits selects the same
-        8-byte kind ``int64`` denotes).  Fortran requires ``implicit
-        none`` before any data declaration, so the 2003 parameter
-        follows it whereas the 2008 ``use`` precedes it.  Either way the
-        rest of the module, including the ``_int64`` literal suffix,
-        refers to the kind as ``int64``, so nothing else varies by
-        version.
+        8-byte integer kind ``int64`` denotes) and
+        ``selected_real_kind(15, 307)`` (15 decimal digits + a 10**307
+        range selects the IEEE 754 binary64 kind ``real64`` denotes).
+        Fortran requires ``implicit none`` before any data declaration,
+        so the 2003 parameters follow it whereas the 2008 ``use``
+        precedes it.  Either way the rest of the module, including the
+        ``_int64`` and ``_real64`` literal suffixes, refers to the kinds
+        by name, so nothing else varies by version.
         """
         if self.language_version is self.version_formats.V2003:
             kind_lines: tuple[str, ...] = (
                 "  implicit none",
                 "  integer, parameter :: int64 = selected_int_kind(18)",
+                "  integer, parameter :: real64 = selected_real_kind(15, 307)",
             )
         else:
             kind_lines = (
-                "  use, intrinsic :: iso_fortran_env, only: int64",
+                "  use, intrinsic :: iso_fortran_env, only: int64, real64",
                 "  implicit none",
             )
         return (
@@ -1241,7 +1276,7 @@ class Fortran(metaclass=LanguageCls):
             "; integer(kind=int64), intent(in) :: n"
             "; type(fval_t) :: v; end function",
             f"  function {self.real_name}(x) result(v)"
-            "; real, intent(in) :: x"
+            "; real(kind=real64), intent(in) :: x"
             "; type(fval_t) :: v; end function",
             f"  function {self.str_name}(s) result(v)"
             "; character(len=*), intent(in) :: s"
