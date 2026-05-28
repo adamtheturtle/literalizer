@@ -1041,6 +1041,14 @@ jobs:
           find tests/integration/cases -name '*.vb' -print0 > /tmp/files-vb && test -s /tmp/files-vb
           dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-vb
 
+      # Basic JSON -> VB.NET -> JSON round-trip (issue 2682). Runs here
+      # because this is the job with the .NET toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_vb_roundtrip.py`.
+      - name: VisualBasic roundtrip
+        run: uv run python .github/scripts/run_vb_roundtrip.py
+
       # Generate an FSX driver that `#load`s every fixture, then
       # evaluate it in a single `dotnet fsi --exec` invocation so the
       # .NET runtime and FSI compiler start up once instead of per
