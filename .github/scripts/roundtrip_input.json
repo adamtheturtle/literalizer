@@ -9,6 +9,7 @@
   "bool_true": true,
   "bool_false": false,
   "string": "hello",
+  "string_empty": "",
   "string_unicode": "unicode é 中",
   "string_escapes": "quote \" backslash \\",
   "empty_array": [],

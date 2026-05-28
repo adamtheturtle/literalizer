@@ -1,5 +1,5 @@
 module fval_m
-  use, intrinsic :: iso_fortran_env, only: int64
+  use, intrinsic :: iso_fortran_env, only: int64, real64
   implicit none
   type :: fval_t
     integer :: t = 0
@@ -8,7 +8,7 @@ contains
   function jnull() result(v); type(fval_t) :: v; end function
   function jbool(b) result(v); logical, intent(in) :: b; type(fval_t) :: v; end function
   function jint(n) result(v); integer(kind=int64), intent(in) :: n; type(fval_t) :: v; end function
-  function jreal(x) result(v); real, intent(in) :: x; type(fval_t) :: v; end function
+  function jreal(x) result(v); real(kind=real64), intent(in) :: x; type(fval_t) :: v; end function
   function jstr(s) result(v); character(len=*), intent(in) :: s; type(fval_t) :: v; end function
   function jlist(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function
   function jmap(a) result(v); type(fval_t), intent(in) :: a(:); type(fval_t) :: v; end function

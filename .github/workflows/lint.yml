@@ -375,6 +375,14 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2008 < /tmp/files-fortran2008
 
+      # Basic JSON -> Fortran -> JSON round-trip (issue 2652). Runs here
+      # because this is the job with the gfortran toolchain installed;
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_fortran_roundtrip.py`.
+      - name: Fortran roundtrip
+        run: uv run python .github/scripts/run_fortran_roundtrip.py
+
       - name: Lint Lua
         run: |-
           find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua && test -s /tmp/files-lua
