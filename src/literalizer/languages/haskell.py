@@ -1583,6 +1583,11 @@ class Haskell(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class BoolFormats(enum.Enum):
+        """Empty: this language has no alternative boolean formats."""
+
+    bool_formats = BoolFormats
+
     class JsonTypes(enum.Enum):
         """JSON value type options for Haskell."""
 

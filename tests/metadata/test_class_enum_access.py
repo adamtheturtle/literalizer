@@ -31,6 +31,8 @@ def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     assert len(language_cls.StringFormats) >= 1
     assert len(language_cls.TrailingCommas) >= 1
     assert len(language_cls.CallStyles) >= 0
+    assert len(language_cls.JsonTypes) >= 0
+    assert len(language_cls.BoolFormats) >= 0
     assert len(language_cls.identifier_cases) >= 1
     assert isinstance(language_cls.supports_zero_parameter_calls, bool)
     assert isinstance(language_cls.supports_inline_multiline_dict_args, bool)
