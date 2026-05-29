@@ -30,7 +30,7 @@ _CIRCE_DEP = "io.circe::circe-core:0.14.10"
 def _build_program(json_text: str) -> str:
     """Return a runnable Scala program literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Scala(json_type=Scala.JsonTypes.CIRCE),  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+        language=Scala(json_type=Scala.json_types.CIRCE),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=1,
