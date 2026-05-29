@@ -790,6 +790,8 @@ class LanguageCls(type):
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
+    JsonTypes: type[enum.Enum]
+    BoolFormats: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     supported_ref_cases: frozenset[IdentifierCase]
     modifier_combinations: tuple[ModifierCombination, ...]
@@ -1026,6 +1028,28 @@ class Language(Protocol):
         collections expose a single-member enum whose only option is
         ``ERROR``.  Languages with richer strategies (e.g. Rust's
         ``TAGGED_ENUM``) expose additional members.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def json_types(self) -> type[enum.Enum]:
+        """Enum class whose members list the JSON value-type options
+        this language supports.
+
+        Languages without a JSON value-type representation expose an
+        empty enum so consumers can enumerate options uniformly without
+        reflection.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def bool_formats(self) -> type[enum.Enum]:
+        """Enum class whose members list the boolean format options
+        this language supports.
+
+        Languages without alternative boolean formats expose an empty
+        enum so consumers can enumerate options uniformly without
+        reflection.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

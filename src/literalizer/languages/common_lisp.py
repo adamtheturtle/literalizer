@@ -380,6 +380,16 @@ class CommonLisp(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class JsonTypes(enum.Enum):
+        """Empty: this language has no JSON value-type variants."""
+
+    json_types = JsonTypes
+
+    class BoolFormats(enum.Enum):
+        """Empty: this language has no alternative boolean formats."""
+
+    bool_formats = BoolFormats
+
     class VersionFormats(enum.Enum):
         """Version options for Common Lisp."""
 

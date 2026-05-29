@@ -790,6 +790,11 @@ class Zig(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    class BoolFormats(enum.Enum):
+        """Empty: this language has no alternative boolean formats."""
+
+    bool_formats = BoolFormats
+
     class VersionFormats(enum.Enum):
         """Version options for Zig."""
 

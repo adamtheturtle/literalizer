@@ -91,6 +91,10 @@ optional-dependencies.dev = [
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.5.20",
+    # pyproject-fmt 2.21.2 has no upper bound on toml-fmt-common and
+    # is broken by toml-fmt-common 1.3.3+ (duplicate --table-format flag).
+    # Keep in sync with the pyproject-fmt pin above.
+    "toml-fmt-common==1.3.2",
     "towncrier==25.8.0",
     "ty==0.0.40",
     "types-pygments==2.20.0.20260518",
