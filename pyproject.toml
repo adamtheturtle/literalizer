@@ -62,7 +62,7 @@ optional-dependencies.dev = [
     "pygments==2.20.0",
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
-    "pyproject-fmt==2.21.2",
+    "pyproject-fmt==2.22.0",
     "pyrefly==1.0.0",
     "pyright==1.1.409",
     "pyroma==5.0.1",
@@ -91,10 +91,6 @@ optional-dependencies.dev = [
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.5.20",
-    # pyproject-fmt 2.21.2 has no upper bound on toml-fmt-common and
-    # is broken by toml-fmt-common 1.3.3+ (duplicate --table-format flag).
-    # Keep in sync with the pyproject-fmt pin above.
-    "toml-fmt-common==1.3.5",
     "towncrier==25.8.0",
     "ty==0.0.40",
     "types-pygments==2.20.0.20260518",
@@ -110,13 +106,13 @@ urls.Documentation = "https://adamtheturtle.github.io/literalizer/"
 urls.Source = "https://github.com/adamtheturtle/literalizer"
 
 [tool.setuptools]
-zip-safe = false
-package-data.literalizer = [
-    "py.typed",
-]
 packages.find.where = [
     "src",
 ]
+package-data.literalizer = [
+    "py.typed",
+]
+zip-safe = false
 
 [tool.setuptools_scm]
 # This keeps the start of the version the same as the last release.
@@ -183,16 +179,29 @@ lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: 
 lint.pydocstyle.convention = "google"
 
 [tool.pylint]
+DEPRECATED_BUILTINS.bad-functions = [
+    # Use Pylint until Ruff can ban bare builtin calls, or until custom rules
+    # make this removable:
+    # https://github.com/astral-sh/ruff/issues/10079
+    # https://github.com/astral-sh/ruff/issues/970
+    "filter",
+    "getattr",
+    "hasattr",
+    "map",
+    "setattr",
+]
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
 FORMAT.single-line-if-stmt = false
-# Pickle collected data for later comparisons.
-MASTER.persistent = true
-# Use multiple processes to speed up Pylint.
-MASTER.jobs = 0
+# Return non-zero exit code if useless-suppression is emitted.
+MAIN.fail-on = [
+    "useless-suppression",
+]
 # Top-level investigation script with intentional ``exec`` and shell
 # fragments in its docstring; not part of the shipped package.
 MASTER.ignore-paths = [ "repro.py" ]
+# Use multiple processes to speed up Pylint.
+MASTER.jobs = 0
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 # See https://chezsoi.org/lucas/blog/pylint-strict-base-configuration.html.
@@ -202,7 +211,6 @@ MASTER.ignore-paths = [ "repro.py" ]
 # - pylint.extensions.while_used
 # as they seemed to get in the way.
 MASTER.load-plugins = [
-    "pylint_per_file_ignores",
     "pylint.extensions.bad_builtin",
     "pylint.extensions.comparison_placement",
     "pylint.extensions.consider_refactoring_into_while_condition",
@@ -218,24 +226,45 @@ MASTER.load-plugins = [
     "pylint.extensions.redefined_variable_type",
     "pylint.extensions.set_membership",
     "pylint.extensions.typing",
+    "pylint_per_file_ignores",
 ]
+# Pickle collected data for later comparisons.
+MASTER.persistent = true
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 MASTER.unsafe-load-any-extension = false
-# Return non-zero exit code if useless-suppression is emitted.
-MAIN.fail-on = [
-    "useless-suppression",
-]
-DEPRECATED_BUILTINS.bad-functions = [
-    # Use Pylint until Ruff can ban bare builtin calls, or until custom rules
-    # make this removable:
-    # https://github.com/astral-sh/ruff/issues/10079
-    # https://github.com/astral-sh/ruff/issues/970
-    "filter",
-    "getattr",
-    "hasattr",
-    "map",
-    "setattr",
+# Disable the message, report, category or checker with the given id(s). You
+# can either give multiple identifiers separated by comma (,) or put this
+# option multiple times (only on the command line, not in the configuration
+# file where it should appear only once).You can also use "--disable=all" to
+# disable everything first and then reenable specific checks. For example, if
+# you want to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use"--disable=all --enable=classes
+# --disable=W"
+MESSAGES-CONTROL.disable = [
+    # Too difficult to please
+    "duplicate-code",
+    # Let ruff handle long lines
+    "line-too-long",
+    "locally-disabled",
+    "missing-return-type-doc",
+    # We don't need everything to be documented because of mypy
+    "missing-type-doc",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-lines",
+    "too-many-locals",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-statements",
+    # Let ruff deal with sorting
+    "ungrouped-imports",
+    # Let ruff handle unused imports
+    "unused-import",
+    # Let ruff handle imports
+    "wrong-import-order",
 ]
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -248,39 +277,6 @@ MESSAGES-CONTROL.enable = [
     "spelling",
     "use-symbolic-message-instead",
     "useless-suppression",
-]
-# Disable the message, report, category or checker with the given id(s). You
-# can either give multiple identifiers separated by comma (,) or put this
-# option multiple times (only on the command line, not in the configuration
-# file where it should appear only once).You can also use "--disable=all" to
-# disable everything first and then reenable specific checks. For example, if
-# you want to run only the similarities checker, you can use "--disable=all
-# --enable=similarities". If you want to run only the classes checker, but have
-# no Warning level messages displayed, use"--disable=all --enable=classes
-# --disable=W"
-MESSAGES-CONTROL.disable = [
-    "too-few-public-methods",
-    "too-many-locals",
-    "too-many-arguments",
-    "too-many-instance-attributes",
-    "too-many-public-methods",
-    "too-many-return-statements",
-    "too-many-statements",
-    "too-many-lines",
-    "locally-disabled",
-    # Let ruff handle long lines
-    "line-too-long",
-    # Let ruff handle unused imports
-    "unused-import",
-    # Let ruff deal with sorting
-    "ungrouped-imports",
-    # We don't need everything to be documented because of mypy
-    "missing-type-doc",
-    "missing-return-type-doc",
-    # Too difficult to please
-    "duplicate-code",
-    # Let ruff handle imports
-    "wrong-import-order",
 ]
 # We ignore invalid names because:
 # - We want to use generated module names, which may not be valid, but are never seen.
@@ -303,31 +299,31 @@ SPELLING.spelling-store-unknown-words = "no"
 
 [tool.check-manifest]
 ignore = [
+    ".clang-tidy",
+    ".clj-kondo",
+    ".clj-kondo/**",
+    ".git_archival.txt",
     ".pre-commit-config.yaml",
     ".vscode/*.json",
-    "conftest.py",
     "CHANGELOG.rst",
-    "newsfragments",
-    "newsfragments/**",
-    "CODE_OF_CONDUCT.rst",
-    "CONTRIBUTING.rst",
-    "LICENSE",
-    "Makefile",
-    "issue.md",
-    "repro.py",
+    "CheckJavaSyntax.java",
     "ci",
     "ci/**",
+    "CODE_OF_CONDUCT.rst",
+    "conftest.py",
+    "CONTRIBUTING.rst",
     "docs",
     "docs/**",
-    ".git_archival.txt",
+    "issue.md",
+    "LICENSE",
+    "Makefile",
+    "newsfragments",
+    "newsfragments/**",
+    "repro.py",
     "spelling_private_dict.txt",
     "tests",
     "tests/**",
     "zizmor.yml",
-    "CheckJavaSyntax.java",
-    ".clj-kondo",
-    ".clj-kondo/**",
-    ".clang-tidy",
 ]
 
 [tool.deptry]
@@ -343,7 +339,6 @@ keep_full_version = true
 max_supported_python = "3.14"
 
 [tool.mypy]
-strict = true
 files = [ "." ]
 # ``@`` in a path stops mypy from forming a module name and triggers an
 # internal error (mypy 2.1.0).  Every golden fixture under
@@ -354,8 +349,9 @@ exclude = [
     "repro.py",
     "tests/integration/cases/.*@.*",
 ]
-plugins = [ "mypy_strict_kwargs" ]
 follow_untyped_imports = true
+strict = true
+plugins = [ "mypy_strict_kwargs" ]
 
 [[tool.mypy.overrides]]
 # Ref case golden files intentionally reference undefined identifiers.
@@ -367,25 +363,25 @@ module = [
 ignore_errors = true
 
 [tool.pyrefly]
+search_path = [ ".", ".github/scripts", "src" ]
+errors.non-exhaustive-match = "error"
+errors.unused-ignore = "error"
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
 # `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
 # appended to ours and combine with the `.gitignore`-based ignore files to
 # match our entire include pattern (`**/*.py*`), causing pyrefly to report
 # "no files matched" and fail the pre-push hook.
 disable-project-excludes-heuristics = true
-errors.non-exhaustive-match = "error"
-errors.unused-ignore = "error"
 project-excludes = [ "repro.py" ]
-search_path = [ ".", "src", ".github/scripts" ]
 
 [tool.pyright]
-enableTypeIgnoreComments = false
+typeCheckingMode = "strict"
 exclude = [
     ".venv",
     "repro.py",
 ]
+enableTypeIgnoreComments = false
 reportUnnecessaryTypeIgnoreComment = true
-typeCheckingMode = "strict"
 executionEnvironments = [
     { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
     { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
@@ -393,16 +389,16 @@ executionEnvironments = [
 ]
 
 [tool.ty]
-analysis.respect-type-ignore-comments = false
+src.exclude = [ "repro.py" ]
+environment.extra-paths = [ ".github/scripts" ]
 terminal.error-on-warning = true
 overrides = []
-environment.extra-paths = [ ".github/scripts" ]
-src.exclude = [ "repro.py" ]
+analysis.respect-type-ignore-comments = false
 
 [tool.pytest]
+ini_options.addopts = "-n auto"
 ini_options.xfail_strict = true
 ini_options.log_cli = true
-ini_options.addopts = "-n auto"
 
 [tool.coverage]
 run.branch = true
@@ -430,11 +426,11 @@ filename = "CHANGELOG.rst"
 # date) followed by a flat bullet list with no per-type sub-headings.
 template = "docs/towncrier_template.rst.jinja"
 title_format = "{version}"
+issue_format = "#{issue}"
 # ``title_format`` underline first, then any nested headings.  A bare
 # version such as ``2026.05.18`` underlined with ``-`` matches every
 # pre-towncrier entry in CHANGELOG.rst.
 underlines = [ "-", "~", "^" ]
-issue_format = "#{issue}"
 type = [
     # A single, unnamed fragment type keeps the assembled output as one
     # flat bullet list, matching the historical changelog (which never
@@ -455,11 +451,11 @@ ignore_path = [
 
 [tool.interrogate]
 fail-under = 100
-omit-covered-files = true
-verbose = 2
 exclude = [
     "tests/integration/cases",
 ]
+verbose = 2
+omit-covered-files = true
 
 [tool.pydocstringformatter]
 write = true
@@ -468,135 +464,9 @@ max-line-length = 75
 linewrap-full-docstring = true
 
 [tool.vulture]
-# Ideally we would limit the paths to the source code where we want to ignore names,
-# but Vulture does not enable this.
-ignore_names = [
-    # pytest configuration
-    "pytest_collect_file",
-    "pytest_plugins",
-    # pytest fixtures - we name fixtures like this for this purpose
-    "fixture_*",
-    # Sphinx
-    "autoclass_content",
-    "autodoc_member_order",
-    "copybutton_exclude",
-    "extensions",
-    "html_show_copyright",
-    "html_show_sourcelink",
-    "html_show_sphinx",
-    "html_theme",
-    "html_theme_options",
-    "html_title",
-    "htmlhelp_basename",
-    "intersphinx_mapping",
-    "language",
-    "linkcheck_ignore",
-    "linkcheck_retries",
-    "master_doc",
-    "nitpicky",
-    "project_copyright",
-    "pygments_style",
-    "rst_prolog",
-    "source_suffix",
-    "spelling_word_list_filename",
-    "suppress_warnings",
-    "templates_path",
-    "towncrier_draft_autoversion_mode",
-    "towncrier_draft_include_empty",
-    "towncrier_draft_working_directory",
-    "warning_is_error",
-    # Enum __call__ used implicitly when enum members are passed as callables
-    "__call__",
-    # Protocol and collection dunder methods used implicitly
-    "__getitem__",
-    # Enum members accessed by consumers iterating format enums
-    "ALLOW",
-    "ARRAY",
-    "BASE64",
-    "BINARY",
-    "BLOCK",
-    "BTREE_MAP",
-    "BTREE_SET",
-    "bool_formats",
-    "call_styles",
-    "heterogeneous_strategies",
-    "INTERFACE",
-    "JDK_16",
-    "OBJECT_VARIANT",
-    "RECORD",
-    "TAGGED_ENUM",
-    "UNION_TYPE",
-    "VARIANT",
-    "CONST",
-    "CONTAINERS_MAP",
-    "DICTIONARY",
-    "HASH_MAP",
-    "HASH_SET",
-    "HEX",
-    "JSON_PP_REF",
-    "JSON_PP_SINGLETON",
-    "LIST_MAP",
-    "LET",
-    "LET_MUT",
-    "LET_MUTABLE",
-    "MAP",
-    "MAP_OF_ENTRIES",
-    "MAP_SET",
-    "MATH_BIG_INT",
-    "MUT",
-    "NAMED",
-    "EPOCH",
-    "FIXED",
-    "FROZENSET",
-    "ELIXIR",
-    "ERLANG",
-    "DOUBLE_UTF8",
-    "EXPLICIT",
-    "NO",
-    "OBJECT",
-    "PAREN",
-    "OCTAL",
-    "OCTAL_C_STYLE",
-    "RAW",
-    "ORDERED",
-    "PRIVATE",
-    "PROTECTED",
-    "ROCKET",
-    "SAFE",
-    "SEQ",
-    "SCIENTIFIC",
-    "SINGLE",
-    "SYMBOL",
-    "SORTED_DICTIONARY",
-    "SORTED_SET",
-    "STATIC",
-    "TREE_SET",
-    "TUPLE",
-    "UNDERSCORE",
-    "UNORDERED_MAP",
-    "VERBATIM",
-    "ZONED",
-    # Used by downstream consumers
-    "supports_module_name",
-    "supports_empty_dict_key",
-    "supports_call_style",
-    "supports_default_dict_key_type",
-    "supports_default_dict_value_type",
-    "supports_default_sequence_element_type",
-    "supports_default_set_element_type",
-    "supports_default_ordered_map_value_type",
-    "supports_record_struct_name_prefix",
-    # Used in documentation code examples
-    "custom",
-    "result",
-    # ruamel.yaml configuration attributes
-    "default_flow_style",
-    "sort_base_mapping_type_on_output",
-]
 # Duplicate some of .gitignore
 exclude = [
     ".venv",
-    "tests/integration/cases",
     # ``doccmd`` writes transient ``doccmd_*.py`` snippet files under
     # ``docs/source`` while the docs hooks run.  A concurrently running
     # ``vulture .`` can enumerate one and then fail to read it once
@@ -605,6 +475,132 @@ exclude = [
     # bare token becomes the ``*doccmd_*`` glob Vulture matches paths
     # against).
     "doccmd_",
+    "tests/integration/cases",
+]
+# Ideally we would limit the paths to the source code where we want to ignore names,
+# but Vulture does not enable this.
+ignore_names = [
+    # Enum __call__ used implicitly when enum members are passed as callables
+    "__call__",
+    # Protocol and collection dunder methods used implicitly
+    "__getitem__",
+    # Enum members accessed by consumers iterating format enums
+    "ALLOW",
+    "ARRAY",
+    # Sphinx
+    "autoclass_content",
+    "autodoc_member_order",
+    "BASE64",
+    "BINARY",
+    "BLOCK",
+    "bool_formats",
+    "BTREE_MAP",
+    "BTREE_SET",
+    "call_styles",
+    "CONST",
+    "CONTAINERS_MAP",
+    "copybutton_exclude",
+    # Used in documentation code examples
+    "custom",
+    # ruamel.yaml configuration attributes
+    "default_flow_style",
+    "DICTIONARY",
+    "DOUBLE_UTF8",
+    "ELIXIR",
+    "EPOCH",
+    "ERLANG",
+    "EXPLICIT",
+    "extensions",
+    "FIXED",
+    # pytest fixtures - we name fixtures like this for this purpose
+    "fixture_*",
+    "FROZENSET",
+    "HASH_MAP",
+    "HASH_SET",
+    "heterogeneous_strategies",
+    "HEX",
+    "html_show_copyright",
+    "html_show_sourcelink",
+    "html_show_sphinx",
+    "html_theme",
+    "html_theme_options",
+    "html_title",
+    "htmlhelp_basename",
+    "INTERFACE",
+    "intersphinx_mapping",
+    "JDK_16",
+    "JSON_PP_REF",
+    "JSON_PP_SINGLETON",
+    "language",
+    "LET",
+    "LET_MUT",
+    "LET_MUTABLE",
+    "linkcheck_ignore",
+    "linkcheck_retries",
+    "LIST_MAP",
+    "MAP",
+    "MAP_OF_ENTRIES",
+    "MAP_SET",
+    "master_doc",
+    "MATH_BIG_INT",
+    "MUT",
+    "NAMED",
+    "nitpicky",
+    "NO",
+    "OBJECT",
+    "OBJECT_VARIANT",
+    "OCTAL",
+    "OCTAL_C_STYLE",
+    "ORDERED",
+    "PAREN",
+    "PRIVATE",
+    "project_copyright",
+    "PROTECTED",
+    "pygments_style",
+    # pytest configuration
+    "pytest_collect_file",
+    "pytest_plugins",
+    "RAW",
+    "RECORD",
+    "result",
+    "ROCKET",
+    "rst_prolog",
+    "SAFE",
+    "SCIENTIFIC",
+    "SEQ",
+    "SINGLE",
+    "sort_base_mapping_type_on_output",
+    "SORTED_DICTIONARY",
+    "SORTED_SET",
+    "source_suffix",
+    "spelling_word_list_filename",
+    "STATIC",
+    "supports_call_style",
+    "supports_default_dict_key_type",
+    "supports_default_dict_value_type",
+    "supports_default_ordered_map_value_type",
+    "supports_default_sequence_element_type",
+    "supports_default_set_element_type",
+    "supports_empty_dict_key",
+    # Used by downstream consumers
+    "supports_module_name",
+    "supports_record_struct_name_prefix",
+    "suppress_warnings",
+    "SYMBOL",
+    "TAGGED_ENUM",
+    "templates_path",
+    "towncrier_draft_autoversion_mode",
+    "towncrier_draft_include_empty",
+    "towncrier_draft_working_directory",
+    "TREE_SET",
+    "TUPLE",
+    "UNDERSCORE",
+    "UNION_TYPE",
+    "UNORDERED_MAP",
+    "VARIANT",
+    "VERBATIM",
+    "warning_is_error",
+    "ZONED",
 ]
 
 [tool.yamlfix]
