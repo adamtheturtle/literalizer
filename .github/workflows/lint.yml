@@ -123,15 +123,19 @@ jobs:
       # is for reproducibility rather than language selection. apt
       # provides no point-release pin, so the ``-3.0`` package suffix
       # is the only available version constraint.
-      # ``guile-json`` (pinned to the Ubuntu 24.04 build of ``4.7.3-3``)
+      # ``guile-3-json`` (pinned to the Ubuntu 24.04 build of ``4.7.3-3``)
       # provides the ``(json)`` module used by
       # ``.github/scripts/run_scheme_roundtrip.py`` to re-emit JSON from
       # a literalized Scheme value; Guile itself ships no JSON library.
+      # Note the package name is ``guile-3-json`` (binding the module to
+      # the Guile 3.0 site-load path), not the unversioned ``guile-json``
+      # apt package, which installs the module under the Guile 2.2 site
+      # path where ``guile-3.0`` cannot find it.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
-            guile-3.0 guile-json=4.7.3-3
+            guile-3.0 guile-3-json=4.7.3-3
           version: 1.0
       # The Forth Foundation Library (FFL) supplies the ``jos`` JSON
       # output-stream module used by
