@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import json
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -24,6 +25,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -94,11 +96,14 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -309,6 +314,166 @@ def _odin_record_literal(
     )
 
 
+# Static preamble lines emitted under ``json_type=JSON_VALUE``.  The
+# helper procedure normalizes ``json.parse_string`` (which returns a
+# ``(Value, Error)`` pair and defaults ``parse_integers`` to ``false``)
+# into a single-expression call returning a ``json.Value`` with
+# integers parsed as ``Integer`` rather than ``Float``, so every
+# declaration/assignment/call-argument site can render as a plain
+# ``_json_parse(`...`)``.
+_JSON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
+    "#+feature dynamic-literals",
+    "package main",
+    'import "core:encoding/json"',
+    "_json_parse :: proc(s: string) -> json.Value {",
+    "\tv, _ := json.parse_string(s, parse_integers=true)",
+    "\treturn v",
+    "}",
+)
+
+
+# Permissive format-config records used while ``json_type`` is active.  The
+# framework still walks the data to compute a formatted ``value``, but
+# that string is discarded by :func:`_format_odin_json_declaration` and
+# friends in favor of a fresh ``_json_parse(`...`)`` call against the
+# raw data.  These definitions only need to be permissive enough that
+# the formatting pass does not error on heterogeneous data or nulls
+# inside containers.
+_JSON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=True,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_JSON_VALUE_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="["),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=True,
+)
+
+_JSON_VALUE_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_template(
+        template="{key}: {value}",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=True,
+)
+
+_JSON_VALUE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _temporal_to_iso(data: datetime.date | datetime.time) -> str:
+    """Return ISO-8601 text for a date / datetime / time value.
+
+    Naive datetimes are anchored to UTC so the round trip through
+    ``json.parse_string`` keeps a definite offset.
+    """
+    if isinstance(data, datetime.datetime):
+        iso = data.isoformat()
+        if data.tzinfo is None:
+            iso += "Z"
+        return iso
+    return data.isoformat()
+
+
+@beartype
+def _to_jsonable(data: Value) -> object:
+    """Convert *data* into a value that :func:`json.dumps` can serialize.
+
+    Dates, datetimes, and times become ISO-8601 strings (JSON has no
+    temporal type).  Bytes become a hex-encoded string.  Sets and
+    :class:`OrderedMap` fold into list/dict respectively.  Non-string
+    dict keys are not handled here; the caller validates first.
+    """
+    match data:
+        case datetime.datetime() | datetime.date() | datetime.time():
+            return _temporal_to_iso(data=data)
+        case bytes():
+            return data.hex()
+        case OrderedMap() | dict():
+            return {
+                key: _to_jsonable(data=value) for key, value in data.items()
+            }
+        case set():
+            items = [_to_jsonable(data=item) for item in data]
+            items.sort(key=repr)
+            return items
+        case list():
+            return [_to_jsonable(data=item) for item in data]
+        case _:
+            return data
+
+
+@beartype
+def _format_odin_json_value(data: Value) -> str:
+    """Serialize *data* as a single-line JSON expression."""
+    return json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
+
+
+@beartype
+def _odin_parse_expression(data: Value) -> str:
+    """Render an ``_json_parse`` call call.
+
+    Odin's raw-string literal (backtick-delimited) carries the JSON
+    text verbatim, including embedded double quotes and backslash
+    escapes, without needing further escaping.  :func:`json.dumps`
+    never produces a literal backtick, so the raw string is safe.
+    """
+    json_text = _format_odin_json_value(data=data)
+    return f"_json_parse(`{json_text}`)"
+
+
+@beartype
+def _format_odin_json_declaration(
+    name: str,
+    _value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a ``json.Value`` declaration backed by ``_json_parse``."""
+    return f"{name} := {_odin_parse_expression(data=data)}"
+
+
+@beartype
+def _format_odin_json_assignment(
+    name: str,
+    _value: str,
+    data: Value,
+) -> str:
+    """Format a ``json.Value`` assignment backed by ``_json_parse``."""
+    return f"{name} = {_odin_parse_expression(data=data)}"
+
+
+@beartype
+def _format_odin_json_call_arg(raw_value: Value, _formatted: str) -> str:
+    """Format a direct call argument as a ``json.Value`` literal."""
+    return _odin_parse_expression(data=raw_value)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Odin(metaclass=LanguageCls):
@@ -354,13 +519,6 @@ class Odin(metaclass=LanguageCls):
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
-
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            identity_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
 
     class DateFormats(enum.Enum):
         """Date format options for Odin."""
@@ -616,7 +774,10 @@ class Odin(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class JsonTypes(enum.Enum):
-        """Empty: this language has no JSON value-type variants."""
+        """JSON value type options for Odin."""
+
+        JSON_VALUE = "json.Value"
+        """Odin's standard ``core:encoding/json`` ``Value`` sum type."""
 
     json_types = JsonTypes
 
@@ -642,7 +803,61 @@ class Odin(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Raise if the spec cannot produce valid code for *data*.
+
+        When :attr:`json_type` is active, walk *data* to reject
+        non-string dict keys, which JSON objects cannot represent.
+        """
+        if self._json_type_active:
+            self._validate_json_value_keys(data)
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether Odin should render via ``json.Value``."""
+        return self.json_type is not None
+
+    def __post_init__(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit."""
+        self._validate_json_type_spec()
+
+    def _validate_json_type_spec(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        Under ``json_type`` the rendered data flows through a single
+        ``_json_parse`` call call, which is incompatible with
+        ``heterogeneous_strategy=RECORD`` (which would generate ``struct``
+        declarations parallel to the JSON text).
+        """
+        if not self._json_type_active:
+            return
+        if self.heterogeneous_strategy is self.heterogeneous_strategies.RECORD:
+            msg = (
+                "Odin json_type renders data through "
+                "_json_parse(`...`) and is incompatible with "
+                "heterogeneous_strategy=RECORD, which generates typed "
+                "struct declarations. Use heterogeneous_strategy=ERROR."
+            )
+            raise IncompatibleFormatsError(msg)
+
+    def _validate_json_value_keys(self, data: Value, /) -> None:
+        """Reject non-string object keys for ``json.Value``."""
+        match data:
+            case OrderedMap() | dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Odin json_type can only represent dict keys "
+                            "as JSON object strings, not "
+                            f"{type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_json_value_keys(value)
+            case list() | set():
+                for item in data:
+                    self._validate_json_value_keys(item)
+            case _:
+                return
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -656,17 +871,30 @@ class Odin(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Odin declaration in a main procedure."""
+        """Wrap an Odin declaration in a main procedure.
+
+        Under :attr:`json_type` an :class:`ExistingVariable` form
+        produces a bare ``my_data = _json_parse(...)`` line, which the
+        Odin compiler rejects (the name is undeclared); inject a
+        zero-valued ``my_data: json.Value`` declaration ahead of the
+        assignment so the wrapped file still compiles.
+        """
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
+        if (
+            self._json_type_active
+            and variable_name
+            and content.lstrip().startswith(f"{variable_name} = ")
+        ):
+            content = f"{variable_name}: json.Value\n{content}"
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
@@ -712,6 +940,7 @@ class Odin(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
     language_version: VersionFormats = VersionFormats.DEV_2024
     indent: str = "\t"
@@ -726,11 +955,23 @@ class Odin(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ";"
-    static_preamble: ClassVar[Sequence[str]] = (
-        "#+feature dynamic-literals",
-        "package main",
-    )
     static_body_preamble: ClassVar[Sequence[str]] = ()
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """File-scope preamble.
+
+        Under :attr:`json_type` the package gains a ``core:encoding/json``
+        import plus a tiny ``_json_parse`` helper so every literalized
+        value can render as a single ``_json_parse`` call call.
+        """
+        if self._json_type_active:
+            return _JSON_VALUE_STATIC_PREAMBLE
+        return (
+            "#+feature dynamic-literals",
+            "package main",
+        )
+
     special_float_preamble: ClassVar[tuple[str, ...]] = ('import "core:math"',)
     call_style: CallStyles = CallStyles.POSITIONAL
 
@@ -751,12 +992,27 @@ class Odin(metaclass=LanguageCls):
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
-        """Format a set entry."""
+        """Format a set entry.
+
+        Under :attr:`json_type` set entries fold into the JSON text
+        and the per-entry string is discarded, so the framework just
+        needs a permissive identity arm rather than the
+        ``"key" = {}`` map-as-set form.
+        """
+        if self._json_type_active:
+            return passthrough_sequence_entry
         return _format_set_entry
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
-        """Format an assignment to an existing variable."""
+        """Format an assignment to an existing variable.
+
+        Under :attr:`json_type` the assignment uses the
+        ``_json_parse`` call shortcut instead of the framework's
+        formatted value.
+        """
+        if self._json_type_active:
+            return _format_odin_json_assignment
         return variable_formatter(template="{name} = {value}")
 
     def _odin_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
@@ -840,15 +1096,28 @@ class Odin(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        For ``HeterogeneousStrategies.RECORD`` emits one ``struct``
+        Under :attr:`json_type` the data rides inside a single JSON
+        string, so no per-data preamble applies.  For
+        ``HeterogeneousStrategies.RECORD`` emits one ``struct``
         declaration per record shape present in the data; otherwise
         produces no preamble.
         """
+        if self._json_type_active:
+            return no_data_preamble
         return self._record_strategy.preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
-        """Return the behavior for the chosen heterogeneous strategy."""
+        """Return the behavior for the chosen heterogeneous strategy.
+
+        Under :attr:`json_type` heterogeneous scalars all flow through
+        the JSON text, so scalar-uniformity checks are skipped.
+        """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         return self._record_strategy.behavior
 
     @cached_property
@@ -938,18 +1207,40 @@ class Odin(metaclass=LanguageCls):
         return never_inhibits_consuming_form
 
     @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Callable that rewrites a formatted direct call argument.
+
+        Under :attr:`json_type` each argument is a ``json.Value``
+        produced by ``_json_parse``; otherwise the framework's
+        formatted text passes through unchanged.
+        """
+        if self._json_type_active:
+            return _format_odin_json_call_arg
+        return identity_call_arg
+
+    @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
+        """Configuration for the chosen sequence format.
+
+        Under :attr:`json_type` lists fold into the JSON text and the
+        framework's formatted output is discarded.
+        """
+        if self._json_type_active:
+            return _JSON_VALUE_SEQUENCE_CONFIG
         return self.sequence_format.value
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self._json_type_active:
+            return _JSON_VALUE_SEQUENCE_CONFIG.sequence_open
         return self.sequence_format.value.sequence_open
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
+        if self._json_type_active:
+            return _JSON_VALUE_SET_CONFIG
         init_element_to_type = make_element_to_type(
             str_type="string",
             bool_type="bool",
@@ -979,6 +1270,8 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_type_active:
+            return _JSON_VALUE_DICT_CONFIG
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str="map[string]any{",
@@ -1039,6 +1332,8 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
+        if self._json_type_active:
+            return _JSON_VALUE_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="map[string]any{"),
             close="}",
@@ -1057,7 +1352,15 @@ class Odin(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under :attr:`json_type` the declaration is a
+        ``_json_parse`` call call (the inferred return type is
+        ``json.Value``), bypassing both the framework's formatted value
+        and the nil-safe ``: any = nil`` shim.
+        """
+        if self._json_type_active:
+            return _format_odin_json_declaration
         return _nil_safe_declaration(
             base_formatter=self.declaration_style.value.formatter,
         )

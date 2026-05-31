@@ -124,7 +124,7 @@ JSON value types
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  Rust, Crystal, Java, Kotlin,
 Scala, C#, F#, Nim, Haskell, Zig, C++, OCaml, Elm, PureScript, Erlang,
-and D support this through the ``json_type`` constructor argument (D's
+Odin, and D support this through the ``json_type`` constructor argument (D's
 polarity is reversed; see below):
 
 .. code-block:: python
@@ -532,6 +532,36 @@ emits list-form string values as arrays of integers.  Null renders
 as the bare atom ``null`` (rather than ``undefined``), and sets
 render as JSON arrays.  Dict keys must be strings so they remain
 valid JSON object keys.
+
+Odin exposes the same option through ``Odin.json_types.JSON_VALUE``:
+
+.. code-block:: python
+
+   """Render Odin data as a ``json.Value`` sum-type tree."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Odin
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Odin(json_type=Odin.json_types.JSON_VALUE),
+       variable_form=NewVariable(name="payload"),
+   )
+
+This emits the literalized document as one JSON-text string parsed at
+runtime by a tiny package-scope ``_json_parse`` helper that wraps
+``core:encoding/json.parse_string`` (with ``parse_integers=true`` so
+integer literals parse to ``Integer`` rather than ``Float``).
+The rendered binding therefore has the static type ``json.Value``
+instead of Odin's default ``map[string]any`` / ``[dynamic]any``
+shape, so the value flows directly through ``json.marshal`` (which
+rejects the ``any``-typed containers) and heterogeneous collections
+no longer raise.  Dates, datetimes, times, and bytes fold into
+JSON-friendly strings.  Dict keys must be strings so they remain
+valid JSON object keys, and ``heterogeneous_strategy=RECORD`` is
+rejected because the generated ``struct`` declarations cannot coexist
+with the single-call parsed value.
 
 D's polarity is reversed from the others: its default already renders
 every value through ``std.json.JSONValue``, so the ``json_type``

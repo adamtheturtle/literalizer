@@ -628,6 +628,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             lang_cls=Erlang,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
+        Variant(
+            name="Odin_json_type_json_value",
+            spec=make_spec(
+                lang_cls=Odin,
+                json_type=Odin.json_types.JSON_VALUE,
+            ),
+            lang_cls=Odin,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
     ]
 
 
@@ -2570,6 +2579,20 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Haskell.json_types.AESON_VALUE,
                     ),
                     lang_cls=Haskell,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.ExistingVariable(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Odin_json_type_json_value_existing",
+                variant=Variant(
+                    name="Odin_json_type_json_value_existing",
+                    spec=make_spec(
+                        lang_cls=Odin,
+                        json_type=Odin.json_types.JSON_VALUE,
+                    ),
+                    lang_cls=Odin,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
