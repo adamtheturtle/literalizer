@@ -501,6 +501,22 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
 
+      # cJSON drives the generated ``main`` in the C round-trip step
+      # below: the literalized ``CVal`` is untagged, so the helper
+      # builds a parallel ``cJSON`` tree (shape generated from the
+      # parsed JSON) and prints it with ``cJSON_PrintUnformatted``.
+      - name: Install libcjson-dev
+        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
+
+      # Basic JSON -> C -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the C toolchain (``clang``) set up
+      # by the ``Lint C`` step above and the ``libcjson-dev`` headers
+      # installed just above; ``uv run`` (project mode, not
+      # ``--no-project``) is required so ``import literalizer``
+      # resolves. See ``.github/scripts/run_c_roundtrip.py``.
+      - name: C roundtrip
+        run: uv run python .github/scripts/run_c_roundtrip.py
+
   # Keep Odin isolated.  This fixture set is good at finding compiler
   # instability because many generated files combine [dynamic]any,
   # map[string]any, nested literals, and variadic proc(..any) stubs.
