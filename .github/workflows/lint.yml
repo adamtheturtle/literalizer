@@ -123,11 +123,15 @@ jobs:
       # is for reproducibility rather than language selection. apt
       # provides no point-release pin, so the ``-3.0`` package suffix
       # is the only available version constraint.
+      # ``guile-json`` (pinned to the Ubuntu 24.04 build of ``4.7.3-3``)
+      # provides the ``(json)`` module used by
+      # ``.github/scripts/run_scheme_roundtrip.py`` to re-emit JSON from
+      # a literalized Scheme value; Guile itself ships no JSON library.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
-            guile-3.0
+            guile-3.0 guile-json=4.7.3-3
           version: 1.0
       # The Forth Foundation Library (FFL) supplies the ``jos`` JSON
       # output-stream module used by
@@ -455,6 +459,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme && test -s /tmp/files-scheme
           xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
+
+      # Basic JSON -> Scheme -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `guile-3.0` toolchain on PATH;
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.
+      # See `.github/scripts/run_scheme_roundtrip.py`.
+      - name: Scheme roundtrip
+        run: uv run python .github/scripts/run_scheme_roundtrip.py
 
       - name: Lint Dhall
         run: |-
