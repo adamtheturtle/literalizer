@@ -807,10 +807,13 @@ class Odin(metaclass=LanguageCls):
         """Raise if the spec cannot produce valid code for *data*.
 
         When :attr:`json_type` is active, walk *data* to reject
-        non-string dict keys, which JSON objects cannot represent.
+        non-string dict keys (which JSON objects cannot represent) and
+        strings (string values or string-typed dict keys) carrying a
+        literal backtick (which would terminate the Odin raw-string
+        delimiter that wraps the embedded JSON text).
         """
         if self._json_type_active:
-            self._validate_json_value_keys(data)
+            self._validate_json_value(data)
 
     @cached_property
     def _json_type_active(self) -> bool:
@@ -825,7 +828,7 @@ class Odin(metaclass=LanguageCls):
         """Reject ``json_type`` combinations the generator cannot emit.
 
         Under ``json_type`` the rendered data flows through a single
-        ``_json_parse`` call call, which is incompatible with
+        ``_json_parse`` call, which is incompatible with
         ``heterogeneous_strategy=RECORD`` (which would generate ``struct``
         declarations parallel to the JSON text).
         """
@@ -840,8 +843,15 @@ class Odin(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
 
-    def _validate_json_value_keys(self, data: Value, /) -> None:
-        """Reject non-string object keys for ``json.Value``."""
+    def _validate_json_value(self, data: Value, /) -> None:
+        """Reject inputs ``json.Value`` cannot carry.
+
+        Walks the value tree and rejects non-string object keys (no
+        JSON representation) plus any string value or string-typed key
+        containing a literal backtick character, which would terminate
+        the Odin raw-string delimiter wrapping the embedded JSON text
+        and yield non-compiling output.
+        """
         match data:
             case OrderedMap() | dict():
                 for key, value in data.items():
@@ -852,16 +862,39 @@ class Odin(metaclass=LanguageCls):
                             f"{type(key).__name__}"
                         )
                         raise UnrepresentableInputError(msg)
-                    self._validate_json_value_keys(value)
+                    self._reject_backtick(value=key)
+                    self._validate_json_value(value)
             case list() | set():
                 for item in data:
-                    self._validate_json_value_keys(item)
+                    self._validate_json_value(item)
+            case str():
+                self._reject_backtick(value=data)
             case _:
                 return
 
+    @staticmethod
+    def _reject_backtick(value: str) -> None:
+        """Raise if *value* contains an Odin raw-string terminator."""
+        if "`" in value:
+            msg = (
+                "Odin json_type embeds the rendered JSON text inside a "
+                "backtick-delimited raw string; a literal backtick in a "
+                "string value or dict key would terminate the literal "
+                "and yield non-compiling output."
+            )
+            raise UnrepresentableInputError(msg)
+
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
+        """Return call-argument validation for this language.
+
+        Under :attr:`json_type` direct call arguments flow through
+        the same ``_json_parse`` shortcut as variable bindings, so
+        they need the same dict-key / backtick rejection that
+        :meth:`validate_spec_for_data` applies on the variable path.
+        """
+        if self._json_type_active:
+            return self._validate_json_value
         return no_validate_call_arg
 
     @cached_property
