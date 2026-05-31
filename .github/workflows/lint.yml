@@ -123,20 +123,11 @@ jobs:
       # is for reproducibility rather than language selection. apt
       # provides no point-release pin, so the ``-3.0`` package suffix
       # is the only available version constraint.
-      # ``guile-3.0-json`` (pinned to the Ubuntu 24.04 build of
-      # ``4.7.3-3``) provides the ``(json)`` module used by
-      # ``.github/scripts/run_scheme_roundtrip.py`` to re-emit JSON from
-      # a literalized Scheme value; Guile itself ships no JSON library.
-      # Note the package name is ``guile-3.0-json`` (binding the module
-      # to the Guile 3.0 site-load path, matching the ``guile-3.0``
-      # binary's naming), not the unversioned ``guile-json`` apt package
-      # which installs the module under the Guile 2.2 site path where
-      # ``guile-3.0`` cannot find it.
       - name: Install apt packages
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
-            guile-3.0 guile-3.0-json=4.7.3-3
+            guile-3.0
           version: 1.0
       # The Forth Foundation Library (FFL) supplies the ``jos`` JSON
       # output-stream module used by
@@ -151,6 +142,20 @@ jobs:
           git clone https://github.com/irdvo/ffl.git /tmp/ffl
           git -C /tmp/ffl checkout --quiet 753d418081a48afe8c86196261fda3299d93ac98
           echo "LITERALIZER_FFL_PATH=/tmp/ffl" >> "$GITHUB_ENV"
+      # guile-json supplies the ``(json)`` module used by
+      # ``.github/scripts/run_scheme_roundtrip.py``; Guile itself ships
+      # no JSON library, and the apt-packaged variants on Ubuntu 24.04
+      # are an unreliable source (the ``guile-json`` binary targets
+      # Guile 2.2, no Guile-3.0-bound binary is published under either
+      # ``guile-3-json`` or ``guile-3.0-json``).  Pin the upstream source
+      # tag instead and pass the checkout to ``guile`` via ``-L`` from
+      # the round-trip script; ``--no-auto-compile`` means no .go cache
+      # build is needed.  Tag ``4.7.3`` is the latest upstream release.
+      - name: Install guile-json
+        run: |-
+          git clone https://github.com/aconchillo/guile-json.git /tmp/guile-json
+          git -C /tmp/guile-json checkout --quiet 4.7.3
+          echo "LITERALIZER_GUILE_JSON_PATH=/tmp/guile-json" >> "$GITHUB_ENV"
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
         # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall

@@ -7,9 +7,10 @@ normalizes the literalized value into the alist / vector tree
 JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Scheme roundtrip`` step of the
-``lint-fast`` job in ``.github/workflows/lint.yml``, because that job is
-where ``guile-3.0`` and the ``guile-3.0-json`` apt package are
-installed.  It shares the same input and comparison logic as the other
+``lint-fast`` job in ``.github/workflows/lint.yml``, because that job
+is where ``guile-3.0`` is installed and where the ``Install guile-json``
+step clones the guile-json checkout that ``LITERALIZER_GUILE_JSON_PATH``
+points at.  It shares the same input and comparison logic as the other
 per-language round-trip helpers.
 
 The serializer is the ``(json)`` module from guile-json rather than a
@@ -39,6 +40,7 @@ the parsed-value diff in :func:`roundtrip_common.verify`.
 """
 
 import json
+import os
 import shutil
 
 import roundtrip_common
@@ -150,13 +152,27 @@ def main() -> None:
     # `update-alternatives` postinst on cache hit, so `/usr/bin/guile`
     # is missing (mirrors the `Lint Scheme` step).
     guile = shutil.which(cmd="guile-3.0") or "guile-3.0"
+    # `LITERALIZER_GUILE_JSON_PATH` points at the guile-json checkout
+    # (the `Install guile-json` step in `.github/workflows/lint.yml`
+    # exports it).  Adding it via `-L` puts `json.scm` on Guile's
+    # source-load path so the bare `(use-modules (json))` resolves
+    # there; `--no-auto-compile` keeps the run from trying to write
+    # a `.go` cache for it.
+    guile_json_path = os.environ["LITERALIZER_GUILE_JSON_PATH"]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.scm",
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[guile, "--no-auto-compile", "-s", "main.scm"],
+                args=[
+                    guile,
+                    "--no-auto-compile",
+                    "-L",
+                    guile_json_path,
+                    "-s",
+                    "main.scm",
+                ],
                 failure_label="guile runtime error",
             ),
         ],
