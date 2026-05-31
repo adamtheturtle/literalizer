@@ -2,15 +2,15 @@
 
 Literalize the shared ``roundtrip_input.json`` document to a Scheme
 ``(define my-data ...)`` binding, wrap it in a Guile script that
-normalizes the literalized value into a hash-table / vector tree and
-prints ``scm->json`` of that tree, run it under ``guile-3.0``, and hand
-the emitted JSON to :func:`roundtrip_common.verify`.
+normalizes the literalized value into the alist / vector tree
+``scm->json`` expects, run it under ``guile-3.0``, and hand the emitted
+JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Scheme roundtrip`` step of the
 ``lint-fast`` job in ``.github/workflows/lint.yml``, because that job is
-where ``guile-3.0`` and the ``guile-json`` apt package are installed.
-It shares the same input and comparison logic as the other per-language
-round-trip helpers.
+where ``guile-3.0`` and the ``guile-3.0-json`` apt package are
+installed.  It shares the same input and comparison logic as the other
+per-language round-trip helpers.
 
 The serializer is the ``(json)`` module from guile-json rather than a
 hand-rolled encoder (matching the preference expressed in the issue
@@ -24,10 +24,12 @@ To avoid emitting one ``list-ref`` per leaf (as the Tcl / Common Lisp
 helpers do), Python instead emits a compact *shape tree* describing
 which subtrees of ``my-data`` are objects and which are arrays, plus a
 generic Scheme ``normalize`` walker that rebuilds the typed structure
-``scm->json`` expects: hash tables for objects, vectors for arrays.
-Shape nodes are ``(obj (key . sub-shape) ...)``, ``(arr sub-shape ...)``,
-or the leaf symbol ``scalar``.  All JSON encoding -- string escaping,
-number formatting, separator placement -- is then done by a single
+``scm->json`` accepts: an *alist* of ``(key . value)`` pairs for each
+object (``scm->json``'s ``json-valid?`` rejects hash tables, see
+``builder.scm:188``), and a vector for each array.  Shape nodes are
+``(obj (key . sub-shape) ...)``, ``(arr sub-shape ...)``, or the leaf
+symbol ``scalar``.  All JSON encoding -- string escaping, number
+formatting, separator placement -- is then done by a single
 ``scm->json`` call, so no encoder details are hand-rolled.  No
 top-level keys are excluded: Guile has arbitrary-precision integers
 (so the 26-digit ``biginteger`` survives) and ``scm->json`` emits
@@ -64,9 +66,13 @@ _LABEL = "Scheme"
 # Python verifier regardless of the runner's locale.  The `normalize`
 # walker pairs each shape node with the matching sub-value inside the
 # literalized `my-data`: an `obj` shape consumes the flat alternating
-# key/value list (taking the value at every odd index), an `arr` shape
-# walks its children in lockstep with the literalized list, and the
-# `scalar` leaf passes the value straight through to `scm->json`.
+# key/value list (taking the value at every odd index) and returns an
+# alist of `(key . value)` pairs (the only object form `scm->json`'s
+# `json-valid?` accepts; see `json/builder.scm:188`), an `arr` shape
+# walks its children in lockstep with the literalized list and returns
+# a vector, and the `scalar` leaf passes the value straight through to
+# `scm->json`.  Indexing is done with hand-rolled accumulators so the
+# walker has no implicit dependency on SRFI-1 (`iota`).
 _HEADER = """\
 (use-modules (json))
 (set-port-encoding! (current-output-port) "UTF-8")
@@ -75,20 +81,24 @@ _HEADER = """\
   (cond
     ((eq? shape (quote scalar)) data)
     ((eq? (car shape) (quote obj))
-     (let ((ht (make-hash-table)))
-       (let loop ((entries (cdr shape)) (index 0))
-         (when (pair? entries)
-           (hash-set! ht
-                      (car (car entries))
-                      (normalize (cdr (car entries))
-                                 (list-ref data (+ (* index 2) 1))))
-           (loop (cdr entries) (+ index 1))))
-       ht))
+     (let loop ((entries (cdr shape)) (index 0) (acc (quote ())))
+       (if (pair? entries)
+           (loop (cdr entries)
+                 (+ index 1)
+                 (cons (cons (car (car entries))
+                             (normalize (cdr (car entries))
+                                        (list-ref data
+                                                  (+ (* index 2) 1))))
+                       acc))
+           (reverse acc))))
     ((eq? (car shape) (quote arr))
-     (list->vector
-      (map (lambda (child index) (normalize child (list-ref data index)))
-           (cdr shape)
-           (iota (length (cdr shape))))))))
+     (let loop ((children (cdr shape)) (index 0) (acc (quote ())))
+       (if (pair? children)
+           (loop (cdr children)
+                 (+ index 1)
+                 (cons (normalize (car children) (list-ref data index))
+                       acc))
+           (list->vector (reverse acc)))))))
 """
 
 
