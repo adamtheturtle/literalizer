@@ -142,6 +142,20 @@ jobs:
           git clone https://github.com/irdvo/ffl.git /tmp/ffl
           git -C /tmp/ffl checkout --quiet 753d418081a48afe8c86196261fda3299d93ac98
           echo "LITERALIZER_FFL_PATH=/tmp/ffl" >> "$GITHUB_ENV"
+      # guile-json supplies the ``(json)`` module used by
+      # ``.github/scripts/run_scheme_roundtrip.py``; Guile itself ships
+      # no JSON library, and the apt-packaged variants on Ubuntu 24.04
+      # are an unreliable source (the ``guile-json`` binary targets
+      # Guile 2.2, no Guile-3.0-bound binary is published under either
+      # ``guile-3-json`` or ``guile-3.0-json``).  Pin the upstream source
+      # tag instead and pass the checkout to ``guile`` via ``-L`` from
+      # the round-trip script; ``--no-auto-compile`` means no .go cache
+      # build is needed.  Tag ``4.7.3`` is the latest upstream release.
+      - name: Install guile-json
+        run: |-
+          git clone https://github.com/aconchillo/guile-json.git /tmp/guile-json
+          git -C /tmp/guile-json checkout --quiet 4.7.3
+          echo "LITERALIZER_GUILE_JSON_PATH=/tmp/guile-json" >> "$GITHUB_ENV"
       - name: Install Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
         # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
@@ -455,6 +469,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme && test -s /tmp/files-scheme
           xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
+
+      # Basic JSON -> Scheme -> JSON round-trip (issue 1867). Runs here
+      # because this is the job with the `guile-3.0` toolchain on PATH;
+      # `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves.
+      # See `.github/scripts/run_scheme_roundtrip.py`.
+      - name: Scheme roundtrip
+        run: uv run python .github/scripts/run_scheme_roundtrip.py
 
       - name: Lint Dhall
         run: |-
