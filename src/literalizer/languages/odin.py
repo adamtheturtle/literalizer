@@ -79,8 +79,6 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -483,8 +481,6 @@ class Odin(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -927,7 +923,10 @@ class Odin(metaclass=LanguageCls):
             and variable_name
             and content.lstrip().startswith(f"{variable_name} = ")
         ):
-            content = f"{variable_name}: json.Value\n{content}"
+            # Typed ``any`` (not ``json.Value``): the assignment may
+            # bind either a ``_json_parse`` value or a call result
+            # whose stub returns ``any``, and only ``any`` accepts both.
+            content = f"{variable_name}: any\n{content}"
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
@@ -1238,6 +1237,52 @@ class Odin(metaclass=LanguageCls):
         the Mojo ``^`` on register-trivial scalars) override this.
         """
         return never_inhibits_consuming_form
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that formats a declaration binding a call result.
+
+        Always uses the plain ``{name} := {value}`` form regardless of
+        :attr:`json_type`: a call's return type is opaque to the
+        renderer (the generated proc stub returns ``any``), and the
+        json-mode ``_json_parse`` shortcut applied to literal bindings
+        would discard the formatted call expression and substitute the
+        argument data, which is not the call's return value.
+        """
+
+        @beartype
+        def _format_call_decl(
+            name: str,
+            value: str,
+            _data: Value,
+            _modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Format an inferred Odin declaration binding a call."""
+            return f"{name} := {value}"
+
+        return _format_call_decl
+
+    @cached_property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Callable that formats an assignment binding a call result.
+
+        The call-expression counterpart of
+        :attr:`format_call_variable_declaration`; the json-mode
+        ``_json_parse`` shortcut applied to literal assignments would
+        substitute the argument data for the formatted call
+        expression and is dropped here.
+        """
+
+        @beartype
+        def _format_call_assign(name: str, value: str, _data: Value) -> str:
+            """Format an Odin assignment binding a call."""
+            return f"{name} = {value}"
+
+        return _format_call_assign
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:

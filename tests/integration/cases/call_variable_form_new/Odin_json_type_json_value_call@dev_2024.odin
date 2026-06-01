@@ -5,9 +5,9 @@ _json_parse :: proc(s: string) -> json.Value {
 	v, _ := json.parse_string(s, parse_integers=true)
 	return v
 }
+make_widget :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
-my_data: any
-my_data = _json_parse(`{"name": "Alice", "scores": [10, 20, 30]}`)
+my_data := make_widget(_json_parse(`42`))
 _ = my_data
 }
