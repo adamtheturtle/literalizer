@@ -679,7 +679,7 @@ def _c_cjson_call_stub(
     The cJSON-mode counterpart of :func:`_c_call_stub`: every parameter
     and value-returning return type is ``cJSON *`` instead of the
     tagged ``CVal`` union, and a value-returning stub returns ``NULL``
-    rather than a zero-initialised ``CVal`` literal.
+    rather than a zero-initialized ``CVal`` literal.
     """
     # pylint: disable=too-complex,too-many-branches
     is_value = stub_return is StubReturn.VALUE
