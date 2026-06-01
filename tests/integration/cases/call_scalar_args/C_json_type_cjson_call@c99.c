@@ -1,8 +1,8 @@
 #include <cjson/cJSON.h>
-static void process(CVal _a0) { (void)_a0; }
+static void process(cJSON *_a0) { (void)_a0; }
 int main(void) {
-process(((CVal){.s = "hello"}));
-process(((CVal){.i = 42}));
-process(((CVal){.b = true}));
+process(cJSON_CreateString("hello"));
+process(cJSON_CreateNumber((double)42));
+process(cJSON_CreateBool(1));
     return 0;
 }

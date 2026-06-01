@@ -667,6 +667,87 @@ _CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
 
 
 @beartype
+def _c_cjson_call_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return cJSON-mode C stub declarations for a call name.
+
+    The cJSON-mode counterpart of :func:`_c_call_stub`: every parameter
+    and value-returning return type is ``cJSON *`` instead of the
+    tagged ``CVal`` union, and a value-returning stub returns ``NULL``
+    rather than a zero-initialised ``CVal`` literal.
+    """
+    # pylint: disable=too-complex,too-many-branches
+    is_value = stub_return is StubReturn.VALUE
+    return_keyword = "cJSON *" if is_value else "void "
+    proto = ", ".join(["cJSON *"] * len(params)) if params else "void"
+    stub_params = ", ".join(f"cJSON *_a{i}" for i in range(len(params)))
+    stub_signature = stub_params or "void"
+    discards = "".join(f" (void)_a{i};" for i in range(len(params)))
+    return_stmt = " return NULL;" if is_value else ""
+    has_body = discards or is_value
+    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
+    nolint = (
+        ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
+        if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
+        else ()
+    )
+    match parts:
+        case [single]:
+            return (
+                *nolint,
+                f"static {return_keyword}{single}({stub_signature}) "
+                f"{stub_body}",
+            )
+        case [root, method]:
+            stub_fn = f"{root}_{method}_stub_"
+            type_name = f"{root}Type_"
+            return (
+                *nolint,
+                f"static {return_keyword}{stub_fn}({stub_signature}) "
+                f"{stub_body}",
+                f"struct {type_name} "
+                f"{{ {return_keyword}(*{method})({proto}); }};",
+                f"static const struct {type_name} {root} = "
+                f"{{ .{method} = {stub_fn} }};",
+            )
+        case _:
+            pass
+    root = parts[0]
+    method = parts[-1]
+    fields = parts[1:-1]
+    stub_fn = "_".join((*parts, "stub_"))
+    lines: list[str] = [
+        *nolint,
+        f"static {return_keyword}{stub_fn}({stub_signature}) {stub_body}",
+    ]
+    inner_type = f"{fields[-1]}Type_"
+    lines.append(
+        f"struct {inner_type} {{ {return_keyword}(*{method})({proto}); }};",
+    )
+    prev_type = inner_type
+    for i in range(len(fields) - 2, -1, -1):
+        curr_type = f"{fields[i]}Type_"
+        lines.append(
+            f"struct {curr_type} {{ struct {prev_type} {fields[i + 1]}; }};",
+        )
+        prev_type = curr_type
+    root_type = f"{root}Type_"
+    lines.append(
+        f"struct {root_type} {{ struct {prev_type} {fields[0]}; }};",
+    )
+    init = f"{{ .{method} = {stub_fn} }}"
+    for field in reversed(fields):
+        init = f"{{ .{field} = {init} }}"
+    lines.append(f"static const struct {root_type} {root} = {init};")
+    return tuple(lines)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _CjsonRender:
     """Multi-statement cJSON build plus the rendered right-hand side.
@@ -1477,7 +1558,14 @@ class C(metaclass=LanguageCls):
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
         tuple[str, ...],
     ]:
-        """Return file-scope stubs for a call expression."""
+        """Return file-scope stubs for a call expression.
+
+        Under :attr:`json_type` every parameter is a ``cJSON *`` rather
+        than the tagged ``CVal`` union, since call arguments are emitted
+        as ``cJSON_Create*`` expressions.
+        """
+        if self._json_type_active:
+            return _c_cjson_call_stub
         return _c_call_stub
 
     @cached_property
@@ -1536,8 +1624,43 @@ class C(metaclass=LanguageCls):
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``CVal`` union so call sites
         match the concrete prototype emitted by :func:`_c_call_stub`.
+
+        Under :attr:`json_type` each scalar call argument is rendered
+        as a ``cJSON_Create*`` expression matching the ``cJSON *``
+        parameters emitted by :func:`_c_cjson_call_stub`.
         """
+        if self._json_type_active:
+            return self._cjson_format_call_arg
         return self._format_entry
+
+    @cached_property
+    def _cjson_format_call_arg(self) -> Callable[[Value, str], str]:
+        """Return the cJSON-mode call-argument formatter."""
+        format_integer = self.format_integer
+        format_float = self.format_float
+        format_string = self.format_string
+        format_bytes = self.format_bytes
+        format_date = self.format_date
+        format_datetime = self.format_datetime
+        format_time = self.format_time
+        datetime_epoch = self.datetime_format.value.type_produced is int
+
+        @beartype
+        def _format(value: Value, _formatted: str) -> str:
+            """Render *value* as a ``cJSON_Create*`` expression."""
+            return _cjson_format_scalar(
+                value=value,
+                format_integer=format_integer,
+                format_float=format_float,
+                format_string=format_string,
+                format_bytes=format_bytes,
+                format_date=format_date,
+                format_datetime=format_datetime,
+                format_time=format_time,
+                datetime_epoch=datetime_epoch,
+            )
+
+        return _format
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
