@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import json
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -844,10 +845,12 @@ class Odin(metaclass=LanguageCls):
         """Reject inputs ``json.Value`` cannot carry.
 
         Walks the value tree and rejects non-string object keys (no
-        JSON representation) plus any string value or string-typed key
-        containing a literal backtick character, which would terminate
-        the Odin raw-string delimiter wrapping the embedded JSON text
-        and yield non-compiling output.
+        JSON representation), any string value or string-typed key
+        containing a literal backtick character (which would terminate
+        the Odin raw-string delimiter wrapping the embedded JSON
+        text), and non-finite floats (``NaN`` / ``+Infinity`` /
+        ``-Infinity``) which JSON has no syntax for and which
+        ``json.parse_string`` rejects at runtime.
         """
         match data:
             case OrderedMap() | dict():
@@ -866,6 +869,16 @@ class Odin(metaclass=LanguageCls):
                     self._validate_json_value(item)
             case str():
                 self._reject_backtick(value=data)
+            case bool():
+                return
+            case float() if not math.isfinite(data):
+                msg = (
+                    "Odin json_type renders the literalized value as a "
+                    "JSON text; JSON has no representation for non-finite "
+                    "floats (NaN / +Infinity / -Infinity) and "
+                    "json.parse_string rejects them at runtime."
+                )
+                raise UnrepresentableInputError(msg)
             case _:
                 return
 
@@ -926,12 +939,12 @@ class Odin(metaclass=LanguageCls):
             self._json_type_active
             and variable_name
             and re.search(
-                pattern=rf"^[ \t]*{re.escape(variable_name)} = ",
+                pattern=rf"^[ \t]*{re.escape(pattern=variable_name)} = ",
                 string=content,
                 flags=re.MULTILINE,
             )
             and not re.search(
-                pattern=rf"^[ \t]*{re.escape(variable_name)} := ",
+                pattern=rf"^[ \t]*{re.escape(pattern=variable_name)} := ",
                 string=content,
                 flags=re.MULTILINE,
             )

@@ -82,6 +82,34 @@ def test_odin_json_type_call_arg_rejects_backtick_in_string() -> None:
         )
 
 
+def test_odin_json_type_rejects_nan() -> None:
+    """JSON has no syntax for ``NaN``."""
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="non-finite floats",
+    ):
+        literalize(
+            source=".nan",
+            input_format=InputFormat.YAML,
+            language=Odin(json_type=Odin.json_types.JSON_VALUE),
+            variable_form=NewVariable(name="my_data"),
+        )
+
+
+def test_odin_json_type_rejects_positive_infinity() -> None:
+    """JSON has no syntax for ``+Infinity``."""
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="non-finite floats",
+    ):
+        literalize(
+            source=".inf",
+            input_format=InputFormat.YAML,
+            language=Odin(json_type=Odin.json_types.JSON_VALUE),
+            variable_form=NewVariable(name="my_data"),
+        )
+
+
 def test_odin_json_type_rejects_record_strategy() -> None:
     """``_json_parse`` rendering cannot coexist with generated
     records.
