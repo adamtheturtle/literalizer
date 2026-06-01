@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import json
+import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -911,8 +912,11 @@ class Odin(metaclass=LanguageCls):
         Under :attr:`json_type` an :class:`ExistingVariable` form
         produces a bare ``my_data = _json_parse(...)`` line, which the
         Odin compiler rejects (the name is undeclared); inject a
-        zero-valued ``my_data: json.Value`` declaration ahead of the
-        assignment so the wrapped file still compiles.
+        zero-valued ``my_data: any`` declaration ahead of the
+        assignment so the wrapped file still compiles.  Typed ``any``
+        (not ``json.Value``): the assignment may bind either a
+        ``_json_parse`` value or a call result whose stub returns
+        ``any``, and only ``any`` accepts both.
         """
         content = prepend_body_preamble(
             content=content,
@@ -921,11 +925,17 @@ class Odin(metaclass=LanguageCls):
         if (
             self._json_type_active
             and variable_name
-            and content.lstrip().startswith(f"{variable_name} = ")
+            and re.search(
+                pattern=rf"^[ \t]*{re.escape(variable_name)} = ",
+                string=content,
+                flags=re.MULTILINE,
+            )
+            and not re.search(
+                pattern=rf"^[ \t]*{re.escape(variable_name)} := ",
+                string=content,
+                flags=re.MULTILINE,
+            )
         ):
-            # Typed ``any`` (not ``json.Value``): the assignment may
-            # bind either a ``_json_parse`` value or a call result
-            # whose stub returns ``any``, and only ``any`` accepts both.
             content = f"{variable_name}: any\n{content}"
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
