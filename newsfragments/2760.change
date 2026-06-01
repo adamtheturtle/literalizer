@@ -1,0 +1,1 @@
+Add a ``json_type=Scheme.json_types.GUILE_JSON`` option to the Scheme language that renders objects as Scheme association lists, arrays as vectors, and null as ``'null`` so the literalized binding can be handed directly to guile-json's ``scm->json`` without an intermediate shape walker.
