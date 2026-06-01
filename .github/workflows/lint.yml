@@ -1569,6 +1569,11 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``cJSON`` fixtures (``C(json_type=CJSON)``) need the
+      # ``<cjson/cJSON.h>`` header on the default include path;
+      # clang-tidy parses the headers even though it never links.
+      - name: Install libcjson-dev
+        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files

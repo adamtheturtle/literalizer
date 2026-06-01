@@ -575,6 +575,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="C_json_type_cjson",
+            spec=make_spec(
+                lang_cls=C,
+                json_type=C.json_types.CJSON,
+            ),
+            lang_cls=C,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="FSharp_json_type_json_node",
             spec=make_spec(
                 lang_cls=FSharp,
@@ -2632,6 +2641,20 @@ def build_variant_cases() -> list[VariantCase]:
                         json_type=Cpp.json_types.NLOHMANN_JSON,
                     ),
                     lang_cls=Cpp,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="C_json_type_cjson_combined",
+                variant=Variant(
+                    name="C_json_type_cjson_combined",
+                    spec=make_spec(
+                        lang_cls=C,
+                        json_type=C.json_types.CJSON,
+                    ),
+                    lang_cls=C,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",

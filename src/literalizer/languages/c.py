@@ -92,7 +92,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 
 @beartype
@@ -605,6 +608,22 @@ def _c_call_stub(
 
 
 @beartype
+def _format_c_cjson_call_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a cJSON declaration binding a call result.
+
+    A call returns a freshly-constructed ``cJSON *`` node directly, so
+    the binding is a plain pointer declaration with no node-building
+    statements.
+    """
+    return f"cJSON *{name} = {value};"
+
+
+@beartype
 def _format_c_call_declaration(
     name: str,
     value: str,
@@ -642,6 +661,206 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
     assigned directly with no compound-literal wrapping.
     """
     return f"{name} = {value};"
+
+
+_CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _CjsonRender:
+    """Multi-statement cJSON build plus the rendered right-hand side.
+
+    *build_statements* are emitted into the function body before the
+    binding line; *binding_rhs* is the C expression that yields the
+    root ``cJSON *``.  The build always names the root ``_n0`` (every
+    other temporary uses the same ``_n<N>`` zero-padded numbering) so
+    that ``compute_body_preamble`` and ``format_variable_declaration``
+    can recompute the same plan from the same data without sharing
+    state.
+    """
+
+    build_statements: tuple[str, ...]
+    binding_rhs: str
+
+
+@beartype
+def _cjson_format_scalar(  # noqa: C901, PLR0911
+    *,
+    value: Value,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+    format_string: Callable[[str], str],
+    format_bytes: Callable[[bytes], str],
+    format_date: Callable[[datetime.date], str],
+    format_datetime: Callable[[datetime.datetime], str],
+    format_time: Callable[[datetime.time], str],
+    datetime_epoch: bool,
+) -> str:
+    """Return the ``cJSON_Create*`` expression for one scalar."""
+    # pylint: disable=too-many-return-statements,too-complex
+    match value:
+        case bool():
+            return f"cJSON_CreateBool({1 if value else 0})"
+        case None:
+            return "cJSON_CreateNull()"
+        case int():
+            return f"cJSON_CreateNumber((double){format_integer(value)})"
+        case float():
+            return f"cJSON_CreateNumber({format_float(value)})"
+        case str():
+            return f"cJSON_CreateString({format_string(value)})"
+        case bytes():
+            return f"cJSON_CreateString({format_bytes(value)})"
+        case datetime.datetime() if datetime_epoch:
+            return f"cJSON_CreateNumber((double){format_datetime(value)})"
+        case datetime.datetime():
+            return f"cJSON_CreateString({format_datetime(value)})"
+        case datetime.date():
+            return f"cJSON_CreateString({format_date(value)})"
+        case datetime.time():
+            return f"cJSON_CreateString({format_time(value)})"
+        case _:
+            msg = (
+                "C(json_type=CJSON) cannot represent value of type "
+                f"{type(value).__name__}"
+            )
+            raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _cjson_walk(
+    *,
+    node: Value,
+    statements: list[str],
+    counter: list[int],
+    name_prefix: str,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+    format_string: Callable[[str], str],
+    format_bytes: Callable[[bytes], str],
+    format_date: Callable[[datetime.date], str],
+    format_datetime: Callable[[datetime.datetime], str],
+    format_time: Callable[[datetime.time], str],
+    datetime_epoch: bool,
+) -> str:
+    """Walk *node* recursively, emitting cJSON build statements.
+
+    Returns the name of the temporary holding the rendered node.  A
+    scalar gets its own ``_nN`` temporary so the binding always
+    references ``_n0`` regardless of root shape.
+    """
+    name = f"{name_prefix}{counter[0]}"
+    counter[0] += 1
+    match node:
+        case dict():
+            statements.append(f"cJSON *{name} = cJSON_CreateObject();")
+            for key, val in node.items():
+                if not isinstance(key, str):
+                    msg = (
+                        "C(json_type=CJSON) can only represent dict keys "
+                        f"as strings, not {type(key).__name__}"
+                    )
+                    raise UnrepresentableInputError(msg)
+                child = _cjson_walk(
+                    node=val,
+                    statements=statements,
+                    counter=counter,
+                    name_prefix=name_prefix,
+                    format_integer=format_integer,
+                    format_float=format_float,
+                    format_string=format_string,
+                    format_bytes=format_bytes,
+                    format_date=format_date,
+                    format_datetime=format_datetime,
+                    format_time=format_time,
+                    datetime_epoch=datetime_epoch,
+                )
+                statements.append(
+                    f"cJSON_AddItemToObject({name}, "
+                    f"{format_string(key)}, {child});"
+                )
+        case list() | set():
+            statements.append(f"cJSON *{name} = cJSON_CreateArray();")
+            items: list[Value] = (
+                sorted(node, key=lambda v: (type(v).__name__, repr(v)))
+                if isinstance(node, set)
+                else list(node)
+            )
+            for item in items:
+                child = _cjson_walk(
+                    node=item,
+                    statements=statements,
+                    counter=counter,
+                    name_prefix=name_prefix,
+                    format_integer=format_integer,
+                    format_float=format_float,
+                    format_string=format_string,
+                    format_bytes=format_bytes,
+                    format_date=format_date,
+                    format_datetime=format_datetime,
+                    format_time=format_time,
+                    datetime_epoch=datetime_epoch,
+                )
+                statements.append(f"cJSON_AddItemToArray({name}, {child});")
+        case _:
+            expr = _cjson_format_scalar(
+                value=node,
+                format_integer=format_integer,
+                format_float=format_float,
+                format_string=format_string,
+                format_bytes=format_bytes,
+                format_date=format_date,
+                format_datetime=format_datetime,
+                format_time=format_time,
+                datetime_epoch=datetime_epoch,
+            )
+            statements.append(f"cJSON *{name} = {expr};")
+    return name
+
+
+@beartype
+def _build_cjson_render(
+    *,
+    data: Value,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+    format_string: Callable[[str], str],
+    format_bytes: Callable[[bytes], str],
+    format_date: Callable[[datetime.date], str],
+    format_datetime: Callable[[datetime.datetime], str],
+    format_time: Callable[[datetime.time], str],
+    datetime_epoch: bool,
+    name_prefix: str,
+) -> _CjsonRender:
+    """Build the cJSON statement plan for *data*.
+
+    Empty containers and bare scalars collapse to a single build
+    statement that binds directly; nothing about the binding line
+    needs to differ.  The *name_prefix* lets callers pick distinct
+    temporary names so a combined declaration + reassignment in one
+    function body does not collide.
+    """
+    statements: list[str] = []
+    counter = [0]
+    _cjson_walk(
+        node=data,
+        statements=statements,
+        counter=counter,
+        name_prefix=name_prefix,
+        format_integer=format_integer,
+        format_float=format_float,
+        format_string=format_string,
+        format_bytes=format_bytes,
+        format_date=format_date,
+        format_datetime=format_datetime,
+        format_time=format_time,
+        datetime_epoch=datetime_epoch,
+    )
+    return _CjsonRender(
+        build_statements=tuple(statements),
+        binding_rhs=f"{name_prefix}0",
+    )
 
 
 @beartype
@@ -915,7 +1134,15 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class JsonTypes(enum.Enum):
-        """Empty: this language has no JSON value-type variants."""
+        """JSON value type options for C."""
+
+        CJSON = "cJSON *"
+        """The ``cJSON`` dynamic JSON value type from the
+        ``cjson/cJSON.h`` library.  Every node is constructed
+        explicitly via ``cJSON_Create*`` calls and assembled with
+        ``cJSON_AddItemToObject`` / ``cJSON_AddItemToArray``; the
+        binding type is ``cJSON *``.
+        """
 
     json_types = JsonTypes
 
@@ -941,6 +1168,30 @@ class C(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
+
+    def __post_init__(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit."""
+        self._validate_json_type_spec()
+
+    def _validate_json_type_spec(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        Under :attr:`json_type` the rendered data flows through cJSON
+        node-construction calls.  The ``RECORD`` heterogeneous
+        strategy generates ``struct`` declarations whose literals do
+        not correspond to any cJSON node type, so the two cannot be
+        combined in the first slice.
+        """
+        if not self._json_type_active:
+            return
+        if self.heterogeneous_strategy.name == "RECORD":
+            msg = (
+                "C json_type renders data through cJSON node "
+                "construction calls and is incompatible with "
+                "heterogeneous_strategy=RECORD, which generates "
+                "struct declarations. Use heterogeneous_strategy=ERROR."
+            )
+            raise IncompatibleFormatsError(msg)
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid C for *data*.
@@ -1044,6 +1295,7 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # Keep in sync with the ``-std=`` flag passed to clang and clang-tidy
     # in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.C99
@@ -1078,6 +1330,11 @@ class C(metaclass=LanguageCls):
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return self.heterogeneous_strategy.name == "RECORD"
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether C should render via the ``cJSON`` API."""
+        return self.json_type is not None
 
     def _c_record_field_type(  # noqa: C901, PLR0911
         self,
@@ -1176,7 +1433,15 @@ class C(metaclass=LanguageCls):
         ``RECORD`` resolves to the shared record behavior (its value
         needs the per-instance renderer, so it cannot be stored on the
         enum member); ``ERROR`` keeps the ``CVal``-union default.
+        Under :attr:`json_type` the framework's scalar checks are
+        skipped because cJSON's dynamic node type accepts any mix of
+        scalar types in a container.
         """
+        if self._json_type_active:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                skip_scalar_checks=True,
+            )
         if self._record_strategy_active:
             return self._record_strategy.behavior
         return NO_HETEROGENEOUS_BEHAVIOR
@@ -1563,10 +1828,33 @@ class C(metaclass=LanguageCls):
         Under ``RECORD`` a record-shaped root is declared with its
         generated ``struct`` type (``struct Record0 my_data = (struct
         Record0){...};``) and an all-record-list root as an array
-        (``struct Record0 my_data[] = {...};``); every other value keeps
-        the ``CVal``-wrapped form.
+        (``struct Record0 my_data[] = {...};``); under
+        :attr:`json_type` the value is built up by a sequence of
+        ``cJSON_Create*`` / ``cJSON_AddItem*`` statements emitted into
+        the binding's body, with the binding line declaring
+        ``cJSON *NAME = _n0;``; every other value keeps the
+        ``CVal``-wrapped form.
         """
         format_entry = self._format_entry
+        if self._json_type_active:
+            build_render = self._build_cjson_render_for_data
+
+            @beartype
+            def _format_cjson_decl(
+                name: str,
+                _value: str,
+                data: Value,
+                _modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format a cJSON declaration as build + bind lines."""
+                render = build_render(data=data, name_prefix="_n")
+                lines = (
+                    *render.build_statements,
+                    f"cJSON *{name} = {render.binding_rhs};",
+                )
+                return "\n".join(lines)
+
+            return _format_cjson_decl
 
         @beartype
         def _format_decl(
@@ -1594,9 +1882,31 @@ class C(metaclass=LanguageCls):
 
         The combined declaration+assignment form is only exercised for a
         top-level record-shaped dict, so a ``RECORD`` reassignment is a
-        plain ``my_data = (struct Record0){...};`` struct copy.
+        plain ``my_data = (struct Record0){...};`` struct copy.  Under
+        :attr:`json_type` the assignment builds a fresh cJSON tree under
+        a distinct ``_m<N>`` prefix so its temporaries do not collide
+        with the declaration's ``_n<N>`` block in the same function
+        body, then rebinds ``NAME`` to the new root.
         """
         format_entry = self._format_entry
+        if self._json_type_active:
+            build_render = self._build_cjson_render_for_data
+
+            @beartype
+            def _format_cjson_assign(
+                name: str,
+                _value: str,
+                data: Value,
+            ) -> str:
+                """Format a cJSON assignment as build + rebind lines."""
+                render = build_render(data=data, name_prefix="_m")
+                lines = (
+                    *render.build_statements,
+                    f"{name} = {render.binding_rhs};",
+                )
+                return "\n".join(lines)
+
+            return _format_cjson_assign
 
         @beartype
         def _format_assign(name: str, value: str, data: Value) -> str:
@@ -1608,6 +1918,26 @@ class C(metaclass=LanguageCls):
             return f"{name} = {wrapped};"
 
         return _format_assign
+
+    def _build_cjson_render_for_data(
+        self, *, data: Value, name_prefix: str
+    ) -> _CjsonRender:
+        """Build a cJSON render plan for *data* using this spec's
+        scalar formatters.
+        """
+        datetime_epoch = self.datetime_format.value.type_produced is int
+        return _build_cjson_render(
+            data=data,
+            format_integer=self.format_integer,
+            format_float=self.format_float,
+            format_string=self.format_string,
+            format_bytes=self.format_bytes,
+            format_date=self.format_date,
+            format_datetime=self.format_datetime,
+            format_time=self.format_time,
+            datetime_epoch=datetime_epoch,
+            name_prefix=name_prefix,
+        )
 
     @cached_property
     def format_call_variable_declaration(
@@ -1621,7 +1951,11 @@ class C(metaclass=LanguageCls):
         always the universal ``CVal`` union (the type every generated
         call stub returns), so the call result is bound directly with a
         plain ``CVal`` declaration and no compound-literal wrapping.
+        Under :attr:`json_type` the binding type is ``cJSON *``
+        instead, matching the cJSON node-construction API.
         """
+        if self._json_type_active:
+            return _format_c_cjson_call_declaration
         return _format_c_call_declaration
 
     @cached_property
@@ -1638,7 +1972,15 @@ class C(metaclass=LanguageCls):
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:
-        """Static preamble lines emitted once per file."""
+        """Static preamble lines emitted once per file.
+
+        Under :attr:`json_type` the ``cjson/cJSON.h`` header replaces
+        the default ``CVal`` / ``CKV`` type declarations because every
+        emitted expression goes through the cJSON node-construction
+        API.
+        """
+        if self._json_type_active:
+            return _CJSON_STATIC_PREAMBLE
         return (
             "#include <stdbool.h>",
             "#include <stddef.h>",
