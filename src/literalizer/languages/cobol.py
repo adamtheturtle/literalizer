@@ -134,7 +134,7 @@ def _pic_from_value(value: str) -> str:
         return "PIC X(5)"
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
-        return f"PIC X({max(1, len(inner))})"
+        return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
     if re.match(pattern=r"^-?\d+$", string=value):
         return "PIC S9(18) COMP-5"
     # Float or other numeric
