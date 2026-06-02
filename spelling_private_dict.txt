@@ -126,6 +126,7 @@ backticks
 beartype
 bool
 booleans
+cJSON
 chrono
 closers
 commonjs

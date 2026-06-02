@@ -1,0 +1,1 @@
+Add ``C(json_type=CJSON)`` to render values as cJSON trees built with ``cJSON_Create*`` and ``cJSON_AddItemTo*`` calls.
