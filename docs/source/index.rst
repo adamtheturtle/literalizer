@@ -21,43 +21,53 @@ Requires Python |minimum-python-version|\+.
 Usage
 -----
 
-Use :func:`literalizer.literalize` to convert data to native language literals:
+Use :func:`literalizer.literalize` to convert data to native language literals.
+Pass your data, its format, and a target language:
 
 .. code-block:: python
 
-   """Example of using literalizer."""
+   """Minimal example of using literalizer."""
+
+   from literalizer import InputFormat, literalize
+   from literalizer.languages import Python
+
+   result = literalize(  # returns LiteralizeResult with .code and .preamble
+       source='{"x": 1}',
+       input_format=InputFormat.JSON,
+       language=Python(),
+   )
+   # result.code:
+   # {
+   #     "x": 1,
+   # }
+
+Configure the language to control how individual data types are rendered.
+Comments in the source are preserved using the target language's comment syntax:
+
+.. code-block:: python
+
+   """Layering format options on top of the minimal call."""
 
    from literalizer import InputFormat, literalize
    from literalizer.languages import Go
 
-   # YAML comments are preserved using the target language's comment syntax
    yaml_config = """\
    # Server configuration
    host: localhost  # default host
    port: 8080
-   # Enable debug mode for development
-   debug: true
+   released: 2026-06-02
    """
-   result = literalize(  # returns LiteralizeResult with .code and .preamble
+   result = literalize(
        source=yaml_config,
        input_format=InputFormat.YAML,
-       language=Go(
-           date_format=Go.date_formats.GO,
-           datetime_format=Go.datetime_formats.GO,
-           bytes_format=Go.bytes_formats.HEX,
-           sequence_format=Go.sequence_formats.SLICE,
-       ),
-       pre_indent_level=0,
-       include_delimiters=True,
-       variable_form=None,
+       language=Go(date_format=Go.date_formats.ISO),
    )
    # result.code:
    # map[string]any{
    #     // Server configuration
    #     "host": "localhost",  // default host
    #     "port": 8080,
-   #     // Enable debug mode for development
-   #     "debug": true,
+   #     "released": "2026-06-02",
    # }
 
 Use cases
