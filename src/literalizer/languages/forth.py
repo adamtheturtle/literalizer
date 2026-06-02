@@ -212,10 +212,11 @@ def _format_forth_declaration(
          -obj
         ;
     """
+    # Every value yields a non-empty body: scalars gain a marker, ``null``
+    # becomes ``+null``, and empty collections render ``+obj -obj`` /
+    # ``+arr -arr``, so there is no empty-definition case to guard.
     body = _forth_mark_value(value=data, formatted=value)
     stripped = body.strip("\n")
-    if not stripped.strip():
-        return f": {name} ;"
     if "\n" in stripped:
         return f": {name}\n{stripped}\n;"
     return f": {name} {stripped} ;"
