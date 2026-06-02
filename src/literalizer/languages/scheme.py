@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -20,6 +21,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
+    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -73,12 +75,50 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableInputError,
+    UnrepresentableSpecialFloatError,
+)
+
+# Format definitions used while ``json_type=GUILE_JSON`` is active.
+# Objects are emitted as association lists
+# (``(list (cons "k" v) ...)``) because the ``json-valid?`` predicate
+# in guile-json accepts only that form, not hash tables (see
+# ``json/builder.scm:188`` upstream; matches the round-trip helper's
+# existing ``normalize`` walker).  Arrays become vectors
+# (``(vector v ...)``) since the ``scm->json`` writer in guile-json
+# distinguishes vector arrays from list-of-pairs objects.  Sets
+# reuse the array (vector) form because JSON has no set type.
+_GUILE_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="(vector "),
+    close=")",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=False,
+    empty_sequence="(vector)",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+_GUILE_JSON_SET_CONFIG = SetFormatConfig(
+    set_open=fixed_open(open_str="(vector "),
+    close=")",
+    empty_set="(vector)",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=False,
+)
 
 
 @beartype
@@ -364,7 +404,14 @@ class Scheme(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class JsonTypes(enum.Enum):
-        """Empty: this language has no JSON value-type variants."""
+        """JSON value type options for Scheme."""
+
+        GUILE_JSON = "guile-json scm->json value shape"
+        """Guile-json's ``scm->json`` value shape: Scheme association
+        lists for objects, vectors for arrays, ``'null`` for JSON
+        null.  The literalized output can be handed directly to
+        ``(scm->json ...)`` without a runtime shape walker.
+        """
 
     json_types = JsonTypes
 
@@ -385,8 +432,6 @@ class Scheme(metaclass=LanguageCls):
         IdentifierCase.KEBAB,
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
-
-    validate_spec_for_data = no_validate_spec_for_data
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -456,6 +501,7 @@ class Scheme(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     call_style: CallStyles = CallStyles.PREFIX
     # The `Install apt packages` step in `.github/workflows/lint.yml`
     # installs the `guile-3.0` apt package, whose Guile 3.x implements
@@ -465,7 +511,6 @@ class Scheme(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.R7RS
     indent: str = "    "
 
-    null_literal: ClassVar[str] = "'()"
     true_literal: ClassVar[str] = "#t"
     false_literal: ClassVar[str] = "#f"
     indent_closing_delimiter: ClassVar[bool] = False
@@ -475,9 +520,80 @@ class Scheme(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ""
-    static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether ``json_type=GUILE_JSON`` is selected."""
+        return self.json_type is not None
+
+    @cached_property
+    def null_literal(self) -> str:
+        """The literal representing null.
+
+        Under :attr:`json_type` the value must be the null sentinel
+        that guile-json recognizes (the symbol ``'null``, matching
+        the default of its ``*null*`` parameter); the flat-list mode
+        uses the empty list, which is conventional for ``null`` in
+        Scheme.
+        """
+        return "'null" if self._json_type_active else "'()"
+
+    @cached_property
+    def static_preamble(self) -> Sequence[str]:
+        """File-scope preamble.
+
+        Under :attr:`json_type` the rendered value is a tree of
+        Scheme association lists and vectors that
+        ``(scm->json ...)`` accepts directly, so the ``(json)``
+        module must be imported.
+        """
+        if self._json_type_active:
+            return ("(use-modules (json))",)
+        return ()
+
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject data that ``json_type=GUILE_JSON`` cannot represent.
+
+        Walks *data* under :attr:`json_type` to reject non-string dict
+        keys (JSON objects keys must be strings) and the special
+        floats ``NaN`` / ``+inf.0`` / ``-inf.0`` (not valid JSON).
+        """
+        if self._json_type_active:
+            self._validate_guile_json_value(data)
+
+    def _validate_guile_json_value(self, data: Value, /) -> None:
+        """Recursively validate that *data* is JSON-representable."""
+        match data:
+            case OrderedMap() | dict():
+                for key, value in data.items():
+                    if not isinstance(key, str):
+                        msg = (
+                            "Scheme json_type=GUILE_JSON can only "
+                            "represent dict keys as JSON object "
+                            f"strings, not {type(key).__name__}"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    self._validate_guile_json_value(value)
+            case list() | set():
+                for item in data:
+                    self._validate_guile_json_value(item)
+            case float():
+                self._validate_guile_json_float(value=data)
+            case _:
+                return
+
+    @staticmethod
+    def _validate_guile_json_float(*, value: float) -> None:
+        """Reject ``NaN`` / ``+inf.0`` / ``-inf.0`` floats."""
+        if math.isnan(value) or math.isinf(value):
+            msg = (
+                "Scheme json_type=GUILE_JSON cannot represent the "
+                f"special float {value!r}: JSON has no NaN or "
+                "infinity."
+            )
+            raise UnrepresentableSpecialFloatError(msg)
 
     @cached_property
     def call_style_config(self) -> CallStyle:
@@ -622,22 +738,56 @@ class Scheme(metaclass=LanguageCls):
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
-        """Configuration for the chosen sequence format."""
+        """Configuration for the chosen sequence format.
+
+        Under :attr:`json_type` arrays are emitted as ``(vector ...)``
+        so ``scm->json`` round-trips them as JSON arrays unambiguously.
+        """
+        if self._json_type_active:
+            return _GUILE_JSON_SEQUENCE_CONFIG
         return self.sequence_format.value
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        Under :attr:`json_type` sets share the array form
+        (``(vector ...)``); JSON has no native set type.
+        """
+        if self._json_type_active:
+            return _GUILE_JSON_SET_CONFIG
         return self.set_format.value
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self._json_type_active:
+            return _GUILE_JSON_SEQUENCE_CONFIG.sequence_open
         return self.sequence_format.value.sequence_open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
-        """Configuration for dict formatting."""
+        """Configuration for dict formatting.
+
+        Under :attr:`json_type` each entry is a ``(cons "k" v)`` pair
+        and the dict wraps them in ``(list ...)`` to form a Scheme
+        association list; ``scm->json``'s ``json-valid?`` accepts only
+        that shape for JSON objects.  The default mode emits the
+        legacy flat ``(list "k" v "k" v ...)`` form.
+        """
+        if self._json_type_active:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="(list "),
+                close=")",
+                format_entry=dict_entry_with_template(
+                    template="(cons {key} {value})",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict="(list)",
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="(list "),
             close=")",
@@ -688,7 +838,13 @@ class Scheme(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
+        """Configuration for ordered-map formatting.
+
+        Under :attr:`json_type` an ordered map is rendered as the same
+        association-list shape used for plain dicts so ``scm->json``
+        round-trips it as a JSON object (key order is preserved by
+        the surrounding list's element order).
+        """
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="(list "),
             close=")",
@@ -697,7 +853,16 @@ class Scheme(metaclass=LanguageCls):
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
-        """Callable that formats one ordered-map entry."""
+        """Callable that formats one ordered-map entry.
+
+        Under :attr:`json_type` each entry is a ``(cons "k" v)`` pair
+        matching :attr:`dict_format_config`.
+        """
+        if self._json_type_active:
+            return dict_entry_with_template(
+                template="(cons {key} {value})",
+                format_value=passthrough_sequence_entry,
+            )
         return dict_entry_with_separator(
             separator=" ",
             format_value=passthrough_sequence_entry,

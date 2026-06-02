@@ -44,6 +44,7 @@ from literalizer.languages import (
     Roc,
     Rust,
     Scala,
+    Scheme,
     Swift,
     VisualBasic,
     Zig,
@@ -617,6 +618,15 @@ def build_json_type_variants() -> Iterable[Variant]:
                 json_type=PureScript.json_types.ARGONAUT_JSON,
             ),
             lang_cls=PureScript,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Scheme_json_type_guile_json",
+            spec=make_spec(
+                lang_cls=Scheme,
+                json_type=Scheme.json_types.GUILE_JSON,
+            ),
+            lang_cls=Scheme,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(

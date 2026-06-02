@@ -464,11 +464,15 @@ jobs:
       # Invoke ``guile-3.0`` directly rather than ``guile`` because
       # cache-apt-pkgs-action does not replay the package's
       # ``update-alternatives`` postinst on cache hit, so ``/usr/bin/guile``
-      # is missing.
+      # is missing.  ``-L $LITERALIZER_GUILE_JSON_PATH`` puts the
+      # ``Install guile-json`` checkout on Guile's load path so fixtures
+      # that ``(use-modules (json))`` (the ``Scheme_json_type_guile_json``
+      # variant,  # 2760) resolve there; ``--no-auto-compile`` keeps the
+      # run from writing a ``.go`` cache for it.
       - name: Lint Scheme
         run: |-
           find tests/integration/cases -name '*.scm' -print0 > /tmp/files-scheme && test -s /tmp/files-scheme
-          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -s {} < /tmp/files-scheme
+          xargs -0 -P "$(nproc)" -I{} guile-3.0 --no-auto-compile -L "$LITERALIZER_GUILE_JSON_PATH" -s {} < /tmp/files-scheme
 
       # Basic JSON -> Scheme -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `guile-3.0` toolchain on PATH;

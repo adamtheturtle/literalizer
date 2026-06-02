@@ -506,6 +506,38 @@ must be strings so they remain valid JSON object keys, and special
 floats (``NaN``, ``+Infinity``, ``-Infinity``) are rejected because
 JSON has no syntax for them.
 
+Scheme exposes the same option through
+``Scheme.json_types.GUILE_JSON``:
+
+.. code-block:: python
+
+   """Render Scheme data for the ``scm->json`` writer in guile-json."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Scheme
+
+   result = literalize(
+       source='{"id": 1, "tags": ["red", 2]}',
+       input_format=InputFormat.JSON,
+       language=Scheme(
+           json_type=Scheme.json_types.GUILE_JSON,
+       ),
+       variable_form=NewVariable(name="my-data"),
+   )
+
+This renders objects as Scheme association lists
+(``(list (cons "k" v) ...)``), arrays
+as vectors (``(vector v ...)``), and null as the symbol ``'null`` so
+the binding can be handed directly to ``(scm->json my-data)`` from the
+guile-json ``(json)`` module without an intermediate shape walker.
+The default Scheme rendering folds both objects and arrays into a
+flat ``(list ...)`` form, which makes ``{}`` indistinguishable from
+``[]`` and ``{"a": 1}`` indistinguishable from ``["a", 1]``; the
+``GUILE_JSON`` mode resolves that ambiguity at the source.  Dict keys
+must be strings so they remain valid JSON object keys, and special
+floats (``NaN``, ``+inf.0``, ``-inf.0``) are rejected because JSON
+has no syntax for them.
+
 Erlang exposes the same option through
 ``Erlang.json_types.OTP_JSON``:
 
