@@ -511,7 +511,7 @@ Scheme exposes the same option through
 
 .. code-block:: python
 
-   """Render Scheme data for guile-json's ``scm->json``."""
+   """Render Scheme data for the ``scm->json`` writer in guile-json."""
 
    from literalizer import InputFormat, NewVariable, literalize
    from literalizer.languages import Scheme
