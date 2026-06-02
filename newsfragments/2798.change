@@ -1,0 +1,1 @@
+Restructured the API reference into labeled sections (core functions, result type, variable forms, identifier cases, function calls, formatting configuration, language definition and exceptions) and stopped surfacing undocumented internals on the page.
