@@ -115,9 +115,10 @@ def _build_program(*, json_text: str) -> str:
         f'             {name} IS "{key}"'
         for name, key in zip(data_names, keys, strict=True)
     )
+    # ``result.code`` already prepends any ``body_preamble`` lines ahead
+    # of the declaration, which is exactly where they belong inside
+    # WORKING-STORAGE; COBOL defines none, so this is just the group.
     group = result.code
-    if result.body_preamble:
-        group = "\n".join(result.body_preamble) + "\n" + group
     return (
         "IDENTIFICATION DIVISION.\n"
         "PROGRAM-ID. CHECK.\n"
