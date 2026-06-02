@@ -87,13 +87,13 @@ from literalizer.exceptions import (
 
 # Format definitions used while ``json_type=GUILE_JSON`` is active.
 # Objects are emitted as association lists
-# (``(list (cons "k" v) ...)``) because guile-json's ``json-valid?``
-# accepts only that form, not hash tables (see
+# (``(list (cons "k" v) ...)``) because the ``json-valid?`` predicate
+# in guile-json accepts only that form, not hash tables (see
 # ``json/builder.scm:188`` upstream; matches the round-trip helper's
 # existing ``normalize`` walker).  Arrays become vectors
-# (``(vector v ...)``) since guile-json's ``scm->json`` distinguishes
-# vector arrays from list-of-pairs objects.  Sets reuse the array
-# (vector) form because JSON has no set type.
+# (``(vector v ...)``) since the ``scm->json`` writer in guile-json
+# distinguishes vector arrays from list-of-pairs objects.  Sets
+# reuse the array (vector) form because JSON has no set type.
 _GUILE_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
     sequence_open=fixed_open(open_str="(vector "),
     close=")",
