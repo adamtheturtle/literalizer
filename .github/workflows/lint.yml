@@ -256,6 +256,15 @@ jobs:
           xargs -0 bash -n < /tmp/files-bash
           xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
 
+      # Basic JSON -> Bash -> JSON round-trip (issue 2640). Runs here
+      # because this is the job with the pinned ``bash`` interpreter (the
+      # runner default, guarded by the ``Lint Bash`` step above); ``uv
+      # run`` (project mode, not ``--no-project``) is required so
+      # ``import literalizer`` resolves. See
+      # ``.github/scripts/run_bash_roundtrip.py``.
+      - name: Bash roundtrip
+        run: uv run python .github/scripts/run_bash_roundtrip.py
+
       # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
       # ``Ruby.language_version`` in ``src/literalizer/languages/ruby.py``;
       # keep them in sync. Without this setup step the ``ruby`` binary is
