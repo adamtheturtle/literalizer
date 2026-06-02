@@ -47,7 +47,7 @@ def _build_program(json_text: str) -> str:
         pre_indent_level=0,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    emit = f'printf("%s", jsonencode({_VAR_NAME}));'
+    emit = f'fprintf("%s", jsonencode({_VAR_NAME}));'
     return f"{preamble}\n{result.code}\n{emit}\n"
 
 
