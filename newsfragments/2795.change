@@ -1,0 +1,1 @@
+Document when to choose a ``heterogeneous_strategy`` versus a ``json_type`` for mixed-type data: the heterogeneous strategies page now carries a "Which should I use?" note contrasting the statically typed wrappers with the single runtime JSON value type, and the two documentation sections cross-link each other.
