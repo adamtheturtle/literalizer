@@ -1,0 +1,1 @@
+Give colliding COBOL data names a numeric suffix so that two distinct JSON object keys that map to the same COBOL data name (because the character rewriting or the 30-character name limit collapses them together) no longer produce two sibling items with the same name in one group, which GnuCOBOL rejects as ambiguous when the name is referenced.

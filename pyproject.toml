@@ -92,6 +92,12 @@ optional-dependencies.dev = [
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.5.20",
     "towncrier==25.8.0",
+    # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
+    # ``Norg roundtrip`` check (``.github/scripts/run_norg_roundtrip.py``);
+    # listed here so the type checkers resolve its (``py.typed``) imports.
+    # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
+    # of ``.github/workflows/lint.yml``.
+    "tree-sitter==0.25.2",
     "ty==0.0.40",
     "types-pygments==2.20.0.20260518",
     "vulture==2.16",

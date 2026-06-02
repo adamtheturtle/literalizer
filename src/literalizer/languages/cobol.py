@@ -199,6 +199,11 @@ def _key_to_cobol_name(key_str: str) -> str:
     with hyphens, and adds the ``F-`` prefix to avoid clashes with COBOL
     reserved words.  The result is truncated to 28 characters (leaving
     room for the prefix).
+
+    This mapping discards information, so two distinct keys can collapse
+    onto the same name (the character rewriting above, or the 28-character
+    truncation).  Sibling clashes within a group are resolved afterwards
+    by :func:`_disambiguate_data_names`.
     """
     name = strip_key_quotes(key=key_str).replace('""', '"')
     name = name.upper()
@@ -206,6 +211,92 @@ def _key_to_cobol_name(key_str: str) -> str:
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
     name = name[:28].strip("-") or "FILLER"
     return f"F-{name}"
+
+
+# COBOL user-defined words are limited to 30 characters in the COBOL 2002
+# dialect this module targets.  ``_key_to_cobol_name`` already truncates a
+# single name's body to fit that budget (``F-`` prefix plus 28 characters);
+# the collision suffix appended below stays within it too.
+_MAX_COBOL_NAME_LENGTH = 30
+
+_DATA_NAME_LINE_RE = re.compile(
+    pattern=(
+        r"^(?P<indent>\s*)(?P<level>\d{2}) "
+        r"(?P<name>[A-Za-z0-9-]+)(?P<rest>.*)$"
+    )
+)
+
+
+@dataclasses.dataclass
+class _NameScope:
+    """Mutable record of the data names already used in one COBOL group.
+
+    ``level`` is the group header's level number; ``used`` holds the
+    direct-child names emitted so far so a colliding sibling can be given
+    a distinct numeric suffix.
+    """
+
+    level: int
+    used: set[str]
+
+
+@beartype
+def _unique_cobol_name(base: str, used: set[str]) -> str:
+    """Return *base*, or a suffixed variant of it, not present in *used*.
+
+    On collision a ``-2``, ``-3``, ... suffix is appended; the base is
+    truncated first when needed so the result stays within
+    :data:`_MAX_COBOL_NAME_LENGTH`.  The chosen name is recorded in
+    *used*.
+    """
+    if base not in used:
+        used.add(base)
+        return base
+    counter = 2
+    while True:
+        suffix = f"-{counter}"
+        head = base[: _MAX_COBOL_NAME_LENGTH - len(suffix)].rstrip("-")
+        candidate = f"{head}{suffix}"
+        if candidate not in used:
+            used.add(candidate)
+            return candidate
+        counter += 1
+
+
+@beartype
+def _disambiguate_data_names(content: str) -> str:
+    """Make sibling COBOL data names unique within each group.
+
+    ``_key_to_cobol_name`` can map distinct JSON keys to the same COBOL
+    data name (its character rewriting or the 28-character truncation
+    collapses them), producing two sibling items with identical names in
+    one group -- ambiguous COBOL that GnuCOBOL refuses to compile once
+    the name is referenced.  This pass walks the rendered DATA DIVISION
+    entries level by level and appends a numeric suffix to any name that
+    repeats among the direct children of one group, leaving ``FILLER``
+    (the explicit unnamed placeholder, which may legitimately repeat)
+    untouched.
+    """
+    scopes: list[_NameScope] = []
+    out_lines: list[str] = []
+    for line in content.split(sep="\n"):
+        match = _DATA_NAME_LINE_RE.match(string=line)
+        if match is None:
+            out_lines.append(line)
+            continue
+        level = int(match["level"])
+        while scopes and scopes[-1].level >= level:
+            scopes.pop()
+        name = match["name"]
+        if name == "FILLER" or not scopes:
+            new_name = name
+        else:
+            new_name = _unique_cobol_name(base=name, used=scopes[-1].used)
+        scopes.append(_NameScope(level=level, used=set()))
+        out_lines.append(
+            f"{match['indent']}{match['level']} {new_name}{match['rest']}"
+        )
+    return "\n".join(out_lines)
 
 
 @beartype
@@ -308,7 +399,9 @@ def _format_variable_declaration(
     stripped = value.strip("\n")
     scalar = stripped.strip()
     if "\n" in stripped or _is_data_entry(s=scalar):
-        return f"01 {cobol_name}.\n{stripped}"
+        return _disambiguate_data_names(
+            content=f"01 {cobol_name}.\n{stripped}"
+        )
     picture_clause = _pic_from_value(value=scalar)
     return f"01 {cobol_name} {picture_clause} VALUE {scalar}."
 
