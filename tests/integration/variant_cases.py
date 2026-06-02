@@ -585,6 +585,15 @@ def build_json_type_variants() -> Iterable[Variant]:
             collection_layout=literalizer.CollectionLayout.COMPACT,
         ),
         Variant(
+            name="Cobol_json_type_cjson",
+            spec=make_spec(
+                lang_cls=Cobol,
+                json_type=Cobol.json_types.CJSON,
+            ),
+            lang_cls=Cobol,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
             name="FSharp_json_type_json_node",
             spec=make_spec(
                 lang_cls=FSharp,
@@ -2692,6 +2701,40 @@ def build_variant_cases() -> list[VariantCase]:
                 ),
                 case_dir_name="dict_with_list_value",
                 variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            VariantCase(
+                variant_name="Cobol_json_type_cjson_combined",
+                variant=Variant(
+                    name="Cobol_json_type_cjson_combined",
+                    spec=make_spec(
+                        lang_cls=Cobol,
+                        json_type=Cobol.json_types.CJSON,
+                    ),
+                    lang_cls=Cobol,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="dict_with_list_value",
+                variable_form=literalizer.BothVariableForms(name="my_data"),
+            ),
+            # A string mixing an embedded quote, a control character, and
+            # a multi-byte character: COBOL alphanumeric literals have no
+            # escapes, so ``json_type=CJSON`` splices the non-printable
+            # bytes in as ``X"NN"`` hex.  Scoped to COBOL via a
+            # ``VARIANT_ONLY`` case directory so no other language renders
+            # it.
+            VariantCase(
+                variant_name="Cobol_json_type_cjson_string_bytes",
+                variant=Variant(
+                    name="Cobol_json_type_cjson_string_bytes",
+                    spec=make_spec(
+                        lang_cls=Cobol,
+                        json_type=Cobol.json_types.CJSON,
+                    ),
+                    lang_cls=Cobol,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                case_dir_name="cobol_cjson_string_bytes",
+                variable_form=wrap_variable_form(),
             ),
             VariantCase(
                 variant_name="FSharp_json_type_json_node_combined",

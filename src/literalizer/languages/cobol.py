@@ -35,6 +35,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
+from literalizer._formatters.format_json_value import JsonValue, to_jsonable
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -422,6 +423,308 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"MOVE {scalar} TO {cobol_name}."
 
 
+# Marker line separating the WORKING-STORAGE declarations from the
+# PROCEDURE DIVISION statements inside one ``json_type=CJSON`` payload
+# string.  COBOL forces the two apart (declarations and statements live
+# in different divisions), but ``format_variable_declaration`` returns a
+# single string, so the two halves travel joined by this sentinel and
+# :meth:`Cobol.wrap_in_file` / :meth:`Cobol.wrap_combined_in_file` split
+# them back out.  It is a COBOL comment line, so a payload that somehow
+# reached a wrapper without being split would still be syntactically
+# inert.
+_CJSON_PROC_SENTINEL = "*> CJSON-PROCEDURE-DIVISION"
+
+_CJSON_CALL_ARG_MSG = (
+    "COBOL json_type=CJSON builds each value as a multi-statement cJSON "
+    "node tree, and COBOL has no inline call-expression form to pass one "
+    "as a CALL argument"
+)
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CobolStringLiteral:
+    """A COBOL alphanumeric literal expression and its byte length.
+
+    :attr:`expr` is the text that follows ``VALUE`` (a quoted run, or a
+    ``&``-joined mix of quoted runs and ``X"NN"`` hex bytes); :attr:`size`
+    is the byte count a ``PIC X(size)`` clause must reserve to hold it.
+    """
+
+    expr: str
+    size: int
+
+
+# A byte in this inclusive range is a printable ASCII character that
+# can sit inside a quoted COBOL literal run; anything else (control
+# bytes, the trailing bytes of a multi-byte UTF-8 character) is spliced
+# in as an ``X"NN"`` hex literal instead.
+_ASCII_PRINTABLE_MIN = 0x20
+_ASCII_PRINTABLE_MAX = 0x7E
+# A double quote inside a quoted run is escaped by doubling it.
+_ASCII_DOUBLE_QUOTE = 0x22
+
+
+@beartype
+def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
+    """Return a null-terminated COBOL literal expression for *text*.
+
+    cJSON's ``cJSON_CreateString`` / ``cJSON_AddItemToObject`` take a C
+    ``const char *``, so every string and object key must be a
+    null-terminated buffer.  COBOL alphanumeric literals have no escape
+    sequences and cannot span lines, so non-printable bytes (and the
+    trailing ``X"00"`` terminator) are spliced in as ``X"NN"`` hex
+    literals joined with ``&``; printable ASCII stays a readable quoted
+    run, with an embedded double quote doubled per COBOL's own escaping.
+    The string is encoded as UTF-8 so multi-byte characters survive.
+    """
+    data = text.encode(encoding="utf-8")
+    tokens: list[str] = []
+    run = ""
+    for byte in data:
+        if _ASCII_PRINTABLE_MIN <= byte <= _ASCII_PRINTABLE_MAX:
+            run += '""' if byte == _ASCII_DOUBLE_QUOTE else chr(byte)
+            continue
+        if run:
+            tokens.append(f'"{run}"')
+            run = ""
+        tokens.append(f'X"{byte:02X}"')
+    if run:
+        tokens.append(f'"{run}"')
+    tokens.append('X"00"')
+    return _CobolStringLiteral(expr=" & ".join(tokens), size=len(data) + 1)
+
+
+# A child is composed into its parent with ``cJSON_AddItemTo*``, which
+# returns a ``cJSON_bool`` (1 on success).  A CALL return that is not
+# captured lands in GnuCOBOL's ``RETURN-CODE`` special register, which
+# ``STOP RUN`` then propagates as the process exit status, so a
+# container build would exit non-zero; capturing the status into this
+# throwaway item keeps ``RETURN-CODE`` at zero.
+_CJSON_STATUS_ITEM = "CJSON-STATUS"
+_CJSON_STATUS_DECL = f"01 {_CJSON_STATUS_ITEM} PIC S9(9) COMP-5."
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CobolCJsonBuild:
+    """The two-division build of one cJSON node tree.
+
+    :attr:`ws_lines` are the WORKING-STORAGE entries (one ``USAGE
+    POINTER`` per node plus the literal items its constructor reads),
+    :attr:`proc_lines` the PROCEDURE DIVISION ``CALL`` statements that
+    build and compose the nodes, and :attr:`root` the data name of the
+    outermost node.  :attr:`uses_status` records whether any
+    ``cJSON_AddItemTo*`` CALL captured its result into
+    :data:`_CJSON_STATUS_ITEM`, so the binding declares that item only
+    when it is referenced.
+    """
+
+    ws_lines: tuple[str, ...]
+    proc_lines: tuple[str, ...]
+    root: str
+    uses_status: bool
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CobolScalarNode:
+    """A leaf cJSON node's optional value item and its create CALL.
+
+    :attr:`value_line` is the WORKING-STORAGE item the constructor reads
+    (``None`` for ``cJSON_CreateNull``, which takes no argument);
+    :attr:`create_call` is the ``cJSON_Create*`` statement that binds the
+    node pointer.
+    """
+
+    value_line: str | None
+    create_call: str
+
+
+@beartype
+def _cobol_cjson_scalar_node(
+    name: str,
+    node: JsonValue,
+    /,
+    *,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+) -> _CobolScalarNode:
+    """Return the value item and create CALL for a leaf *node*.
+
+    cJSON has no integer constructor, so a number (``int`` or ``float``)
+    is stored in a ``COMP-2`` (C ``double``) item and passed ``BY
+    VALUE``; *format_integer* supplies the literal (and raises for a
+    value beyond COBOL's widest integer, matching the default record
+    mode).  A boolean becomes a 0/1 ``COMP-5`` int and a string a
+    null-terminated ``PIC X`` buffer.
+    """
+    create = (
+        'CALL "cJSON_Create{verb}" USING {passing} {name}-V RETURNING {name}.'
+    )
+    match node:
+        case bool():
+            return _CobolScalarNode(
+                value_line=(
+                    f"01 {name}-V PIC S9(9) COMP-5 VALUE {1 if node else 0}."
+                ),
+                create_call=create.format(
+                    verb="Bool", passing="BY VALUE", name=name
+                ),
+            )
+        case int():
+            return _CobolScalarNode(
+                value_line=(
+                    f"01 {name}-V USAGE COMP-2 VALUE {format_integer(node)}."
+                ),
+                create_call=create.format(
+                    verb="Number", passing="BY VALUE", name=name
+                ),
+            )
+        case float():
+            return _CobolScalarNode(
+                value_line=(
+                    f"01 {name}-V USAGE COMP-2 VALUE {format_float(node)}."
+                ),
+                create_call=create.format(
+                    verb="Number", passing="BY VALUE", name=name
+                ),
+            )
+        case str():
+            literal = _cobol_null_terminated_literal(node)
+            return _CobolScalarNode(
+                value_line=(
+                    f"01 {name}-V PIC X({literal.size}) VALUE {literal.expr}."
+                ),
+                create_call=create.format(
+                    verb="String", passing="BY REFERENCE", name=name
+                ),
+            )
+        case _:
+            return _CobolScalarNode(
+                value_line=None,
+                create_call=f'CALL "cJSON_CreateNull" RETURNING {name}.',
+            )
+
+
+@beartype
+def _cobol_cjson_build(
+    jsonable: JsonValue,
+    /,
+    *,
+    prefix: str,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+) -> _CobolCJsonBuild:
+    """Walk a JSON-able tree and return its COBOL cJSON build.
+
+    Each node is bound to its own ``{prefix}{n}`` ``USAGE POINTER`` data
+    item, created with the matching ``cJSON_Create*`` CALL, and composed
+    into its parent with ``cJSON_AddItemToObject`` /
+    ``cJSON_AddItemToArray`` in a following statement.  Nodes are numbered
+    in pre-order, so the document root is always ``{prefix}0``.  A
+    distinct *prefix* keeps the declaration and assignment builds of the
+    combined form from defining the same data name twice.
+
+    cJSON has no integer constructor, so a number is stored in a
+    ``COMP-2`` (C ``double``) item and passed ``BY VALUE``; *format_integer*
+    supplies the literal (and raises for a value beyond COBOL's widest
+    integer, matching the default record mode).
+    """
+    ws_lines: list[str] = []
+    proc_lines: list[str] = []
+    counter = 0
+    uses_status = False
+
+    @beartype
+    def _emit(node: JsonValue, /) -> str:
+        """Emit the build entries for *node*; return its data name."""
+        nonlocal counter, uses_status
+        name = f"{prefix}{counter}"
+        counter += 1
+        ws_lines.append(f"01 {name} USAGE POINTER.")
+        match node:
+            case dict():
+                proc_lines.append(
+                    f'CALL "cJSON_CreateObject" RETURNING {name}.'
+                )
+                for key, child_value in node.items():
+                    child = _emit(child_value)
+                    uses_status = True
+                    key_literal = _cobol_null_terminated_literal(
+                        str(object=key)
+                    )
+                    ws_lines.append(
+                        f"01 {child}-K PIC X({key_literal.size}) "
+                        f"VALUE {key_literal.expr}."
+                    )
+                    proc_lines.append(
+                        'CALL "cJSON_AddItemToObject" USING BY VALUE '
+                        f"{name} BY REFERENCE {child}-K BY VALUE {child} "
+                        f"RETURNING {_CJSON_STATUS_ITEM}."
+                    )
+            case list():
+                proc_lines.append(
+                    f'CALL "cJSON_CreateArray" RETURNING {name}.'
+                )
+                for item in node:
+                    child = _emit(item)
+                    uses_status = True
+                    proc_lines.append(
+                        'CALL "cJSON_AddItemToArray" USING BY VALUE '
+                        f"{name} BY VALUE {child} "
+                        f"RETURNING {_CJSON_STATUS_ITEM}."
+                    )
+            case _:
+                scalar = _cobol_cjson_scalar_node(
+                    name,
+                    node,
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                if scalar.value_line is not None:
+                    ws_lines.append(scalar.value_line)
+                proc_lines.append(scalar.create_call)
+        return name
+
+    root = _emit(jsonable)
+    return _CobolCJsonBuild(
+        ws_lines=tuple(ws_lines),
+        proc_lines=tuple(proc_lines),
+        root=root,
+        uses_status=uses_status,
+    )
+
+
+@beartype
+def _render_cjson_payload(
+    *,
+    ws_lines: tuple[str, ...],
+    proc_lines: tuple[str, ...],
+) -> str:
+    """Join a cJSON build's two sections with the division sentinel."""
+    return "\n".join((*ws_lines, _CJSON_PROC_SENTINEL, *proc_lines))
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CobolCJsonSections:
+    """The WORKING-STORAGE and PROCEDURE halves of a split payload."""
+
+    working_storage: str
+    procedure: str
+
+
+@beartype
+def _split_cjson_payload(payload: str, /) -> _CobolCJsonSections:
+    """Split a :func:`_render_cjson_payload` string at its sentinel."""
+    working_storage, _, procedure = payload.partition(_CJSON_PROC_SENTINEL)
+    return _CobolCJsonSections(
+        working_storage=working_storage.strip("\n"),
+        procedure=procedure.strip("\n"),
+    )
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cobol(metaclass=LanguageCls):
@@ -671,7 +974,17 @@ class Cobol(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class JsonTypes(enum.Enum):
-        """Empty: this language has no JSON value-type variants."""
+        """JSON value type options for COBOL."""
+
+        CJSON = "cJSON"
+        """The ``cJSON`` library's ``cJSON *`` dynamic JSON value, built
+        through GnuCOBOL's C ``CALL`` interface.
+
+        The document is rendered as a tree of ``cJSON_Create*`` CALLs
+        composed with ``cJSON_AddItemTo*`` rather than a WORKING-STORAGE
+        record, so arbitrary string keys, JSON booleans, real numbers,
+        heterogeneous arrays, and the empty string are all faithful.
+        """
 
     json_types = JsonTypes
 
@@ -723,7 +1036,25 @@ class Cobol(metaclass=LanguageCls):
         prepended before it.  In call mode (*variable_name* is empty),
         *content* holds PROCEDURE DIVISION statements and *body_preamble*
         holds nested-program stubs that follow ``STOP RUN.``.
+
+        Under ``json_type=CJSON`` *content* is a two-division payload (see
+        :func:`_render_cjson_payload`): its WORKING-STORAGE half supplies
+        the node pointers and literal items and its PROCEDURE half the
+        ``CALL`` statements that build the tree.
         """
+        if _CJSON_PROC_SENTINEL in content:
+            sections = _split_cjson_payload(content)
+            indented = textwrap.indent(
+                text=sections.procedure,
+                prefix=self.indent,
+            )
+            return (
+                Cobol._PROGRAM_PREFIX
+                + f"{sections.working_storage}\n"
+                + "PROCEDURE DIVISION.\n"
+                + f"{indented}\n"
+                + f"{self.indent}STOP RUN."
+            )
         if variable_name:
             content = prepend_body_preamble(
                 content=content,
@@ -750,8 +1081,37 @@ class Cobol(metaclass=LanguageCls):
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap COBOL declaration and assignment in a complete program."""
+        """Wrap COBOL declaration and assignment in a complete program.
+
+        Under ``json_type=CJSON`` both *declaration* and *assignment* are
+        two-division payloads: their WORKING-STORAGE halves merge into one
+        DATA DIVISION (the declaration already declares the binding
+        pointer; the assignment build only adds its ``M`` nodes) and their
+        PROCEDURE halves run one after the other.  The sentinel in
+        *declaration* is the reliable discriminator, so this stays a
+        :func:`staticmethod`.
+        """
         del variable_name
+        if _CJSON_PROC_SENTINEL in declaration:
+            decl_sections = _split_cjson_payload(declaration)
+            assign_sections = _split_cjson_payload(assignment)
+            working_storage = (
+                f"{decl_sections.working_storage}\n"
+                f"{assign_sections.working_storage}"
+            )
+            procedure = textwrap.indent(
+                text=(
+                    f"{decl_sections.procedure}\n{assign_sections.procedure}"
+                ),
+                prefix="    ",
+            )
+            return (
+                Cobol._PROGRAM_PREFIX
+                + f"{working_storage}\n"
+                + "PROCEDURE DIVISION.\n"
+                + f"{procedure}\n"
+                + "    STOP RUN."
+            )
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -796,6 +1156,7 @@ class Cobol(metaclass=LanguageCls):
     # ``lint-cobol`` job of ``.github/workflows/lint.yml``; the pinned
     # GnuCOBOL must support COBOL ``>=`` this ``V2002`` default.
     language_version: VersionFormats = VersionFormats.V2002
+    json_type: JsonTypes | None = None
     indent: str = "    "
 
     null_literal: ClassVar[str] = "SPACES"
@@ -838,7 +1199,42 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
-        """Format an assignment to an existing variable."""
+        """Format an assignment to an existing variable.
+
+        Under ``json_type=CJSON`` the value is rebuilt as a fresh
+        ``cJSON`` node tree (a distinct ``M`` node prefix keeps the combined
+        declaration+assignment form from defining a data name twice) and
+        the existing pointer is reset to its root.
+        """
+        if self._json_type_active:
+            format_integer = self.format_integer
+            format_float = self.format_float
+
+            @beartype
+            def _format_cjson_assign(
+                name: str,
+                _value: str,
+                data: Value,
+            ) -> str:
+                """Build a cJSON node tree and reset the binding
+                pointer.
+                """
+                build = _cobol_cjson_build(
+                    to_jsonable(data=data),
+                    prefix="M",
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                cobol_name = _to_cobol_name(python_name=name)
+                return _render_cjson_payload(
+                    ws_lines=build.ws_lines,
+                    proc_lines=(
+                        *build.proc_lines,
+                        f"SET {cobol_name} TO {build.root}.",
+                    ),
+                )
+
+            return _format_cjson_assign
         return _format_variable_assignment
 
     @cached_property
@@ -904,7 +1300,29 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
-        """Prepend ``BY CONTENT`` to each COBOL CALL argument."""
+        """Prepend ``BY CONTENT`` to each COBOL CALL argument.
+
+        Under ``json_type=CJSON`` a value is a multi-statement ``cJSON``
+        node tree, and COBOL has no inline call-expression form to pass one
+        as
+        a CALL argument, so call binding is rejected (the case is skipped,
+        no golden emitted).
+        """
+        if self._json_type_active:
+
+            @beartype
+            def _reject_cjson_call_arg(
+                _value: Value,
+                _formatted: str,
+                /,
+            ) -> str:
+                """Reject a cJSON call argument."""
+                raise CallArgNotSupportedError(
+                    language_name="COBOL",
+                    reason=_CJSON_CALL_ARG_MSG,
+                )
+
+            return _reject_cjson_call_arg
         return _cobol_format_call_arg
 
     @cached_property
@@ -1046,10 +1464,59 @@ class Cobol(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether COBOL renders via cJSON's ``cJSON *`` type."""
+        return self.json_type is not None
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
+        """Callable that formats a new variable declaration.
+
+        Under ``json_type=CJSON`` the rendered record value is discarded:
+        the data is built as a ``cJSON`` node tree (WORKING-STORAGE
+        pointer items plus PROCEDURE DIVISION ``CALL`` statements, joined
+        by the
+        division sentinel) and the binding pointer is set to its root.
+        """
+        if self._json_type_active:
+            format_integer = self.format_integer
+            format_float = self.format_float
+
+            @beartype
+            def _format_cjson_decl(
+                name: str,
+                _value: str,
+                data: Value,
+                _modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Build a cJSON node tree and declare its root
+                pointer.
+                """
+                build = _cobol_cjson_build(
+                    to_jsonable(data=data),
+                    prefix="N",
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                cobol_name = _to_cobol_name(python_name=name)
+                status_decl = (
+                    (_CJSON_STATUS_DECL,) if build.uses_status else ()
+                )
+                return _render_cjson_payload(
+                    ws_lines=(
+                        *build.ws_lines,
+                        f"01 {cobol_name} USAGE POINTER.",
+                        *status_decl,
+                    ),
+                    proc_lines=(
+                        *build.proc_lines,
+                        f"SET {cobol_name} TO {build.root}.",
+                    ),
+                )
+
+            return _format_cjson_decl
         return self.declaration_style.value.formatter
 
     @cached_property
