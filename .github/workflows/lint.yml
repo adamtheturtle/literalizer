@@ -383,6 +383,14 @@ jobs:
         run: pwsh -NoProfile -NonInteractive -File .github/scripts/run-powershell.ps1
           < /tmp/files-ps1
 
+      # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with the PowerShell toolchain; `uv
+      # run` (project mode, not `--no-project`) is required so `import
+      # literalizer` resolves. See
+      # `.github/scripts/run_powershell_roundtrip.py`.
+      - name: PowerShell roundtrip
+        run: uv run python .github/scripts/run_powershell_roundtrip.py
+
       # Every fixture defines its own `fval_m` module, and the syntax
       # check leaves an `fval_m.mod` in the working directory (gfortran
       # emits .mod files even under `-fsyntax-only`). gfortran would

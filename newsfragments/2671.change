@@ -1,0 +1,1 @@
+Add a PowerShell JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``$myData`` value with the built-in ``ConvertTo-Json -Depth 100 -Compress``; the 26-digit ``biginteger`` field is excluded because PowerShell parses it as a ``[double]`` and re-emits it with a fractional part.
