@@ -66,6 +66,12 @@ _EXCLUDED_KEYS = ("biginteger", "float_large_exponent")
 # document root).
 _DATA_NAME = _VAR_NAME.upper().replace("_", "-")
 
+# The PROCEDURE DIVISION indent the backend emits.  Derived rather than
+# hard-coded as ``"    "`` so a future ``Cobol.indent`` change relocates
+# the ``STOP RUN`` anchor and the print statements together instead of
+# silently de-syncing.
+_INDENT = Cobol().indent
+
 # Extra WORKING-STORAGE items the print step needs: the pointer
 # ``cJSON_PrintUnformatted`` returns, its ``strlen`` (so the exact JSON
 # bytes are displayed without the trailing spaces of a fixed-width PIC),
@@ -77,12 +83,32 @@ _PRINT_STORAGE = (
 )
 
 _PRINT_STATEMENTS = (
-    '    CALL "cJSON_PrintUnformatted" USING BY VALUE '
+    f'{_INDENT}CALL "cJSON_PrintUnformatted" USING BY VALUE '
     f"{_DATA_NAME} RETURNING JSON-PTR.\n"
-    "    SET ADDRESS OF JSON-OUT TO JSON-PTR.\n"
-    '    CALL "strlen" USING BY VALUE JSON-PTR RETURNING JSON-LEN.\n'
-    "    DISPLAY JSON-OUT(1:JSON-LEN).\n"
+    f"{_INDENT}SET ADDRESS OF JSON-OUT TO JSON-PTR.\n"
+    f'{_INDENT}CALL "strlen" USING BY VALUE JSON-PTR RETURNING JSON-LEN.\n'
+    f"{_INDENT}DISPLAY JSON-OUT(1:JSON-LEN).\n"
 )
+
+
+def _splice_once(*, program: str, anchor: str, replacement: str) -> str:
+    """Return *program* with its sole occurrence of *anchor* replaced by
+    *replacement*.
+
+    Raise :class:`RuntimeError` naming the missing anchor if it does not
+    occur exactly once, so a future change to the generated program's
+    textual shape fails loudly here rather than as a confusing
+    downstream compile / empty-output error.
+    """
+    count = program.count(anchor)
+    if count != 1:
+        msg = (
+            f"Expected exactly one occurrence of anchor {anchor!r} in the "
+            f"generated COBOL program to splice the print step into, but "
+            f"found {count}; the backend's output shape has drifted."
+        )
+        raise RuntimeError(msg)
+    return program.replace(anchor, replacement, 1)
 
 
 def _build_program(*, json_text: str) -> str:
@@ -102,13 +128,16 @@ def _build_program(*, json_text: str) -> str:
         variable_form=literalizer.NewVariable(name=_VAR_NAME),
         wrap_in_file=True,
     )
-    program = result.code.replace(
-        "WORKING-STORAGE SECTION.\n",
-        f"WORKING-STORAGE SECTION.\n{_PRINT_STORAGE}",
-        1,
-    ).replace(
-        "    STOP RUN.",
-        f"{_PRINT_STATEMENTS}    STOP RUN.",
+    stop_run_anchor = f"{_INDENT}STOP RUN."
+    with_storage = _splice_once(
+        program=result.code,
+        anchor="WORKING-STORAGE SECTION.\n",
+        replacement=f"WORKING-STORAGE SECTION.\n{_PRINT_STORAGE}",
+    )
+    program = _splice_once(
+        program=with_storage,
+        anchor=stop_run_anchor,
+        replacement=f"{_PRINT_STATEMENTS}{stop_run_anchor}",
     )
     return f"{program}\n"
 
