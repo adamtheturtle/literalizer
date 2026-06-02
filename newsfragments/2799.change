@@ -1,0 +1,1 @@
+Remove the incomplete custom-language sketch from the "Custom language implementations" documentation; it imported private, underscore-prefixed modules.  The section now points readers to the built-in language modules as the worked example.
