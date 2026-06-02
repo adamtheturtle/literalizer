@@ -1,0 +1,1 @@
+Add TOML and JSON5 input examples to the documentation, showing that TOML comments are preserved and that JSON5's relaxed syntax (comments, single-quoted strings, trailing commas, and hexadecimal numbers) is accepted.
