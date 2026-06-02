@@ -1073,6 +1073,25 @@ jobs:
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam && test -s /tmp/files-occam
           xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_occam_syntax.py < /tmp/files-occam
 
+      # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
+      # unlike every other language.  A round-trip must compile and run the
+      # literalized program so it re-emits JSON on stdout, and for Occam there
+      # is no toolchain that can do this:
+      #
+      # 1. The backend models a JSON value as a "MOBILE DATA TYPE LIT IS CASE"
+      #    tagged union with recursive "MOBILE []MOBILE LIT" children.  That
+      #    tagged-union-over-DATA-TYPE construct is not part of the occam-pi
+      #    language, so no compiler accepts it.
+      # 2. KRoC (the only maintained occam-pi compiler, last updated 2020)
+      #    cannot parse the construct, rejects the underscores in identifiers
+      #    such as ``my_data``, and uses ``*`` rather than ``\`` as its string
+      #    escape character -- the same blockers documented for "Lint Occam"
+      #    above, which is why that step is a Python structural checker rather
+      #    than a real compile.
+      #
+      # Because nothing can execute the literalized output, Occam is the one
+      # issue-1867 language with no ``run_occam_roundtrip.py`` helper.
+
       - name: Lint Toml
         run: |-
           find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
