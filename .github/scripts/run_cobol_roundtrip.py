@@ -32,9 +32,9 @@ literalization (see ``_EXCLUDED_KEYS``):
 * Nested objects re-emit fine structurally but their keys are likewise
   mangled, and there is no per-element ``NAME OF`` target for items
   nested below the top level, so they are excluded too.
-* ``string_empty`` is stored as ``PIC X(1)`` (a single space) and
-  ``string_unicode`` as a byte-counted ``PIC X(11)`` that truncates the
-  14-byte UTF-8 value, so neither round-trips losslessly.
+* ``string_empty`` is stored as ``PIC X(1)`` (a single space), so it
+  cannot represent the empty string: a COBOL ``PIC X`` item has a
+  one-byte minimum and that byte holds a space, not nothing.
 * ``biginteger`` overflows COBOL's widest integer literal, so the
   literalizer raises
   :class:`literalizer.exceptions.UnrepresentableIntegerError` before any
@@ -42,8 +42,10 @@ literalization (see ``_EXCLUDED_KEYS``):
   scripts).
 
 Every remaining top-level scalar -- signed integers, the 32-bit-
-overflowing ``long``, and plain / escaped ASCII strings -- round-trips
-losslessly through ``JSON GENERATE``.
+overflowing ``long``, and plain / escaped / unicode strings -- round-
+trips losslessly through ``JSON GENERATE`` (the ``PIC X`` items are
+sized by UTF-8 byte length, so multibyte values are no longer
+truncated).
 """
 
 import json
@@ -64,7 +66,6 @@ _EXCLUDED_KEYS = (
     "bool_true",
     "bool_false",
     "string_empty",
-    "string_unicode",
     "empty_array",
     "int_array",
     "double_array",
