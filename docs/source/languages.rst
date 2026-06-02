@@ -118,13 +118,22 @@ constructor argument controls the outcome.  Every language defaults to
 ``RECORD``.  See :ref:`heterogeneous-strategies` for the strategies,
 worked examples, and the per-language support matrix.
 
+.. _json-value-types:
+
 JSON value types
 ----------------
 
 Some languages also have a single runtime JSON value type that is a better
 fit than native narrow collection types.  These languages support this
 through the ``json_type`` constructor argument, accessed as
-``<Language>.json_types.<VALUE>``.  Rust is the worked example:
+``<Language>.json_types.<VALUE>``.
+
+.. seealso::
+
+   :ref:`heterogeneous-strategies` for the statically typed alternative,
+   and its "Which should I use?" note comparing the two approaches.
+
+Rust is the worked example:
 
 .. code-block:: python
 

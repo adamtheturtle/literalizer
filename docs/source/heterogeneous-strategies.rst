@@ -210,6 +210,37 @@ raises :class:`~literalizer.exceptions.TupleArityNotRepresentableError`
 otherwise); :class:`~literalizer.Rust` and :class:`~literalizer.Scala`
 impose no length limit.
 
+Which should I use? Heterogeneous strategies vs. JSON value types
+-----------------------------------------------------------------
+
+A heterogeneous strategy is not the only way to render mixed-type data.
+Several languages also expose a ``json_type`` constructor argument that
+renders the whole value through a single runtime JSON value type (for
+example ``Rust.json_types.SERDE_JSON_VALUE`` yielding
+``serde_json::Value``).  Both features accept input such as
+``[1, "two", 3.0]`` that the language's narrow collection type cannot
+hold, so the same data often qualifies for either one.  They differ in
+the type of the rendered value:
+
+* A heterogeneous strategy keeps the result **statically typed**.  The
+  generated enum, struct, or tuple preserves each value's original type,
+  and the rendered collection stays a normal typed collection of that
+  wrapper.  Reach for this when the surrounding code is statically typed
+  and you want the compiler to keep tracking the element types, or when
+  the data is conceptually a record (use ``RECORD``).
+* ``json_type`` renders the value as **one runtime JSON value type**
+  (``serde_json::Value``, ``JsonNode``, ``JSON::Any``, and so on).  The
+  static type is uniform and the element types are recovered at runtime.
+  Reach for this when the value is genuinely arbitrary JSON, when you
+  already pass it to a JSON library, or when synthesizing a typed wrapper
+  per shape would be more structure than the data deserves.
+
+The two are mutually exclusive for a given render, and some languages
+reject specific combinations (for instance Java, Kotlin, Zig, and Odin
+reject ``RECORD`` while in their ``json_type`` mode).  See
+:ref:`json-value-types` for every ``json_type`` value, its emitted form,
+and the per-language constraints.
+
 Per-language support matrix
 ---------------------------
 
@@ -277,6 +308,9 @@ Rust, Go, Java, Kotlin, and Scala additionally accept
 declaration name; see each language's reference entry.
 
 .. seealso::
+
+   :ref:`json-value-types` for the runtime JSON value type alternative
+   to a statically typed strategy.
 
    :ref:`languages` for every language class and its other format
    options.
