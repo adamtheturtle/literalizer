@@ -5,7 +5,7 @@ import dataclasses
 import datetime
 import enum
 from collections.abc import Callable, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar, TypeGuard
 
@@ -38,6 +38,10 @@ from literalizer._formatters.format_integers import (
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
+)
+from literalizer._formatters.format_json_value import (
+    JsonValue,
+    to_jsonable,
 )
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
@@ -92,7 +96,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 
 @beartype
@@ -511,35 +518,58 @@ _SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
 
 
 @beartype
+def _c_stub_param(value_type: str, ident: str, /) -> str:
+    """Return a stub parameter declaration, abutting a pointer ``*``.
+
+    A value type such as ``CVal`` takes a separating space before its
+    identifier; a pointer type already ends in ``*`` and abuts the
+    identifier directly.
+    """
+    if value_type.endswith("*"):
+        return f"{value_type}{ident}"
+    return f"{value_type} {ident}"
+
+
+@beartype
 def _c_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     _args: Sequence[Value],
     /,
+    *,
+    value_type: str,
+    value_zero: str,
 ) -> tuple[str, ...]:
     """Return C stub declarations for a call name.
+
+    *value_type* is the universal value type a call argument or result
+    carries: ``CVal`` (the tagged-union default) or ``cJSON *`` (under
+    ``json_type=CJSON``).  *value_zero* is the zero literal a
+    value-returning stub returns (the zero ``CVal`` or ``NULL``).
 
     C has no member functions and no type-generic function templates,
     so dotted targets are modeled as a nested chain of ``struct`` types
     whose leaf field is a function pointer.  Each prototype declares
-    one ``CVal`` parameter per call argument so call sites pass values
-    through the union-typed wrapper defined in the static preamble; this
-    avoids the K&R unspecified-parameter syntax (and the
-    ``-Wdeprecated-non-prototype`` clang warning it triggers) while
-    still letting the same stub accept any mix of argument types.
+    one *value_type* parameter per call argument so call sites pass
+    values through the universal value type; this avoids the K&R
+    unspecified-parameter syntax (and the ``-Wdeprecated-non-prototype``
+    clang warning it triggers) while still letting the same stub accept
+    any mix of argument types.
 
     Single-name calls emit a ``static`` definition so the fixture links
     under the lint workflow's run step — a bare prototype without a body
     would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
-    return_keyword = "CVal" if is_value else "void"
-    proto = ", ".join(["CVal"] * len(params)) if params else "void"
-    stub_params = ", ".join(f"CVal _a{i}" for i in range(len(params)))
+    return_keyword = value_type if is_value else "void"
+    proto = ", ".join([value_type] * len(params)) if params else "void"
+    stub_params = ", ".join(
+        _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
+    )
     stub_signature = stub_params or "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
-    return_stmt = " return (CVal){0};" if is_value else ""
+    return_stmt = f" return {value_zero};" if is_value else ""
     has_body = discards or is_value
     stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
     # Long uniform-typed parameter lists trip clang-tidy's
@@ -642,6 +672,169 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
     assigned directly with no compound-literal wrapping.
     """
     return f"{name} = {value};"
+
+
+# Static preamble emitted under ``json_type=CJSON``: the cJSON header
+# replaces the default ``CVal`` / ``CKV`` type declarations, since every
+# value is built from cJSON's own ``cJSON *`` node type.
+_CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
+
+_CJSON_RECORD_REJECTED_MSG = (
+    "C json_type renders data as a cJSON_Create*(...) node tree and is "
+    "incompatible with heterogeneous_strategy=RECORD, which generates "
+    "struct declarations. Use heterogeneous_strategy=ERROR."
+)
+
+_CJSON_NON_SCALAR_ARG_MSG = (
+    "C json_type can only render a scalar (or temporal / bytes) call "
+    "argument inline as a single cJSON_Create*(...) expression; a "
+    "container call argument is not supported in this slice"
+)
+
+
+@beartype
+def _check_c_json_value_keys(*, data: Value) -> None:
+    """Reject non-string object keys under ``json_type=CJSON``.
+
+    A dict renders as a ``cJSON_CreateObject`` whose members are added
+    with ``cJSON_AddItemToObject(obj, "key", ...)``, so every key must be
+    a JSON object string.  ``OrderedMap`` is a :class:`dict` subclass, so
+    the ``dict`` arm covers it too.
+    """
+    match data:
+        case dict():
+            for key, value in data.items():
+                if not isinstance(key, str):
+                    msg = (
+                        "C json_type can only represent dict keys as JSON "
+                        f"object strings, not {type(key).__name__}"
+                    )
+                    raise UnrepresentableInputError(msg)
+                _check_c_json_value_keys(data=value)
+        case list() | set():
+            for item in data:
+                _check_c_json_value_keys(data=item)
+        case _:
+            return
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CJsonBuild:
+    """The statements that build a cJSON node tree, plus its root name.
+
+    Pre-order allocation always names the outermost node ``{prefix}0``,
+    so the binding line can reference :attr:`root` without the builder
+    and the binding formatter sharing state.
+    """
+
+    lines: tuple[str, ...]
+    root: str
+
+
+@beartype
+def _c_json_object_key(key: Scalar, /) -> str:
+    """Return a JSON object *key* as a C string literal.
+
+    A ``cJSON`` object is keyed by JSON strings.
+    :meth:`C.validate_spec_for_data` (and the language's
+    ``supports_non_string_dict_keys = False``) reject a non-string key
+    before any value is rendered, so *key* is a string here; ``str``
+    narrows its static :data:`~literalizer._types.Scalar` type to
+    :class:`str` without a redundant runtime branch.
+    """
+    return format_string_backslash(str(object=key))
+
+
+@beartype
+def _c_cjson_scalar_create(
+    value: JsonValue,
+    /,
+    *,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+) -> str:
+    """Return the ``cJSON_Create*`` expression for one JSON scalar.
+
+    *value* is a JSON-able value (see
+    :func:`~literalizer._formatters.format_json_value.to_jsonable`):
+    temporal and bytes values have already been folded into strings.
+    cJSON has no integer constructor, so an integer is widened to
+    ``double`` at the call site (``cJSON_CreateNumber((double)42)``);
+    :func:`format_integer` supplies the ``ULL`` suffix that keeps a
+    value above ``LLONG_MAX`` a well-formed constant before the cast.
+
+    A container *value* has no single-expression cJSON form (its nodes
+    must be built across statements), so one reaching here -- only via a
+    container call argument -- is rejected.
+    """
+    match value:
+        case bool():
+            return f"cJSON_CreateBool({1 if value else 0})"
+        case int():
+            return f"cJSON_CreateNumber((double){format_integer(value)})"
+        case float():
+            return f"cJSON_CreateNumber({format_float(value)})"
+        case str():
+            return f"cJSON_CreateString({format_string_backslash(value)})"
+        case None:
+            return "cJSON_CreateNull()"
+        case _:
+            raise UnrepresentableInputError(_CJSON_NON_SCALAR_ARG_MSG)
+
+
+@beartype
+def _c_cjson_build(
+    jsonable: JsonValue,
+    /,
+    *,
+    prefix: str,
+    format_integer: Callable[[int], str],
+    format_float: Callable[[float], str],
+) -> _CJsonBuild:
+    """Walk a JSON-able tree and return its portable cJSON build.
+
+    cJSON's ``cJSON_AddItemTo*`` helpers return ``cJSON_bool``, not the
+    item, so a container cannot be composed as a single nested
+    expression.  Each node is therefore bound to its own
+    ``cJSON *{prefix}{n}``
+    variable and added to its parent in a following statement -- the
+    portable standard-C form every cJSON tutorial shows.  Nodes are
+    numbered in pre-order, so the document root is always ``{prefix}0``.
+    """
+    lines: list[str] = []
+    counter = 0
+
+    @beartype
+    def _emit(node: JsonValue, /) -> str:
+        """Emit the build statements for *node*; return its variable."""
+        nonlocal counter
+        name = f"{prefix}{counter}"
+        counter += 1
+        match node:
+            case dict():
+                lines.append(f"cJSON *{name} = cJSON_CreateObject();")
+                for key, child_value in node.items():
+                    child = _emit(child_value)
+                    lines.append(
+                        f"cJSON_AddItemToObject({name}, "
+                        f"{_c_json_object_key(key)}, {child});"
+                    )
+            case list():
+                lines.append(f"cJSON *{name} = cJSON_CreateArray();")
+                for item in node:
+                    child = _emit(item)
+                    lines.append(f"cJSON_AddItemToArray({name}, {child});")
+            case _:
+                scalar = _c_cjson_scalar_create(
+                    node,
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                lines.append(f"cJSON *{name} = {scalar};")
+        return name
+
+    root = _emit(jsonable)
+    return _CJsonBuild(lines=tuple(lines), root=root)
 
 
 @beartype
@@ -915,7 +1108,12 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategies = HeterogeneousStrategies
 
     class JsonTypes(enum.Enum):
-        """Empty: this language has no JSON value-type variants."""
+        """JSON value type options for C."""
+
+        CJSON = "cJSON"
+        """The ``cJSON`` library's ``cJSON *`` dynamic JSON value type
+        from ``<cjson/cJSON.h>``.
+        """
 
     json_types = JsonTypes
 
@@ -942,8 +1140,25 @@ class C(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
+    def __post_init__(self) -> None:
+        """Reject ``json_type`` combinations the generator cannot emit.
+
+        Under ``json_type=CJSON`` the data is rendered as a
+        ``cJSON_Create*(...)`` node tree, which is incompatible with the
+        ``RECORD`` heterogeneous strategy (it generates ``struct``
+        declarations that the cJSON renderer would silently drop).
+        """
+        if self._json_type_active and self.heterogeneous_strategy.name == (
+            "RECORD"
+        ):
+            raise IncompatibleFormatsError(_CJSON_RECORD_REJECTED_MSG)
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid C for *data*.
+
+        Under ``json_type=CJSON`` a dict becomes a
+        ``cJSON_CreateObject`` whose members are keyed by JSON object
+        strings, so non-string dict keys are rejected.
 
         Under the ``RECORD`` strategy a record-shaped dict renders as a
         ``(struct RecordN){...}`` literal (and a list whose elements are
@@ -958,12 +1173,20 @@ class C(metaclass=LanguageCls):
         (cf. the set / non-record-dict field boundary tracked in
         #2317).  The default (``ERROR``) strategy is unconstrained.
         """
+        if self._json_type_active:
+            _check_c_json_value_keys(data=data)
+            return
         if self._record_strategy_active:
             _check_c_record_nesting(
                 node=data,
                 cval_context=False,
                 array_lengths_by_shape={},
             )
+
+    @cached_property
+    def _json_type_active(self) -> bool:
+        """Return whether C should render via cJSON's ``cJSON *`` type."""
+        return self.json_type is not None
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1044,6 +1267,7 @@ class C(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    json_type: JsonTypes | None = None
     # Keep in sync with the ``-std=`` flag passed to clang and clang-tidy
     # in ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.C99
@@ -1212,8 +1436,23 @@ class C(metaclass=LanguageCls):
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
         tuple[str, ...],
     ]:
-        """Return file-scope stubs for a call expression."""
-        return _c_call_stub
+        """Return file-scope stubs for a call expression.
+
+        Under ``json_type=CJSON`` the universal value type is
+        ``cJSON *`` (zero value ``NULL``) rather than the tagged
+        ``CVal`` union, so the stub prototypes and bodies use it.
+        """
+        if self._json_type_active:
+            return partial(
+                _c_call_stub,
+                value_type="cJSON *",
+                value_zero="NULL",
+            )
+        return partial(
+            _c_call_stub,
+            value_type="CVal",
+            value_zero="(CVal){0}",
+        )
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -1271,7 +1510,29 @@ class C(metaclass=LanguageCls):
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``CVal`` union so call sites
         match the concrete prototype emitted by :func:`_c_call_stub`.
+
+        Under ``json_type=CJSON`` a scalar argument is rendered inline as
+        a single ``cJSON_Create*(...)`` expression instead (the rendered
+        ``CVal`` text is discarded), matching the ``cJSON *`` stub
+        prototype.
         """
+        if self._json_type_active:
+            format_integer = self.format_integer
+            format_float = self.format_float
+
+            @beartype
+            def _format_cjson_call_arg(
+                raw_value: Value,
+                _formatted: str,
+            ) -> str:
+                """Render a scalar call argument as a cJSON expression."""
+                return _c_cjson_scalar_create(
+                    to_jsonable(data=raw_value),
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+
+            return _format_cjson_call_arg
         return self._format_entry
 
     @cached_property
@@ -1565,7 +1826,35 @@ class C(metaclass=LanguageCls):
         Record0){...};``) and an all-record-list root as an array
         (``struct Record0 my_data[] = {...};``); every other value keeps
         the ``CVal``-wrapped form.
+
+        Under ``json_type=CJSON`` the rendered ``CVal`` value is
+        discarded: the data is built as a ``cJSON_Create*(...)`` node
+        tree (one statement per node) and the binding declares the root
+        ``cJSON *my_data = _n0;``.
         """
+        if self._json_type_active:
+            format_integer = self.format_integer
+            format_float = self.format_float
+
+            @beartype
+            def _format_cjson_decl(
+                name: str,
+                _value: str,
+                data: Value,
+                _modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Build a cJSON node tree and declare its root."""
+                build = _c_cjson_build(
+                    to_jsonable(data=data),
+                    prefix="_n",
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                return "\n".join(
+                    (*build.lines, f"cJSON *{name} = {build.root};"),
+                )
+
+            return _format_cjson_decl
         format_entry = self._format_entry
 
         @beartype
@@ -1595,7 +1884,34 @@ class C(metaclass=LanguageCls):
         The combined declaration+assignment form is only exercised for a
         top-level record-shaped dict, so a ``RECORD`` reassignment is a
         plain ``my_data = (struct Record0){...};`` struct copy.
+
+        Under ``json_type=CJSON`` the value is rebuilt as a fresh
+        ``cJSON`` node tree and the existing binding is reassigned to its
+        root.
+        A distinct ``_m`` node prefix (the declaration build uses
+        ``_n``) keeps the combined declaration+assignment form free of
+        duplicate ``cJSON *`` definitions in one scope.
         """
+        if self._json_type_active:
+            format_integer = self.format_integer
+            format_float = self.format_float
+
+            @beartype
+            def _format_cjson_assign(
+                name: str,
+                _value: str,
+                data: Value,
+            ) -> str:
+                """Build a cJSON node tree and reassign the binding."""
+                build = _c_cjson_build(
+                    to_jsonable(data=data),
+                    prefix="_m",
+                    format_integer=format_integer,
+                    format_float=format_float,
+                )
+                return "\n".join((*build.lines, f"{name} = {build.root};"))
+
+            return _format_cjson_assign
         format_entry = self._format_entry
 
         @beartype
@@ -1638,7 +1954,14 @@ class C(metaclass=LanguageCls):
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:
-        """Static preamble lines emitted once per file."""
+        """Static preamble lines emitted once per file.
+
+        Under ``json_type=CJSON`` the ``cJSON`` header replaces the
+        default ``CVal`` / ``CKV`` type declarations: every value is a
+        ``cJSON *`` node built with the library's own constructors.
+        """
+        if self._json_type_active:
+            return _CJSON_STATIC_PREAMBLE
         return (
             "#include <stdbool.h>",
             "#include <stddef.h>",

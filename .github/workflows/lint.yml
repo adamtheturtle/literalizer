@@ -511,9 +511,19 @@ jobs:
       - name: Wren roundtrip
         run: uv run python .github/scripts/run_wren_roundtrip.py
 
+      # cJSON provides the ``cJSON *`` value type for the
+      # ``C(json_type=CJSON)`` fixtures (which ``Lint C`` builds and runs
+      # below, linking ``-lcjson``) and drives the generated ``main`` in
+      # the C round-trip step further down.  Installed before ``Lint C``
+      # so its ``<cjson/cJSON.h>`` header is on the include path.
+      - name: Install libcjson-dev
+        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
+
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
-      # separate `-fsyntax-only` pass would be redundant.
+      # separate `-fsyntax-only` pass would be redundant.  ``-lcjson``
+      # links the ``C(json_type=CJSON)`` fixtures; it is harmless for the
+      # other fixtures, which reference none of its symbols.
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Lint C
@@ -522,17 +532,10 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" || exit 1
+          clang -std=c99 "$1" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
-
-      # cJSON drives the generated ``main`` in the C round-trip step
-      # below: the literalized ``CVal`` is untagged, so the helper
-      # builds a parallel ``cJSON`` tree (shape generated from the
-      # parsed JSON) and prints it with ``cJSON_PrintUnformatted``.
-      - name: Install libcjson-dev
-        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
 
       # Basic JSON -> C -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the C toolchain (``clang``) set up
@@ -1595,6 +1598,11 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install clang-tidy
         run: uv tool install clang-tidy
+      # ``cJSON`` fixtures (``C(json_type=CJSON)``) need the cJSON header
+      # on the default include path; clang-tidy does not link, so the
+      # ``-lcjson`` library itself is irrelevant here.
+      - name: Install libcjson-dev
+        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
