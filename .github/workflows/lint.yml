@@ -435,6 +435,14 @@ jobs:
           find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix && test -s /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
+      # Basic JSON -> Nix -> JSON round-trip (issue 2666). Runs here
+      # because this is the job with the `nix-instantiate` binary on PATH
+      # (the `Install Nix` step above); `uv run` (project mode, not
+      # `--no-project`) is required so `import literalizer` resolves.
+      # See `.github/scripts/run_nix_roundtrip.py`.
+      - name: Nix roundtrip
+        run: uv run python .github/scripts/run_nix_roundtrip.py
+
       - name: Lint Tcl
         run: |-
           find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl && test -s /tmp/files-tcl
