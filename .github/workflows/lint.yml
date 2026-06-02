@@ -2584,6 +2584,14 @@ jobs:
         run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
       - name: Check Mojo syntax
         run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
+      # Basic JSON -> Mojo -> JSON round-trip (issue 2664). Runs here
+      # because this is the job with the Mojo toolchain; `uv run`
+      # (project mode, not `--no-project`) is required so `import
+      # literalizer` resolves *and* so uv's managed CPython is on PATH for
+      # the script's `std.python` JSON interop. See
+      # `.github/scripts/run_mojo_roundtrip.py`.
+      - name: Mojo roundtrip
+        run: uv run python .github/scripts/run_mojo_roundtrip.py
 
   lint-nim:
     runs-on: ubuntu-latest
