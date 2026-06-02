@@ -746,6 +746,20 @@ jobs:
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
           xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
+      # because this is the job with the MATLAB toolchain (Octave, the
+      # practical CI substitute) already installed; `uv run` (project
+      # mode, not `--no-project`) is required so `import literalizer`
+      # resolves. See `.github/scripts/run_matlab_roundtrip.py`.
+      - name: MATLAB roundtrip
+        run: uv run python .github/scripts/run_matlab_roundtrip.py
+
   lint-perl:
     runs-on: ubuntu-latest
     timeout-minutes: 10
