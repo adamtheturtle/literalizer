@@ -861,6 +861,13 @@ jobs:
             /tmp/tree-sitter-norg/src/parser.c \
             -x c++ /tmp/tree-sitter-norg/src/scanner.cc \
             -lstdc++
+      # `uv` is needed by the `Norg roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Json5
         run: |-
@@ -871,6 +878,17 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg && test -s /tmp/files-norg
           xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
+      # Basic JSON -> Norg -> JSON round-trip (issue 2667). Runs here
+      # because this is the job that builds the `tree-sitter-norg` grammar
+      # (`/tmp/norg.so`) the helper loads through the `tree-sitter` Python
+      # binding; `uv run` (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves, and `--with` layers `tree-sitter` on
+      # top. The grammar's path is passed via `LITERALIZER_NORG_PARSER`.
+      # See `.github/scripts/run_norg_roundtrip.py`.
+      - name: Norg roundtrip
+        env:
+          LITERALIZER_NORG_PARSER: /tmp/norg.so
+        run: uv run --with 'tree-sitter==0.25.2' python .github/scripts/run_norg_roundtrip.py
 
       # ``tsc`` parses these ``.ts`` fixtures at
       # ``TypeScript.language_version`` (``V5``) in

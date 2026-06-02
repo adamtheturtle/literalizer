@@ -1,0 +1,1 @@
+Add a Norg JSON round-trip check to CI using the shared round-trip fixture.  The literalizer stores the value inside a ``@code json`` ranged verbatim tag, so the check parses the generated document with the ``tree-sitter-norg`` grammar, pulls the embedded code block back out, and re-parses it with the standard library ``json`` module.
