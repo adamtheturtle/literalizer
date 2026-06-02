@@ -1,3 +1,3 @@
 (define my_data (list
-    "outer" (list "a" 1 "b" "x" "c" '())
+    (cons "outer" (list (cons "a" 1) (cons "b" "x") (cons "c" '())))
 ))

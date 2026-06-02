@@ -1,8 +1,8 @@
 (define my_data (list
-    "name" "Alice"
-    "tags" (list
+    (cons "name" "Alice")
+    (cons "tags" (list
         #t
         42
         "apple"
-    )
+    ))
 ))

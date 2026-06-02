@@ -20,7 +20,6 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
-    dict_entry_with_separator,
     dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
@@ -769,30 +768,20 @@ class Scheme(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
-        Under :attr:`json_type` each entry is a ``(cons "k" v)`` pair
-        and the dict wraps them in ``(list ...)`` to form a Scheme
-        association list; ``scm->json``'s ``json-valid?`` accepts only
-        that shape for JSON objects.  The default mode emits the
+        Each entry is a ``(cons "k" v)`` pair and the dict wraps them
+        in ``(list ...)`` to form a Scheme association list -- the
+        conventional key/value mapping idiom, what ``assoc`` /
+        ``alist->hash-table`` expect, and what ``scm->json``'s
+        ``json-valid?`` accepts for JSON objects under
+        :attr:`json_type`.  A list of ``pair?`` elements is locally
+        distinguishable from a heterogeneous sequence, unlike the
         legacy flat ``(list "k" v "k" v ...)`` form.
         """
-        if self._json_type_active:
-            return DictFormatConfig(
-                dict_open=fixed_open(open_str="(list "),
-                close=")",
-                format_entry=dict_entry_with_template(
-                    template="(cons {key} {value})",
-                    format_value=passthrough_sequence_entry,
-                ),
-                empty_dict="(list)",
-                preamble_lines=(),
-                narrowed_open=None,
-                supports_trailing_comma=True,
-            )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="(list "),
             close=")",
-            format_entry=dict_entry_with_separator(
-                separator=" ",
+            format_entry=dict_entry_with_template(
+                template="(cons {key} {value})",
                 format_value=passthrough_sequence_entry,
             ),
             empty_dict="(list)",
@@ -855,16 +844,11 @@ class Scheme(metaclass=LanguageCls):
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry.
 
-        Under :attr:`json_type` each entry is a ``(cons "k" v)`` pair
-        matching :attr:`dict_format_config`.
+        Each entry is a ``(cons "k" v)`` pair matching
+        :attr:`dict_format_config`.
         """
-        if self._json_type_active:
-            return dict_entry_with_template(
-                template="(cons {key} {value})",
-                format_value=passthrough_sequence_entry,
-            )
-        return dict_entry_with_separator(
-            separator=" ",
+        return dict_entry_with_template(
+            template="(cons {key} {value})",
             format_value=passthrough_sequence_entry,
         )
 

@@ -1,5 +1,5 @@
 (define my_data (list
-    "host" "localhost"
-    "port" '()  ; not configured yet
-    "debug" #t
+    (cons "host" "localhost")
+    (cons "port" '())  ; not configured yet
+    (cons "debug" #t)
 ))

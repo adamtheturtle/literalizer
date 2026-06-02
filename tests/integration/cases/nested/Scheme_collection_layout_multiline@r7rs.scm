@@ -1,17 +1,17 @@
 (define my_data (list
-    "users" (list
+    (cons "users" (list
         (list
-            "name" "Bob"
-            "tags" (list
+            (cons "name" "Bob")
+            (cons "tags" (list
                 "admin"
                 "user"
-            )
+            ))
         )
         (list
-            "name" "Carol"
-            "tags" (list
+            (cons "name" "Carol")
+            (cons "tags" (list
                 "guest"
-            )
+            ))
         )
-    )
+    ))
 ))

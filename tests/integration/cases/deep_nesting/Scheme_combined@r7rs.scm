@@ -1,6 +1,6 @@
 (define my_data (list
-    "level1" (list "level2" (list "level3" (list "level4" (list "value" "deep" "items" (list "a" "b"))) "sibling" 42) "tags" (list (list "name" "tag1" "meta" (list "priority" 1 "labels" (list "x" "y")))))
+    (cons "level1" (list (cons "level2" (list (cons "level3" (list (cons "level4" (list (cons "value" "deep") (cons "items" (list "a" "b")))))) (cons "sibling" 42))) (cons "tags" (list (list (cons "name" "tag1") (cons "meta" (list (cons "priority" 1) (cons "labels" (list "x" "y")))))))))
 ))
 (set! my_data (list
-    "level1" (list "level2" (list "level3" (list "level4" (list "value" "deep" "items" (list "a" "b"))) "sibling" 42) "tags" (list (list "name" "tag1" "meta" (list "priority" 1 "labels" (list "x" "y")))))
+    (cons "level1" (list (cons "level2" (list (cons "level3" (list (cons "level4" (list (cons "value" "deep") (cons "items" (list "a" "b")))))) (cons "sibling" 42))) (cons "tags" (list (list (cons "name" "tag1") (cons "meta" (list (cons "priority" 1) (cons "labels" (list "x" "y")))))))))
 ))

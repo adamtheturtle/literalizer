@@ -1,6 +1,6 @@
 (define my_data (list
-    "name" "Alice"
-    "age" 30
-    "active" #t
-    "score" '()
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" #t)
+    (cons "score" '())
 ))

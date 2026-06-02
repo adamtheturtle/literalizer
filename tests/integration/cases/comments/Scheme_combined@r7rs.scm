@@ -1,14 +1,14 @@
 (define my_data (list
     ; Server configuration
-    "host" "localhost"  ; default host
-    "port" 8080
+    (cons "host" "localhost")  ; default host
+    (cons "port" 8080)
     ; Enable debug mode
-    "debug" #t
+    (cons "debug" #t)
 ))
 (set! my_data (list
     ; Server configuration
-    "host" "localhost"  ; default host
-    "port" 8080
+    (cons "host" "localhost")  ; default host
+    (cons "port" 8080)
     ; Enable debug mode
-    "debug" #t
+    (cons "debug" #t)
 ))

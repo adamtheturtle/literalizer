@@ -1,3 +1,3 @@
 (define my_data (list
-    "key" "\"bang!\""  ; real
+    (cons "key" "\"bang!\"")  ; real
 ))

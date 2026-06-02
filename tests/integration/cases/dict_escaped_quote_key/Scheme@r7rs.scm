@@ -1,3 +1,3 @@
 (define my_data (list
-    "a\"b" 1
+    (cons "a\"b" 1)
 ))

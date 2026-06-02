@@ -1,4 +1,4 @@
 (define my_data (list
-    "lint" (list 2 (list))
-    "test" (list 5 (list "compile"))
+    (cons "lint" (list 2 (list)))
+    (cons "test" (list 5 (list "compile")))
 ))

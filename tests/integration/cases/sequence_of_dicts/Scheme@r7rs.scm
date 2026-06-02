@@ -1,4 +1,4 @@
 (define my_data (list
-    (list "name" "Alice" "age" 30)
-    (list "name" "Bob" "age" 25)
+    (list (cons "name" "Alice") (cons "age" 30))
+    (list (cons "name" "Bob") (cons "age" 25))
 ))

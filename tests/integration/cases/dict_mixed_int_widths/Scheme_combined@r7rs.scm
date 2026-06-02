@@ -1,10 +1,10 @@
 (define my_data (list
-    "a" 1
-    "b" 3000000000
-    "c" "x"
+    (cons "a" 1)
+    (cons "b" 3000000000)
+    (cons "c" "x")
 ))
 (set! my_data (list
-    "a" 1
-    "b" 3000000000
-    "c" "x"
+    (cons "a" 1)
+    (cons "b" 3000000000)
+    (cons "c" "x")
 ))

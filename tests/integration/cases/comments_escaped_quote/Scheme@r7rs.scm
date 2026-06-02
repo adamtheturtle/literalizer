@@ -1,3 +1,3 @@
 (define my_data (list
-    "key" "value \" # not a comment"  ; real
+    (cons "key" "value \" # not a comment")  ; real
 ))

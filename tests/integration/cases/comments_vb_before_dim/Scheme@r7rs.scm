@@ -1,6 +1,6 @@
 (define my_data (list
     ; Configuration
-    "name" "app"
+    (cons "name" "app")
     ; Port setting
-    "port" 3000
+    (cons "port" 3000)
 ))

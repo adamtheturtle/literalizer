@@ -1,12 +1,12 @@
 (define my_data (list
-    "name" "Alice"
-    "age" 30
-    "active" #t
-    "score" 4.5
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" #t)
+    (cons "score" 4.5)
 ))
 (set! my_data (list
-    "name" "Alice"
-    "age" 30
-    "active" #t
-    "score" 4.5
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" #t)
+    (cons "score" 4.5)
 ))

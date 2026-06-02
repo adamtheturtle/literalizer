@@ -1,10 +1,10 @@
 (define my_data (list
-    (list "item" "existing")
+    (list (cons "item" "existing"))
     ; This comment describes the next item.
-    (list "item" "next")
+    (list (cons "item" "next"))
 ))
 (set! my_data (list
-    (list "item" "existing")
+    (list (cons "item" "existing"))
     ; This comment describes the next item.
-    (list "item" "next")
+    (list (cons "item" "next"))
 ))

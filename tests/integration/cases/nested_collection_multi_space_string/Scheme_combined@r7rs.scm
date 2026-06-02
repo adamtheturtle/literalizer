@@ -1,6 +1,6 @@
 (define my_data (list
-    (list "key" "hello   world" "value" 1)
+    (list (cons "key" "hello   world") (cons "value" 1))
 ))
 (set! my_data (list
-    (list "key" "hello   world" "value" 1)
+    (list (cons "key" "hello   world") (cons "value" 1))
 ))
