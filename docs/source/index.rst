@@ -148,6 +148,7 @@ Reference
    api-reference
    languages
    heterogeneous-strategies
+   common-errors
    release-process
    unreleased
    changelog
