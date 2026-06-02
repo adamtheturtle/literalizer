@@ -142,13 +142,24 @@ Reference
 
 .. toctree::
    :maxdepth: 3
+   :caption: Guides
 
    json-api-use-case
    function-call-use-case
-   api-reference
-   languages
    heterogeneous-strategies
    common-errors
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Reference
+
+   api-reference
+   languages
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Project / Development
+
    release-process
    unreleased
    changelog

@@ -1,0 +1,1 @@
+Group the documentation index into captioned "Guides", "Reference", and "Project / Development" sections, and correct the contributing guide to reference ``prek`` hooks and the ``uv run --extra dev pytest`` test command.

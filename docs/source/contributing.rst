@@ -14,7 +14,7 @@ Install Python dependencies in a virtual environment.
 
    $ pip install --editable '.[dev]'
 
-Install ``pre-commit`` hooks:
+Install ``prek`` hooks:
 
 .. code-block:: console
 
@@ -34,11 +34,9 @@ Run lint tools either by committing, or with:
 Running tests
 -------------
 
-Run ``pytest``:
-
 .. code-block:: console
 
-   $ pytest
+   $ uv run --extra dev pytest
 
 Documentation
 -------------
