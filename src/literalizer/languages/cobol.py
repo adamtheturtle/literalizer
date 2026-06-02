@@ -499,10 +499,13 @@ def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
 # returns a ``cJSON_bool`` (1 on success).  A CALL return that is not
 # captured lands in GnuCOBOL's ``RETURN-CODE`` special register, which
 # ``STOP RUN`` then propagates as the process exit status, so a
-# container build would exit non-zero; capturing the status into this
-# throwaway item keeps ``RETURN-CODE`` at zero.
-_CJSON_STATUS_ITEM = "CJSON-STATUS"
-_CJSON_STATUS_DECL = f"01 {_CJSON_STATUS_ITEM} PIC S9(9) COMP-5."
+# container build would exit non-zero; capturing the status into a
+# throwaway item keeps ``RETURN-CODE`` at zero.  The item is named after
+# the build's node *prefix* (``N-STATUS`` / ``M-STATUS``) and declared by
+# the build itself, so each build stays self-contained: the combined
+# declaration+assignment form gets two distinct items instead of sharing
+# (and so duplicating) one declaration.
+_CJSON_STATUS_PIC = "PIC S9(9) COMP-5"
 
 
 @beartype
@@ -514,16 +517,14 @@ class _CobolCJsonBuild:
     POINTER`` per node plus the literal items its constructor reads),
     :attr:`proc_lines` the PROCEDURE DIVISION ``CALL`` statements that
     build and compose the nodes, and :attr:`root` the data name of the
-    outermost node.  :attr:`uses_status` records whether any
-    ``cJSON_AddItemTo*`` CALL captured its result into
-    :data:`_CJSON_STATUS_ITEM`, so the binding declares that item only
-    when it is referenced.
+    outermost node.  A build is self-contained: ``ws_lines`` already
+    includes its own ``{prefix}-STATUS`` capture item when any
+    ``cJSON_AddItemTo*`` CALL needs it.
     """
 
     ws_lines: tuple[str, ...]
     proc_lines: tuple[str, ...]
     root: str
-    uses_status: bool
 
 
 @beartype
@@ -634,6 +635,7 @@ def _cobol_cjson_build(
     ws_lines: list[str] = []
     proc_lines: list[str] = []
     counter = 0
+    status_item = f"{prefix}-STATUS"
     uses_status = False
 
     @beartype
@@ -661,7 +663,7 @@ def _cobol_cjson_build(
                     proc_lines.append(
                         'CALL "cJSON_AddItemToObject" USING BY VALUE '
                         f"{name} BY REFERENCE {child}-K BY VALUE {child} "
-                        f"RETURNING {_CJSON_STATUS_ITEM}."
+                        f"RETURNING {status_item}."
                     )
             case list():
                 proc_lines.append(
@@ -673,7 +675,7 @@ def _cobol_cjson_build(
                     proc_lines.append(
                         'CALL "cJSON_AddItemToArray" USING BY VALUE '
                         f"{name} BY VALUE {child} "
-                        f"RETURNING {_CJSON_STATUS_ITEM}."
+                        f"RETURNING {status_item}."
                     )
             case _:
                 scalar = _cobol_cjson_scalar_node(
@@ -688,11 +690,12 @@ def _cobol_cjson_build(
         return name
 
     root = _emit(jsonable)
+    if uses_status:
+        ws_lines.append(f"01 {status_item} {_CJSON_STATUS_PIC}.")
     return _CobolCJsonBuild(
         ws_lines=tuple(ws_lines),
         proc_lines=tuple(proc_lines),
         root=root,
-        uses_status=uses_status,
     )
 
 
@@ -1501,14 +1504,10 @@ class Cobol(metaclass=LanguageCls):
                     format_float=format_float,
                 )
                 cobol_name = _to_cobol_name(python_name=name)
-                status_decl = (
-                    (_CJSON_STATUS_DECL,) if build.uses_status else ()
-                )
                 return _render_cjson_payload(
                     ws_lines=(
                         *build.ws_lines,
                         f"01 {cobol_name} USAGE POINTER.",
-                        *status_decl,
                     ),
                     proc_lines=(
                         *build.proc_lines,
