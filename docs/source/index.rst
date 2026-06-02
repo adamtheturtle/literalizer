@@ -70,6 +70,60 @@ Comments in the source are preserved using the target language's comment syntax:
    #     "released": "2026-06-02",
    # }
 
+TOML is read the same way, and its comments are preserved too:
+
+.. code-block:: python
+
+   """Reading TOML, with comments preserved."""
+
+   from literalizer import InputFormat, literalize
+   from literalizer.languages import Python
+
+   toml_config = """\
+   # Server configuration
+   host = "localhost"  # default host
+   port = 8080
+   """
+   result = literalize(
+       source=toml_config,
+       input_format=InputFormat.TOML,
+       language=Python(),
+   )
+   # result.code:
+   # {
+   #     # Server configuration
+   #     "host": "localhost",  # default host
+   #     "port": 8080,
+   # }
+
+JSON5 is also accepted. Its relaxed syntax, such as comments, single-quoted
+strings, trailing commas, and hexadecimal numbers, is converted to the target
+language:
+
+.. code-block:: python
+
+   """Reading JSON5's relaxed syntax."""
+
+   from literalizer import InputFormat, literalize
+   from literalizer.languages import Python
+
+   json5_config = """\
+   {
+     // Relaxed syntax is accepted here.
+     name: 'literalizer',
+     port: 0x1F90,
+   }"""
+   result = literalize(
+       source=json5_config,
+       input_format=InputFormat.JSON5,
+       language=Python(),
+   )
+   # result.code:
+   # {
+   #     "name": "literalizer",
+   #     "port": 8080,
+   # }
+
 Use cases
 ---------
 
