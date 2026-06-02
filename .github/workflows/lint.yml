@@ -2847,6 +2847,20 @@ jobs:
       - name: Check SystemVerilog syntax
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
           -Wno-REALCVT < /tmp/files-to-lint
+      # `uv` is needed by the `SystemVerilog roundtrip` step below; it
+      # runs the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> SystemVerilog -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with Verilator installed; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_systemverilog_roundtrip.py`.
+      - name: SystemVerilog roundtrip
+        run: uv run python .github/scripts/run_systemverilog_roundtrip.py
 
   lint-v:
     runs-on: ubuntu-latest
