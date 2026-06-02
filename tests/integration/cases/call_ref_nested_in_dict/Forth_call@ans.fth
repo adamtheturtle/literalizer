@@ -1,3 +1,3 @@
 : process ;
-: my_var 42 ;
-s\" key" my_var s\" count" 42 process
+: my_var 42 +int ;
++obj s\" key" +key my_var s\" count" +key 42 +int -obj process

@@ -1,4 +1,6 @@
 : my_data
-    s\" call" s\" send"
-    s\" args" 1 s\" email" s\" a@gmail.com" 100
++obj
+    s\" call" +key s\" send" +str
+    s\" args" +key +arr 1 +int s\" email" +str s\" a@gmail.com" +str 100 +int -arr
+ -obj
 ;

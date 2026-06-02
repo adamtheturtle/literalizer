@@ -665,6 +665,59 @@ accepted.
            variable_form=NewVariable(name="my_data"),
        )
 
+Forth visitor stream
+--------------------
+
+Forth has no native mapping or sequence type, so the Forth language
+does not emit a data literal.  Instead it emits a colon definition that
+executes a sequence of small constructor words, one per structural
+event in the document:
+
+============  ===========================  =================================
+Word          Stack effect                 Meaning
+============  ===========================  =================================
+``+obj``      ``( -- )``                   start of an object
+``-obj``      ``( -- )``                   end of an object
+``+arr``      ``( -- )``                   start of an array
+``-arr``      ``( -- )``                   end of an array
+``+key``      ``( c-addr u -- )``          a member name
+``+int``      ``( n -- )``                 an integer value
+``+float``    ``( F: r -- )``              a floating-point value
+``+str``      ``( c-addr u -- )``          a string value
+``+bool``     ``( flag -- )``              a boolean value
+``+null``     ``( -- )``                   a null value
+============  ===========================  =================================
+
+For example, ``{"name": "Alice", "tags": [1, 2]}`` is literalized to:
+
+.. code-block:: forth
+
+   : my_data
+   +obj
+       s\" name" +key s\" Alice" +str
+       s\" tags" +key +arr 1 +int 2 +int -arr
+    -obj
+   ;
+
+The constructor words are the protocol; the caller supplies their
+bindings.  The Forth language ships a default binding in
+``src/literalizer/languages/forth_prelude.fs`` that writes JSON to a
+shared output stream through the Forth Foundation Library ``jos``
+module, so loading the prelude and then running ``my_data`` prints the
+document as JSON out of the box:
+
+.. code-block:: forth
+
+   include forth_prelude.fs
+   \ ... the literalized : my_data ... ; definition ...
+   my_data json-out str-get type
+
+To consume the same definition another way -- to build a Forth-side
+data structure, walk into custom storage, compute over the values, or
+emit a different format -- redefine any of the constructor words before
+running the definition.  Nothing in the definition is tied to JSON
+beyond the bindings the caller chooses to load.
+
 Custom language implementations
 -------------------------------
 

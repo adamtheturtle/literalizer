@@ -1,8 +1,12 @@
 : my_data
-    s\" 100% done"
-    s\" %(name) is here"
++arr
+    s\" 100% done" +str
+    s\" %(name) is here" +str
+ -arr
 ;
 : my_data
-    s\" 100% done"
-    s\" %(name) is here"
++arr
+    s\" 100% done" +str
+    s\" %(name) is here" +str
+ -arr
 ;

@@ -1,8 +1,12 @@
 : my_data
-    s\" name" s\" Alice"
-    s\" tags" true 42 s\" apple"
++obj
+    s\" name" +key s\" Alice" +str
+    s\" tags" +key +arr true +bool 42 +int s\" apple" +str -arr
+ -obj
 ;
 : my_data
-    s\" name" s\" Alice"
-    s\" tags" true 42 s\" apple"
++obj
+    s\" name" +key s\" Alice" +str
+    s\" tags" +key +arr true +bool 42 +int s\" apple" +str -arr
+ -obj
 ;

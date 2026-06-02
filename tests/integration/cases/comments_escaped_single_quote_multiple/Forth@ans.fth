@@ -1,6 +1,8 @@
 \ a comment
 \ another
 : my_data
-    s\" host" s\" it's here"
-    s\" port" 80
++obj
+    s\" host" +key s\" it's here" +str
+    s\" port" +key 80 +int
+ -obj
 ;

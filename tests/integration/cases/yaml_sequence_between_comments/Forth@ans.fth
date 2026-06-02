@@ -1,5 +1,7 @@
 \ This comment describes the next item.
 : my_data
-    s\" item" s\" existing"
-    s\" item" s\" next"
++arr
+    +obj s\" item" +key s\" existing" +str -obj
+    +obj s\" item" +key s\" next" +str -obj
+ -arr
 ;

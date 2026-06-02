@@ -1,8 +1,12 @@
 : my_data
-    1
-    s\" hello"
++arr
+    1 +int
+    s\" hello" +str
+ -arr
 ;
 : my_data
-    1
-    s\" hello"
++arr
+    1 +int
+    s\" hello" +str
+ -arr
 ;

@@ -1,8 +1,12 @@
 : my_data
-    s\" 0a" s\" first"
-    s\" 1b" s\" second"
++obj
+    s\" 0a" +key s\" first" +str
+    s\" 1b" +key s\" second" +str
+ -obj
 ;
 : my_data
-    s\" 0a" s\" first"
-    s\" 1b" s\" second"
++obj
+    s\" 0a" +key s\" first" +str
+    s\" 1b" +key s\" second" +str
+ -obj
 ;

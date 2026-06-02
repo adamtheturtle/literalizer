@@ -1,12 +1,16 @@
 \ not configured yet
 : my_data
-    s\" host" s\" localhost"
-    s\" port" 0
-    s\" debug" true
++obj
+    s\" host" +key s\" localhost" +str
+    s\" port" +key +null
+    s\" debug" +key true +bool
+ -obj
 ;
 \ not configured yet
 : my_data
-    s\" host" s\" localhost"
-    s\" port" 0
-    s\" debug" true
++obj
+    s\" host" +key s\" localhost" +str
+    s\" port" +key +null
+    s\" debug" +key true +bool
+ -obj
 ;

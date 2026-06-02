@@ -1,10 +1,14 @@
 : my_data
-    s\" title" s\" report"
-    s\" tags" s\" draft" s\" urgent" s\" review"
-    s\" priority" 2
++obj
+    s\" title" +key s\" report" +str
+    s\" tags" +key +arr s\" draft" +str s\" urgent" +str s\" review" +str -arr
+    s\" priority" +key 2 +int
+ -obj
 ;
 : my_data
-    s\" title" s\" report"
-    s\" tags" s\" draft" s\" urgent" s\" review"
-    s\" priority" 2
++obj
+    s\" title" +key s\" report" +str
+    s\" tags" +key +arr s\" draft" +str s\" urgent" +str s\" review" +str -arr
+    s\" priority" +key 2 +int
+ -obj
 ;

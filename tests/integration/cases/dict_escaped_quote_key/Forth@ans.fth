@@ -1,1 +1,5 @@
-: my_data     s\" a\"b" 1 ;
+: my_data
++obj
+    s\" a\"b" +key 1 +int
+ -obj
+;

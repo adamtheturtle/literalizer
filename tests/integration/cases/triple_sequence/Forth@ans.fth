@@ -1,5 +1,7 @@
 : my_data
-    1
-    s\" hello"
-    true
++arr
+    1 +int
+    s\" hello" +str
+    true +bool
+ -arr
 ;

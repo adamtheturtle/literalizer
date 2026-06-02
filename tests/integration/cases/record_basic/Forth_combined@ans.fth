@@ -1,12 +1,16 @@
 : my_data
-    s\" id" 1
-    s\" description" s\" She said \"hello\", then waved"
-    s\" is_done" false
-    s\" blocks" 1 2 3
++obj
+    s\" id" +key 1 +int
+    s\" description" +key s\" She said \"hello\", then waved" +str
+    s\" is_done" +key false +bool
+    s\" blocks" +key +arr 1 +int 2 +int 3 +int -arr
+ -obj
 ;
 : my_data
-    s\" id" 1
-    s\" description" s\" She said \"hello\", then waved"
-    s\" is_done" false
-    s\" blocks" 1 2 3
++obj
+    s\" id" +key 1 +int
+    s\" description" +key s\" She said \"hello\", then waved" +str
+    s\" is_done" +key false +bool
+    s\" blocks" +key +arr 1 +int 2 +int 3 +int -arr
+ -obj
 ;

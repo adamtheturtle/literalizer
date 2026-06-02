@@ -1,4 +1,6 @@
 : my_data
-    s\" issue #{42}"
-    s\" color #red"
++arr
+    s\" issue #{42}" +str
+    s\" color #red" +str
+ -arr
 ;

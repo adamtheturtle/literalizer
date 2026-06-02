@@ -1,4 +1,6 @@
 : my_data
-    s\" a" 1
-    s\" hello"
++arr
+    +obj s\" a" +key 1 +int -obj
+    s\" hello" +str
+ -arr
 ;

@@ -1,1 +1,1 @@
-: my_data ;
+: my_data +obj -obj ;

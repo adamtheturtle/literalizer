@@ -1,2 +1,2 @@
-: MY_INT 42 ;
+: MY_INT 42 +int ;
 : my_data MY_INT ;

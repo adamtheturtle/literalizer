@@ -1,10 +1,14 @@
 \
 : my_data
-    s\" a"
-    s\" b"
++arr
+    s\" a" +str
+    s\" b" +str
+ -arr
 ;
 \
 : my_data
-    s\" a"
-    s\" b"
++arr
+    s\" a" +str
+    s\" b" +str
+ -arr
 ;

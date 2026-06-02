@@ -1,4 +1,6 @@
 : my_data
-    s\" exact_millisecond" s\" 09:30:15.123000"
-    s\" sub_millisecond" s\" 09:30:15.123456"
++obj
+    s\" exact_millisecond" +key s\" 09:30:15.123000" +str
+    s\" sub_millisecond" +key s\" 09:30:15.123456" +str
+ -obj
 ;

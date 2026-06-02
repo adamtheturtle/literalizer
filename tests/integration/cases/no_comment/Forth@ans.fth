@@ -1,1 +1,5 @@
-: my_data     s\" message" s\" no comment here" ;
+: my_data
++obj
+    s\" message" +key s\" no comment here" +str
+ -obj
+;

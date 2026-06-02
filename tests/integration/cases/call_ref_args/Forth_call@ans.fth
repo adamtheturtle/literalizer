@@ -1,13 +1,17 @@
 : process ;
 : my_var
-    1
-    2
-    3
++arr
+    1 +int
+    2 +int
+    3 +int
+ -arr
 ;
 : my_other
-    4
-    5
-    6
++arr
+    4 +int
+    5 +int
+    6 +int
+ -arr
 ;
 my_var 42 process
 my_other 7 process

@@ -1,4 +1,4 @@
 \ note
-: my_data s\" hello # world" ;
+: my_data s\" hello # world" +str ;
 \ note
-: my_data s\" hello # world" ;
+: my_data s\" hello # world" +str ;

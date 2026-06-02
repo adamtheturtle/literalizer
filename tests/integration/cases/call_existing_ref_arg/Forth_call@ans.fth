@@ -1,3 +1,3 @@
 : process ;
-: existing 42 ;
+: existing 42 +int ;
 existing process

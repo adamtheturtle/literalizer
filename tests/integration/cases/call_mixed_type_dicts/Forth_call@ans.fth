@@ -1,5 +1,5 @@
 : app ;
 : app.mgr ;
 : app.mgr.run ;
-s\" type" s\" create" s\" pr_id" s\" pr_1" s\" draft" true app.mgr.run
-s\" type" s\" create" s\" pr_id" s\" pr_2" app.mgr.run
++obj s\" type" +key s\" create" +str s\" pr_id" +key s\" pr_1" +str s\" draft" +key true +bool -obj app.mgr.run
++obj s\" type" +key s\" create" +str s\" pr_id" +key s\" pr_2" +str -obj app.mgr.run

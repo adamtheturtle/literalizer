@@ -1,8 +1,14 @@
 : my_data
-    1 2
-    s\" a" s\" b"
++arr
+    +arr 1 +int 2 +int -arr
+    +arr  -arr
+    +arr s\" a" +str s\" b" +str -arr
+ -arr
 ;
 : my_data
-    1 2
-    s\" a" s\" b"
++arr
+    +arr 1 +int 2 +int -arr
+    +arr  -arr
+    +arr s\" a" +str s\" b" +str -arr
+ -arr
 ;

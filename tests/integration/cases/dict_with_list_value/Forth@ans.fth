@@ -1,4 +1,6 @@
 : my_data
-    s\" name" s\" Alice"
-    s\" scores" 10 20 30
++obj
+    s\" name" +key s\" Alice" +str
+    s\" scores" +key +arr 10 +int 20 +int 30 +int -arr
+ -obj
 ;

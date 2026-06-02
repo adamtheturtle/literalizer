@@ -1,12 +1,16 @@
 : my_data
-    1
-    s\" hello"
-    true
-    0
++arr
+    1 +int
+    s\" hello" +str
+    true +bool
+    +null
+ -arr
 ;
 : my_data
-    1
-    s\" hello"
-    true
-    0
++arr
+    1 +int
+    s\" hello" +str
+    true +bool
+    +null
+ -arr
 ;

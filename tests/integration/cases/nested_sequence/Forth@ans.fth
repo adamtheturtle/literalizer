@@ -1,6 +1,8 @@
 : my_data
-    true
-    s\" hi"
-    1 2
-    0
++arr
+    true +bool
+    s\" hi" +str
+    +arr 1 +int 2 +int -arr
+    +null
+ -arr
 ;

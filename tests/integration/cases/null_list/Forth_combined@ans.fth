@@ -1,8 +1,12 @@
 : my_data
-    0
-    0
++arr
+    +null
+    +null
+ -arr
 ;
 : my_data
-    0
-    0
++arr
+    +null
+    +null
+ -arr
 ;

@@ -1,10 +1,14 @@
 : my_data
-    1.0e0 0.0e0 f/
-    -1.0e0 0.0e0 f/
-    0.0e0 0.0e0 f/
++arr
+    1.0e0 0.0e0 f/ +float
+    -1.0e0 0.0e0 f/ +float
+    0.0e0 0.0e0 f/ +float
+ -arr
 ;
 : my_data
-    1.0e0 0.0e0 f/
-    -1.0e0 0.0e0 f/
-    0.0e0 0.0e0 f/
++arr
+    1.0e0 0.0e0 f/ +float
+    -1.0e0 0.0e0 f/ +float
+    0.0e0 0.0e0 f/ +float
+ -arr
 ;

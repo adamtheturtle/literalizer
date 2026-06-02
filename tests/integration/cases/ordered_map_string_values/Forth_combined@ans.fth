@@ -1,10 +1,14 @@
 : my_data
-    s\" first" s\" one"
-    s\" second" s\" two"
-    s\" third" s\" three"
++obj
+    s\" first" +key s\" one" +str
+    s\" second" +key s\" two" +str
+    s\" third" +key s\" three" +str
+ -obj
 ;
 : my_data
-    s\" first" s\" one"
-    s\" second" s\" two"
-    s\" third" s\" three"
++obj
+    s\" first" +key s\" one" +str
+    s\" second" +key s\" two" +str
+    s\" third" +key s\" three" +str
+ -obj
 ;

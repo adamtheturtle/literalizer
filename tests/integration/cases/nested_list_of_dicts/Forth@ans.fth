@@ -1,4 +1,6 @@
 : my_data
-    s\" name" s\" Alice" s\" name" s\" Bob"
-    s\" name" s\" Charlie" s\" name" s\" Dave"
++arr
+    +arr +obj s\" name" +key s\" Alice" +str -obj +obj s\" name" +key s\" Bob" +str -obj -arr
+    +arr +obj s\" name" +key s\" Charlie" +str -obj +obj s\" name" +key s\" Dave" +str -obj -arr
+ -arr
 ;

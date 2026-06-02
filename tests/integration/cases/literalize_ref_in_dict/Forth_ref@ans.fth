@@ -1,2 +1,10 @@
-: MY_VAR     s\" _" s\" _" ;
-: my_data     s\" key" MY_VAR ;
+: MY_VAR
++obj
+    s\" _" +key s\" _" +str
+ -obj
+;
+: my_data
++obj
+    s\" key" +key MY_VAR
+ -obj
+;

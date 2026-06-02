@@ -1,6 +1,8 @@
 \ Configuration
 \ Port setting
 : my_data
-    s\" name" s\" app"
-    s\" port" 3000
++obj
+    s\" name" +key s\" app" +str
+    s\" port" +key 3000 +int
+ -obj
 ;

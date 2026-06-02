@@ -18,7 +18,6 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
-    passthrough_sequence_entry,
 )
 from literalizer._formatters.format_floats import format_float_scientific
 from literalizer._language import (
@@ -150,26 +149,74 @@ def _format_bytes_base64_forth(value: bytes) -> str:
 
 
 @beartype
+def _forth_scalar_marker(value: Value, formatted: str) -> str:
+    r"""Return the visitor marker word for a formatted scalar.
+
+    The marker reflects the *rendered* form, not the Python type, so a
+    datetime literalized to an epoch integer is tagged ``+int`` while
+    one rendered as an ISO ``s\" ..."`` string is tagged ``+str``.
+    """
+    match value:
+        case bool():
+            return "+bool"
+        case float():
+            return "+float"
+        case _ if formatted.startswith('s\\"'):
+            return "+str"
+        case _:
+            return "+int"
+
+
+@beartype
+def _forth_mark_value(value: Value, formatted: str) -> str:
+    r"""Append a visitor marker after a formatted leaf value.
+
+    Container values already carry their own ``+obj``/``+arr`` brackets,
+    so they pass through unchanged.  ``null`` collapses to a bare
+    ``+null`` (the visitor word takes no operand), dropping the ``0``
+    null literal.
+
+    Example: ``42`` -> ``42 +int``; ``s\" x"`` -> ``s\" x" +str``.
+    """
+    match value:
+        case dict() | list() | set():
+            return formatted
+        case None:
+            return "+null"
+        case _:
+            marker = _forth_scalar_marker(value=value, formatted=formatted)
+            return f"{formatted} {marker}"
+
+
+@beartype
 def _format_forth_declaration(
     name: str,
     value: str,
-    _data: Value,
+    data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    r"""Format a Forth colon definition.
+    r"""Format a Forth colon definition emitting a visitor stream.
 
-    Example (single line): ``: my_data 42 ;``
+    A top-level scalar is tagged with its marker so the definition is a
+    complete visitor sequence on its own; collections already carry
+    their brackets and markers from the opener/entry formatters.
+
+    Example (single line): ``: my_data 42 +int ;``
 
     Example (multi-line)::
 
         : my_data
-            s\" name" s\" Alice"
-            s\" age" 30
+        +obj
+            s\" name" +key s\" Alice" +str
+            s\" age" +key 30 +int
+         -obj
         ;
     """
-    stripped = value.strip("\n")
-    if not stripped.strip():
-        return f": {name} ;"
+    # Every value yields a non-empty body: scalars gain a marker, ``null``
+    # becomes ``+null``, and empty collections render ``+obj -obj`` /
+    # ``+arr -arr``, so there is no empty-definition case to guard.
+    body = _forth_mark_value(value=data, formatted=value)
+    stripped = body.strip("\n")
     if "\n" in stripped:
         return f": {name}\n{stripped}\n;"
     return f": {name} {stripped} ;"
@@ -178,16 +225,24 @@ def _format_forth_declaration(
 @beartype
 def _format_forth_dict_entry(
     key: str,
-    _raw_value: Value,
+    raw_value: Value,
     formatted_value: str,
 ) -> str:
-    r"""Format a dict entry as ``key value``.
+    r"""Format a dict entry as a ``+key`` token followed by the value.
 
-    Example: ``s\" name" s\" Alice"``.
+    Example: ``s\" name" +key s\" Alice" +str``.
     """
-    if not formatted_value:
-        return key
-    return f"{key} {formatted_value}"
+    marked = _forth_mark_value(value=raw_value, formatted=formatted_value)
+    return f"{key} +key {marked}"
+
+
+@beartype
+def _forth_sequence_entry(value: Value, item: str) -> str:
+    r"""Tag a sequence or set element with its visitor marker.
+
+    Example: ``42`` -> ``42 +int``.
+    """
+    return _forth_mark_value(value=value, formatted=item)
 
 
 @beartype
@@ -306,14 +361,14 @@ class Forth(metaclass=LanguageCls):
         """Sequence type options."""
 
         LIST = SequenceFormatConfig(
-            sequence_open=fixed_open(open_str=""),
-            close="",
+            sequence_open=fixed_open(open_str="+arr "),
+            close=" -arr",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
             supports_trailing_comma=False,
-            empty_sequence=None,
+            empty_sequence="+arr -arr",
             preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
+            format_entry=_forth_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
@@ -325,9 +380,9 @@ class Forth(metaclass=LanguageCls):
         """Set type options."""
 
         SET = SetFormatConfig(
-            set_open=fixed_open(open_str=""),
-            close="",
-            empty_set=None,
+            set_open=fixed_open(open_str="+arr "),
+            close=" -arr",
+            empty_set="+arr -arr",
             preamble_lines=(),
             set_opener_template="",
             supports_heterogeneity=True,
@@ -597,12 +652,12 @@ class Forth(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return passthrough_sequence_entry
+        return _forth_sequence_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return passthrough_sequence_entry
+        return _forth_sequence_entry
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
@@ -724,10 +779,10 @@ class Forth(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_open(open_str=""),
-            close="",
+            dict_open=fixed_open(open_str="+obj "),
+            close=" -obj",
             format_entry=_format_forth_dict_entry,
-            empty_dict=None,
+            empty_dict="+obj -obj",
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
@@ -777,8 +832,8 @@ class Forth(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str=""),
-            close="",
+            ordered_map_open=fixed_open(open_str="+obj "),
+            close=" -obj",
             preamble_lines=(),
         )
 

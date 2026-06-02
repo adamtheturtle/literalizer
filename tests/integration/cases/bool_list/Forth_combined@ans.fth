@@ -1,10 +1,14 @@
 : my_data
-    true
-    false
-    true
++arr
+    true +bool
+    false +bool
+    true +bool
+ -arr
 ;
 : my_data
-    true
-    false
-    true
++arr
+    true +bool
+    false +bool
+    true +bool
+ -arr
 ;

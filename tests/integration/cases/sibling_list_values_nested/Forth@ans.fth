@@ -1,4 +1,6 @@
 : my_data
-    s\" lint" 2
-    s\" test" 5 s\" compile"
++obj
+    s\" lint" +key +arr 2 +int +arr -arr -arr
+    s\" test" +key +arr 5 +int +arr s\" compile" +str -arr -arr
+ -obj
 ;

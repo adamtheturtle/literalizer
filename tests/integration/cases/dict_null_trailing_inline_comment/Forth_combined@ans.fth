@@ -1,10 +1,14 @@
 \ not configured yet
 : my_data
-    s\" host" s\" localhost"
-    s\" port" 0
++obj
+    s\" host" +key s\" localhost" +str
+    s\" port" +key +null
+ -obj
 ;
 \ not configured yet
 : my_data
-    s\" host" s\" localhost"
-    s\" port" 0
++obj
+    s\" host" +key s\" localhost" +str
+    s\" port" +key +null
+ -obj
 ;

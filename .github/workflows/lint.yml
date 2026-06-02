@@ -456,10 +456,18 @@ jobs:
       - name: Tcl roundtrip
         run: uv run python .github/scripts/run_tcl_roundtrip.py
 
+      # The literalized `*.fth` fixtures are visitor streams that call
+      # the `+obj`/`+arr`/`+key`/`+int`/... constructor words (issue
+      # 2744).  Load the minimal stack-discipline bindings in
+      # `.github/scripts/forth_visitor_lint.fs` before each fixture so
+      # those words resolve; that validates the generated code parses
+      # and every word it names is defined.  The shipped FFL `jos`
+      # default binding (`src/literalizer/languages/forth_prelude.fs`)
+      # is exercised end-to-end by the `Forth roundtrip` step below.
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth && test -s /tmp/files-forth
-          xargs -0 -P "$(nproc)" -I{} gforth {} -e bye < /tmp/files-forth
+          xargs -0 -P "$(nproc)" -I{} gforth .github/scripts/forth_visitor_lint.fs {} -e bye < /tmp/files-forth
 
       # Basic JSON -> Forth -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `gforth` toolchain on PATH;

@@ -2,7 +2,9 @@
 ( default host )
 ( Enable debug mode )
 : my_data
-    s\" host" s\" localhost"
-    s\" port" 8080
-    s\" debug" true
++obj
+    s\" host" +key s\" localhost" +str
+    s\" port" +key 8080 +int
+    s\" debug" +key true +bool
+ -obj
 ;

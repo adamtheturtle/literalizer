@@ -1,2 +1,6 @@
 \ real
-: my_data     s\" key" s\" \"bang!\"" ;
+: my_data
++obj
+    s\" key" +key s\" \"bang!\"" +str
+ -obj
+;
