@@ -1,1 +1,0 @@
-Add a MATLAB JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``myData`` value with the built-in ``jsonencode``; the 26-digit ``biginteger`` field is excluded because MATLAB's only numeric type is the IEEE 754 ``double``, which re-emits it as ``1e26``.

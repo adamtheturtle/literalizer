@@ -1,1 +1,0 @@
-Size COBOL ``PIC X(n)`` alphanumeric clauses by the UTF-8 byte length of the string rather than its character count, so that string literals containing characters that take more than one UTF-8 byte are no longer given an undersized picture and silently truncated by GnuCOBOL at runtime.

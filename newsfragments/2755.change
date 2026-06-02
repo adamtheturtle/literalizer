@@ -1,1 +1,0 @@
-Expose the nested ``JsonTypes`` and ``BoolFormats`` enum classes (plus their snake_case ``json_types`` / ``bool_formats`` aliases) on every ``Language`` subclass, using an empty enum for languages that do not support these options. Consumers can now enumerate these options uniformly across languages without reflection helpers.

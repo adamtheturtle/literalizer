@@ -1,1 +1,0 @@
-Add a Nix JSON round-trip check to CI using the shared round-trip fixture, evaluating the literalized expression with ``nix-instantiate --eval --strict --json`` so that Nix's built-in JSON printer re-emits the value.

@@ -3,6 +3,65 @@ Changelog
 
 .. towncrier release notes start
 
+2026.06.02
+----------
+
+- Add a Bash JSON round-trip check to CI using the shared round-trip fixture, driven by the pinned ``bash`` interpreter. Because Bash associative arrays cannot nest, the check walks the known JSON shape and runs ``eval`` on each nested-collection string to rebuild a fresh array before re-emitting JSON.
+
+- Add a C JSON round-trip check to CI using the shared round-trip fixture; because the literalizer's ``CVal`` union carries no run-time discriminator, the helper builds a parallel ``cJSON`` tree whose shape is generated from the parsed input (one ``cJSON_Create*`` call per node, reading the ``CVal`` slot that matches the original JSON type) and prints it with ``cJSON_PrintUnformatted``.
+
+- Add a COBOL JSON round-trip check to CI using the shared round-trip fixture, compiled and run with GnuCOBOL and re-emitting JSON via the standard ``JSON GENERATE`` statement.  ``JSON GENERATE`` skips ``FILLER`` items (so the literalizer's ``FILLER``-group arrays cannot be reconstructed), has no JSON boolean and no floating-point support, and mangles keys to COBOL data names, so the helper renames the recoverable top-level scalars back to their original keys with a ``NAME OF`` clause and excludes the array/object/boolean/float fields plus the integer-overflowing ``biginteger`` and the width-truncated ``string_empty`` / ``string_unicode`` values.
+
+- Add a Fortran JSON round-trip check to CI using the shared round-trip fixture, and switch the Fortran language module to emit ``real(real64)`` literals (with the matching ``freal`` constructor signature in the ``fval_m`` preamble) so that double-precision values like ``1.7976931348623157e+308`` are no longer silently truncated to single precision.
+
+- Add a MATLAB JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``myData`` value with the built-in ``jsonencode``; the 26-digit ``biginteger`` field is excluded because MATLAB's only numeric type is the IEEE 754 ``double``, which re-emits it as ``1e26``.
+
+- Add a Mojo JSON round-trip check to CI using the shared round-trip fixture, run with ``mojo run``.  The shared input's mixed-type top-level object is literalized with the ``VARIANT`` heterogeneous strategy and re-emitted by copying each value out of its ``Variant`` slot into a CPython ``dict`` and calling ``json.dumps`` on it through Mojo's ``std.python`` bridge to CPython (Mojo has no JSON encoder of its own).  The wide ``biginteger`` field (which overflows Mojo's 64-bit ``Int``) and the array/object fields (which the ``VARIANT`` strategy cannot place alongside scalars in one dict) are excluded.
+
+- Add a Nix JSON round-trip check to CI using the shared round-trip fixture, evaluating the literalized expression with ``nix-instantiate --eval --strict --json`` so that Nix's built-in JSON printer re-emits the value.
+
+- Add a Norg JSON round-trip check to CI using the shared round-trip fixture.  The literalizer stores the value inside a ``@code json`` ranged verbatim tag, so the check parses the generated document with the ``tree-sitter-norg`` grammar, pulls the embedded code block back out, and re-parses it with the standard library ``json`` module.
+
+- Add a PowerShell JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``$myData`` value with the built-in ``ConvertTo-Json -Depth 100 -Compress``; the 26-digit ``biginteger`` field is excluded because PowerShell parses it as a ``[double]`` and re-emits it with a fractional part.
+
+- Add a Scheme JSON round-trip check to CI using the shared round-trip fixture, driven by Guile 3 and the ``guile-json`` library.
+
+- Add a SystemVerilog JSON round-trip check to CI using the shared round-trip fixture, built and run with ``verilator --binary``.  Because the literalizer's ``_VVal`` is a flat tagged record (it has no recursive component and no boolean tag), nested containers are serialized to opaque strings and booleans share the integer slot, so the helper generates the re-emitting walk from the parsed input's shape (one expression per top-level key, reading the ``_VVal`` slot that matches the original JSON type) and excludes the array/object fields, which cannot be walked back into at run time.
+
+- Rework the Forth language to emit a structured visitor stream. The literalized ``: my_data ... ;`` definition now calls small constructor words (``+obj``/``-obj``/``+arr``/``-arr``/``+key``/``+int``/``+float``/``+str``/``+bool``/``+null``) that preserve the document structure, instead of the previous flat sequence of stack pushes that dropped all array and object boundaries.  The constructor words are a protocol the caller binds: literalizer ships a default binding (``src/literalizer/languages/forth_prelude.fs``) that writes JSON through the Forth Foundation Library ``jos`` module, so a literalized definition prints the document as JSON out of the box, while a caller can redefine any word to build a Forth-side structure or emit another format.
+
+- Add ``Odin(json_type=Odin.json_types.JSON_VALUE)``, the Odin sibling of the existing Zig / C++ / Haskell / OCaml / PureScript JSON-value modes, so output renders the literalized document as a single ``json.parse_string`` call against an embedded JSON text rather than the default ``map[string]any`` / ``[dynamic]any`` shape.  The rendered binding therefore has the static type ``json.Value`` (the ``core:encoding/json`` sum type), so the value flows directly through ``json.marshal`` instead of needing a hand-rolled ``any``-walker, and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the single parsed value.
+
+- Expose the nested ``JsonTypes`` and ``BoolFormats`` enum classes (plus their snake_case ``json_types`` / ``bool_formats`` aliases) on every ``Language`` subclass, using an empty enum for languages that do not support these options. Consumers can now enumerate these options uniformly across languages without reflection helpers.
+
+- Add a ``json_type=Scheme.json_types.GUILE_JSON`` option to the Scheme language that renders objects as Scheme association lists, arrays as vectors, and null as ``'null`` so the literalized binding can be handed directly to guile-json's ``scm->json`` without an intermediate shape walker.
+
+- Change the default ``Scheme`` dict and ordered-map rendering from a flat alternating ``(list "k" v "k" v ...)`` to an association list of cons pairs (``(list (cons "k" v) ...)``). Each entry is now a ``pair?`` rather than a bare scalar, so a non-empty mapping is locally distinguishable from a heterogeneous sequence, and the form is what ``assoc`` / ``alist->hash-table`` expect. The empty case stays ``(list)`` for both an empty dict and an empty sequence.
+
+- Add ``C(json_type=C.json_types.CJSON)``, which renders the literalized document as a portable ``cJSON_Create*(...)`` node tree (one ``cJSON *`` statement per node, composed with ``cJSON_AddItemToArray`` / ``cJSON_AddItemToObject``) under ``#include <cjson/cJSON.h>`` instead of the default tagged ``CVal`` union. Integers are widened to ``double`` (``cJSON`` has no integer constructor) and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the ``cJSON`` value type.
+
+- Rewrite the C JSON round-trip CI check to literalize the shared fixture through ``C(json_type=C.json_types.CJSON)`` and print it with ``cJSON_PrintUnformatted``, dropping the Python-side walker that previously built a parallel ``cJSON`` tree from the parsed input. The check still reports ``C round-trip OK`` with the same two excluded fields.
+
+- Size COBOL ``PIC X(n)`` alphanumeric clauses by the UTF-8 byte length of the string rather than its character count, so that string literals containing characters that take more than one UTF-8 byte are no longer given an undersized picture and silently truncated by GnuCOBOL at runtime.
+
+- Give colliding COBOL data names a numeric suffix so that two distinct JSON object keys that map to the same COBOL data name (because the character rewriting or the 30-character name limit collapses them together) no longer produce two sibling items with the same name in one group, which GnuCOBOL rejects as ambiguous when the name is referenced.
+
+- Add ``Cobol(json_type=CJSON)``, which renders a document as a ``cJSON`` node tree built through COBOL's C ``CALL`` interface (``cJSON_Create*`` composed with ``cJSON_AddItemTo*``) rather than a WORKING-STORAGE record, so arbitrary string keys, JSON booleans, real numbers, heterogeneous arrays, nested objects, and the empty string are all represented faithfully.  The COBOL JSON round-trip now uses this mode with ``cJSON_PrintUnformatted``, so it reproduces every field of the shared input except ``biginteger`` and ``float_large_exponent``.
+
+- Lead the README and documentation home page with a minimal ``literalize`` call so that the required arguments are obvious at a glance, and move the format-option configuration into a follow-up example instead of mixing default-valued arguments into the first example.
+
+- Collapsed the repetitive per-language "JSON value types" documentation section into a single lookup table, keeping prose only for the unusual OCaml and D cases.
+
+- Document when to choose a ``heterogeneous_strategy`` versus a ``json_type`` for mixed-type data: the heterogeneous strategies page now carries a "Which should I use?" note contrasting the statically typed wrappers with the single runtime JSON value type, and the two documentation sections cross-link each other.
+
+- Add a "Common errors and how to resolve them" documentation page mapping each user-facing exception to its cause and the recommended fix.
+
+- Add TOML and JSON5 input examples to the documentation, showing that TOML comments are preserved and that JSON5's relaxed syntax (comments, single-quoted strings, trailing commas, and hexadecimal numbers) is accepted.
+
+- Restructured the API reference into labeled sections (core functions, result type, variable forms, identifier cases, function calls, formatting configuration, language definition and exceptions) and stopped surfacing undocumented internals on the page.
+
+- Remove the incomplete custom-language sketch from the "Custom language implementations" documentation; it imported private, underscore-prefixed modules.  The section now points readers to the built-in language modules as the worked example.
+
 2026.05.28
 ----------
 

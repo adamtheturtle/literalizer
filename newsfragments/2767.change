@@ -1,1 +1,0 @@
-Rewrite the C JSON round-trip CI check to literalize the shared fixture through ``C(json_type=C.json_types.CJSON)`` and print it with ``cJSON_PrintUnformatted``, dropping the Python-side walker that previously built a parallel ``cJSON`` tree from the parsed input. The check still reports ``C round-trip OK`` with the same two excluded fields.

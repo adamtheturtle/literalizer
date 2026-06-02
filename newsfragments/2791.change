@@ -1,1 +1,0 @@
-Lead the README and documentation home page with a minimal ``literalize`` call so that the required arguments are obvious at a glance, and move the format-option configuration into a follow-up example instead of mixing default-valued arguments into the first example.
