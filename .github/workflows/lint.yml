@@ -2855,8 +2855,18 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.sv' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # Pinned to 5.046 rather than `latest`: Verilator 5.048 hits an
+      # internal "Underflow of indentation" codegen error
+      # (`V3File.h:160`) when building the `run_systemverilog_roundtrip.py`
+      # program with `--binary` (the string-building `json_escape`
+      # helper, inlined into the concatenation that calls it). 5.046 is
+      # the most recent release that both lints the fixtures and builds
+      # the round-trip program cleanly; bump this once the upstream
+      # regression is fixed.
       - name: Install Verilator
         uses: veryl-lang/setup-verilator@v2
+        with:
+          version: '5.046'
       # `--language 1800-2017` matches `SystemVerilog.language_version` in
       # `src/literalizer/languages/systemverilog.py`
       # (`SystemVerilog.VersionFormats.IEEE_1800_2017` maps to the
@@ -2864,6 +2874,20 @@ jobs:
       - name: Check SystemVerilog syntax
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
           -Wno-REALCVT < /tmp/files-to-lint
+      # `uv` is needed by the `SystemVerilog roundtrip` step below; it
+      # runs the helper in project mode so `import literalizer` resolves.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+      # Basic JSON -> SystemVerilog -> JSON round-trip (issue 1867). Runs
+      # here because this is the job with Verilator installed; `uv run`
+      # (project mode, not `--no-project`) is required so
+      # `import literalizer` resolves. See
+      # `.github/scripts/run_systemverilog_roundtrip.py`.
+      - name: SystemVerilog roundtrip
+        run: uv run python .github/scripts/run_systemverilog_roundtrip.py
 
   lint-v:
     runs-on: ubuntu-latest
