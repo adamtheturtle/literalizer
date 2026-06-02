@@ -1,8 +1,8 @@
 (define my_data (list
-    "description" "# not a comment\n"
-    "name" "foo"
+    (cons "description" "# not a comment\n")
+    (cons "name" "foo")
 ))
 (set! my_data (list
-    "description" "# not a comment\n"
-    "name" "foo"
+    (cons "description" "# not a comment\n")
+    (cons "name" "foo")
 ))

@@ -1,8 +1,8 @@
 (define my_data (list
-    "name" "Alice"
-    "scores" (list
+    (cons "name" "Alice")
+    (cons "scores" (list
         10
         20
         30
-    )
+    ))
 ))

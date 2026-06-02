@@ -1,6 +1,6 @@
 (define my_data (list
-    "id" 1
-    "description" "She said \"hello\", then waved"
-    "is_done" #f
-    "blocks" (list 1 2 3)
+    (cons "id" 1)
+    (cons "description" "She said \"hello\", then waved")
+    (cons "is_done" #f)
+    (cons "blocks" (list 1 2 3))
 ))

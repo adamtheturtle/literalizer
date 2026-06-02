@@ -1,8 +1,8 @@
 (define my_data (list
-    (list (list "name" "Alice") (list "name" "Bob"))
-    (list (list "name" "Charlie") (list "name" "Dave"))
+    (list (list (cons "name" "Alice")) (list (cons "name" "Bob")))
+    (list (list (cons "name" "Charlie")) (list (cons "name" "Dave")))
 ))
 (set! my_data (list
-    (list (list "name" "Alice") (list "name" "Bob"))
-    (list (list "name" "Charlie") (list "name" "Dave"))
+    (list (list (cons "name" "Alice")) (list (cons "name" "Bob")))
+    (list (list (cons "name" "Charlie")) (list (cons "name" "Dave")))
 ))

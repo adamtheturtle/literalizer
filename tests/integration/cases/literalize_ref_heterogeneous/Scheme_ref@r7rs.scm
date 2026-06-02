@@ -1,4 +1,4 @@
 (define my_data (list
-    "a" 1
-    "b" "hello"
+    (cons "a" 1)
+    (cons "b" "hello")
 ))

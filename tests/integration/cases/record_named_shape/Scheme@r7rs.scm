@@ -1,4 +1,4 @@
 (define my_data (list
-    (list "id" 100 "description" "first task" "is_done" #f "blocks" (list 102 103))
-    (list "id" 101 "description" "second task" "is_done" #t "blocks" (list 100))
+    (list (cons "id" 100) (cons "description" "first task") (cons "is_done" #f) (cons "blocks" (list 102 103)))
+    (list (cons "id" 101) (cons "description" "second task") (cons "is_done" #t) (cons "blocks" (list 100)))
 ))

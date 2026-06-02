@@ -1,2 +1,2 @@
 (define process (lambda args (if #f #f)))
-(process (list "a" 1 "b" 2))
+(process (list (cons "a" 1) (cons "b" 2)))

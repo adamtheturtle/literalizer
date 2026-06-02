@@ -1,6 +1,6 @@
 (define my_data (list
-    "users" (list (list "name" "Bob" "tags" (list "admin" "user")) (list "name" "Carol" "tags" (list "guest")))
+    (cons "users" (list (list (cons "name" "Bob") (cons "tags" (list "admin" "user"))) (list (cons "name" "Carol") (cons "tags" (list "guest")))))
 ))
 (set! my_data (list
-    "users" (list (list "name" "Bob" "tags" (list "admin" "user")) (list "name" "Carol" "tags" (list "guest")))
+    (cons "users" (list (list (cons "name" "Bob") (cons "tags" (list "admin" "user"))) (list (cons "name" "Carol") (cons "tags" (list "guest")))))
 ))

@@ -1,6 +1,6 @@
 (define my_data (list
     ; before
-    "answer" 42  ; inline
-    "plain" "ok"
+    (cons "answer" 42)  ; inline
+    (cons "plain" "ok")
     ; trailing
 ))

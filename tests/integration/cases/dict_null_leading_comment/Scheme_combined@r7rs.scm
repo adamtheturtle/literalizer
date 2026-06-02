@@ -1,10 +1,10 @@
 (define my_data (list
     ; comment
-    "name" "Alice"
-    "score" '()
+    (cons "name" "Alice")
+    (cons "score" '())
 ))
 (set! my_data (list
     ; comment
-    "name" "Alice"
-    "score" '()
+    (cons "name" "Alice")
+    (cons "score" '())
 ))

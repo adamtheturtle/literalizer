@@ -1,8 +1,8 @@
 (define my_data (list
-    "project" "alpha"
-    "lead_task" (list "id" 100 "description" "first task" "is_done" #f "blocks" (list 102 103))
+    (cons "project" "alpha")
+    (cons "lead_task" (list (cons "id" 100) (cons "description" "first task") (cons "is_done" #f) (cons "blocks" (list 102 103))))
 ))
 (set! my_data (list
-    "project" "alpha"
-    "lead_task" (list "id" 100 "description" "first task" "is_done" #f "blocks" (list 102 103))
+    (cons "project" "alpha")
+    (cons "lead_task" (list (cons "id" 100) (cons "description" "first task") (cons "is_done" #f) (cons "blocks" (list 102 103))))
 ))

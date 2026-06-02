@@ -1,19 +1,19 @@
 (define my_data (list
-    "omap_value" (list
-        "first" 1
-    )
-    "sibling_lists" (list
-        "numbers" (list
+    (cons "omap_value" (list
+        (cons "first" 1)
+    ))
+    (cons "sibling_lists" (list
+        (cons "numbers" (list
             1
             2
-        )
-        "strings" (list
+        ))
+        (cons "strings" (list
             "x"
             "y"
-        )
-    )
-    "ref_marker_present" (list
+        ))
+    ))
+    (cons "ref_marker_present" (list
         "$keep"
         "z"
-    )
+    ))
 ))

@@ -1,5 +1,5 @@
 (define my_data (list
-    1 "one"
-    2 "two"
-    42 "answer"
+    (cons 1 "one")
+    (cons 2 "two")
+    (cons 42 "answer")
 ))

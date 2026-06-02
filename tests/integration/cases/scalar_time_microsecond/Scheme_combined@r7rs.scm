@@ -1,8 +1,8 @@
 (define my_data (list
-    "exact_millisecond" "09:30:15.123000"
-    "sub_millisecond" "09:30:15.123456"
+    (cons "exact_millisecond" "09:30:15.123000")
+    (cons "sub_millisecond" "09:30:15.123456")
 ))
 (set! my_data (list
-    "exact_millisecond" "09:30:15.123000"
-    "sub_millisecond" "09:30:15.123456"
+    (cons "exact_millisecond" "09:30:15.123000")
+    (cons "sub_millisecond" "09:30:15.123456")
 ))

@@ -1,9 +1,9 @@
 (define my_data (list
-    "name" "Alice"
-    "age" 30
-    "active" #t
-    "score" '()
-    "joined" "2024-01-15"
-    "last_login" "2024-01-15T12:30:00+00:00"
-    "avatar" "48656c6c6f"
+    (cons "name" "Alice")
+    (cons "age" 30)
+    (cons "active" #t)
+    (cons "score" '())
+    (cons "joined" "2024-01-15")
+    (cons "last_login" "2024-01-15T12:30:00+00:00")
+    (cons "avatar" "48656c6c6f")
 ))

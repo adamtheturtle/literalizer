@@ -1,5 +1,5 @@
 (define my_data (list
-    "a" '()
-    "b" '()
+    (cons "a" '())
+    (cons "b" '())
     ; trailing
 ))
