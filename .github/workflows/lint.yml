@@ -752,6 +752,15 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
+      # Unlike the other round-trip jobs, this one runs inside a
+      # container, so the checked-out workspace is owned by a different
+      # uid than the container user. Git then refuses to operate on it
+      # ("dubious ownership"), which breaks the `setuptools_scm` version
+      # lookup that `uv run` triggers when it builds `literalizer`. Mark
+      # the workspace safe so that build succeeds.
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
       # because this is the job with the MATLAB toolchain (Octave, the
       # practical CI substitute) already installed; `uv run` (project
