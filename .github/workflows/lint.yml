@@ -1672,6 +1672,11 @@ jobs:
         uses: fabasoad/setup-cobol-action@v1.6.2
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       # GnuCOBOL caps the file base name length and rejects ``@``-laden
       # names that exceed it, so copy each fixture to a fixed short
       # filename before invoking ``cobc``.
@@ -1694,6 +1699,14 @@ jobs:
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
+
+      # Basic JSON -> COBOL -> JSON round-trip (issue 2643). Runs here
+      # because this is the job with the pinned GnuCOBOL toolchain
+      # installed; `uv run` (project mode, not `--no-project`) is required
+      # so `import literalizer` resolves. See
+      # `.github/scripts/run_cobol_roundtrip.py`.
+      - name: Cobol roundtrip
+        run: uv run python .github/scripts/run_cobol_roundtrip.py
 
   lint-cpp:
     runs-on: ubuntu-latest
