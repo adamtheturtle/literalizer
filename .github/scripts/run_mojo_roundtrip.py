@@ -1,37 +1,42 @@
-r"""Mojo JSON round-trip check (issue #2664).
+"""Mojo JSON round-trip check (issue #2664).
 
 Literalize the shared ``roundtrip_input.json`` document to a Mojo
-``var my_data = {...}`` binding, wrap it in a ``def main() raises:`` whose
-body walks ``my_data`` and ``print``s the re-emitted JSON, run that with
-``mojo run``, and hand the emitted JSON to :func:`roundtrip_common.verify`.
+``var my_data = {...}`` binding, wrap it in a ``def main() raises:`` that
+copies each value into a CPython ``dict`` and ``print``s
+``json.dumps(...)`` of it, run that with ``mojo run``, and hand the
+emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Mojo roundtrip`` step of the
 ``lint-mojo`` job in ``.github/workflows/lint.yml``, because that job is
-where the Mojo toolchain is installed; ``uv run`` (project mode) is
-required so ``import literalizer`` resolves.  It is deliberately not a
-pytest test under ``tests/``.
+where the Mojo toolchain is installed.  It is deliberately not a pytest
+test under ``tests/``.
 
-Mojo ships no standard JSON encoder, so this helper hand-rolls one (the
-"language has no standard option" carve-out from the issue's
-prefer-a-library rule).  The shared input's top-level object holds scalar
-values of several types, so it is literalized with the ``VARIANT``
-heterogeneous strategy: the binding is a ``Dict[String, JsonValue]`` where
-``comptime JsonValue = Variant[Int, Float64, Bool, String]``.  Each value
-is read back from the slot matching its original JSON type --
-``[Int]`` for integers, ``[Bool]`` for booleans, ``[Float64]`` for floats
-and ``[String]`` for strings.  Knowing each key's JSON type up front (read
-from the parsed JSON in Python, same pattern as the C / Forth / Tcl /
-SystemVerilog helpers) is what lets booleans round-trip despite Python
-treating ``True`` / ``False`` as ``int`` instances.
+``uv run`` (project mode, not ``--no-project``) is load-bearing twice
+over: it makes ``import literalizer`` resolve here, *and* it puts uv's
+managed CPython on ``PATH`` so Mojo's ``std.python`` interop bridges to a
+``libpython`` that is guaranteed present on the runner (the same uv that
+runs this script supplies the Python it talks to).
 
-Integers and booleans print via ``String(...)`` / a ``"true"``/``"false"``
-ternary.  Floats print via ``String(Float64)``, whose Mojo shortest
-round-trip representation reparses to the same IEEE 754 ``binary64`` value
-(the comparison in :func:`roundtrip_common.verify` is on parsed Python
-values, and negative zero compares equal to zero there anyway).  Leaf
-string escaping is done by the ``json_escape`` helper below, which works
-on raw UTF-8 bytes so multi-byte codepoints survive byte-for-byte and only
-``"``, ``\`` and control characters are escaped.
+Mojo ships no JSON encoder in its own standard library, but it is built
+around Python interop, so the idiomatic "standard option" is to borrow
+CPython's :mod:`json` via ``Python.import_module("json")`` -- preferred
+over a hand-rolled serializer per the issue.  String escaping, unicode
+and number formatting are therefore CPython's; this helper only has to
+move each value out of Mojo into a ``Python.dict()``.
+
+The shared input's top-level object holds scalar values of several types,
+so it is literalized with the ``VARIANT`` heterogeneous strategy: the
+binding is a ``Dict[String, JsonValue]`` where
+``comptime JsonValue = Variant[Int, Float64, Bool, String]``.  Mojo
+cannot reflect over a ``Variant`` generically, so each value is read from
+the slot matching its original JSON type -- ``[Int]`` for integers,
+``[Bool]`` for booleans, ``[Float64]`` for floats and ``[String]`` for
+strings.  Knowing each key's JSON type up front (read from the parsed
+JSON in Python, same pattern as the C / Forth / Tcl / SystemVerilog
+helpers) is what lets booleans round-trip despite Python treating
+``True`` / ``False`` as ``int`` instances: assigning the ``[Bool]`` slot
+into the CPython dict yields a Python ``bool`` that ``json.dumps`` emits
+as ``true`` / ``false``.
 
 The shared input's nested containers and ``biginteger`` are excluded:
 
@@ -39,7 +44,8 @@ The shared input's nested containers and ``biginteger`` are excluded:
   the ``VARIANT`` strategy cannot place a container alongside scalars in
   one dict (it raises
   :class:`literalizer.exceptions.MixedDictValuesError`), so the mixed
-  top-level object is reduced to its scalar fields.
+  top-level object is reduced to its scalar fields.  This is a limit of
+  the Mojo backend, not of the serializer.
 * ``biginteger`` -- its 26-digit value overflows Mojo's signed 64-bit
   ``Int``, so it cannot be represented losslessly.  Same shape as the
   Go / TypeScript / Zig / C / SystemVerilog exclusions.
@@ -84,53 +90,6 @@ _EXCLUDED_KEYS = (
     "nested_object",
 )
 
-# Static Mojo helpers backing the shape-driven walk: a single hex-digit
-# encoder and a JSON string escaper that operates on raw UTF-8 bytes so
-# the multi-byte codepoints of ``string_unicode`` pass through unchanged
-# (only ``"``, ``\`` and control characters are escaped).
-_HELPERS = """def hex_digit(v: Int) -> UInt8:
-    if v < 10:
-        return UInt8(48 + v)
-    return UInt8(87 + v)
-
-def json_escape(t: String) -> String:
-    var buf = List[UInt8]()
-    buf.append(34)
-    for b in t.as_bytes():
-        var c = Int(b)
-        if c == 34:
-            buf.append(92)
-            buf.append(34)
-        elif c == 92:
-            buf.append(92)
-            buf.append(92)
-        elif c == 8:
-            buf.append(92)
-            buf.append(98)
-        elif c == 9:
-            buf.append(92)
-            buf.append(116)
-        elif c == 10:
-            buf.append(92)
-            buf.append(110)
-        elif c == 12:
-            buf.append(92)
-            buf.append(102)
-        elif c == 13:
-            buf.append(92)
-            buf.append(114)
-        elif c < 32:
-            buf.append(92)
-            buf.append(117)
-            buf.append(48)
-            buf.append(48)
-            buf.append(hex_digit((c >> 4) & 15))
-            buf.append(hex_digit(c & 15))
-        else:
-            buf.append(b)
-    buf.append(34)
-    return String(StringSlice(unsafe_from_utf8=Span(buf)))"""
-
 
 def _mojo_string_literal(text: str) -> str:
     """Return *text* as a double-quoted Mojo string literal."""
@@ -138,25 +97,24 @@ def _mojo_string_literal(text: str) -> str:
     return f'"{escaped}"'
 
 
-def _value_expr(*, value: JsonValue, key: str) -> str:
-    """Return a Mojo string expression re-emitting *value* for *key*.
+def _variant_slot(*, value: JsonValue) -> str:
+    """Return the ``Variant`` slot type for *value*'s JSON type.
 
     ``bool`` is checked before ``int`` because Python treats ``True`` /
-    ``False`` as ``int`` instances; the boolean reads the ``[Bool]`` slot
-    as a ``"true"``/``"false"`` ternary.  Containers and ``None`` never
-    reach here -- the former are trimmed via ``_EXCLUDED_KEYS`` and the
-    latter is absent from the shared input -- so an unexpected type raises
-    rather than emitting wrong code.
+    ``False`` as ``int`` instances; reading the ``[Bool]`` slot keeps the
+    value a Mojo ``Bool`` so it crosses into CPython as a ``bool``.
+    Containers and ``None`` never reach here -- the former are trimmed via
+    ``_EXCLUDED_KEYS`` and the latter is absent from the shared input --
+    so an unexpected type raises rather than emitting wrong code.
     """
-    access = f"{_VAR_NAME}[{_mojo_string_literal(text=key)}]"
     if isinstance(value, bool):
-        return f'(String("true") if {access}[Bool] else String("false"))'
+        return "Bool"
     if isinstance(value, int):
-        return f"String({access}[Int])"
+        return "Int"
     if isinstance(value, float):
-        return f"String({access}[Float64])"
+        return "Float64"
     if isinstance(value, str):
-        return f"json_escape({access}[String])"
+        return "String"
     message = f"unsupported round-trip value {value!r}"
     raise TypeError(message)
 
@@ -177,20 +135,22 @@ def _build_program(*, json_text: str) -> str:
         pre_indent_level=1,
     )
     parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)
-    walk = ['    var out = String("{")']
-    for index, (key, value) in enumerate(parsed.items()):
-        fragment = ("," if index else "") + json.dumps(obj=key) + ":"
-        expr = _value_expr(value=value, key=key)
+    walk = [
+        '    var json = Python.import_module("json")',
+        "    var out = Python.dict()",
+    ]
+    for key, value in parsed.items():
+        key_literal = _mojo_string_literal(text=key)
+        slot = _variant_slot(value=value)
         walk.append(
-            f"    out += {_mojo_string_literal(text=fragment)} + {expr}",
+            f"    out[{key_literal}] = {_VAR_NAME}[{key_literal}][{slot}]",
         )
-    walk.append('    out += "}"')
-    walk.append('    print(out, end="")')
+    walk.append('    print(json.dumps(out), end="")')
     walk_body = "\n".join(walk)
     preamble = "\n".join(result.preamble)
     return (
+        "from std.python import Python\n"
         f"{preamble}\n"
-        f"{_HELPERS}\n"
         "def main() raises:\n"
         f"{result.code}\n"
         f"{walk_body}\n"
