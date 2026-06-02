@@ -1,0 +1,1 @@
+Collapsed the repetitive per-language "JSON value types" documentation section into a single lookup table, keeping prose only for the unusual OCaml and D cases.
