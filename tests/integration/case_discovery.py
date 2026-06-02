@@ -88,6 +88,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_triple_top_level",
         "heterogeneous_time_string",
         "dict_wide_int_key",
+        # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
+        # variant case: a string mixing an embedded quote, a control
+        # character, and a multi-byte character exercises COBOL's
+        # ``X"NN"`` hex-byte splicing under ``json_type=CJSON`` (no other
+        # language renders this directory).
+        "cobol_cjson_string_bytes",
     }
 )
 

@@ -1,91 +1,87 @@
-"""COBOL JSON round-trip check (issue #2643).
+"""COBOL JSON round-trip check (issue #2790).
 
 Literalize the shared ``roundtrip_input.json`` document to a COBOL
-``01 MY-DATA.`` group (WORKING-STORAGE level items), wrap it in a tiny
-``CHECK`` program whose PROCEDURE DIVISION re-emits JSON with the
-standard ``JSON GENERATE`` statement, ``cobc``-compile and run that
-program, and hand the emitted JSON to :func:`roundtrip_common.verify`.
+``cJSON *`` node tree via ``Cobol(json_type=CJSON)``, wrap it in a tiny
+``CHECK`` program whose PROCEDURE DIVISION re-emits JSON with
+``cJSON_PrintUnformatted``, ``cobc``-compile and run that program, and
+hand the emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Cobol roundtrip`` step of the
 ``lint-cobol`` job in ``.github/workflows/lint.yml``, because that job
-is where the pinned GnuCOBOL toolchain is installed; ``uv run`` (project
-mode, not ``--no-project``) is required so ``import literalizer``
-resolves.  It is deliberately not a pytest test under ``tests/``.
+is where the pinned GnuCOBOL toolchain (and ``libcjson-dev``) is
+installed; ``uv run`` (project mode, not ``--no-project``) is required
+so ``import literalizer`` resolves.  It is deliberately not a pytest
+test under ``tests/``.
 
-GnuCOBOL ships ``JSON GENERATE`` as its standard JSON encoder, so this
-helper uses it rather than hand-rolling a serializer (the issue's
-prefer-a-library rule).  ``JSON GENERATE`` constrains what can be
-re-emitted, which is why the shared input is heavily trimmed before
-literalization (see ``_EXCLUDED_KEYS``):
+The default record mode round-trip (issue #2643) used GnuCOBOL's
+built-in ``JSON GENERATE``, which loses information as a JSON
+encoder: keys are recovered out of mangled COBOL data names, booleans
+and the empty string have no representation, floats are rejected, and
+arrays / objects are dropped.  ``Cobol(json_type=CJSON)`` (issue #2790,
+mirroring C's #2766 / #2767) instead builds the document directly as a
+``cJSON`` node tree through COBOL's C ``CALL`` interface -- one
+``cJSON_Create*`` CALL per node, composed with ``cJSON_AddItemTo*`` --
+so arbitrary string keys, JSON booleans, real numbers, heterogeneous
+arrays, nested objects, and the empty string all round-trip.  This
+helper therefore no longer reverse-engineers the key mapping in Python:
+it literalizes, prints, and compares, like the C / C++ / Haskell / Zig
+scripts.
 
-* The literalizer mangles each JSON key to a COBOL data name (``int`` ->
-  ``F-INT``); the ``NAME OF`` clause below renames each item back to its
-  original key, so only top-level scalars whose data name is recoverable
-  participate.
-* Booleans are stored as ``PIC X(5)`` strings (``"TRUE"`` / ``"FALSE"``)
-  and would re-emit as JSON strings, not JSON booleans.
-* Floats are stored as ``COMP-2``; GnuCOBOL's ``JSON GENERATE`` does not
-  implement floating-point items ("attempt to use non-implemented JSON
-  I/O").
-* Sequences and sets are stored as groups of ``FILLER`` items, which
-  ``JSON GENERATE`` omits, so arrays cannot be reconstructed.
-* Nested objects re-emit fine structurally but their keys are likewise
-  mangled, and there is no per-element ``NAME OF`` target for items
-  nested below the top level, so they are excluded too.
-* ``string_empty`` is stored as ``PIC X(1)`` (a single space), so it
-  cannot represent the empty string: a COBOL ``PIC X`` item has a
-  one-byte minimum and that byte holds a space, not nothing.
-* ``biginteger`` overflows COBOL's widest integer literal, so the
+``wrap_in_file=True`` already yields the complete cJSON-building
+``CHECK`` program (the WORKING-STORAGE pointer / literal items and the
+PROCEDURE DIVISION ``CALL`` tree ending in ``SET my_data`` and ``STOP
+RUN``), so the only surgery is splicing in the print storage and the
+print statements -- no manual program template, and no reach into the
+backend's private division-split marker.
+
+Two fields are excluded from the comparison (the same two as the C
+``cJSON`` round-trip):
+
+* ``biginteger`` -- its 26-digit value overflows the signed 64-bit
+  range (the widest integer literal the COBOL backend emits), so the
   literalizer raises
-  :class:`literalizer.exceptions.UnrepresentableIntegerError` before any
-  source is produced (same exclusion shape as the Go / TypeScript / C
-  scripts).
-
-Every remaining top-level scalar -- signed integers, the 32-bit-
-overflowing ``long``, and plain / escaped / unicode strings -- round-
-trips losslessly through ``JSON GENERATE`` (the ``PIC X`` items are
-sized by UTF-8 byte length, so multibyte values are no longer
-truncated).
+  :class:`literalizer.exceptions.UnrepresentableIntegerError`; trimmed
+  before literalization.  Same shape as the C / Go / TypeScript / Zig
+  exclusions.
+* ``float_large_exponent`` -- cJSON's own ``print_number``
+  (``snprintf("%1.15g", ...)`` with a 17-digit fallback) rounds
+  ``1.7976931348623157e+308`` (DBL_MAX) to a value that parses as
+  ``inf``, so cJSON emits the rounded form anyway.  The truncation
+  happens inside cJSON's printer, not in the literalized tree -- a
+  limitation inherited verbatim from the C round-trip, not a COBOL one.
 """
 
-import json
-import re
 import shutil
 
 import roundtrip_common
 
+import literalizer
 from literalizer.languages import Cobol
 
 _VAR_NAME = "my_data"
 _LABEL = "Cobol"
-_EXCLUDED_KEYS = (
-    "biginteger",
-    "float",
-    "float_large_exponent",
-    "negative_zero",
-    "bool_true",
-    "bool_false",
-    "string_empty",
-    "empty_array",
-    "int_array",
-    "double_array",
-    "bool_array",
-    "mixed_array",
-    "nested_array",
-    "empty_object",
-    "flat_object",
-    "nested_object",
+_EXCLUDED_KEYS = ("biginteger", "float_large_exponent")
+
+# The COBOL data name the binding pointer is declared under (the cJSON
+# document root).
+_DATA_NAME = _VAR_NAME.upper().replace("_", "-")
+
+# Extra WORKING-STORAGE items the print step needs: the pointer
+# ``cJSON_PrintUnformatted`` returns, its ``strlen`` (so the exact JSON
+# bytes are displayed without the trailing spaces of a fixed-width PIC),
+# and a BASED window over the returned C string.
+_PRINT_STORAGE = (
+    "01 JSON-PTR USAGE POINTER.\n"
+    "01 JSON-LEN PIC 9(9) COMP-5.\n"
+    "01 JSON-OUT PIC X(16000) BASED.\n"
 )
 
-# The literalized group opens ``01 MY-DATA.`` followed by one
-# ``05 F-... PIC ...`` elementary item per surviving key, in document
-# order.  Pull those data names out so each can be renamed back to its
-# original JSON key in the ``NAME OF`` clause; matching against the
-# emitted code (rather than reimplementing the key-to-name mangling)
-# keeps this in step with the COBOL backend.
-_DATA_NAME_RE = re.compile(
-    pattern=r"^\s*05\s+(F-[A-Z0-9-]+)\s",
-    flags=re.MULTILINE,
+_PRINT_STATEMENTS = (
+    '    CALL "cJSON_PrintUnformatted" USING BY VALUE '
+    f"{_DATA_NAME} RETURNING JSON-PTR.\n"
+    "    SET ADDRESS OF JSON-OUT TO JSON-PTR.\n"
+    '    CALL "strlen" USING BY VALUE JSON-PTR RETURNING JSON-LEN.\n'
+    "    DISPLAY JSON-OUT(1:JSON-LEN).\n"
 )
 
 
@@ -97,48 +93,28 @@ def _build_program(*, json_text: str) -> str:
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
-    result = roundtrip_common.literalize_new_variable(
-        language=Cobol(),
-        json_text=trimmed_json,
-        var_name=_VAR_NAME,
+    result = literalizer.literalize(
+        source=trimmed_json,
+        input_format=literalizer.InputFormat.JSON,
+        language=Cobol(json_type=Cobol.json_types.CJSON),
         pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=literalizer.NewVariable(name=_VAR_NAME),
+        wrap_in_file=True,
     )
-    keys = list(json.loads(s=trimmed_json).keys())
-    data_names = _DATA_NAME_RE.findall(string=result.code)
-    if len(data_names) != len(keys):
-        message = (
-            f"{_LABEL}: expected one COBOL data name per key, "
-            f"got {data_names!r} for {keys!r}"
-        )
-        raise RuntimeError(message)
-    rename_lines = "\n".join(
-        f'             {name} IS "{key}"'
-        for name, key in zip(data_names, keys, strict=True)
+    program = result.code.replace(
+        "WORKING-STORAGE SECTION.\n",
+        f"WORKING-STORAGE SECTION.\n{_PRINT_STORAGE}",
+        1,
+    ).replace(
+        "    STOP RUN.",
+        f"{_PRINT_STATEMENTS}    STOP RUN.",
     )
-    # ``result.code`` already prepends any ``body_preamble`` lines ahead
-    # of the declaration, which is exactly where they belong inside
-    # WORKING-STORAGE; COBOL defines none, so this is just the group.
-    group = result.code
-    return (
-        "IDENTIFICATION DIVISION.\n"
-        "PROGRAM-ID. CHECK.\n"
-        "DATA DIVISION.\n"
-        "WORKING-STORAGE SECTION.\n"
-        f"{group}\n"
-        "01 JSON-OUT PIC X(4000).\n"
-        "01 JSON-LEN PIC 9(9) COMP.\n"
-        "PROCEDURE DIVISION.\n"
-        "    JSON GENERATE JSON-OUT FROM MY-DATA COUNT IN JSON-LEN\n"
-        "        NAME OF MY-DATA IS OMITTED\n"
-        f"{rename_lines}\n"
-        "    END-JSON.\n"
-        "    DISPLAY JSON-OUT(1:JSON-LEN).\n"
-        "    STOP RUN.\n"
-    )
+    return f"{program}\n"
 
 
 def main() -> None:
-    """Round-trip the shared document through the COBOL backend."""
+    """Round-trip the shared document through the COBOL cJSON backend."""
     program = _build_program(json_text=roundtrip_common.read_input())
     cobc = shutil.which(cmd="cobc") or "cobc"
     roundtrip_common.execute(
@@ -147,7 +123,15 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[cobc, "-x", "-free", "check.cob", "-o", "check"],
+                args=[
+                    cobc,
+                    "-x",
+                    "-free",
+                    "check.cob",
+                    "-o",
+                    "check",
+                    "-lcjson",
+                ],
                 failure_label="cobc error",
             ),
             roundtrip_common.Step(

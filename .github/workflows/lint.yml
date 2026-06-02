@@ -1775,13 +1775,18 @@ jobs:
           cobc -free -fsyntax-only "$tmpdir/check.cob"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
+      # ``-lcjson`` links the cJSON library that the
+      # ``json_type=CJSON`` fixtures reach through COBOL's C ``CALL``
+      # interface (``cJSON_Create*`` / ``cJSON_AddItemTo*``).  The flag
+      # is harmless for the record-mode fixtures that do not call into
+      # it, so every fixture builds with the same command.
       - name: Run COBOL files
         run: |-
           cat > /tmp/run-cobol.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" || exit 1
+          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
