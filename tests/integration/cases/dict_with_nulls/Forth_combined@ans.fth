@@ -1,10 +1,14 @@
 : my_data
-    s\" name" s\" Alice"
-    s\" score" 0
-    s\" age" 30
++obj
+    s\" name" +key s\" Alice" +str
+    s\" score" +key +null
+    s\" age" +key 30 +int
+ -obj
 ;
 : my_data
-    s\" name" s\" Alice"
-    s\" score" 0
-    s\" age" 30
++obj
+    s\" name" +key s\" Alice" +str
+    s\" score" +key +null
+    s\" age" +key 30 +int
+ -obj
 ;

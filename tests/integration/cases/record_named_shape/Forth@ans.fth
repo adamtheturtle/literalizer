@@ -1,4 +1,6 @@
 : my_data
-    s\" id" 100 s\" description" s\" first task" s\" is_done" false s\" blocks" 102 103
-    s\" id" 101 s\" description" s\" second task" s\" is_done" true s\" blocks" 100
++arr
+    +obj s\" id" +key 100 +int s\" description" +key s\" first task" +str s\" is_done" +key false +bool s\" blocks" +key +arr 102 +int 103 +int -arr -obj
+    +obj s\" id" +key 101 +int s\" description" +key s\" second task" +str s\" is_done" +key true +bool s\" blocks" +key +arr 100 +int -arr -obj
+ -arr
 ;

@@ -1,12 +1,16 @@
 : my_data
-    1
-    s\" email"
-    s\" a@gmail.com"
-    100
++arr
+    1 +int
+    s\" email" +str
+    s\" a@gmail.com" +str
+    100 +int
+ -arr
 ;
 : my_data
-    1
-    s\" email"
-    s\" a@gmail.com"
-    100
++arr
+    1 +int
+    s\" email" +str
+    s\" a@gmail.com" +str
+    100 +int
+ -arr
 ;

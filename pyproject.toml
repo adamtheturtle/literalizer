@@ -110,6 +110,10 @@ packages.find.where = [
     "src",
 ]
 package-data.literalizer = [
+    # Default visitor bindings for the Forth language output (issue
+    # #2744); shipped so a literalized Forth definition can be run as a
+    # JSON emitter out of the box.
+    "languages/forth_prelude.fs",
     "py.typed",
 ]
 zip-safe = false

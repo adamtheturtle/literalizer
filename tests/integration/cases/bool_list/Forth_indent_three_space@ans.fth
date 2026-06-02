@@ -1,5 +1,7 @@
 : my_data
-   true
-   false
-   true
++arr
+   true +bool
+   false +bool
+   true +bool
+ -arr
 ;

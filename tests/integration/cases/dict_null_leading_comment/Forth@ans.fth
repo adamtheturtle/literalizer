@@ -1,5 +1,7 @@
 \ comment
 : my_data
-    s\" name" s\" Alice"
-    s\" score" 0
++obj
+    s\" name" +key s\" Alice" +str
+    s\" score" +key +null
+ -obj
 ;

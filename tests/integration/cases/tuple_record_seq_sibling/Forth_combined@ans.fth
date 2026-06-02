@@ -1,8 +1,12 @@
 : my_data
-    s\" scores" 10 20 30
-    s\" args" 1 s\" email" s\" a@gmail.com" 100
++obj
+    s\" scores" +key +arr 10 +int 20 +int 30 +int -arr
+    s\" args" +key +arr 1 +int s\" email" +str s\" a@gmail.com" +str 100 +int -arr
+ -obj
 ;
 : my_data
-    s\" scores" 10 20 30
-    s\" args" 1 s\" email" s\" a@gmail.com" 100
++obj
+    s\" scores" +key +arr 10 +int 20 +int 30 +int -arr
+    s\" args" +key +arr 1 +int s\" email" +str s\" a@gmail.com" +str 100 +int -arr
+ -obj
 ;

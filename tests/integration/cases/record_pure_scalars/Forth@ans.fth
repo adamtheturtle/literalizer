@@ -1,6 +1,8 @@
 : my_data
-    s\" name" s\" Alice"
-    s\" age" 30
-    s\" active" true
-    s\" score" 4.5e0
++obj
+    s\" name" +key s\" Alice" +str
+    s\" age" +key 30 +int
+    s\" active" +key true +bool
+    s\" score" +key 4.5e0 +float
+ -obj
 ;

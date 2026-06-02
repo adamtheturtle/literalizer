@@ -1,5 +1,7 @@
 : my_data
-    true
-    42
-    s\" apple"
++arr
+    true +bool
+    42 +int
+    s\" apple" +str
+ -arr
 ;

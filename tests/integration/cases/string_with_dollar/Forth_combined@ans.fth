@@ -1,8 +1,12 @@
 : my_data
-    s\" price $10"
-    s\" $HOME"
++arr
+    s\" price $10" +str
+    s\" $HOME" +str
+ -arr
 ;
 : my_data
-    s\" price $10"
-    s\" $HOME"
++arr
+    s\" price $10" +str
+    s\" $HOME" +str
+ -arr
 ;

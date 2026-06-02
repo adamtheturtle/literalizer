@@ -1,5 +1,7 @@
 : my_data
-    1
-    2.5e0
-    3
++arr
+    1 +int
+    2.5e0 +float
+    3 +int
+ -arr
 ;

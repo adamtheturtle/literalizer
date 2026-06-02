@@ -1,8 +1,12 @@
 : my_data
-    s\" project" s\" alpha"
-    s\" lead_task" s\" id" 100 s\" description" s\" first task" s\" is_done" false s\" blocks" 102 103
++obj
+    s\" project" +key s\" alpha" +str
+    s\" lead_task" +key +obj s\" id" +key 100 +int s\" description" +key s\" first task" +str s\" is_done" +key false +bool s\" blocks" +key +arr 102 +int 103 +int -arr -obj
+ -obj
 ;
 : my_data
-    s\" project" s\" alpha"
-    s\" lead_task" s\" id" 100 s\" description" s\" first task" s\" is_done" false s\" blocks" 102 103
++obj
+    s\" project" +key s\" alpha" +str
+    s\" lead_task" +key +obj s\" id" +key 100 +int s\" description" +key s\" first task" +str s\" is_done" +key false +bool s\" blocks" +key +arr 102 +int 103 +int -arr -obj
+ -obj
 ;

@@ -1,4 +1,6 @@
 : my_data
-    s\" description" s\" # not a comment\n"
-    s\" name" s\" foo"
++obj
+    s\" description" +key s\" # not a comment\n" +str
+    s\" name" +key s\" foo" +str
+ -obj
 ;

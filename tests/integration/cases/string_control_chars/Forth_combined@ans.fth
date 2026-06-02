@@ -1,10 +1,14 @@
 : my_data
-    s\" line1\r\nline2"
-    s\" line1\rline2"
-    s\" "
++arr
+    s\" line1\r\nline2" +str
+    s\" line1\rline2" +str
+    s\" " +str
+ -arr
 ;
 : my_data
-    s\" line1\r\nline2"
-    s\" line1\rline2"
-    s\" "
++arr
+    s\" line1\r\nline2" +str
+    s\" line1\rline2" +str
+    s\" " +str
+ -arr
 ;

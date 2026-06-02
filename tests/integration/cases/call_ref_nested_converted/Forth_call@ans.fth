@@ -1,3 +1,3 @@
 : process ;
-: MY_VAR 42 ;
-MY_VAR 42 s\" static" process
+: MY_VAR 42 +int ;
++arr MY_VAR 42 +int s\" static" +str -arr process

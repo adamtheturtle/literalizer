@@ -1,4 +1,4 @@
 \ note
-: my_data 0 ;
+: my_data +null ;
 \ note
-: my_data 0 ;
+: my_data +null ;

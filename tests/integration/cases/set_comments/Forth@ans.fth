@@ -2,6 +2,8 @@
 \ before banana
 \ trailing
 : my_data
-    s\" apple"
-    s\" banana"
++arr
+    s\" apple" +str
+    s\" banana" +str
+ -arr
 ;

@@ -1,10 +1,14 @@
 \ removes "world"
 : my_data
-    s\" ADD" s\" alice" s\" hello"
-    s\" DEL" s\" bob" s\" 5"
++arr
+    +arr s\" ADD" +str s\" alice" +str s\" hello" +str -arr
+    +arr s\" DEL" +str s\" bob" +str s\" 5" +str -arr
+ -arr
 ;
 \ removes "world"
 : my_data
-    s\" ADD" s\" alice" s\" hello"
-    s\" DEL" s\" bob" s\" 5"
++arr
+    +arr s\" ADD" +str s\" alice" +str s\" hello" +str -arr
+    +arr s\" DEL" +str s\" bob" +str s\" 5" +str -arr
+ -arr
 ;

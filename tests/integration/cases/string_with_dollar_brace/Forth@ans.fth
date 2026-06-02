@@ -1,4 +1,6 @@
 : my_data
-    s\" prefix ${HOME} suffix"
-    s\" ${interpolated}"
++arr
+    s\" prefix ${HOME} suffix" +str
+    s\" ${interpolated}" +str
+ -arr
 ;

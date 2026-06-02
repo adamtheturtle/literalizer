@@ -1,8 +1,12 @@
 : my_data
-    true false
-    true true
++arr
+    +arr true +bool false +bool -arr
+    +arr true +bool true +bool -arr
+ -arr
 ;
 : my_data
-    true false
-    true true
++arr
+    +arr true +bool false +bool -arr
+    +arr true +bool true +bool -arr
+ -arr
 ;

@@ -1,10 +1,14 @@
 : my_data
-    s\" foo"
-    s\" bar"
-    s\" baz"
++arr
+    s\" foo" +str
+    s\" bar" +str
+    s\" baz" +str
+ -arr
 ;
 : my_data
-    s\" foo"
-    s\" bar"
-    s\" baz"
++arr
+    s\" foo" +str
+    s\" bar" +str
+    s\" baz" +str
+ -arr
 ;

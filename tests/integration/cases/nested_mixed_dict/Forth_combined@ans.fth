@@ -1,2 +1,10 @@
-: my_data     s\" outer" s\" a" 1 s\" b" s\" x" s\" c" 0 ;
-: my_data     s\" outer" s\" a" 1 s\" b" s\" x" s\" c" 0 ;
+: my_data
++obj
+    s\" outer" +key +obj s\" a" +key 1 +int s\" b" +key s\" x" +str s\" c" +key +null -obj
+ -obj
+;
+: my_data
++obj
+    s\" outer" +key +obj s\" a" +key 1 +int s\" b" +key s\" x" +str s\" c" +key +null -obj
+ -obj
+;

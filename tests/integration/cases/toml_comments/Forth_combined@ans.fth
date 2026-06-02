@@ -2,13 +2,17 @@
 \ inline
 \ trailing
 : my_data
-    s\" answer" 42
-    s\" plain" s\" ok"
++obj
+    s\" answer" +key 42 +int
+    s\" plain" +key s\" ok" +str
+ -obj
 ;
 \ before
 \ inline
 \ trailing
 : my_data
-    s\" answer" 42
-    s\" plain" s\" ok"
++obj
+    s\" answer" +key 42 +int
+    s\" plain" +key s\" ok" +str
+ -obj
 ;

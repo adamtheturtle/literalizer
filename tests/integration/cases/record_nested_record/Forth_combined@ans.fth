@@ -1,8 +1,12 @@
 : my_data
-    s\" id" 1
-    s\" owner" s\" name" s\" Alice" s\" age" 30
++obj
+    s\" id" +key 1 +int
+    s\" owner" +key +obj s\" name" +key s\" Alice" +str s\" age" +key 30 +int -obj
+ -obj
 ;
 : my_data
-    s\" id" 1
-    s\" owner" s\" name" s\" Alice" s\" age" 30
++obj
+    s\" id" +key 1 +int
+    s\" owner" +key +obj s\" name" +key s\" Alice" +str s\" age" +key 30 +int -obj
+ -obj
 ;

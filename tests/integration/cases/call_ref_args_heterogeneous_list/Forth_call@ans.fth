@@ -1,14 +1,18 @@
 : process ;
 : my_ints
-    1
-    2
-    3
++arr
+    1 +int
+    2 +int
+    3 +int
+ -arr
 ;
 : my_strings
-    s\" a"
-    s\" b"
++arr
+    s\" a" +str
+    s\" b" +str
+ -arr
 ;
-: my_empty ;
+: my_empty +arr -arr ;
 my_ints 42 process
 my_strings 7 process
 my_empty 99 process

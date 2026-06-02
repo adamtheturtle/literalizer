@@ -1,8 +1,12 @@
 : my_data
-    s\" a"
-    s\" b"
++obj
+    s\" a" +key +arr -arr
+    s\" b" +key +arr -arr
+ -obj
 ;
 : my_data
-    s\" a"
-    s\" b"
++obj
+    s\" a" +key +arr -arr
+    s\" b" +key +arr -arr
+ -obj
 ;

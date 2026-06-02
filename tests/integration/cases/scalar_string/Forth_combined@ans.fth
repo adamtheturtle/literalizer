@@ -1,2 +1,2 @@
-: my_data s\" hello" ;
-: my_data s\" hello" ;
+: my_data s\" hello" +str ;
+: my_data s\" hello" +str ;

@@ -1,8 +1,12 @@
 : my_data
-    s\" lint" 2 1
-    s\" test" 5 7
++obj
+    s\" lint" +key +arr 2 +int +arr 1 +int -arr -arr
+    s\" test" +key +arr 5 +int +arr 7 +int -arr -arr
+ -obj
 ;
 : my_data
-    s\" lint" 2 1
-    s\" test" 5 7
++obj
+    s\" lint" +key +arr 2 +int +arr 1 +int -arr -arr
+    s\" test" +key +arr 5 +int +arr 7 +int -arr -arr
+ -obj
 ;

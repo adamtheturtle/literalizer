@@ -1,1 +1,5 @@
-: my_data     s\" SGVsbG8=" ;
+: my_data
++arr
+    s\" SGVsbG8=" +str
+ -arr
+;

@@ -1,5 +1,7 @@
 : my_data
-    s\" my-key" s\" value1"
-    s\" another-key" s\" value2"
-    s\" normal_key" s\" value3"
++obj
+    s\" my-key" +key s\" value1" +str
+    s\" another-key" +key s\" value2" +str
+    s\" normal_key" +key s\" value3" +str
+ -obj
 ;

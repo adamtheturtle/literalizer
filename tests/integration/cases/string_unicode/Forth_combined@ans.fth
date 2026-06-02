@@ -1,8 +1,12 @@
 : my_data
-    s\" café"
-    s\" 中文"
++arr
+    s\" café" +str
+    s\" 中文" +str
+ -arr
 ;
 : my_data
-    s\" café"
-    s\" 中文"
++arr
+    s\" café" +str
+    s\" 中文" +str
+ -arr
 ;

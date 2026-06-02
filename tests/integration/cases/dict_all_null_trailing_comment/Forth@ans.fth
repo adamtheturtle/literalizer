@@ -1,5 +1,7 @@
 \ trailing
 : my_data
-    s\" a" 0
-    s\" b" 0
++obj
+    s\" a" +key +null
+    s\" b" +key +null
+ -obj
 ;

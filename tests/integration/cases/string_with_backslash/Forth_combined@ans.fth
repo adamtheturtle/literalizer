@@ -1,18 +1,22 @@
 : my_data
-    s\" C:\\path\\to\\file"
-    s\" back\\\\slash"
-    s\" hello \\\"world\\\""
-    s\" path\\to \"# file"
-    s\" trailing\\"
-    s\" both \"quotes''' here"
-    s\" line1\\nline2\nwith newline"
++arr
+    s\" C:\\path\\to\\file" +str
+    s\" back\\\\slash" +str
+    s\" hello \\\"world\\\"" +str
+    s\" path\\to \"# file" +str
+    s\" trailing\\" +str
+    s\" both \"quotes''' here" +str
+    s\" line1\\nline2\nwith newline" +str
+ -arr
 ;
 : my_data
-    s\" C:\\path\\to\\file"
-    s\" back\\\\slash"
-    s\" hello \\\"world\\\""
-    s\" path\\to \"# file"
-    s\" trailing\\"
-    s\" both \"quotes''' here"
-    s\" line1\\nline2\nwith newline"
++arr
+    s\" C:\\path\\to\\file" +str
+    s\" back\\\\slash" +str
+    s\" hello \\\"world\\\"" +str
+    s\" path\\to \"# file" +str
+    s\" trailing\\" +str
+    s\" both \"quotes''' here" +str
+    s\" line1\\nline2\nwith newline" +str
+ -arr
 ;

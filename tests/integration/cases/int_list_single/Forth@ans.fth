@@ -1,1 +1,5 @@
-: my_data     1 ;
+: my_data
++arr
+    1 +int
+ -arr
+;
