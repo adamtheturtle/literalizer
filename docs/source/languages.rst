@@ -4,14 +4,12 @@ Languages
 =========
 
 Every target language is a class in :mod:`literalizer.languages`.
-You import the class, optionally configure it, and pass an instance to
-:func:`~literalizer.literalize`.
+You import the class, optionally configure it, and pass an instance to :func:`~literalizer.literalize`.
 
 Selecting a language
 --------------------
 
-Each language class lives in :mod:`literalizer.languages` and is listed in
-:data:`~literalizer.languages.ALL_LANGUAGES`.
+Each language class lives in :mod:`literalizer.languages` and is listed in :data:`~literalizer.languages.ALL_LANGUAGES`.
 Create an instance with its defaults, or override individual format options:
 
 .. code-block:: python
@@ -42,8 +40,7 @@ Create an instance with its defaults, or override individual format options:
 Format options
 --------------
 
-Language classes define nested :class:`~enum.Enum` classes that control how
-each data type is rendered.
+Language classes define nested :class:`~enum.Enum` classes that control how each data type is rendered.
 The available enums vary by language, but the most common ones are:
 
 .. list-table::
@@ -79,59 +76,38 @@ The available enums vary by language, but the most common ones are:
    * - ``StatementTerminatorStyles``
      - Statement terminator (``SEMICOLON``, ``NEWLINE``, ``NONE``).
 
-Access a language's enum members through the class itself, e.g.
-``Go.sequence_formats.SLICE`` for Go slices or ``Go.date_formats.GO``
-for the ``time.Date(...)`` constructor.
+Access a language's enum members through the class itself, e.g. ``Go.sequence_formats.SLICE`` for Go slices or ``Go.date_formats.GO`` for the ``time.Date(...)`` constructor.
 
-Each ``__init__`` parameter has a sensible default, so you only need to
-specify the options you want to change.
+Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
 Float emission scope
 --------------------
 
-|project| emits a syntactically valid source literal for any finite
-IEEE 754 ``double`` the target language accepts.  Scientific-notation
-output always uses a dotted mantissa (``1.0e+16`` rather than
-``1e+16``) so the result parses as a float in languages whose
-grammars reject a bare integer mantissa (Ada, Cobol, Elixir, Erlang,
-Gleam, Nix, YAML).  Gleam additionally strips the ``+`` from positive
-exponents because its parser rejects the explicit sign; other
-languages keep the ``+`` because YAML's resolver regex requires it to
-recognize the literal as a float.
+|project| emits a syntactically valid source literal for any finite IEEE 754 ``double`` the target language accepts.
+Scientific-notation output always uses a dotted mantissa (``1.0e+16`` rather than ``1e+16``) so the result parses as a float in languages whose grammars reject a bare integer mantissa (Ada, Cobol, Elixir, Erlang, Gleam, Nix, YAML).
+Gleam additionally strips the ``+`` from positive exponents because its parser rejects the explicit sign; other languages keep the ``+`` because YAML's resolver regex requires it to recognize the literal as a float.
 
-Whether a round-trip through a *target ecosystem's* JSON encoder
-preserves edge values such as ``DBL_MAX`` is governed by that
-ecosystem's encoder (precision, integer-vs-float rendering, ``Inf``
-coercion) and is out of scope for the formatter.  Special floats
-(``inf`` / ``nan``) follow each language's ``supports_special_floats``
-policy; targets that have no expression for them (e.g. Gleam's Erlang
-target) raise
-:class:`~literalizer.exceptions.UnrepresentableSpecialFloatError`.
+Whether a round-trip through a *target ecosystem's* JSON encoder preserves edge values such as ``DBL_MAX`` is governed by that ecosystem's encoder (precision, integer-vs-float rendering, ``Inf`` coercion) and is out of scope for the formatter.
+Special floats (``inf`` / ``nan``) follow each language's ``supports_special_floats`` policy; targets that have no expression for them (e.g. Gleam's Erlang target) raise :class:`~literalizer.exceptions.UnrepresentableSpecialFloatError`.
 
 Heterogeneous values
 --------------------
 
-When the input data mixes value types that the target language's
-natural collection type cannot hold, a ``heterogeneous_strategy``
-constructor argument controls the outcome.  Every language defaults to
-``ERROR``; some expose richer strategies such as ``TAGGED_ENUM`` or
-``RECORD``.  See :ref:`heterogeneous-strategies` for the strategies,
-worked examples, and the per-language support matrix.
+When the input data mixes value types that the target language's natural collection type cannot hold, a ``heterogeneous_strategy`` constructor argument controls the outcome.
+Every language defaults to ``ERROR``; some expose richer strategies such as ``TAGGED_ENUM`` or ``RECORD``.
+See :ref:`heterogeneous-strategies` for the strategies, worked examples, and the per-language support matrix.
 
 .. _json-value-types:
 
 JSON value types
 ----------------
 
-Some languages also have a single runtime JSON value type that is a better
-fit than native narrow collection types.  These languages support this
-through the ``json_type`` constructor argument, accessed as
-``<Language>.json_types.<VALUE>``.
+Some languages also have a single runtime JSON value type that is a better fit than native narrow collection types.
+These languages support this through the ``json_type`` constructor argument, accessed as ``<Language>.json_types.<VALUE>``.
 
 .. seealso::
 
-   :ref:`heterogeneous-strategies` for the statically typed alternative,
-   and its "Which should I use?" note comparing the two approaches.
+   :ref:`heterogeneous-strategies` for the statically typed alternative, and its "Which should I use?" note comparing the two approaches.
 
 Rust is the worked example:
 
@@ -149,13 +125,10 @@ Rust is the worked example:
        variable_form=NewVariable(name="payload"),
    )
 
-This emits ``serde_json::json!(...)`` expressions, relaxes Rust's
-homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys
-to be strings so they remain valid JSON object keys.
+This emits ``serde_json::json!(...)`` expressions, relaxes Rust's homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys to be strings so they remain valid JSON object keys.
 
-Every mode requires dict keys to be strings for the same reason.  The
-remaining languages differ only in the emitted form and a few extra
-constraints:
+Every mode requires dict keys to be strings for the same reason.
+The remaining languages differ only in the emitted form and a few extra constraints:
 
 .. list-table::
    :header-rows: 1
@@ -168,8 +141,7 @@ constraints:
    * - Crystal
      - ``JSON_ANY``
      - ``JSON.parse(%(...))`` yielding ``JSON::Any``
-     - Rejects characters that break the ``%(...)`` literal (``\``, ``"``,
-       ``(``, ``)``, ``#{``); rejects integers overflowing signed 64-bit.
+     - Rejects characters that break the ``%(...)`` literal (``\``, ``"``, ``(``, ``)``, ``#{``); rejects integers overflowing signed 64-bit.
    * - Java
      - ``JACKSON_JSON_NODE``
      - ``new ObjectMapper().readTree("...")`` yielding ``JsonNode``
@@ -180,87 +152,60 @@ constraints:
      - ``RECORD`` and ``TUPLE`` ``heterogeneous_strategy`` options rejected.
    * - Scala
      - ``CIRCE``
-     - ``Json.obj(...)`` / ``Json.arr(...)`` with ``Json.fromXxx(...)``
-       scalars yielding ``io.circe.Json``
+     - ``Json.obj(...)`` / ``Json.arr(...)`` with ``Json.fromXxx(...)`` scalars yielding ``io.circe.Json``
      - None beyond string keys.
    * - C#
      - ``SYSTEM_TEXT_JSON_NODE``
-     - ``new JsonObject { ... }`` / ``new JsonArray { ... }`` backed by
-       ``System.Text.Json.Nodes``
-     - Dates / datetimes / times become ISO 8601 strings; the ``const``
-       modifier is rejected (the constructors are runtime expressions).
+     - ``new JsonObject { ... }`` / ``new JsonArray { ... }`` backed by ``System.Text.Json.Nodes``
+     - Dates / datetimes / times become ISO 8601 strings; the ``const`` modifier is rejected (the constructors are runtime expressions).
    * - F#
      - ``SYSTEM_TEXT_JSON_NODE``
-     - ``JsonObject(dict [ ... ])`` / ``JsonArray([| ... |])`` with
-       ``JsonValue.Create(...)`` scalars
-     - Dates / datetimes / times become ISO 8601 strings unless
-       ``datetime_format`` is ``EPOCH``.
+     - ``JsonObject(dict [ ... ])`` / ``JsonArray([| ... |])`` with ``JsonValue.Create(...)`` scalars
+     - Dates / datetimes / times become ISO 8601 strings unless ``datetime_format`` is ``EPOCH``.
    * - Nim
      - ``JSON_NODE``
      - ``%*(...)`` backed by the standard-library ``json`` module
-     - Dates / datetimes become ISO 8601 strings; ``CONST`` is rejected
-       (``%*`` is a runtime macro).
+     - Dates / datetimes become ISO 8601 strings; ``CONST`` is rejected (``%*`` is a runtime macro).
    * - Haskell
      - ``AESON_VALUE``
      - ``[aesonQQ| ... |]`` quasi-quote yielding ``Data.Aeson.Value``
      - None beyond string keys.
    * - Zig
      - ``STD_JSON_VALUE``
-     - ``std.json.parseFromSlice(std.json.Value, allocator, "...", .{})
-       catch unreachable`` with an injected ``std.heap.ArenaAllocator``
-       preamble
-     - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is
-       rejected.
+     - ``std.json.parseFromSlice(std.json.Value, allocator, "...", .{}) catch unreachable`` with an injected ``std.heap.ArenaAllocator`` preamble
+     - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is rejected.
    * - C++
      - ``NLOHMANN_JSON``
-     - ``nlohmann::json::parse(R"json(...)json")`` plus an
-       ``#include <nlohmann/json.hpp>`` preamble line
+     - ``nlohmann::json::parse(R"json(...)json")`` plus an ``#include <nlohmann/json.hpp>`` preamble line
      - Input must not encode the raw-string terminator ``)json"``.
    * - Gleam
      - ``GLEAM_JSON_JSON``
-     - ``json.int`` / ``json.string`` / ``json.preprocessed_array`` /
-       ``json.object`` builders yielding ``gleam/json.Json``
-     - Adds an ``import gleam/json`` line and drops the ``GVal`` ADT;
-       non-finite floats rejected (the Erlang target cannot express them).
+     - ``json.int`` / ``json.string`` / ``json.preprocessed_array`` / ``json.object`` builders yielding ``gleam/json.Json``
+     - Adds an ``import gleam/json`` line and drops the ``GVal`` ADT; non-finite floats rejected (the Erlang target cannot express them).
    * - Elm
      - ``JSON_ENCODE_VALUE``
-     - ``Json.Encode.int`` / ``string`` / ``list identity`` / ``object``
-       calls yielding ``Json.Encode.Value``
-     - Adds an ``import Json.Encode`` line in place of the per-fixture
-       ``Val`` ADT.
+     - ``Json.Encode.int`` / ``string`` / ``list identity`` / ``object`` calls yielding ``Json.Encode.Value``
+     - Adds an ``import Json.Encode`` line in place of the per-fixture ``Val`` ADT.
    * - PureScript
      - ``ARGONAUT_JSON``
-     - ``fromRight jsonNull (jsonParser "...")`` yielding
-       ``Data.Argonaut.Core.Json``
+     - ``fromRight jsonNull (jsonParser "...")`` yielding ``Data.Argonaut.Core.Json``
      - Special floats (``NaN``, ``+Infinity``, ``-Infinity``) rejected.
    * - Scheme
      - ``GUILE_JSON``
-     - Association lists ``(list (cons "k" v) ...)``, vectors
-       ``(vector v ...)``, and the symbol ``'null``, ready for
-       ``scm->json``
-     - Resolves the default mode's object/array ambiguity; special floats
-       (``NaN``, ``+inf.0``, ``-inf.0``) rejected.
+     - Association lists ``(list (cons "k" v) ...)``, vectors ``(vector v ...)``, and the symbol ``'null``, ready for ``scm->json``
+     - Resolves the default mode's object/array ambiguity; special floats (``NaN``, ``+inf.0``, ``-inf.0``) rejected.
    * - Erlang
      - ``OTP_JSON``
-     - UTF-8 binary literals (``<<"..."/utf8>>``) for the built-in
-       ``json`` module; null as the atom ``null``; sets as JSON arrays
+     - UTF-8 binary literals (``<<"..."/utf8>>``) for the built-in ``json`` module; null as the atom ``null``; sets as JSON arrays
      - Requires the ``OTP_27`` built-in ``json:encode/1``.
    * - Odin
      - ``JSON_VALUE``
-     - JSON text parsed at runtime by a package-scope ``_json_parse``
-       helper (over ``core:encoding/json.parse_string``) yielding
-       ``json.Value``
-     - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is
-       rejected.
+     - JSON text parsed at runtime by a package-scope ``_json_parse`` helper (over ``core:encoding/json.parse_string``) yielding ``json.Value``
+     - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is rejected.
 
 Two cases are unusual enough to keep as prose.
 
-OCaml's ``YOJSON_SAFE_T`` mode emits ``Yojson.Safe.t`` polymorphic-variant
-literals directly, keyed by the standard ``yojson`` tag set (``Bool``,
-``Int``, ``Float``, ``String``, ``Null``, ``List``, ``Assoc``,
-``Intlit``), so the rendered binding has the static type ``Yojson.Safe.t``
-instead of OCaml's generated ``val_t`` algebraic type, and the
-``type val_t = ...`` preamble drops out entirely:
+OCaml's ``YOJSON_SAFE_T`` mode emits ``Yojson.Safe.t`` polymorphic-variant literals directly, keyed by the standard ``yojson`` tag set (``Bool``, ``Int``, ``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``), so the rendered binding has the static type ``Yojson.Safe.t`` instead of OCaml's generated ``val_t`` algebraic type, and the ``type val_t = ...`` preamble drops out entirely:
 
 .. code-block:: ocaml
 
@@ -269,18 +214,10 @@ instead of OCaml's generated ``val_t`` algebraic type, and the
        ("tags", `List [`String "red"; `Int 2])
    ]
 
-Dates, datetimes, times, and bytes fold into JSON-friendly strings;
-integers that exceed OCaml's native ``int`` range route through the
-``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON number)
-instead of raising.
+Dates, datetimes, times, and bytes fold into JSON-friendly strings; integers that exceed OCaml's native ``int`` range route through the ``Intlit`` arbitrary-precision escape hatch (a string-tagged JSON number) instead of raising.
 
-D's polarity is reversed from the others: its default already renders
-every value through ``std.json.JSONValue``, so the ``json_type``
-constructor argument selects the inverse mode.  ``D.json_types.STD_JSON_VALUE``
-is the default and matches the other languages' opt-in JSON value
-rendering; passing ``json_type=None`` instead activates a narrow-typed
-mode that mirrors the typed-collection defaults the other languages
-provide:
+D's polarity is reversed from the others: its default already renders every value through ``std.json.JSONValue``, so the ``json_type`` constructor argument selects the inverse mode.
+``D.json_types.STD_JSON_VALUE`` is the default and matches the other languages' opt-in JSON value rendering; passing ``json_type=None`` instead activates a narrow-typed mode that mirrors the typed-collection defaults the other languages provide:
 
 .. code-block:: python
 
@@ -296,33 +233,18 @@ provide:
        variable_form=NewVariable(name="counts"),
    )
 
-This emits raw D scalars, ``T[]`` array literals, and ``V[K]``
-associative-array literals (``auto counts = ["a": 1, "b": 2];``)
-without the ``JSONValue`` wrapper.  Inputs that have no narrow form,
-a heterogeneous list, a heterogeneous-valued dict, an empty list or
-dict (D's ``auto`` cannot infer an element type for an empty literal),
-a set, an ordered map, or a non-record dict, are rejected with
-:class:`~literalizer.exceptions.UnrepresentableInputError`.  The
-``RECORD`` ``heterogeneous_strategy`` is also rejected because it
-already renders record-shaped dicts as generated ``struct`` literals,
-which conflicts with narrow mode's associative-array form.
+This emits raw D scalars, ``T[]`` array literals, and ``V[K]`` associative-array literals (``auto counts = ["a": 1, "b": 2];``) without the ``JSONValue`` wrapper.
+Inputs that have no narrow form, a heterogeneous list, a heterogeneous-valued dict, an empty list or dict (D's ``auto`` cannot infer an element type for an empty literal), a set, an ordered map, or a non-record dict, are rejected with :class:`~literalizer.exceptions.UnrepresentableInputError`.
+The ``RECORD`` ``heterogeneous_strategy`` is also rejected because it already renders record-shaped dicts as generated ``struct`` literals, which conflicts with narrow mode's associative-array form.
 
 Empty mappings on Ada, Lua, PHP, and R
 --------------------------------------
 
-Ada, Lua, PHP, and R all have a runtime representation that cannot
-distinguish an empty mapping from an empty sequence.  Lua's table,
-PHP's array, and R's ``list()`` each serialize an empty mapping the
-same way their JSON encoders serialize an empty sequence (typically
-``[]``).  The Ada literalizer's unified ``A_Val`` aggregate likewise
-collapses an empty ``AMap'[]`` and an empty ``AList'[]`` to the same
-runtime value, so the mapping/sequence distinction is lost on
-round-trip.  ``literalize`` refuses to emit a literal that cannot
-round-trip and raises
-:class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on
-those four languages whenever an empty mapping appears at any depth
-in the input.  Empty sequences are unambiguous and are still
-accepted.
+Ada, Lua, PHP, and R all have a runtime representation that cannot distinguish an empty mapping from an empty sequence.
+Lua's table, PHP's array, and R's ``list()`` each serialize an empty mapping the same way their JSON encoders serialize an empty sequence (typically ``[]``).
+The Ada literalizer's unified ``A_Val`` aggregate likewise collapses an empty ``AMap'[]`` and an empty ``AList'[]`` to the same runtime value, so the mapping/sequence distinction is lost on round-trip.
+``literalize`` refuses to emit a literal that cannot round-trip and raises :class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on those four languages whenever an empty mapping appears at any depth in the input.
+Empty sequences are unambiguous and are still accepted.
 
 .. code-block:: python
 
@@ -347,10 +269,8 @@ accepted.
 Forth visitor stream
 --------------------
 
-Forth has no native mapping or sequence type, so the Forth language
-does not emit a data literal.  Instead it emits a colon definition that
-executes a sequence of small constructor words, one per structural
-event in the document:
+Forth has no native mapping or sequence type, so the Forth language does not emit a data literal.
+Instead it emits a colon definition that executes a sequence of small constructor words, one per structural event in the document:
 
 ============  ===========================  =================================
 Word          Stack effect                 Meaning
@@ -378,12 +298,8 @@ For example, ``{"name": "Alice", "tags": [1, 2]}`` is literalized to:
     -obj
    ;
 
-The constructor words are the protocol; the caller supplies their
-bindings.  The Forth language ships a default binding in
-``src/literalizer/languages/forth_prelude.fs`` that writes JSON to a
-shared output stream through the Forth Foundation Library ``jos``
-module, so loading the prelude and then running ``my_data`` prints the
-document as JSON out of the box:
+The constructor words are the protocol; the caller supplies their bindings.
+The Forth language ships a default binding in ``src/literalizer/languages/forth_prelude.fs`` that writes JSON to a shared output stream through the Forth Foundation Library ``jos`` module, so loading the prelude and then running ``my_data`` prints the document as JSON out of the box:
 
 .. code-block:: forth
 
@@ -391,32 +307,20 @@ document as JSON out of the box:
    \ ... the literalized : my_data ... ; definition ...
    my_data json-out str-get type
 
-To consume the same definition another way -- to build a Forth-side
-data structure, walk into custom storage, compute over the values, or
-emit a different format -- redefine any of the constructor words before
-running the definition.  Nothing in the definition is tied to JSON
-beyond the bindings the caller chooses to load.
+To consume the same definition another way -- to build a Forth-side data structure, walk into custom storage, compute over the values, or emit a different format -- redefine any of the constructor words before running the definition.
+Nothing in the definition is tied to JSON beyond the bindings the caller chooses to load.
 
 Custom language implementations
 -------------------------------
 
-To support a language that is not built in, create a class that satisfies
-the :class:`~literalizer.Language` protocol, using ``metaclass=LanguageCls``
-and defining the required nested enum classes and attributes.
+To support a language that is not built in, create a class that satisfies the :class:`~literalizer.Language` protocol, using ``metaclass=LanguageCls`` and defining the required nested enum classes and attributes.
 
-When an attribute is part of the :class:`~literalizer.Language` protocol but
-should resolve to ``None``, expose that value through a descriptor or property
-instead of storing literal ``None`` on the class.  CPython treats class-level
-``None`` as "attribute is not implemented" during runtime protocol checks,
-which can prevent ABC cache warming for large ``@runtime_checkable`` protocols;
-see `python/cpython#102433 <https://github.com/python/cpython/issues/102433>`__.
-Built-in languages use shared descriptors such as ``no_pygments_name`` and
-``no_format_integer_widened`` for this pattern.
+When an attribute is part of the :class:`~literalizer.Language` protocol but should resolve to ``None``, expose that value through a descriptor or property instead of storing literal ``None`` on the class.
+CPython treats class-level ``None`` as "attribute is not implemented" during runtime protocol checks, which can prevent ABC cache warming for large ``@runtime_checkable`` protocols; see `python/cpython#102433 <https://github.com/python/cpython/issues/102433>`__.
+Built-in languages use shared descriptors such as ``no_pygments_name`` and ``no_format_integer_widened`` for this pattern.
 
-Look at any built-in language module under ``literalizer/languages/`` for a
-complete working example.
-The :class:`~literalizer.Language` protocol documents every required
-attribute.
+Look at any built-in language module under ``literalizer/languages/`` for a complete working example.
+The :class:`~literalizer.Language` protocol documents every required attribute.
 
 Built-in languages
 ------------------
