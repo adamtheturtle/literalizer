@@ -47,7 +47,8 @@ class InvalidDictKeyError(Exception):
 
     This includes empty-string keys and keys containing characters that
     the language's label syntax does not support (e.g. control characters
-    in Dhall backtick-quoted labels).
+    in Dhall backtick-quoted labels).  To resolve, remove or rename the
+    offending key.
     """
 
 
@@ -57,19 +58,31 @@ class UnrepresentableInputError(Exception):
 
     Used as the centralized error for shape-level rejections at the
     formatting boundary, e.g. when a dict carries a non-string key for
-    a language whose surface syntax only admits string-typed keys.
+    a language whose surface syntax only admits string-typed keys.  To
+    resolve, adjust the data to a representable shape, or pick a language
+    that supports it.
     """
 
 
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
+
+    To resolve, pick a non-default ``heterogeneous_strategy`` (see
+    :ref:`heterogeneous-strategies`) or render the value through a
+    ``json_type`` (see :ref:`json-value-types`); catch this base class to
+    skip any heterogeneous input a strict-typed language cannot hold.
     """
 
 
 class HeterogeneousScalarCollectionError(HeterogeneousCollectionError):
     """Raised when a collection contains scalars of multiple types and
     the target language requires homogeneous scalar collections.
+
+    For example, ``[1, "two", 3.0]`` for a language that needs a single
+    element type.  To resolve, set ``heterogeneous_strategy`` to
+    ``TAGGED_ENUM`` (or the language's equivalent) to wrap each scalar,
+    or to ``TUPLE`` for a fixed-length array.
     """
 
 
@@ -77,36 +90,53 @@ class HeterogeneousSiblingListsError(HeterogeneousCollectionError):
     """Raised when sibling sub-lists contain scalars that, combined,
     span multiple types and the target language requires homogeneous
     scalar collections.
+
+    To resolve, use a ``TAGGED_ENUM`` strategy, or render the value
+    through a ``json_type``.
     """
 
 
 class MixedDictValuesError(HeterogeneousCollectionError):
     """Raised when a dict has values spanning multiple type families
     and the target language requires homogeneous dict values.
+
+    To resolve, use the ``RECORD`` strategy if the dict is conceptually
+    a record, or a ``json_type`` for arbitrary mappings.
     """
 
 
 class MixedDictKeysError(HeterogeneousCollectionError):
     """Raised when a dict has keys spanning multiple type families
     and the target language requires homogeneous dict keys.
+
+    To resolve, use a single key type, or render through a ``json_type``.
     """
 
 
 class MixedListValuesError(HeterogeneousCollectionError):
     """Raised when a list has elements spanning multiple type families
     and the target language requires homogeneous list elements.
+
+    To resolve, use a richer ``heterogeneous_strategy`` or a
+    ``json_type``.
     """
 
 
 class MixedDictShapesError(HeterogeneousCollectionError):
     """Raised when a list contains dicts with different key sets and
     the target language requires uniform record shapes (e.g. Dhall).
+
+    To resolve, make every dict share the same keys, or use a
+    ``json_type``.
     """
 
 
 class HeterogeneousSetError(HeterogeneousCollectionError):
     """Raised when a set contains scalars of multiple types and the
     target language requires homogeneous set elements.
+
+    To resolve, use one scalar type, or a richer
+    ``heterogeneous_strategy``.
     """
 
 
@@ -124,6 +154,10 @@ class TupleArityNotRepresentableError(HeterogeneousCollectionError):
     :class:`HeterogeneousCollectionError` so the same callers that
     already skip a heterogeneous input the language cannot represent
     also skip this one.
+
+    To resolve, shorten the array to a length the language supports,
+    choose a language without the tuple-length cap (Rust, Scala), or
+    switch to a ``TAGGED_ENUM`` strategy.
     """
 
     def __init__(self, *, arity: int) -> None:
@@ -142,18 +176,26 @@ class TupleArityNotRepresentableError(HeterogeneousCollectionError):
 class NullInCollectionError(Exception):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).
+
+    To resolve, remove the nulls, or select a collection format that
+    admits them.
     """
 
 
 class PerElementNotListError(Exception):
     """Raised when ``per_element=True`` but the parsed data is not a
     list.
+
+    To resolve, pass a list, or drop ``per_element``.
     """
 
 
 class ParameterCountMismatchError(Exception):
     """Raised when the number of ``parameter_names`` does not match the
     number of argument values in a function-call row.
+
+    To resolve, make ``parameter_names`` the same length as each row of
+    values.
     """
 
     def __init__(self, *, expected: int, got: int) -> None:
@@ -168,6 +210,9 @@ class ParameterCountMismatchError(Exception):
 class CallsNotSupportedByLanguageError(Exception):
     """Raised when the target language itself has no function call
     syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).
+
+    To resolve, use :func:`~literalizer.literalize` instead, or target a
+    programming language.
     """
 
     def __init__(self, *, language_name: str) -> None:
@@ -180,6 +225,8 @@ class CallsNotSupportedByToolError(Exception):
     """Raised when literalizer has not yet implemented function call
     rendering for the target language, even though the language itself
     has function call syntax.
+
+    To resolve, target a language whose call rendering is implemented.
     """
 
     def __init__(self, *, language_name: str) -> None:
@@ -196,9 +243,12 @@ class CallArgNotSupportedError(Exception):
     positional argument in the target language's call syntax.
 
     Used by languages whose call syntax does not accept compound
-    literals as arguments — e.g. Bash, where ``cmd (1 2 3)`` parses
+    literals as arguments, e.g. Bash, where ``cmd (1 2 3)`` parses
     as a nested ``(...)`` child-process invocation rather than an
     inline array value.
+
+    To resolve, bind the value to a name first, or target a language
+    that accepts the argument inline.
     """
 
     def __init__(self, *, language_name: str, reason: str) -> None:
@@ -217,6 +267,8 @@ class IncompatibleFormatsError(Exception):
     For example, Rust ``CONST`` and ``STATIC`` declaration styles
     require constant-expression initializers, but the ``VEC`` sequence
     format produces ``vec![…]`` which is not a constant expression.
+
+    To resolve, change one of the conflicting options so they agree.
     """
 
 
@@ -226,6 +278,9 @@ class InvalidRecordNameError(Exception):
     with a reserved keyword of the target language, collides with
     ``heterogeneous_value_enum_name``, or duplicates another mapped
     struct name.
+
+    To resolve, use distinct, valid PascalCase names that avoid reserved
+    keywords.
     """
 
 
@@ -238,6 +293,9 @@ class UnrepresentableIntegerError(Exception):
     ``integer``, Cobol ``PIC S9(18)``, PureScript ``Int``) when no
     external arbitrary-precision integer library is assumed to be
     available.
+
+    To resolve, keep integers within range, or target a language with
+    wider or arbitrary-precision integers.
     """
 
 
@@ -251,6 +309,9 @@ class UnrepresentableEmptyDictError(Exception):
     as ``[]``.  The literalizer refuses to emit a literal that cannot
     round-trip rather than silently lose the mapping/sequence
     distinction.
+
+    To resolve, drop the empty mapping, or target a language that
+    distinguishes the two.
     """
 
 
@@ -261,6 +322,9 @@ class UnrepresentableSpecialFloatError(Exception):
 
     Used by Gleam on the Erlang target, which has no expression that
     evaluates to a non-finite float.
+
+    To resolve, replace the non-finite floats with finite values, or
+    pick another language.
     """
 
 
@@ -269,6 +333,9 @@ class UnsupportedIdentifierCaseError(Exception):
     ``ref_case`` that is not in the target language's
     ``supported_ref_cases`` -- i.e. one that would not produce a
     syntactically legal identifier in the target language.
+
+    To resolve, choose a ``ref_case`` from the language's
+    ``supported_ref_cases``.
     """
 
     def __init__(self, *, language_name: str, case_name: str) -> None:
@@ -284,6 +351,9 @@ class DottedCallTargetNotSupportedError(Exception):
     """Raised when ``literalize_call`` is given a dotted
     ``target_function``
     but the target language does not support dotted call expressions.
+
+    To resolve, use a target name without dots, or target a language
+    with dotted calls.
     """
 
     def __init__(self, *, language_name: str, target_function: str) -> None:
@@ -299,6 +369,8 @@ class DottedCallTargetNotSupportedError(Exception):
 class ZipValuesLengthMismatchError(Exception):
     """Raised when ``literalize_call`` is given a ``zip_source`` whose
     parsed top-level elements differ in number from the generated calls.
+
+    To resolve, make ``zip_source`` hold one element per generated call.
     """
 
     def __init__(
@@ -323,6 +395,9 @@ class ZipValuesWithoutCallTransformError(Exception):
     The paired values are only reachable through
     :attr:`~literalizer.CallContext.zipped`, so supplying them without
     a transform would silently discard them.
+
+    To resolve, supply a ``call_transform`` that reads
+    :attr:`~literalizer.CallContext.zipped`, or drop ``zip_source``.
     """
 
     def __init__(self) -> None:
@@ -339,6 +414,8 @@ class ZipSourceWithoutInputFormatError(Exception):
 
     The companion source can only be parsed once its serialization
     format is known, so the two arguments must be supplied together.
+
+    To resolve, pass ``zip_input_format`` alongside ``zip_source``.
     """
 
     def __init__(self) -> None:
@@ -355,6 +432,8 @@ class CommentSourceLengthMismatchError(Exception):
 
     Each comment is paired positionally with one call, so the two
     sequences must be the same length.
+
+    To resolve, provide one comment per generated call.
     """
 
     def __init__(
@@ -379,6 +458,8 @@ class CommentSourceMultilineError(Exception):
     newline would push the remainder onto a line with no comment
     leader and, in languages whose line comment runs to end of line,
     produce invalid source.  Comments must be single-line.
+
+    To resolve, remove the newline, keeping each comment on one line.
     """
 
     def __init__(self, *, index: int) -> None:
@@ -393,6 +474,9 @@ class CommentSourceMultilineError(Exception):
 class VariableNameNotSupportedError(Exception):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.
+
+    To resolve, omit ``variable_form`` for that language, or target one
+    that supports it.
     """
 
     def __init__(self, *, language_name: str, variable_name: str) -> None:
@@ -418,6 +502,9 @@ class WrapInFileWithoutVariableNotSupportedError(Exception):
     :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
     to ``False``, and ``literalize`` rejects the combination at the
     boundary instead of silently emitting invalid code.
+
+    To resolve, supply a ``variable_form`` so the value becomes a
+    top-level declaration.
     """
 
     def __init__(self, *, language_name: str) -> None:
@@ -437,6 +524,9 @@ class UnsupportedCallShapeError(Exception):
     individual argument values): this covers structural properties of
     the call itself, e.g. zero-parameter calls in languages whose
     syntax requires at least one operand.
+
+    To resolve, adjust the call shape, or target a language that
+    supports it.
     """
 
     def __init__(self, *, language_name: str, reason: str) -> None:
@@ -456,4 +546,7 @@ class WrapCombinedInFileNotSupportedError(Exception):
     that form before reaching ``wrap_combined_in_file``, but each
     language implementation still raises this typed exception as a
     safety net.
+
+    To resolve, use a single variable form, or target a language that
+    supports the combined form.
     """
