@@ -213,6 +213,11 @@ CLI
 
 A command-line interface is available at `literalizer-cli <https://github.com/adamtheturtle/literalizer-cli>`__.
 
+Sphinx extension
+----------------
+
+A Sphinx extension is available at `sphinx-literalizer <https://github.com/adamtheturtle/sphinx-literalizer>`__.
+
 Reference
 ---------
 
