@@ -96,9 +96,8 @@ TOML is read the same way, and its comments are preserved too:
    #     "port": 8080,
    # }
 
-JSON5 is also accepted. Its relaxed syntax, such as comments, single-quoted
-strings, trailing commas, and hexadecimal numbers, is converted to the target
-language:
+JSON5 is also accepted.
+Its relaxed syntax, such as comments, single-quoted strings, trailing commas, and hexadecimal numbers, is converted to the target language:
 
 .. code-block:: python
 
@@ -127,21 +126,15 @@ language:
 Binding the result to a variable
 --------------------------------
 
-By default :func:`~literalizer.literalize` renders a bare literal.  Pass
-``variable_form`` to bind that literal to a variable instead, so the
-output is a statement you can drop straight into source.  There are three
-forms, and the difference is visible in languages that distinguish
-declaring a variable from assigning to one:
+By default :func:`~literalizer.literalize` renders a bare literal.
+Pass ``variable_form`` to bind that literal to a variable instead, so the output is a statement you can drop straight into source.
+There are three forms, and the difference is visible in languages that distinguish declaring a variable from assigning to one:
 
-* :class:`~literalizer.NewVariable` declares a fresh variable (Go's
-  ``config :=``, JavaScript's ``const config =``, Rust's ``let config =``).
+* :class:`~literalizer.NewVariable` declares a fresh variable (Go's ``config :=``, JavaScript's ``const config =``, Rust's ``let config =``).
   This is the form nearly every example uses.
-* :class:`~literalizer.ExistingVariable` assigns to a variable declared
-  elsewhere (``config =``), emitting no declaration keyword.
-* :class:`~literalizer.BothVariableForms` emits a declaration *and* a
-  subsequent assignment together, for showing both styles from one
-  source.  It requires ``wrap_in_file=True`` and a language whose
-  declaration style permits reassigning the same name.
+* :class:`~literalizer.ExistingVariable` assigns to a variable declared elsewhere (``config =``), emitting no declaration keyword.
+* :class:`~literalizer.BothVariableForms` emits a declaration *and* a subsequent assignment together, for showing both styles from one source.
+  It requires ``wrap_in_file=True`` and a language whose declaration style permits reassigning the same name.
 
 The same source, rendered for Go in each form:
 
@@ -203,14 +196,9 @@ The same source, rendered for Go in each form:
        "}"
    )
 
-Whether the two forms differ at all depends on the language.  Python uses
-``config =`` for both declaring and assigning, so with the default
-settings :class:`~literalizer.NewVariable` and
-:class:`~literalizer.ExistingVariable` render identically.  They diverge
-once a feature attaches to the *declaration* specifically: enabling
-``variable_type_hints`` makes :class:`~literalizer.NewVariable` annotate
-the binding (``config: dict[str, str | int] = ...``) while
-:class:`~literalizer.ExistingVariable` stays a bare ``config = ...``.
+Whether the two forms differ at all depends on the language.
+Python uses ``config =`` for both declaring and assigning, so with the default settings :class:`~literalizer.NewVariable` and :class:`~literalizer.ExistingVariable` render identically.
+They diverge once a feature attaches to the *declaration* specifically: enabling ``variable_type_hints`` makes :class:`~literalizer.NewVariable` annotate the binding (``config: dict[str, str | int] = ...``) while :class:`~literalizer.ExistingVariable` stays a bare ``config = ...``.
 
 Use cases
 ---------

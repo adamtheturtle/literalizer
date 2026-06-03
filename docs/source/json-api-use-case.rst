@@ -1,16 +1,13 @@
 Multi-language API documentation
 =================================
 
-If you maintain a JSON API, your documentation probably needs to show
-request and response examples in every language your callers use.
-|project| generates those native-language literals from a single JSON
-sample so you don't have to write them by hand.
+If you maintain a JSON API, your documentation probably needs to show request and response examples in every language your callers use.
+|project| generates those native-language literals from a single JSON sample so you don't have to write them by hand.
 
 Example
 -------
 
-Suppose your ``POST /users`` endpoint accepts this request body and
-returns this response:
+Suppose your ``POST /users`` endpoint accepts this request body and returns this response:
 
 .. code-block:: json
 

@@ -3,8 +3,7 @@ API Reference
 
 .. currentmodule:: literalizer
 
-Everything documented here is importable directly from the top-level
-``literalizer`` package (exceptions live in :mod:`literalizer.exceptions`).
+Everything documented here is importable directly from the top-level ``literalizer`` package (exceptions live in :mod:`literalizer.exceptions`).
 
 Core functions
 --------------
@@ -25,8 +24,7 @@ Result type
 Variable forms
 --------------
 
-The ``bound_refs`` argument to :func:`literalize` and :func:`literalize_call`
-describes each referenced name as one of these forms.
+The ``bound_refs`` argument to :func:`literalize` and :func:`literalize_call` describes each referenced name as one of these forms.
 
 .. autoclass:: NewVariable
    :members:
@@ -106,8 +104,7 @@ Input formats
 Formatting configuration
 ------------------------
 
-Building blocks used when defining how a language renders collections,
-comments and scalars.
+Building blocks used when defining how a language renders collections, comments and scalars.
 
 .. autoclass:: CollectionLayout
    :members:
@@ -151,8 +148,7 @@ Defining a language
 -------------------
 
 The :class:`Language` protocol describes how a language formats literals.
-Concrete, built-in languages are listed in :doc:`languages`; the members
-below are the contract each one implements.
+Concrete, built-in languages are listed in :doc:`languages`; the members below are the contract each one implements.
 
 .. autoclass:: Language
    :members:
