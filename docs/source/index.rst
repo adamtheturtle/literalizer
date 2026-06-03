@@ -203,9 +203,14 @@ The same source, rendered for Go in each form:
        "}"
    )
 
-For Python, which uses ``config =`` for both declaring and assigning,
-:class:`~literalizer.NewVariable` and :class:`~literalizer.ExistingVariable`
-render identically.
+Whether the two forms differ at all depends on the language.  Python uses
+``config =`` for both declaring and assigning, so with the default
+settings :class:`~literalizer.NewVariable` and
+:class:`~literalizer.ExistingVariable` render identically.  They diverge
+once a feature attaches to the *declaration* specifically: enabling
+``variable_type_hints`` makes :class:`~literalizer.NewVariable` annotate
+the binding (``config: dict[str, str | int] = ...``) while
+:class:`~literalizer.ExistingVariable` stays a bare ``config = ...``.
 
 Use cases
 ---------
