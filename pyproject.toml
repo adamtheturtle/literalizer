@@ -62,7 +62,7 @@ optional-dependencies.dev = [
     "pygments==2.20.0",
     "pylint[spelling]==4.0.5",
     "pylint-per-file-ignores==3.2.1",
-    "pyproject-fmt==2.22.0",
+    "pyproject-fmt==2.23.0",
     "pyrefly==1.0.0",
     "pyright==1.1.410",
     "pyroma==5.0.1",
@@ -313,6 +313,14 @@ SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
 # --spelling-private-dict-file option instead of raising a message.
 SPELLING.spelling-store-unknown-words = "no"
 
+[tool.interrogate]
+fail-under = 100
+exclude = [
+    "tests/integration/cases",
+]
+verbose = 2
+omit-covered-files = true
+
 [tool.check-manifest]
 ignore = [
     ".clang-tidy",
@@ -348,136 +356,6 @@ optional_dependencies_dev_groups = [
     "dev",
     "release",
 ]
-
-[tool.pyproject-fmt]
-indent = 4
-keep_full_version = true
-max_supported_python = "3.14"
-
-[tool.mypy]
-files = [ "." ]
-# ``@`` in a path stops mypy from forming a module name and triggers an
-# internal error (mypy 2.1.0).  Every golden fixture under
-# ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
-# those paths from mypy; ruff and other linters still cover them.
-exclude = [
-    "build",
-    "repro.py",
-    "tests/integration/cases/.*@.*",
-]
-follow_untyped_imports = true
-strict = true
-plugins = [ "mypy_strict_kwargs" ]
-
-[[tool.mypy.overrides]]
-# Ref case golden files intentionally reference undefined identifiers.
-module = [
-    "tests.integration.cases.literalize_ref_in_dict.*",
-    "tests.integration.cases.literalize_ref_in_list.*",
-    "tests.integration.cases.literalize_ref_whole.*",
-]
-ignore_errors = true
-
-[tool.pyrefly]
-search_path = [ ".", ".github/scripts", "src" ]
-errors.non-exhaustive-match = "error"
-errors.unused-ignore = "error"
-# Without this, pyrefly's built-in default `project-excludes` (e.g.
-# `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
-# appended to ours and combine with the `.gitignore`-based ignore files to
-# match our entire include pattern (`**/*.py*`), causing pyrefly to report
-# "no files matched" and fail the pre-push hook.
-disable-project-excludes-heuristics = true
-project-excludes = [ "repro.py" ]
-
-[tool.pyright]
-typeCheckingMode = "strict"
-exclude = [
-    ".venv",
-    "repro.py",
-]
-enableTypeIgnoreComments = false
-reportUnnecessaryTypeIgnoreComment = true
-executionEnvironments = [
-    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
-    { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
-    { root = "tests/integration/call_cases.py", reportPrivateUsage = false },
-]
-
-[tool.ty]
-src.exclude = [ "repro.py" ]
-environment.extra-paths = [ ".github/scripts" ]
-terminal.error-on-warning = true
-overrides = []
-analysis.respect-type-ignore-comments = false
-
-[tool.pytest]
-ini_options.addopts = "-n auto"
-ini_options.xfail_strict = true
-ini_options.log_cli = true
-
-[tool.coverage]
-run.branch = true
-run.omit = [
-    "tests/benchmarks/**/*.py",
-    "tests/integration/cases/**/*.py",
-    "tests/integration/list_fixtures.py",
-]
-report.exclude_also = [
-    "case _ as unreachable:\n\\s*assert_never\\(",
-    "if TYPE_CHECKING:",
-    "raise NotImplementedError",
-]
-report.show_missing = true
-
-[tool.towncrier]
-# The changelog and the per-release GitHub release notes are both built
-# from news fragments under ``newsfragments/``.  The release workflow
-# runs ``towncrier build`` to assemble them; contributors add one
-# fragment file per user-facing change.
-directory = "newsfragments"
-filename = "CHANGELOG.rst"
-# Custom template so an assembled version reproduces the historical
-# style exactly: a bare ``<version>`` heading (no project name, no
-# date) followed by a flat bullet list with no per-type sub-headings.
-template = "docs/towncrier_template.rst.jinja"
-title_format = "{version}"
-issue_format = "#{issue}"
-# ``title_format`` underline first, then any nested headings.  A bare
-# version such as ``2026.05.18`` underlined with ``-`` matches every
-# pre-towncrier entry in CHANGELOG.rst.
-underlines = [ "-", "~", "^" ]
-type = [
-    # A single, unnamed fragment type keeps the assembled output as one
-    # flat bullet list, matching the historical changelog (which never
-    # grouped entries under "Features"/"Bugfixes"/... sub-headings).
-    { directory = "change", name = "", showcontent = true },
-]
-
-[tool.doc8]
-max_line_length = 2000
-ignore_path = [
-    "./.eggs",
-    "./docs/build",
-    "./docs/build/spelling/output.txt",
-    "./node_modules",
-    "./src/*.egg-info/",
-    "./src/*/_setuptools_scm_version.txt",
-]
-
-[tool.interrogate]
-fail-under = 100
-exclude = [
-    "tests/integration/cases",
-]
-verbose = 2
-omit-covered-files = true
-
-[tool.pydocstringformatter]
-write = true
-split-summary-body = false
-max-line-length = 75
-linewrap-full-docstring = true
 
 [tool.vulture]
 # Duplicate some of .gitignore
@@ -621,6 +499,128 @@ ignore_names = [
     "warning_is_error",
     "ZONED",
 ]
+
+[tool.pyproject-fmt]
+indent = 4
+keep_full_version = true
+max_supported_python = "3.14"
+
+[tool.mypy]
+files = [ "." ]
+# ``@`` in a path stops mypy from forming a module name and triggers an
+# internal error (mypy 2.1.0).  Every golden fixture under
+# ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
+# those paths from mypy; ruff and other linters still cover them.
+exclude = [
+    "build",
+    "repro.py",
+    "tests/integration/cases/.*@.*",
+]
+follow_untyped_imports = true
+strict = true
+plugins = [ "mypy_strict_kwargs" ]
+
+[[tool.mypy.overrides]]
+# Ref case golden files intentionally reference undefined identifiers.
+module = [
+    "tests.integration.cases.literalize_ref_in_dict.*",
+    "tests.integration.cases.literalize_ref_in_list.*",
+    "tests.integration.cases.literalize_ref_whole.*",
+]
+ignore_errors = true
+
+[tool.pyrefly]
+search_path = [ ".", ".github/scripts", "src" ]
+errors.non-exhaustive-match = "error"
+errors.unused-ignore = "error"
+# Without this, pyrefly's built-in default `project-excludes` (e.g.
+# `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
+# appended to ours and combine with the `.gitignore`-based ignore files to
+# match our entire include pattern (`**/*.py*`), causing pyrefly to report
+# "no files matched" and fail the pre-push hook.
+disable-project-excludes-heuristics = true
+project-excludes = [ "repro.py" ]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+exclude = [
+    ".venv",
+    "repro.py",
+]
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = true
+executionEnvironments = [
+    { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
+    { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
+    { root = "tests/integration/call_cases.py", reportPrivateUsage = false },
+]
+
+[tool.ty]
+src.exclude = [ "repro.py" ]
+environment.extra-paths = [ ".github/scripts" ]
+terminal.error-on-warning = true
+overrides = []
+analysis.respect-type-ignore-comments = false
+
+[tool.pytest]
+ini_options.addopts = "-n auto"
+ini_options.xfail_strict = true
+ini_options.log_cli = true
+
+[tool.coverage]
+run.branch = true
+run.omit = [
+    "tests/benchmarks/**/*.py",
+    "tests/integration/cases/**/*.py",
+    "tests/integration/list_fixtures.py",
+]
+report.exclude_also = [
+    "case _ as unreachable:\n\\s*assert_never\\(",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+report.show_missing = true
+
+[tool.towncrier]
+# The changelog and the per-release GitHub release notes are both built
+# from news fragments under ``newsfragments/``.  The release workflow
+# runs ``towncrier build`` to assemble them; contributors add one
+# fragment file per user-facing change.
+directory = "newsfragments"
+filename = "CHANGELOG.rst"
+# Custom template so an assembled version reproduces the historical
+# style exactly: a bare ``<version>`` heading (no project name, no
+# date) followed by a flat bullet list with no per-type sub-headings.
+template = "docs/towncrier_template.rst.jinja"
+title_format = "{version}"
+issue_format = "#{issue}"
+# ``title_format`` underline first, then any nested headings.  A bare
+# version such as ``2026.05.18`` underlined with ``-`` matches every
+# pre-towncrier entry in CHANGELOG.rst.
+underlines = [ "-", "~", "^" ]
+type = [
+    # A single, unnamed fragment type keeps the assembled output as one
+    # flat bullet list, matching the historical changelog (which never
+    # grouped entries under "Features"/"Bugfixes"/... sub-headings).
+    { directory = "change", name = "", showcontent = true },
+]
+
+[tool.doc8]
+max_line_length = 2000
+ignore_path = [
+    "./.eggs",
+    "./docs/build",
+    "./docs/build/spelling/output.txt",
+    "./node_modules",
+    "./src/*.egg-info/",
+    "./src/*/_setuptools_scm_version.txt",
+]
+
+[tool.pydocstringformatter]
+write = true
+split-summary-body = false
+max-line-length = 75
+linewrap-full-docstring = true
 
 [tool.yamlfix]
 section_whitelines = 1
