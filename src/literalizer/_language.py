@@ -2488,3 +2488,95 @@ def body_preamble_from_scalars(
         return format_lines(result)
 
     return _compute
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class FileSection:
+    """One named region of a multi-section language's rendered output.
+
+    Most languages render a value as a single fragment that a caller can
+    drop straight into a program template (the way the C, C++, Haskell
+    and Zig round-trip helpers do).  A few cannot: their output spans
+    more than one region of a source file that a wrapping template must
+    place separately.  COBOL under ``json_type=CJSON`` is the current
+    example -- it produces WORKING-STORAGE declarations and PROCEDURE
+    DIVISION statements that live in different divisions.
+
+    For such languages :attr:`~literalizer.LiteralizeResult.sections`
+    exposes the regions as a tuple of these objects, so a caller can
+    compose each one into the right place in its own template without
+    parsing any language-internal marker.  Single-section languages
+    leave that attribute empty.
+    """
+
+    name: str
+    """A stable label identifying the region within its language (for
+    COBOL ``json_type=CJSON``, ``"WORKING-STORAGE"`` or
+    ``"PROCEDURE"``).
+    """
+
+    content: str
+    """The region's text, with no marker lines and no enclosing program
+    boilerplate.
+    """
+
+
+# A language that emits more than one :class:`FileSection` joins the
+# regions into the single string its formatter must return by bracketing
+# each one with a marker line.  The marker carries a null byte, which
+# never occurs in real source, so a content line can never be mistaken
+# for a marker and :func:`decode_file_sections` can split single-section
+# output back out as "no sections" cheaply.
+_FILE_SECTION_OPEN: Final = "\x00literalizer-file-section:"
+_FILE_SECTION_CLOSE: Final = "\x00"
+
+
+@beartype
+def encode_file_sections(sections: tuple[FileSection, ...], /) -> str:
+    """Join *sections* into one marker-bracketed payload string.
+
+    The inverse of :func:`decode_file_sections`.  A language whose
+    formatter must return a single string, yet whose output is really
+    several :class:`FileSection` regions, returns the result of this
+    function; the wrapping layer (and any
+    :attr:`~literalizer.LiteralizeResult.sections` consumer) recovers the
+    regions with :func:`decode_file_sections`.
+    """
+    parts: list[str] = []
+    for section in sections:
+        parts.append(
+            f"{_FILE_SECTION_OPEN}{section.name}{_FILE_SECTION_CLOSE}"
+        )
+        parts.append(section.content)
+    return "\n".join(parts)
+
+
+@beartype
+def _decode_one_section(chunk: str, /) -> FileSection:
+    """Build a :class:`FileSection` from one marker-headed *chunk*.
+
+    *chunk* is a region of an :func:`encode_file_sections` payload: a
+    marker line (which may retain its leading ``_FILE_SECTION_OPEN``)
+    followed by the region's content.
+    """
+    header, _, content = chunk.partition("\n")
+    name = header.removeprefix(_FILE_SECTION_OPEN).removesuffix(
+        _FILE_SECTION_CLOSE
+    )
+    return FileSection(name=name, content=content)
+
+
+@beartype
+def decode_file_sections(payload: str, /) -> tuple[FileSection, ...]:
+    """Split an :func:`encode_file_sections` *payload* into its regions.
+
+    Returns an empty tuple when *payload* carries no marker (the
+    single-section case for almost every language), so callers can treat
+    a non-empty result as "this output is multi-section".
+    """
+    if _FILE_SECTION_OPEN not in payload:
+        return ()
+    sectioned = payload[payload.index(_FILE_SECTION_OPEN) :]
+    chunks = sectioned.split(sep=f"\n{_FILE_SECTION_OPEN}")
+    return tuple(_decode_one_section(chunk) for chunk in chunks)

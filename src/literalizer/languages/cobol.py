@@ -48,6 +48,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileSection,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -59,10 +60,12 @@ from literalizer._language import (
     StubReturn,
     TrailingCommaConfig,
     body_preamble_from_scalars,
+    decode_file_sections,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
+    encode_file_sections,
     identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
@@ -423,16 +426,16 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     return f"MOVE {scalar} TO {cobol_name}."
 
 
-# Marker line separating the WORKING-STORAGE declarations from the
-# PROCEDURE DIVISION statements inside one ``json_type=CJSON`` payload
-# string.  COBOL forces the two apart (declarations and statements live
-# in different divisions), but ``format_variable_declaration`` returns a
-# single string, so the two halves travel joined by this sentinel and
-# :meth:`Cobol.wrap_in_file` / :meth:`Cobol.wrap_combined_in_file` split
-# them back out.  It is a COBOL comment line, so a payload that somehow
-# reached a wrapper without being split would still be syntactically
-# inert.
-_CJSON_PROC_SENTINEL = "*> CJSON-PROCEDURE-DIVISION"
+# Names of the two file regions a ``json_type=CJSON`` payload carries.
+# COBOL forces declarations and statements into different divisions, but
+# ``format_variable_declaration`` returns a single string, so the two
+# halves travel joined as :class:`FileSection` regions (see
+# :func:`encode_file_sections`); :meth:`Cobol.wrap_in_file` /
+# :meth:`Cobol.wrap_combined_in_file` split them back out, and
+# :attr:`~literalizer.LiteralizeResult.sections` exposes them to callers
+# composing their own program.
+_CJSON_WORKING_STORAGE_SECTION = "WORKING-STORAGE"
+_CJSON_PROCEDURE_SECTION = "PROCEDURE"
 
 _CJSON_CALL_ARG_MSG = (
     "COBOL json_type=CJSON builds each value as a multi-statement cJSON "
@@ -705,8 +708,19 @@ def _render_cjson_payload(
     ws_lines: tuple[str, ...],
     proc_lines: tuple[str, ...],
 ) -> str:
-    """Join a cJSON build's two sections with the division sentinel."""
-    return "\n".join((*ws_lines, _CJSON_PROC_SENTINEL, *proc_lines))
+    """Join a cJSON build's two halves as encoded file-section regions."""
+    return encode_file_sections(
+        (
+            FileSection(
+                name=_CJSON_WORKING_STORAGE_SECTION,
+                content="\n".join(ws_lines),
+            ),
+            FileSection(
+                name=_CJSON_PROCEDURE_SECTION,
+                content="\n".join(proc_lines),
+            ),
+        )
+    )
 
 
 @beartype
@@ -720,11 +734,14 @@ class _CobolCJsonSections:
 
 @beartype
 def _split_cjson_payload(payload: str, /) -> _CobolCJsonSections:
-    """Split a :func:`_render_cjson_payload` string at its sentinel."""
-    working_storage, _, procedure = payload.partition(_CJSON_PROC_SENTINEL)
+    """Split a :func:`_render_cjson_payload` string into its regions."""
+    by_name = {
+        section.name: section.content
+        for section in decode_file_sections(payload)
+    }
     return _CobolCJsonSections(
-        working_storage=working_storage.strip("\n"),
-        procedure=procedure.strip("\n"),
+        working_storage=by_name[_CJSON_WORKING_STORAGE_SECTION],
+        procedure=by_name[_CJSON_PROCEDURE_SECTION],
     )
 
 
@@ -737,6 +754,18 @@ class Cobol(metaclass=LanguageCls):
     scalars become elementary data items with VALUE clauses, and
     sequences / dicts become group items with 05-level sub-items.
     """
+
+    #: :attr:`~literalizer.FileSection.name` of the declarations region a
+    #: ``json_type=CJSON`` ``wrap_in_file=False`` result exposes through
+    #: :attr:`~literalizer.LiteralizeResult.sections`; its content belongs
+    #: in a program's WORKING-STORAGE SECTION.
+    CJSON_WORKING_STORAGE_SECTION: ClassVar[str] = (
+        _CJSON_WORKING_STORAGE_SECTION
+    )
+    #: :attr:`~literalizer.FileSection.name` of the statements region a
+    #: ``json_type=CJSON`` ``wrap_in_file=False`` result exposes; its
+    #: content belongs in a program's PROCEDURE DIVISION.
+    CJSON_PROCEDURE_SECTION: ClassVar[str] = _CJSON_PROCEDURE_SECTION
 
     format_integer_widened = no_format_integer_widened
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -1040,12 +1069,12 @@ class Cobol(metaclass=LanguageCls):
         *content* holds PROCEDURE DIVISION statements and *body_preamble*
         holds nested-program stubs that follow ``STOP RUN.``.
 
-        Under ``json_type=CJSON`` *content* is a two-division payload (see
+        Under ``json_type=CJSON`` *content* is a two-region payload (see
         :func:`_render_cjson_payload`): its WORKING-STORAGE half supplies
         the node pointers and literal items and its PROCEDURE half the
         ``CALL`` statements that build the tree.
         """
-        if _CJSON_PROC_SENTINEL in content:
+        if decode_file_sections(content):
             sections = _split_cjson_payload(content)
             indented = textwrap.indent(
                 text=sections.procedure,
@@ -1087,15 +1116,15 @@ class Cobol(metaclass=LanguageCls):
         """Wrap COBOL declaration and assignment in a complete program.
 
         Under ``json_type=CJSON`` both *declaration* and *assignment* are
-        two-division payloads: their WORKING-STORAGE halves merge into one
+        two-region payloads: their WORKING-STORAGE halves merge into one
         DATA DIVISION (the declaration already declares the binding
         pointer; the assignment build only adds its ``M`` nodes) and their
-        PROCEDURE halves run one after the other.  The sentinel in
-        *declaration* is the reliable discriminator, so this stays a
-        :func:`staticmethod`.
+        PROCEDURE halves run one after the other.  The file-section
+        markers in *declaration* are the reliable discriminator, so this
+        stays a :func:`staticmethod`.
         """
         del variable_name
-        if _CJSON_PROC_SENTINEL in declaration:
+        if decode_file_sections(declaration):
             decl_sections = _split_cjson_payload(declaration)
             assign_sections = _split_cjson_payload(assignment)
             working_storage = (
@@ -1480,8 +1509,8 @@ class Cobol(metaclass=LanguageCls):
         Under ``json_type=CJSON`` the rendered record value is discarded:
         the data is built as a ``cJSON`` node tree (WORKING-STORAGE
         pointer items plus PROCEDURE DIVISION ``CALL`` statements, joined
-        by the
-        division sentinel) and the binding pointer is set to its root.
+        as encoded file-section regions) and the binding pointer is set to
+        its root.
         """
         if self._json_type_active:
             format_integer = self.format_integer
