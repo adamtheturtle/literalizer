@@ -14,29 +14,20 @@ Parsing the input
 
 Raised while reading ``source`` in the declared ``input_format``, before any language-specific rendering.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 35 35
+.. autoexception:: literalizer.exceptions.ParseError
+   :no-index:
 
-   * - Exception
-     - Cause
-     - How to resolve
-   * - :class:`~literalizer.exceptions.ParseError`
-     - Base class for every input-parsing failure.
-       Catch this to handle any malformed input uniformly.
-     - Validate the source against its declared ``input_format``.
-   * - :class:`~literalizer.exceptions.JSONParseError`
-     - The ``source`` is not well-formed JSON.
-     - Fix the JSON syntax, or pass the correct ``input_format`` if the data is really JSON5, YAML, or TOML.
-   * - :class:`~literalizer.exceptions.JSON5ParseError`
-     - The ``source`` is not well-formed JSON5.
-     - Fix the JSON5 syntax, or choose the matching ``input_format``.
-   * - :class:`~literalizer.exceptions.YAMLParseError`
-     - The ``source`` is not well-formed YAML.
-     - Fix the YAML syntax, or choose the matching ``input_format``.
-   * - :class:`~literalizer.exceptions.TOMLParseError`
-     - The ``source`` is not well-formed TOML.
-     - Fix the TOML syntax, or choose the matching ``input_format``.
+.. autoexception:: literalizer.exceptions.JSONParseError
+   :no-index:
+
+.. autoexception:: literalizer.exceptions.JSON5ParseError
+   :no-index:
+
+.. autoexception:: literalizer.exceptions.YAMLParseError
+   :no-index:
+
+.. autoexception:: literalizer.exceptions.TOMLParseError
+   :no-index:
 
 Mixed-type collections
 ----------------------
