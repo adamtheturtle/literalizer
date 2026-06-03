@@ -19,6 +19,9 @@ Result type
 .. autoclass:: LiteralizeResult
    :members:
 
+.. autoclass:: FileSection
+   :members:
+
 Variable forms
 --------------
 

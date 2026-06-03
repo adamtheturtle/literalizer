@@ -27,12 +27,16 @@ helper therefore no longer reverse-engineers the key mapping in Python:
 it literalizes, prints, and compares, like the C / C++ / Haskell / Zig
 scripts.
 
-``wrap_in_file=True`` already yields the complete cJSON-building
-``CHECK`` program (the WORKING-STORAGE pointer / literal items and the
-PROCEDURE DIVISION ``CALL`` tree ending in ``SET my_data`` and ``STOP
-RUN``), so the only surgery is splicing in the print storage and the
-print statements -- no manual program template, and no reach into the
-backend's private division-split marker.
+``Cobol(json_type=CJSON)`` output is inherently two sections (the
+WORKING-STORAGE pointer / literal items and the PROCEDURE DIVISION
+``CALL`` tree), so ``wrap_in_file=False`` exposes them as
+:attr:`literalizer.LiteralizeResult.sections` (issue #2807).  This
+helper composes those regions straight into its own ``CHECK`` program
+template -- adding the print storage to WORKING-STORAGE and the print
+statements ahead of ``STOP RUN`` -- the same compose-into-template
+pattern the C / C++ / Haskell / Zig round-trip scripts use, with no
+string surgery on a wrapped program and no reach into any
+backend-internal division marker.
 
 Two fields are excluded from the comparison (the same two as the C
 ``cJSON`` round-trip):
@@ -52,6 +56,7 @@ Two fields are excluded from the comparison (the same two as the C
 """
 
 import shutil
+import textwrap
 
 import roundtrip_common
 
@@ -91,24 +96,25 @@ _PRINT_STATEMENTS = (
 )
 
 
-def _splice_once(*, program: str, anchor: str, replacement: str) -> str:
-    """Return *program* with its sole occurrence of *anchor* replaced by
-    *replacement*.
+def _section(*, result: literalizer.LiteralizeResult, name: str) -> str:
+    """Return the *name* region of a multi-section *result*.
 
-    Raise :class:`RuntimeError` naming the missing anchor if it does not
-    occur exactly once, so a future change to the generated program's
-    textual shape fails loudly here rather than as a confusing
-    downstream compile / empty-output error.
+    Raise :class:`RuntimeError` naming the missing region if it is
+    absent, so a future change to the backend's section layout fails
+    loudly here rather than as a confusing downstream compile error.
     """
-    count = program.count(anchor)
-    if count != 1:
-        msg = (
-            f"Expected exactly one occurrence of anchor {anchor!r} in the "
-            f"generated COBOL program to splice the print step into, but "
-            f"found {count}; the backend's output shape has drifted."
-        )
-        raise RuntimeError(msg)
-    return program.replace(anchor, replacement, 1)
+    for section in result.sections:
+        if section.name == name:
+            return section.content
+    available = (
+        ", ".join(section.name for section in result.sections) or "none"
+    )
+    msg = (
+        f"Expected a {name!r} file section in the literalized COBOL "
+        f"result, but found: {available}; the backend's section layout "
+        f"has drifted."
+    )
+    raise RuntimeError(msg)
 
 
 def _build_program(*, json_text: str) -> str:
@@ -126,20 +132,26 @@ def _build_program(*, json_text: str) -> str:
         pre_indent_level=0,
         include_delimiters=True,
         variable_form=literalizer.NewVariable(name=_VAR_NAME),
-        wrap_in_file=True,
+        wrap_in_file=False,
     )
-    stop_run_anchor = f"{_INDENT}STOP RUN."
-    with_storage = _splice_once(
-        program=result.code,
-        anchor="WORKING-STORAGE SECTION.\n",
-        replacement=f"WORKING-STORAGE SECTION.\n{_PRINT_STORAGE}",
+    working_storage = _section(
+        result=result,
+        name=Cobol.CJSON_WORKING_STORAGE_SECTION,
     )
-    program = _splice_once(
-        program=with_storage,
-        anchor=stop_run_anchor,
-        replacement=f"{_PRINT_STATEMENTS}{stop_run_anchor}",
+    procedure = _section(result=result, name=Cobol.CJSON_PROCEDURE_SECTION)
+    indented_procedure = textwrap.indent(text=procedure, prefix=_INDENT)
+    return (
+        "IDENTIFICATION DIVISION.\n"
+        "PROGRAM-ID. CHECK.\n"
+        "DATA DIVISION.\n"
+        "WORKING-STORAGE SECTION.\n"
+        f"{_PRINT_STORAGE}"
+        f"{working_storage}\n"
+        "PROCEDURE DIVISION.\n"
+        f"{indented_procedure}\n"
+        f"{_PRINT_STATEMENTS}"
+        f"{_INDENT}STOP RUN.\n"
     )
-    return f"{program}\n"
 
 
 def main() -> None:

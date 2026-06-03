@@ -33,6 +33,7 @@ from literalizer._language import (
     CallSupport,
     CollectionLayout,
     CommandCallStyle,
+    FileSection,
     IdentifierCase,
     KeywordCallStyle,
     Language,
@@ -41,6 +42,7 @@ from literalizer._language import (
     PostfixCallStyle,
     PrefixCallStyle,
     StubReturn,
+    decode_file_sections,
 )
 from literalizer._parsing import (
     InputFormat,
@@ -200,6 +202,26 @@ class LiteralizeResult:
     preamble surface this so the second call can inspect the actual
     values (e.g. datetime microsecond precision) rather than a
     placeholder.
+    """
+
+    sections: tuple[FileSection, ...] = ()
+    """For multi-section languages, the rendered output split into its
+    file regions; empty for the single-section common case.
+
+    A few languages cannot express a value as one drop-in fragment:
+    their output spans more than one region of a source file that a
+    wrapping template must place separately.  COBOL under
+    ``json_type=CJSON`` is the current example, emitting a
+    ``WORKING-STORAGE`` region of declarations and a ``PROCEDURE`` region
+    of statements.
+
+    Only populated when ``wrap_in_file=False`` (with ``wrap_in_file=True``
+    the language has already composed the regions into a complete file).
+    When non-empty, compose these :class:`FileSection` regions into your
+    own template; :attr:`code` / :attr:`declaration_code` then hold an
+    opaque marker-bracketed payload (the form the language's wrappers
+    consume), not usable source.  Empty for almost every language; use
+    :attr:`code` then.
     """
 
     @property
@@ -2166,6 +2188,7 @@ def _literalize_apply_form(
         pre_declaration_comments=pre_decl,
         types_present=computed.types_present,
         source_data=pre_form.data_for_preamble,
+        sections=decode_file_sections(result),
     )
 
 
