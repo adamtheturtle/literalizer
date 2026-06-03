@@ -2,23 +2,44 @@
 
 
 class ParseError(Exception):
-    """Raised when input cannot be parsed into a data structure."""
+    """Raised when input cannot be parsed into a data structure.
+
+    Base class for every input-parsing failure; catch it to handle any
+    malformed input uniformly.  To resolve, validate the source against
+    its declared ``input_format``.
+    """
 
 
 class JSONParseError(ParseError):
-    """Raised when a JSON string cannot be parsed."""
+    """Raised when a JSON string cannot be parsed.
+
+    To resolve, fix the JSON syntax, or pass the correct ``input_format``
+    if the data is really JSON5, YAML, or TOML.
+    """
 
 
 class YAMLParseError(ParseError):
-    """Raised when a YAML string cannot be parsed."""
+    """Raised when a YAML string cannot be parsed.
+
+    To resolve, fix the YAML syntax, or choose the matching
+    ``input_format``.
+    """
 
 
 class TOMLParseError(ParseError):
-    """Raised when a TOML string cannot be parsed."""
+    """Raised when a TOML string cannot be parsed.
+
+    To resolve, fix the TOML syntax, or choose the matching
+    ``input_format``.
+    """
 
 
 class JSON5ParseError(ParseError):
-    """Raised when a JSON5 string cannot be parsed."""
+    """Raised when a JSON5 string cannot be parsed.
+
+    To resolve, fix the JSON5 syntax, or choose the matching
+    ``input_format``.
+    """
 
 
 class InvalidDictKeyError(Exception):
