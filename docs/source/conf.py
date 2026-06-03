@@ -6,6 +6,8 @@ from pathlib import Path
 from packaging.specifiers import SpecifierSet
 from sphinx_pyproject import SphinxConfig
 
+from literalizer.languages import ALL_LANGUAGES
+
 _pyproject_file = Path(__file__).parent.parent.parent / "pyproject.toml"
 _pyproject_config = SphinxConfig(
     pyproject_file=_pyproject_file,
@@ -17,6 +19,7 @@ author = _pyproject_config.author
 
 extensions = [
     "sphinx_copybutton",
+    "sphinx_jinja",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_substitution_extensions",
@@ -36,6 +39,33 @@ towncrier_draft_include_empty = True
 towncrier_draft_working_directory = f"{_pyproject_file.parent}"
 
 templates_path = ["_templates"]
+
+# Build the heterogeneous-strategy support matrix from the language
+# registry so the table in ``heterogeneous-strategies.rst`` (rendered via
+# the ``sphinx_jinja`` extension) cannot drift from the
+# ``heterogeneous_strategies`` enum on each language class.  Every
+# language supports ``ERROR``; only the richer strategies are listed, and
+# a language exposing nothing else is omitted.
+_strategies_by_language = {
+    language.__name__: [
+        member.name
+        for member in language.HeterogeneousStrategies
+        if member.name != "ERROR"
+    ]
+    for language in ALL_LANGUAGES
+}
+jinja_contexts = {
+    "heterogeneous_strategies": {
+        "languages": [
+            {
+                "name": name,
+                "strategies": ", ".join(f"``{member}``" for member in members),
+            }
+            for name, members in sorted(_strategies_by_language.items())
+            if members
+        ],
+    },
+}
 
 # Ambiguous cross-references from identically-named nested classes
 # (DateFormat, DatetimeFormat, BytesFormat) across language modules.

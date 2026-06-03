@@ -192,39 +192,20 @@ Per-language support matrix
 
 Every built-in language supports ``ERROR`` and defaults to it.
 The table below lists every language that exposes a richer strategy; any language not listed exposes ``ERROR`` only.
+It is generated from the language registry at build time, so it always matches the ``heterogeneous_strategies`` enum on each language class.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 25 75
+.. jinja:: heterogeneous_strategies
 
-   * - Language
-     - Strategies (besides ``ERROR``)
-   * - :class:`~literalizer.Rust`
-     - ``TAGGED_ENUM``, ``RECORD``, ``TUPLE``
-   * - :class:`~literalizer.Kotlin`
-     - ``RECORD``, ``TUPLE``
-   * - :class:`~literalizer.Scala`
-     - ``RECORD``, ``TUPLE``
-   * - :class:`~literalizer.Go`
-     - ``RECORD``
-   * - :class:`~literalizer.Java`
-     - ``RECORD``
-   * - :class:`~literalizer.Python`
-     - ``RECORD``
-   * - :class:`~literalizer.Swift`
-     - ``RECORD``
-   * - :class:`~literalizer.Cpp`
-     - ``RECORD``, ``TUPLE``
-   * - :class:`~literalizer.TypeScript`
-     - ``TUPLE``
-   * - :class:`~literalizer.Dhall`
-     - ``UNION_TYPE``
-   * - :class:`~literalizer.Mojo`
-     - ``VARIANT``
-   * - :class:`~literalizer.Nim`
-     - ``OBJECT_VARIANT``, ``RECORD``
-   * - :class:`~literalizer.V`
-     - ``INTERFACE``
+   .. list-table::
+      :header-rows: 1
+      :widths: 25 75
+
+      * - Language
+        - Strategies (besides ``ERROR``)
+      {% for language in languages %}
+      * - :class:`~literalizer.{{ language.name }}`
+        - {{ language.strategies }}
+      {%- endfor %}
 
 Naming the generated type
 -------------------------
