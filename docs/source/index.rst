@@ -124,6 +124,89 @@ language:
    #     "port": 8080,
    # }
 
+Binding the result to a variable
+--------------------------------
+
+By default :func:`~literalizer.literalize` renders a bare literal.  Pass
+``variable_form`` to bind that literal to a variable instead, so the
+output is a statement you can drop straight into source.  There are three
+forms, and the difference is visible in languages that distinguish
+declaring a variable from assigning to one:
+
+* :class:`~literalizer.NewVariable` declares a fresh variable (Go's
+  ``config :=``, JavaScript's ``const config =``, Rust's ``let config =``).
+  This is the form nearly every example uses.
+* :class:`~literalizer.ExistingVariable` assigns to a variable declared
+  elsewhere (``config =``), emitting no declaration keyword.
+* :class:`~literalizer.BothVariableForms` emits a declaration *and* a
+  subsequent assignment together, for showing both styles from one
+  source.  It requires ``wrap_in_file=True`` and a language whose
+  declaration style permits reassigning the same name.
+
+The same source, rendered for Go in each form:
+
+.. code-block:: python
+
+   """Contrast the three variable_form choices for one source."""
+
+   from literalizer import (
+       BothVariableForms,
+       ExistingVariable,
+       InputFormat,
+       NewVariable,
+       literalize,
+   )
+   from literalizer.languages import Go
+
+   source = '{"host": "localhost", "port": 8080}'
+
+   new_variable = literalize(
+       source=source,
+       input_format=InputFormat.JSON,
+       language=Go(),
+       variable_form=NewVariable(name="config"),
+   )
+   assert new_variable.code == (
+       'config := map[string]any{\n\t"host": "localhost",\n\t"port": 8080,\n}'
+   )
+
+   existing_variable = literalize(
+       source=source,
+       input_format=InputFormat.JSON,
+       language=Go(),
+       variable_form=ExistingVariable(name="config"),
+   )
+   assert existing_variable.code == (
+       'config = map[string]any{\n\t"host": "localhost",\n\t"port": 8080,\n}'
+   )
+
+   both_forms = literalize(
+       source=source,
+       input_format=InputFormat.JSON,
+       language=Go(),
+       variable_form=BothVariableForms(name="config"),
+       wrap_in_file=True,
+   )
+   assert both_forms.code == (
+       "package main\n"
+       "\n"
+       "func main() {\n"
+       "config := map[string]any{\n"
+       '\t"host": "localhost",\n'
+       '\t"port": 8080,\n'
+       "}\n"
+       "config = map[string]any{\n"
+       '\t"host": "localhost",\n'
+       '\t"port": 8080,\n'
+       "}\n"
+       "_ = config\n"
+       "}"
+   )
+
+For Python, which uses ``config =`` for both declaring and assigning,
+:class:`~literalizer.NewVariable` and :class:`~literalizer.ExistingVariable`
+render identically.
+
 Use cases
 ---------
 
