@@ -1,0 +1,1 @@
+Move the language-definition (extension) API reference out of the consumer-facing API reference page and into the ``Languages`` guide, co-locating the ``Language`` protocol, the ``LanguageCls`` class, the ``*FormatConfig`` building blocks, and ``fixed_open`` with the narrative "Custom language implementations" how-to that already explains them.
