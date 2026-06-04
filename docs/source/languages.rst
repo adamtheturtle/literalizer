@@ -322,6 +322,69 @@ Built-in languages use shared descriptors such as ``no_pygments_name`` and ``no_
 Look at any built-in language module under ``literalizer/languages/`` for a complete working example.
 The :class:`~literalizer.Language` protocol documents every required attribute.
 
+Language-definition API
+-----------------------
+
+.. currentmodule:: literalizer
+
+These symbols are only needed when defining a language that is not built in.
+Everything here is importable directly from the top-level ``literalizer`` package.
+
+Formatting configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Building blocks used when defining how a language renders collections, comments and scalars.
+
+.. autoclass:: CollectionLayout
+   :members:
+   :undoc-members:
+
+.. autoclass:: TrailingCommaConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: CommentConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: SequenceFormatConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: SetFormatConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: DictFormatConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: OrderedMapFormatConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: DateFormatConfig
+   :members:
+   :undoc-members:
+
+.. autoclass:: DatetimeFormatConfig
+   :members:
+   :undoc-members:
+
+.. autofunction:: fixed_open
+
+Defining a language
+~~~~~~~~~~~~~~~~~~~~
+
+The :class:`Language` protocol describes how a language formats literals.
+The members below are the contract each built-in language implements.
+
+.. autoclass:: Language
+   :members:
+
+.. autoclass:: LanguageCls
+   :members:
+
 Built-in languages
 ------------------
 
