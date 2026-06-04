@@ -25,18 +25,15 @@ jobs:
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]
-        hook-stage: [pre-commit, pre-push, manual]
-        # Windows is dropped from the heavy stages (pre-push, manual)
-        # because the type checkers and pylint dominate wall time on
-        # Windows runners and are platform-agnostic in practice. Re-add
-        # Windows here once prek supports hook groups so we can shard
-        # the heavy hooks across runners:
-        # https://github.com/j178/prek/issues/1385
-        exclude:
-          - platform: windows-latest
-            hook-stage: pre-push
-          - platform: windows-latest
-            hook-stage: manual
+        # We shard the hooks into prek groups (defined via ``groups:`` in
+        # ``.pre-commit-config.yaml``) rather than running them by stage,
+        # so the heavy hooks are spread across runners and each group is
+        # light enough to run on Windows too:
+        #   - ``fast``: the quick pre-commit-stage hooks
+        #   - ``typecheck``: mypy / pyright / ty / pyrefly (+ check-manifest)
+        #   - ``docs``: pylint, the Sphinx builds, spelling, linkcheck
+        # ``prek run --group`` needs prek >= 0.4.4.
+        group: [fast, typecheck, docs]
 
     runs-on: ${{ matrix.platform }}
 
@@ -52,8 +49,7 @@ jobs:
 
       - name: Lint
         shell: bash
-        run: uv run --extra=dev prek run --all-files --hook-stage ${{ matrix.hook-stage }}
-          --verbose
+        run: uv run --extra=dev prek run --all-files --group ${{ matrix.group }} --verbose
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
