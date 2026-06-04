@@ -198,7 +198,7 @@ repos:
       - id: mypy
         name: mypy
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [mypy]
         priority: 520
         entry: uv run --extra=dev -m mypy --num-workers=4
         language: python
@@ -210,7 +210,7 @@ repos:
       - id: mypy-docs
         name: mypy-docs
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [mypy]
         priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --language=python --command="mypy
           --num-workers=4"
@@ -221,7 +221,7 @@ repos:
       - id: check-manifest
         name: check-manifest
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [fast]
         priority: 520
         entry: uv run --extra=dev -m check_manifest
         language: python
@@ -231,7 +231,7 @@ repos:
       - id: pyright
         name: pyright
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [pyright]
         priority: 520
         entry: uv run --extra=dev -m pyright .
         language: python
@@ -242,7 +242,7 @@ repos:
       - id: pyright-docs
         name: pyright-docs
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [pyright]
         priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="pyright"
@@ -253,7 +253,7 @@ repos:
       - id: pyright-verifytypes
         name: pyright-verifytypes
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [pyright]
         priority: 530
         entry: uv run --extra=dev -m pyright --ignoreexternal --verifytypes literalizer
         language: python
@@ -264,7 +264,7 @@ repos:
       - id: ty
         name: ty
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [ty]
         priority: 520
         entry: uv run --extra=dev ty check
         language: python
@@ -275,7 +275,7 @@ repos:
       - id: ty-docs
         name: ty-docs
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [ty]
         priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="ty check"
@@ -286,7 +286,7 @@ repos:
       - id: pyrefly
         name: pyrefly
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [pyrefly]
         priority: 520
         entry: uv run --extra=dev pyrefly check
         language: python
@@ -297,7 +297,7 @@ repos:
       - id: pyrefly-docs
         name: pyrefly-docs
         stages: [pre-push]
-        groups: [typecheck]
+        groups: [pyrefly]
         priority: 540
         entry: uv run --extra=dev doccmd --no-write-to-file --example-workers 0 --language=python
           --command="pyrefly check"
@@ -353,7 +353,7 @@ repos:
         entry: uv run --extra=dev -m pylint *.py src/ tests/ docs/
         language: python
         stages: [manual]
-        groups: [docs]
+        groups: [pylint]
         priority: 600
         pass_filenames: false
         additional_dependencies: [*uv_version]
@@ -364,7 +364,7 @@ repos:
           --command="pylint"
         language: python
         stages: [manual]
-        groups: [docs]
+        groups: [pylint]
         priority: 605
         types_or: [markdown, rst]
         additional_dependencies: [*uv_version]
