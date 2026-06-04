@@ -202,6 +202,14 @@ The remaining languages differ only in the emitted form and a few extra constrai
      - ``JSON_VALUE``
      - JSON text parsed at runtime by a package-scope ``_json_parse`` helper (over ``core:encoding/json.parse_string``) yielding ``json.Value``
      - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is rejected.
+   * - C
+     - ``CJSON``
+     - A ``cJSON_Create*(...)`` node tree composed with ``cJSON_AddItemToObject`` / ``cJSON_AddItemToArray`` plus an ``#include <cjson/cJSON.h>`` preamble, yielding ``cJSON *``
+     - Integers render through ``cJSON_CreateNumber((double)...)`` (``cJSON`` has no integer node); ``RECORD`` is rejected.
+   * - Cobol
+     - ``CJSON``
+     - The same ``cJSON_Create*`` tree built through GnuCOBOL's C ``CALL`` interface across the ``WORKING-STORAGE`` and ``PROCEDURE`` divisions, yielding ``cJSON *``
+     - Integers are stored in a ``COMP-2`` (C ``double``) item; values beyond COBOL's widest integer are rejected.
 
 Two cases are unusual enough to keep as prose.
 
