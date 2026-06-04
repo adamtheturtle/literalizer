@@ -1,0 +1,1 @@
+Add an "Understanding the result" documentation page that defines each ``LiteralizeResult`` field, explains when ``preamble`` and ``body_preamble`` are populated and that they must precede ``code`` to compile, and shows how ``wrap_in_file=True`` assembles those fields into output that compiles for you.

@@ -41,6 +41,10 @@ Pass your data, its format, and a target language:
    #     "x": 1,
    # }
 
+The call returns a single :class:`~literalizer.LiteralizeResult`.
+Here ``result.code`` is the whole story, but for some languages and options the literal in ``code`` relies on a separate ``preamble`` to compile.
+See :doc:`understanding-the-result` for what each field means and how to assemble output that compiles.
+
 Configure the language to control how individual data types are rendered.
 Comments in the source are preserved using the target language's comment syntax:
 
@@ -225,6 +229,7 @@ Reference
    :maxdepth: 3
    :caption: Guides
 
+   understanding-the-result
    json-api-use-case
    function-call-use-case
    heterogeneous-strategies
