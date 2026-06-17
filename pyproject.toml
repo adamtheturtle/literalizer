@@ -88,7 +88,7 @@ optional-dependencies.dev = [
     "sphinx-jinja==2.0.2",
     "sphinx-lint==1.0.2",
     "sphinx-pyproject==0.3.0",
-    "sphinx-substitution-extensions==2026.1.12",
+    "sphinx-substitution-extensions==2026.6.17",
     "sphinxcontrib-spelling==8.0.2",
     # ``sphinxcontrib-towncrier`` renders the unreleased news fragments
     # into the docs (docs/source/unreleased.rst) so the existing Sphinx
