@@ -1,0 +1,1 @@
+Added heterogeneous call dispatch to ``literalize_call``: pass ``dispatch_field`` and a ``call_specs`` table of the new ``CallSpec`` to render one ordered input file as a sequence of different calls (each element selects its target function, parameter names and optional per-spec transform by a discriminant field, and a spec may be omitted from the output).

@@ -207,6 +207,60 @@ class ParameterCountMismatchError(Exception):
         self.got = got
 
 
+class CallDispatchConfigError(Exception):
+    """Raised when ``literalize_call``'s dispatch arguments are
+    combined invalidly.
+
+    Heterogeneous dispatch (``dispatch_field`` + ``call_specs``) is a
+    distinct mode from the homogeneous ``target_function`` /
+    ``parameter_names`` mode: exactly one must be selected, dispatch
+    requires ``per_element=True``, and it is not combined with the
+    result-binding (``variable_form``), declaration-composition
+    (``bound_refs``), companion-value (``zip_source``) or
+    trailing-comment (``comment_source``) features.
+
+    To resolve, select a single mode and drop the unsupported
+    combination.
+    """
+
+
+class UnknownDispatchValueError(Exception):
+    """Raised when a dispatch element's discriminant value has no
+    matching entry in ``call_specs``.
+
+    To resolve, add a :class:`~literalizer.CallSpec` for the value, or
+    correct the discriminant in the input.
+    """
+
+    def __init__(self, *, value: str, known_values: tuple[str, ...]) -> None:
+        """Create an ``UnknownDispatchValueError``."""
+        known = ", ".join(repr(name) for name in known_values)
+        super().__init__(
+            f"dispatch value {value!r} has no matching call_specs entry; "
+            f"known values: {known}"
+        )
+        self.value = value
+        self.known_values = known_values
+
+
+class MalformedDispatchElementError(Exception):
+    """Raised when a dispatch input element is not a mapping carrying the
+    discriminant field (and at most the arguments field).
+
+    Each element must be a mapping such as
+    ``{"call": "put", "args": [1, 10]}``: the *dispatch_field* key
+    selects the :class:`~literalizer.CallSpec`, and the optional
+    *args_field* key holds the positional argument list.
+
+    To resolve, shape each element as such a mapping.
+    """
+
+    def __init__(self, *, reason: str) -> None:
+        """Create a ``MalformedDispatchElementError``."""
+        super().__init__(f"malformed dispatch element: {reason}")
+        self.reason = reason
+
+
 class CallsNotSupportedByLanguageError(Exception):
     """Raised when the target language itself has no function call
     syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).

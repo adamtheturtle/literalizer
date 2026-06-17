@@ -63,13 +63,16 @@ from literalizer._types import (
     ValueItemsMap,
 )
 from literalizer.exceptions import (
+    CallDispatchConfigError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    MalformedDispatchElementError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnknownDispatchValueError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
@@ -292,6 +295,44 @@ class BothVariableForms:
 
 
 VariableForm = NewVariable | ExistingVariable | BothVariableForms
+
+
+@dataclasses.dataclass(frozen=True)
+class CallSpec:
+    """One call variant in a :func:`literalize_call` dispatch table.
+
+    Each input element selects a ``CallSpec`` by its discriminant value
+    (the ``dispatch_field`` key); the element's remaining positional
+    arguments (the ``args_field`` list) are rendered through the call
+    assembly path using this spec's *target_function* and
+    *parameter_names*.  See :func:`literalize_call`'s ``dispatch_field``
+    and ``call_specs`` arguments.
+    """
+
+    target_function: str
+    """The function expression this variant calls (e.g. ``"cache.put"``
+    or ``"put"``).
+    """
+
+    parameter_names: Sequence[str] = ()
+    """Parameter names, positionally mapped to the element's arguments.
+    For positional call styles these are unused in the output but still
+    determine how many arguments to expect; a length mismatch raises
+    :class:`~literalizer.exceptions.ParameterCountMismatchError`.
+    """
+
+    call_transform: Callable[["CallContext"], str] | None = None
+    """Optional per-variant call transform, applied exactly like the
+    homogeneous ``call_transform`` (e.g. ``lambda ctx:
+    f"print({ctx.call})"``)
+    but only to elements selecting this variant.
+    """
+
+    omit: bool = False
+    """When ``True`` this variant renders nothing.  Use it for setup or
+    void calls that should be consumed from the input sequence without
+    appearing in the output.
+    """
 
 
 @beartype
@@ -4352,14 +4393,577 @@ def _resolve_zip_literals(
     return _ZipResolution(literals=literals, values=values)
 
 
+@dataclasses.dataclass(frozen=True)
+class _ResolvedDispatchCall:
+    """One input element resolved against the dispatch ``call_specs``."""
+
+    spec: CallSpec
+    target_function: str
+    """The spec's ``target_function`` formatted by the language."""
+
+    target_function_parts: tuple[str, ...]
+    args: list[Value]
+
+
+@beartype
+def _resolve_dispatch_calls(
+    *,
+    data: list[Value],
+    dispatch_field: str,
+    call_specs: Mapping[str, CallSpec],
+    args_field: str,
+    language: Language,
+) -> list[_ResolvedDispatchCall]:
+    """Resolve each input element to its selected :class:`CallSpec`.
+
+    Each element must be a mapping carrying *dispatch_field* (a string
+    selecting the spec) and, optionally, *args_field* (the positional
+    argument list); any other key, a non-string discriminant, an unknown
+    discriminant, or an argument count not matching the spec's
+    ``parameter_names`` is a typed error.
+    """
+    known_values = tuple(call_specs)
+    resolved: list[_ResolvedDispatchCall] = []
+    for element in data:
+        if not isinstance(element, dict):
+            raise MalformedDispatchElementError(
+                reason=(
+                    f"each element must be a mapping, got "
+                    f"{type(element).__name__}"
+                ),
+            )
+        if dispatch_field not in element:
+            raise MalformedDispatchElementError(
+                reason=f"missing dispatch field {dispatch_field!r}",
+            )
+        extra_keys = set(element) - {dispatch_field, args_field}
+        if extra_keys:
+            joined = ", ".join(
+                repr(key)
+                for key in sorted(str(object=key) for key in extra_keys)
+            )
+            raise MalformedDispatchElementError(
+                reason=(
+                    f"unexpected keys {joined}; only {dispatch_field!r} "
+                    f"and {args_field!r} are allowed"
+                ),
+            )
+        dispatch_value = element[dispatch_field]
+        if not isinstance(dispatch_value, str):
+            raise MalformedDispatchElementError(
+                reason=(
+                    f"dispatch field {dispatch_field!r} must be a string, "
+                    f"got {type(dispatch_value).__name__}"
+                ),
+            )
+        if dispatch_value not in call_specs:
+            raise UnknownDispatchValueError(
+                value=dispatch_value,
+                known_values=known_values,
+            )
+        spec = call_specs[dispatch_value]
+        raw_args = element.get(args_field, [])
+        if not isinstance(raw_args, list):
+            raise MalformedDispatchElementError(
+                reason=(
+                    f"arguments field {args_field!r} must be a list, got "
+                    f"{type(raw_args).__name__}"
+                ),
+            )
+        if len(raw_args) != len(spec.parameter_names):
+            raise ParameterCountMismatchError(
+                expected=len(spec.parameter_names),
+                got=len(raw_args),
+            )
+        parts = tuple(spec.target_function.split(sep="."))
+        resolved.append(
+            _ResolvedDispatchCall(
+                spec=spec,
+                target_function=language.format_call_target(parts),
+                target_function_parts=parts,
+                args=raw_args,
+            )
+        )
+    return resolved
+
+
+@beartype
+def _validate_dispatch_spec(
+    *,
+    language: Language,
+    spec: CallSpec,
+    target_function_parts: tuple[str, ...],
+    style: CallStyle,
+) -> None:
+    """Raise typed errors for an unsupported dispatch :class:`CallSpec`.
+
+    Mirrors the per-call structural checks of
+    :func:`_validate_call_preconditions` (parameter-count range, reserved
+    target, dotted-call support, ``call_transform`` shape) for a single
+    spec; omitted specs render nothing and so are never validated.
+    """
+    _validate_parameter_count(
+        language=language, parameter_names=spec.parameter_names
+    )
+    if target_function_parts[-1] in language.reserved_identifiers:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"target_function {spec.target_function!r} ends in a "
+                f"reserved identifier of this language"
+            ),
+        )
+    if len(target_function_parts) > 1 and not language.supports_dotted_calls:
+        raise DottedCallTargetNotSupportedError(
+            language_name=type(language).__name__,
+            target_function=spec.target_function,
+        )
+    if spec.call_transform is None:
+        return
+    if not language.call_returns_expression:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "calls in this language are statements, not expressions, "
+                "so a call_transform cannot consume the call as a value"
+            ),
+        )
+    if not isinstance(
+        style, PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "call_transform is only supported for languages whose "
+                "call form is an expression that can be wrapped "
+                "(positional, keyword, or object call style)"
+            ),
+        )
+
+
+@beartype
+def _render_call_dispatch(
+    *,
+    resolved: Sequence[_ResolvedDispatchCall],
+    language: Language,
+    style: CallStyle,
+    ref_case: IdentifierCase | None,
+    consumable_ref_names: frozenset[str],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+    collection_layout: CollectionLayout,
+) -> str:
+    """Render the resolved dispatch calls in document order.
+
+    Each element is rendered independently through the same call-assembly
+    path as a homogeneous call -- there is no cross-call slot widening,
+    because the calls do not share a target function.  Specs marked
+    ``omit`` contribute no output (and no preamble inference upstream).
+    """
+    effective_rows: list[Value] = [
+        resolved_call.args
+        for resolved_call in resolved
+        if not resolved_call.spec.omit
+    ]
+    single_use_ref_names = _compute_call_arg_ref_single_use_names(
+        elements=effective_rows,
+        ref_key=ref_key,
+    )
+    consume_inhibited_ref_names = (
+        _compute_call_arg_ref_consume_inhibited_names(
+            elements=effective_rows,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            language=language,
+        )
+    )
+    rendered_elements: list[str] = []
+    index = 0
+    for resolved_call in resolved:
+        if resolved_call.spec.omit:
+            continue
+        arg_values = resolved_call.args
+        non_ref_args = [
+            value
+            for value in arg_values
+            if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is None
+        ]
+        for value in non_ref_args:
+            stripped_value = _strip_refs_from_value(
+                value=value, ref_key=ref_key
+            )
+            check_data(data=stripped_value, spec=language)
+            language.validate_call_arg(stripped_value)
+        args_str = _format_call_args(
+            values=arg_values,
+            params=resolved_call.spec.parameter_names,
+            language=language,
+            wrap_ids=_compute_wrap_ids(data=non_ref_args, spec=language),
+            tuple_list_ids=_compute_tuple_list_ids(
+                data=non_ref_args,
+                spec=language,
+            ),
+            scalar_wrap_ids=frozenset[int](),
+            style=style,
+            dict_open_overrides=[None] * len(arg_values),
+            ref_case=ref_case,
+            ref_values=ref_values,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+        )
+        rendered_elements.append(
+            language.format_call_statement(
+                _assemble_call(
+                    target_function=resolved_call.target_function,
+                    args_str=args_str,
+                    call_transform=resolved_call.spec.call_transform,
+                    statement_terminator=language.statement_terminator,
+                    style=style,
+                    index=index,
+                    row=arg_values,
+                    zipped=None,
+                )
+            )
+        )
+        index += 1
+    return "\n".join(rendered_elements)
+
+
+@beartype
+def _wrap_dispatch_call_in_file(
+    *,
+    language: Language,
+    resolved: Sequence[_ResolvedDispatchCall],
+    result: str,
+    preamble: tuple[str, ...],
+    computed_body: tuple[str, ...],
+) -> str:
+    """Wrap a dispatch result in a complete file.
+
+    Emits one no-op stub per distinct (non-omitted) target function, with
+    that target's argument rows folded in for type inference, so the
+    generated file references no undefined name.  A target whose spec
+    carries a ``call_transform`` is stubbed to return a value (the
+    transform consumes the result); the rest return void.
+    """
+    grouped: dict[str, list[_ResolvedDispatchCall]] = {}
+    target_order: list[str] = []
+    for resolved_call in resolved:
+        if resolved_call.spec.omit:
+            continue
+        if resolved_call.target_function not in grouped:
+            grouped[resolved_call.target_function] = []
+            target_order.append(resolved_call.target_function)
+        grouped[resolved_call.target_function].append(resolved_call)
+    body_stubs: list[str] = []
+    preamble_stubs: list[str] = []
+    for target in target_order:
+        group = grouped[target]
+        first = group[0]
+        stub_return = (
+            StubReturn.VALUE
+            if any(call.spec.call_transform is not None for call in group)
+            else StubReturn.VOID
+        )
+        group_arg_values: list[Value] = [call.args for call in group]
+        body_stubs.extend(
+            language.format_call_stub(
+                first.target_function_parts,
+                first.spec.parameter_names,
+                stub_return,
+                group_arg_values,
+            ),
+        )
+        preamble_stubs.extend(
+            language.format_call_preamble_stub(
+                first.target_function_parts,
+                first.spec.parameter_names,
+                stub_return,
+                group_arg_values,
+            ),
+        )
+    # Distinct targets may each carry the same shared declaration (e.g.
+    # Dhall's ``let DVal = ...``, emitted by every stub's type
+    # signature), so the preamble and body-stub entries are
+    # deduplicated -- preserving first-seen order -- so a multi-target
+    # dispatch file declares each shared type once.  The single-target
+    # homogeneous wrap path never hits this.
+    deduped_body_preamble = deduplicate_preamble_entries(
+        entries=tuple(body_stubs) + computed_body,
+    )
+    wrapped = language.wrap_in_file(
+        content=result,
+        variable_name="",
+        body_preamble=deduped_body_preamble,
+    )
+    full_preamble = deduplicate_preamble_entries(
+        entries=preamble + tuple(preamble_stubs),
+    )
+    if full_preamble:
+        wrapped = "\n".join(full_preamble) + "\n" + wrapped
+    return wrapped
+
+
+@beartype
+def _resolve_call_style(*, language: Language) -> CallStyle:
+    """Return *language*'s call style, raising for data-only or
+    not-yet-implemented languages.
+    """
+    match language.call_style_config:
+        case CallSupport.NOT_IN_LANGUAGE:
+            raise CallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            raise CallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
+        case _ as style:
+            return style
+
+
+@beartype
+def _dispatch_requested(
+    *,
+    dispatch_field: str | None,
+    call_specs: Mapping[str, CallSpec] | None,
+) -> bool:
+    """Return whether either dispatch argument was supplied.
+
+    Selecting dispatch mode on *either* argument (rather than both) lets
+    :func:`_literalize_call_dispatch` raise a precise
+    :class:`~literalizer.exceptions.CallDispatchConfigError` for the
+    half-specified case instead of silently falling back to the
+    homogeneous path.
+    """
+    return dispatch_field is not None or call_specs is not None
+
+
+@beartype
+def _require_homogeneous_target(*, target_function: str | None) -> str:
+    """Return *target_function*, rejecting the no-mode-selected case.
+
+    Reached only on the homogeneous path (dispatch returns earlier), so
+    a missing *target_function* means neither mode was selected.
+    """
+    if target_function is None:
+        msg = (
+            "literalize_call requires either target_function (homogeneous "
+            "mode) or dispatch_field + call_specs (dispatch mode)"
+        )
+        raise CallDispatchConfigError(msg)
+    return target_function
+
+
+@beartype
+def _reject_dispatch_conflicts(
+    *,
+    target_function: str | None,
+    parameter_names: Sequence[str],
+    variable_form: VariableForm | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    zip_source: str | None,
+    comment_source: Sequence[str] | None,
+    call_transform: Callable[[CallContext], str] | None,
+) -> None:
+    """Reject homogeneous-mode and unsupported-feature arguments paired
+    with dispatch.
+
+    Dispatch is mutually exclusive with the homogeneous
+    ``target_function`` / ``parameter_names`` pair, and is not combined
+    with the result-binding, declaration-composition, companion-value or
+    trailing-comment features; each carries a typed
+    :class:`~literalizer.exceptions.CallDispatchConfigError`.
+    """
+    if target_function is not None or parameter_names:
+        msg = (
+            "target_function / parameter_names (homogeneous mode) and "
+            "dispatch_field / call_specs (dispatch mode) are mutually "
+            "exclusive"
+        )
+        raise CallDispatchConfigError(msg)
+    for feature_value, feature_name in (
+        (variable_form, "variable_form"),
+        (bound_refs, "bound_refs"),
+        (zip_source, "zip_source"),
+        (comment_source, "comment_source"),
+    ):
+        if feature_value is not None:
+            msg = f"{feature_name} is not supported with dispatch"
+            raise CallDispatchConfigError(msg)
+    if call_transform is not None:
+        msg = (
+            "call_transform is not supported with dispatch; supply a "
+            "per-spec call_transform via CallSpec instead"
+        )
+        raise CallDispatchConfigError(msg)
+
+
+@beartype
+def _literalize_call_dispatch(
+    *,
+    language: Language,
+    style: CallStyle,
+    data: Value,
+    dispatch_field: str | None,
+    call_specs: Mapping[str, CallSpec] | None,
+    args_field: str,
+    target_function: str | None,
+    parameter_names: Sequence[str],
+    variable_form: VariableForm | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    zip_source: str | None,
+    comment_source: Sequence[str] | None,
+    call_transform: Callable[[CallContext], str] | None,
+    per_element: bool,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+    consumable_refs: frozenset[str],
+    ref_values: Mapping[str, ValueInput] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    contains_standalone_comments: bool,
+) -> LiteralizeResult:
+    """Render a heterogeneous-dispatch ``literalize_call`` request.
+
+    This path handles only the dispatch table; the homogeneous mode's
+    mutually exclusive arguments and the unsupported features are
+    rejected here via :func:`_reject_dispatch_conflicts`.
+    """
+    if dispatch_field is None or call_specs is None:
+        msg = "dispatch requires both dispatch_field and call_specs"
+        raise CallDispatchConfigError(msg)
+    _reject_dispatch_conflicts(
+        target_function=target_function,
+        parameter_names=parameter_names,
+        variable_form=variable_form,
+        bound_refs=bound_refs,
+        zip_source=zip_source,
+        comment_source=comment_source,
+        call_transform=call_transform,
+    )
+    if not per_element:
+        msg = (
+            "dispatch (dispatch_field + call_specs) requires per_element=True"
+        )
+        raise CallDispatchConfigError(msg)
+    if not call_specs:
+        msg = "call_specs must not be empty"
+        raise CallDispatchConfigError(msg)
+    if not isinstance(data, list):
+        msg = f"dispatch requires a top-level list, got {type(data).__name__}"
+        raise PerElementNotListError(msg)
+    materialized_ref_values: Mapping[str, Value] = {
+        name: _materialize_value_input(value=value)
+        for name, value in (ref_values or {}).items()
+    }
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
+    resolved = _resolve_dispatch_calls(
+        data=data,
+        dispatch_field=dispatch_field,
+        call_specs=call_specs,
+        args_field=args_field,
+        language=language,
+    )
+    for resolved_call in resolved:
+        if resolved_call.spec.omit:
+            continue
+        _validate_dispatch_spec(
+            language=language,
+            spec=resolved_call.spec,
+            target_function_parts=resolved_call.target_function_parts,
+            style=style,
+        )
+    effective_rows: list[Value] = [
+        resolved_call.args
+        for resolved_call in resolved
+        if not resolved_call.spec.omit
+    ]
+    if not language.supports_inline_multiline_dict_args and any(
+        _has_inline_multiline_dict_arg(arg_values=row, ref_key=ref_key)
+        for row in effective_rows
+        if isinstance(row, list)
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "multi-key dict call arguments have no inline multiline "
+                "representation in this language"
+            ),
+        )
+    result = _render_call_dispatch(
+        resolved=resolved,
+        language=language,
+        style=style,
+        ref_case=ref_case,
+        consumable_ref_names=consumable_refs,
+        ref_values=materialized_ref_values,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+    )
+    data_for_preamble = _strip_call_arg_refs_for_preamble(
+        data=effective_rows,
+        per_element_data=effective_rows,
+        ref_key=ref_key,
+        ref_values=materialized_ref_values,
+    )
+    computed = compute_preamble(
+        data=data_for_preamble,
+        language=language,
+        has_variable_declaration=False,
+    )
+    preamble = deduplicate_preamble_entries(
+        entries=(
+            computed.leading
+            + tuple(language.static_preamble)
+            + computed.header
+            + language.call_data_dependent_preamble(data_for_preamble)
+        )
+    )
+    if wrap_in_file:
+        wrapped = _wrap_dispatch_call_in_file(
+            language=language,
+            resolved=resolved,
+            result=result,
+            preamble=preamble,
+            computed_body=computed.body,
+        )
+        return LiteralizeResult(
+            declaration_code=wrapped,
+            preamble=(),
+            body_preamble=(),
+            types_present=computed.types_present,
+            contains_standalone_comments=contains_standalone_comments,
+            source_data=data_for_preamble,
+        )
+    return LiteralizeResult(
+        declaration_code=result,
+        preamble=preamble,
+        body_preamble=computed.body,
+        types_present=computed.types_present,
+        contains_standalone_comments=contains_standalone_comments,
+        source_data=data_for_preamble,
+    )
+
+
 @beartype
 def literalize_call(
     *,
     source: str,
     input_format: InputFormat,
     language: Language,
-    target_function: str,
-    parameter_names: Sequence[str],
+    target_function: str | None = None,
+    parameter_names: Sequence[str] = (),
+    dispatch_field: str | None = None,
+    call_specs: Mapping[str, CallSpec] | None = None,
+    args_field: str = "args",
     call_transform: Callable[[CallContext], str] | None = None,
     zip_source: str | None = None,
     zip_input_format: InputFormat | None = None,
@@ -4386,11 +4990,46 @@ def literalize_call(
         language: A :class:`Language` instance describing how to format
             literals.
         target_function: The function expression to call
-            (e.g. ``"throttler.should_send_notification"``).
+            (e.g. ``"throttler.should_send_notification"``).  Required in
+            the homogeneous mode and mutually exclusive with
+            *dispatch_field* / *call_specs*; leave it ``None`` when using
+            dispatch.
         parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
-            determine how many values to expect per row.
+            determine how many values to expect per row.  Must be left
+            empty in dispatch mode (each :class:`CallSpec` carries its
+            own).
+        dispatch_field: Enables heterogeneous call dispatch.  When set
+            (together with *call_specs*), each top-level input element
+            must be a mapping whose *dispatch_field* value selects a
+            :class:`CallSpec`; that spec's ``target_function`` /
+            ``parameter_names`` render the element's *args_field*
+            arguments through the ordinary call-assembly path, so a
+            single ordered input file becomes an idiomatic sequence of
+            *different* calls (e.g. a mix of ``put`` / ``get`` /
+            ``get_frequency`` on a cache).  This is a distinct mode from
+            the homogeneous *target_function* / *parameter_names* pair
+            and the two are mutually exclusive
+            (:class:`~literalizer.exceptions.CallDispatchConfigError`).
+            Dispatch requires ``per_element=True`` and is not combined
+            with *variable_form*, *bound_refs*, *zip_source*,
+            *comment_source* or the top-level *call_transform* (use a
+            per-spec :attr:`CallSpec.call_transform` instead).  An unknown
+            discriminant raises
+            :class:`~literalizer.exceptions.UnknownDispatchValueError`;
+            an element that is not a ``{dispatch_field, args_field}``
+            mapping raises
+            :class:`~literalizer.exceptions.MalformedDispatchElementError`;
+            an argument count not matching the spec raises
+            :class:`~literalizer.exceptions.ParameterCountMismatchError`.
+        call_specs: The dispatch table mapping each discriminant value to
+            its :class:`CallSpec`.  Required whenever *dispatch_field* is
+            set and ignored otherwise.
+        args_field: The mapping key holding each dispatch element's
+            positional argument list (defaults to ``"args"``); an element
+            with no arguments may omit it.  Only meaningful in dispatch
+            mode.
         call_transform: Optional callable transforming each generated
             call.  Invoked once per call as ``call_transform(context)``
             with a :class:`CallContext` and returns the transformed
@@ -4610,17 +5249,38 @@ def literalize_call(
     parsed = parse_input(source=source, input_format=input_format)
     data = parsed.data
     contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
-    match language.call_style_config:
-        case CallSupport.NOT_IN_LANGUAGE:
-            raise CallsNotSupportedByLanguageError(
-                language_name=type(language).__name__,
-            )
-        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
-            raise CallsNotSupportedByToolError(
-                language_name=type(language).__name__,
-            )
-        case _ as style:
-            pass
+    style = _resolve_call_style(language=language)
+
+    if _dispatch_requested(
+        dispatch_field=dispatch_field, call_specs=call_specs
+    ):
+        return _literalize_call_dispatch(
+            language=language,
+            style=style,
+            data=data,
+            dispatch_field=dispatch_field,
+            call_specs=call_specs,
+            args_field=args_field,
+            target_function=target_function,
+            parameter_names=parameter_names,
+            variable_form=variable_form,
+            bound_refs=bound_refs,
+            zip_source=zip_source,
+            comment_source=comment_source,
+            call_transform=call_transform,
+            per_element=per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=ref_case,
+            consumable_refs=consumable_refs,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            contains_standalone_comments=contains_standalone_comments,
+        )
+
+    target_function = _require_homogeneous_target(
+        target_function=target_function
+    )
 
     per_element_data: list[Value] | None = None
     if per_element:

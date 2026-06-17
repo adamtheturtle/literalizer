@@ -344,3 +344,58 @@ Languages with no line comment fall back to that language's block-comment form (
 A trailing comment is only safe where each generated call is a self-contained line.
 Languages that assemble the call sequence into a single clause, list or expression -- so a separator, terminator or closer would follow the call on the same line and the line comment would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list ``,``, a Roc ``dbg ( ... )`` wrapper) -- reject a non-empty ``comment_source`` with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
 The supported set is exactly the languages whose :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls` is ``True``.
+
+Rendering a sequence of different calls (dispatch)
+--------------------------------------------------
+
+The examples so far render one call shape repeated over many argument rows.
+An object with mutable state driven by an *ordered sequence of different method calls* -- a cache taking a mix of ``put``, ``get`` and ``configure`` calls, say -- is a different shape: one input file, many *kinds* of call, in document order.
+Pass ``dispatch_field`` together with a ``call_specs`` table and each top-level element selects its call by a discriminant field.
+Every element is a mapping carrying that field plus an ``args`` list; the selected :class:`~literalizer.CallSpec` supplies the ``target_function`` and ``parameter_names`` for that element, and the arguments render through the ordinary call-assembly path.
+A spec marked ``omit`` renders nothing, so setup or void calls can be consumed from the sequence without appearing in the output:
+
+.. code-block:: python
+
+   """Render an ordered sequence of heterogeneous calls from one file."""
+
+   from literalizer import CallSpec, InputFormat, literalize_call
+   from literalizer.languages import Python
+
+   events_yaml = """\
+   ---
+   - call: put
+     args: [1, 10]
+   - call: get
+     args: [1]
+   - call: configure
+     args: ["debug"]
+   """
+
+   result = literalize_call(
+       source=events_yaml,
+       input_format=InputFormat.YAML,
+       language=Python(),
+       dispatch_field="call",
+       call_specs={
+           "put": CallSpec(
+               target_function="cache.put",
+               parameter_names=["key", "value"],
+           ),
+           "get": CallSpec(
+               target_function="cache.get",
+               parameter_names=["key"],
+           ),
+           "configure": CallSpec(
+               target_function="cache.configure",
+               parameter_names=["mode"],
+               omit=True,
+           ),
+       },
+   )
+
+   assert result.code == ("cache.put(key=1, value=10)\ncache.get(key=1)")
+
+Dispatch is a distinct mode from the homogeneous ``target_function`` / ``parameter_names`` pair, and the two are mutually exclusive (supplying both raises :class:`~literalizer.exceptions.CallDispatchConfigError`).
+It requires ``per_element=True`` and is not combined with ``variable_form``, ``bound_refs``, ``zip_source``, ``comment_source`` or the top-level ``call_transform`` (each :class:`~literalizer.CallSpec` carries its own ``call_transform`` instead).
+With ``wrap_in_file=True`` the rendered file stubs one no-op function per distinct (non-omitted) target, so it references no undefined name.
+An element whose discriminant has no matching spec raises :class:`~literalizer.exceptions.UnknownDispatchValueError`; an element that is not a ``{dispatch_field, args}`` mapping raises :class:`~literalizer.exceptions.MalformedDispatchElementError`; an argument count not matching the spec raises :class:`~literalizer.exceptions.ParameterCountMismatchError`.

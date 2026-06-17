@@ -32,6 +32,7 @@ from literalizer._language import (
 from literalizer._literalize import (
     BothVariableForms,
     CallContext,
+    CallSpec,
     ExistingVariable,
     LiteralizeResult,
     NewVariable,
@@ -46,6 +47,7 @@ __all__ = [
     "NON_KEBAB_REF_CASES",
     "BothVariableForms",
     "CallContext",
+    "CallSpec",
     "CallStyle",
     "CollectionLayout",
     "CommandCallStyle",

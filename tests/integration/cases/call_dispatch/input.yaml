@@ -1,0 +1,6 @@
+- call: configure
+  args: ["debug"]
+- call: put
+  args: [1, 10]
+- call: get
+  args: [1]
