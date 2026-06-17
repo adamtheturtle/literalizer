@@ -1,4 +1,4 @@
-template put(args: varargs[untyped]) = discard
-template get(args: varargs[untyped]) = discard
-put(1, 10)
-get(1)
+template store_item(args: varargs[untyped]) = discard
+template read_item(args: varargs[untyped]) = discard
+store_item(1, 10)
+read_item(1)

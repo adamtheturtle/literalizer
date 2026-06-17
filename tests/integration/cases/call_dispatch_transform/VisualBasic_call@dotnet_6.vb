@@ -1,13 +1,16 @@
 Imports System.Collections.Generic
 Module Check
-    Function record(value As Object) As Object
+    Function record_value(value As Object) As Object
         Return Nothing
     End Function
-    Function flush(count As Object) As Object
+    Function flush_buffer(count As Object) As Object
+        Return Nothing
+    End Function
+    Function emit(_arg As Object) As Object
         Return Nothing
     End Function
     Sub _calls()
-        record(42)
-        flush(3)
+        emit(record_value(42))
+        flush_buffer(3)
     End Sub
 End Module

@@ -1,7 +1,9 @@
-def record(value: Int) -> None:
+def record_value(value: Int) -> None:
     pass
-def flush(count: Int):
+def flush_buffer(count: Int):
+    pass
+def emit[*Ts: AnyType](*args: *Ts):
     pass
 def main():
-    record(42)
-    flush(3)
+    emit(record_value(42))
+    flush_buffer(3)

@@ -1,2 +1,2 @@
-_0 = put(1, 10)
-_1 = get(1)
+_0 = store_item(1, 10)
+_1 = read_item(1)

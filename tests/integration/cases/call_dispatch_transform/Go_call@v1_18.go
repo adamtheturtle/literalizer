@@ -1,8 +1,9 @@
 package main
-func record(args ...any) any { return nil }
-func flush(args ...any) any { return nil }
+func record_value(args ...any) any { return nil }
+func flush_buffer(args ...any) any { return nil }
+func emit(args ...any) any { return nil }
 
 func main() {
-record(42)
-flush(3)
+emit(record_value(42))
+flush_buffer(3)
 }

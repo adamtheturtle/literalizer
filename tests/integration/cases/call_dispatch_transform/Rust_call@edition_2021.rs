@@ -1,6 +1,7 @@
 fn main() {
-    fn record<A>(_value: A) {}
-    fn flush<A>(_count: A) {}
-    record(42);
-    flush(3);
+    fn record_value<A>(_value: A) {}
+    fn flush_buffer<A>(_count: A) {}
+    fn emit<A>(__arg: A) {}
+    emit(record_value(42));
+    flush_buffer(3);
 }

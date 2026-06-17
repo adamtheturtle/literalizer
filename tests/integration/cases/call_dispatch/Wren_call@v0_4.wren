@@ -1,10 +1,10 @@
-class Put_ {
+class Store_item_ {
     construct new() {}
     call(key, value) {}
 }
-var put = Put_.new()
-class Get_ {
+var store_item = Store_item_.new()
+class Read_item_ {
     call(key) {}
-var get = Get_.new()
-put.call(1, 10)
-get.call(1)
+var read_item = Read_item_.new()
+store_item.call(1, 10)
+read_item.call(1)

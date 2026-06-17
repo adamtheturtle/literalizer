@@ -1,7 +1,7 @@
-def put(key: Int, value: Int):
+def store_item(key: Int, value: Int):
     pass
-def get(key: Int):
+def read_item(key: Int):
     pass
 def main():
-    put(1, 10)
-    get(1)
+    store_item(1, 10)
+    read_item(1)

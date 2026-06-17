@@ -2,10 +2,10 @@ module Check where
 
 
 import Prelude
-put :: Val -> Val -> Unit
-put _ _ = unit
-get :: Val -> Unit
-get _ = unit
+store_item :: Val -> Val -> Unit
+store_item _ _ = unit
+read_item :: Val -> Unit
+read_item _ = unit
 data Val
     = PInt Int
     | PList (Array Val)
@@ -14,7 +14,7 @@ data Val
 main :: Unit
 main =
     let
-        _ = put (PInt 1) (PInt 10)
-        _ = get (PInt 1)
+        _ = store_item (PInt 1) (PInt 10)
+        _ = read_item (PInt 1)
     in
     unit

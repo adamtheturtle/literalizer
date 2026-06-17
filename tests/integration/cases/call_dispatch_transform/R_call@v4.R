@@ -1,4 +1,5 @@
-record <- function(...) NULL
-flush <- function(...) NULL
-record(value = 42)
-flush(count = 3)
+record_value <- function(...) NULL
+flush_buffer <- function(...) NULL
+emit <- function(...) NULL
+emit(record_value(value = 42))
+flush_buffer(count = 3)

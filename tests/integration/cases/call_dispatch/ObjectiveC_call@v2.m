@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
-static void put(id _a0, id _a1) { (void)_a0; (void)_a1; }
-static void get(id _a0) { (void)_a0; }
+static void store_item(id _a0, id _a1) { (void)_a0; (void)_a1; }
+static void read_item(id _a0) { (void)_a0; }
 int main(void) {
 @autoreleasepool {
-put(@1, @10);
-get(@1);
+store_item(@1, @10);
+read_item(@1);
 }
     return 0;
 }

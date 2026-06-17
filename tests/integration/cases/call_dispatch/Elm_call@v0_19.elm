@@ -1,10 +1,10 @@
 module Check exposing (..)
 
 
-put : a -> b -> ()
-put _ _ = ()
-get : a -> ()
-get _ = ()
+store_item : a -> b -> ()
+store_item _ _ = ()
+read_item : a -> ()
+read_item _ = ()
 type Val
     = EInt Int
     | EList (List Val)
@@ -13,8 +13,8 @@ type Val
 main : Program () () Never
 main =
     let
-        _ = put (EInt 1) (EInt 10)
-        _ = get (EInt 1)
+        _ = store_item (EInt 1) (EInt 10)
+        _ = read_item (EInt 1)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

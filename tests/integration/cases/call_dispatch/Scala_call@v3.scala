@@ -1,6 +1,6 @@
 object Fixture_call_dispatch_Scala_call {
-def put(key: Any = null, value: Any = null): Any = null
-def get(key: Any = null): Any = null
-put(key = 1, value = 10)
-get(key = 1)
+def store_item(key: Any = null, value: Any = null): Any = null
+def read_item(key: Any = null): Any = null
+store_item(key = 1, value = 10)
+read_item(key = 1)
 }

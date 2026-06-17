@@ -18,15 +18,15 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call put(fint(1_int64), fint(10_int64))
-    call get(fint(1_int64))
+    call store_item(fint(1_int64), fint(10_int64))
+    call read_item(fint(1_int64))
 contains
-    subroutine put(key, value)
+    subroutine store_item(key, value)
         implicit none
         type(fval_t), intent(in) :: key, value
-    end subroutine put
-    subroutine get(key)
+    end subroutine store_item
+    subroutine read_item(key)
         implicit none
         type(fval_t), intent(in) :: key
-    end subroutine get
+    end subroutine read_item
 end program main

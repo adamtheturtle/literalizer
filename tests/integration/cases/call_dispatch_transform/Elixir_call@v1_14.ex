@@ -1,8 +1,9 @@
 defmodule Check do
-  def record(_value), do: nil
-  def flush(_count), do: nil
+  def record_value(_value), do: nil
+  def flush_buffer(_count), do: nil
+  def emit(_arg), do: nil
   def x do
-    record(42)
-    flush(3)
+    emit(record_value(42))
+    flush_buffer(3)
   end
 end

@@ -1,7 +1,8 @@
 -module(fixture_call_dispatch_transform_erlang_call).
 -export([x/0]).
-record(_) -> undefined.
-flush(_) -> ok.
+record_value(_) -> undefined.
+flush_buffer(_) -> ok.
+emit(_) -> ok.
 x() ->
-    record(42),
-    flush(3).
+    emit(record_value(42)),
+    flush_buffer(3).

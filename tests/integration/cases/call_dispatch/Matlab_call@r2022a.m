@@ -1,4 +1,4 @@
-put = @(varargin) [];
-get = @(varargin) [];
-put(1, 10)
-get(1)
+store_item = @(varargin) [];
+read_item = @(varargin) [];
+store_item(1, 10)
+read_item(1)

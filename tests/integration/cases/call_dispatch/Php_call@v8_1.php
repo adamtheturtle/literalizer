@@ -1,5 +1,5 @@
 <?php
-function put($key, $value) {}
-function get($key) {}
-put(key: 1, value: 10);
-get(key: 1);
+function store_item($key, $value) {}
+function read_item($key) {}
+store_item(key: 1, value: 10);
+read_item(key: 1);

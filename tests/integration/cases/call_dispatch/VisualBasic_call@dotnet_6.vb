@@ -1,13 +1,13 @@
 Imports System.Collections.Generic
 Module Check
-    Function put(key As Object, value As Object) As Object
+    Function store_item(key As Object, value As Object) As Object
         Return Nothing
     End Function
-    Function get(key As Object) As Object
+    Function read_item(key As Object) As Object
         Return Nothing
     End Function
     Sub _calls()
-        put(1, 10)
-        get(1)
+        store_item(1, 10)
+        read_item(1)
     End Sub
 End Module

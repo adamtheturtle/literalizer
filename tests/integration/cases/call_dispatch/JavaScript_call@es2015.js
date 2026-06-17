@@ -1,4 +1,4 @@
-function put() {}
-function get() {}
-put({ key: 1, value: 10 });
-get({ key: 1 });
+function store_item() {}
+function read_item() {}
+store_item({ key: 1, value: 10 });
+read_item({ key: 1 });

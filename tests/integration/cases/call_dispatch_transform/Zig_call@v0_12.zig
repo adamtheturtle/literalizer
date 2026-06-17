@@ -10,9 +10,10 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn record(value: ZVal) void { _ = value; }
-fn flush(count: ZVal) void { _ = count; }
+fn record_value(value: ZVal) void { _ = value; }
+fn flush_buffer(count: ZVal) void { _ = count; }
+fn emit(_arg: anytype) void { _ = _arg; }
 pub fn main() void {
-    record(.{ .int = 42 });
-    flush(.{ .int = 3 });
+    emit(record_value(.{ .int = 42 }));
+    flush_buffer(.{ .int = 3 });
 }

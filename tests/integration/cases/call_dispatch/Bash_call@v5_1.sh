@@ -1,4 +1,4 @@
-put() { :; }
-get() { :; }
-put 1 10
-get 1
+store_item() { :; }
+read_item() { :; }
+store_item 1 10
+read_item 1

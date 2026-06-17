@@ -1,11 +1,11 @@
 module [main]
 
-put : a, b -> {}
-put = \_, _ -> {}
-get : a -> {}
-get = \_ -> {}
+store_item : a, b -> {}
+store_item = \_, _ -> {}
+read_item : a -> {}
+read_item = \_ -> {}
 
 main =
-    dbg (put (RInt 1i128) (RInt 10i128))
-    dbg (get (RInt 1i128))
+    dbg (store_item (RInt 1i128) (RInt 10i128))
+    dbg (read_item (RInt 1i128))
     {}

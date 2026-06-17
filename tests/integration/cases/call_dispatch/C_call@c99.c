@@ -14,10 +14,10 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void put(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
-static void get(CVal _a0) { (void)_a0; }
+static void store_item(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
+static void read_item(CVal _a0) { (void)_a0; }
 int main(void) {
-put(((CVal){.i = 1}), ((CVal){.i = 10}));
-get(((CVal){.i = 1}));
+store_item(((CVal){.i = 1}), ((CVal){.i = 10}));
+read_item(((CVal){.i = 1}));
     return 0;
 }

@@ -1,4 +1,4 @@
-def put(Map _args) { null }
-def get(Map _args) { null }
-put(key: 1, value: 10)
-get(key: 1)
+def store_item(Map _args) { null }
+def read_item(Map _args) { null }
+store_item(key: 1, value: 10)
+read_item(key: 1)

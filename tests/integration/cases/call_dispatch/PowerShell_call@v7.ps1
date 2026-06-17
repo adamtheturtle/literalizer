@@ -1,4 +1,4 @@
-function put {}
-function get {}
-put(1, 10)
-get(1)
+function store_item {}
+function read_item {}
+store_item(1, 10)
+read_item(1)

@@ -1,9 +1,9 @@
 #include <initializer_list>
 #include <vector>
-auto put(auto...) { return 0; }
-auto get(auto...) { return 0; }
+auto store_item(auto...) { return 0; }
+auto read_item(auto...) { return 0; }
 int main() {
-put(1, 10);
-get(1);
+store_item(1, 10);
+read_item(1);
     return 0;
 }

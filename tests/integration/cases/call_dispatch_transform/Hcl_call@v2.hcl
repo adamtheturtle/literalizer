@@ -1,2 +1,2 @@
-_0 = record(42)
-_1 = flush(3)
+_0 = emit(record_value(42))
+_1 = flush_buffer(3)

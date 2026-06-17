@@ -1,7 +1,7 @@
 import std.json;
 void main() {
-int put(T...)(T args) { return 0; }
-int get(T...)(T args) { return 0; }
-put(1, 10);
-get(1);
+int store_item(T...)(T args) { return 0; }
+int read_item(T...)(T args) { return 0; }
+store_item(1, 10);
+read_item(1);
 }

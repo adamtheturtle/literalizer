@@ -1,8 +1,8 @@
 defmodule Check do
-  def put(_key, _value), do: nil
-  def get(_key), do: nil
+  def store_item(_key, _value), do: nil
+  def read_item(_key), do: nil
   def x do
-    put(1, 10)
-    get(1)
+    store_item(1, 10)
+    read_item(1)
   end
 end

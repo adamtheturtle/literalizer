@@ -10,9 +10,9 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn put(key: ZVal, value: ZVal) void { _ = key; _ = value; }
-fn get(key: ZVal) void { _ = key; }
+fn store_item(key: ZVal, value: ZVal) void { _ = key; _ = value; }
+fn read_item(key: ZVal) void { _ = key; }
 pub fn main() void {
-    put(.{ .int = 1 }, .{ .int = 10 });
-    get(.{ .int = 1 });
+    store_item(.{ .int = 1 }, .{ .int = 10 });
+    read_item(.{ .int = 1 });
 }

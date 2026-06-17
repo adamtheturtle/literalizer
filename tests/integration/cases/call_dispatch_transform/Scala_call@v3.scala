@@ -1,6 +1,7 @@
 object Fixture_call_dispatch_transform_Scala_call {
-def record(value: Any = null): Any = null
-def flush(count: Any = null): Any = null
-record(value = 42)
-flush(count = 3)
+def record_value(value: Any = null): Any = null
+def flush_buffer(count: Any = null): Any = null
+def emit(_arg: Any = null): Any = null
+emit(record_value(value = 42))
+flush_buffer(count = 3)
 }

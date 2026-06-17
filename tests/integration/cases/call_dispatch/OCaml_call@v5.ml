@@ -1,11 +1,11 @@
 module Check = struct
 
-let put _ = ()
-let get _ = ()
+let store_item _ = ()
+let read_item _ = ()
 type val_t =
   | OInt of int
   | OList of val_t list
-let _ = put(1, 10)
-let _ = get(1)
+let _ = store_item(1, 10)
+let _ = read_item(1)
 
 end

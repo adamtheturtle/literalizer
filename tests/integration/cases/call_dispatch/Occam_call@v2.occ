@@ -11,13 +11,13 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-PROC put (VAL MOBILE LIT key, VAL MOBILE LIT value)
+PROC store_item (VAL MOBILE LIT key, VAL MOBILE LIT value)
     SKIP
 :
-PROC get (VAL MOBILE LIT key)
+PROC read_item (VAL MOBILE LIT key)
 PROC main ()
-    put(MOBILE LIT(lit.int; 1), MOBILE LIT(lit.int; 10))
-    get(MOBILE LIT(lit.int; 1))
+    store_item(MOBILE LIT(lit.int; 1), MOBILE LIT(lit.int; 10))
+    read_item(MOBILE LIT(lit.int; 1))
     SEQ
         SKIP
 :

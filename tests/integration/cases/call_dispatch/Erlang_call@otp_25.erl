@@ -1,7 +1,7 @@
 -module(fixture_call_dispatch_erlang_call).
 -export([x/0]).
-put(_, _) -> ok.
-get(_) -> ok.
+store_item(_, _) -> ok.
+read_item(_) -> ok.
 x() ->
-    put(1, 10),
-    get(1).
+    store_item(1, 10),
+    read_item(1).

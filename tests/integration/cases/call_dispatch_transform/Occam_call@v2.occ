@@ -11,14 +11,18 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
-MOBILE LIT FUNCTION record (VAL MOBILE LIT value)
+MOBILE LIT FUNCTION record_value (VAL MOBILE LIT value)
     RESULT MOBILE LIT(lit.null)
 :
-PROC flush (VAL MOBILE LIT count)
+PROC flush_buffer (VAL MOBILE LIT count)
     SKIP
+:
+PROC emit (VAL MOBILE LIT _arg)
+    SKIP
+:
 PROC main ()
-    record(MOBILE LIT(lit.int; 42))
-    flush(MOBILE LIT(lit.int; 3))
+    emit(record_value(MOBILE LIT(lit.int; 42)))
+    flush_buffer(MOBILE LIT(lit.int; 3))
     SEQ
         SKIP
 :

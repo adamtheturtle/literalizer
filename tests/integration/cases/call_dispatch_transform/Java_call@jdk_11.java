@@ -1,8 +1,9 @@
 class Main {
-static Object record(Object... args) { return null; }
-static Object flush(Object... args) { return null; }
+static Object record_value(Object... args) { return null; }
+static Object flush_buffer(Object... args) { return null; }
+static Object emit(Object... args) { return null; }
     public static void main() {
-record(42);
-flush(3);
+emit(record_value(42));
+flush_buffer(3);
     }
 }

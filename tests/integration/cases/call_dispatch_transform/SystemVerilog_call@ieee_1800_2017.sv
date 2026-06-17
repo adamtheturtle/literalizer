@@ -10,12 +10,13 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-function _VVal record(input _VVal value);
-    record = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
+function _VVal record_value(input _VVal value);
+    record_value = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
 endfunction
-task flush(input _VVal count); endtask
+task flush_buffer(input _VVal count); endtask
+task emit(input _VVal _arg); endtask
 initial begin
-record(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-flush(_VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""});
+emit(record_value(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}));
+flush_buffer(_VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""});
 end
 endmodule

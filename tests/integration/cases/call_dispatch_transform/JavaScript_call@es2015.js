@@ -1,4 +1,5 @@
-function record() {}
-function flush() {}
-record({ value: 42 });
-flush({ count: 3 });
+function record_value() {}
+function flush_buffer() {}
+function emit() {}
+emit(record_value({ value: 42 }));
+flush_buffer({ count: 3 });

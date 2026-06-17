@@ -1,9 +1,10 @@
 #+feature dynamic-literals
 package main
-record :: proc(args: ..any) -> any { return nil }
-flush :: proc(args: ..any) -> any { return nil }
+record_value :: proc(args: ..any) -> any { return nil }
+flush_buffer :: proc(args: ..any) -> any { return nil }
+emit :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
-record(42);
-flush(3);
+emit(record_value(42));
+flush_buffer(3);
 }

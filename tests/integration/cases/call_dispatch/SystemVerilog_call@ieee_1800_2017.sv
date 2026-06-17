@@ -10,10 +10,10 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-task put(input _VVal key, input _VVal value); endtask
-task get(input _VVal key); endtask
+task store_item(input _VVal key, input _VVal value); endtask
+task read_item(input _VVal key); endtask
 initial begin
-put(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_INT, i: 10, r: 0.0, s: ""});
-get(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+store_item(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_INT, i: 10, r: 0.0, s: ""});
+read_item(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
 end
 endmodule

@@ -1,4 +1,5 @@
-function record(...) end
-function flush(...) end
-record(42)
-flush(3)
+function record_value(...) end
+function flush_buffer(...) end
+function emit(...) end
+emit(record_value(42))
+flush_buffer(3)

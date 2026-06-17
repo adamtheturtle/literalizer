@@ -1,6 +1,6 @@
-local put(key, value) = null;
-local get(key) = null;
+local store_item(key, value) = null;
+local read_item(key) = null;
 [
-    put(key=1, value=10),
-    get(key=1),
+    store_item(key=1, value=10),
+    read_item(key=1),
 ]

@@ -1,8 +1,8 @@
 interface ICallArg_ {}
-fn put(args ...ICallArg_) {}
-fn get(args ...ICallArg_) {}
+fn store_item(args ...ICallArg_) {}
+fn read_item(args ...ICallArg_) {}
 
 fn main() {
-	put(1, 10);
-	get(1);
+	store_item(1, 10);
+	read_item(1);
 }

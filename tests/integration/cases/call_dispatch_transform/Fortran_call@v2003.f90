@@ -19,17 +19,21 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call record(fint(42_int64))
-    call flush(fint(3_int64))
+    call emit(record_value(fint(42_int64)))
+    call flush_buffer(fint(3_int64))
 contains
-    function record(value) result(r)
+    function record_value(value) result(r)
         implicit none
         type(fval_t), intent(in) :: value
         type(fval_t) :: r
         r = fnull()
-    end function record
-    subroutine flush(count)
+    end function record_value
+    subroutine flush_buffer(count)
         implicit none
         type(fval_t), intent(in) :: count
-    end subroutine flush
+    end subroutine flush_buffer
+    subroutine emit(arg)
+        implicit none
+        type(fval_t), intent(in) :: arg
+    end subroutine emit
 end program main

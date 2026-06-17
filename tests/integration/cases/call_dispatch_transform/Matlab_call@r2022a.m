@@ -1,4 +1,5 @@
-record = @(varargin) [];
-flush = @(varargin) [];
-record(42)
-flush(3)
+record_value = @(varargin) [];
+flush_buffer = @(varargin) [];
+emit = @(varargin) [];
+emit(record_value(42))
+flush_buffer(3)

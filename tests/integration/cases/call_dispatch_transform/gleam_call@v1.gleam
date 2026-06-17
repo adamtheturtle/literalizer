@@ -2,10 +2,11 @@ pub type GVal {
   GInt(Int)
   GList(List(GVal))
 }
-pub fn record(_value: a) -> Nil { Nil }
-pub fn flush(_count: a) -> Nil { Nil }
+pub fn record_value(_value: a) -> Nil { Nil }
+pub fn flush_buffer(_count: a) -> Nil { Nil }
+pub fn emit(__arg: a) -> Nil { Nil }
 
 pub fn main() {
-  record(GInt(42))
-  flush(GInt(3))
+  emit(record_value(GInt(42)))
+  flush_buffer(GInt(3))
 }

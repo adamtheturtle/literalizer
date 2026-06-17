@@ -1,8 +1,8 @@
 package main
-func put(args ...any) any { return nil }
-func get(args ...any) any { return nil }
+func store_item(args ...any) any { return nil }
+func read_item(args ...any) any { return nil }
 
 func main() {
-put(1, 10)
-get(1)
+store_item(1, 10)
+read_item(1)
 }
