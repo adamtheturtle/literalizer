@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install uv
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # ``luaVersion: '5.4'`` matches ``Lua.language_version`` (``V5_4``)
@@ -621,7 +621,7 @@ jobs:
       ODIN_VERSION: dev-2026-04
       ODIN_FIXTURE_TAG: dev_2024
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Odin
@@ -686,7 +686,7 @@ jobs:
     env:
       ROC_NIGHTLY_BUILD: roc_nightly-linux_x86_64-2025-10-28-ea210f57
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Roc
@@ -743,7 +743,7 @@ jobs:
     container:
       image: gnuoctave/octave:9.2.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Lint Matlab
@@ -778,7 +778,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # ``perl-version: '5.36'`` is ``>=`` the ``V5_36``
@@ -819,7 +819,7 @@ jobs:
   lint-go-installed:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Go-sourced linters
@@ -863,7 +863,7 @@ jobs:
   lint-npm-installed:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # `node-version` pinned to Node 22 LTS, which supports the
@@ -935,7 +935,7 @@ jobs:
   lint-typescript-run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # `node-version` pinned to Node 22 LTS, which supports the
@@ -981,7 +981,7 @@ jobs:
   lint-elm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # `node-version` pinned to Node 22 LTS, which supports the
@@ -1017,7 +1017,7 @@ jobs:
   lint-elm-run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # `node-version` pinned to Node 22 LTS, which supports the
@@ -1057,7 +1057,7 @@ jobs:
   lint-uv-scripts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
@@ -1176,7 +1176,7 @@ jobs:
   lint-dotnet:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Initialize .NET runtime
@@ -1264,7 +1264,7 @@ jobs:
   lint-sml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # The pinned MLton implements SML '97, matching
@@ -1310,7 +1310,7 @@ jobs:
       ELIXIR_VERSION: '1.18'
       ELIXIR_FIXTURE_TAG: v1_14
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Elixir
@@ -1355,7 +1355,7 @@ jobs:
       OTP_VERSION: '27'
       ERLANG_FIXTURE_TAG: otp_25
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Erlang
@@ -1428,7 +1428,7 @@ jobs:
       GLEAM_VERSION: v1.16.0
       GLEAM_FIXTURE_TAG: v1
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install Gleam
@@ -1486,7 +1486,7 @@ jobs:
   lint-jvm-mini:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # ``bb: 1.12.218`` bundles Clojure 1.12.x, which is ``>=`` the
@@ -1559,7 +1559,7 @@ jobs:
   lint-haskell-family:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: haskell-actions/setup@v2
@@ -1686,7 +1686,7 @@ jobs:
   lint-c-tidy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install uv
@@ -1711,7 +1711,7 @@ jobs:
   lint-cpp-tidy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install uv
@@ -1743,7 +1743,7 @@ jobs:
       # pin must stay ``>=`` that ``V2002`` default).
       GNUCOBOL_VERSION: '3.2'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -1807,7 +1807,7 @@ jobs:
   lint-cpp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -1870,7 +1870,7 @@ jobs:
       KOTLIN_VERSION: 2.3.20
       KOTLIN_FIXTURE_TAG: v1_9
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -1931,7 +1931,7 @@ jobs:
   lint-swift:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -1976,7 +1976,7 @@ jobs:
   lint-ocaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2042,7 +2042,7 @@ jobs:
     env:
       LISP: sbcl-bin/2.6.4
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2090,7 +2090,7 @@ jobs:
   lint-scala:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2150,7 +2150,7 @@ jobs:
   lint-haxe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2204,7 +2204,7 @@ jobs:
   lint-dart:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2276,7 +2276,7 @@ jobs:
   lint-julia:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2322,7 +2322,7 @@ jobs:
   lint-go:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2363,7 +2363,7 @@ jobs:
   lint-rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2428,7 +2428,7 @@ jobs:
   lint-r:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2478,7 +2478,7 @@ jobs:
   lint-d:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2536,7 +2536,7 @@ jobs:
   lint-crystal:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2597,7 +2597,7 @@ jobs:
   lint-mojo:
     runs-on: ubicloud-standard-4
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2714,7 +2714,7 @@ jobs:
         --warningAsError:XmightNotBeenInit:on
         --warningAsError:warnRstStyle:on
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2758,7 +2758,7 @@ jobs:
   lint-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Install uv
@@ -2795,7 +2795,7 @@ jobs:
   lint-racket:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2841,7 +2841,7 @@ jobs:
     env:
       RAKU_VERSION: '2026.04'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2888,7 +2888,7 @@ jobs:
       ZIG_VERSION: 0.14.0
       ZIG_FIXTURE_TAG: v0_12
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2948,7 +2948,7 @@ jobs:
   lint-systemverilog:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -2992,7 +2992,7 @@ jobs:
   lint-v:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -3057,7 +3057,7 @@ jobs:
     # build reproducibility, not to track a moving standard.
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
@@ -3113,7 +3113,7 @@ jobs:
     # ``src/literalizer/languages/objective_c.py``; keep them in sync.
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
