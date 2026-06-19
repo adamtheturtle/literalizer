@@ -1,0 +1,4 @@
+- call: record
+  args: [42]
+- call: flush
+  args: [3]

@@ -62,6 +62,12 @@ Function calls
    :members:
    :undoc-members:
 
+The ``dispatch_field`` / ``call_specs`` arguments to :func:`literalize_call` render an ordered sequence of *different* calls, one per input element, using this table.
+
+.. autoclass:: CallSpec
+   :members:
+   :undoc-members:
+
 A language renders a call using one of these call styles.
 
 .. autodata:: CallStyle

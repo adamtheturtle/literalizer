@@ -11,7 +11,7 @@ import datetime
 import enum
 import functools
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import pytest
@@ -145,6 +145,15 @@ class CallCaseConfig:
     # the resulting fixture and are skipped (no golden) instead of
     # emitting non-compiling output.
     requires_dict_literal_as_free_expression: bool
+    # Heterogeneous-dispatch cases (issue #2846).  When set, the case
+    # drives ``literalize_call(dispatch_field=..., call_specs=...,
+    # wrap_in_file=True)`` instead of the homogeneous
+    # ``target_function`` / ``parameter_names`` pair (which are left as
+    # ``""`` / ``[]`` and unused).  The harness stubs one target per
+    # non-omitted spec via the library's own wrap path, so no extra
+    # stub wiring is needed here.  ``None`` selects the homogeneous mode.
+    dispatch_field: str | None = None
+    call_specs: Mapping[str, literalizer.CallSpec] | None = None
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -1422,6 +1431,97 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
     ),
+    CallCaseConfig(
+        # Heterogeneous call dispatch (issue #2846): one ordered input
+        # file renders as a sequence of *different* calls selected by
+        # the ``call`` discriminant.  ``configure`` is an ``omit`` spec
+        # (it renders nothing); ``store_item`` and ``read_item`` take
+        # different numbers of parameters, exercising per-spec stubbing
+        # in the wrap path.  Target names are compound to avoid colliding
+        # with any language's reserved words or library names (e.g.
+        # ``put`` / ``get`` are auto-imported in Erlang, a Common Lisp
+        # standard function and a Visual Basic keyword).
+        case_dir_name="call_dispatch",
+        target_function="",
+        parameter_names=[],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=True,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        dispatch_field="call",
+        call_specs={
+            "configure": literalizer.CallSpec(
+                target_function="configure_store",
+                parameter_names=["mode"],
+                omit=True,
+            ),
+            "put": literalizer.CallSpec(
+                target_function="store_item",
+                parameter_names=["key", "value"],
+            ),
+            "get": literalizer.CallSpec(
+                target_function="read_item",
+                parameter_names=["key"],
+            ),
+        },
+    ),
+    CallCaseConfig(
+        # Dispatch with a per-spec ``call_transform``.  ``record`` wraps
+        # its call in ``emit(...)`` (a void wrapper the harness stubs, as
+        # for the homogeneous transform cases), so the value-returning
+        # call is consumed rather than discarded -- a bare value-yielding
+        # statement is an error in strict languages (e.g. SystemVerilog
+        # ``-Werror`` IGNOREDRETURN).  Driven through the non-wrap
+        # composition path (``wrap_in_file=False``) so the wrapper stub
+        # can be injected.  ``flush`` has no transform.
+        case_dir_name="call_dispatch_transform",
+        target_function="",
+        parameter_names=[],
+        call_transform=None,
+        transform_stub_names=["emit"],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=True,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        dispatch_field="call",
+        call_specs={
+            "record": literalizer.CallSpec(
+                target_function="record_value",
+                parameter_names=["value"],
+                call_transform=lambda ctx: f"emit({ctx.call})",
+            ),
+            "flush": literalizer.CallSpec(
+                target_function="flush_buffer",
+                parameter_names=["count"],
+            ),
+        },
+    ),
     *[
         CallCaseConfig(
             case_dir_name=f"call_{name}",
@@ -1584,6 +1684,8 @@ def _expected_call_shape_exception(
     """Return the exception ``literalize_call`` is expected to raise for
     this (lang, config) pair, or ``None`` if it should produce output.
     """
+    if config.dispatch_field is not None:
+        return _dispatch_expected_exception(lang_cls=lang_cls, config=config)
     parameter_count = len(config.parameter_names)
     max_params = lang_cls.max_call_parameters
     variable_form_exc = _variable_form_expected_exception(
@@ -1606,6 +1708,45 @@ def _expected_call_shape_exception(
     )
     if any(unsupported_signals):
         return UnsupportedCallShapeError
+    return None
+
+
+@beartype
+def _dispatch_expected_exception(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    config: CallCaseConfig,
+) -> type[Exception] | None:
+    """Mirror ``_validate_dispatch_spec`` rejection paths per spec.
+
+    Each non-omitted :class:`~literalizer.CallSpec` is validated like a
+    homogeneous call (parameter-count range, reserved target, dotted
+    support, ``call_transform`` shape).  The first unsupported spec
+    decides the expected exception; dispatch cases never use dotted
+    targets, so only :class:`UnsupportedCallShapeError` arises here.
+    """
+    call_specs = config.call_specs or {}
+    default_style = next(iter(lang_cls.CallStyles)).value
+    for spec in call_specs.values():
+        if spec.omit:
+            continue
+        parameter_count = len(spec.parameter_names)
+        innermost_target = spec.target_function.split(sep=".")[-1]
+        transform_style_unsupported = (
+            spec.call_transform is not None
+            and not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
+        )
+        unsupported_signals = (
+            parameter_count == 0
+            and not lang_cls.supports_zero_parameter_calls,
+            parameter_count > lang_cls.max_call_parameters,
+            innermost_target in lang_cls.reserved_identifiers,
+            spec.call_transform is not None
+            and not lang_cls.call_returns_expression,
+            transform_style_unsupported,
+        )
+        if any(unsupported_signals):
+            return UnsupportedCallShapeError
     return None
 
 
@@ -1660,6 +1801,156 @@ def discover_call_cases() -> list[CallCase]:
                 )
             )
     return cases
+
+
+@beartype
+def _dispatch_call(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    yaml_string: str,
+    wrap_in_file: bool,
+) -> literalizer.LiteralizeResult:
+    """Render a dispatch case, forwarding its dispatch arguments."""
+    return literalizer.literalize_call(
+        source=yaml_string,
+        input_format=literalizer.InputFormat.YAML,
+        language=spec,
+        dispatch_field=config.dispatch_field,
+        call_specs=config.call_specs,
+        per_element=config.per_element,
+        wrap_in_file=wrap_in_file,
+    )
+
+
+@beartype
+def _compose_dispatch_with_stubs(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Compose a non-wrapped dispatch result with target and wrapper
+    stubs into one self-contained file.
+
+    One stub is emitted per distinct non-omitted target (value-returning
+    when that spec carries a ``call_transform``, else void), plus one for
+    each ``transform_stub_names`` wrapper.  The per-target argument rows
+    are recovered by pairing ``result.source_data`` -- the rendered rows
+    in document order -- with the non-omitted specs in the same order
+    (the fixtures use each spec once, in ``call_specs`` order).
+    """
+    call_specs = config.call_specs or {}
+    non_omitted = [s for s in call_specs.values() if not s.omit]
+    rows = result.source_data
+    assert isinstance(rows, list)  # noqa: S101
+    assert len(rows) == len(non_omitted)  # noqa: S101
+    rows_by_target: dict[str, list[_Value]] = {}
+    return_by_target: dict[str, StubReturn] = {}
+    target_order: list[str] = []
+    for call_spec, row in zip(non_omitted, rows, strict=True):
+        target = call_spec.target_function
+        if target not in rows_by_target:
+            rows_by_target[target] = []
+            target_order.append(target)
+        rows_by_target[target].append(row)
+        return_by_target[target] = (
+            StubReturn.VALUE
+            if call_spec.call_transform is not None
+            else StubReturn.VOID
+        )
+    params_by_target = {
+        s.target_function: s.parameter_names for s in non_omitted
+    }
+    body_stubs: list[str] = []
+    preamble_stubs: list[str] = []
+    for target in target_order:
+        target_parts = tuple(target.split(sep="."))
+        body_stubs.extend(
+            spec.format_call_stub(
+                target_parts,
+                params_by_target[target],
+                return_by_target[target],
+                rows_by_target[target],
+            ),
+        )
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(
+                target_parts,
+                params_by_target[target],
+                return_by_target[target],
+                rows_by_target[target],
+            ),
+        )
+    for wrapper_name in config.transform_stub_names:
+        wrapper_parts = tuple(wrapper_name.split(sep="."))
+        body_stubs.extend(
+            spec.format_call_stub(
+                wrapper_parts,
+                config.transform_stub_param_names,
+                StubReturn.VOID,
+                (),
+            ),
+        )
+        preamble_stubs.extend(
+            spec.format_call_preamble_stub(
+                wrapper_parts,
+                config.transform_stub_param_names,
+                StubReturn.VOID,
+                (),
+            ),
+        )
+    return _literalize_call_with_declarations(
+        language=spec,
+        declarations=[],
+        call=result,
+        extra_body_preamble=tuple(body_stubs),
+        extra_preamble=tuple(preamble_stubs),
+    )
+
+
+@beartype
+def _run_dispatch_case(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    yaml_string: str,
+    lang_name: str,
+    lang_extension: str,
+    golden_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Run a heterogeneous-dispatch case and check its golden.
+
+    With ``wrap_in_file`` the library's own wrap path stubs one target
+    per non-omitted spec.  Otherwise the rendered calls are composed with
+    harness-injected target and wrapper stubs (the path that lets a
+    per-spec ``call_transform`` wrap each call in a void ``emit`` so its
+    value is consumed rather than discarded).
+    """
+    try:
+        result = _dispatch_call(
+            config=config,
+            spec=spec,
+            yaml_string=yaml_string,
+            wrap_in_file=config.wrap_in_file,
+        )
+    except CallArgNotSupportedError as exc:
+        golden_path.unlink(missing_ok=True)
+        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
+    if not config.wrap_in_file:
+        result = _compose_dispatch_with_stubs(
+            config=config,
+            spec=spec,
+            result=result,
+        )
+    file_regression.check(
+        contents=result.code + "\n",
+        encoding="utf-8",
+        extension=lang_extension,
+        newline="",
+        fullpath=golden_path,
+    )
 
 
 @beartype
@@ -1853,6 +2144,17 @@ def run_call_golden_case(
         config=config, lang_cls=lang_cls, golden_path=golden_path
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    if config.dispatch_field is not None:
+        _run_dispatch_case(
+            config=config,
+            spec=spec,
+            yaml_string=yaml_string,
+            lang_name=lang_cls.__name__,
+            lang_extension=lang_cls.extension,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+        return
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
         # First element of ``identifier_cases`` is the language's

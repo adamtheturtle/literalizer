@@ -11,6 +11,7 @@ import pytest
 
 from literalizer import (
     BothVariableForms,
+    CallSpec,
     IdentifierCase,
     InputFormat,
     NewVariable,
@@ -19,13 +20,16 @@ from literalizer import (
 )
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    CallDispatchConfigError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    MalformedDispatchElementError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    UnknownDispatchValueError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
@@ -790,4 +794,242 @@ def test_literalize_call_bound_refs_with_variable_form_raises() -> None:
             wrap_in_file=True,
             bound_refs={"my_list": [1, 2, 3]},
             variable_form=NewVariable(name="result"),
+        )
+
+
+_DISPATCH_SPECS = {
+    "put": CallSpec(target_function="put", parameter_names=["key", "value"]),
+    "get": CallSpec(target_function="get", parameter_names=["key"]),
+}
+
+
+def test_literalize_call_dispatch_and_homogeneous_mutually_exclusive() -> None:
+    """Combining ``target_function`` with dispatch arguments is
+    rejected.
+    """
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"mutually exclusive",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="put",
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_neither_mode_raises() -> None:
+    """Supplying neither ``target_function`` nor dispatch is rejected."""
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"requires either target_function",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+        )
+
+
+def test_literalize_call_dispatch_without_call_specs_raises() -> None:
+    """``dispatch_field`` without ``call_specs`` is rejected."""
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"requires both dispatch_field and call_specs",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+        )
+
+
+def test_literalize_call_dispatch_requires_per_element() -> None:
+    """Dispatch with ``per_element=False`` is rejected."""
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"requires per_element=True",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+            per_element=False,
+        )
+
+
+def test_literalize_call_dispatch_rejects_variable_form() -> None:
+    """Dispatch combined with ``variable_form`` is rejected."""
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"variable_form is not supported with dispatch",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+            variable_form=NewVariable(name="result"),
+        )
+
+
+def test_literalize_call_dispatch_rejects_top_level_call_transform() -> None:
+    """Dispatch with a top-level ``call_transform`` is rejected (use a
+    per-spec ``CallSpec.call_transform`` instead).
+    """
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"per-spec call_transform via CallSpec instead",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+            call_transform=lambda ctx: ctx.call,
+        )
+
+
+def test_literalize_call_dispatch_empty_call_specs_raises() -> None:
+    """An empty dispatch table is rejected."""
+    with pytest.raises(
+        expected_exception=CallDispatchConfigError,
+        match=r"call_specs must not be empty",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs={},
+        )
+
+
+def test_literalize_call_dispatch_non_list_raises() -> None:
+    """Dispatch over a non-list top level raises
+    ``PerElementNotListError``.
+    """
+    with pytest.raises(
+        expected_exception=PerElementNotListError,
+        match=r"^dispatch requires a top-level list, got dict$",
+    ):
+        literalize_call(
+            source='{"call": "put"}',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_unknown_value_raises() -> None:
+    """An element whose discriminant has no spec raises."""
+    with pytest.raises(
+        expected_exception=UnknownDispatchValueError,
+        match=r"dispatch value 'pop' has no matching call_specs entry",
+    ):
+        literalize_call(
+            source='[{"call": "pop", "args": [1]}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_element_not_mapping_raises() -> None:
+    """A non-mapping dispatch element is rejected."""
+    with pytest.raises(
+        expected_exception=MalformedDispatchElementError,
+        match=r"each element must be a mapping, got list",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_missing_field_raises() -> None:
+    """An element missing the discriminant field is rejected."""
+    with pytest.raises(
+        expected_exception=MalformedDispatchElementError,
+        match=r"missing dispatch field 'call'",
+    ):
+        literalize_call(
+            source='[{"args": [1]}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_unexpected_key_raises() -> None:
+    """An element with an unexpected key is rejected."""
+    with pytest.raises(
+        expected_exception=MalformedDispatchElementError,
+        match=r"unexpected keys 'extra'",
+    ):
+        literalize_call(
+            source='[{"call": "get", "args": [1], "extra": 2}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_non_string_discriminant_raises() -> None:
+    """A non-string discriminant value is rejected."""
+    with pytest.raises(
+        expected_exception=MalformedDispatchElementError,
+        match=r"dispatch field 'call' must be a string, got int",
+    ):
+        literalize_call(
+            source='[{"call": 1, "args": [1]}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_args_not_list_raises() -> None:
+    """A non-list ``args`` value is rejected."""
+    with pytest.raises(
+        expected_exception=MalformedDispatchElementError,
+        match=r"arguments field 'args' must be a list, got int",
+    ):
+        literalize_call(
+            source='[{"call": "get", "args": 1}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
+        )
+
+
+def test_literalize_call_dispatch_arg_count_mismatch_raises() -> None:
+    """An argument count not matching the spec raises."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=r"^Expected 1 parameters but got 2 values$",
+    ):
+        literalize_call(
+            source='[{"call": "get", "args": [1, 2]}]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            dispatch_field="call",
+            call_specs=_DISPATCH_SPECS,
         )

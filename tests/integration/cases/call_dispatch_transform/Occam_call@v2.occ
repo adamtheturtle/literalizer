@@ -1,0 +1,28 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+MOBILE LIT FUNCTION record_value (VAL MOBILE LIT value)
+    RESULT MOBILE LIT(lit.null)
+:
+PROC flush_buffer (VAL MOBILE LIT count)
+    SKIP
+:
+PROC emit (VAL MOBILE LIT _arg)
+    SKIP
+:
+PROC main ()
+    emit(record_value(MOBILE LIT(lit.int; 42)))
+    flush_buffer(MOBILE LIT(lit.int; 3))
+    SEQ
+        SKIP
+:
