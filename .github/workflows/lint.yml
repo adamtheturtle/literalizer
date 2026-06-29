@@ -1878,7 +1878,7 @@ jobs:
         run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_FIXTURE_TAG"
           > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Kotlin
-        uses: fwilhe2/setup-kotlin@v1
+        uses: fwilhe2/setup-kotlin@v2
         with:
           version: ${{ env.KOTLIN_VERSION }}
       # kotlinx-serialization-json jars are needed by
