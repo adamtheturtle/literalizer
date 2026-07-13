@@ -88,6 +88,14 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_triple_top_level",
         "heterogeneous_time_string",
         "dict_wide_int_key",
+        # ``record_keyword_field`` carries dict keys that collide with
+        # Rust keywords (``type``, ``match``) to exercise the RECORD
+        # strategy's raw-identifier escaping (``r#type``, issue #2880).
+        # The Rust ``record_keyword_field`` variant is the sole
+        # consumer: other languages have their own keyword sets and
+        # escape mechanisms, so base-discovering it for every language
+        # would emit golden files that may fail to compile.
+        "record_keyword_field",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
         # character, and a multi-byte character exercises COBOL's
