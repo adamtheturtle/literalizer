@@ -96,6 +96,16 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # escape mechanisms, so base-discovering it for every language
         # would emit golden files that may fail to compile.
         "record_keyword_field",
+        # ``record_field_type_split`` carries same-key-set dicts whose
+        # field types conflict (a nested record with different fields,
+        # differing scalar types) in positions that never share a
+        # sibling list, so the Rust RECORD strategy's field-type shape
+        # split (issue #2881) resolves each group to its own struct.
+        # The Rust ``record_field_type_split`` variant is the sole
+        # consumer: other RECORD languages still key shapes by key set
+        # alone, so base-discovering it would emit golden files that
+        # fail to compile.
+        "record_field_type_split",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
         # character, and a multi-byte character exercises COBOL's

@@ -5,7 +5,8 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Mapping, Sequence
+from collections import Counter
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, assert_never
@@ -972,10 +973,413 @@ def _validate_rust_record_field_key(*, key: str) -> None:
         raise UnrepresentableInputError(msg)
 
 
+@dataclasses.dataclass(frozen=True)
+class _FieldVariantRecordShape(RecordShape):
+    """A record shape split off from same-key-set dicts whose field
+    types conflict.
+
+    Two dicts with equal key tuples share one :class:`RecordShape`,
+    but when a field's value type differs between them (e.g. the
+    nested record under a key has different fields) they cannot share
+    one generated struct: the declaration would take the field types
+    of the first dict, and the literal for the other dict would not
+    compile (issue #2881).  :func:`_refine_record_shapes` gives each
+    conflicting group its own instance of this subclass; ``variant``
+    tells the groups apart, numbered in document order of each
+    group's first dict.  The subclass never compares equal to a plain
+    :class:`RecordShape`, so every shape-keyed lookup treats each
+    group as a distinct record shape.
+    """
+
+    # ``dataclasses`` requires a default here because the base class's
+    # ``optional_keys`` field has one; every construction site passes
+    # ``variant`` explicitly.
+    variant: int = 0
+
+
+# Signature slot for a key a dict lacks (possible only for a
+# unification-added optional key).  Dicts that differ solely in which
+# optional keys they carry stay in one group (see
+# :func:`_present_signatures_agree`), so this slot value only tells
+# dicts apart once some key's present values already conflict.
+_ABSENT_FIELD: str = "<absent field>"
+
+
 @beartype
-def _build_record_behavior(
+def _unify_signatures(*, signatures: Sequence[Hashable]) -> Hashable:
+    """Mirror :func:`_unify_rust_types` at the signature level.
+
+    A repeated signature collapses; all-integer signatures widen to
+    the largest width, matching the ``Vec`` element type
+    :func:`_rust_record_field_type` declares.  Any other mix keeps the
+    distinct tuple; that fallback is only reached for element mixes
+    :func:`~literalizer._checks.check_data` rejects right after shape
+    computation, so it never influences emitted code and only has to
+    be deterministic.
+    """
+    unique = list(dict.fromkeys(signatures))
+    integer_signatures = [
+        signature
+        for signature in unique
+        if isinstance(signature, str) and signature in {"i32", "i64", "i128"}
+    ]
+    match unique:
+        case [only]:
+            return only
+        case _ if len(integer_signatures) == len(unique):
+            return _unify_rust_types(types=integer_signatures)
+        case _:
+            return tuple(unique)
+
+
+@beartype
+def _record_field_type_signature(  # pylint: disable=redefined-variable-type
+    *,
+    value: Value,
+    group_of: Mapping[int, Hashable],
+    tuple_list_ids: frozenset[int],
+    date_type: str,
+    datetime_type: str,
+) -> Hashable:
+    """Return a structural stand-in for the Rust type
+    :func:`_rust_record_field_type` would declare for *value*.
+
+    Mirrors that function branch for branch, except that a nested
+    record dict is represented by its current refinement group token
+    (struct names are not assigned during refinement) and values that
+    :func:`_rust_record_field_type` rejects (sets, non-record dicts)
+    map to fixed tokens: such values are rejected later either way, so
+    the signature only has to avoid splitting on them.  Two field
+    values with different signatures would be declared with different
+    Rust types, so their parent dicts cannot share one generated
+    struct.
+    """
+
+    def recurse(*, item: Value) -> Hashable:
+        """Return the signature of one nested element of *value*."""
+        return _record_field_type_signature(
+            value=item,
+            group_of=group_of,
+            tuple_list_ids=tuple_list_ids,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+
+    result: Hashable
+    match value:
+        case []:
+            result = "Vec<String>"
+        case list() if id(value) in tuple_list_ids:
+            result = ("tuple", tuple(recurse(item=item) for item in value))
+        case list():
+            element_signatures = [recurse(item=item) for item in value]
+            result = ("vec", _unify_signatures(signatures=element_signatures))
+        case dict() if id(value) in group_of:
+            result = group_of[id(value)]
+        case dict():
+            result = "<non-record dict>"
+        case set():
+            result = "<set>"
+        case _:
+            signature = _heterogeneous_variant_for_scalar(
+                value=value,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+            if signature.inner_type is None:
+                result = "Option<()>"
+            else:
+                result = signature.inner_type
+    return result
+
+
+@beartype
+def _record_dicts_in_document_order(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+) -> list[dict[Scalar, Value]]:
+    """Return every record-shaped dict in *data*, in document order.
+
+    A dict aliased into the tree more than once (e.g. via a YAML
+    anchor) appears once.
+    """
+    ordered: list[dict[Scalar, Value]] = []
+    seen: set[int] = set()
+
+    def walk(node: Value) -> None:
+        """Append record dicts under *node* in document order."""
+        match node:
+            case dict():
+                if id(node) in shapes_by_id and id(node) not in seen:
+                    seen.add(id(node))
+                    ordered.append(node)
+                for child in node.values():
+                    walk(node=child)
+            case list():
+                for item in node:
+                    walk(node=item)
+            case _:
+                return
+
+    walk(node=data)
+    return ordered
+
+
+@beartype
+def _instance_signature(
+    *,
+    instance: dict[Scalar, Value],
+    shape: RecordShape,
+    group_of: Mapping[int, Hashable],
+    tuple_list_ids: frozenset[int],
+    date_type: str,
+    datetime_type: str,
+) -> tuple[Hashable, ...]:
+    """Return the per-key field-type signatures of *instance*, in
+    shape-key order, with :data:`_ABSENT_FIELD` for a key it lacks.
+    """
+    return tuple(
+        _record_field_type_signature(
+            value=instance[key],
+            group_of=group_of,
+            tuple_list_ids=tuple_list_ids,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        if key in instance
+        else _ABSENT_FIELD
+        for key in shape.keys
+    )
+
+
+@beartype
+def _present_signatures_agree(
+    *,
+    member_signatures: Sequence[tuple[Hashable, ...]],
+) -> bool:
+    """Return ``True`` when, for every key slot, the present
+    (non-absent) signatures across *member_signatures* are all equal,
+    i.e. the group's dicts can share one struct declaration.
+    """
+    key_count = len(member_signatures[0])
+    for slot in range(key_count):
+        present = {
+            signatures[slot]
+            for signatures in member_signatures
+            if signatures[slot] != _ABSENT_FIELD
+        }
+        if len(present) > 1:
+            return False
+    return True
+
+
+@beartype
+def _regroup_by_field_signatures(
+    *,
+    instances: Sequence[dict[Scalar, Value]],
+    shapes_by_id: Mapping[int, RecordShape],
+    group_of: Mapping[int, Hashable],
+    tuple_list_ids: frozenset[int],
+    date_type: str,
+    datetime_type: str,
+) -> dict[int, Hashable]:
+    """Run one refinement round: split each group of *group_of* whose
+    members' field signatures conflict, keeping agreeing groups whole.
+    """
+    members_by_group: dict[Hashable, list[dict[Scalar, Value]]] = {}
+    for instance in instances:
+        members_by_group.setdefault(group_of[id(instance)], []).append(
+            instance
+        )
+    new_group_of: dict[int, Hashable] = {}
+    for token, members in members_by_group.items():
+        member_signatures = [
+            _instance_signature(
+                instance=member,
+                shape=shapes_by_id[id(member)],
+                group_of=group_of,
+                tuple_list_ids=tuple_list_ids,
+                date_type=date_type,
+                datetime_type=datetime_type,
+            )
+            for member in members
+        ]
+        if _present_signatures_agree(member_signatures=member_signatures):
+            for member in members:
+                new_group_of[id(member)] = token
+        else:
+            for member, signatures in zip(
+                members, member_signatures, strict=True
+            ):
+                new_group_of[id(member)] = (token, signatures)
+    return new_group_of
+
+
+@beartype
+def _partition(
+    *,
+    instances: Sequence[dict[Scalar, Value]],
+    group_of: Mapping[int, Hashable],
+) -> frozenset[tuple[int, ...]]:
+    """Return the grouping of *instances* induced by *group_of* in a
+    form comparable across refinement rounds (group tokens change
+    representation between rounds even when the grouping does not).
+    """
+    ids_by_group: dict[Hashable, list[int]] = {}
+    for instance in instances:
+        ids_by_group.setdefault(group_of[id(instance)], []).append(
+            id(instance)
+        )
+    return frozenset(tuple(ids) for ids in ids_by_group.values())
+
+
+@beartype
+def _materialize_refined_shapes(
+    *,
+    instances: Sequence[dict[Scalar, Value]],
+    shapes_by_id: Mapping[int, RecordShape],
+    group_of: Mapping[int, Hashable],
+) -> dict[int, RecordShape]:
+    """Map each dict to its refined shape.
+
+    A shape whose dicts all landed in one group keeps its original
+    :class:`RecordShape` object, so unaffected inputs render exactly
+    as before; a split shape's groups become
+    :class:`_FieldVariantRecordShape` instances numbered in document
+    order of each group's first dict.
+    """
+    tokens_by_shape: dict[RecordShape, set[Hashable]] = {}
+    for instance in instances:
+        tokens_by_shape.setdefault(shapes_by_id[id(instance)], set()).add(
+            group_of[id(instance)]
+        )
+    shape_for_token: dict[Hashable, RecordShape] = {}
+    variant_counter: Counter[RecordShape] = Counter()
+    refined: dict[int, RecordShape] = {}
+    for instance in instances:
+        token = group_of[id(instance)]
+        base = shapes_by_id[id(instance)]
+        if token not in shape_for_token:
+            if len(tokens_by_shape[base]) == 1:
+                shape_for_token[token] = base
+            else:
+                shape_for_token[token] = _FieldVariantRecordShape(
+                    keys=base.keys,
+                    optional_keys=base.optional_keys,
+                    variant=variant_counter[base],
+                )
+                variant_counter[base] += 1
+        refined[id(instance)] = shape_for_token[token]
+    return refined
+
+
+@beartype
+def _refine_record_shapes(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    tuple_list_ids: frozenset[int],
+    date_type: str,
+    datetime_type: str,
+) -> dict[int, RecordShape]:
+    """Split record shapes whose dicts disagree on a field's Rust type.
+
+    *shapes_by_id* keys shapes by key tuple (plus optional-field
+    unification), so two dicts with the same keys share a shape even
+    when a field's value type differs between them; declaring the
+    field with the type from the first dict then makes the literal
+    for the other dict fail to compile (issue #2881).  This pass
+    splits each shape's dicts into groups by per-field type signature
+    so each group gets its own generated struct.  Sibling lists
+    spanning split groups then fail
+    :func:`~literalizer._checks.check_data`'s mixed-record-shape gate
+    (the honest heterogeneous-siblings outcome) instead of silently
+    emitting mismatched field types, while groups that never share a
+    list each render as a genuinely distinct struct that compiles.
+
+    Signatures reference nested records by group, so the grouping is
+    computed to a fixed point: splitting a nested shape can in turn
+    split the shape of the dicts embedding it.  Dicts that differ only
+    in which unification-added optional keys they carry stay in one
+    group (see :func:`_present_signatures_agree`).
+    """
+    instances = _record_dicts_in_document_order(
+        data=data,
+        shapes_by_id=shapes_by_id,
+    )
+    group_of: dict[int, Hashable] = {
+        id(instance): shapes_by_id[id(instance)] for instance in instances
+    }
+    while True:
+        regrouped = _regroup_by_field_signatures(
+            instances=instances,
+            shapes_by_id=shapes_by_id,
+            group_of=group_of,
+            tuple_list_ids=tuple_list_ids,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        old_partition = _partition(instances=instances, group_of=group_of)
+        new_partition = _partition(instances=instances, group_of=regrouped)
+        if new_partition == old_partition:
+            break
+        group_of = regrouped
+    return _materialize_refined_shapes(
+        instances=instances,
+        shapes_by_id=shapes_by_id,
+        group_of=group_of,
+    )
+
+
+@beartype
+def _assign_record_struct_names(
+    *,
+    ordered_shapes: Sequence[RecordShape],
+    record_prefix: str,
+    record_shape_names: Mapping[frozenset[str], str],
+) -> dict[RecordShape, str]:
+    """Assign a struct name to each shape, in document order.
+
+    A shape whose key set is mapped in *record_shape_names* takes the
+    custom name; the auto ``{prefix}{index}`` counter advances only
+    for the unmapped shapes.  When more than one distinct shape
+    carries a custom-named key set (same keys but conflicting field
+    types or key order -- see :func:`_refine_record_shapes`), the
+    custom name cannot identify one struct, so the input is rejected
+    rather than emitting duplicate ``struct`` declarations under that
+    name.
+    """
+    key_set_counts = Counter(frozenset(shape.keys) for shape in ordered_shapes)
+    names: dict[RecordShape, str] = {}
+    prefix_index = 0
+    for shape in ordered_shapes:
+        key_set = frozenset(shape.keys)
+        custom = record_shape_names.get(key_set)
+        if custom is None:
+            names[shape] = f"{record_prefix}{prefix_index}"
+            prefix_index += 1
+        elif key_set_counts[key_set] > 1:
+            sorted_keys = ", ".join(sorted(key_set))
+            msg = (
+                f"record_shape_names maps the key set {{{sorted_keys}}} "
+                f"to {custom!r}, but the data contains multiple distinct "
+                f"record shapes with that key set (their field types or "
+                f"key order differ), so one custom name cannot identify "
+                f"one generated struct"
+            )
+            raise UnrepresentableInputError(msg)
+        else:
+            names[shape] = custom
+    return names
+
+
+@beartype
+def _record_behavior_impl(
     params: _StrategyParams,
     /,
+    *,
+    enable_tuples: bool,
 ) -> HeterogeneousBehavior:
     """RECORD strategy: render record-shaped dicts as struct literals."""
     # ``name_cache`` and ``id_to_shape`` are rebuilt on every
@@ -990,15 +1394,29 @@ def _build_record_behavior(
         """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
 
         With ``unify_optional_fields`` on, multiple ids collapse to a
-        shared unified shape (see :func:`unify_record_shapes`).
-        Re-populates the shared caches in document order so the
-        preamble's struct names match the rendered literals.
+        shared unified shape (see :func:`unify_record_shapes`); shapes
+        whose dicts disagree on a field's Rust type are then split so
+        each field-type group gets its own struct (see
+        :func:`_refine_record_shapes`).  Re-populates the shared
+        caches in document order so the preamble's struct names match
+        the rendered literals.
         """
         raw_shapes_by_id = collect_record_shapes(data=data)
-        shapes_by_id = (
+        unified_shapes_by_id = (
             unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
             if params.unify_optional_fields
             else raw_shapes_by_id
+        )
+        shapes_by_id = _refine_record_shapes(
+            data=data,
+            shapes_by_id=unified_shapes_by_id,
+            tuple_list_ids=(
+                collect_tuple_list_ids(data=data)
+                if enable_tuples
+                else frozenset()
+            ),
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
         )
         name_cache.clear()
         id_to_shape.clear()
@@ -1007,18 +1425,16 @@ def _build_record_behavior(
             data=data,
             shapes_by_id=shapes_by_id,
         )
-        prefix_index = 0
         for shape in ordered:
             for key in shape.keys:
                 _validate_rust_record_field_key(key=key)
-            # ``ordered`` is unique by construction, so the cache always
-            # gets populated on first encounter.
-            custom = params.record_shape_names.get(frozenset(shape.keys))
-            if custom is None:
-                name_cache[shape] = f"{params.record_prefix}{prefix_index}"
-                prefix_index += 1
-            else:
-                name_cache[shape] = custom
+        name_cache.update(
+            _assign_record_struct_names(
+                ordered_shapes=ordered,
+                record_prefix=params.record_prefix,
+                record_shape_names=params.record_shape_names,
+            )
+        )
         return shapes_by_id
 
     def _render_literal(
@@ -1064,6 +1480,15 @@ def _build_record_behavior(
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
     )
+
+
+@beartype
+def _build_record_behavior(
+    params: _StrategyParams,
+    /,
+) -> HeterogeneousBehavior:
+    """RECORD strategy: render record-shaped dicts as struct literals."""
+    return _record_behavior_impl(params, enable_tuples=False)
 
 
 @beartype
@@ -1114,7 +1539,7 @@ def _build_tuple_behavior(
     :func:`~literalizer._checks.check_data` uses to carve those arrays
     out of the heterogeneous-scalar checks.
     """
-    record_behavior = _build_record_behavior(params)
+    record_behavior = _record_behavior_impl(params, enable_tuples=True)
     return dataclasses.replace(
         record_behavior,
         render_tuple_literal=_render_rust_tuple,
@@ -1205,10 +1630,17 @@ def _record_preamble_impl(
             if enable_tuples
             else frozenset[int]()
         )
-        shapes_by_id: Mapping[int, RecordShape] = (
+        unified_shapes_by_id: Mapping[int, RecordShape] = (
             unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
             if params.unify_optional_fields
             else raw_shapes_by_id
+        )
+        shapes_by_id: Mapping[int, RecordShape] = _refine_record_shapes(
+            data=data,
+            shapes_by_id=unified_shapes_by_id,
+            tuple_list_ids=tuple_list_ids,
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
         )
         ordered_shapes: list[RecordShape] = []
         seen: set[RecordShape] = set()
@@ -1220,15 +1652,11 @@ def _record_preamble_impl(
             seen=seen,
             field_values=field_values,
         )
-        record_names: dict[RecordShape, str] = {}
-        prefix_index = 0
-        for shape in ordered_shapes:
-            custom = params.record_shape_names.get(frozenset(shape.keys))
-            if custom is None:
-                record_names[shape] = f"{params.record_prefix}{prefix_index}"
-                prefix_index += 1
-            else:
-                record_names[shape] = custom
+        record_names = _assign_record_struct_names(
+            ordered_shapes=ordered_shapes,
+            record_prefix=params.record_prefix,
+            record_shape_names=params.record_shape_names,
+        )
         emit_order: list[RecordShape] = []
         emit_seen: set[RecordShape] = set()
         _accumulate_emit_order(

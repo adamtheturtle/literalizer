@@ -1,0 +1,21 @@
+plain:
+  status: 1
+other:
+  status: ready
+nested_a:
+  inner:
+    kind: add
+    urgent: true
+nested_b:
+  inner:
+    error: not_found
+wrap_a:
+  holder:
+    status: 2
+wrap_b:
+  holder:
+    status: word
+wide:
+  nums:
+    - 1
+    - 1099511627776
