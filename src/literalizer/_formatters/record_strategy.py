@@ -21,11 +21,12 @@ literal rendering; the preamble (assembled after all literals are
 formatted) reads that cache.
 
 Rust keeps its own copy of this logic because it additionally
-supports optional-field unification; this module supports
+supports optional-field unification and splits same-key-set shapes
+whose field types conflict (issue #2881); this module supports
 ``record_shape_names`` (custom per-shape struct names, keyed by the
-shape's key-set) but deliberately omits unification (out of scope
-for the non-Rust ports), so :attr:`RecordShape.optional_keys` is
-always empty here.
+shape's key-set) but deliberately omits both (out of scope for the
+non-Rust ports), so :attr:`RecordShape.optional_keys` is always
+empty here.
 """
 
 import dataclasses

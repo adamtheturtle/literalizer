@@ -1224,6 +1224,39 @@ def build_record_keyword_field_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_field_type_split_variants() -> Iterable[Variant]:
+    """Build the Rust ``record_field_type_split`` variant.
+
+    Same-key-set dicts whose field types conflict (a nested record
+    with different fields, differing scalar types) must resolve to
+    distinct generated struct declarations, or the struct declared
+    from the field types of the first dict fails to compile against
+    the literal for the other dict (issue #2881).  The case input
+    keeps every conflicting pair out of sibling lists so each group
+    renders as its own
+    compiling struct.  Only Rust splits record shapes by field type,
+    so the variant is single-language and its case directory stays
+    out of the all-languages base discovery.
+    """
+    default_spec = make_spec(lang_cls=Rust)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    return [
+        Variant(
+            name="Rust_record_field_type_split",
+            spec=make_spec(
+                lang_cls=Rust, heterogeneous_strategy=record_strategy
+            ),
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    ]
+
+
+@beartype
 def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` + ``EPOCH`` variant for every language whose
     spec exposes both a ``RECORD`` heterogeneous strategy and an
@@ -2105,6 +2138,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_record_nonrecord_dict_field_variants
     ),
     "record_keyword_field": build_record_keyword_field_variants,
+    "record_field_type_split": build_record_field_type_split_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,
@@ -2446,6 +2480,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "record_keyword_field": (
         _ci(case_dir_name="record_keyword_field", suffix=""),
+    ),
+    "record_field_type_split": (
+        _ci(case_dir_name="record_field_type_split", suffix=""),
     ),
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),
