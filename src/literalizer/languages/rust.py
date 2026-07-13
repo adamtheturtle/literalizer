@@ -141,6 +141,75 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 # that must start with an uppercase letter.
 _RUST_PASCAL_KEYWORDS: frozenset[str] = frozenset({"Self"})
 
+# Rust keywords (strict and reserved, editions 2015 through 2024) that
+# are legal in raw-identifier form, so a dict key that collides with
+# one can still name a struct field as ``r#keyword`` (issue #2880).
+# ``crate``/``self``/``super``/``Self`` are excluded because ``rustc``
+# rejects them as raw identifiers.  Weak keywords (``union``, ``raw``,
+# ...) are valid field names verbatim and need no escaping.
+_RUST_RAW_ESCAPABLE_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "abstract",
+        "as",
+        "async",
+        "await",
+        "become",
+        "box",
+        "break",
+        "const",
+        "continue",
+        "do",
+        "dyn",
+        "else",
+        "enum",
+        "extern",
+        "false",
+        "final",
+        "fn",
+        "for",
+        "gen",
+        "if",
+        "impl",
+        "in",
+        "let",
+        "loop",
+        "macro",
+        "match",
+        "mod",
+        "move",
+        "mut",
+        "override",
+        "priv",
+        "pub",
+        "ref",
+        "return",
+        "static",
+        "struct",
+        "trait",
+        "true",
+        "try",
+        "type",
+        "typeof",
+        "unsafe",
+        "unsized",
+        "use",
+        "virtual",
+        "where",
+        "while",
+        "yield",
+    }
+)
+
+# Dict keys that are identifier-shaped text but can never name a Rust
+# struct field: the keywords ``rustc`` rejects even in raw-identifier
+# form, plus the reserved wildcard identifier ``_`` (``r#_`` is
+# likewise rejected).
+_RUST_UNUSABLE_FIELD_KEYS: frozenset[str] = frozenset(
+    {"crate", "self", "super", "Self", "_"}
+)
+
+_RUST_IDENTIFIER = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 _I64_MIN = -(2**63)
@@ -867,6 +936,43 @@ def _rust_record_field_type(
 
 
 @beartype
+def _rust_record_field_identifier(key: str, /) -> str:
+    """Return the Rust struct field name for dict *key*.
+
+    A key that collides with a Rust keyword is escaped as a raw
+    identifier (``r#type``) so the struct declaration and its literals
+    compile (issue #2880).  Keys that no escape can rescue are rejected
+    by :func:`_validate_rust_record_field_key` before rendering, so
+    they never reach this helper.
+    """
+    if key in _RUST_RAW_ESCAPABLE_KEYWORDS:
+        return f"r#{key}"
+    return key
+
+
+@beartype
+def _validate_rust_record_field_key(*, key: str) -> None:
+    """Raise for a dict key that cannot name a Rust struct field.
+
+    ``crate``/``self``/``super``/``Self`` are keywords ``rustc``
+    rejects even in raw-identifier form, ``_`` is the reserved
+    wildcard identifier, and a key that is not identifier-shaped text
+    (e.g. it contains ``-`` or a space) is beyond what raw-identifier
+    escaping can express.
+    """
+    if key in _RUST_UNUSABLE_FIELD_KEYS or not _RUST_IDENTIFIER.match(
+        string=key
+    ):
+        msg = (
+            f"Rust cannot represent the dict key {key!r} as a struct "
+            f"field name under the RECORD heterogeneous strategy: it "
+            f"is not usable as a Rust identifier and raw-identifier "
+            f"escaping (r#...) cannot express it"
+        )
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _build_record_behavior(
     params: _StrategyParams,
     /,
@@ -903,6 +1009,8 @@ def _build_record_behavior(
         )
         prefix_index = 0
         for shape in ordered:
+            for key in shape.keys:
+                _validate_rust_record_field_key(key=key)
             # ``ordered`` is unique by construction, so the cache always
             # gets populated on first encounter.
             custom = params.record_shape_names.get(frozenset(shape.keys))
@@ -931,14 +1039,15 @@ def _build_record_behavior(
         shape = id_to_shape[id(value)]
         parts: list[str] = []
         for key in shape.keys:
+            field_name = _rust_record_field_identifier(key)
             if key in fields:
                 formatted = fields[key]
                 if key in shape.optional_keys:
-                    parts.append(f"{key}: Some({formatted})")
+                    parts.append(f"{field_name}: Some({formatted})")
                 else:
-                    parts.append(f"{key}: {formatted}")
+                    parts.append(f"{field_name}: {formatted}")
             else:
-                parts.append(f"{key}: None")
+                parts.append(f"{field_name}: None")
         return RenderedRecordLiteral(
             head=f"{name_cache[shape]} {{",
             entries=tuple(parts),
@@ -1143,7 +1252,8 @@ def _record_preamble_impl(
                 )
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
-                block.append(f"    {key}: {field_type},")
+                field_name = _rust_record_field_identifier(key)
+                block.append(f"    {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
         return tuple(struct_blocks)
@@ -1975,6 +2085,14 @@ class Rust(metaclass=LanguageCls):
         values span multiple Rust scalar types but always share the
         same field set.  The prefix is configurable via
         :attr:`Rust.record_struct_name_prefix`.
+
+        A key that collides with a Rust keyword (e.g. ``type``,
+        ``match``) renders as a raw identifier (``r#type``) in both
+        the struct declaration and its literals.  A key with no
+        compiling struct field name (``crate``, ``self``, ``super``,
+        ``Self``, ``_``, or a key that is not identifier-shaped text)
+        raises
+        :class:`~literalizer.exceptions.UnrepresentableInputError`.
         """
 
         TUPLE = _HeterogeneousStrategyConfig(
