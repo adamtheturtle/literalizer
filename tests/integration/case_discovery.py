@@ -119,6 +119,15 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``nested_map_widening`` variants are the sole consumers, so it
         # stays out of the all-languages base discovery.
         "nested_map_widening",
+        # ``dhall_nested_map_widening`` is the Dhall counterpart of
+        # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
+        # records typed by their field set, so it needs a dedicated input
+        # whose sibling inner maps share one key set while diverging their
+        # scalar value types; the ``UNION_TYPE`` strategy then wraps every
+        # sibling map's leaves in ``Value`` so the list type-checks.  The
+        # Dhall ``dhall_nested_map_widening`` variants are the sole
+        # consumers, so it stays out of the all-languages base discovery.
+        "dhall_nested_map_widening",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
         # character, and a multi-byte character exercises COBOL's
