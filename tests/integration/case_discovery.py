@@ -106,6 +106,16 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # alone, so base-discovering it would emit golden files that
         # fail to compile.
         "record_field_type_split",
+        # ``nested_map_widening`` carries sibling dict values that are
+        # maps whose value types diverge (issue #2878).  Under the
+        # default strategy the enclosing container widens to
+        # ``map[string]map[string]any`` while each inner map otherwise
+        # narrows to its own value type, so only languages with a stable
+        # widened dict fallback (Go today) render it as code that
+        # compiles; the Go
+        # ``nested_map_widening`` variants are the sole consumers, so it
+        # stays out of the all-languages base discovery.
+        "nested_map_widening",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
         # character, and a multi-byte character exercises COBOL's

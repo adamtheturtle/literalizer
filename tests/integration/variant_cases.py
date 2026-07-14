@@ -1257,6 +1257,38 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_nested_map_widening_variants() -> Iterable[Variant]:
+    """Build the Go ``nested_map_widening`` variants.
+
+    Sibling dict values that are themselves maps share one declared
+    value type in the enclosing container, but each inner map otherwise
+    renders with its own narrowed opener, so a map narrower than the
+    widened slot type does not compile (issue #2878; the dict-value
+    analogue of the sibling widening #1471/#1472 applied to call
+    arguments and sequence elements).  Go widens every such inner map to
+    ``map[string]any`` so the literal matches its declared type.  Only
+    languages with a stable widened dict fallback participate today, so
+    the variant is single-language and its case directory stays out of
+    the all-languages base discovery; both layouts are covered because
+    the compact and multiline paths pick the widened opener separately.
+    """
+    return [
+        Variant(
+            name="Go_nested_map_widening",
+            spec=make_spec(lang_cls=Go),
+            lang_cls=Go,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Go_nested_map_widening_multiline",
+            spec=make_spec(lang_cls=Go),
+            lang_cls=Go,
+            collection_layout=literalizer.CollectionLayout.MULTILINE,
+        ),
+    ]
+
+
+@beartype
 def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` + ``EPOCH`` variant for every language whose
     spec exposes both a ``RECORD`` heterogeneous strategy and an
@@ -2139,6 +2171,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "record_keyword_field": build_record_keyword_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
+    "nested_map_widening": build_nested_map_widening_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,
@@ -2483,6 +2516,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "record_field_type_split": (
         _ci(case_dir_name="record_field_type_split", suffix=""),
+    ),
+    "nested_map_widening": (
+        _ci(case_dir_name="nested_map_widening", suffix=""),
     ),
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),

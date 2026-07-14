@@ -372,6 +372,7 @@ class _RenderContext:
     spec: Language
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
+    dict_open_overrides: Mapping[int, str]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
     expand_refs: bool
@@ -387,6 +388,7 @@ class _RenderContext:
             spec=self.spec,
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
+            dict_open_overrides=self.dict_open_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -410,6 +412,7 @@ class _RenderContext:
             spec=self.spec,
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
+            dict_open_overrides=self.dict_open_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -426,6 +429,7 @@ class _RenderContext:
             spec=self.spec,
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
+            dict_open_overrides=self.dict_open_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -804,6 +808,8 @@ def _format_dict_value(
     match open_override:
         case str():
             opener = open_override
+        case _ if id(value) in ctx.dict_open_overrides:
+            opener = ctx.dict_open_overrides[id(value)]
         case _ if not ctx.ref_key:
             opener = dict_cfg.dict_open(dict_items)
         case _:
@@ -910,6 +916,181 @@ def _compute_dict_open_override(
             combined[f"_k{idx}"] = v
             idx += 1
     return dict_open(combined)
+
+
+# Single-value dicts whose one value has a different scalar type, used
+# to probe whether a language's dict opener *narrows* by value type.  A
+# language whose opener ignores the values (dynamic languages emit a
+# fixed ``{``) can never produce a mismatch between a map and its
+# declared slot, so nested-map widening is irrelevant and the walk is
+# skipped entirely.
+_DICT_STR_PROBE: dict[Scalar, Value] = {"_probe": "s"}
+_DICT_INT_PROBE: dict[Scalar, Value] = {"_probe": 1}
+# Two dicts whose values mix disjoint scalar types, used to probe
+# whether a narrowing opener collapses to a stable "any"-like fallback
+# for mixed values.  When both probes yield the same opener the language
+# has a content-independent fallback (e.g. Go's ``map[string]any``,
+# Kotlin's ``Any?``); when they differ it builds a content-specific type
+# (C++'s ``std::variant``, etc.) with no widened form that accepts every
+# sibling, so nested-map widening must be left alone.  Every probe is
+# non-empty and string-keyed so the check never depends on an empty-dict
+# opener, which some strategies (e.g. D's ``RECORD``) reject.  Mirrors
+# :data:`_FALLBACK_PROBE` for sequences.
+_DICT_FALLBACK_PROBE_A: dict[Scalar, Value] = {"_probe_a": 1, "_probe_b": "s"}
+_DICT_FALLBACK_PROBE_B: dict[Scalar, Value] = {
+    "_probe_a": 1.5,
+    "_probe_b": False,
+}
+
+
+@beartype
+def _dict_widening_applies(*, spec: Language) -> bool:
+    """Return whether nested sibling-map widening can help *spec*.
+
+    Widening (#2878) is only relevant, and only produces output that
+    compiles, for languages whose dict opener both narrows by value type
+    and exposes a single "accepts anything" value type (Go's
+    ``map[string]any``, Kotlin's ``Any?``).  Two classes are excluded:
+
+    * Languages whose opener ignores the values (dynamic languages emit
+      a fixed ``{``): every map already shares an opener, so no map can
+      mismatch its declared slot and the whole walk is skipped.
+    * Languages whose opener is content-specific (variant/union typing,
+      e.g. C++): they have no widened type that accepts every sibling,
+      so widening would only shift the type mismatch; those are handled
+      by a dedicated heterogeneous check instead.
+
+    The probes are minimal, non-empty and string-keyed so every
+    language's dict opener returns a value for them (an empty-dict
+    opener, which some strategies such as D's ``RECORD`` reject, is
+    never requested).
+    """
+    dict_open = spec.dict_format_config.dict_open
+    if dict_open(_DICT_STR_PROBE) == dict_open(_DICT_INT_PROBE):
+        return False
+    return dict_open(_DICT_FALLBACK_PROBE_A) == dict_open(
+        _DICT_FALLBACK_PROBE_B
+    )
+
+
+@beartype
+def _collect_dict_open_overrides(
+    *,
+    data: Value,
+    spec: Language,
+) -> dict[int, str]:
+    """Compute widened dict openers for nested sibling map values.
+
+    Sibling dict values that are themselves maps share a single declared
+    value type in the enclosing container, but each inner map otherwise
+    renders with its own narrowed opener, so a map whose values are
+    narrower than the widened slot type does not compile (issue #2878;
+    the dict-value analogue of the sibling widening #1471/#1472 applied
+    to call arguments and sequence elements).
+
+    Walks *data* and records ``id(map) -> widened opener`` for every
+    group of sibling maps that must share a widened type, pooling values
+    exactly as
+    :func:`~literalizer._formatters.type_inference.infer_element_type`
+    does when it derives the container's declared type.  Only languages
+    the widening can help (see :func:`_dict_widening_applies`) are
+    walked; the returned mapping is empty for every other language, so
+    they pay only the constant-cost probe.
+    """
+    out: dict[int, str] = {}
+    if _dict_widening_applies(spec=spec):
+        _accumulate_dict_open_overrides(data=data, spec=spec, out=out)
+    return out
+
+
+@beartype
+def _accumulate_dict_open_overrides(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, str],
+) -> None:
+    """Record widened openers for sibling maps reachable from *data*.
+
+    The dict values of a plain dict share that dict value slot; a list
+    of two or more plain dicts makes those dicts one shared type, so
+    their values share a single (deeper) slot pooled across every
+    element.  Both are handled by :func:`_widen_sibling_map_values`,
+    which descends through nested levels.  The structural recursion here
+    reaches every independent slot; :func:`dict.setdefault` in the widen
+    helper keeps the widest (outermost) opener for any map claimed at
+    more than one level.
+    """
+    match data:
+        case OrderedMap():
+            for value in data.values():
+                _accumulate_dict_open_overrides(data=value, spec=spec, out=out)
+        case dict():
+            _widen_sibling_map_values(
+                pool=list(data.values()), spec=spec, out=out
+            )
+            for value in data.values():
+                _accumulate_dict_open_overrides(data=value, spec=spec, out=out)
+        case list():
+            min_dicts_for_widening = 2
+            plain_dict_elements = [
+                item
+                for item in data
+                if isinstance(item, dict) and not isinstance(item, OrderedMap)
+            ]
+            if len(plain_dict_elements) == len(data) >= min_dicts_for_widening:
+                pooled = [
+                    value
+                    for element in plain_dict_elements
+                    for value in element.values()
+                ]
+                _widen_sibling_map_values(pool=pooled, spec=spec, out=out)
+            for item in data:
+                _accumulate_dict_open_overrides(data=item, spec=spec, out=out)
+        case _:
+            return
+
+
+@beartype
+def _widen_sibling_map_values(
+    *,
+    pool: list[Value],
+    spec: Language,
+    out: dict[int, str],
+) -> None:
+    """Record the widened opener for the maps in one shared value slot.
+
+    *pool* are the sibling values occupying a single declared value slot.
+    When two or more are maps whose inferred openers diverge, every such
+    map is recorded with the combined (widened) opener so it renders at
+    the slot's declared type, and their own values -- the next shared
+    slot -- are pooled and widened in turn, so nesting deeper than one
+    level widens too.
+
+    When ``_compute_dict_open_override`` returns ``None`` the recursion
+    stops.  That covers two cases, both terminal: fewer than two sibling
+    maps here (any nested slot they own is reached instead by the
+    structural walk in :func:`_accumulate_dict_open_overrides`), or two
+    or more maps that already share an opener -- meaning their inferred
+    nested value types are identical, so no nested map anywhere below
+    can mismatch its slot.  Stopping there keeps the walk linear in the
+    input size instead of re-scanning nested maps once per enclosing
+    level.
+    """
+    maps: list[Value] = [
+        item
+        for item in pool
+        if isinstance(item, dict) and not isinstance(item, OrderedMap)
+    ]
+    override = _compute_dict_open_override(items=maps, spec=spec)
+    if override is None:
+        return
+    for map_value in maps:
+        out.setdefault(id(map_value), override)
+    child_pool = [
+        value for m in maps if isinstance(m, dict) for value in m.values()
+    ]
+    _widen_sibling_map_values(pool=child_pool, spec=spec, out=out)
 
 
 @beartype
@@ -1487,6 +1668,8 @@ def _collection_open_for_multiline_value(
             opener = spec.ordered_map_format_config.ordered_map_open(data)
         case dict() if dict_open_override is not None:
             opener = dict_open_override
+        case dict() if id(data) in ctx.dict_open_overrides:
+            opener = ctx.dict_open_overrides[id(data)]
         case dict() if not ctx.ref_key:
             opener = spec.dict_format_config.dict_open(data)
         case dict():
@@ -1827,6 +2010,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         spec=language,
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
+        dict_open_overrides=_collect_dict_open_overrides(
+            data=data, spec=language
+        ),
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=False,
@@ -3061,6 +3247,11 @@ def _format_single_call_arg(
         spec=language,
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
+        # Nested sibling-map widening (#2878) is scoped to the
+        # ``literalize`` literal and ``$zipped`` paths; call arguments
+        # already reconcile sibling dict types across slots via
+        # ``_compute_call_slot_overrides``, so this map stays empty here.
+        dict_open_overrides={},
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=True,
@@ -4265,6 +4456,9 @@ def _render_zip_literal(
         spec=language,
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
+        dict_open_overrides=_collect_dict_open_overrides(
+            data=value, spec=language
+        ),
         ref_case=None,
         ref_values=None,
         expand_refs=False,
