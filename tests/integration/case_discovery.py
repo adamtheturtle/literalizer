@@ -99,12 +99,13 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``record_field_type_split`` carries same-key-set dicts whose
         # field types conflict (a nested record with different fields,
         # differing scalar types) in positions that never share a
-        # sibling list, so the Rust RECORD strategy's field-type shape
-        # split (issue #2881) resolves each group to its own struct.
-        # The Rust ``record_field_type_split`` variant is the sole
-        # consumer: other RECORD languages still key shapes by key set
-        # alone, so base-discovering it would emit golden files that
-        # fail to compile.
+        # sibling list, so a field-type-splitting RECORD strategy
+        # resolves each group to its own struct (Rust issue #2881, Go
+        # issue #2888).  The Rust and Go ``record_field_type_split``
+        # variants are the sole consumers: the remaining RECORD
+        # languages still key shapes by key set alone, so
+        # base-discovering it would emit golden files that fail to
+        # compile.
         "record_field_type_split",
         # ``nested_map_widening`` carries sibling dict values that are
         # maps whose value types diverge (issue #2878).  Each inner map

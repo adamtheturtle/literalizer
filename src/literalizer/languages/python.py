@@ -1505,7 +1505,10 @@ class Python(metaclass=LanguageCls):
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is cls.RECORD:
-            return build_record_strategy(renderer=self._record_renderer)
+            return build_record_strategy(
+                renderer=self._record_renderer,
+                split_conflicting_field_types=False,
+            )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,
             preamble=no_data_preamble,
