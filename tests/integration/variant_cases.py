@@ -1268,12 +1268,15 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     arguments and sequence elements).  Go widens every such inner map to
     ``map[string]any`` (#2878) and Kotlin widens the element maps to
     ``mapOf<String, Map<String, Any?>>`` (#2890) so each literal matches
-    its declared type.  Only languages with a stable widened dict
-    fallback participate today, so the variant stays out of the
-    all-languages base discovery; both layouts are covered because the
-    compact and multiline paths pick the widened opener separately.
+    its declared type.  Rust's ``TAGGED_ENUM`` strategy instead wraps the
+    scalar leaves of every sibling map in the ``Value`` enum (#2879), so
+    each inner map is ``HashMap<&str, Value>`` and the sibling maps share
+    one value type.  Only languages that can widen participate today, so
+    the variant stays out of the all-languages base discovery; both
+    layouts are covered because the compact and multiline paths render
+    the widened literals separately.
     """
-    return [
+    variants: list[Variant] = [
         variant
         for lang_cls in (Go, Kotlin)
         for variant in (
@@ -1291,6 +1294,33 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
             ),
         )
     ]
+    rust_default_spec = make_spec(lang_cls=Rust)
+    rust_tagged_enum = next(
+        strategy
+        for strategy in rust_default_spec.heterogeneous_strategies
+        if strategy.name == "TAGGED_ENUM"
+    )
+    rust_spec = make_spec(
+        lang_cls=Rust,
+        heterogeneous_strategy=rust_tagged_enum,
+    )
+    variants.extend(
+        [
+            Variant(
+                name="Rust_nested_map_widening",
+                spec=rust_spec,
+                lang_cls=Rust,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            ),
+            Variant(
+                name="Rust_nested_map_widening_multiline",
+                spec=rust_spec,
+                lang_cls=Rust,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
+            ),
+        ]
+    )
+    return variants
 
 
 @beartype
