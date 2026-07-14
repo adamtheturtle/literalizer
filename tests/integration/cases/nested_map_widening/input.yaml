@@ -1,0 +1,5 @@
+---
+- input: {kind: add, item_id: item_1, urgent: true}
+  expected: {item_id: item_1, state: pending}
+- input: {kind: remove, item_id: item_9}
+  expected: {error: not_found}

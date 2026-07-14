@@ -1,0 +1,1 @@
+Fix Go output for nested maps whose sibling dict values have different value types: each inner map is now widened to ``map[string]any`` so the literal matches the enclosing container's declared type and compiles, instead of narrowing each inner map to its own value type (issue #2878).
