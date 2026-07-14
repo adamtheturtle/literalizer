@@ -1269,9 +1269,10 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     ``map[string]any`` (#2878) and Kotlin widens the element maps to
     ``mapOf<String, Map<String, Any?>>`` (#2890) so each literal matches
     its declared type.  Rust's ``TAGGED_ENUM`` strategy instead wraps the
-    scalar leaves of every sibling map in the ``Value`` enum (#2879), so
-    each inner map is ``HashMap<&str, Value>`` and the sibling maps share
-    one value type.  Only languages that can widen participate today, so
+    scalar leaves of every sibling map in the ``Value`` enum (#2879), and
+    Nim's ``OBJECT_VARIANT`` strategy wraps them in its object-variant
+    ``Value`` so every inner ``Table`` shares one value type (#2898).
+    Only languages that can widen participate today, so
     the variant stays out of the all-languages base discovery; both
     layouts are covered because the compact and multiline paths render
     the widened literals separately.
@@ -1316,6 +1317,32 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                 name="Rust_nested_map_widening_multiline",
                 spec=rust_spec,
                 lang_cls=Rust,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
+            ),
+        ]
+    )
+    nim_default_spec = make_spec(lang_cls=Nim)
+    nim_object_variant = next(
+        strategy
+        for strategy in nim_default_spec.heterogeneous_strategies
+        if strategy.name == "OBJECT_VARIANT"
+    )
+    nim_spec = make_spec(
+        lang_cls=Nim,
+        heterogeneous_strategy=nim_object_variant,
+    )
+    variants.extend(
+        [
+            Variant(
+                name="Nim_nested_map_widening",
+                spec=nim_spec,
+                lang_cls=Nim,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            ),
+            Variant(
+                name="Nim_nested_map_widening_multiline",
+                spec=nim_spec,
+                lang_cls=Nim,
                 collection_layout=literalizer.CollectionLayout.MULTILINE,
             ),
         ]
