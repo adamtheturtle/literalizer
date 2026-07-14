@@ -113,11 +113,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # enclosing container declares the widened type, so only
         # languages that can widen render it as code that compiles: Go
         # and Kotlin widen the opener (issues #2878/#2890) while Rust,
-        # Nim, and Mojo wrap the scalar leaves in their ``TAGGED_ENUM`` /
-        # ``OBJECT_VARIANT`` / ``VARIANT`` ``Value`` (issues
-        # #2879/#2898/#2895).  The Go, Kotlin, Rust, Nim, and Mojo
-        # ``nested_map_widening`` variants are the sole consumers, so it
-        # stays out of the all-languages base discovery.
+        # Nim, Mojo, and V wrap the scalar leaves in their ``TAGGED_ENUM``
+        # / ``OBJECT_VARIANT`` / ``VARIANT`` / ``INTERFACE`` ``Value`` /
+        # ``IVal`` (issues #2879/#2898/#2895/#2896).  The Go, Kotlin,
+        # Rust, Nim, Mojo, and V ``nested_map_widening`` variants are the
+        # sole consumers, so it stays out of the all-languages base
+        # discovery.
         "nested_map_widening",
         # ``dhall_nested_map_widening`` is the Dhall counterpart of
         # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
