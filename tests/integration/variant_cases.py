@@ -22,11 +22,9 @@ from literalizer.languages import (
     Cpp,
     Crystal,
     CSharp,
-    D,
     Dart,
     Dhall,
     Elm,
-    Erlang,
     Fortran,
     FSharp,
     Gleam,
@@ -44,7 +42,6 @@ from literalizer.languages import (
     Roc,
     Rust,
     Scala,
-    Scheme,
     Swift,
     V,
     VisualBasic,
@@ -473,200 +470,103 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     ]
 
 
+@runtime_checkable
+class _HasJsonType(Protocol):
+    """Structural type for languages whose spec exposes a ``json_type``
+    value field, alongside the ``json_types`` enum that configures it.
+
+    Languages without a JSON value-type representation omit the
+    ``json_type`` constructor field entirely (their ``json_types`` enum
+    is empty), so the ``isinstance`` check skips them without reflection.
+    """
+
+    json_type: enum.Enum | None
+    json_types: type[enum.Enum]
+
+
+# ``json_type`` variant name suffixes that deliberately diverge from the
+# lower-case form of the selected enum member's name.  C# and F# both
+# select the ``SYSTEM_TEXT_JSON_NODE`` member yet name the variant (and
+# its golden) ``..._json_type_json_node``; the override keeps those
+# golden filenames stable rather than renaming them to
+# ``..._system_text_json_node``.
+JSON_TYPE_VARIANT_NAME_SUFFIXES: dict[literalizer.LanguageCls, str] = {
+    CSharp: "json_node",
+    FSharp: "json_node",
+}
+
+
 @beartype
 def build_json_type_variants() -> Iterable[Variant]:
-    """Build JSON value type variants for languages that support them."""
-    return [
-        Variant(
-            name="Rust_json_type_serde_json_value",
-            spec=make_spec(
-                lang_cls=Rust,
-                json_type=Rust.json_types.SERDE_JSON_VALUE,
-            ),
-            lang_cls=Rust,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Crystal_json_type_json_any",
-            spec=make_spec(
-                lang_cls=Crystal,
-                json_type=Crystal.json_types.JSON_ANY,
-            ),
-            lang_cls=Crystal,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Java_json_type_jackson_json_node",
-            spec=make_spec(
-                lang_cls=Java,
-                json_type=Java.json_types.JACKSON_JSON_NODE,
-            ),
-            lang_cls=Java,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Scala_json_type_circe",
-            spec=make_spec(
-                lang_cls=Scala,
-                json_type=Scala.json_types.CIRCE,
-            ),
-            lang_cls=Scala,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="CSharp_json_type_json_node",
-            spec=make_spec(
-                lang_cls=CSharp,
-                json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE,
-            ),
-            lang_cls=CSharp,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Nim_json_type_json_node",
-            spec=make_spec(
-                lang_cls=Nim,
-                json_type=Nim.json_types.JSON_NODE,
-            ),
-            lang_cls=Nim,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Haskell_json_type_aeson_value",
-            spec=make_spec(
-                lang_cls=Haskell,
-                json_type=Haskell.json_types.AESON_VALUE,
-            ),
-            lang_cls=Haskell,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Zig_json_type_std_json_value",
-            spec=make_spec(
-                lang_cls=Zig,
-                json_type=Zig.json_types.STD_JSON_VALUE,
-            ),
-            lang_cls=Zig,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="D_json_type_narrow",
-            spec=make_spec(
-                lang_cls=D,
-                json_type=None,
-            ),
-            lang_cls=D,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Kotlin_json_type_kotlinx_json_element",
-            spec=make_spec(
-                lang_cls=Kotlin,
-                json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT,
-            ),
-            lang_cls=Kotlin,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Cpp_json_type_nlohmann_json",
-            spec=make_spec(
-                lang_cls=Cpp,
-                json_type=Cpp.json_types.NLOHMANN_JSON,
-            ),
-            lang_cls=Cpp,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="C_json_type_cjson",
-            spec=make_spec(
-                lang_cls=C,
-                json_type=C.json_types.CJSON,
-            ),
-            lang_cls=C,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Cobol_json_type_cjson",
-            spec=make_spec(
-                lang_cls=Cobol,
-                json_type=Cobol.json_types.CJSON,
-            ),
-            lang_cls=Cobol,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="FSharp_json_type_json_node",
-            spec=make_spec(
-                lang_cls=FSharp,
-                json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
-            ),
-            lang_cls=FSharp,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Gleam_json_type_gleam_json_json",
-            spec=make_spec(
-                lang_cls=Gleam,
-                json_type=Gleam.json_types.GLEAM_JSON_JSON,
-            ),
-            lang_cls=Gleam,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="OCaml_json_type_yojson_safe_t",
-            spec=make_spec(
-                lang_cls=OCaml,
-                json_type=OCaml.json_types.YOJSON_SAFE_T,
-            ),
-            lang_cls=OCaml,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Elm_json_type_json_encode_value",
-            spec=make_spec(
-                lang_cls=Elm,
-                json_type=Elm.json_types.JSON_ENCODE_VALUE,
-            ),
-            lang_cls=Elm,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="PureScript_json_type_argonaut_json",
-            spec=make_spec(
-                lang_cls=PureScript,
-                json_type=PureScript.json_types.ARGONAUT_JSON,
-            ),
-            lang_cls=PureScript,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Scheme_json_type_guile_json",
-            spec=make_spec(
-                lang_cls=Scheme,
-                json_type=Scheme.json_types.GUILE_JSON,
-            ),
-            lang_cls=Scheme,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Erlang_json_type_otp_json",
-            spec=make_spec(
-                lang_cls=Erlang,
-                json_type=Erlang.json_types.OTP_JSON,
-            ),
-            lang_cls=Erlang,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Odin_json_type_json_value",
-            spec=make_spec(
-                lang_cls=Odin,
-                json_type=Odin.json_types.JSON_VALUE,
-            ),
-            lang_cls=Odin,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-    ]
+    """Build JSON value-type variants for every language whose spec
+    exposes a ``json_type`` field.
+
+    For each such language, emit a variant for every ``json_type``
+    setting other than its default.  The candidate settings are ``None``
+    (the narrow, no-JSON-type rendering) together with each member of the
+    language's ``json_types`` enum.  Every current language offers a
+    single non-default setting: the JSON-capable languages default to
+    ``None`` and gain one JSON value type, while D defaults to its only
+    JSON value type and narrows back to ``None``.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(spec, _HasJsonType):
+            continue
+        default_json_type = spec.json_type
+        candidates: list[enum.Enum | None] = [None, *spec.json_types]
+        for json_type in candidates:
+            if json_type is default_json_type:
+                continue
+            suffix = (
+                "narrow"
+                if json_type is None
+                else JSON_TYPE_VARIANT_NAME_SUFFIXES.get(
+                    lang_cls, json_type.name.lower()
+                )
+            )
+            variants.append(
+                Variant(
+                    name=f"{lang_cls.__name__}_json_type_{suffix}",
+                    spec=make_spec(lang_cls=lang_cls, json_type=json_type),
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
+
+
+def _check_json_type_variants() -> None:
+    """Validate JSON value-type variant coverage at import time.
+
+    :func:`build_json_type_variants` must emit a variant for exactly the
+    languages whose spec exposes a ``json_type`` field, so a future
+    JSON-capable language cannot land without coverage.  Every entry in
+    :data:`JSON_TYPE_VARIANT_NAME_SUFFIXES` must name such a language and
+    actually differ from the member name it renames; either kind of
+    drift would silently break variant coverage or leave a dead override.
+    """
+    supported = {
+        lang_cls
+        for lang_cls in ALL_LANGUAGES
+        if isinstance(make_spec(lang_cls=lang_cls), _HasJsonType)
+    }
+    covered = {variant.lang_cls for variant in build_json_type_variants()}
+    assert covered == supported  # noqa: S101
+    assert set(JSON_TYPE_VARIANT_NAME_SUFFIXES) <= supported  # noqa: S101
+    for lang_cls, suffix in JSON_TYPE_VARIANT_NAME_SUFFIXES.items():
+        spec = make_spec(lang_cls=lang_cls)
+        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        member_suffixes = {
+            member.name.lower()
+            for member in spec.json_types
+            if member is not spec.json_type
+        }
+        assert suffix not in member_suffixes, lang_cls.__name__  # noqa: S101
+
+
+_check_json_type_variants()
 
 
 @runtime_checkable
