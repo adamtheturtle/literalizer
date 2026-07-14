@@ -43,6 +43,7 @@ from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
+    collect_sibling_map_wrap_ids,
     iter_wrapped_scalars,
 )
 from literalizer._language import (
@@ -686,7 +687,9 @@ def _build_variant_behavior(
 
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should wrap."""
-        return collect_heterogeneous_container_ids(data=data)
+        return collect_heterogeneous_container_ids(
+            data=data
+        ) | collect_sibling_map_wrap_ids(data=data)
 
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}({payload})`` where the
@@ -720,7 +723,9 @@ def _collect_variant_alternatives_from_data(
     The result is order-preserving and deduplicated.  Returns an empty
     tuple when *data* contains no heterogeneous containers.
     """
-    wrap_ids = collect_heterogeneous_container_ids(data=data)
+    wrap_ids = collect_heterogeneous_container_ids(
+        data=data
+    ) | collect_sibling_map_wrap_ids(data=data)
     if not wrap_ids:
         return ()
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)

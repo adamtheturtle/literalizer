@@ -1278,6 +1278,8 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     scalar leaves of every sibling map in the ``Value`` enum (#2879), and
     the Nim ``OBJECT_VARIANT`` strategy wraps them in its object-variant
     ``Value`` so every inner ``Table`` shares one value type (#2898).
+    The Mojo ``VARIANT`` strategy wraps them in its ``Value`` alias so
+    every inner ``Dict`` shares one value type (#2895).
     Only languages that can widen participate today, so
     the variant stays out of the all-languages base discovery; both
     layouts are covered because the compact and multiline paths render
@@ -1349,6 +1351,32 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                 name="Nim_nested_map_widening_multiline",
                 spec=nim_spec,
                 lang_cls=Nim,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
+            ),
+        ]
+    )
+    mojo_default_spec = make_spec(lang_cls=Mojo)
+    mojo_variant = next(
+        strategy
+        for strategy in mojo_default_spec.heterogeneous_strategies
+        if strategy.name == "VARIANT"
+    )
+    mojo_spec = make_spec(
+        lang_cls=Mojo,
+        heterogeneous_strategy=mojo_variant,
+    )
+    variants.extend(
+        [
+            Variant(
+                name="Mojo_nested_map_widening",
+                spec=mojo_spec,
+                lang_cls=Mojo,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            ),
+            Variant(
+                name="Mojo_nested_map_widening_multiline",
+                spec=mojo_spec,
+                lang_cls=Mojo,
                 collection_layout=literalizer.CollectionLayout.MULTILINE,
             ),
         ]
