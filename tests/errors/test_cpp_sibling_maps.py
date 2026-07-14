@@ -1,4 +1,4 @@
-"""Rejection of unrepresentable sibling maps under C++'s variant typing.
+"""Rejection of sibling maps C++ cannot represent under variant typing.
 
 Sibling dict values that are themselves maps share one declared value
 type in the enclosing container.  Go and Kotlin widen the narrower inner
@@ -29,7 +29,7 @@ _SIBLING_MAPS_YAML = (
     "- input: {kind: remove, item_id: item_9}\n"
     "  expected: {error: not_found}\n"
 )
-# Divergent sibling maps within a single dict's value slot.
+# Divergent sibling maps sharing one dict value slot.
 _WITHIN_DICT_YAML = "a: {x: 1}\nb: {y: two}\n"
 
 
