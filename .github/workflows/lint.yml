@@ -229,7 +229,7 @@ jobs:
       # `lint-elm-run`); keep all of them and that `language_version`
       # declaration in sync.
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -871,7 +871,7 @@ jobs:
       # the other Node lint jobs and the `language_version` declaration in
       # `src/literalizer/languages/javascript.py` (see the `Set up Node`
       # step in `lint-fast` for the full rationale).
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -943,7 +943,7 @@ jobs:
       # the other Node lint jobs and the `language_version` declaration in
       # `src/literalizer/languages/javascript.py` (see the `Set up Node`
       # step in `lint-fast` for the full rationale).
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -989,7 +989,7 @@ jobs:
       # the other Node lint jobs and the `language_version` declaration in
       # `src/literalizer/languages/javascript.py` (see the `Set up Node`
       # step in `lint-fast` for the full rationale).
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -1025,7 +1025,7 @@ jobs:
       # the other Node lint jobs and the `language_version` declaration in
       # `src/literalizer/languages/javascript.py` (see the `Set up Node`
       # step in `lint-fast` for the full rationale).
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
