@@ -112,12 +112,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # otherwise renders at its own narrower value type while the
         # enclosing container declares the widened type, so only
         # languages that can widen render it as code that compiles: Go
-        # and Kotlin widen the opener (issues #2878/#2890) while Rust and
-        # Nim wrap the scalar leaves in their ``TAGGED_ENUM`` /
-        # ``OBJECT_VARIANT`` ``Value`` (issues #2879/#2898).  The Go,
-        # Kotlin, Rust, and Nim ``nested_map_widening`` variants are the
-        # sole consumers, so it stays out of the all-languages base
-        # discovery.
+        # and Kotlin widen the opener (issues #2878/#2890) while Rust,
+        # Nim, and Mojo wrap the scalar leaves in their ``TAGGED_ENUM`` /
+        # ``OBJECT_VARIANT`` / ``VARIANT`` ``Value`` (issues
+        # #2879/#2898/#2895).  The Go, Kotlin, Rust, Nim, and Mojo
+        # ``nested_map_widening`` variants are the sole consumers, so it
+        # stays out of the all-languages base discovery.
         "nested_map_widening",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
