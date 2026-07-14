@@ -1,0 +1,1 @@
+Fix V ``INTERFACE`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in ``IVal`` so each inner ``map`` shares one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2896).

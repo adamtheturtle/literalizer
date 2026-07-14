@@ -59,7 +59,10 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.type_inference import infer_element_type
-from literalizer._heterogeneous import collect_heterogeneous_container_ids
+from literalizer._heterogeneous import (
+    collect_heterogeneous_container_ids,
+    collect_sibling_map_wrap_ids,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -177,8 +180,13 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
     * Sets with mixed Python types.
     * Containers whose children have mixed V types because some
       children are in wrap_ids and others are not.
+    * Maps that are individually homogeneous yet must widen because a
+      sibling map at the same slot does
+      (:func:`collect_sibling_map_wrap_ids`, issue #2896).
     """
-    base_ids = collect_heterogeneous_container_ids(data=data)
+    base_ids = collect_heterogeneous_container_ids(
+        data=data
+    ) | collect_sibling_map_wrap_ids(data=data)
     wrap_ids: set[int] = set(base_ids)
 
     def _visit(item: Value) -> None:

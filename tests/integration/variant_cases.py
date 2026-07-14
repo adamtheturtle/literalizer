@@ -46,6 +46,7 @@ from literalizer.languages import (
     Scala,
     Scheme,
     Swift,
+    V,
     VisualBasic,
     Zig,
 )
@@ -1279,7 +1280,9 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     the Nim ``OBJECT_VARIANT`` strategy wraps them in its object-variant
     ``Value`` so every inner ``Table`` shares one value type (#2898).
     The Mojo ``VARIANT`` strategy wraps them in its ``Value`` alias so
-    every inner ``Dict`` shares one value type (#2895).  Dhall's
+    every inner ``Dict`` shares one value type (#2895).  The V
+    ``INTERFACE`` strategy wraps them in ``IVal`` so every inner
+    ``map`` shares one value type (#2896).  Dhall's
     ``UNION_TYPE`` strategy has the analogous fix (#2897) but is covered
     by :func:`build_dhall_nested_map_widening_variants` against a
     dedicated input, because Dhall's record typing cannot represent this
@@ -1381,6 +1384,32 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                 name="Mojo_nested_map_widening_multiline",
                 spec=mojo_spec,
                 lang_cls=Mojo,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
+            ),
+        ]
+    )
+    v_default_spec = make_spec(lang_cls=V)
+    v_interface = next(
+        strategy
+        for strategy in v_default_spec.heterogeneous_strategies
+        if strategy.name == "INTERFACE"
+    )
+    v_spec = make_spec(
+        lang_cls=V,
+        heterogeneous_strategy=v_interface,
+    )
+    variants.extend(
+        [
+            Variant(
+                name="V_nested_map_widening",
+                spec=v_spec,
+                lang_cls=V,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            ),
+            Variant(
+                name="V_nested_map_widening_multiline",
+                spec=v_spec,
+                lang_cls=V,
                 collection_layout=literalizer.CollectionLayout.MULTILINE,
             ),
         ]
