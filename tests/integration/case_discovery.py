@@ -107,14 +107,15 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # fail to compile.
         "record_field_type_split",
         # ``nested_map_widening`` carries sibling dict values that are
-        # maps whose value types diverge (issue #2878).  Under the
-        # default strategy the enclosing container widens to
-        # ``map[string]map[string]any`` while each inner map otherwise
-        # narrows to its own value type, so only languages with a stable
-        # widened dict fallback (Go today) render it as code that
-        # compiles; the Go
-        # ``nested_map_widening`` variants are the sole consumers, so it
-        # stays out of the all-languages base discovery.
+        # maps whose value types diverge (issue #2878).  Each inner map
+        # otherwise renders at its own narrower value type while the
+        # enclosing container declares the widened type, so only
+        # languages that can widen render it as code that compiles: Go
+        # and Kotlin widen the opener (issues #2878/#2890) and Rust wraps
+        # the scalar leaves in its ``TAGGED_ENUM`` ``Value`` (issue
+        # #2879).  The Go, Kotlin, and Rust ``nested_map_widening``
+        # variants are the sole consumers, so it stays out of the
+        # all-languages base discovery.
         "nested_map_widening",
         # Owned by the bespoke ``Cobol_json_type_cjson_string_bytes``
         # variant case: a string mixing an embedded quote, a control
