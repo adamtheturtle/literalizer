@@ -1,6 +1,6 @@
-var my_data = mapOf<String, Any?>(
+var my_data = mapOf<String, Map<String, Int>>(
     "section" to mapOf<String, Int>("value" to 1),
 )
-my_data = mapOf<String, Any?>(
+my_data = mapOf<String, Map<String, Int>>(
     "section" to mapOf<String, Int>("value" to 1),
 )

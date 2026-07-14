@@ -243,6 +243,37 @@ def _kotlin_type_to_opener(
             return scalar_openers.get(element_type)
 
 
+@beartype
+def _kotlin_dict_value_type_name(
+    element_type: type | ListType | DictType,
+    *,
+    base_resolver: Callable[[type | ListType | DictType], str | None],
+    key_type: str,
+    fallback: str,
+) -> str | None:
+    """Resolve a dict value's Kotlin type name to match the renderer.
+
+    Narrows only ``DictType`` values, to ``Map<key, ...>`` recursively
+    (``Map`` is covariant in its value type, so a narrower rendered map
+    is still accepted), and defers every other element type to
+    *base_resolver*, which keeps the prior ``Array``/``Any?`` list
+    typing.  See :meth:`Kotlin._kotlin_dict_value_type` for why list
+    values are left to *base_resolver* rather than narrowed (#2890).
+    """
+    if not isinstance(element_type, DictType):
+        return base_resolver(element_type)
+    value_type = element_type.value_type
+    if value_type is None:
+        return f"Map<{key_type}, {fallback}>"
+    inner = _kotlin_dict_value_type_name(
+        element_type=value_type,
+        base_resolver=base_resolver,
+        key_type=key_type,
+        fallback=fallback,
+    )
+    return f"Map<{key_type}, {inner if inner is not None else fallback}>"
+
+
 _KOTLIN_I32_MIN = -(2**31)
 _KOTLIN_I32_MAX = 2**31 - 1
 
@@ -1870,6 +1901,45 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _kotlin_dict_value_type(
+        self,
+    ) -> Callable[[type | ListType | DictType], str | None]:
+        """Resolve a dict value's Kotlin type name to match the renderer.
+
+        Kotlin's dict opener previously disabled value narrowing entirely
+        (its base list template renders as an ``Array`` type, which does
+        not match the real ``List`` sequence rendering, so narrowing list
+        values would give them the wrong type).  That left a map value
+        typed ``Any?`` where a nested ``Map<...>`` was declared, so a map
+        used as e.g. a sequence element did not compile (#2890).
+
+        Delegates to :func:`_kotlin_dict_value_type_name`, which narrows
+        only ``DictType`` values and keeps the prior ``Array``/``Any?``
+        list typing for everything else.
+        """
+        base_resolver = self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=True,
+            date_type=self._date_type_name,
+            datetime_type=self._dt_type_name,
+            enable_dict_type=False,
+            dict_key_type=self.default_dict_key_type,
+        )
+        key_type = self.default_dict_key_type
+        fallback = self.default_dict_value_type
+
+        def resolve(element_type: type | ListType | DictType) -> str | None:
+            """Map an element type to its rendered Kotlin type name."""
+            return _kotlin_dict_value_type_name(
+                element_type=element_type,
+                base_resolver=base_resolver,
+                key_type=key_type,
+                fallback=fallback,
+            )
+
+        return resolve
+
+    @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -1881,14 +1951,14 @@ class Kotlin(metaclass=LanguageCls):
         return DictFormatConfig(
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
-                    element_to_type=self._opener_config.element_to_type(
-                        list_template=None,
-                        enable_list_type=True,
-                        date_type=self._date_type_name,
-                        datetime_type=self._dt_type_name,
-                        enable_dict_type=False,
-                        dict_key_type=self.default_dict_key_type,
-                    ),
+                    # A dict value that is itself a map keeps its
+                    # ``Map<String, ...>`` type instead of collapsing to
+                    # the ``Any?`` fallback, so a map used where a nested
+                    # map type is declared (e.g. a sequence element)
+                    # matches that type (#2890); other value types keep
+                    # their prior typing.  See
+                    # :meth:`_kotlin_dict_value_type`.
+                    element_to_type=self._kotlin_dict_value_type,
                     opener_template=resolved_dict_opener,
                 ),
                 fallback=resolved_dict_opener.format(
