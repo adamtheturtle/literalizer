@@ -3,6 +3,41 @@ Changelog
 
 .. towncrier release notes start
 
+2026.07.14
+----------
+
+- Add an "Understanding the result" documentation page that defines each ``LiteralizeResult`` field, explains when ``preamble`` and ``body_preamble`` are populated and that they must precede ``code`` to compile, and shows how ``wrap_in_file=True`` assembles those fields into output that compiles for you.
+
+- Document the ``variable_form`` argument with a "Binding the result to a variable" section that contrasts ``NewVariable``, ``ExistingVariable``, and ``BothVariableForms`` and shows the output each produces.
+
+- Group the documentation index into captioned "Guides", "Reference", and "Project / Development" sections, and correct the contributing guide to reference ``prek`` hooks and the ``uv run --extra dev pytest`` test command.
+
+- Move the language-definition (extension) API reference out of the consumer-facing API reference page and into the ``Languages`` guide, co-locating the ``Language`` protocol, the ``LanguageCls`` class, the ``*FormatConfig`` building blocks, and ``fixed_open`` with the narrative "Custom language implementations" how-to that already explains them.
+
+- Add a public ``LiteralizeResult.sections`` accessor (a tuple of the new ``FileSection`` dataclass) that exposes the file regions of a multi-section language's ``wrap_in_file=False`` output, so a caller can compose each region into its own program template instead of parsing a language-internal marker.  COBOL under ``json_type=CJSON`` is the first such language, surfacing its ``WORKING-STORAGE`` and ``PROCEDURE`` regions (named by the ``Cobol.CJSON_WORKING_STORAGE_SECTION`` / ``Cobol.CJSON_PROCEDURE_SECTION`` constants); its CI round-trip helper now composes those regions directly rather than splicing into a wrapped program.
+
+- Fold the resolution guidance for each exception into its class description (a "To resolve, ..." sentence) and render the remaining stages of the "Common errors" documentation page with ``autoexception`` directives instead of hand-maintained Cause / How-to-resolve tables, so each exception's meaning and recommended fix are single-sourced from ``literalizer.exceptions`` and can no longer drift between the page and the API reference.
+
+- Generate the per-language heterogeneous-strategy support matrix in the documentation from the language registry at build time (rendered with the ``sphinx-jinja`` extension), so it can no longer drift from the ``heterogeneous_strategies`` enum on each language class.  This also corrects the previously stale matrix, which omitted several languages that now expose ``RECORD``.
+
+- Fix Go output for nested maps whose sibling dict values have different value types: each inner map is now widened to ``map[string]any`` so the literal matches the enclosing container's declared type and compiles, instead of narrowing each inner map to its own value type (issue #2878).
+
+- Fix Rust ``TAGGED_ENUM`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` enum so each inner map is ``HashMap<&str, Value>`` and the sibling maps share one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2879).
+
+- Under the Rust ``RECORD`` heterogeneous strategy, dict keys that collide with Rust keywords (e.g. ``type``, ``match``) now render as raw identifiers (``r#type``) in both the generated struct declarations and the struct literals, so the output compiles. Keys that no struct field name can express (``crate``, ``self``, ``super``, ``Self``, ``_``, or keys that are not identifier-shaped text) raise ``UnrepresentableInputError`` instead of emitting code that fails to compile.
+
+- Fix Kotlin output for nested maps used where a nested map type is declared: a map value now keeps its ``Map<String, ...>`` type instead of collapsing to the ``Any?`` fallback, so an element map matches the declared ``mapOf<String, Map<String, Any?>>`` type and compiles (issue #2890).
+
+- Raise ``HeterogeneousSiblingMapsError`` when a C++ container holds sibling maps whose value types force a widened dict slot the language cannot represent, instead of silently emitting a ``std::variant`` map literal that does not compile. Go and Kotlin widen these maps to their ``map[string]any`` / ``Any?`` fallback, but C++'s variant typing has no single value type every sibling map converts to, so ``literalize`` now rejects the input (use the ``RECORD`` strategy or a ``json_type`` to represent it).
+
+- Fix Mojo ``VARIANT`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` alias so each inner ``Dict`` shares one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2895).
+
+- Fix V ``INTERFACE`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in ``IVal`` so each inner ``map`` shares one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2896).
+
+- Fix Dhall ``UNION_TYPE`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` union so each inner record shares one field type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not type-check (issue #2897).
+
+- Fix Nim ``OBJECT_VARIANT`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the object-variant ``Value`` so each inner ``Table`` shares one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2898).
+
 2026.06.02
 ----------
 

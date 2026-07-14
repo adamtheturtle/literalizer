@@ -1,1 +1,0 @@
-Fix Dhall ``UNION_TYPE`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` union so each inner record shares one field type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not type-check (issue #2897).

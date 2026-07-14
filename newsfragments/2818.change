@@ -1,1 +1,0 @@
-Generate the per-language heterogeneous-strategy support matrix in the documentation from the language registry at build time (rendered with the ``sphinx-jinja`` extension), so it can no longer drift from the ``heterogeneous_strategies`` enum on each language class.  This also corrects the previously stale matrix, which omitted several languages that now expose ``RECORD``.

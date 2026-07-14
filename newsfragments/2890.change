@@ -1,1 +1,0 @@
-Fix Kotlin output for nested maps used where a nested map type is declared: a map value now keeps its ``Map<String, ...>`` type instead of collapsing to the ``Any?`` fallback, so an element map matches the declared ``mapOf<String, Map<String, Any?>>`` type and compiles (issue #2890).

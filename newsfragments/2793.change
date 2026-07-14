@@ -1,1 +1,0 @@
-Document the ``variable_form`` argument with a "Binding the result to a variable" section that contrasts ``NewVariable``, ``ExistingVariable``, and ``BothVariableForms`` and shows the output each produces.
