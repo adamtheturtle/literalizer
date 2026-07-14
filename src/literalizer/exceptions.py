@@ -105,6 +105,24 @@ class MixedDictValuesError(HeterogeneousCollectionError):
     """
 
 
+class HeterogeneousSiblingMapsError(HeterogeneousCollectionError):
+    """Raised when a container holds sibling maps whose value types force
+    a widened dict slot the target language cannot represent.
+
+    Languages whose dict opener builds a content-specific value type
+    (variant/union typing, e.g. C++'s ``std::variant``) have no single
+    "accepts anything" value type that every sibling map converts to, so
+    a narrower inner map does not fit the widened slot the enclosing
+    container declares.  Unlike Go or Kotlin, whose ``map[string]any`` /
+    ``Any?`` fallback lets ``literalize`` widen the inner maps, these
+    languages can only emit non-compiling code, so ``literalize`` raises
+    instead.
+
+    To resolve, use the ``RECORD`` strategy so each map renders as its
+    own struct, or render the value through a ``json_type``.
+    """
+
+
 class MixedDictKeysError(HeterogeneousCollectionError):
     """Raised when a dict has keys spanning multiple type families
     and the target language requires homogeneous dict keys.
