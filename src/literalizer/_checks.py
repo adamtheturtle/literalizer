@@ -714,15 +714,16 @@ _MIXED_VALUE_PROBE_B: dict[Scalar, Value] = {
 
 
 @beartype
-def _dict_slot_lacks_widened_type(*, spec: Language) -> bool:
-    """Return whether *spec*'s dict opener has no widened value type that
-    accepts every sibling map.
+def _dict_slot_uses_variant_typing(*, spec: Language) -> bool:
+    """Return whether *spec*'s dict opener builds a content-specific
+    value type with no single type accepting every sibling map.
 
-    True only for languages whose opener builds a content-specific value
-    type from the values (variant/union typing, e.g. C++), and so has no
-    single "accepts anything" value type; False for languages with a
-    stable fallback (Go's ``map[string]any``, Kotlin's ``Any?``) and for
-    dynamic languages whose opener ignores the values entirely.
+    True only for languages whose opener derives the value type from the
+    values (variant/union typing, e.g. C++), so two dicts with different
+    value content yield different openers; those have no "accepts
+    anything" value type to widen a narrower sibling map into.  False for
+    languages with a stable fallback (Go's ``map[string]any``, Kotlin's
+    ``Any?``) and for dynamic languages whose opener ignores the values.
 
     A language whose opener rejects a heterogeneous-valued dict outright
     (e.g. D's narrow-typed mode) already raises on the real data through
@@ -867,7 +868,7 @@ def _check_unrepresentable_sibling_maps(
     """Raise if *data* holds sibling maps whose widened dict slot *spec*
     cannot represent.
     """
-    if _dict_slot_lacks_widened_type(spec=spec) and (
+    if _dict_slot_uses_variant_typing(spec=spec) and (
         _has_unrepresentable_sibling_maps(
             data=data,
             spec=spec,
