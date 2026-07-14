@@ -1279,7 +1279,11 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     the Nim ``OBJECT_VARIANT`` strategy wraps them in its object-variant
     ``Value`` so every inner ``Table`` shares one value type (#2898).
     The Mojo ``VARIANT`` strategy wraps them in its ``Value`` alias so
-    every inner ``Dict`` shares one value type (#2895).
+    every inner ``Dict`` shares one value type (#2895).  Dhall's
+    ``UNION_TYPE`` strategy has the analogous fix (#2897) but is covered
+    by :func:`build_dhall_nested_map_widening_variants` against a
+    dedicated input, because Dhall's record typing cannot represent this
+    input's divergent inner key sets.
     Only languages that can widen participate today, so
     the variant stays out of the all-languages base discovery; both
     layouts are covered because the compact and multiline paths render
@@ -1382,6 +1386,46 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
         ]
     )
     return variants
+
+
+@beartype
+def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
+    """Build the ``dhall_nested_map_widening`` variants.
+
+    This mirrors :func:`build_nested_map_widening_variants` for Dhall's
+    ``UNION_TYPE`` strategy, but uses a dedicated input.  Dhall renders
+    dicts as records whose type is fixed by their field set, so the
+    shared ``nested_map_widening`` input (whose sibling inner maps also
+    differ in *which* keys they carry) can never type-check as a Dhall
+    list regardless of widening.  This input keeps every sibling inner
+    map at the same key set while diverging its scalar value types, so
+    the widening fix (wrapping every sibling map's scalar leaves in the
+    ``Value`` union) is exactly what makes the list type-check (#2897).
+    """
+    dhall_default_spec = make_spec(lang_cls=Dhall)
+    dhall_union_type = next(
+        strategy
+        for strategy in dhall_default_spec.heterogeneous_strategies
+        if strategy.name == "UNION_TYPE"
+    )
+    dhall_spec = make_spec(
+        lang_cls=Dhall,
+        heterogeneous_strategy=dhall_union_type,
+    )
+    return [
+        Variant(
+            name="Dhall_nested_map_widening",
+            spec=dhall_spec,
+            lang_cls=Dhall,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Dhall_nested_map_widening_multiline",
+            spec=dhall_spec,
+            lang_cls=Dhall,
+            collection_layout=literalizer.CollectionLayout.MULTILINE,
+        ),
+    ]
 
 
 @beartype
@@ -2268,6 +2312,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_keyword_field": build_record_keyword_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
     "nested_map_widening": build_nested_map_widening_variants,
+    "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,
@@ -2615,6 +2660,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "nested_map_widening": (
         _ci(case_dir_name="nested_map_widening", suffix=""),
+    ),
+    "dhall_nested_map_widening": (
+        _ci(case_dir_name="dhall_nested_map_widening", suffix=""),
     ),
     "record_epoch_i32_overflow": (
         _ci(case_dir_name="record_epoch_datetime_i32_overflow", suffix=""),

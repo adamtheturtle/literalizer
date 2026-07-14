@@ -39,6 +39,7 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
+    collect_sibling_map_wrap_ids,
     iter_wrapped_scalars,
 )
 from literalizer._language import (
@@ -477,7 +478,9 @@ def _build_union_type_behavior(
 
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should wrap."""
-        return collect_heterogeneous_container_ids(data=data)
+        return collect_heterogeneous_container_ids(
+            data=data
+        ) | collect_sibling_map_wrap_ids(data=data)
 
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{union_name}.{Variant} payload``."""
@@ -510,7 +513,9 @@ def _build_union_type_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the union-type declaration for *data*."""
-        wrap_ids = collect_heterogeneous_container_ids(data=data)
+        wrap_ids = collect_heterogeneous_container_ids(
+            data=data
+        ) | collect_sibling_map_wrap_ids(data=data)
         if not wrap_ids:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
