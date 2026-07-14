@@ -192,7 +192,13 @@ def build_tuple_strategy(
         record_renderer,
         field_type=_tuple_aware_field_type,
     )
-    record_strategy = build_record_strategy(renderer=wrapped_renderer)
+    # Field-type splitting (issue #2888) is a plain-``RECORD`` port; the
+    # ``TUPLE`` composition (shared across languages) keeps its existing
+    # behavior until ported in its own increment.
+    record_strategy = build_record_strategy(
+        renderer=wrapped_renderer,
+        split_conflicting_field_types=False,
+    )
 
     def _compute_tuple_list_ids(data: Value, /) -> frozenset[int]:
         """Return the tuple-eligible list ids, raising for any whose

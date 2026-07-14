@@ -1690,7 +1690,10 @@ class Kotlin(metaclass=LanguageCls):
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is cls.RECORD:
-            return build_record_strategy(renderer=self._record_renderer)
+            return build_record_strategy(
+                renderer=self._record_renderer,
+                split_conflicting_field_types=False,
+            )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(
                 record_renderer=self._record_renderer,

@@ -1379,7 +1379,10 @@ class C(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(renderer=self._record_renderer)
+        return build_record_strategy(
+            renderer=self._record_renderer,
+            split_conflicting_field_types=False,
+        )
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

@@ -1535,7 +1535,10 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``type``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(renderer=self._record_renderer)
+        return build_record_strategy(
+            renderer=self._record_renderer,
+            split_conflicting_field_types=False,
+        )
 
     @cached_property
     def type_hint_collection_preamble_lines(

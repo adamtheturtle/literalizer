@@ -1225,35 +1225,41 @@ def build_record_keyword_field_variants() -> Iterable[Variant]:
 
 @beartype
 def build_record_field_type_split_variants() -> Iterable[Variant]:
-    """Build the Rust ``record_field_type_split`` variant.
+    """Build the ``record_field_type_split`` variants.
 
     Same-key-set dicts whose field types conflict (a nested record
     with different fields, differing scalar types) must resolve to
     distinct generated struct declarations, or the struct declared
     from the field types of the first dict fails to compile against
-    the literal for the other dict (issue #2881).  The case input
-    keeps every conflicting pair out of sibling lists so each group
-    renders as its own
-    compiling struct.  Only Rust splits record shapes by field type,
-    so the variant is single-language and its case directory stays
-    out of the all-languages base discovery.
+    the literal for the other dict (issue #2881 for Rust, #2888 for
+    the shared non-Rust ports).  The case input keeps every
+    conflicting pair out of sibling lists so each group renders as its
+    own compiling struct.  Rust splits via its own
+    ``_refine_record_shapes`` while Go splits through the shared
+    record strategy's field-type refinement, so the two are the only
+    consumers and the case directory stays out of the all-languages
+    base discovery.
     """
-    default_spec = make_spec(lang_cls=Rust)
-    record_strategy = next(
-        strategy
-        for strategy in default_spec.heterogeneous_strategies
-        if strategy.name == "RECORD"
-    )
-    return [
-        Variant(
-            name="Rust_record_field_type_split",
-            spec=make_spec(
-                lang_cls=Rust, heterogeneous_strategy=record_strategy
-            ),
-            lang_cls=Rust,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
+    variants: list[Variant] = []
+    for lang_cls in (Rust, Go):
+        default_spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
         )
-    ]
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_record_field_type_split",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=record_strategy,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
 
 
 @beartype
