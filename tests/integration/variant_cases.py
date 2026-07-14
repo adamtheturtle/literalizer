@@ -1270,7 +1270,7 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     ``mapOf<String, Map<String, Any?>>`` (#2890) so each literal matches
     its declared type.  Rust's ``TAGGED_ENUM`` strategy instead wraps the
     scalar leaves of every sibling map in the ``Value`` enum (#2879), and
-    Nim's ``OBJECT_VARIANT`` strategy wraps them in its object-variant
+    the Nim ``OBJECT_VARIANT`` strategy wraps them in its object-variant
     ``Value`` so every inner ``Table`` shares one value type (#2898).
     Only languages that can widen participate today, so
     the variant stays out of the all-languages base discovery; both
