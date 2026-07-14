@@ -1258,7 +1258,7 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 @beartype
 def build_nested_map_widening_variants() -> Iterable[Variant]:
-    """Build the Go ``nested_map_widening`` variants.
+    """Build the ``nested_map_widening`` variants.
 
     Sibling dict values that are themselves maps share one declared
     value type in the enclosing container, but each inner map otherwise
@@ -1266,25 +1266,30 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     widened slot type does not compile (issue #2878; the dict-value
     analogue of the sibling widening #1471/#1472 applied to call
     arguments and sequence elements).  Go widens every such inner map to
-    ``map[string]any`` so the literal matches its declared type.  Only
-    languages with a stable widened dict fallback participate today, so
-    the variant is single-language and its case directory stays out of
-    the all-languages base discovery; both layouts are covered because
-    the compact and multiline paths pick the widened opener separately.
+    ``map[string]any`` (#2878) and Kotlin widens the element maps to
+    ``mapOf<String, Map<String, Any?>>`` (#2890) so each literal matches
+    its declared type.  Only languages with a stable widened dict
+    fallback participate today, so the variant stays out of the
+    all-languages base discovery; both layouts are covered because the
+    compact and multiline paths pick the widened opener separately.
     """
     return [
-        Variant(
-            name="Go_nested_map_widening",
-            spec=make_spec(lang_cls=Go),
-            lang_cls=Go,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Go_nested_map_widening_multiline",
-            spec=make_spec(lang_cls=Go),
-            lang_cls=Go,
-            collection_layout=literalizer.CollectionLayout.MULTILINE,
-        ),
+        variant
+        for lang_cls in (Go, Kotlin)
+        for variant in (
+            Variant(
+                name=f"{lang_cls.__name__}_nested_map_widening",
+                spec=make_spec(lang_cls=lang_cls),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            ),
+            Variant(
+                name=f"{lang_cls.__name__}_nested_map_widening_multiline",
+                spec=make_spec(lang_cls=lang_cls),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
+            ),
+        )
     ]
 
 
