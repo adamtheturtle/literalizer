@@ -50,6 +50,9 @@ The usual fix is to pick a non-default ``heterogeneous_strategy``; see :ref:`het
 .. autoexception:: literalizer.exceptions.MixedDictValuesError
    :no-index:
 
+.. autoexception:: literalizer.exceptions.HeterogeneousSiblingMapsError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.MixedDictKeysError
    :no-index:
 

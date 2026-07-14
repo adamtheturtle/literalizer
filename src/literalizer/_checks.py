@@ -9,15 +9,18 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 from literalizer._language import Language
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    HeterogeneousCollectionError,
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
     HeterogeneousSiblingListsError,
+    HeterogeneousSiblingMapsError,
     MixedDictKeysError,
     MixedDictShapesError,
     MixedDictValuesError,
     MixedListValuesError,
+    UnrepresentableInputError,
 )
 
 if TYPE_CHECKING:
@@ -693,6 +696,194 @@ def _check_heterogeneous_set(*, data: Value) -> None:
         raise HeterogeneousSetError(msg)
 
 
+# Two dicts whose values mix disjoint scalar types, used to probe whether
+# a language's dict opener collapses mixed values to a stable
+# "accepts anything" fallback or builds a content-specific type.  When
+# the two openers differ the language uses variant/union typing (e.g.
+# C++'s ``std::variant``) with no single value type that every sibling
+# map converts to, so divergent sibling maps cannot be widened and must
+# be rejected.  Both probes are non-empty and string-keyed so no
+# language's opener depends on an empty-dict opener (which some
+# strategies, e.g. D's ``RECORD``, reject).  Mirrors
+# :data:`literalizer._literalize._DICT_FALLBACK_PROBE_A` / ``_B``.
+_MIXED_VALUE_PROBE_A: dict[Scalar, Value] = {"_probe_a": 1, "_probe_b": "s"}
+_MIXED_VALUE_PROBE_B: dict[Scalar, Value] = {
+    "_probe_a": 1.5,
+    "_probe_b": False,
+}
+
+
+@beartype
+def _dict_slot_uses_variant_typing(*, spec: Language) -> bool:
+    """Return whether *spec*'s dict opener builds a content-specific
+    value type with no single type accepting every sibling map.
+
+    True only for languages whose opener derives the value type from the
+    values (variant/union typing, e.g. C++), so two dicts with different
+    value content yield different openers; those have no "accepts
+    anything" value type to widen a narrower sibling map into.  False for
+    languages with a stable fallback (Go's ``map[string]any``, Kotlin's
+    ``Any?``) and for dynamic languages whose opener ignores the values.
+
+    A language whose opener rejects a heterogeneous-valued dict outright
+    (e.g. D's narrow-typed mode) already raises on the real data through
+    its own path, so the probe failure maps to ``False`` here.
+    """
+    dict_open = spec.dict_format_config.dict_open
+    try:
+        return dict_open(_MIXED_VALUE_PROBE_A) != dict_open(
+            _MIXED_VALUE_PROBE_B
+        )
+    except (UnrepresentableInputError, HeterogeneousCollectionError):
+        return False
+
+
+@beartype
+def _sibling_maps_diverge(
+    *,
+    pool: list[Value],
+    spec: Language,
+    record_dict_ids: frozenset[int],
+) -> bool:
+    """Return whether two or more maps sharing one declared value slot
+    infer different dict openers.
+
+    *pool* are the sibling values occupying a single declared value slot.
+    Dicts rendered as records (``record_dict_ids``) are excluded because
+    they render as their own struct type rather than a shared map slot.
+    When the remaining maps' openers disagree, the enclosing container
+    declares a widened map slot that the narrower inner maps do not fit.
+    """
+    dict_open = spec.dict_format_config.dict_open
+    maps: list[dict[Scalar, Value]] = [
+        item
+        for item in pool
+        if isinstance(item, dict)
+        and not isinstance(item, OrderedMap)
+        and id(item) not in record_dict_ids
+    ]
+    min_maps_for_divergence = 2
+    if len(maps) < min_maps_for_divergence:
+        return False
+    filtered = [
+        {
+            k: v
+            for k, v in d.items()
+            if not (spec.skip_null_dict_values and v is None)
+        }
+        for d in maps
+    ]
+    return len({dict_open(d) for d in filtered}) > 1
+
+
+@beartype
+def _has_unrepresentable_sibling_maps(
+    *,
+    data: Value,
+    spec: Language,
+    record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
+) -> bool:
+    """Return whether *data* holds sibling maps whose value types force a
+    widened dict slot *spec* cannot represent.
+
+    Walks *data* pooling sibling map values exactly as
+    :func:`~literalizer._formatters.type_inference.infer_element_type`
+    derives a container's declared type: a plain dict pools its own
+    values, and a list of two or more plain dicts pools every element's
+    values into one shared slot.  A pool whose maps disagree on their
+    opener (see :func:`_sibling_maps_diverge`) declares a widened slot
+    the language cannot represent.
+    """
+    match data:
+        case OrderedMap():
+            return any(
+                _has_unrepresentable_sibling_maps(
+                    data=value,
+                    spec=spec,
+                    record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for value in data.values()
+            )
+        case dict():
+            if _sibling_maps_diverge(
+                pool=list(data.values()),
+                spec=spec,
+                record_dict_ids=record_dict_ids,
+            ):
+                return True
+            return any(
+                _has_unrepresentable_sibling_maps(
+                    data=value,
+                    spec=spec,
+                    record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for value in data.values()
+            )
+        case list():
+            min_dicts_for_pooling = 2
+            plain_dicts = [
+                item
+                for item in data
+                if isinstance(item, dict) and not isinstance(item, OrderedMap)
+            ]
+            if (
+                id(data) not in tuple_list_ids
+                and len(plain_dicts) == len(data) >= min_dicts_for_pooling
+            ):
+                pooled = [
+                    value
+                    for element in plain_dicts
+                    for value in element.values()
+                ]
+                if _sibling_maps_diverge(
+                    pool=pooled,
+                    spec=spec,
+                    record_dict_ids=record_dict_ids,
+                ):
+                    return True
+            return any(
+                _has_unrepresentable_sibling_maps(
+                    data=item,
+                    spec=spec,
+                    record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for item in data
+            )
+        case _:
+            return False
+
+
+@beartype
+def _check_unrepresentable_sibling_maps(
+    *,
+    data: Value,
+    spec: Language,
+    record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
+) -> None:
+    """Raise if *data* holds sibling maps whose widened dict slot *spec*
+    cannot represent.
+    """
+    if _dict_slot_uses_variant_typing(spec=spec) and (
+        _has_unrepresentable_sibling_maps(
+            data=data,
+            spec=spec,
+            record_dict_ids=record_dict_ids,
+            tuple_list_ids=tuple_list_ids,
+        )
+    ):
+        msg = (
+            "Container holds sibling maps whose value types force a "
+            "widened dict slot that the target language cannot "
+            "represent"
+        )
+        raise HeterogeneousSiblingMapsError(msg)
+
+
 @beartype
 def check_data(  # noqa: C901  # pylint: disable=too-complex
     *,
@@ -726,6 +917,12 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         compute_tuple_list_ids(data)
         if compute_tuple_list_ids is not None
         else frozenset()
+    )
+    _check_unrepresentable_sibling_maps(
+        data=data,
+        spec=spec,
+        record_dict_ids=record_dict_ids,
+        tuple_list_ids=tuple_list_ids,
     )
     if behavior.render_record_literal is not None and _has_mixed_record_shapes(
         data=data,
