@@ -172,6 +172,20 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_int_large", suffix="_long"),
         _ci(case_dir_name="scalar_int_very_large", suffix="_bigint"),
         _ci(case_dir_name="bool_list", suffix="_bool_list"),
+        _ci(case_dir_name="scalar_null", suffix="_null"),
+        _ci(
+            case_dir_name="scalar_int_negative_large",
+            suffix="_negative_large",
+        ),
+        _ci(case_dir_name="float_special_values", suffix="_float_specials"),
+    ),
+    "json_type_bytes_cross": (_ci(case_dir_name="binary", suffix=""),),
+    "json_type_datetime_cross": (
+        _ci(case_dir_name="scalar_datetime", suffix=""),
+        _ci(case_dir_name="scalar_datetime_naive", suffix="_naive"),
+    ),
+    "json_type_declaration_cross": (
+        _ci(case_dir_name="dict_with_list_value", suffix=""),
     ),
     "default_dict_value_type": DEFAULT_DICT_INPUTS,
     "default_dict_key_type": DEFAULT_DICT_INPUTS,
