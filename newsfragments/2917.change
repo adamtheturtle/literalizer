@@ -1,1 +1,0 @@
-C++'s ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``std::map`` values backed by a shared ``std::variant``, while preserving the uniform outer struct.

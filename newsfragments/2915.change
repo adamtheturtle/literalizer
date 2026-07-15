@@ -1,1 +1,0 @@
-Scala's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Map[String, Any]`` while preserving the uniform outer record.

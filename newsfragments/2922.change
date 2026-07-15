@@ -1,1 +1,0 @@
-V's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``map[string]IVal`` using its existing interface carrier while preserving the uniform outer struct.

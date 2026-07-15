@@ -1,1 +1,0 @@
-Under Java's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``java.util.Map<String, Object>`` instead of emitting incompatible generated record types.  Their uniform enclosing records remain generated records, and the result compiles with the standard Java toolchain.

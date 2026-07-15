@@ -3,6 +3,39 @@ Changelog
 
 .. towncrier release notes start
 
+2026.07.15
+----------
+
+- Under the Rust ``RECORD`` heterogeneous strategy, a list of records whose uniform top-level keys hold nested maps of divergent or disjoint shape under one key no longer raises ``HeterogeneousSiblingListsError``.  A shared inference pass detects a nested sibling-map family that cannot share one record shape and widens it to ``HashMap<&'static str, Value>``, wrapping the map's scalar leaves in the generated ``Value`` enum, so the enclosing record survives and the sibling list renders as compiling Rust.  This is the reference implementation; the remaining ``RECORD`` languages gain the same widening in later increments.
+
+- Under Go's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``map[string]any`` instead of raising ``HeterogeneousSiblingListsError``.  Their uniform enclosing records remain generated structs, and the result compiles with the standard Go toolchain.
+
+- Under Java's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``java.util.Map<String, Object>`` instead of emitting incompatible generated record types.  Their uniform enclosing records remain generated records, and the result compiles with the standard Java toolchain.
+
+- C#'s ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Dictionary<string, object>`` while preserving the uniform outer record.
+
+- Kotlin's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Map<String, Any?>`` while preserving the uniform outer record.
+
+- Scala's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Map[String, Any]`` while preserving the uniform outer record.
+
+- Swift's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``[String: Any]`` while preserving the uniform outer record.
+
+- C++'s ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``std::map`` values backed by a shared ``std::variant``, while preserving the uniform outer struct.
+
+- Zig's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to its generated ``ZVal`` tagged union while preserving the uniform outer struct.
+
+- Crystal's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to a ``Hash`` over a generated native scalar union while preserving the uniform outer record.
+
+- D's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``JSONValue`` while preserving the uniform outer struct.
+
+- Nim's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Table[string, Value]`` using its generated object-variant carrier while preserving the uniform outer record.
+
+- V's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``map[string]IVal`` using its existing interface carrier while preserving the uniform outer struct.
+
+- Odin's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``map[string]any`` while preserving the uniform outer struct.
+
+- C's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to the existing ``CVal``/``CKV`` tagged-union map representation, while preserving the uniform outer struct.
+
 2026.07.14
 ----------
 

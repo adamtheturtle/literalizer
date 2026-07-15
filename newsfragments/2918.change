@@ -1,1 +1,0 @@
-Zig's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to its generated ``ZVal`` tagged union while preserving the uniform outer struct.

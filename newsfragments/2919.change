@@ -1,1 +1,0 @@
-Crystal's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to a ``Hash`` over a generated native scalar union while preserving the uniform outer record.
