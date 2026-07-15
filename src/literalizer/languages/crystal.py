@@ -72,6 +72,7 @@ from literalizer._language import (
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -79,6 +80,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
@@ -423,6 +425,14 @@ class Crystal(metaclass=LanguageCls):
         "default_dict_value_type": "Int32",
         "default_dict_key_type": "Int32",
     }
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = True

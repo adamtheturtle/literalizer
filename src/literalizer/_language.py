@@ -762,6 +762,37 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+class RecordVariant(enum.Enum):
+    """Focused record behaviors that need integration variants."""
+
+    UNIFY_OPTIONAL_FIELDS = enum.auto()
+    NONRECORD_DICT_FIELD = enum.auto()
+    KEYWORD_FIELD = enum.auto()
+    FIELD_TYPE_SPLIT = enum.auto()
+
+
+class NestedMapWideningVariant(enum.Enum):
+    """Input shape used to exercise a language's nested-map widening."""
+
+    NONE = enum.auto()
+    DEFAULT = enum.auto()
+    UNIFORM_KEYS = enum.auto()
+
+
+@dataclasses.dataclass(frozen=True)
+class VariantMetadata:
+    """Language-owned metadata for constructing integration variants.
+
+    These values describe supported behaviors and compatibility constraints;
+    the integration suite remains responsible for choosing input fixtures.
+    """
+
+    collection_layout_category: str
+    record_variants: frozenset[RecordVariant]
+    nested_map_widening: NestedMapWideningVariant
+    modifier_sequence_format_overrides: dict[str, str]
+
+
 @beartype
 def _identity_constructor_target(class_name: str, /) -> str:
     """Return *class_name* as a zero-argument constructor call target."""
@@ -825,6 +856,7 @@ class LanguageCls(type):
     identifier_cases: tuple[IdentifierCase, ...]
     supported_ref_cases: frozenset[IdentifierCase]
     modifier_combinations: tuple[ModifierCombination, ...]
+    variant_metadata: VariantMetadata
     module_name_case: IdentifierCase
     extension: str
     pygments_name: str | None
@@ -853,17 +885,17 @@ class LanguageCls(type):
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
     supports_default_ordered_map_value_type: bool
-    non_default_kwargs: Mapping[str, str] = {}
+    non_default_kwargs: Mapping[str, str]
     """Valid non-default values for configurable string options.
 
     Keys are constructor field names.  Keeping these values on the language
     class lets metadata consumers exercise those options without maintaining
     a parallel language matrix.
     """
-    declaration_style_sequence_format_overrides: Mapping[str, str] = {}
+    declaration_style_sequence_format_overrides: Mapping[str, str]
     """Compatible sequence-format names for declaration-style variants."""
 
-    json_type_variant_name_suffix: str | None = None
+    json_type_variant_name_suffix: str | None
     """Stable filename suffix for a non-default JSON type variant."""
     supports_record_struct_name_prefix: bool
     supports_record_shape_names: bool

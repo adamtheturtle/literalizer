@@ -58,12 +58,14 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     identity_constructor_target,
@@ -620,6 +622,14 @@ class Dhall(metaclass=LanguageCls):
     non_default_kwargs: ClassVar[dict[str, str]] = {
         "heterogeneous_value_union_name": "JsonValue"
     }
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.UNIFORM_KEYS,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
