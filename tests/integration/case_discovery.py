@@ -899,16 +899,11 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     against ``=``, and continuation lines keep their relative offsets.
 
     ``simple_dict`` exercises a multi-line container value at indent
-    across every language with class-field modifiers.  Cpp additionally
-    gets a ``comment_scalar_before_and_inline`` case to exercise a
-    scalar whose formatted value is preceded by ``//`` comment lines
-    that carry the same ``line_prefix`` indent: the scenario that
-    previously caused Cpp to misclassify a string scalar as a typed
-    expression.  Java and CSharp cannot share that case because their
-    ``wrap_in_file`` class-field detection runs off the first token of
-    *content*, which is the leading comment rather than the modifier
-    once before-comments are prepended; fixing that latent issue is
-    out of scope for this case.
+    across every language with class-field modifiers.  Languages may
+    additionally opt into a focused ``comment_scalar_before_and_inline``
+    case through their variant metadata.  It exercises a scalar whose
+    formatted value is preceded by comment lines carrying the same
+    ``line_prefix`` indent.
     """
     cases: list[PreIndentCase] = []
     for lang_cls in sorted_languages():
@@ -922,18 +917,20 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
             )
             for combo in lang_cls.modifier_combinations
         )
-    cpp_cls = next(c for c in sorted_languages() if c.__name__ == "Cpp")
-    cases.extend(
-        PreIndentCase(
-            name=(
-                f"{cpp_cls.__name__}_pre_indent_1_{combo.name}"
-                "_comment_scalar_before_and_inline"
-            ),
-            lang_cls=cpp_cls,
-            case_dir_name="comment_scalar_before_and_inline",
-            pre_indent_level=1,
-            modifiers=combo.modifiers,
+    for lang_cls in sorted_languages():
+        if not lang_cls.variant_metadata.pre_indent_comment_scalar_variant:
+            continue
+        cases.extend(
+            PreIndentCase(
+                name=(
+                    f"{lang_cls.__name__}_pre_indent_1_{combo.name}"
+                    "_comment_scalar_before_and_inline"
+                ),
+                lang_cls=lang_cls,
+                case_dir_name="comment_scalar_before_and_inline",
+                pre_indent_level=1,
+                modifiers=combo.modifiers,
+            )
+            for combo in lang_cls.modifier_combinations
         )
-        for combo in cpp_cls.modifier_combinations
-    )
     return cases

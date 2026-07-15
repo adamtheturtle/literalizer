@@ -789,6 +789,7 @@ class VariantMetadata:
     the integration suite remains responsible for choosing input fixtures.
     """
 
+    pre_indent_comment_scalar_variant: bool
     fixture_module_name_template: str | None
     fixture_module_name_lowercase: bool
     golden_filename_lowercase: bool
