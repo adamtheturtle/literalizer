@@ -880,6 +880,17 @@ class C(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {
+        "bool_field": "bl",
+        "int_field": "integer",
+        "uint_field": "uinteger",
+        "float_field": "fp",
+        "string_field": "str",
+        "array_field": "arr",
+        "map_field": "dict",
+        "key_field": "key",
+        "value_field": "val",
+    }
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

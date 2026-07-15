@@ -366,6 +366,13 @@ class Go(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = True
+    non_default_kwargs: ClassVar[dict[str, str]] = {
+        "default_set_element_type": "string",
+        "default_sequence_element_type": "interface{}",
+        "default_dict_value_type": "interface{}",
+        "default_dict_key_type": "any",
+        "default_ordered_map_value_type": "interface{}",
+    }
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = False

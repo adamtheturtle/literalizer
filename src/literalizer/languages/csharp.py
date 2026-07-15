@@ -629,6 +629,13 @@ class CSharp(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {
+        "default_set_element_type": "string",
+        "default_sequence_element_type": "string",
+        "default_dict_value_type": "object?",
+        "default_dict_key_type": "object",
+    }
+    json_type_variant_name_suffix = "json_node"
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

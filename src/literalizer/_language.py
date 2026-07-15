@@ -835,6 +835,18 @@ class LanguageCls(type):
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
     supports_default_ordered_map_value_type: bool
+    non_default_kwargs: Mapping[str, str] = {}
+    """Valid non-default values for configurable string options.
+
+    Keys are constructor field names.  Keeping these values on the language
+    class lets metadata consumers exercise those options without maintaining
+    a parallel language matrix.
+    """
+    declaration_style_sequence_format_overrides: Mapping[str, str] = {}
+    """Compatible sequence-format names for declaration-style variants."""
+
+    json_type_variant_name_suffix: str | None = None
+    """Stable filename suffix for a non-default JSON type variant."""
     supports_record_struct_name_prefix: bool
     supports_record_shape_names: bool
     dict_supports_heterogeneous_values: bool
