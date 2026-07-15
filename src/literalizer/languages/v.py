@@ -267,24 +267,20 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
 @beartype
 def _build_v_interface_preamble(
     *,
-    compute_wrap_ids: Callable[[Value], frozenset[int]] | None = None,
+    compute_wrap_ids: Callable[[Value], frozenset[int]],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Emit ``interface IVal {}`` when an interface-wrapped map is used.
 
-    ``INTERFACE`` supplies no *compute_wrap_ids* and therefore discovers
-    all containers requiring its carrier.  ``RECORD`` passes the narrower
-    set of maps de-recordized by its shared nested-map fallback.
+    ``INTERFACE`` supplies its broad collector, while ``RECORD`` passes
+    the narrower set of maps de-recordized by its shared nested-map
+    fallback.
     """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when any container needs
         wrapping.
         """
-        wrap_ids = (
-            compute_wrap_ids(data)
-            if compute_wrap_ids is not None
-            else _v_collect_ids_needing_wrap(data=data)
-        )
+        wrap_ids = compute_wrap_ids(data)
         if not wrap_ids:
             return ()
         return (_V_IFACE_DECL,)
@@ -1193,7 +1189,9 @@ class V(metaclass=LanguageCls):
                     ),
                 )
             case "INTERFACE":
-                return _build_v_interface_preamble()
+                return _build_v_interface_preamble(
+                    compute_wrap_ids=_v_collect_ids_needing_wrap,
+                )
             case _:
                 return _build_v_empty_container_preamble()
 
