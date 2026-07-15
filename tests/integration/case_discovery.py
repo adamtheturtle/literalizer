@@ -141,8 +141,8 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # consumers, so it stays out of the all-languages base discovery.
         "dhall_nested_map_widening",
         # A string mixing an embedded quote, a control character, and a
-        # multi-byte character exercises every JSON value backend's string
-        # escaping.  It stays variant-only because the ``json_type`` axis is
+        # multi-byte character exercises string escaping for every JSON value
+        # back end.  It stays variant-only because the ``json_type`` axis is
         # its sole consumer.
         "json_string_escaping",
     }
