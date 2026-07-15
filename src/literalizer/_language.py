@@ -787,6 +787,7 @@ class VariantMetadata:
     the integration suite remains responsible for choosing input fixtures.
     """
 
+    pre_indent_comment_scalar_variant: bool
     collection_layout_category: str
     record_variants: frozenset[RecordVariant]
     nested_map_widening: NestedMapWideningVariant

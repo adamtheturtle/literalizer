@@ -991,6 +991,7 @@ class Mojo(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        pre_indent_comment_scalar_variant=False,
         collection_layout_category="collection_layout",
         record_variants=frozenset(),
         nested_map_widening=NestedMapWideningVariant.NONE,
