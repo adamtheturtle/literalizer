@@ -506,6 +506,7 @@ class Scala(metaclass=LanguageCls):
     non_default_kwargs: ClassVar[dict[str, str]] = {}
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
+    supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         fixture_module_name_template="Fixture_{parent}_{stem}",
         fixture_module_name_lowercase=False,
