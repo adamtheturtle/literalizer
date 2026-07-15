@@ -501,6 +501,7 @@ class Swift(metaclass=LanguageCls):
     pygments_name = "swift"
     supports_special_floats = True
     supports_variable_names = True
+    normalizes_new_variable_names = True
     supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
