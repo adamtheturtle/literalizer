@@ -466,16 +466,6 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
-# Languages whose primitive string type cannot hold non-ASCII
-# characters in a portable source file.  The ``Sml`` language targets
-# a compiler whose ``string`` is an 8-bit type and which rejects raw
-# UTF-8 byte sequences without a non-portable annotation; ``\uXXXX``
-# escapes above U+00FF are likewise rejected because the value does
-# not fit in a ``char``.  ``string_unicode`` is the only case that
-# exercises this today.
-_LANGS_WITHOUT_NON_ASCII_STRING_LITERALS = frozenset({"Sml"})
-
-
 def has_non_ascii_strings(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a string with a non-ASCII
     character.
@@ -578,8 +568,7 @@ def discover_cases(
                 continue
             if (
                 non_ascii_string
-                and lang_cls.__name__
-                in _LANGS_WITHOUT_NON_ASCII_STRING_LITERALS
+                and not lang_cls.supports_non_ascii_string_literals
             ):
                 continue
             cases.append((case_dir.name, lang_cls))
@@ -651,7 +640,7 @@ def discover_combined_cases(
                 continue
             if (
                 non_ascii_string
-                and lang_name in _LANGS_WITHOUT_NON_ASCII_STRING_LITERALS
+                and not lang_cls.supports_non_ascii_string_literals
             ):
                 continue
             spec = make_spec(lang_cls=lang_cls)

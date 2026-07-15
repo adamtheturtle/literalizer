@@ -2139,6 +2139,7 @@ class Rust(metaclass=LanguageCls):
         "STATIC": "ARRAY",
     }
     json_type_variant_name_suffix: ClassVar[str | None] = None
+    supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         collection_layout_category="collection_layout",
         record_variants=frozenset(
