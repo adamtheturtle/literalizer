@@ -17,7 +17,7 @@ def test_elm_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -31,5 +31,5 @@ def test_elm_json_type_rejects_nested_non_string_dict_keys() -> None:
             source="[{1: one}]",
             input_format=InputFormat.YAML,
             language=Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

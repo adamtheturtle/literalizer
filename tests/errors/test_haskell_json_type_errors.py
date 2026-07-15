@@ -17,7 +17,7 @@ def test_haskell_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -31,7 +31,7 @@ def test_haskell_json_type_rejects_aeson_qq_terminator_in_string() -> None:
             source='{"note": "ends with |] here"}',
             input_format=InputFormat.JSON,
             language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -49,7 +49,7 @@ def test_haskell_json_type_accepts_aeson_qq_interpolation_metasyntax() -> None:
         source='{"note": "hello #{world} and $ident here", "$key": "x"}',
         input_format=InputFormat.JSON,
         language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-        variable_form=NewVariable(name="my_data"),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
     )
     assert "#{world}" in result.code
     assert "$ident" in result.code

@@ -47,7 +47,7 @@ def _build_document(json_text: str) -> str:
         language=Norg(),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_form=NewVariable(name=_VAR_NAME),
+        variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
         wrap_in_file=False,
     )
     return f"{result.code}\n"

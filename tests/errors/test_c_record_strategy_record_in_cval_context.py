@@ -59,5 +59,5 @@ def test_c_record_strategy_rejects_record_in_cval_context(
             input_format=InputFormat.YAML,
             language=language,
             wrap_in_file=True,
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

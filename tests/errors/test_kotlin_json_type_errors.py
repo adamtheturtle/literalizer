@@ -22,7 +22,7 @@ def test_kotlin_json_type_rejects_non_string_dict_keys() -> None:
             language=Kotlin(
                 json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 

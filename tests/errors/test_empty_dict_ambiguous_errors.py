@@ -25,7 +25,7 @@ def _literalize(language: Language, value: object) -> None:
         source=json.dumps(obj=value),
         input_format=InputFormat.JSON,
         language=language,
-        variable_form=NewVariable(name="x"),
+        variable_form=NewVariable(name="x", modifiers=frozenset()),
     )
 
 

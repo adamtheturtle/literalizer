@@ -22,7 +22,7 @@ def test_purescript_json_type_rejects_non_string_dict_keys() -> None:
             language=PureScript(
                 json_type=PureScript.json_types.ARGONAUT_JSON,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -38,7 +38,7 @@ def test_purescript_json_type_rejects_special_float_nan() -> None:
             language=PureScript(
                 json_type=PureScript.json_types.ARGONAUT_JSON,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -54,7 +54,7 @@ def test_purescript_json_type_rejects_special_float_infinity() -> None:
             language=PureScript(
                 json_type=PureScript.json_types.ARGONAUT_JSON,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -74,7 +74,7 @@ def test_purescript_json_type_escapes_quotes_in_string_values() -> None:
         language=PureScript(
             json_type=PureScript.json_types.ARGONAUT_JSON,
         ),
-        variable_form=NewVariable(name="my_data"),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
     )
     assert "she said " in result.code
     assert r"\\\"hi\\\"" in result.code

@@ -131,7 +131,10 @@ def _build_program(*, json_text: str) -> str:
         language=Cobol(json_type=Cobol.json_types.CJSON),
         pre_indent_level=0,
         include_delimiters=True,
-        variable_form=literalizer.NewVariable(name=_VAR_NAME),
+        variable_form=literalizer.NewVariable(
+            name=_VAR_NAME,
+            modifiers=frozenset(),
+        ),
         wrap_in_file=False,
     )
     working_storage = _section(

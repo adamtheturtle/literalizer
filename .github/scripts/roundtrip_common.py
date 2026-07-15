@@ -128,7 +128,7 @@ def literalize_new_variable(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=True,
-        variable_form=NewVariable(name=var_name),
+        variable_form=NewVariable(name=var_name, modifiers=frozenset()),
         wrap_in_file=False,
     )
 

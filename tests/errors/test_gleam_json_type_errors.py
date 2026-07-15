@@ -20,7 +20,7 @@ def test_gleam_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -36,5 +36,5 @@ def test_gleam_json_type_rejects_special_floats() -> None:
             source="Infinity",
             input_format=InputFormat.JSON5,
             language=Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

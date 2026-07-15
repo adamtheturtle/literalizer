@@ -16,7 +16,7 @@ def _narrow_literalize(source: str) -> None:
         source=source,
         input_format=InputFormat.JSON,
         language=D(json_type=None),
-        variable_form=NewVariable(name="my_data"),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
     )
 
 

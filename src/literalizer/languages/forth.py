@@ -324,6 +324,7 @@ class Forth(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=_format_date_forth,
             type_produced=str,
+            preamble_lines=(),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -336,11 +337,13 @@ class Forth(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_datetime_forth,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

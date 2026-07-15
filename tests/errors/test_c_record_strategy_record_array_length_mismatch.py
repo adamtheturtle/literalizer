@@ -57,5 +57,5 @@ def test_c_record_strategy_rejects_array_field_length_mismatch(
             input_format=InputFormat.YAML,
             language=language,
             wrap_in_file=True,
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

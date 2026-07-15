@@ -20,7 +20,7 @@ def test_cpp_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -42,7 +42,7 @@ def test_cpp_json_type_rejects_raw_string_terminator_in_key() -> None:
             source='{")json": "x"}',
             input_format=InputFormat.JSON,
             language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 

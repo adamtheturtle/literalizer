@@ -50,8 +50,8 @@ class DateFormatConfig:
     """Configuration for a single date format."""
 
     formatter: Callable[[datetime.date], str]
-    preamble_lines: tuple[str, ...] = ()
-    type_produced: type = datetime.date
+    preamble_lines: tuple[str, ...]
+    type_produced: type
 
 
 @dataclasses.dataclass(frozen=True)
@@ -59,8 +59,8 @@ class DatetimeFormatConfig:
     """Configuration for a single datetime format."""
 
     formatter: Callable[[datetime.datetime], str]
-    preamble_lines: tuple[str, ...] = ()
-    type_produced: type = datetime.datetime
+    preamble_lines: tuple[str, ...]
+    type_produced: type
 
 
 @beartype
@@ -592,15 +592,15 @@ class HeterogeneousBehavior:
     returns ``None`` for a record-eligible dict the strategy does not
     render as a struct after all -- a nested sibling map widened to a
     plain map (issue #2910) -- so the shared formatter falls through to
-    normal map rendering.  The hook itself defaults to ``None`` for
+    normal map rendering.  The hook is ``None`` for
     strategies that do not opt into the ``RECORD`` style.
 
     ``compute_record_shapes`` walks the data once and returns a
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
     the strategy will render as a record literal.  Used by
     :func:`~literalizer._checks.check_data` to carve record-eligible
-    dicts out of the heterogeneous-values checks.  Defaults to
-    ``None`` for non-RECORD strategies, paired with
+    dicts out of the heterogeneous-values checks.  It is ``None`` for
+    non-RECORD strategies, paired with
     ``render_record_literal``: a behavior either sets both (RECORD)
     or neither.
 
@@ -608,7 +608,7 @@ class HeterogeneousBehavior:
     scalar array as a native tuple given the raw list and its
     pre-formatted elements, returning a :class:`RenderedTupleLiteral`
     (structured pieces the same shared layout code assembles into
-    compact or multiline form).  Defaults to ``None`` for strategies
+    compact or multiline form).  It is ``None`` for strategies
     that do not opt into the ``TUPLE`` style.
 
     ``compute_tuple_list_ids`` walks the data once and returns the set
@@ -618,7 +618,7 @@ class HeterogeneousBehavior:
     scalar buckets).  Used by
     :func:`~literalizer._checks.check_data` to carve those lists out of
     the heterogeneous-scalar / mixed-list / mixed-dict-value checks.
-    Defaults to ``None`` for non-TUPLE strategies, paired with
+    It is ``None`` for non-TUPLE strategies, paired with
     ``render_tuple_literal``: a behavior either sets both (TUPLE) or
     neither.  The ``TUPLE`` strategy additionally sets the ``RECORD``
     hooks so a record field whose value is a heterogeneous scalar
@@ -634,26 +634,24 @@ class HeterogeneousBehavior:
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
-    widens_nested_maps_by_wrapping_scalars: bool = False
-    widens_unrecordizable_nested_sibling_maps: bool = False
+    widens_nested_maps_by_wrapping_scalars: bool
+    widens_unrecordizable_nested_sibling_maps: bool
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
             RenderedRecordLiteral | None,
         ]
         | None
-    ) = None
-    compute_record_shapes: (
-        Callable[[Value], Mapping[int, RecordShape]] | None
-    ) = None
+    )
+    compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]] | None
     render_tuple_literal: (
         Callable[
             [list[Value], Sequence[str]],
             RenderedTupleLiteral,
         ]
         | None
-    ) = None
-    compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None = None
+    )
+    compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None
 
 
 @beartype
@@ -688,6 +686,12 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     wrap_non_scalar=None,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
     dict_open_for_wrap_ids=None,
+    widens_nested_maps_by_wrapping_scalars=False,
+    widens_unrecordizable_nested_sibling_maps=False,
+    render_record_literal=None,
+    compute_record_shapes=None,
+    render_tuple_literal=None,
+    compute_tuple_list_ids=None,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.

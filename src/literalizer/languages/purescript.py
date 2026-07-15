@@ -910,6 +910,7 @@ class PureScript(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=_format_purescript_date_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -922,11 +923,13 @@ class PureScript(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_purescript_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=_format_purescript_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

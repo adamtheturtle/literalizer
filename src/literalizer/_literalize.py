@@ -163,7 +163,7 @@ class LiteralizeResult:
     lines.
     """
 
-    pre_declaration_comments: tuple[str, ...] = ()
+    pre_declaration_comments: tuple[str, ...]
     """Already-formatted comment lines that appear between
     :attr:`body_preamble` and the variable declaration/assignment in
     :attr:`code`.  These come from scalar before-comments when the
@@ -173,7 +173,7 @@ class LiteralizeResult:
     :attr:`declaration_code`.
     """
 
-    types_present: frozenset[type] = frozenset()
+    types_present: frozenset[type]
     """The set of Python types observed in the source data (e.g.
     ``int``, ``str``, ``list``, ``dict``).  Callers that combine
     multiple ``literalize`` results (for example, a test harness that
@@ -183,7 +183,7 @@ class LiteralizeResult:
     across the combined output.
     """
 
-    contains_standalone_comments: bool = False
+    contains_standalone_comments: bool
     """Whether the rendered source carried standalone comments (lines
     whose only content is a comment, distinct from inline trailing
     comments).  Set when ``literalize_call`` parses YAML input that
@@ -194,7 +194,7 @@ class LiteralizeResult:
     to decide whether wrapping is safe.
     """
 
-    source_data: Value = None
+    source_data: Value
     """The parsed source value the literal was rendered from.  Most
     callers do not need it.  Callers that combine multiple
     ``literalize`` results and re-invoke
@@ -204,7 +204,7 @@ class LiteralizeResult:
     placeholder.
     """
 
-    sections: tuple[FileSection, ...] = ()
+    sections: tuple[FileSection, ...]
     """For multi-section languages, the rendered output split into its
     file regions; empty for the single-section common case.
 
@@ -261,7 +261,7 @@ class NewVariable:
     """Wrap output in a new variable declaration."""
 
     name: str
-    modifiers: frozenset[enum.Enum] = frozenset()
+    modifiers: frozenset[enum.Enum]
     """Declaration modifiers to apply.  Each language exposes its own
     modifier enum as ``Language.Modifiers`` (e.g. ``Java.Modifiers.FINAL``,
     ``CSharp.Modifiers.READONLY``, ``Cpp.Modifiers.STATIC``).  Values
@@ -285,7 +285,7 @@ class BothVariableForms:
     """
 
     name: str
-    modifiers: frozenset[enum.Enum] = frozenset()
+    modifiers: frozenset[enum.Enum]
     """Declaration modifiers applied to the declaration half.  See
     :attr:`NewVariable.modifiers`.
     """
@@ -2395,6 +2395,9 @@ def _literalize_apply_form(
             body_preamble=(),
             types_present=computed.types_present,
             source_data=pre_form.data_for_preamble,
+            pre_declaration_comments=(),
+            contains_standalone_comments=False,
+            sections=(),
         )
 
     return LiteralizeResult(
@@ -2405,6 +2408,7 @@ def _literalize_apply_form(
         types_present=computed.types_present,
         source_data=pre_form.data_for_preamble,
         sections=decode_file_sections(result),
+        contains_standalone_comments=False,
     )
 
 
@@ -2467,6 +2471,9 @@ def _literalize_both_forms(
         body_preamble=(),
         types_present=declaration.types_present,
         source_data=declaration.source_data,
+        pre_declaration_comments=(),
+        contains_standalone_comments=False,
+        sections=(),
     )
 
 
@@ -2518,7 +2525,9 @@ def _literalize_bound_refs(
             _literalize_value_binding(
                 value=bound_refs[name],
                 language=language,
-                variable_form=NewVariable(name=converted_name),
+                variable_form=NewVariable(
+                    name=converted_name, modifiers=frozenset()
+                ),
             )
         )
     effective_ref_values: dict[str, Value] = dict(explicit_ref_values or {})
@@ -2602,6 +2611,9 @@ def _literalize_value_binding(
         body_preamble=computed.body,
         types_present=computed.types_present,
         source_data=value,
+        pre_declaration_comments=(),
+        contains_standalone_comments=False,
+        sections=(),
     )
 
 
@@ -2695,6 +2707,9 @@ def _compose_bound_refs(
         body_preamble=(),
         types_present=union_types,
         source_data=main_result.source_data,
+        pre_declaration_comments=(),
+        contains_standalone_comments=False,
+        sections=(),
     )
 
 
@@ -4286,6 +4301,8 @@ def _compose_call_with_bound_ref_declarations(
         types_present=types_present,
         contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
+        pre_declaration_comments=(),
+        sections=(),
     )
     stub_arg_values: Sequence[Value] = (
         data_for_preamble
@@ -4302,6 +4319,7 @@ def _compose_call_with_bound_ref_declarations(
                     if ref_case is not None
                     else name
                 ),
+                modifiers=frozenset(),
             ),
         )
         for name, value in bound_refs.items()
@@ -4408,6 +4426,8 @@ def _wrap_call_result_in_file(
         types_present=types_present,
         contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
+        pre_declaration_comments=(),
+        sections=(),
     )
 
 
@@ -5022,6 +5042,8 @@ def literalize_call(
         types_present=computed.types_present,
         contains_standalone_comments=contains_standalone_comments,
         source_data=data_for_preamble,
+        pre_declaration_comments=(),
+        sections=(),
     )
 
 
@@ -5171,4 +5193,6 @@ def _literalize_call_with_declarations(
         types_present=union_types,
         contains_standalone_comments=call.contains_standalone_comments,
         source_data=call.source_data,
+        pre_declaration_comments=(),
+        sections=(),
     )

@@ -48,5 +48,5 @@ def test_record_strategy_rejects_non_record_dict_field(
             input_format=input_format,
             language=language,
             wrap_in_file=True,
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

@@ -197,8 +197,14 @@ class Lua(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Lua."""
 
-        LUA = DateFormatConfig(formatter=_format_date_lua)
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        LUA = DateFormatConfig(
+            formatter=_format_date_lua,
+            preamble_lines=(),
+            type_produced=datetime.date,
+        )
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -207,15 +213,21 @@ class Lua(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Lua."""
 
-        LUA = DatetimeFormatConfig(formatter=_format_datetime_lua)
+        LUA = DatetimeFormatConfig(
+            formatter=_format_datetime_lua,
+            preamble_lines=(),
+            type_produced=datetime.datetime,
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

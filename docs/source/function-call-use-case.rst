@@ -145,7 +145,7 @@ The call still renders only the identifier, but the referenced value participate
        source="[1, 2, 3]",
        input_format=InputFormat.JSON,
        language=language,
-       variable_form=NewVariable(name="myList"),
+       variable_form=NewVariable(name="myList", modifiers=frozenset()),
    )
    call = literalize_call(
        source='[[{"$ref": "myList"}, 42]]',

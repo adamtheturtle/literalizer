@@ -784,6 +784,7 @@ class Elm(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=_format_elm_date_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -796,11 +797,13 @@ class Elm(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=_format_elm_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=_format_elm_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

@@ -161,7 +161,7 @@ The same source, rendered for Go in each form:
        source=source,
        input_format=InputFormat.JSON,
        language=Go(),
-       variable_form=NewVariable(name="config"),
+       variable_form=NewVariable(name="config", modifiers=frozenset()),
    )
    assert new_variable.code == (
        'config := map[string]any{\n\t"host": "localhost",\n\t"port": 8080,\n}'
@@ -181,7 +181,10 @@ The same source, rendered for Go in each form:
        source=source,
        input_format=InputFormat.JSON,
        language=Go(),
-       variable_form=BothVariableForms(name="config"),
+       variable_form=BothVariableForms(
+           name="config",
+           modifiers=frozenset(),
+       ),
        wrap_in_file=True,
    )
    assert both_forms.code == (

@@ -56,7 +56,7 @@ def wrap_variable_form() -> literalizer.NewVariable:
     the signal that the language cannot wrap output in a named
     variable, rather than pre-filtering on ``supports_variable_names``.
     """
-    return literalizer.NewVariable(name="my_data")
+    return literalizer.NewVariable(name="my_data", modifiers=frozenset())
 
 
 @beartype
@@ -2397,7 +2397,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Rust_json_type_serde_json_value_lazy_static",
@@ -2426,7 +2428,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Java_json_type_jackson_json_node_combined",
@@ -2440,7 +2444,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Scala_json_type_circe_combined",
@@ -2455,7 +2461,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="CSharp_json_type_json_node_combined",
@@ -2469,7 +2477,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Nim_json_type_json_node_combined",
@@ -2483,7 +2493,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Zig_json_type_std_json_value_combined",
@@ -2498,7 +2510,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Haskell_json_type_aeson_value_existing",
@@ -2559,7 +2573,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="bool_list",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Kotlin_json_type_kotlinx_json_element_combined",
@@ -2574,7 +2590,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Cpp_json_type_nlohmann_json_combined",
@@ -2588,7 +2606,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="C_json_type_cjson_combined",
@@ -2602,7 +2622,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Cobol_json_type_cjson_combined",
@@ -2616,7 +2638,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             # A string mixing an embedded quote, a control character, and
             # a multi-byte character: COBOL alphanumeric literals have no
@@ -2653,7 +2677,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="FSharp_json_type_json_node_null",
@@ -2711,7 +2737,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="scalar_datetime_naive",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Gleam_json_type_gleam_json_json_bytes_base64",
@@ -2726,7 +2754,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="binary",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Gleam_json_type_gleam_json_json_combined",
@@ -2740,7 +2770,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="dict_with_list_value",
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="Nim_json_type_json_node_let",
@@ -2773,7 +2805,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="bool_list",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             # Covers the negative-numeric paren-wrap arm of
             # ``_format_elm_json_with_ctor`` (positive numerals pass
@@ -2791,7 +2825,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="scalar_int_negative_large",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             # Covers the ``inf``/``nan`` arms of the JSON-mode float
             # formatter on Elm.
@@ -2809,7 +2845,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="float_special_values",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             # Covers ``bytes_format=BASE64`` under JSON mode (the
             # default JSON variant uses ``HEX``).
@@ -2826,7 +2864,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="binary",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             # Covers ``datetime_format=EPOCH`` under JSON mode (datetime
             # rendered as ``Json.Encode.int`` of Unix epoch seconds).
@@ -2843,7 +2883,9 @@ def build_variant_cases() -> list[VariantCase]:
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 case_dir_name="scalar_datetime",
-                variable_form=literalizer.NewVariable(name="my_data"),
+                variable_form=literalizer.NewVariable(
+                    name="my_data", modifiers=frozenset()
+                ),
             ),
             VariantCase(
                 variant_name="PureScript_json_type_argonaut_json_existing",

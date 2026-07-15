@@ -89,9 +89,9 @@ _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
 class _HclScanState:
     """Mutable HCL bracket/string scan state across lines."""
 
-    depth: int = 0
-    in_string: bool = False
-    escaped: bool = False
+    depth: int
+    in_string: bool
+    escaped: bool
 
 
 @beartype
@@ -145,7 +145,7 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     """
     statements: list[str] = []
     current: list[str] = []
-    state = _HclScanState()
+    state = _HclScanState(depth=0, in_string=False, escaped=False)
     for line in content.split(sep="\n"):
         current.append(line)
         _advance_scan_state(line=line, state=state)
@@ -211,7 +211,9 @@ class Hcl(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Hcl."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -223,11 +225,13 @@ class Hcl(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

@@ -1204,7 +1204,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
-        variable_form=literalizer.NewVariable(name="my_data"),
+        variable_form=literalizer.NewVariable(
+            name="my_data", modifiers=frozenset()
+        ),
         zip_source=None,
         zip_input_format=None,
         comment_source=None,
@@ -1227,7 +1229,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
-        variable_form=literalizer.NewVariable(name="my_data"),
+        variable_form=literalizer.NewVariable(
+            name="my_data", modifiers=frozenset()
+        ),
         zip_source=None,
         zip_input_format=None,
         comment_source=None,
@@ -1259,6 +1263,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=literalizer.NewVariable(
             name="my_data",
+            modifiers=frozenset(),
         ),
         variable_form=literalizer.ExistingVariable(name="my_data"),
         zip_source=None,
@@ -1291,7 +1296,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
-        variable_form=literalizer.NewVariable(name="my_data"),
+        variable_form=literalizer.NewVariable(
+            name="my_data", modifiers=frozenset()
+        ),
         zip_source=None,
         zip_input_format=None,
         comment_source=None,
@@ -1319,7 +1326,9 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_inline_multiline_dict_args=False,
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
-        variable_form=literalizer.NewVariable(name="my_data"),
+        variable_form=literalizer.NewVariable(
+            name="my_data", modifiers=frozenset()
+        ),
         zip_source=None,
         zip_input_format=None,
         comment_source=None,
@@ -1760,6 +1769,7 @@ def _run_call_with_declarations(
                 language=spec,
                 variable_form=literalizer.NewVariable(
                     name=declaration_names[ref_name],
+                    modifiers=frozenset(),
                 ),
             )
             for ref_name, ref_source in config.ref_declarations.items()

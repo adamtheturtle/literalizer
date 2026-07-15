@@ -340,8 +340,14 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Erlang."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
-        ERLANG = DateFormatConfig(formatter=_format_date_erlang)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
+        ERLANG = DateFormatConfig(
+            formatter=_format_date_erlang,
+            preamble_lines=(),
+            type_produced=datetime.date,
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -353,12 +359,18 @@ class Erlang(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
-        ERLANG = DatetimeFormatConfig(formatter=_format_datetime_erlang)
+        ERLANG = DatetimeFormatConfig(
+            formatter=_format_datetime_erlang,
+            preamble_lines=(),
+            type_produced=datetime.datetime,
+        )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

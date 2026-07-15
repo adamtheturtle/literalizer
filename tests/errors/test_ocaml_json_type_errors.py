@@ -17,5 +17,5 @@ def test_ocaml_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

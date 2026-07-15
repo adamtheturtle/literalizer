@@ -22,7 +22,7 @@ def test_scheme_json_type_rejects_non_string_dict_keys() -> None:
             language=Scheme(
                 json_type=Scheme.json_types.GUILE_JSON,
             ),
-            variable_form=NewVariable(name="my-data"),
+            variable_form=NewVariable(name="my-data", modifiers=frozenset()),
         )
 
 
@@ -38,7 +38,7 @@ def test_scheme_json_type_rejects_special_float_nan() -> None:
             language=Scheme(
                 json_type=Scheme.json_types.GUILE_JSON,
             ),
-            variable_form=NewVariable(name="my-data"),
+            variable_form=NewVariable(name="my-data", modifiers=frozenset()),
         )
 
 
@@ -54,5 +54,5 @@ def test_scheme_json_type_rejects_special_float_infinity() -> None:
             language=Scheme(
                 json_type=Scheme.json_types.GUILE_JSON,
             ),
-            variable_form=NewVariable(name="my-data"),
+            variable_form=NewVariable(name="my-data", modifiers=frozenset()),
         )
