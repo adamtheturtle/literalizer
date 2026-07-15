@@ -52,7 +52,7 @@ def test_language_metadata_is_declared_by_each_language(
 
 
 def test_language_metadata_has_no_metaclass_defaults() -> None:
-    """The metaclass contract must not conceal missing declarations."""
+    """The meta-class contract must not conceal missing declarations."""
     inherited_defaults = _LANGUAGE_OWNED_METADATA & vars(LanguageCls).keys()
     assert not inherited_defaults
 

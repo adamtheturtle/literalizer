@@ -3,7 +3,7 @@
 The main variant matrix is capability-driven.  These cases deliberately
 exercise particular interactions in particular language implementations, so
 keeping them in a separate, declarative table makes that test policy visible
-without teaching the matrix orchestrator about every language class.
+without teaching the matrix builder about every language class.
 """
 
 import dataclasses
@@ -179,7 +179,7 @@ _EXTRA_CASES: tuple[_ExtraCase, ...] = (
         datetime_format=None,
         bytes_format=None,
     ),
-    # The shared JSON inputs contain no False value, so this pins OCaml's
+    # The shared JSON inputs contain no False value, so this pins the OCaml
     # YOJSON_SAFE_T false-literal branch.
     _ExtraCase(
         lang_cls=OCaml,
@@ -423,16 +423,17 @@ def _build_variable_form(
     *, kind: _VariableFormKind
 ) -> literalizer.VariableForm:
     """Build the variable form selected by *kind*."""
-    match kind:
-        case _VariableFormKind.NEW:
-            return wrap_variable_form()
-        case _VariableFormKind.BOTH:
-            return literalizer.BothVariableForms(
-                name="my_data",
-                modifiers=frozenset(),
-            )
-        case _VariableFormKind.EXISTING:
-            return literalizer.ExistingVariable(name="my_data")
+    forms: dict[_VariableFormKind, literalizer.VariableForm] = {
+        _VariableFormKind.NEW: wrap_variable_form(),
+        _VariableFormKind.BOTH: literalizer.BothVariableForms(
+            name="my_data",
+            modifiers=frozenset(),
+        ),
+        _VariableFormKind.EXISTING: literalizer.ExistingVariable(
+            name="my_data"
+        ),
+    }
+    return forms[kind]
 
 
 @beartype
