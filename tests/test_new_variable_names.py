@@ -28,3 +28,16 @@ def test_zig_new_variable_reserved_name_is_normalized() -> None:
     )
 
     assert "const literalizer_error: ZVal = .{ .int = 1 };" in result.code
+
+
+def test_zig_new_variable_malformed_name_is_normalized() -> None:
+    """A malformed NewVariable name must not produce invalid Zig."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Zig(),
+        variable_form=NewVariable(name="a-b", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "const a_b: ZVal = .{ .int = 1 };" in result.code
