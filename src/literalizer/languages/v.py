@@ -58,7 +58,10 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
-from literalizer._formatters.type_inference import infer_element_type
+from literalizer._formatters.type_inference import (
+    infer_element_type,
+    record_shape_for_dict,
+)
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     collect_sibling_map_wrap_ids,
@@ -105,7 +108,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -262,14 +265,26 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
 
 
 @beartype
-def _build_v_interface_preamble() -> Callable[[Value], tuple[str, ...]]:
-    """INTERFACE strategy: emit ``interface IVal {}`` when needed."""
+def _build_v_interface_preamble(
+    *,
+    compute_wrap_ids: Callable[[Value], frozenset[int]] | None = None,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Emit ``interface IVal {}`` when an interface-wrapped map is used.
+
+    ``INTERFACE`` supplies no *compute_wrap_ids* and therefore discovers
+    all containers requiring its carrier.  ``RECORD`` passes the narrower
+    set of maps de-recordized by its shared nested-map fallback.
+    """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when any container needs
         wrapping.
         """
-        wrap_ids = _v_collect_ids_needing_wrap(data=data)
+        wrap_ids = (
+            compute_wrap_ids(data)
+            if compute_wrap_ids is not None
+            else _v_collect_ids_needing_wrap(data=data)
+        )
         if not wrap_ids:
             return ()
         return (_V_IFACE_DECL,)
@@ -506,15 +521,14 @@ def _v_record_literal(
 def _build_v_record_preamble(
     *,
     record_preamble: Callable[[Value], tuple[str, ...]],
+    interface_preamble: Callable[[Value], tuple[str, ...]],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
-    Composes the ``interface IVal {}`` line (emitted only when the data
-    contains an empty list, dict, or set, whose V literal is
-    ``[]IVal{}`` / ``map[string]IVal{}`` and whose declared field type
-    is correspondingly ``[]IVal`` / ``map[string]IVal``) followed by the
-    generated ``struct`` declarations.  The interface precedes the
-    declarations so a declared field may name ``[]IVal``.
+    Composes the ``interface IVal {}`` line (emitted for an empty
+    collection or a de-recordized nested map) followed by generated
+    ``struct`` declarations.  The interface precedes declarations so a
+    declared field may name ``[]IVal`` or ``map[string]IVal``.
     """
     empty_container_preamble = _build_v_empty_container_preamble()
 
@@ -522,8 +536,14 @@ def _build_v_record_preamble(
         """Return the ``interface IVal {}`` line (when needed) plus the
         ``struct`` declarations.
         """
-        return tuple(empty_container_preamble(data)) + tuple(
-            record_preamble(data),
+        return tuple(
+            dict.fromkeys(
+                (
+                    *empty_container_preamble(data),
+                    *interface_preamble(data),
+                    *record_preamble(data),
+                ),
+            ),
         )
 
     return _record_pre
@@ -1056,13 +1076,11 @@ class V(metaclass=LanguageCls):
         ``[]`` of its element type (an empty list to ``[]IVal``,
         matching the ``[]IVal{}`` empty literal).
 
-        An ordered map or non-record dict field is out of scope for
-        the base ``RECORD`` port (the cross-language decision is
-        tracked in #2317): V's only such corpus case
-        (``multiline_sibling_list_widening``) carries heterogeneous
-        sibling lists V's array format cannot represent, so it is
-        rejected before formatting and no record golden reaches the
-        ``map``-typed fallback.
+        An ordered map remains out of scope for the base ``RECORD``
+        port (the cross-language decision is tracked in #2317).  A
+        plain nested map de-recordized by the shared sibling-map
+        fallback is instead typed as ``map[string]IVal`` by
+        :meth:`_v_record_field_type`.
         """
         value = self._v_epoch_normalized(value)
         match value:
@@ -1090,6 +1108,12 @@ class V(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"[]{request.element_record_name}"
+        if (
+            isinstance(request.value, dict)
+            and not isinstance(request.value, OrderedMap)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return f"map[string]{_V_IFACE_NAME}"
         return self._v_type_for_value(request.value)
 
     def _v_render_record_declaration(
@@ -1131,11 +1155,21 @@ class V(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
+            widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
+        )
+        interface_behavior = _build_v_interface_behavior()
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior,
+                wrap_scalar=interface_behavior.wrap_scalar,
+                wrap_non_scalar=interface_behavior.wrap_non_scalar,
+                widens_nested_maps_by_wrapping_scalars=True,
+            ),
         )
 
     @cached_property
@@ -1152,6 +1186,11 @@ class V(metaclass=LanguageCls):
             case "RECORD":
                 return _build_v_record_preamble(
                     record_preamble=self._record_strategy.preamble,
+                    interface_preamble=_build_v_interface_preamble(
+                        compute_wrap_ids=(
+                            self._record_strategy.behavior.compute_wrap_ids
+                        ),
+                    ),
                 )
             case "INTERFACE":
                 return _build_v_interface_preamble()
