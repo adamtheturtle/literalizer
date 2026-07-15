@@ -55,6 +55,7 @@ from literalizer._formatters.record_strategy import (
 from literalizer._formatters.type_inference import (
     MixedNumeric,
     infer_element_type,
+    record_shape_for_dict,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -96,7 +97,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -366,6 +367,21 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
 
 
 _STD_JSON_STATIC_PREAMBLE: tuple[str, ...] = ('const std = @import("std");',)
+
+_ZVAL_STATIC_PREAMBLE: tuple[str, ...] = (
+    "const ZVal = union(enum) {",
+    "    nil,",
+    "    bool: bool,",
+    "    int: i64,",
+    "    uint: u64,",
+    "    float: f64,",
+    "    str: []const u8,",
+    "    arr: []const ZVal,",
+    "    map: []const ZKV,",
+    "    set: []const ZVal,",
+    "};",
+    "const ZKV = struct { key: []const u8, val: ZVal };",
+)
 
 _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
     "var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);",
@@ -1212,6 +1228,12 @@ class Zig(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"[]const {request.element_record_name}"
+        if (
+            isinstance(request.value, dict)
+            and not isinstance(request.value, OrderedMap)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return "ZVal"
         return self._zig_value_type(request.value)
 
     @cached_property
@@ -1229,11 +1251,31 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open=".{ .map = &.{",
+        )
+
+        def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
+            """Tag a scalar stored in a widened ``ZVal`` map."""
+            if isinstance(raw_value, bool):
+                return f".{{ .bool = {formatted} }}"
+            return _format_zig_entry(
+                original=raw_value,
+                formatted=formatted,
+                date_type=self.date_format.value.type_produced,
+                datetime_type=self.datetime_format.value.type_produced,
+            )
+
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior,
+                wrap_scalar=_wrap_scalar,
+                widens_nested_maps_by_wrapping_scalars=True,
+            ),
         )
 
     @cached_property
@@ -1251,20 +1293,7 @@ class Zig(metaclass=LanguageCls):
             return _STD_JSON_STATIC_PREAMBLE
         if self._record_strategy_active:
             return ()
-        return (
-            "const ZVal = union(enum) {",
-            "    nil,",
-            "    bool: bool,",
-            "    int: i64,",
-            "    uint: u64,",
-            "    float: f64,",
-            "    str: []const u8,",
-            "    arr: []const ZVal,",
-            "    map: []const ZKV,",
-            "    set: []const ZVal,",
-            "};",
-            "const ZKV = struct { key: []const u8, val: ZVal };",
-        )
+        return _ZVAL_STATIC_PREAMBLE
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -1279,7 +1308,17 @@ class Zig(metaclass=LanguageCls):
         if self._json_type_active:
             return no_data_preamble
         if self._record_strategy_active:
-            return self._record_strategy.preamble
+            record_preamble = self._record_strategy.preamble
+            compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
+
+            def _record_preamble(data: Value, /) -> tuple[str, ...]:
+                """Emit ``ZVal`` when a nested map needs that carrier."""
+                value_preamble = (
+                    _ZVAL_STATIC_PREAMBLE if compute_wrap_ids(data) else ()
+                )
+                return (*value_preamble, *record_preamble(data))
+
+            return _record_preamble
         return no_data_preamble
 
     @cached_property
