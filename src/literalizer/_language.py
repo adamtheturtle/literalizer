@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import math
+import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
@@ -26,6 +27,28 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableEmptyDictError
+
+
+@beartype
+def format_new_variable_name(language: "Language", name: str) -> str:
+    """Return a target-language-safe name for a new variable.
+
+    ``NewVariable`` names are emitted into generated source, so malformed
+    names must not be allowed to turn an otherwise valid literal into a
+    syntax error.  Keep ordinary names unchanged and make invalid names
+    deterministic by replacing non-identifier characters and prefixing the
+    result when necessary.  The prefix also keeps reserved words distinct.
+    """
+    if name.isidentifier() and name not in language.reserved_identifiers:
+        return name
+    normalized = re.sub(r"[^0-9A-Za-z_]", "_", name)
+    if (
+        not normalized
+        or normalized[0].isdigit()
+        or name in language.reserved_identifiers
+    ):
+        normalized = "literalizer_" + normalized
+    return normalized
 
 
 @dataclasses.dataclass(frozen=True)
