@@ -86,6 +86,7 @@ from literalizer._language import (
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -94,6 +95,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
@@ -500,6 +502,15 @@ class Scala(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {}
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = False

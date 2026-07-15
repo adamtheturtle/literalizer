@@ -80,14 +80,17 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordVariant,
     RenderedRecordLiteral,
     RenderedTupleLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
@@ -2135,6 +2138,19 @@ class Rust(metaclass=LanguageCls):
         "CONST": "ARRAY",
         "STATIC": "ARRAY",
     }
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(
+            {
+                RecordVariant.UNIFY_OPTIONAL_FIELDS,
+                RecordVariant.KEYWORD_FIELD,
+                RecordVariant.FIELD_TYPE_SPLIT,
+            }
+        ),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = True
