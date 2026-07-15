@@ -12,7 +12,7 @@ from literalizer.languages import ALL_LANGUAGES
 
 
 def test_only_end_user_facing_callables_have_defaults() -> None:
-    """Internal callables require every argument explicitly."""
+    """Internal APIs require every argument explicitly."""
     source_root = Path(__file__).parents[1] / "src" / "literalizer"
     defaulted_callables: set[tuple[str, str]] = set()
     for source_path in source_root.rglob(pattern="*.py"):
