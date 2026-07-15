@@ -336,6 +336,7 @@ _TS_TUPLE_BEHAVIOR = HeterogeneousBehavior(
     wrap_scalar=None,
     wrap_non_scalar=None,
     compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+    dict_open_for_wrap_ids=None,
     render_tuple_literal=_render_ts_tuple,
     compute_tuple_list_ids=_ts_tuple_list_ids,
 )

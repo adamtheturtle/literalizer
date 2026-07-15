@@ -251,6 +251,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         wrap_scalar=_wrap_scalar,
         wrap_non_scalar=_wrap_non_scalar,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+        dict_open_for_wrap_ids=None,
     )
 
 
@@ -1123,6 +1124,8 @@ class V(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
         )
 
     @cached_property

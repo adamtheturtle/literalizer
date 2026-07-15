@@ -1,0 +1,1 @@
+Under Go's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``map[string]any`` instead of raising ``HeterogeneousSiblingListsError``.  Their uniform enclosing records remain generated structs, and the result compiles with the standard Go toolchain.

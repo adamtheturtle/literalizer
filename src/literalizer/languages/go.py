@@ -851,6 +851,9 @@ class Go(metaclass=LanguageCls):
         :func:`make_unsigned_overflow_fallback`), so the field is typed
         ``uint64`` to match that typed conversion.
 
+        A record-eligible dict with no generated record name was widened
+        out of the record-shape mapping because its nested sibling family
+        cannot share one shape (issue #2911); it uses ``map[string]any``.
         A set or a non-record dict (an empty or non-string-keyed dict)
         as a record field has no precise component type under the
         ``RECORD`` strategy.  Per the cross-language decision in #2317,
@@ -861,6 +864,13 @@ class Go(metaclass=LanguageCls):
         if request.record_name is not None:
             return request.record_name
         value = request.value
+        if (
+            isinstance(value, dict)
+            and not isinstance(value, OrderedMap)
+            and bool(value)
+            and all(isinstance(key, str) for key in value)
+        ):
+            return "map[string]any"
         match value:
             case None:
                 return "any"
@@ -911,6 +921,8 @@ class Go(metaclass=LanguageCls):
             return build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=True,
+                widen_unrecordizable_nested_sibling_maps=True,
+                derecordized_map_open="map[string]any{",
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

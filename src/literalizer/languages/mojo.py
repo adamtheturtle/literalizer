@@ -713,6 +713,7 @@ def _build_variant_behavior(
         wrap_scalar=_wrap,
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
+        dict_open_for_wrap_ids=None,
     )
 
 
