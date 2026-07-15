@@ -1113,6 +1113,11 @@ class D(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"{request.element_record_name}[]"
+        if (
+            isinstance(request.value, dict)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return "JSONValue"
         return self._d_value_type(request.value)
 
     @cached_property
@@ -1133,8 +1138,8 @@ class D(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open="JSONValue([",
         )
 
     @cached_property
@@ -1200,7 +1205,17 @@ class D(metaclass=LanguageCls):
         declared before its parent.
         """
         if self._record_strategy_active:
-            return self._record_strategy.preamble
+            record_preamble = self._record_strategy.preamble
+            compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
+
+            def _record_preamble(data: Value, /) -> tuple[str, ...]:
+                """Import ``std.json`` when a widened map uses its carrier."""
+                imports = (
+                    ("import std.json;",) if compute_wrap_ids(data) else ()
+                )
+                return (*imports, *record_preamble(data))
+
+            return _record_preamble
         return no_data_preamble
 
     @cached_property
