@@ -66,6 +66,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
     record_shape_for_dict,
 )
+from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -858,6 +859,8 @@ _CPP_SCALAR_FIELD_TYPES: frozenset[str] = frozenset(
 _CPP_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
 )
+_CPP_RECORD_MAP_VALUE = "LiteralizerRecordValue"
+_CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
 @beartype
@@ -977,6 +980,7 @@ def _build_cpp_record_preamble(
     *,
     type_ctx: _CppTypeCtx,
     record_preamble: Callable[[Value], tuple[str, ...]],
+    compute_wrap_ids: Callable[[Value], frozenset[int]],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -995,7 +999,17 @@ def _build_cpp_record_preamble(
         """Return the ``std::variant`` / ``std::nullptr_t`` headers plus
         the ``struct`` declarations.
         """
-        return tuple(variant_preamble(data)) + tuple(record_preamble(data))
+        wrap_ids = compute_wrap_ids(data)
+        value_alias: tuple[str, ...] = ()
+        headers = list(variant_preamble(data))
+        if wrap_ids:
+            value_type = _compute_element_type_for_items(
+                items=list(iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)),
+                type_ctx=type_ctx,
+                in_mapping_value=True,
+            )
+            value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
+        return (*headers, *value_alias, *record_preamble(data))
 
     return _record_pre
 
@@ -2277,6 +2291,12 @@ class Cpp(metaclass=LanguageCls):
         if request.element_record_name is not None:
             return f"std::vector<{request.element_record_name}>"
         value = request.value
+        if (
+            isinstance(value, dict)
+            and not isinstance(value, OrderedMap)
+            and record_shape_for_dict(value=value) is not None
+        ):
+            return _CPP_RECORD_MAP_TYPE
         if isinstance(value, int) and not isinstance(value, bool):
             int_type = _cpp_int_field_type(
                 value=value,
@@ -2307,11 +2327,24 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+        )
+
+        def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
+            """Construct the shared value variant for a widened map."""
+            return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
+
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior,
+                wrap_scalar=_wrap_scalar,
+                widens_nested_maps_by_wrapping_scalars=True,
+            ),
         )
 
     @cached_property
@@ -2455,6 +2488,9 @@ class Cpp(metaclass=LanguageCls):
             return _build_cpp_record_preamble(
                 type_ctx=self._type_ctx,
                 record_preamble=self._record_strategy.preamble,
+                compute_wrap_ids=(
+                    self._record_strategy.behavior.compute_wrap_ids
+                ),
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)

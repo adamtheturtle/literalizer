@@ -113,10 +113,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # a record (issue #2910).  The shared widening pass drops those
         # maps from the shape mapping so the outer record survives.  Rust,
         # Go, Java, C#, Kotlin, Scala, and Swift are top-type consumers;
-        # Rust, Crystal, Nim, V, D, Odin, Zig, and C use language-specific
-        # value carriers (issues #2910 through #2916 and #2919 through
-        # #2924). Remaining RECORD languages widen in later sub-issues of
-        # #2909, so this case stays out of all-languages base discovery.
+        # Rust, Crystal, Nim, V, D, Odin, Zig, C, and C++ use
+        # language-specific value carriers (issues #2910 through #2917
+        # and #2919 through #2924). Remaining RECORD languages widen in
+        # later sub-issues of #2909, so this case stays out of
+        # all-languages base discovery.
         "record_nested_map_fallback",
         # ``nested_map_widening`` carries sibling dict values that are
         # maps whose value types diverge (issue #2878).  Each inner map
@@ -124,12 +125,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # enclosing container declares the widened type, so only
         # languages that can widen render it as code that compiles: Go
         # and Kotlin widen the opener (issues #2878/#2890) while Rust,
-        # Nim, Mojo, and V wrap the scalar leaves in their ``TAGGED_ENUM``
-        # / ``OBJECT_VARIANT`` / ``VARIANT`` / ``INTERFACE`` ``Value`` /
-        # ``IVal`` (issues #2879/#2898/#2895/#2896).  The Go, Kotlin,
-        # Rust, Nim, Mojo, and V ``nested_map_widening`` variants are the
-        # sole consumers, so it stays out of the all-languages base
-        # discovery.
+        # Nim, Mojo, V, and C++ wrap the scalar leaves in their
+        # ``TAGGED_ENUM`` / ``OBJECT_VARIANT`` / ``VARIANT`` /
+        # ``INTERFACE`` / RECORD-map value carriers (issues
+        # #2879/#2898/#2895/#2896/#2917).  The Go, Kotlin, Rust, Nim,
+        # Mojo, V, and C++ ``nested_map_widening`` variants are the sole
+        # consumers, so it stays out of the all-languages base discovery.
         "nested_map_widening",
         # ``dhall_nested_map_widening`` is the Dhall counterpart of
         # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as

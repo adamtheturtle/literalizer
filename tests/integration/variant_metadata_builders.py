@@ -238,7 +238,8 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     The Mojo ``VARIANT`` strategy wraps them in its ``Value`` alias so
     every inner ``Dict`` shares one value type (#2895).  The V
     ``INTERFACE`` strategy wraps them in ``IVal`` so every inner
-    ``map`` shares one value type (#2896).  Dhall's
+    ``map`` shares one value type (#2896). C++'s ``RECORD`` strategy
+    wraps them in a shared ``std::variant`` value alias (#2917). Dhall's
     ``UNION_TYPE`` strategy has the analogous fix (#2897) but is covered
     by :func:`build_dhall_nested_map_widening_variants` against a
     dedicated input, because Dhall's record typing cannot represent this
