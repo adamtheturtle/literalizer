@@ -1698,8 +1698,8 @@ class Java(metaclass=LanguageCls):
 
         A record-eligible dict with no ``record_name`` was widened out
         of record inference because its nested sibling maps cannot
-        share one shape.  Type that field as ``java.util.Map<String,
-        Object>`` so the uniform enclosing record survives (#2912).  A
+        share one shape.  Type that field as ``Map<String, Object>`` so
+        the uniform enclosing record survives (#2912).  A
         set or a genuinely non-record dict (empty or non-string-keyed)
         still has no precise component type; per the cross-language
         decision in #2317, Java folds it into the ``Object`` top type.
