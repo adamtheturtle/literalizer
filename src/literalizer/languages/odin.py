@@ -73,6 +73,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -80,6 +81,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
@@ -517,6 +519,14 @@ class Odin(metaclass=LanguageCls):
     non_default_kwargs: ClassVar[dict[str, str]] = {
         "default_set_element_type": "int"
     }
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
@@ -1151,7 +1161,7 @@ class Odin(metaclass=LanguageCls):
             return build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=False,
-                widen_unrecordizable_nested_sibling_maps=False,
+                widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )
         return RecordStrategy(

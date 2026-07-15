@@ -70,6 +70,7 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -77,6 +78,7 @@ from literalizer._language import (
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
@@ -525,6 +527,15 @@ class D(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {}
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
     supports_non_string_dict_keys = False
@@ -1113,6 +1124,11 @@ class D(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"{request.element_record_name}[]"
+        if (
+            isinstance(request.value, dict)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return "JSONValue"
         return self._d_value_type(request.value)
 
     @cached_property
@@ -1133,8 +1149,8 @@ class D(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open="JSONValue([",
         )
 
     @cached_property
@@ -1200,7 +1216,17 @@ class D(metaclass=LanguageCls):
         declared before its parent.
         """
         if self._record_strategy_active:
-            return self._record_strategy.preamble
+            record_preamble = self._record_strategy.preamble
+            compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
+
+            def _record_preamble(data: Value, /) -> tuple[str, ...]:
+                """Import ``std.json`` when a widened map uses its carrier."""
+                imports = (
+                    ("import std.json;",) if compute_wrap_ids(data) else ()
+                )
+                return (*imports, *record_preamble(data))
+
+            return _record_preamble
         return no_data_preamble
 
     @cached_property

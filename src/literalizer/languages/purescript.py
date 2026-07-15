@@ -59,11 +59,13 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     identity_call_ref_identifier,
@@ -900,6 +902,14 @@ class PureScript(metaclass=LanguageCls):
         "type_name": "JsonVal",
         "constructor_prefix": "J",
     }
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

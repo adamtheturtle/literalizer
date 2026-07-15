@@ -64,12 +64,14 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
@@ -499,6 +501,13 @@ class FSharp(metaclass=LanguageCls):
         "constructor_prefix": "J",
     }
     json_type_variant_name_suffix = "json_node"
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset(),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

@@ -86,13 +86,16 @@ from literalizer._language import (
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordVariant,
     RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
@@ -646,6 +649,13 @@ class CSharp(metaclass=LanguageCls):
         "default_dict_key_type": "object",
     }
     json_type_variant_name_suffix = "json_node"
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset({RecordVariant.NONRECORD_DICT_FIELD}),
+        nested_map_widening=NestedMapWideningVariant.NONE,
+        modifier_sequence_format_overrides={"READONLY": "ARRAY"},
+    )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

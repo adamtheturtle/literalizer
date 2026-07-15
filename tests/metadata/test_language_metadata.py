@@ -1,6 +1,7 @@
 """Language-wide metadata and protocol checks."""
 
 import enum
+import inspect
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
@@ -25,6 +26,47 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
         style.value.supports_redefinition for style in cls.DeclarationStyles
     )
 ]
+
+_LANGUAGE_OWNED_METADATA = frozenset(
+    {
+        "declaration_style_sequence_format_overrides",
+        "json_type_variant_name_suffix",
+        "non_default_kwargs",
+        "variant_metadata",
+    }
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_language_metadata_is_declared_by_each_language(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language owns its metadata instead of inheriting defaults."""
+    missing = _LANGUAGE_OWNED_METADATA - vars(language_cls).keys()
+    assert not missing
+
+
+def test_language_metadata_has_no_metaclass_defaults() -> None:
+    """The meta-class contract must not conceal missing declarations."""
+    inherited_defaults = _LANGUAGE_OWNED_METADATA & vars(LanguageCls).keys()
+    assert not inherited_defaults
+
+
+def test_variant_metadata_fields_have_no_defaults() -> None:
+    """Every metadata choice must be supplied by the language class."""
+    parameters = inspect.signature(
+        obj=type(Python.variant_metadata)
+    ).parameters
+    assert parameters
+    assert all(
+        parameter.default is inspect.Parameter.empty
+        for parameter in parameters.values()
+    )
 
 
 @pytest.mark.parametrize(
