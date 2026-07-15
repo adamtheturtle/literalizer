@@ -490,8 +490,9 @@ def _build_object_variant_preamble(
     """Emit an object-variant ``type`` block for wrapped scalars.
 
     ``OBJECT_VARIANT`` supplies its broad collector, while ``RECORD``
-    uses the same value carrier only for maps de-recordized by its
-    shared nested-map fallback and supplies that narrower collector.
+    uses the same value carrier only for maps excluded from record
+    rendering by its shared nested-map fallback and supplies that
+    narrower collector.
     """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
