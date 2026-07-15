@@ -117,7 +117,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -517,19 +517,29 @@ def _csharp_render_record_declaration(
 
 @beartype
 def _csharp_int_field_type(*, value: int) -> str:
-    """Return the C# record-component type for an in-range integer.
+    """Return the C# record-component type for an integer.
 
     A value inside signed 32-bit range is declared ``int``; a wider one
     is declared ``long``.  C# types a literal that carries no type
     suffix by magnitude (signed 32-bit, then unsigned 32-bit, then
     signed 64-bit), and each of those converts implicitly to the chosen
     field type, so the declared type accepts the rendered literal.  A
-    value beyond signed 64-bit range is handled by the caller as the
-    unsigned 64-bit type, matching the literal C# infers there.
+    value beyond signed 64-bit range uses the unsigned 64-bit type,
+    matching the literal C# infers there.
     """
+    if not I64_MIN <= value <= I64_MAX:
+        return "ulong"
     if _CSHARP_I32_MIN <= value <= _CSHARP_I32_MAX:
         return "int"
     return "long"
+
+
+@beartype
+def _csharp_record_dict_field_type(value: dict[Scalar, Value], /) -> str:
+    """Return the component type for a dict not rendered as a record."""
+    if record_shape_for_dict(value=value) is not None:
+        return "Dictionary<string, object>"
+    return "object"
 
 
 @beartype
@@ -1366,12 +1376,13 @@ class CSharp(metaclass=LanguageCls):
         ``Dictionary<string, object>``).  Every other scalar uses the
         shared scalar resolver (``date`` -> ``DateOnly``).
 
-        A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field has no precise component type under the
-        ``RECORD`` strategy.  Per the cross-language decision in #2317,
-        Rust rejects such a field while C# folds it into the ``object``
-        top type (documented best effort), which the rendered literal
-        still assigns into.
+        A record-eligible dict with no ``record_name`` was widened out
+        of record inference because its nested sibling maps cannot
+        share one shape.  Type that field as ``Dictionary<string,
+        object>`` so the uniform enclosing record survives (#2913).  A
+        set or a genuinely non-record dict (empty or non-string-keyed)
+        still has no precise component type; per the cross-language
+        decision in #2317, C# folds it into the ``object`` top type.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1389,14 +1400,14 @@ class CSharp(metaclass=LanguageCls):
         match value:
             case bool():
                 return "bool"
-            case int() if not I64_MIN <= value <= I64_MAX:
-                return "ulong"
             case int():
                 return _csharp_int_field_type(value=value)
             case OrderedMap():
                 opener = self.ordered_map_format_config.ordered_map_open(
                     value,
                 )
+            case dict():
+                return _csharp_record_dict_field_type(value)
             case list():
                 opener = self.sequence_open(value)
             case _:
@@ -1424,8 +1435,8 @@ class CSharp(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open="new Dictionary<string, object> {",
         )
 
     @cached_property

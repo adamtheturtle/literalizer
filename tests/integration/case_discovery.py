@@ -55,11 +55,11 @@ from .language_specs import (
 # heterogeneous dict already covered elsewhere -- so it stays out of
 # the all-languages base discovery.
 # ``record_nonrecord_dict_field`` carries a record-shaped dict whose
-# ``meta`` field is an empty (non-record) dict.  It exists only to
-# exercise the per-language rejection of a non-record-dict record field
-# under the ``RECORD`` strategy (the cross-language decision in #2317):
-# the Nim variant builder is the sole consumer, so it stays out of the
-# all-languages base discovery.
+# ``meta`` field is an empty (non-record) dict.  Its dedicated variant
+# builder exercises the widened C# ``object`` field and the documented
+# Nim rejection path (the cross-language decision in #2317).  The case
+# stays out of all-languages base discovery because only ``RECORD``
+# behavior is relevant; other ports do not yet all emit valid code for it.
 #
 # ``heterogeneous_time_string`` carries ``[09:30:00, "hello"]`` solely
 # to drive the ``case datetime.time():`` arm of each language's
@@ -111,11 +111,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # uniform top-level keys hold nested sibling maps of divergent /
         # disjoint shape, which the ``RECORD`` strategy cannot render as
         # a record (issue #2910).  The shared widening pass drops those
-        # maps from the shape mapping so the outer record survives.  Rust
-        # Rust, Go, and Java are the current consumers (issues #2910,
-        # #2911, and #2912); the remaining RECORD languages widen in
-        # later sub-issues of #2909, so it stays out of the all-languages
-        # base discovery.
+        # maps from the shape mapping so the outer record survives.  Rust,
+        # Go, Java, and C# are the current consumers (issues #2910,
+        # #2911, #2912, and #2913); the remaining RECORD languages widen
+        # in later sub-issues of #2909, so it stays out of the
+        # all-languages base discovery.
         "record_nested_map_fallback",
         # ``nested_map_widening`` carries sibling dict values that are
         # maps whose value types diverge (issue #2878).  Each inner map

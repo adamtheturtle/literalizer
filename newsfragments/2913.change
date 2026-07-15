@@ -1,0 +1,1 @@
+C#'s ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Dictionary<string, object>`` while preserving the uniform outer record.
