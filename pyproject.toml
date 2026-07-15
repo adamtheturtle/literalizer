@@ -374,6 +374,8 @@ exclude = [
 # Ideally we would limit the paths to the source code where we want to ignore names,
 # but Vulture does not enable this.
 ignore_names = [
+    # Language capability flags are read dynamically from language classes.
+    "normalizes_new_variable_names",
     # Enum __call__ used implicitly when enum members are passed as callables
     "__call__",
     # Protocol and collection dunder methods used implicitly
