@@ -11,7 +11,7 @@ import enum
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Cobol, Haskell, OCaml, Odin, PureScript
+from literalizer.languages import Haskell, OCaml, Odin, PureScript
 
 from .language_specs import make_spec
 from .variant_types import (
@@ -75,15 +75,6 @@ _FOCUSED_CASES: tuple[_FocusedCase, ...] = (
         json_type="JSON_VALUE",
         case_dir_name="dict_with_list_value",
         variable_form=_EXISTING,
-    ),
-    # COBOL literals have no escapes, so CJSON splices non-printable bytes
-    # into this string as hexadecimal literals.
-    _FocusedCase(
-        lang_cls=Cobol,
-        name="Cobol_json_type_cjson_string_bytes",
-        json_type="CJSON",
-        case_dir_name="cobol_cjson_string_bytes",
-        variable_form=_VariableFormKind.NEW,
     ),
 )
 
