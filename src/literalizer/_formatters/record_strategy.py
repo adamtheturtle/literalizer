@@ -774,8 +774,6 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
 
     def _compute_wrap_ids(data: Value) -> frozenset[int]:
         """Return ids of maps widened out of the record-shape mapping."""
-        if not widen_unrecordizable_nested_sibling_maps:
-            return frozenset()
         raw_shapes_by_id = collect_record_shapes(data=data)
         widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
             data=data,
