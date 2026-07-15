@@ -117,7 +117,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -517,19 +517,29 @@ def _csharp_render_record_declaration(
 
 @beartype
 def _csharp_int_field_type(*, value: int) -> str:
-    """Return the C# record-component type for an in-range integer.
+    """Return the C# record-component type for an integer.
 
     A value inside signed 32-bit range is declared ``int``; a wider one
     is declared ``long``.  C# types a literal that carries no type
     suffix by magnitude (signed 32-bit, then unsigned 32-bit, then
     signed 64-bit), and each of those converts implicitly to the chosen
     field type, so the declared type accepts the rendered literal.  A
-    value beyond signed 64-bit range is handled by the caller as the
-    unsigned 64-bit type, matching the literal C# infers there.
+    value beyond signed 64-bit range uses the unsigned 64-bit type,
+    matching the literal C# infers there.
     """
+    if not I64_MIN <= value <= I64_MAX:
+        return "ulong"
     if _CSHARP_I32_MIN <= value <= _CSHARP_I32_MAX:
         return "int"
     return "long"
+
+
+@beartype
+def _csharp_record_dict_field_type(value: dict[Scalar, Value], /) -> str:
+    """Return the component type for a dict not rendered as a record."""
+    if record_shape_for_dict(value=value) is not None:
+        return "Dictionary<string, object>"
+    return "object"
 
 
 @beartype
@@ -1384,16 +1394,14 @@ class CSharp(metaclass=LanguageCls):
         match value:
             case bool():
                 return "bool"
-            case int() if not I64_MIN <= value <= I64_MAX:
-                return "ulong"
             case int():
                 return _csharp_int_field_type(value=value)
             case OrderedMap():
                 opener = self.ordered_map_format_config.ordered_map_open(
                     value,
                 )
-            case dict() if record_shape_for_dict(value=value) is not None:
-                return "Dictionary<string, object>"
+            case dict():
+                return _csharp_record_dict_field_type(value)
             case list():
                 opener = self.sequence_open(value)
             case _:
