@@ -500,6 +500,7 @@ def _build_union_type_behavior(
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
+        widens_nested_maps_by_wrapping_scalars=True,
     )
 
 
