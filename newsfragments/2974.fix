@@ -1,0 +1,1 @@
+Escape V keyword field names in generated struct declarations and literals.

@@ -1,0 +1,1 @@
+Reject Nim object-variant maps containing only null values instead of emitting an invalid table type.

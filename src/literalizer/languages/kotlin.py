@@ -573,14 +573,67 @@ def _kotlin_opener_to_type(opener: str, /) -> str:
     return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
 
 
+_KOTLIN_KEYWORDS = frozenset(
+    {
+        "as",
+        "break",
+        "by",
+        "catch",
+        "class",
+        "companion",
+        "constructor",
+        "continue",
+        "data",
+        "delegate",
+        "do",
+        "dynamic",
+        "else",
+        "false",
+        "field",
+        "file",
+        "finally",
+        "for",
+        "fun",
+        "get",
+        "if",
+        "import",
+        "in",
+        "init",
+        "interface",
+        "is",
+        "null",
+        "object",
+        "package",
+        "param",
+        "property",
+        "receiver",
+        "return",
+        "set",
+        "setparam",
+        "super",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typealias",
+        "typeof",
+        "val",
+        "var",
+        "when",
+        "where",
+        "while",
+    }
+)
+
+
 @beartype
 def _kotlin_record_field_identifier(key: str, /) -> str:
     """Return the Kotlin record field name for a dict *key*.
 
-    Kotlin allows the original (possibly snake_case) key verbatim as a
-    ``data class`` property name, so the mapping is the identity.
+    Kotlin permits reserved words as identifiers when surrounded by
+    backticks, both in declarations and named constructor arguments.
     """
-    return key
+    return f"`{key}`" if key in _KOTLIN_KEYWORDS else key
 
 
 @beartype
@@ -1723,10 +1776,10 @@ class Kotlin(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=False,
+                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open="mapOf<String, Any?>(",
-                allow_same_key_record_variants_in_sequences=False,
+                allow_same_key_record_variants_in_sequences=True,
             )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(

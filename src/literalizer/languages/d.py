@@ -269,15 +269,119 @@ _D_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
 )
 
 
+_D_KEYWORDS = frozenset(
+    {
+        "abstract",
+        "alias",
+        "align",
+        "asm",
+        "assert",
+        "auto",
+        "body",
+        "bool",
+        "break",
+        "byte",
+        "case",
+        "cast",
+        "catch",
+        "cdouble",
+        "cent",
+        "cfloat",
+        "char",
+        "class",
+        "const",
+        "continue",
+        "creal",
+        "dchar",
+        "debug",
+        "default",
+        "delegate",
+        "delete",
+        "deprecated",
+        "do",
+        "double",
+        "else",
+        "enum",
+        "export",
+        "extern",
+        "false",
+        "final",
+        "finally",
+        "float",
+        "for",
+        "foreach",
+        "foreach_reverse",
+        "function",
+        "goto",
+        "idouble",
+        "if",
+        "ifloat",
+        "immutable",
+        "import",
+        "in",
+        "inout",
+        "int",
+        "interface",
+        "invariant",
+        "ireal",
+        "is",
+        "lazy",
+        "long",
+        "mixin",
+        "module",
+        "new",
+        "nothrow",
+        "null",
+        "out",
+        "override",
+        "package",
+        "pragma",
+        "private",
+        "protected",
+        "public",
+        "pure",
+        "real",
+        "ref",
+        "return",
+        "scope",
+        "shared",
+        "short",
+        "static",
+        "struct",
+        "super",
+        "switch",
+        "synchronized",
+        "template",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typeid",
+        "typeof",
+        "ubyte",
+        "ucent",
+        "uint",
+        "ulong",
+        "union",
+        "unittest",
+        "ushort",
+        "version",
+        "void",
+        "wchar",
+        "while",
+        "with",
+    }
+)
+
+
 @beartype
 def _d_record_field_identifier(key: str, /) -> str:
     """Return the D ``struct`` member name for a dict *key*.
 
-    D member identifiers are the dict keys verbatim (no case
-    conversion), matching the positional struct-constructor literal
-    ``Record0(value, ...)``.
+    D struct literals are positional, so reserved words can be made
+    legal declaration identifiers by appending an underscore.
     """
-    return key
+    return f"{key}_" if key in _D_KEYWORDS else key
 
 
 @beartype

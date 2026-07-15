@@ -482,14 +482,61 @@ def _v_inner_type(items: list[Value], /) -> str:
     return resolved or _V_IFACE_NAME
 
 
+_V_KEYWORDS = frozenset(
+    {
+        "as",
+        "asm",
+        "assert",
+        "atomic",
+        "break",
+        "chan",
+        "const",
+        "continue",
+        "defer",
+        "else",
+        "enum",
+        "false",
+        "fn",
+        "for",
+        "go",
+        "goto",
+        "if",
+        "import",
+        "in",
+        "interface",
+        "is",
+        "isnil",
+        "lock",
+        "match",
+        "module",
+        "mut",
+        "none",
+        "or",
+        "pub",
+        "return",
+        "rlock",
+        "select",
+        "shared",
+        "static",
+        "struct",
+        "true",
+        "type",
+        "typeof",
+        "union",
+        "unsafe",
+        "volatile",
+    }
+)
+
+
 @beartype
 def _v_record_field_identifier(key: str, /) -> str:
     """Return the V ``struct`` member name for a dict *key*.
 
-    V member identifiers are the dict keys verbatim (no case
-    conversion), matching the ``Record0{ id: 1, ... }`` literal form.
+    V permits reserved words as identifiers when prefixed with ``@``,
+    both in struct declarations and keyed struct literals.
     """
-    return key
+    return f"@{key}" if key in _V_KEYWORDS else key
 
 
 @beartype

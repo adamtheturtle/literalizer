@@ -461,6 +461,21 @@ def _reject_object_variant_mixed_scalar_container_lists(
 
 
 @beartype
+def _reject_object_variant_null_only_map(data: Value, /) -> None:
+    """Reject maps whose values provide no concrete Nim value type."""
+    if (
+        isinstance(data, dict)
+        and data
+        and all(value is None for value in data.values())
+    ):
+        msg = (
+            "Nim OBJECT_VARIANT cannot represent a map whose values "
+            "are all null"
+        )
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _build_object_variant_behavior(
     variant_name: str,
     date_type: str,
@@ -1310,6 +1325,7 @@ class Nim(metaclass=LanguageCls):
         """Reject OBJECT_VARIANT data that cannot form a uniform seq."""
         if self._uses_object_variant:
             _reject_object_variant_mixed_scalar_container_lists(data)
+            _reject_object_variant_null_only_map(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

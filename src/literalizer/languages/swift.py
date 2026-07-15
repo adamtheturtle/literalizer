@@ -427,16 +427,81 @@ _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 )
 
 
+_SWIFT_KEYWORDS = frozenset(
+    {
+        "Any",
+        "Self",
+        "actor",
+        "any",
+        "as",
+        "associatedtype",
+        "async",
+        "await",
+        "break",
+        "case",
+        "catch",
+        "class",
+        "continue",
+        "default",
+        "defer",
+        "deinit",
+        "do",
+        "else",
+        "enum",
+        "extension",
+        "fallthrough",
+        "false",
+        "fileprivate",
+        "for",
+        "func",
+        "guard",
+        "if",
+        "import",
+        "in",
+        "init",
+        "inout",
+        "internal",
+        "is",
+        "let",
+        "nil",
+        "open",
+        "operator",
+        "precedencegroup",
+        "private",
+        "protocol",
+        "public",
+        "repeat",
+        "rethrows",
+        "return",
+        "self",
+        "some",
+        "static",
+        "struct",
+        "subscript",
+        "super",
+        "switch",
+        "throw",
+        "throws",
+        "true",
+        "try",
+        "typealias",
+        "var",
+        "where",
+        "while",
+    }
+)
+
+
 @beartype
 def _swift_record_field_identifier(key: str, /) -> str:
     """Return the Swift ``struct`` member name for a dict *key*.
 
-    Swift property identifiers are the dict keys verbatim (no case
-    conversion), matching the synthesized-initializer literal form
-    ``Record0(id: 1, ...)`` whose argument labels are the property
-    names.
+    Swift permits reserved words as stored-property identifiers when
+    surrounded by backticks.  In the synthesized initializer, the
+    argument label uses the same word without backticks (the compiler
+    rejects escaping it in that position).
     """
-    return key
+    return f"`{key}`" if key in _SWIFT_KEYWORDS else key
 
 
 @beartype
@@ -457,7 +522,8 @@ def _swift_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}(",
         entries=tuple(
-            f"{field.identifier}: {field.formatted}" for field in fields
+            f"{field.identifier.strip('`')}: {field.formatted}"
+            for field in fields
         ),
         closer=")",
         compact_pad="",

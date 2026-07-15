@@ -1,0 +1,1 @@
+Split same-key Scala records when their field types conflict.

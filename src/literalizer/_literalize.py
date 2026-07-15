@@ -591,6 +591,10 @@ def _format_ordered_map_value(
         list_values=sibling_list_values,
         spec=spec,
     )
+    int_formatter = _widened_int_formatter(
+        items=[v for _, v in ordered_map_items],
+        spec=spec,
+    )
     pairs = [
         spec.format_ordered_map_entry(
             _format_value(
@@ -609,6 +613,7 @@ def _format_ordered_map_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
+                    int_formatter=int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -788,6 +793,10 @@ def _format_dict_value(
         list_values=sibling_list_values,
         spec=spec,
     )
+    int_formatter = _widened_int_formatter(
+        items=list(dict_items.values()),
+        spec=spec,
+    )
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
@@ -806,6 +815,7 @@ def _format_dict_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
+                    int_formatter=int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -852,6 +862,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ctx: _RenderContext,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -881,7 +892,7 @@ def _format_dict_entry_value(
         dict_open_override=None,
         sequence_open_override=None,
         ctx=ctx,
-        int_formatter=None,
+        int_formatter=int_formatter,
     )
 
 
@@ -1364,6 +1375,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ctx: _RenderContext,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -1415,7 +1427,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ctx=ctx,
-        int_formatter=None,
+        int_formatter=int_formatter,
     )
 
 
@@ -1463,6 +1475,7 @@ def _format_list_value(
         items=value,
         spec=spec,
     )
+    int_formatter = _widened_int_formatter(items=value, spec=spec)
     parent_id = id(value)
     items = [
         spec.format_sequence_entry(
@@ -1479,6 +1492,7 @@ def _format_list_value(
                         child_sequence_open_overrides
                     ),
                     ctx=ctx,
+                    int_formatter=int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -1833,6 +1847,10 @@ def _format_collection_lines(
                 spec=spec,
             )
             formatted_entries: list[str] = []
+            dict_int_formatter = _widened_int_formatter(
+                items=list(dict_data.values()),
+                spec=spec,
+            )
             for k, v in entries:
                 formatted_key: str = _format_value(
                     value=k,
@@ -1849,6 +1867,7 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ctx=line_ctx,
+                        int_formatter=dict_int_formatter,
                     ),
                     ctx=ctx,
                 )
@@ -1924,6 +1943,10 @@ def _format_collection_lines(
                 items=list_data,
                 spec=spec,
             )
+            list_int_formatter = _widened_int_formatter(
+                items=list_data,
+                spec=spec,
+            )
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
@@ -1937,6 +1960,7 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ctx=line_ctx,
+                            int_formatter=list_int_formatter,
                         ),
                         ctx=ctx,
                     ),

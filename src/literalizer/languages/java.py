@@ -695,14 +695,78 @@ def _format_java_json_call_arg(raw_value: Value, _formatted: str) -> str:
     return _java_read_tree_expression(data=raw_value)
 
 
+_JAVA_KEYWORDS = frozenset(
+    {
+        "_",
+        "abstract",
+        "assert",
+        "boolean",
+        "break",
+        "byte",
+        "case",
+        "catch",
+        "char",
+        "class",
+        "const",
+        "continue",
+        "default",
+        "do",
+        "double",
+        "else",
+        "enum",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "float",
+        "for",
+        "goto",
+        "if",
+        "implements",
+        "import",
+        "instanceof",
+        "int",
+        "interface",
+        "long",
+        "native",
+        "new",
+        "null",
+        "package",
+        "private",
+        "protected",
+        "public",
+        "record",
+        "return",
+        "sealed",
+        "short",
+        "static",
+        "strictfp",
+        "super",
+        "switch",
+        "synchronized",
+        "this",
+        "throw",
+        "throws",
+        "transient",
+        "true",
+        "try",
+        "var",
+        "void",
+        "volatile",
+        "while",
+        "yield",
+    }
+)
+
+
 @beartype
 def _java_record_field_identifier(key: str, /) -> str:
     """Return the Java record component name for a dict *key*.
 
-    Java record components keep the original key (identity); the
-    literal is positional so the name only labels the declaration.
+    Java record literals are positional, so reserved words can be
+    made legal declaration identifiers by appending an underscore.
     """
-    return key
+    return f"{key}_" if key in _JAVA_KEYWORDS else key
 
 
 @beartype
