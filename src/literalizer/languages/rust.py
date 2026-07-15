@@ -1608,6 +1608,7 @@ def _record_behavior_impl(
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
+        widens_unrecordizable_nested_sibling_maps=True,
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
     )

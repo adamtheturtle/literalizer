@@ -578,6 +578,12 @@ class HeterogeneousBehavior:
     strict languages expose it only when the corresponding non-default
     heterogeneous strategy is selected.
 
+    ``widens_unrecordizable_nested_sibling_maps`` identifies ``RECORD``
+    strategies that fall back to a widened plain map when nested sibling
+    maps cannot share one record shape.  It is likewise strategy behavior:
+    languages advertise it only while the capable ``RECORD`` strategy is
+    selected.
+
     ``render_record_literal`` renders a record-shaped dict as a
     generated struct literal given its :class:`RecordShape` and a
     mapping of pre-formatted field values, returning a
@@ -629,6 +635,7 @@ class HeterogeneousBehavior:
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
     widens_nested_maps_by_wrapping_scalars: bool = False
+    widens_unrecordizable_nested_sibling_maps: bool = False
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
