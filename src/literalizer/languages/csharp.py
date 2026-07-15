@@ -1360,12 +1360,13 @@ class CSharp(metaclass=LanguageCls):
         ``Dictionary<string, object>``).  Every other scalar uses the
         shared scalar resolver (``date`` -> ``DateOnly``).
 
-        A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field has no precise component type under the
-        ``RECORD`` strategy.  Per the cross-language decision in #2317,
-        Rust rejects such a field while C# folds it into the ``object``
-        top type (documented best effort), which the rendered literal
-        still assigns into.
+        A record-eligible dict with no ``record_name`` was widened out
+        of record inference because its nested sibling maps cannot
+        share one shape.  Type that field as ``Dictionary<string,
+        object>`` so the uniform enclosing record survives (#2913).  A
+        set or a genuinely non-record dict (empty or non-string-keyed)
+        still has no precise component type; per the cross-language
+        decision in #2317, C# folds it into the ``object`` top type.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1391,6 +1392,8 @@ class CSharp(metaclass=LanguageCls):
                 opener = self.ordered_map_format_config.ordered_map_open(
                     value,
                 )
+            case dict() if record_shape_for_dict(value=value) is not None:
+                return "Dictionary<string, object>"
             case list():
                 opener = self.sequence_open(value)
             case _:
@@ -1418,8 +1421,8 @@ class CSharp(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open="new Dictionary<string, object> {",
         )
 
     @cached_property
