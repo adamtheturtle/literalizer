@@ -242,7 +242,10 @@ def _accumulate_dicts_by_shape(
 ) -> None:
     """Group every record dict in *data* by its shape, in document order.
 
-    A dict aliased into the tree more than once appears once per group.
+    A dict aliased into the tree more than once is listed once per
+    occurrence; the caller only reads the distinct shapes each field
+    contributes (a set) and drops ids into a set, so duplicates are
+    harmless.
     """
     match data:
         case OrderedMap():
@@ -253,9 +256,7 @@ def _accumulate_dicts_by_shape(
         case dict():
             shape = shapes_by_id.get(id(data))
             if shape is not None:
-                bucket = out.setdefault(shape, [])
-                if all(existing is not data for existing in bucket):
-                    bucket.append(data)
+                out.setdefault(shape, []).append(data)
             for value in data.values():
                 _accumulate_dicts_by_shape(
                     data=value, shapes_by_id=shapes_by_id, out=out
@@ -293,18 +294,15 @@ def _shapes_with_sibling_list_instances(
                 for value in node.values():
                     walk(node=value)
             case list():
-                min_instances_for_sibling_list = 2
-                counts: dict[RecordShape, int] = {}
+                seen_once: set[RecordShape] = set()
                 for item in node:
-                    if isinstance(item, dict):
-                        shape = shapes_by_id.get(id(item))
-                        if shape is not None:
-                            counts[shape] = counts.get(shape, 0) + 1
-                result.update(
-                    shape
-                    for shape, count in counts.items()
-                    if count >= min_instances_for_sibling_list
-                )
+                    shape = shapes_by_id.get(id(item))
+                    if shape is None:
+                        continue
+                    if shape in seen_once:
+                        result.add(shape)
+                    else:
+                        seen_once.add(shape)
                 for item in node:
                     walk(node=item)
             case _:
@@ -312,35 +310,6 @@ def _shapes_with_sibling_list_instances(
 
     walk(node=data)
     return result
-
-
-@beartype
-def _accumulate_dropped_record_ids(
-    *,
-    data: Value,
-    shapes_by_id: Mapping[int, RecordShape],
-    out: set[int],
-) -> None:
-    """Add the ids of *data* and every record dict nested within it.
-
-    A widened sibling map renders as a plain map, so every record shape
-    reachable inside it is dropped from the shape mapping too.
-    """
-    match data:
-        case dict():
-            if id(data) in shapes_by_id:
-                out.add(id(data))
-            for value in data.values():
-                _accumulate_dropped_record_ids(
-                    data=value, shapes_by_id=shapes_by_id, out=out
-                )
-        case list():
-            for item in data:
-                _accumulate_dropped_record_ids(
-                    data=item, shapes_by_id=shapes_by_id, out=out
-                )
-        case _:
-            return
 
 
 @beartype
@@ -368,10 +337,12 @@ def drop_unrecordizable_nested_sibling_maps(
     declarations through the field-type-splitting refinement and needs
     no widening.  Within such a shape, a field whose values across the
     shape's instances are record dicts of two or more distinct shapes
-    cannot share one record shape; every dict in that field, and every
-    record dict nested inside it, is dropped.  Returns a fresh mapping;
-    *shapes_by_id* is not mutated, and the result equals it when nothing
-    is dropped.
+    cannot share one record shape; every such dict is dropped so it
+    renders as a flat widened map.  A dropped map whose own values are
+    themselves containers is beyond the scalar-valued scope of the Rust
+    reference implementation (its value enum holds only scalars).
+    Returns a fresh mapping; *shapes_by_id* is not mutated, and the
+    result equals it when nothing is dropped.
     """
     dicts_by_shape: dict[RecordShape, list[dict[Scalar, Value]]] = {}
     _accumulate_dicts_by_shape(
@@ -395,11 +366,7 @@ def drop_unrecordizable_nested_sibling_maps(
                 to_drop.extend(members)
     if not to_drop:
         return dict(shapes_by_id)
-    dropped_ids: set[int] = set()
-    for member in to_drop:
-        _accumulate_dropped_record_ids(
-            data=member, shapes_by_id=shapes_by_id, out=dropped_ids
-        )
+    dropped_ids = {id(member) for member in to_drop}
     return {
         dict_id: shape
         for dict_id, shape in shapes_by_id.items()
