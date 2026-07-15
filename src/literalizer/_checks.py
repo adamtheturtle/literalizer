@@ -867,6 +867,11 @@ def _check_unrepresentable_sibling_maps(
 ) -> None:
     """Raise if *data* holds sibling maps whose widened dict slot *spec*
     cannot represent.
+
+    *record_dict_ids* also includes maps whose selected strategy wraps
+    every scalar child into one shared value carrier; those maps no
+    longer rely on their content-specific normal opener and are equally
+    safe to exclude from the divergence probe.
     """
     if _dict_slot_uses_variant_typing(spec=spec) and (
         _has_unrepresentable_sibling_maps(
@@ -921,7 +926,7 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     _check_unrepresentable_sibling_maps(
         data=data,
         spec=spec,
-        record_dict_ids=record_dict_ids,
+        record_dict_ids=(record_dict_ids | behavior.compute_wrap_ids(data)),
         tuple_list_ids=tuple_list_ids,
     )
     if behavior.render_record_literal is not None and _has_mixed_record_shapes(
