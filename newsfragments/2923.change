@@ -1,0 +1,1 @@
+Odin's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``map[string]any`` while preserving the uniform outer struct.
