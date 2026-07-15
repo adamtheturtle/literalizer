@@ -2195,8 +2195,13 @@ def _apply_variable_wrapper(
                 if is_call_binding
                 else language.format_variable_declaration
             )
+            normalized_name = (
+                format_new_variable_name(language=language, name=name)
+                if getattr(language, "normalizes_new_variable_names", False)
+                else name
+            )
             wrapped = declaration_formatter(
-                format_new_variable_name(language=language, name=name),
+                normalized_name,
                 value,
                 data,
                 modifiers,
