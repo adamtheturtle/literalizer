@@ -26,6 +26,7 @@ from literalizer.exceptions import (
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     UnrepresentableIntegerError,
+    UnrepresentableSpecialFloatError,
     VariableNameNotSupportedError,
 )
 from literalizer.languages.rust import Rust
@@ -93,6 +94,11 @@ _VARIANT_SKIP_REASONS: _SkipReasons = (
     (
         IncompatibleFormatsError,
         "combination cannot represent this input",
+        True,
+    ),
+    (
+        UnrepresentableSpecialFloatError,
+        "cannot represent special floats in this input",
         True,
     ),
     (UnrepresentableInputError, "cannot represent this input", True),
@@ -362,6 +368,7 @@ def test_format_variant_golden_file(
                     )
             except (
                 UnrepresentableIntegerError,
+                UnrepresentableSpecialFloatError,
                 UnrepresentableEmptyDictError,
                 NullInCollectionError,
                 HeterogeneousCollectionError,

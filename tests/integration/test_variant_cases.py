@@ -1,6 +1,7 @@
 """Focused tests for small variant-case helpers."""
 
 import enum
+from collections import Counter
 
 import pytest
 
@@ -9,6 +10,7 @@ from literalizer.languages import Python
 from .language_specs import sorted_languages
 from .variant_cases import (
     _enum_member_by_name,  # pyright: ignore[reportPrivateUsage]
+    build_variant_cases,
     group_variant_cases_by_language,
     variant_languages,
 )
@@ -45,3 +47,21 @@ def test_variant_languages_matches_sorted_group_keys() -> None:
     assert variant_languages() == [
         lang_cls for lang_cls in sorted_languages() if lang_cls in groups
     ]
+
+
+def test_variant_cases_have_unique_golden_paths() -> None:
+    """No two variant cases should exercise the same golden file."""
+    targets = [
+        (
+            case.case_dir_name,
+            case.variant_name,
+            case.variant.spec.extension,
+            case.variant.spec.language_version,
+        )
+        for case in build_variant_cases()
+    ]
+    duplicates = [
+        target for target, count in Counter(targets).items() if count > 1
+    ]
+
+    assert duplicates == []

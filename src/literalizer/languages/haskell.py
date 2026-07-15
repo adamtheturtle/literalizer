@@ -31,6 +31,7 @@ from literalizer._formatters.format_entries import (
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
+    data_has_special_float,
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
@@ -89,6 +90,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
+    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -1159,6 +1161,12 @@ def _aeson_quasi_expression(data: Value) -> str:
     JSON.  Bare scalars (``42``, ``true``, ``"hello"``, ``null``) are
     accepted by the quasi-quote bracket just like top-level JSON documents.
     """
+    if data_has_special_float(data=data):
+        msg = (
+            "Haskell(json_type=AESON_VALUE) cannot represent special floats "
+            "because aesonQQ accepts only finite numbers."
+        )
+        raise UnrepresentableSpecialFloatError(msg)
     json_text = format_json_value_text(data=data)
     if _AESON_QQ_CLOSE in json_text:
         msg = (

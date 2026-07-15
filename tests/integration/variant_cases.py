@@ -15,11 +15,16 @@ from typing import Protocol, runtime_checkable
 from beartype import beartype
 
 import literalizer
+from literalizer.exceptions import IncompatibleFormatsError
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_discovery import cases_with_special_floats
 from .json_variant_cases import build_json_variant_cases
-from .language_specs import make_spec, sorted_languages
+from .language_specs import (
+    find_redefinition_styles,
+    make_spec,
+    sorted_languages,
+)
 from .variant_inputs import AXIS_INPUTS
 from .variant_metadata_builders import (
     build_collection_layout_variants,
@@ -188,6 +193,20 @@ class _HasJsonType(Protocol):
     json_types: type[enum.Enum]
 
 
+@runtime_checkable
+class _HasBytesFormat(Protocol):
+    """Structural type for specs exposing a configured bytes format."""
+
+    bytes_format: enum.Enum
+
+
+@beartype
+def _configured_bytes_format(spec: literalizer.Language) -> enum.Enum:
+    """Return the configured enum despite JSON formatter overrides."""
+    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
+    return spec.bytes_format
+
+
 @beartype
 def build_json_type_variants() -> Iterable[Variant]:
     """Build JSON value-type variants for every language whose spec
@@ -265,6 +284,67 @@ def _check_json_type_variants() -> None:
 
 
 _check_json_type_variants()
+
+
+@beartype
+def build_json_type_cross_variants(
+    *,
+    category: str,
+    kwarg: str,
+    get_default: Callable[[literalizer.Language], object],
+    get_formats: Callable[[literalizer.Language], type[enum.Enum]],
+) -> list[Variant]:
+    """Cross every non-default JSON type with another format axis.
+
+    Starting from :func:`build_json_type_variants` keeps discovery tied to
+    the language capability.  A newly added JSON type or format therefore
+    receives the cross-option coverage without another language allow-list.
+    """
+    variants: list[Variant] = []
+    for json_variant in build_json_type_variants():
+        spec = json_variant.spec
+        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        default = get_default(spec)
+        for fmt in get_formats(spec):
+            if fmt is default:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{json_variant.name}_{category}_{fmt.name.lower()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=json_variant.lang_cls,
+                        json_type=spec.json_type,
+                        **{kwarg: fmt},
+                    ),
+                    lang_cls=json_variant.lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
+
+
+@beartype
+def build_json_type_datetime_cross_variants() -> list[Variant]:
+    """Build every non-default ``json_type`` + datetime-format cross."""
+    return build_json_type_cross_variants(
+        category="datetime",
+        kwarg="datetime_format",
+        get_default=lambda spec: spec.datetime_format,
+        get_formats=lambda spec: spec.datetime_formats,
+    )
+
+
+@beartype
+def build_json_type_bytes_cross_variants() -> list[Variant]:
+    """Build every non-default ``json_type`` + bytes-format cross."""
+    return build_json_type_cross_variants(
+        category="bytes",
+        kwarg="bytes_format",
+        get_default=_configured_bytes_format,
+        get_formats=lambda spec: spec.bytes_formats,
+    )
 
 
 @runtime_checkable
@@ -459,6 +539,95 @@ def _resolve_sequence_format_override(
         return None
     spec = make_spec(lang_cls=lang_cls)
     return next(f for f in spec.sequence_formats if f.name == seq_format_name)
+
+
+@beartype
+def build_json_type_declaration_cross_variants() -> list[Variant]:
+    """Build every non-default ``json_type`` + declaration-style cross."""
+    variants: list[Variant] = []
+    for json_variant in build_json_type_variants():
+        spec = json_variant.spec
+        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        for declaration_style in spec.declaration_styles:
+            if declaration_style is spec.declaration_style:
+                continue
+            kwargs: dict[str, object] = {
+                "json_type": spec.json_type,
+                "declaration_style": declaration_style,
+            }
+            seq_override = _resolve_sequence_format_override(
+                lang_cls=json_variant.lang_cls,
+                declaration_style=declaration_style,
+            )
+            if seq_override is not None:
+                kwargs["sequence_format"] = seq_override
+            try:
+                variant_spec = make_spec(
+                    lang_cls=json_variant.lang_cls,
+                    **kwargs,
+                )
+            except IncompatibleFormatsError:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{json_variant.name}"
+                        f"_declaration_style_{declaration_style.name.lower()}"
+                    ),
+                    spec=variant_spec,
+                    lang_cls=json_variant.lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
+
+
+@beartype
+def build_json_type_combined_cases() -> list[VariantCase]:
+    """Build JSON-type cases for every redefinition-supporting style."""
+    cases: list[VariantCase] = []
+    for json_variant in build_json_type_variants():
+        spec = json_variant.spec
+        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        redef_styles = find_redefinition_styles(spec=spec)
+        for index, declaration_style in enumerate(iterable=redef_styles):
+            kwargs: dict[str, object] = {
+                "json_type": spec.json_type,
+                "declaration_style": declaration_style,
+            }
+            seq_override = _resolve_sequence_format_override(
+                lang_cls=json_variant.lang_cls,
+                declaration_style=declaration_style,
+            )
+            # No current JSON-capable redefinition style needs an override
+            # or has a sibling style; these paths activate from metadata when
+            # such a language is added.
+            if seq_override is not None:
+                kwargs["sequence_format"] = seq_override  # pragma: no cover
+            name = f"{json_variant.name}_combined"
+            if index > 0:
+                name = (  # pragma: no cover
+                    f"{name}_declaration_style_"
+                    f"{declaration_style.name.lower()}"
+                )
+            variant = Variant(
+                name=name,
+                spec=make_spec(lang_cls=json_variant.lang_cls, **kwargs),
+                lang_cls=json_variant.lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+            cases.append(
+                VariantCase(
+                    variant_name=name,
+                    variant=variant,
+                    case_dir_name="dict_with_list_value",
+                    variable_form=literalizer.BothVariableForms(
+                        name="my_data",
+                        modifiers=frozenset(),
+                    ),
+                )
+            )
+    return cases
 
 
 @beartype
@@ -1458,6 +1627,11 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_default_sequence_element_type_variants
     ),
     "json_type": build_json_type_variants,
+    "json_type_bytes_cross": build_json_type_bytes_cross_variants,
+    "json_type_datetime_cross": build_json_type_datetime_cross_variants,
+    "json_type_declaration_cross": (
+        build_json_type_declaration_cross_variants
+    ),
     "default_dict_value_type": build_default_dict_value_type_variants,
     "empty_dict_key": build_empty_dict_key_variants,
     "default_dict_key_type": build_default_dict_key_type_variants,
@@ -1535,8 +1709,8 @@ def build_variant_cases() -> list[VariantCase]:
     """Collect all format-variant golden-file test cases.
 
     The full set is the cross product of every axis's variants with its
-    declared inputs in :data:`AXIS_INPUTS`, plus the bespoke modifier
-    cases from :func:`build_modifier_variant_cases`.
+    declared inputs in :data:`AXIS_INPUTS`, plus capability-generated
+    combined JSON cases and the focused modifier / JSON regressions.
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
     cases: list[VariantCase] = []
@@ -1557,6 +1731,7 @@ def build_variant_cases() -> list[VariantCase]:
                 )
             )
     cases.extend(build_modifier_variant_cases())
+    cases.extend(build_json_type_combined_cases())
     cases.extend(build_json_variant_cases())
     return cases
 

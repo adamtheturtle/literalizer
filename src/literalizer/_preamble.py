@@ -2,12 +2,12 @@
 
 import dataclasses
 import datetime
-import math
 from typing import assert_never
 
 from beartype import beartype
 
 from literalizer._checks import scalar_type_bucket
+from literalizer._formatters.format_floats import data_has_special_float
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 
@@ -190,22 +190,6 @@ def deduplicate_preamble_entries(
 
 
 @beartype
-def _has_special_float(*, data: Value) -> bool:
-    """Return ``True`` if *data* contains any special float value
-    (inf, -inf, or nan).
-    """
-    match data:
-        case float():
-            return math.isinf(data) or math.isnan(data)
-        case dict():
-            return any(_has_special_float(data=v) for v in data.values())
-        case list() | set():
-            return any(_has_special_float(data=v) for v in data)
-        case _:
-            return False
-
-
-@beartype
 def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     """Return *elements* with plain dicts pooled and ordered dicts pooled.
 
@@ -373,7 +357,7 @@ def compute_preamble(
     )
     special_float = (
         language.special_float_preamble
-        if float in types and _has_special_float(data=data)
+        if float in types and data_has_special_float(data=data)
         else ()
     )
     collection = _collection_preamble(types=types, language=language)

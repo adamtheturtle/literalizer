@@ -36,6 +36,7 @@ from literalizer._formatters.format_factories import (
     set_format_factory,
 )
 from literalizer._formatters.format_floats import (
+    data_has_special_float,
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
@@ -103,7 +104,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    UnrepresentableSpecialFloatError,
+)
 
 _CRYSTAL_JSON_ANY = "JSON::Any"
 _CRYSTAL_RECORD_MAP_VALUE = "LiteralizerRecordValue"
@@ -762,6 +766,12 @@ class Crystal(metaclass=LanguageCls):
         letting the Crystal compiler or JSON parser fail at runtime.
         """
         if self._uses_json_any:
+            if data_has_special_float(data=data):
+                msg = (
+                    "Crystal(json_type=JSON_ANY) cannot represent special "
+                    "floats because JSON.parse accepts only finite numbers."
+                )
+                raise UnrepresentableSpecialFloatError(msg)
             self._validate_json_any_data(data=data)
 
     def _validate_json_any_data(self, *, data: Value) -> None:

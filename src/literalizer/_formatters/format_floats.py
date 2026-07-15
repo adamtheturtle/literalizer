@@ -1,6 +1,26 @@
 """Float formatting functions for finite values."""
 
+import math
+
 from beartype import beartype
+
+from literalizer._types import OrderedMap, Value
+
+
+@beartype
+def data_has_special_float(*, data: Value) -> bool:
+    """Return whether *data* contains NaN or an infinity."""
+    match data:
+        case float():
+            return not math.isfinite(data)
+        case OrderedMap() | dict():
+            return any(
+                data_has_special_float(data=value) for value in data.values()
+            )
+        case list() | set():
+            return any(data_has_special_float(data=value) for value in data)
+        case _:
+            return False
 
 
 @beartype
