@@ -253,6 +253,10 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
+        render_record_literal=None,
+        compute_record_shapes=None,
+        render_tuple_literal=None,
+        compute_tuple_list_ids=None,
     )
 
 
