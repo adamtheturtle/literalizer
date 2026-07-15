@@ -442,7 +442,7 @@ def _scala_record_field_identifier(key: str, /) -> str:
 
     Scala field identifiers are otherwise the dict keys verbatim (no
     case conversion).  Keywords are enclosed in backticks in both the
-    declaration and named argument (issue #2968).
+    declaration and named argument.
     """
     if key in _SCALA_KEYWORDS:
         return f"`{key}`"

@@ -441,8 +441,7 @@ def _reject_object_variant_mixed_scalar_container_lists(
     wrap heterogeneous scalars in its generated variant, but that
     variant has no container-valued branch, so a list such as
     ``[1, []]`` cannot become a homogeneous ``seq``.  Reject it before
-    rendering instead of returning Nim code that fails to compile
-    (issue #2965).
+    rendering instead of returning Nim code that fails to compile.
     """
     if not isinstance(data, list):
         return
@@ -702,7 +701,7 @@ def _nim_record_field_identifier(key: str, /) -> str:
     ...)`` literal read most naturally in the conventional Nim
     ``camelCase`` (e.g. ``is_done`` -> ``isDone``); the same conversion
     is applied to both so they always agree.  A keyword is enclosed in
-    backticks so it remains a valid field name (issue #2966).
+    backticks so it remains a valid field name.
     """
     identifier = IdentifierCase.CAMEL.convert(name=key)
     normalized = identifier.replace("_", "").lower()

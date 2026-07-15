@@ -202,7 +202,7 @@ def build_tuple_strategy(
     # field resolves to a different record type.  Without this, sibling
     # records such as ``{input: {a: 1}}`` and ``{input: {b: 2}}`` reuse
     # the first outer declaration even though their ``input`` field types
-    # differ (issues #2967 and #2969).
+    # differ.
     record_strategy = build_record_strategy(
         renderer=wrapped_renderer,
         split_conflicting_field_types=True,

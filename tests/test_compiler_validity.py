@@ -1,4 +1,4 @@
-"""Regression coverage for compiler-validity issues #2960--#2979."""
+"""Regression coverage for compiler-valid literal generation."""
 
 from collections.abc import Iterable
 
@@ -35,7 +35,7 @@ def _render(
 
 
 def test_java_mixed_width_integer_array_widens_to_long() -> None:
-    """A later long literal widens the Java array element type (#2960)."""
+    """A later long literal widens the Java array element type."""
     rendered = _render(source="[1, 1099511627776]", language=Java())
 
     assert "new long[]{" in rendered
@@ -204,7 +204,7 @@ def test_tuple_strategy_splits_outer_records_for_nested_shape(
 
 
 def test_nim_object_variant_rejects_scalar_container_sequence() -> None:
-    """Nim rejects a list its scalar-only variant cannot unify (#2965)."""
+    """Nim rejects a list its scalar-only variant cannot unify."""
     language = Nim(
         heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
     )
