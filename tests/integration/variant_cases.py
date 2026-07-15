@@ -901,11 +901,13 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     str, Value>`` and wraps the leaves in its value enum (issue #2910);
     Go widens it to ``map[string]any`` (issue #2911), and Java widens it
     to ``java.util.Map<String, Object>`` (issue #2912).  C# widens it to
-    ``Dictionary<string, object>`` (issue #2913).  The remaining
-    ``RECORD`` languages gain their own widening in later sub-issues of
-    #2909, so this stays out of all-languages base discovery.  Both
-    layouts are covered because their widened-map paths render compact
-    and multiline literals separately.
+    ``Dictionary<string, object>`` (issue #2913), and Crystal uses a
+    native scalar union in ``Hash(String, LiteralizerRecordValue)``
+    (issue #2919).  The remaining ``RECORD`` languages gain their own
+    widening in later sub-issues of #2909, so this stays out of
+    all-languages base discovery.  Both layouts are covered because
+    their widened-map paths render compact and multiline literals
+    separately.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():

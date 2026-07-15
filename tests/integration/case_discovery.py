@@ -111,10 +111,10 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # uniform top-level keys hold nested sibling maps of divergent /
         # disjoint shape, which the ``RECORD`` strategy cannot render as
         # a record (issue #2910).  The shared widening pass drops those
-        # maps from the shape mapping so the outer record survives.  Rust,
-        # Go, Java, and C# are the current consumers (issues #2910,
-        # #2911, #2912, and #2913); the remaining RECORD languages widen
-        # in later sub-issues of #2909, so it stays out of the
+        # maps from the shape mapping so the outer record survives.  The
+        # current consumers are Rust, Go, Java, C#, and Crystal (issues
+        # #2910 through #2913 and #2919).  Remaining RECORD languages
+        # widen in later sub-issues of #2909, so this case stays out of
         # all-languages base discovery.
         "record_nested_map_fallback",
         # ``nested_map_widening`` carries sibling dict values that are
