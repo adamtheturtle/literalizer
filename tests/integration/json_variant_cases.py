@@ -54,13 +54,6 @@ _FOCUSED_CASES: tuple[_FocusedCase, ...] = (
         variable_form=_EXISTING,
     ),
     _FocusedCase(
-        lang_cls=Odin,
-        name="Odin_json_type_json_value_existing",
-        json_type="JSON_VALUE",
-        case_dir_name="dict_with_list_value",
-        variable_form=_EXISTING,
-    ),
-    _FocusedCase(
         lang_cls=OCaml,
         name="OCaml_json_type_yojson_safe_t_existing",
         json_type="YOJSON_SAFE_T",
@@ -71,6 +64,15 @@ _FOCUSED_CASES: tuple[_FocusedCase, ...] = (
         lang_cls=PureScript,
         name="PureScript_json_type_argonaut_json_existing",
         json_type="ARGONAUT_JSON",
+        case_dir_name="dict_with_list_value",
+        variable_form=_EXISTING,
+    ),
+    # Odin emits a real assignment, so its file wrapper must inject the
+    # declaration that makes an ExistingVariable fixture self-contained.
+    _FocusedCase(
+        lang_cls=Odin,
+        name="Odin_json_type_json_value_existing",
+        json_type="JSON_VALUE",
         case_dir_name="dict_with_list_value",
         variable_form=_EXISTING,
     ),
