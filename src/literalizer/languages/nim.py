@@ -485,26 +485,18 @@ def _build_object_variant_preamble(
     indent: str,
     /,
     *,
-    compute_wrap_ids: Callable[[Value], frozenset[int]] | None = None,
+    compute_wrap_ids: Callable[[Value], frozenset[int]],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Emit an object-variant ``type`` block for wrapped scalars.
 
-    ``OBJECT_VARIANT`` supplies no *compute_wrap_ids* and therefore
-    discovers every heterogeneous container itself.  ``RECORD`` uses
-    the same value carrier only for maps de-recordized by its shared
-    nested-map fallback, and supplies that narrower id collector.
+    ``OBJECT_VARIANT`` supplies its broad collector, while ``RECORD``
+    uses the same value carrier only for maps de-recordized by its
+    shared nested-map fallback and supplies that narrower collector.
     """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the object-variant type declaration for *data*."""
-        wrap_ids = (
-            compute_wrap_ids(data)
-            if compute_wrap_ids is not None
-            else (
-                collect_heterogeneous_container_ids(data=data)
-                | collect_sibling_map_wrap_ids(data=data)
-            )
-        )
+        wrap_ids = compute_wrap_ids(data)
         if not wrap_ids:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
@@ -540,6 +532,31 @@ def _build_object_variant_preamble(
         return tuple(lines)
 
     return _preamble
+
+
+@beartype
+def _build_default_object_variant_preamble(
+    variant_name: str,
+    date_type: str,
+    datetime_type: str,
+    indent: str,
+    /,
+) -> Callable[[Value], tuple[str, ...]]:
+    """Build the broad ``OBJECT_VARIANT`` preamble."""
+
+    def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+        """Collect every heterogeneous container requiring a variant."""
+        return collect_heterogeneous_container_ids(
+            data=data,
+        ) | collect_sibling_map_wrap_ids(data=data)
+
+    return _build_object_variant_preamble(
+        variant_name,
+        date_type,
+        datetime_type,
+        indent,
+        compute_wrap_ids=_compute_wrap_ids,
+    )
 
 
 # The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
@@ -1082,7 +1099,7 @@ class Nim(metaclass=LanguageCls):
 
         OBJECT_VARIANT = _HeterogeneousStrategyConfig(
             build_behavior=_build_object_variant_behavior,
-            build_preamble=_build_object_variant_preamble,
+            build_preamble=_build_default_object_variant_preamble,
         )
         """Auto-generate a Nim object variant in the preamble containing
         only the branches actually present in the data, and wrap each
