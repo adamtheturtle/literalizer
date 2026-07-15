@@ -44,6 +44,7 @@ from beartype import beartype
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
+    drop_unrecordizable_nested_sibling_maps,
 )
 from literalizer._language import (
     HeterogeneousBehavior,
@@ -631,10 +632,12 @@ def _list_element_record_name(
 
 
 @beartype
-def build_record_strategy(
+def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
     renderer: RecordRenderer,
     split_conflicting_field_types: bool,
+    widen_unrecordizable_nested_sibling_maps: bool,
+    derecordized_map_open: str | None,
 ) -> RecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 
@@ -652,6 +655,18 @@ def build_record_strategy(
     :attr:`RecordRenderer.field_type` hook is a faithful field-type
     signature (widening hooks are checked for polarity first).  Left off,
     the strategy behaves exactly as before.
+
+    When *widen_unrecordizable_nested_sibling_maps* is set, nested maps
+    whose sibling instances cannot share one record shape are dropped
+    from the shape mapping before field-type refinement (issue #2910).
+    They consequently fall through to the language's plain-map renderer;
+    their ids are exposed through ``compute_wrap_ids`` so the shared
+    heterogeneous checks treat their scalar children as representable by
+    the language's widened map value type.  The identity scalar wrapper
+    leaves those children unchanged in languages such as Go, whose top
+    type accepts the original literals directly.  Such a language can
+    provide *derecordized_map_open* to force the corresponding widened
+    literal opener even when one map's raw values look homogeneous.
     """
     name_by_shape: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
@@ -667,14 +682,22 @@ def build_record_strategy(
         naming and later the mixed-record-shape gate treat them apart.
         """
         raw_shapes_by_id = collect_record_shapes(data=data)
+        widened_shapes_by_id = (
+            drop_unrecordizable_nested_sibling_maps(
+                data=data,
+                shapes_by_id=raw_shapes_by_id,
+            )
+            if widen_unrecordizable_nested_sibling_maps
+            else raw_shapes_by_id
+        )
         shapes_by_id = (
             _refine_record_shapes(
                 data=data,
-                shapes_by_id=raw_shapes_by_id,
+                shapes_by_id=widened_shapes_by_id,
                 field_type=renderer.field_type,
             )
             if split_conflicting_field_types
-            else raw_shapes_by_id
+            else widened_shapes_by_id
         )
         name_by_shape.clear()
         id_to_shape.clear()
@@ -724,10 +747,16 @@ def build_record_strategy(
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
-    ) -> RenderedRecordLiteral:
+    ) -> RenderedRecordLiteral | None:
         """Render a record-shape dict as a language-specific literal,
         caching the first-seen field-type requests for its shape.
+
+        A record-eligible dict absent from ``id_to_shape`` was widened
+        to a plain map, so return ``None`` and let the shared formatter
+        fall through to normal map rendering.
         """
+        if id(value) not in id_to_shape:
+            return None
         shape = id_to_shape[id(value)]
         if shape not in request_by_shape:
             request_by_shape[shape] = {
@@ -743,14 +772,38 @@ def build_record_strategy(
         ]
         return renderer.render_literal(name_by_shape[shape], literal_fields)
 
+    def _compute_wrap_ids(data: Value) -> frozenset[int]:
+        """Return ids of maps widened out of the record-shape mapping."""
+        if not widen_unrecordizable_nested_sibling_maps:
+            return frozenset()
+        raw_shapes_by_id = collect_record_shapes(data=data)
+        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+            data=data,
+            shapes_by_id=raw_shapes_by_id,
+        )
+        return frozenset(set(raw_shapes_by_id) - set(widened_shapes_by_id))
+
+    def _identity_scalar_wrapper(_raw: Scalar, formatted: str) -> str:
+        """Leave a scalar unchanged inside a top-type widened map."""
+        return formatted
+
     behavior = HeterogeneousBehavior(
         skip_scalar_checks=False,
-        compute_wrap_ids=no_compute_wrap_ids,
-        wrap_scalar=None,
+        compute_wrap_ids=(
+            _compute_wrap_ids
+            if widen_unrecordizable_nested_sibling_maps
+            else no_compute_wrap_ids
+        ),
+        wrap_scalar=(
+            _identity_scalar_wrapper
+            if widen_unrecordizable_nested_sibling_maps
+            else None
+        ),
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
+        dict_open_for_wrap_ids=derecordized_map_open,
     )
 
     def _preamble(data: Value, /) -> tuple[str, ...]:

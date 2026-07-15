@@ -1165,7 +1165,7 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 @beartype
 def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
-    """Build the Rust ``record_nested_map_fallback`` variants.
+    """Build the Rust and Go ``record_nested_map_fallback`` variants.
 
     A list of records whose top-level keys are uniform but whose nested
     map under one key differs in shape (divergent or disjoint key sets)
@@ -1173,35 +1173,46 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     maps distinct record shapes forces the enclosing records to split,
     so the ``RECORD`` strategy would reject the sibling list.  The shared
     widening pass drops such families from the shape mapping, so the
-    outer record survives and Rust widens the field to ``HashMap<&'static
-    str, Value>``, wrapping the scalar leaves in the generated ``Value``
-    enum (issue #2910).  Rust is the reference implementation; the
-    remaining ``RECORD`` languages gain their own widening in the
-    sub-issues of #2909, so this stays out of the all-languages base
-    discovery.  Both layouts are covered because the compact and
-    multiline paths render the widened map literals separately.
+    outer record survives.  Rust widens the field to ``HashMap<&'static
+    str, Value>`` and wraps the leaves in its value enum (issue #2910);
+    Go widens it to ``map[string]any`` (issue #2911).  The remaining
+    ``RECORD`` languages gain their own widening in later sub-issues of
+    #2909, so this stays out of all-languages base discovery.  Both
+    layouts are covered because their widened-map paths render compact
+    and multiline literals separately.
     """
-    default_spec = make_spec(lang_cls=Rust)
-    record_strategy = next(
-        strategy
-        for strategy in default_spec.heterogeneous_strategies
-        if strategy.name == "RECORD"
-    )
-    spec = make_spec(lang_cls=Rust, heterogeneous_strategy=record_strategy)
-    return [
-        Variant(
-            name="Rust_record_nested_map_fallback",
-            spec=spec,
-            lang_cls=Rust,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
-        Variant(
-            name="Rust_record_nested_map_fallback_multiline",
-            spec=spec,
-            lang_cls=Rust,
-            collection_layout=literalizer.CollectionLayout.MULTILINE,
-        ),
-    ]
+    variants: list[Variant] = []
+    for lang_cls in (Rust, Go):
+        default_spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
+        )
+        spec = make_spec(
+            lang_cls=lang_cls,
+            heterogeneous_strategy=record_strategy,
+        )
+        variants.extend(
+            [
+                Variant(
+                    name=(f"{lang_cls.__name__}_record_nested_map_fallback"),
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_record_nested_map_fallback_"
+                        "multiline"
+                    ),
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=(literalizer.CollectionLayout.MULTILINE),
+                ),
+            ]
+        )
+    return variants
 
 
 @beartype

@@ -565,6 +565,13 @@ class HeterogeneousBehavior:
     Languages that do not need cross-call top-level wrapping return
     an empty ``frozenset``.
 
+    ``dict_open_for_wrap_ids`` optionally forces the opening delimiter
+    for a dict whose id appears in ``compute_wrap_ids``.  Go's RECORD
+    widening uses this to keep every widened map literal at
+    ``map[string]any`` even when all of one map's values happen to share
+    a narrower scalar type (issue #2911).  Other wrapping strategies
+    leave it as ``None`` and retain their normal inferred dict opener.
+
     ``render_record_literal`` renders a record-shaped dict as a
     generated struct literal given its :class:`RecordShape` and a
     mapping of pre-formatted field values, returning a
@@ -614,6 +621,7 @@ class HeterogeneousBehavior:
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
+    dict_open_for_wrap_ids: str | None
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
@@ -665,6 +673,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     wrap_scalar=None,
     wrap_non_scalar=None,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
+    dict_open_for_wrap_ids=None,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.

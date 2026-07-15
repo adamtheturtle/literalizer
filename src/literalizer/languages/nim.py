@@ -464,6 +464,7 @@ def _build_object_variant_behavior(
         wrap_scalar=_wrap,
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+        dict_open_for_wrap_ids=None,
     )
 
 
@@ -1538,6 +1539,8 @@ class Nim(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
         )
 
     @cached_property

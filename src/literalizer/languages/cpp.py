@@ -804,6 +804,7 @@ _CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
     wrap_scalar=None,
     wrap_non_scalar=None,
     compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
+    dict_open_for_wrap_ids=None,
     render_tuple_literal=_render_cpp_tuple,
     compute_tuple_list_ids=_cpp_tuple_list_ids,
 )
@@ -2290,6 +2291,8 @@ class Cpp(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
         )
 
     @cached_property
