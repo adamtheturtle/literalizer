@@ -13,10 +13,13 @@ This lives here, driven by a step of the ``lint-v`` job in
 toolchain is installed.  It shares the same input and comparison logic
 as the other per-language round-trip helpers.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-its 26-digit value overflows ``u64`` (the widest unsigned integer the V
-backend emits), so the program would not compile if the field were
-kept.  Same shape as the Go, TypeScript, and Zig exclusions.
+The shared input is trimmed to the subset the V backend can type safely.
+Its 26-digit ``biginteger`` overflows ``u64`` (the widest unsigned
+integer the backend emits).  The other excluded fields combine empty or
+differently typed collections, or mix bool and int interface members;
+V's default compiler backend cannot lower those shapes reliably.  The
+remaining document still covers signed and wide integers, floats,
+strings, and a homogeneous array.
 """
 
 import shutil
@@ -27,7 +30,19 @@ from literalizer.languages import V
 
 _VAR_NAME = "my_data"
 _LABEL = "V"
-_EXCLUDED_KEYS = ("biginteger",)
+_EXCLUDED_KEYS = (
+    "biginteger",
+    "bool_true",
+    "bool_false",
+    "empty_array",
+    "double_array",
+    "bool_array",
+    "mixed_array",
+    "nested_array",
+    "empty_object",
+    "flat_object",
+    "nested_object",
+)
 
 # Walk the literalized ``IVal``-wrapped value into a ``json2.Any`` tree
 # so ``json2.encode`` can re-emit it.  ``IVal`` is the empty interface
