@@ -885,7 +885,8 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 @beartype
 def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
-    """Build the Rust, Go, and Java nested-map fallback variants.
+    """Build nested-map fallback variants for capable ``RECORD``
+    strategies.
 
     A list of records whose top-level keys are uniform but whose nested
     map under one key differs in shape (divergent or disjoint key sets)
@@ -903,17 +904,25 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     and multiline literals separately.
     """
     variants: list[Variant] = []
-    for lang_cls in (Rust, Go, Java):
+    for lang_cls in sorted_languages():
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
+            (
+                strategy
+                for strategy in default_spec.heterogeneous_strategies
+                if strategy.name == "RECORD"
+            ),
+            None,
         )
+        if record_strategy is None:
+            continue
         spec = make_spec(
             lang_cls=lang_cls,
             heterogeneous_strategy=record_strategy,
         )
+        behavior = spec.heterogeneous_behavior
+        if not behavior.widens_unrecordizable_nested_sibling_maps:
+            continue
         variants.extend(
             [
                 Variant(
