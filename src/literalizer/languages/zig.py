@@ -1260,6 +1260,8 @@ class Zig(metaclass=LanguageCls):
 
         def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
             """Tag a scalar stored in a widened ``ZVal`` map."""
+            if raw_value is None:
+                return ".nil"
             if isinstance(raw_value, bool):
                 return f".{{ .bool = {formatted} }}"
             return _format_zig_entry(
