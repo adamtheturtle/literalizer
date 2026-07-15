@@ -30,3 +30,16 @@ def test_typescript_new_variable_malformed_name_is_normalized() -> None:
     )
 
     assert "const a_b = 1;" in result.code
+
+
+def test_typescript_new_variable_leading_digit_is_normalized() -> None:
+    """A leading digit must not produce invalid TypeScript."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=TypeScript(),
+        variable_form=NewVariable(name="1value", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "const literalizer_1value = 1;" in result.code
