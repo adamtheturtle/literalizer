@@ -1164,6 +1164,47 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
+    """Build the Rust ``record_nested_map_fallback`` variants.
+
+    A list of records whose top-level keys are uniform but whose nested
+    map under one key differs in shape (divergent or disjoint key sets)
+    cannot render that nested field as a record: giving the two nested
+    maps distinct record shapes forces the enclosing records to split,
+    so the ``RECORD`` strategy would reject the sibling list.  The shared
+    widening pass drops such families from the shape mapping, so the
+    outer record survives and Rust widens the field to ``HashMap<&'static
+    str, Value>``, wrapping the scalar leaves in the generated ``Value``
+    enum (issue #2910).  Rust is the reference implementation; the
+    remaining ``RECORD`` languages gain their own widening in the
+    sub-issues of #2909, so this stays out of the all-languages base
+    discovery.  Both layouts are covered because the compact and
+    multiline paths render the widened map literals separately.
+    """
+    default_spec = make_spec(lang_cls=Rust)
+    record_strategy = next(
+        strategy
+        for strategy in default_spec.heterogeneous_strategies
+        if strategy.name == "RECORD"
+    )
+    spec = make_spec(lang_cls=Rust, heterogeneous_strategy=record_strategy)
+    return [
+        Variant(
+            name="Rust_record_nested_map_fallback",
+            spec=spec,
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        ),
+        Variant(
+            name="Rust_record_nested_map_fallback_multiline",
+            spec=spec,
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.MULTILINE,
+        ),
+    ]
+
+
+@beartype
 def build_nested_map_widening_variants() -> Iterable[Variant]:
     """Build the ``nested_map_widening`` variants.
 
@@ -2240,6 +2281,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "record_keyword_field": build_record_keyword_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
+    "record_nested_map_fallback": build_record_nested_map_fallback_variants,
     "nested_map_widening": build_nested_map_widening_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
@@ -2586,6 +2628,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     ),
     "record_field_type_split": (
         _ci(case_dir_name="record_field_type_split", suffix=""),
+    ),
+    "record_nested_map_fallback": (
+        _ci(case_dir_name="record_nested_map_fallback", suffix=""),
     ),
     "nested_map_widening": (
         _ci(case_dir_name="nested_map_widening", suffix=""),

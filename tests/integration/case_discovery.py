@@ -107,6 +107,16 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # base-discovering it would emit golden files that fail to
         # compile.
         "record_field_type_split",
+        # ``record_nested_map_fallback`` carries a list of records whose
+        # uniform top-level keys hold nested sibling maps of divergent /
+        # disjoint shape, which the ``RECORD`` strategy cannot render as
+        # a record (issue #2910).  The shared widening pass drops those
+        # maps from the shape mapping so the outer record survives, and
+        # Rust widens the field to ``HashMap<&'static str, Value>``.  Rust
+        # is the sole consumer (the reference implementation); the
+        # remaining RECORD languages widen in the sub-issues of #2909, so
+        # it stays out of the all-languages base discovery.
+        "record_nested_map_fallback",
         # ``nested_map_widening`` carries sibling dict values that are
         # maps whose value types diverge (issue #2878).  Each inner map
         # otherwise renders at its own narrower value type while the

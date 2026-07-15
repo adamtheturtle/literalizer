@@ -937,10 +937,17 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     if not dict_supports_het:
         _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:
+        # A scalar-wrapping strategy (RECORD widening a nested sibling
+        # map to a plain map, issue #2910) will wrap the scalar children
+        # of the container ids it marks in a value enum, so those
+        # containers are homogeneous by construction and exempt from the
+        # scalar-family checks -- the same carve-out ``record_dict_ids``
+        # grants.
+        wrapped_dict_ids = record_dict_ids | behavior.compute_wrap_ids(data)
         if not seq_supports_het:
             _check_heterogeneous(
                 data=data,
-                record_dict_ids=record_dict_ids,
+                record_dict_ids=wrapped_dict_ids,
                 tuple_list_ids=tuple_list_ids,
             )
             _check_heterogeneous_sibling_lists(
@@ -950,7 +957,7 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         if not dict_supports_het:
             _check_mixed_dict_values(
                 data=data,
-                record_dict_ids=record_dict_ids,
+                record_dict_ids=wrapped_dict_ids,
                 tuple_list_ids=tuple_list_ids,
             )
         if not seq_supports_het:
