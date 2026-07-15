@@ -234,12 +234,14 @@ sml
 stdin
 str
 struct
+structs
 subclasses
 subdirectory
 superset
 swiftc
 templating
 tomlkit
+toolchain
 ty
 typeclass
 unescape
