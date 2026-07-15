@@ -173,6 +173,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_int_very_large", suffix="_bigint"),
         _ci(case_dir_name="bool_list", suffix="_bool_list"),
         _ci(case_dir_name="scalar_null", suffix="_null"),
+        _ci(case_dir_name="json_string_escaping", suffix="_string_escaping"),
         _ci(
             case_dir_name="scalar_int_negative_large",
             suffix="_negative_large",

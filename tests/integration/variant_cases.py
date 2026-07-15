@@ -19,7 +19,6 @@ from literalizer.exceptions import IncompatibleFormatsError
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_discovery import cases_with_special_floats
-from .json_variant_cases import build_json_variant_cases
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -1732,7 +1731,7 @@ def build_variant_cases() -> list[VariantCase]:
 
     The full set is the cross product of every axis's variants with its
     declared inputs in :data:`AXIS_INPUTS`, plus capability-generated
-    capability-generated JSON variable forms and the focused modifier / JSON
+    capability-generated JSON variable forms and the focused modifier
     regressions.
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
@@ -1755,7 +1754,6 @@ def build_variant_cases() -> list[VariantCase]:
             )
     cases.extend(build_modifier_variant_cases())
     cases.extend(build_json_type_variable_form_cases())
-    cases.extend(build_json_variant_cases())
     return cases
 
 
