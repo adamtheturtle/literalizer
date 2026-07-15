@@ -1688,6 +1688,15 @@ class Nim(metaclass=LanguageCls):
             return _json_call_preamble
         if self._uses_record:
             record_preamble = self._record_strategy.preamble
+            variant_preamble = _build_object_variant_preamble(
+                self.heterogeneous_value_variant_name,
+                self._heterogeneous_variant_date_type,
+                self._heterogeneous_variant_datetime_type,
+                self.indent,
+                compute_wrap_ids=(
+                    self._record_strategy.behavior.compute_wrap_ids
+                ),
+            )
 
             def _record_call_preamble(data: Value, /) -> tuple[str, ...]:
                 """Suppress UnusedImport for ``tables`` and emit it plus
@@ -1699,6 +1708,7 @@ class Nim(metaclass=LanguageCls):
                 return (
                     "{.warning[UnusedImport]:off.}",
                     "import tables",
+                    *variant_preamble(data),
                     *record_preamble(data),
                 )
 
