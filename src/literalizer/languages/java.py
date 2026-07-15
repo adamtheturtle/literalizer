@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import functools
-import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -35,6 +34,7 @@ from literalizer._formatters.format_entries import (
     passthrough_set_entry,
 )
 from literalizer._formatters.format_floats import (
+    data_has_special_float,
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
@@ -654,28 +654,12 @@ _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _contains_special_float(data: Value) -> bool:
-    """Return whether *data* contains NaN or an infinity."""
-    match data:
-        case float():
-            return not math.isfinite(data)
-        case OrderedMap() | dict():
-            return any(
-                _contains_special_float(data=value) for value in data.values()
-            )
-        case list() | set():
-            return any(_contains_special_float(data=value) for value in data)
-        case _:
-            return False
-
-
-@beartype
 def _java_read_tree_expression(data: Value) -> str:
     """Render ``new ObjectMapper().readTree("...")`` for *data*."""
     json_text = format_json_value_text(data=data)
     java_literal = format_string_backslash(value=json_text)
     mapper = "new ObjectMapper()"
-    if _contains_special_float(data=data):
+    if data_has_special_float(data=data):
         mapper = (
             "new ObjectMapper(com.fasterxml.jackson.core.JsonFactory.builder()"
             ".enable(com.fasterxml.jackson.core.json.JsonReadFeature."

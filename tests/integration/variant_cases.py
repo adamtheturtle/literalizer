@@ -298,7 +298,7 @@ def build_json_type_cross_variants(
 
     Starting from :func:`build_json_type_variants` keeps discovery tied to
     the language capability.  A newly added JSON type or format therefore
-    receives the cross-option coverage without another language allowlist.
+    receives the cross-option coverage without another language allow-list.
     """
     variants: list[Variant] = []
     for json_variant in build_json_type_variants():
@@ -599,11 +599,14 @@ def build_json_type_combined_cases() -> list[VariantCase]:
                 lang_cls=json_variant.lang_cls,
                 declaration_style=declaration_style,
             )
+            # No current JSON-capable redefinition style needs an override
+            # or has a sibling style; these paths activate from metadata when
+            # such a language is added.
             if seq_override is not None:
-                kwargs["sequence_format"] = seq_override
+                kwargs["sequence_format"] = seq_override  # pragma: no cover
             name = f"{json_variant.name}_combined"
             if index > 0:
-                name = (
+                name = (  # pragma: no cover
                     f"{name}_declaration_style_"
                     f"{declaration_style.name.lower()}"
                 )
