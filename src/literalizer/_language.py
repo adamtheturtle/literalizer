@@ -30,7 +30,7 @@ from literalizer.exceptions import UnrepresentableEmptyDictError
 
 
 @beartype
-def format_new_variable_name(language: "Language", name: str) -> str:
+def format_new_variable_name(*, language: "Language", name: str) -> str:
     """Return a target-language-safe name for a new variable.
 
     ``NewVariable`` names are emitted into generated source, so malformed
@@ -41,7 +41,7 @@ def format_new_variable_name(language: "Language", name: str) -> str:
     """
     if name.isidentifier() and name not in language.reserved_identifiers:
         return name
-    normalized = re.sub(r"[^0-9A-Za-z_]", "_", name)
+    normalized = re.sub(pattern=r"[^0-9A-Za-z_]", repl="_", string=name)
     if (
         not normalized
         or normalized[0].isdigit()

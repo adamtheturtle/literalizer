@@ -1,7 +1,7 @@
 """Regression tests for generated names in ``NewVariable`` bindings."""
 
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.languages import SML, Swift, TypeScript
+from literalizer.languages import Sml, Swift, TypeScript
 
 
 def test_typescript_new_variable_malformed_name_is_normalized() -> None:
@@ -63,7 +63,7 @@ def test_sml_new_variable_reserved_name_is_normalized() -> None:
     result = literalize(
         source="1",
         input_format=InputFormat.JSON,
-        language=SML(),
+        language=Sml(),
         variable_form=NewVariable(name="val", modifiers=frozenset()),
         wrap_in_file=True,
     )

@@ -2196,7 +2196,7 @@ def _apply_variable_wrapper(
                 else language.format_variable_declaration
             )
             wrapped = declaration_formatter(
-                format_new_variable_name(language, name),
+                format_new_variable_name(language=language, name=name),
                 value,
                 data,
                 modifiers,
