@@ -57,6 +57,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
@@ -501,7 +502,8 @@ def _swift_record_field_identifier(key: str, /) -> str:
     argument label uses the same word without backticks (the compiler
     rejects escaping it in that position).
     """
-    return f"`{key}`" if key in _SWIFT_KEYWORDS else key
+    identifier = require_record_field_identifier(key, language_name="Swift")
+    return f"`{identifier}`" if identifier in _SWIFT_KEYWORDS else identifier
 
 
 @beartype

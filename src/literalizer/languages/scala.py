@@ -59,6 +59,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -444,7 +445,12 @@ def _scala_record_field_identifier(key: str, /) -> str:
     case conversion).  Keywords are enclosed in backticks in both the
     declaration and named argument.
     """
-    if key in _SCALA_KEYWORDS:
+    if key in _SCALA_KEYWORDS or not key.isidentifier():
+        if "`" in key or "\n" in key or "\r" in key:
+            require_record_field_identifier(
+                key,
+                language_name="Scala",
+            )
         return f"`{key}`"
     return key
 

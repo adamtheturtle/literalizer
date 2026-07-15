@@ -84,7 +84,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableStringError,
+)
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
@@ -112,6 +115,11 @@ def _format_string_cobol(value: str) -> str:
 
     Example: ``say "hi" loud`` becomes ``"say ""hi"" loud"``.
     """
+    if "\0" in value:
+        raise UnrepresentableStringError(
+            language_name="COBOL",
+            character_name="NUL",
+        )
     cleaned = value
     for char, replacement in {"\n": " ", "\r": " ", "\t": " "}.items():
         cleaned = cleaned.replace(char, replacement)

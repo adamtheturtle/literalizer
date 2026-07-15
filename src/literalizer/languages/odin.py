@@ -48,7 +48,7 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import format_string_backslash_nul
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -56,6 +56,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -248,7 +249,9 @@ def _odin_record_field_identifier(key: str, /) -> str:
     Odin member identifiers are the dict keys verbatim (no case
     conversion), matching the ``Record0{ id = 1, ... }`` literal form.
     """
-    return key
+    return require_record_field_identifier(
+        key, language_name="Odin", reserved=frozenset({"proc"})
+    )
 
 
 @beartype
@@ -1060,7 +1063,7 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -1165,10 +1168,10 @@ class Odin(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=False,
+                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
-                allow_same_key_record_variants_in_sequences=False,
+                allow_same_key_record_variants_in_sequences=True,
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

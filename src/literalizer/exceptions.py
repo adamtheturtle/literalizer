@@ -64,6 +64,34 @@ class UnrepresentableInputError(Exception):
     """
 
 
+class InvalidRecordFieldNameError(UnrepresentableInputError):
+    """Raised when a mapping key cannot name a generated record field."""
+
+    def __init__(self, *, language_name: str, key: str) -> None:
+        """Create an ``InvalidRecordFieldNameError``."""
+        super().__init__(
+            f"{language_name} cannot represent the dict key {key!r} as a "
+            "record field identifier"
+        )
+        self.language_name = language_name
+        self.key = key
+
+
+class UnrepresentableStringError(UnrepresentableInputError):
+    """Raised when a string contains a target-unrepresentable
+    character.
+    """
+
+    def __init__(self, *, language_name: str, character_name: str) -> None:
+        """Create an ``UnrepresentableStringError``."""
+        super().__init__(
+            f"{language_name} string literals cannot represent "
+            f"{character_name}"
+        )
+        self.language_name = language_name
+        self.character_name = character_name
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.

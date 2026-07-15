@@ -60,6 +60,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import (
     DictType,
@@ -766,7 +767,8 @@ def _java_record_field_identifier(key: str, /) -> str:
     Java record literals are positional, so reserved words can be
     made legal declaration identifiers by appending an underscore.
     """
-    return f"{key}_" if key in _JAVA_KEYWORDS else key
+    identifier = require_record_field_identifier(key, language_name="Java")
+    return f"{identifier}_" if identifier in _JAVA_KEYWORDS else identifier
 
 
 @beartype

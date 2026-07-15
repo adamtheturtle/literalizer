@@ -1,0 +1,1 @@
+Ensure RECORD field identifiers and conflicting field types never produce invalid target-language source.

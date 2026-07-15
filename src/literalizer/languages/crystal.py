@@ -47,7 +47,9 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
     make_overflow_fallback_formatter,
 )
-from literalizer._formatters.format_strings import format_string_backslash_hash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_hash_nul,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -55,6 +57,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
@@ -294,7 +297,7 @@ def _crystal_record_field_identifier(key: str, /) -> str:
     constructor the ``record`` macro generates, so the field names
     appear only in the declaration.
     """
-    return key
+    return require_record_field_identifier(key, language_name="Crystal")
 
 
 @beartype
@@ -974,7 +977,7 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_hash
+        return format_string_backslash_hash_nul
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -1136,10 +1139,10 @@ class Crystal(metaclass=LanguageCls):
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CRYSTAL_RECORD_MAP_TYPE}{{",
-            allow_same_key_record_variants_in_sequences=False,
+            allow_same_key_record_variants_in_sequences=True,
         )
 
     @cached_property

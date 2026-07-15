@@ -52,6 +52,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import (
     record_shape_for_dict,
@@ -259,7 +260,9 @@ def _c_record_field_identifier(key: str, /) -> str:
     conversion), matching the designated-initializer literal form
     ``(struct Record0){.id = 1, ...}``.
     """
-    return key
+    return require_record_field_identifier(
+        key, language_name="C", reserved=frozenset({"switch"})
+    )
 
 
 @beartype
@@ -1412,7 +1415,7 @@ class C(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=self._map_open_str,
             allow_same_key_record_variants_in_sequences=False,

@@ -1,0 +1,1 @@
+Handle embedded NUL characters without emitting invalid target-language string literals.

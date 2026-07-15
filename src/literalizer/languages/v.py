@@ -48,7 +48,7 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar_single,
+    format_string_backslash_dollar_single_nul,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -57,6 +57,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import (
     infer_element_type,
@@ -536,7 +537,8 @@ def _v_record_field_identifier(key: str, /) -> str:
     V permits reserved words as identifiers when prefixed with ``@``,
     both in struct declarations and keyed struct literals.
     """
-    return f"@{key}" if key in _V_KEYWORDS else key
+    identifier = require_record_field_identifier(key, language_name="V")
+    return f"@{identifier}" if identifier in _V_KEYWORDS else identifier
 
 
 @beartype
@@ -1081,7 +1083,7 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_dollar_single
+        return format_string_backslash_dollar_single_nul
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
@@ -1217,7 +1219,7 @@ class V(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
             allow_same_key_record_variants_in_sequences=False,

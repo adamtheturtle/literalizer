@@ -6,6 +6,8 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
+from literalizer.exceptions import UnrepresentableStringError
+
 
 @runtime_checkable
 class _StringFormatter(Protocol):
@@ -99,6 +101,18 @@ prefix, then wraps the result in double quotes.
 Example: ``hello "world"`` -> ``"hello \"world\""``.
 """
 
+format_string_backslash_nul = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\0")],
+)
+r"""Format a double-quoted string and escape NUL as ``\0``."""
+
+format_string_backslash_nul_hex = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x00")],
+)
+r"""Format a double-quoted string and escape NUL as ``\x00``."""
+
 format_string_backslash_single = _build_backslash_formatter(
     quote_char="'",
     extra_replacements=(),
@@ -183,6 +197,12 @@ result in double quotes.
 Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
 """
 
+format_string_backslash_hash_nul = _build_backslash_formatter(
+    quote_char='"',
+    extra_replacements=[("#{", "\\#{"), ("\0", "\\0")],
+)
+r"""Format a Crystal string, escaping interpolation and NUL."""
+
 format_string_backslash_tcl = _build_backslash_formatter(
     quote_char='"',
     extra_replacements=[("$", "\\$"), ("[", "\\["), ("]", "\\]")],
@@ -209,6 +229,33 @@ with a backslash prefix, then wraps the result in single quotes.
 
 Example: ``price $10`` -> ``'price \$10'``.
 """
+
+format_string_backslash_dollar_single_nul = _build_backslash_formatter(
+    quote_char="'",
+    extra_replacements=[("$", "\\$"), ("\0", "\\0")],
+)
+r"""Format a single-quoted interpolated string and escape NUL."""
+
+
+@beartype
+def reject_nul_string_formatter(
+    formatter: Callable[[str], str],
+    /,
+    *,
+    language_name: str,
+) -> Callable[[str], str]:
+    """Wrap *formatter* with a documented rejection for NUL."""
+
+    def _format(value: str) -> str:
+        """Reject NUL, then delegate to the wrapped formatter."""
+        if "\0" in value:
+            raise UnrepresentableStringError(
+                language_name=language_name,
+                character_name="NUL",
+            )
+        return formatter(value)
+
+    return _format
 
 
 @beartype

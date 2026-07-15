@@ -52,6 +52,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import (
     MixedNumeric,
@@ -376,7 +377,12 @@ def _zig_record_field_identifier(key: str, /) -> str:
     same returned string works in a declaration and after the ``.`` of
     a designated initializer.
     """
-    if key in _ZIG_KEYWORDS:
+    if key in _ZIG_KEYWORDS or not key.isidentifier():
+        if '"' in key or "\\" in key or "\n" in key or "\r" in key:
+            require_record_field_identifier(
+                key,
+                language_name="Zig",
+            )
         return f'@"{key}"'
     return key
 

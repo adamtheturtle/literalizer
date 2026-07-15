@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import keyword
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -41,7 +42,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
+    format_string_backslash_nul,
     format_string_backslash_single,
     format_string_raw_python,
 )
@@ -52,6 +53,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
@@ -665,7 +667,8 @@ def _python_record_field_identifier(key: str, /) -> str:
     conversion), matching the keyword-argument literal form
     ``Record0(id=1, ...)``.
     """
-    return key
+    identifier = require_record_field_identifier(key, language_name="Python")
+    return f"{identifier}_" if keyword.iskeyword(identifier) else identifier
 
 
 @beartype
@@ -1186,7 +1189,7 @@ class Python(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_nul)
         SINGLE = enum.member(value=format_string_backslash_single)
         RAW = enum.member(value=format_string_raw_python)
 

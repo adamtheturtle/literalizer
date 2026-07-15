@@ -54,6 +54,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.tuple_strategy import (
     collect_tuple_list_ids,
@@ -871,7 +872,9 @@ def _cpp_record_field_identifier(key: str, /) -> str:
     conversion), matching the designated-initializer literal form
     ``Record0{.id = 1, ...}``.
     """
-    return key
+    return require_record_field_identifier(
+        key, language_name="C++", reserved=frozenset({"class"})
+    )
 
 
 @beartype
@@ -2334,7 +2337,7 @@ class Cpp(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
             allow_same_key_record_variants_in_sequences=False,

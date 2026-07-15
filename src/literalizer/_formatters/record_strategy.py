@@ -53,7 +53,32 @@ from literalizer._language import (
     no_compute_wrap_ids,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import UnrepresentableInputError
+from literalizer.exceptions import (
+    InvalidRecordFieldNameError,
+    UnrepresentableInputError,
+)
+
+
+@beartype
+def require_record_field_identifier(
+    key: str,
+    /,
+    *,
+    language_name: str,
+    reserved: frozenset[str] = frozenset(),
+) -> str:
+    """Return *key* when it can be emitted as a bare field identifier.
+
+    Languages with quoted-identifier syntax handle that syntax in their
+    renderer instead.  Languages without it use this guard so arbitrary
+    mapping keys never leak into generated declarations as invalid source.
+    """
+    if key.isidentifier() and key not in reserved:
+        return key
+    raise InvalidRecordFieldNameError(
+        language_name=language_name,
+        key=key,
+    )
 
 
 @dataclasses.dataclass(frozen=True)

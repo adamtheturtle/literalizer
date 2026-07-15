@@ -11,8 +11,28 @@ from literalizer import (
     NewVariable,
     literalize,
 )
-from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages import D, Java, Kotlin, Nim, Scala, Swift, V, Zig
+from literalizer.exceptions import (
+    HeterogeneousSiblingListsError,
+    UnrepresentableInputError,
+)
+from literalizer.languages import (
+    C,
+    Cobol,
+    Cpp,
+    Crystal,
+    D,
+    Go,
+    Java,
+    Kotlin,
+    Nim,
+    Odin,
+    Python,
+    R,
+    Scala,
+    Swift,
+    V,
+    Zig,
+)
 
 _DECLARATION_AND_LITERAL = 2
 
@@ -95,6 +115,78 @@ def test_record_strategy_splits_conflicting_field_types(
     assert "Record1" in rendered
 
 
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        C(heterogeneous_strategy=C.heterogeneous_strategies.RECORD),
+        Cpp(heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD),
+        D(heterogeneous_strategy=D.heterogeneous_strategies.RECORD),
+        Nim(heterogeneous_strategy=Nim.heterogeneous_strategies.RECORD),
+        V(heterogeneous_strategy=V.heterogeneous_strategies.RECORD),
+    ],
+)
+def test_record_strategy_rejects_unholdable_record_variants(
+    language: Language,
+) -> None:
+    """Homogeneous sequences reject records needing distinct types."""
+    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
+        _render(source='[{"x": 1}, {"x": "s"}]', language=language)
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        Crystal(
+            heterogeneous_strategy=Crystal.heterogeneous_strategies.RECORD,
+        ),
+        Odin(heterogeneous_strategy=Odin.heterogeneous_strategies.RECORD),
+    ],
+)
+def test_record_strategy_emits_holdable_record_variants(
+    language: Language,
+) -> None:
+    """Top-typed sequences retain records with incompatible fields."""
+    rendered = _render(
+        source='[{"x": 1}, {"x": "s"}]',
+        language=language,
+    )
+
+    assert "Record0" in rendered
+    assert "Record1" in rendered
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "escape"),
+    argvalues=[
+        (Crystal(), r"\0"),
+        (D(), r"\0"),
+        (Go(), r"\x00"),
+        (Nim(), r"\0"),
+        (Odin(), r"\0"),
+        (Python(), r"\0"),
+        (V(), r"\0"),
+    ],
+)
+def test_string_literals_escape_nul(
+    language: Language,
+    escape: str,
+) -> None:
+    """NUL data is represented by target-language escape syntax."""
+    rendered = _render(source='{"x": "\\u0000"}', language=language)
+
+    assert "\0" not in rendered
+    assert escape in rendered
+
+
+@pytest.mark.parametrize(argnames="language", argvalues=[R(), Cobol()])
+def test_string_literals_reject_unrepresentable_nul(
+    language: Language,
+) -> None:
+    """Targets without embedded-NUL strings reject the value."""
+    with pytest.raises(expected_exception=UnrepresentableInputError):
+        _render(source='{"x": "\\u0000"}', language=language)
+
+
 def test_java_nested_record_variant_list_uses_top_element_type() -> None:
     """A nested list spanning split records uses the Java top type."""
     rendered = _render(
@@ -167,6 +259,14 @@ def test_java_nested_record_variant_list_uses_top_element_type() -> None:
             "@type",
             _DECLARATION_AND_LITERAL,
         ),
+        (
+            Python(
+                heterogeneous_strategy=Python.heterogeneous_strategies.RECORD,
+            ),
+            '[{"class": 1}]',
+            "class_",
+            _DECLARATION_AND_LITERAL,
+        ),
     ],
 )
 def test_record_strategy_escapes_keyword_fields(
@@ -179,6 +279,113 @@ def test_record_strategy_escapes_keyword_fields(
     rendered = _render(source=source, language=language)
 
     assert rendered.count(escaped) == expected_count
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "escaped"),
+    argvalues=[
+        (
+            Kotlin(
+                heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
+            ),
+            "`a-b`",
+        ),
+        (
+            Scala(
+                heterogeneous_strategy=Scala.heterogeneous_strategies.RECORD,
+            ),
+            "`a-b`",
+        ),
+        (
+            Zig(heterogeneous_strategy=Zig.heterogeneous_strategies.RECORD),
+            '@"a-b"',
+        ),
+    ],
+)
+def test_record_strategy_quotes_non_bare_field_names(
+    language: Language,
+    escaped: str,
+) -> None:
+    """Languages with quoted identifiers preserve punctuation in keys."""
+    rendered = _render(source='[{"a-b": 1}]', language=language)
+
+    assert rendered.count(escaped) == _DECLARATION_AND_LITERAL
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "key"),
+    argvalues=[
+        (
+            C(heterogeneous_strategy=C.heterogeneous_strategies.RECORD),
+            "switch",
+        ),
+        (
+            C(heterogeneous_strategy=C.heterogeneous_strategies.RECORD),
+            "a-b",
+        ),
+        (
+            Cpp(heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD),
+            "class",
+        ),
+        (
+            Cpp(heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD),
+            "a-b",
+        ),
+        (
+            Crystal(
+                heterogeneous_strategy=Crystal.heterogeneous_strategies.RECORD,
+            ),
+            "a-b",
+        ),
+        (
+            D(heterogeneous_strategy=D.heterogeneous_strategies.RECORD),
+            "a-b",
+        ),
+        (
+            Java(
+                heterogeneous_strategy=Java.heterogeneous_strategies.RECORD,
+            ),
+            "a-b",
+        ),
+        (
+            Odin(
+                heterogeneous_strategy=Odin.heterogeneous_strategies.RECORD,
+            ),
+            "proc",
+        ),
+        (
+            Odin(
+                heterogeneous_strategy=Odin.heterogeneous_strategies.RECORD,
+            ),
+            "a-b",
+        ),
+        (
+            Python(
+                heterogeneous_strategy=Python.heterogeneous_strategies.RECORD,
+            ),
+            "a-b",
+        ),
+        (
+            Swift(
+                heterogeneous_strategy=Swift.heterogeneous_strategies.RECORD,
+            ),
+            "a-b",
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.RECORD),
+            "a-b",
+        ),
+    ],
+)
+def test_record_strategy_rejects_unquotable_field_names(
+    language: Language,
+    key: str,
+) -> None:
+    """A record key must have a compiling target-language identifier."""
+    source = f'[{{"{key}": 1}}]'
+
+    with pytest.raises(expected_exception=UnrepresentableInputError):
+        _render(source=source, language=language)
 
 
 @pytest.mark.parametrize(

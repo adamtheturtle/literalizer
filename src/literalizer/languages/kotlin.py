@@ -65,6 +65,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    require_record_field_identifier,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -633,7 +634,14 @@ def _kotlin_record_field_identifier(key: str, /) -> str:
     Kotlin permits reserved words as identifiers when surrounded by
     backticks, both in declarations and named constructor arguments.
     """
-    return f"`{key}`" if key in _KOTLIN_KEYWORDS else key
+    if key in _KOTLIN_KEYWORDS or not key.isidentifier():
+        if "`" in key or "\n" in key or "\r" in key:
+            require_record_field_identifier(
+                key,
+                language_name="Kotlin",
+            )
+        return f"`{key}`"
+    return key
 
 
 @beartype
