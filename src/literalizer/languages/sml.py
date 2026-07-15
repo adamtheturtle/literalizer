@@ -414,7 +414,7 @@ class Sml(metaclass=LanguageCls):
     non_default_kwargs: ClassVar[dict[str, str]] = {}
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
-    # Standard ML's portable ``string`` is an 8-bit type.  Raw UTF-8 and
+    # A portable Standard ML ``string`` is an 8-bit type.  Raw UTF-8 and
     # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.
     supports_non_ascii_string_literals = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
