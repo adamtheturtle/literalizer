@@ -64,7 +64,7 @@ def main() -> None:
             # Module path is the relative path with ``.gleam`` stripped
             # and slashes preserved (Gleam treats ``foo/bar.gleam`` as
             # module ``foo/bar``).
-            module_path = relative.with_suffix("").as_posix()
+            module_path = relative.with_suffix(suffix="").as_posix()
             module_alias = module_path.replace("/", "_")
             runner_imports.append(f"import {module_path} as {module_alias}")
             # Print the original fixture path before each call so a
