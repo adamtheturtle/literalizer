@@ -788,31 +788,34 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
 
 @beartype
 def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
-    """Build the Nim ``record_nonrecord_dict_field`` variant.
+    """Build the C# and Nim non-record-dict field variants.
 
-    Nim is the only port that *rejects* a non-record-dict (here an
-    empty dict) record field under ``RECORD`` while still rendering the
-    surrounding record (the other ports either reject the whole input
-    earlier or widen the field to a map type), so this single-language
-    variant locks in that rejection path.  See #2317 for the
-    cross-language set / non-record-dict record-field decision.
+    The input has an empty dict field inside a record-shaped dict.  The
+    C# variant renders its documented ``object`` fallback, while the
+    integration runner skips Nim after its documented rejection.  This
+    covers both outcomes of the cross-language decision in #2317 through
+    the public API.
     """
-    default_spec = make_spec(lang_cls=Nim)
-    record_strategy = next(
-        strategy
-        for strategy in default_spec.heterogeneous_strategies
-        if strategy.name == "RECORD"
-    )
-    return [
-        Variant(
-            name="Nim_record_nonrecord_dict_field",
-            spec=make_spec(
-                lang_cls=Nim, heterogeneous_strategy=record_strategy
-            ),
-            lang_cls=Nim,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
+    variants: list[Variant] = []
+    for lang_cls in (CSharp, Nim):
+        default_spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
         )
-    ]
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_record_nonrecord_dict_field",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=record_strategy,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
 
 
 @beartype
