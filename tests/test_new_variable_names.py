@@ -28,3 +28,16 @@ def test_v_new_variable_reserved_name_is_normalized() -> None:
     )
 
     assert "literalizer_type := 1" in result.code
+
+
+def test_v_new_variable_malformed_name_is_normalized() -> None:
+    """A malformed NewVariable name must not produce invalid V."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=V(),
+        variable_form=NewVariable(name="a-b", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "a_b := 1" in result.code
