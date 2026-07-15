@@ -1,0 +1,1 @@
+C's ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to the existing ``CVal``/``CKV`` tagged-union map representation, while preserving the uniform outer struct.
