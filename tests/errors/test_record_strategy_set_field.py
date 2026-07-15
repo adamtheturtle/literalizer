@@ -32,5 +32,5 @@ def test_record_strategy_rejects_set_valued_field() -> None:
             input_format=InputFormat.YAML,
             language=language,
             wrap_in_file=True,
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

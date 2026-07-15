@@ -86,7 +86,7 @@ Pass ``wrap_in_file=True`` and |project| assembles a complete, valid file for yo
        language=Rust(
            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
        ),
-       variable_form=NewVariable(name="values"),
+       variable_form=NewVariable(name="values", modifiers=frozenset()),
        wrap_in_file=True,
    )
 

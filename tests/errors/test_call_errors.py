@@ -585,7 +585,7 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
             source="42",
             input_format=InputFormat.JSON,
             language=Python(),
-            variable_form=BothVariableForms(name="x"),
+            variable_form=BothVariableForms(name="x", modifiers=frozenset()),
         )
 
 
@@ -603,7 +603,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
             source="42",
             input_format=InputFormat.JSON,
             language=Elm(),
-            variable_form=BothVariableForms(name="x"),
+            variable_form=BothVariableForms(name="x", modifiers=frozenset()),
             wrap_in_file=True,
         )
 
@@ -620,7 +620,7 @@ def test_literalize_variable_names_not_supported_raises() -> None:
             source="42",
             input_format=InputFormat.JSON,
             language=Yaml(),
-            variable_form=BothVariableForms(name="x"),
+            variable_form=BothVariableForms(name="x", modifiers=frozenset()),
             wrap_in_file=True,
         )
 
@@ -668,7 +668,7 @@ def test_literalize_call_variable_form_multiple_calls_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
-            variable_form=NewVariable(name="result"),
+            variable_form=NewVariable(name="result", modifiers=frozenset()),
         )
 
 
@@ -693,7 +693,7 @@ def test_literalize_call_variable_form_zero_calls_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             per_element=True,
-            variable_form=NewVariable(name="result"),
+            variable_form=NewVariable(name="result", modifiers=frozenset()),
         )
 
 
@@ -718,7 +718,7 @@ def test_literalize_call_variable_form_statement_language_raises() -> None:
             target_function="MAKE-WIDGET",
             parameter_names=["count"],
             per_element=False,
-            variable_form=NewVariable(name="RESULT"),
+            variable_form=NewVariable(name="RESULT", modifiers=frozenset()),
         )
 
 
@@ -738,7 +738,7 @@ def test_literalize_call_variable_form_unsupported_variable_names_raises() -> (
             target_function="make_widget",
             parameter_names=["count"],
             per_element=False,
-            variable_form=NewVariable(name="result"),
+            variable_form=NewVariable(name="result", modifiers=frozenset()),
         )
 
 
@@ -762,7 +762,9 @@ def test_literalize_call_both_variable_forms_unsupported_raises() -> None:
             target_function="make_widget",
             parameter_names=["count"],
             per_element=False,
-            variable_form=BothVariableForms(name="result"),
+            variable_form=BothVariableForms(
+                name="result", modifiers=frozenset()
+            ),
         )
 
 
@@ -789,5 +791,5 @@ def test_literalize_call_bound_refs_with_variable_form_raises() -> None:
             per_element=False,
             wrap_in_file=True,
             bound_refs={"my_list": [1, 2, 3]},
-            variable_form=NewVariable(name="result"),
+            variable_form=NewVariable(name="result", modifiers=frozenset()),
         )

@@ -32,7 +32,7 @@ class _ConstructorBindingCase:
     lang_cls: literalizer.LanguageCls
     spec_kwargs: dict[str, object] = field(default_factory=_empty_spec_kwargs)
     variable_form: literalizer.VariableForm = field(
-        default_factory=lambda: NewVariable(name="p"),
+        default_factory=lambda: NewVariable(name="p", modifiers=frozenset()),
     )
 
 
@@ -201,7 +201,7 @@ def test_constructor_default_call_binding_golden_file(
                     _CONSTRUCTOR_NAME,
                 ),
                 parameter_names=[],
-                variable_form=NewVariable(name="p"),
+                variable_form=NewVariable(name="p", modifiers=frozenset()),
             )
             file_regression.check(
                 contents=result.code + "\n",

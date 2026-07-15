@@ -20,7 +20,7 @@ def test_odin_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Odin(json_type=Odin.json_types.JSON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -34,7 +34,7 @@ def test_odin_json_type_rejects_backtick_in_string_value() -> None:
             source='{"name": "a`b"}',
             input_format=InputFormat.JSON,
             language=Odin(json_type=Odin.json_types.JSON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -48,7 +48,7 @@ def test_odin_json_type_rejects_backtick_in_dict_key() -> None:
             source='{"a`b": 1}',
             input_format=InputFormat.JSON,
             language=Odin(json_type=Odin.json_types.JSON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -92,7 +92,7 @@ def test_odin_json_type_rejects_nan() -> None:
             source=".nan",
             input_format=InputFormat.YAML,
             language=Odin(json_type=Odin.json_types.JSON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -106,7 +106,7 @@ def test_odin_json_type_rejects_positive_infinity() -> None:
             source=".inf",
             input_format=InputFormat.YAML,
             language=Odin(json_type=Odin.json_types.JSON_VALUE),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 

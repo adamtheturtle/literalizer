@@ -20,7 +20,7 @@ def test_c_cjson_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=C(json_type=C.json_types.CJSON),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 

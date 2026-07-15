@@ -46,7 +46,10 @@ Suppose your ``POST /users`` endpoint accepts this request body and returns this
            variable_type_hints=Python.variable_type_hints_formats.NEVER,
        ),
        pre_indent_level=0,
-       variable_form=NewVariable(name="request_body"),
+       variable_form=NewVariable(
+           name="request_body",
+           modifiers=frozenset(),
+       ),
        include_delimiters=True,
    )
    assert request_literal.code == textwrap.dedent(
@@ -69,7 +72,10 @@ Suppose your ``POST /users`` endpoint accepts this request body and returns this
            variable_type_hints=Python.variable_type_hints_formats.NEVER,
        ),
        pre_indent_level=0,
-       variable_form=NewVariable(name="response"),
+       variable_form=NewVariable(
+           name="response",
+           modifiers=frozenset(),
+       ),
        include_delimiters=True,
    )
    assert response_literal.code == textwrap.dedent(

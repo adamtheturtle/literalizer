@@ -122,7 +122,7 @@ Rust is the worked example:
        source='{"id": 1, "tags": ["red", 2]}',
        input_format=InputFormat.JSON,
        language=Rust(json_type=Rust.json_types.SERDE_JSON_VALUE),
-       variable_form=NewVariable(name="payload"),
+       variable_form=NewVariable(name="payload", modifiers=frozenset()),
    )
 
 This emits ``serde_json::json!(...)`` expressions, relaxes Rust's homogeneous ``Vec<T>`` / ``HashMap<K, V>`` checks, and requires dict keys to be strings so they remain valid JSON object keys.
@@ -238,7 +238,7 @@ D's polarity is reversed from the others: its default already renders every valu
        source='{"a": 1, "b": 2}',
        input_format=InputFormat.JSON,
        language=D(json_type=None),
-       variable_form=NewVariable(name="counts"),
+       variable_form=NewVariable(name="counts", modifiers=frozenset()),
    )
 
 This emits raw D scalars, ``T[]`` array literals, and ``V[K]`` associative-array literals (``auto counts = ["a": 1, "b": 2];``) without the ``JSONValue`` wrapper.
@@ -271,7 +271,10 @@ Empty sequences are unambiguous and are still accepted.
            source=json.dumps(obj={"outer": {}}),
            input_format=InputFormat.JSON,
            language=Lua(),
-           variable_form=NewVariable(name="my_data"),
+           variable_form=NewVariable(
+               name="my_data",
+               modifiers=frozenset(),
+           ),
        )
 
 Forth visitor stream

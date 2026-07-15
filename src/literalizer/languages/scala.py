@@ -533,8 +533,11 @@ class Scala(metaclass=LanguageCls):
                 template="LocalDate.of({year}, {month}, {day})",
             ),
             preamble_lines=("import java.time.LocalDate",),
+            type_produced=datetime.date,
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -549,15 +552,18 @@ class Scala(metaclass=LanguageCls):
                 "import java.time.ZoneId",
                 "import java.time.ZonedDateTime",
             ),
+            type_produced=datetime.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
@@ -1194,7 +1200,11 @@ class Scala(metaclass=LanguageCls):
         """
         elem_types = [
             self._scala_record_field_type(
-                RecordFieldType(value=element, record_name=None),
+                RecordFieldType(
+                    value=element,
+                    record_name=None,
+                    element_record_name=None,
+                ),
             )
             for element in elements
         ]

@@ -256,6 +256,7 @@ def test_golden_file_combined_variable_forms(
                         include_delimiters=True,
                         variable_form=literalizer.BothVariableForms(
                             name="my_data",
+                            modifiers=frozenset(),
                         ),
                         wrap_in_file=True,
                     )
@@ -415,7 +416,9 @@ def test_statement_terminator_style_combined_variable_forms(
                 language=spec,
                 pre_indent_level=0,
                 include_delimiters=True,
-                variable_form=literalizer.BothVariableForms(name="my_data"),
+                variable_form=literalizer.BothVariableForms(
+                    name="my_data", modifiers=frozenset()
+                ),
                 wrap_in_file=True,
             )
             file_regression.check(
@@ -485,6 +488,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
                     include_delimiters=True,
                     variable_form=literalizer.BothVariableForms(
                         name="my_data",
+                        modifiers=frozenset(),
                     ),
                     wrap_in_file=True,
                 )
@@ -666,7 +670,9 @@ def test_indent_golden_file(
                     language=spec,
                     pre_indent_level=0,
                     include_delimiters=True,
-                    variable_form=literalizer.NewVariable(name="my_data"),
+                    variable_form=literalizer.NewVariable(
+                        name="my_data", modifiers=frozenset()
+                    ),
                     wrap_in_file=True,
                 )
             except VariableNameNotSupportedError:
@@ -710,6 +716,8 @@ def test_rust_record_strategy_error_path(cases_dir: Path) -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
             wrap_in_file=True,
         )

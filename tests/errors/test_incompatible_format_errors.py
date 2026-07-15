@@ -46,7 +46,7 @@ def test_rust_const_dict_raises() -> None:
             language=RUST_CONST,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_form=NewVariable(name="my_var"),
+            variable_form=NewVariable(name="my_var", modifiers=frozenset()),
         )
 
 
@@ -59,7 +59,7 @@ def test_rust_const_empty_dict_raises() -> None:
             language=RUST_CONST,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_form=NewVariable(name="my_var"),
+            variable_form=NewVariable(name="my_var", modifiers=frozenset()),
         )
 
 
@@ -83,7 +83,7 @@ def test_rust_const_btree_map_raises() -> None:
             language=rust_btree_map,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_form=NewVariable(name="my_var"),
+            variable_form=NewVariable(name="my_var", modifiers=frozenset()),
         )
 
 
@@ -240,5 +240,5 @@ def test_java_record_non_array_sequence_raises() -> None:
             language=java_record_list,
             pre_indent_level=0,
             include_delimiters=True,
-            variable_form=NewVariable(name="my_var"),
+            variable_form=NewVariable(name="my_var", modifiers=frozenset()),
         )

@@ -715,6 +715,7 @@ def _build_variant_behavior(
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
+        widens_unrecordizable_nested_sibling_maps=False,
         render_record_literal=None,
         compute_record_shapes=None,
         render_tuple_literal=None,
@@ -999,7 +1000,9 @@ class Mojo(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Mojo."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -1011,11 +1014,13 @@ class Mojo(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

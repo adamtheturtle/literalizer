@@ -501,6 +501,7 @@ def _build_union_type_behavior(
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
+        widens_unrecordizable_nested_sibling_maps=False,
         render_record_literal=None,
         compute_record_shapes=None,
         render_tuple_literal=None,
@@ -626,7 +627,9 @@ class Dhall(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Dhall."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -638,6 +641,7 @@ class Dhall(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
@@ -645,6 +649,7 @@ class Dhall(metaclass=LanguageCls):
                 format_integer=_format_dhall_integer,
             ),
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

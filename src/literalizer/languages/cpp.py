@@ -807,6 +807,7 @@ _CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
     compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     dict_open_for_wrap_ids=None,
     widens_nested_maps_by_wrapping_scalars=False,
+    widens_unrecordizable_nested_sibling_maps=False,
     render_record_literal=None,
     compute_record_shapes=None,
     render_tuple_literal=_render_cpp_tuple,
@@ -1467,6 +1468,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
             preamble_lines=("#include <chrono>",),
+            type_produced=datetime.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -1492,6 +1494,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
             preamble_lines=("#include <chrono>",),
+            type_produced=datetime.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1502,6 +1505,7 @@ class Cpp(metaclass=LanguageCls):
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         @property

@@ -99,7 +99,7 @@ class RecordFieldType:
 
     value: Value
     record_name: str | None
-    element_record_name: str | None = None
+    element_record_name: str | None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -148,7 +148,7 @@ class RecordStrategy:
     preamble: Callable[[Value], tuple[str, ...]]
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _FieldVariantRecordShape(RecordShape):
     """A record shape split off from same-key-set dicts whose field
     types conflict (issue #2888).
@@ -166,10 +166,7 @@ class _FieldVariantRecordShape(RecordShape):
     separate record shape.
     """
 
-    # ``dataclasses`` requires a default here because the base class's
-    # ``optional_keys`` field has one; every construction site passes
-    # ``variant`` explicitly.
-    variant: int = 0
+    variant: int
 
 
 @beartype
@@ -801,6 +798,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=derecordized_map_open,
         widens_nested_maps_by_wrapping_scalars=False,
+        widens_unrecordizable_nested_sibling_maps=(
+            widen_unrecordizable_nested_sibling_maps
+        ),
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,

@@ -17,7 +17,7 @@ def test_crystal_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -31,7 +31,7 @@ def test_crystal_json_type_rejects_overflow_integers() -> None:
             source=str(object=2**64),
             input_format=InputFormat.JSON,
             language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -45,7 +45,7 @@ def test_crystal_json_type_rejects_double_quote_in_string() -> None:
             source='{"greeting": "say \\"hi\\""}',
             input_format=InputFormat.JSON,
             language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -59,5 +59,5 @@ def test_crystal_json_type_rejects_string_interpolation_sequence() -> None:
             source='{"template": "value=#{x}"}',
             input_format=InputFormat.JSON,
             language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

@@ -50,8 +50,8 @@ class DateFormatConfig:
     """Configuration for a single date format."""
 
     formatter: Callable[[datetime.date], str]
-    preamble_lines: tuple[str, ...] = ()
-    type_produced: type = datetime.date
+    preamble_lines: tuple[str, ...]
+    type_produced: type
 
 
 @dataclasses.dataclass(frozen=True)
@@ -59,8 +59,8 @@ class DatetimeFormatConfig:
     """Configuration for a single datetime format."""
 
     formatter: Callable[[datetime.datetime], str]
-    preamble_lines: tuple[str, ...] = ()
-    type_produced: type = datetime.datetime
+    preamble_lines: tuple[str, ...]
+    type_produced: type
 
 
 @beartype
@@ -578,6 +578,12 @@ class HeterogeneousBehavior:
     strict languages expose it only when the corresponding non-default
     heterogeneous strategy is selected.
 
+    ``widens_unrecordizable_nested_sibling_maps`` identifies ``RECORD``
+    strategies that fall back to a widened plain map when nested sibling
+    maps cannot share one record shape.  It is likewise strategy behavior:
+    languages advertise it only while the capable ``RECORD`` strategy is
+    selected.
+
     ``render_record_literal`` renders a record-shaped dict as a
     generated struct literal given its :class:`RecordShape` and a
     mapping of pre-formatted field values, returning a
@@ -629,6 +635,7 @@ class HeterogeneousBehavior:
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
     widens_nested_maps_by_wrapping_scalars: bool
+    widens_unrecordizable_nested_sibling_maps: bool
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
@@ -680,6 +687,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
     dict_open_for_wrap_ids=None,
     widens_nested_maps_by_wrapping_scalars=False,
+    widens_unrecordizable_nested_sibling_maps=False,
     render_record_literal=None,
     compute_record_shapes=None,
     render_tuple_literal=None,

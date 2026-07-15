@@ -24,7 +24,7 @@ def test_fsharp_json_type_rejects_out_of_range_integer() -> None:
             language=FSharp(
                 json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 
@@ -40,5 +40,5 @@ def test_fsharp_json_type_rejects_non_string_dict_keys() -> None:
             language=FSharp(
                 json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

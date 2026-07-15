@@ -80,7 +80,9 @@ def test_typed_map_languages_reject_non_string_keys(
             source=_INT_KEY_YAML,
             input_format=literalizer.InputFormat.YAML,
             language=lang_cls(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -112,5 +114,7 @@ def test_mixed_int_string_keys_reject_on_homogeneous_target() -> None:
             source=_MIXED_INT_STR_KEY_YAML,
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )

@@ -34,7 +34,7 @@ def _literalize_scalar(language: Language, value: int) -> None:
         source=json.dumps(obj=value),
         input_format=InputFormat.JSON,
         language=language,
-        variable_form=NewVariable(name="x"),
+        variable_form=NewVariable(name="x", modifiers=frozenset()),
     )
 
 

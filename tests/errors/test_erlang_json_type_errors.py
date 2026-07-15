@@ -17,5 +17,5 @@ def test_erlang_json_type_rejects_non_string_dict_keys() -> None:
             source="{1: one}",
             input_format=InputFormat.YAML,
             language=Erlang(json_type=Erlang.json_types.OTP_JSON),
-            variable_form=NewVariable(name="myData"),
+            variable_form=NewVariable(name="myData", modifiers=frozenset()),
         )

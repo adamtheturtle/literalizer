@@ -373,10 +373,13 @@ class ObjectiveC(metaclass=LanguageCls):
 
         OBJC = DateFormatConfig(
             formatter=date_iso_formatter(template='@"{iso}"'),
+            preamble_lines=(),
+            type_produced=datetime.date,
         )
         ISO = DateFormatConfig(
             formatter=date_iso_formatter(template='@"{iso}"'),
             type_produced=str,
+            preamble_lines=(),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -388,15 +391,19 @@ class ObjectiveC(metaclass=LanguageCls):
 
         OBJC = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template='@"{iso}"'),
+            preamble_lines=(),
+            type_produced=datetime.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template='@"{iso}"'),
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

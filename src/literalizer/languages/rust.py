@@ -830,6 +830,7 @@ def _build_tagged_enum_behavior(
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
+        widens_unrecordizable_nested_sibling_maps=False,
         render_record_literal=None,
         compute_record_shapes=None,
         render_tuple_literal=None,
@@ -1087,7 +1088,7 @@ def _validate_rust_record_field_key(*, key: str) -> None:
         raise UnrepresentableInputError(msg)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _FieldVariantRecordShape(RecordShape):
     """A record shape split off from same-key-set dicts whose field
     types conflict.
@@ -1105,10 +1106,7 @@ class _FieldVariantRecordShape(RecordShape):
     group as a distinct record shape.
     """
 
-    # ``dataclasses`` requires a default here because the base class's
-    # ``optional_keys`` field has one; every construction site passes
-    # ``variant`` explicitly.
-    variant: int = 0
+    variant: int
 
 
 # Signature slot for a key a dict lacks (possible only for a
@@ -1613,6 +1611,7 @@ def _record_behavior_impl(
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=False,
+        widens_unrecordizable_nested_sibling_maps=True,
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,
@@ -2146,8 +2145,11 @@ class Rust(metaclass=LanguageCls):
         RUST = DateFormatConfig(
             formatter=_format_date_rust,
             preamble_lines=("use chrono::NaiveDate;",),
+            type_produced=datetime.date,
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -2163,15 +2165,18 @@ class Rust(metaclass=LanguageCls):
                 "use chrono::NaiveDateTime;",
                 "use chrono::NaiveTime;",
             ),
+            type_produced=datetime.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

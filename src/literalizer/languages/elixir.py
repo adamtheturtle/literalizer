@@ -261,9 +261,13 @@ class Elixir(metaclass=LanguageCls):
     class DateFormats(enum.Enum):
         """Date format options for Elixir."""
 
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
         ELIXIR = DateFormatConfig(
             formatter=date_iso_formatter(template="~D[{iso}]"),
+            preamble_lines=(),
+            type_produced=datetime.date,
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -276,12 +280,18 @@ class Elixir(metaclass=LanguageCls):
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
-        ELIXIR = DatetimeFormatConfig(formatter=_format_datetime_elixir)
+        ELIXIR = DatetimeFormatConfig(
+            formatter=_format_datetime_elixir,
+            preamble_lines=(),
+            type_produced=datetime.datetime,
+        )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

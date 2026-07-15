@@ -840,8 +840,11 @@ class Python(metaclass=LanguageCls):
                 "year={year}, month={month}, day={day})",
             ),
             preamble_lines=("import datetime",),
+            type_produced=datetime.date,
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -863,10 +866,12 @@ class Python(metaclass=LanguageCls):
                 utc_tzinfo_expr="datetime.UTC",
             ),
             preamble_lines=("import datetime",),
+            type_produced=datetime.datetime,
         )
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

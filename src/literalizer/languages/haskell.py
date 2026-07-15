@@ -1339,6 +1339,8 @@ class Haskell(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="HDate (fromGregorian {year} {month} {day})",
             ),
+            preamble_lines=(),
+            type_produced=datetime.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -1353,7 +1355,11 @@ class Haskell(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Haskell."""
 
-        HASKELL = DatetimeFormatConfig(formatter=_format_datetime_haskell)
+        HASKELL = DatetimeFormatConfig(
+            formatter=_format_datetime_haskell,
+            preamble_lines=(),
+            type_produced=datetime.datetime,
+        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             preamble_lines=("{-# LANGUAGE OverloadedStrings #-}",),
@@ -1363,6 +1369,7 @@ class Haskell(metaclass=LanguageCls):
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

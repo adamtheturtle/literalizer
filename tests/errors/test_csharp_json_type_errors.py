@@ -22,7 +22,7 @@ def test_csharp_json_type_rejects_non_string_dict_keys() -> None:
             language=CSharp(
                 json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE,
             ),
-            variable_form=NewVariable(name="my_data"),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
 
 

@@ -420,8 +420,12 @@ class Sml(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="SDate ({year}, {month}, {day})",
             ),
+            preamble_lines=(),
+            type_produced=datetime.date,
         )
-        ISO = DateFormatConfig(formatter=format_date_iso, type_produced=str)
+        ISO = DateFormatConfig(
+            formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -435,15 +439,19 @@ class Sml(metaclass=LanguageCls):
                 template="SDatetime (({year}, {month}, {day}), "
                 "({hour}, {minute}, {second}))",
             ),
+            preamble_lines=(),
+            type_produced=datetime.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
+            preamble_lines=(),
         )
 
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
             type_produced=int,
+            preamble_lines=(),
         )
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:

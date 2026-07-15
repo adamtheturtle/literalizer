@@ -49,7 +49,7 @@ def test_python_time_union_annotation_renders() -> None:
         language=Python(
             variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
         ),
-        variable_form=NewVariable(name="x"),
+        variable_form=NewVariable(name="x", modifiers=frozenset()),
         wrap_in_file=True,
     )
 

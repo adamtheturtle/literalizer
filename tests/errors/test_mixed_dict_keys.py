@@ -32,7 +32,9 @@ def test_mixed_int_str_keys_raise_on_homogeneous_target() -> None:
             source="1: a\nx: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -45,7 +47,9 @@ def test_mixed_bool_int_keys_raise_on_homogeneous_target() -> None:
             source="true: a\n2: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -56,7 +60,9 @@ def test_nested_mixed_keys_raise() -> None:
             source="- 1: a\n  x: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -69,7 +75,9 @@ def test_mixed_keys_inside_dict_value_raise() -> None:
             source="outer:\n  1: a\n  x: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -82,7 +90,9 @@ def test_mixed_keys_in_second_list_element_raise() -> None:
             source="- foo: string\n- 1: a\n  x: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
 
 
@@ -95,5 +105,7 @@ def test_mixed_keys_past_set_sibling_raise() -> None:
             source="- !!set\n  ? 1\n  ? 2\n- 1: a\n  x: b\n",
             input_format=literalizer.InputFormat.YAML,
             language=Mojo(),
-            variable_form=literalizer.NewVariable(name="my_data"),
+            variable_form=literalizer.NewVariable(
+                name="my_data", modifiers=frozenset()
+            ),
         )
