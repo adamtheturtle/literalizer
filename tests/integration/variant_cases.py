@@ -583,13 +583,34 @@ def build_json_type_declaration_cross_variants() -> list[Variant]:
 
 
 @beartype
-def build_json_type_combined_cases() -> list[VariantCase]:
-    """Build JSON-type cases for every redefinition-supporting style."""
+def build_json_type_variable_form_cases() -> list[VariantCase]:
+    """Build JSON-type cases selected by redefinition capability.
+
+    Redefinition-supporting declaration styles exercise a declaration and
+    assignment together.  Languages without such a style instead exercise
+    their existing-variable form once.
+    """
     cases: list[VariantCase] = []
     for json_variant in build_json_type_variants():
         spec = json_variant.spec
         assert isinstance(spec, _HasJsonType)  # noqa: S101
         redef_styles = find_redefinition_styles(spec=spec)
+        if not redef_styles:
+            name = f"{json_variant.name}_existing"
+            cases.append(
+                VariantCase(
+                    variant_name=name,
+                    variant=Variant(
+                        name=name,
+                        spec=spec,
+                        lang_cls=json_variant.lang_cls,
+                        collection_layout=literalizer.CollectionLayout.COMPACT,
+                    ),
+                    case_dir_name="dict_with_list_value",
+                    variable_form=literalizer.ExistingVariable(name="my_data"),
+                )
+            )
+            continue
         for index, declaration_style in enumerate(iterable=redef_styles):
             kwargs: dict[str, object] = {
                 "json_type": spec.json_type,
@@ -1710,7 +1731,8 @@ def build_variant_cases() -> list[VariantCase]:
 
     The full set is the cross product of every axis's variants with its
     declared inputs in :data:`AXIS_INPUTS`, plus capability-generated
-    combined JSON cases and the focused modifier / JSON regressions.
+    capability-generated JSON variable forms and the focused modifier / JSON
+    regressions.
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
     cases: list[VariantCase] = []
@@ -1731,7 +1753,7 @@ def build_variant_cases() -> list[VariantCase]:
                 )
             )
     cases.extend(build_modifier_variant_cases())
-    cases.extend(build_json_type_combined_cases())
+    cases.extend(build_json_type_variable_form_cases())
     cases.extend(build_json_variant_cases())
     return cases
 
