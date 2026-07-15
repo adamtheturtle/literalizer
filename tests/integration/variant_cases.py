@@ -1165,7 +1165,7 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
 
 @beartype
 def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
-    """Build the Rust and Go ``record_nested_map_fallback`` variants.
+    """Build the Rust, Go, and Java nested-map fallback variants.
 
     A list of records whose top-level keys are uniform but whose nested
     map under one key differs in shape (divergent or disjoint key sets)
@@ -1175,14 +1175,15 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     widening pass drops such families from the shape mapping, so the
     outer record survives.  Rust widens the field to ``HashMap<&'static
     str, Value>`` and wraps the leaves in its value enum (issue #2910);
-    Go widens it to ``map[string]any`` (issue #2911).  The remaining
+    Go widens it to ``map[string]any`` (issue #2911), and Java widens it
+    to ``java.util.Map<String, Object>`` (issue #2912).  The remaining
     ``RECORD`` languages gain their own widening in later sub-issues of
     #2909, so this stays out of all-languages base discovery.  Both
     layouts are covered because their widened-map paths render compact
     and multiline literals separately.
     """
     variants: list[Variant] = []
-    for lang_cls in (Rust, Go):
+    for lang_cls in (Rust, Go, Java):
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
             strategy
