@@ -70,7 +70,7 @@ def main() -> None:
     classpath = ":".join(
         sorted(
             str(p)
-            for entry in os.environ["LITERALIZER_LINT_CLASSPATH"].split(":")
+            for entry in os.environ["LITERALIZER_LINT_CLASSPATH"].split(sep=":")
             for p in (
                 Path(entry.removesuffix("/*")).glob("*.jar")
                 if entry.endswith("/*")
