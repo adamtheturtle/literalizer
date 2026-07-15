@@ -60,7 +60,11 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
-from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    record_shape_for_dict,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1692,12 +1696,13 @@ class Java(metaclass=LanguageCls):
         other sequence format up front, so no opener without an
         encoded element type (e.g. ``List.of(``) reaches this branch.
 
-        A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field has no precise component type under the
-        ``RECORD`` strategy.  Per the cross-language decision in #2317,
-        Rust rejects such a field while Java folds it into the
-        ``Object`` top type (documented best effort), which the
-        rendered literal still assigns into.
+        A record-eligible dict with no ``record_name`` was widened out
+        of record inference because its nested sibling maps cannot
+        share one shape.  Type that field as ``java.util.Map<String,
+        Object>`` so the uniform enclosing record survives (#2912).  A
+        set or a genuinely non-record dict (empty or non-string-keyed)
+        still has no precise component type; per the cross-language
+        decision in #2317, Java folds it into the ``Object`` top type.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1715,6 +1720,8 @@ class Java(metaclass=LanguageCls):
                 return self._java_record_datetime_type(value)
             case OrderedMap():
                 field_type = "java.util.ArrayList"
+            case dict() if record_shape_for_dict(value=value) is not None:
+                return "java.util.Map<String, Object>"
             case list():
                 opener = self.sequence_open(value)
                 field_type = opener.removeprefix("new ").removesuffix("{")
@@ -1744,7 +1751,7 @@ class Java(metaclass=LanguageCls):
             return build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=False,
-                widen_unrecordizable_nested_sibling_maps=False,
+                widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )
         return RecordStrategy(
