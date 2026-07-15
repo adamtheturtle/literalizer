@@ -78,13 +78,16 @@ from literalizer._language import (
     IdentifierCase,
     LanguageCls,
     ModifierCombination,
+    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordVariant,
     RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
+    VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
@@ -373,6 +376,14 @@ class Go(metaclass=LanguageCls):
         "default_dict_key_type": "any",
         "default_ordered_map_value_type": "interface{}",
     }
+    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    json_type_variant_name_suffix: ClassVar[str | None] = None
+    variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        collection_layout_category="collection_layout",
+        record_variants=frozenset({RecordVariant.FIELD_TYPE_SPLIT}),
+        nested_map_widening=NestedMapWideningVariant.DEFAULT,
+        modifier_sequence_format_overrides={},
+    )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
     supports_non_string_dict_keys = False
