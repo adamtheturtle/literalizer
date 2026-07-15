@@ -199,6 +199,7 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
         dict_type_template="Hash(String, {inner})",
         fallback_value_type="String",
         wide_int_type=None,
+        huge_int_type=None,
     ),
     template="[] of {type}",
     fallback_type="String",
@@ -297,7 +298,9 @@ def _crystal_record_field_identifier(key: str, /) -> str:
     constructor the ``record`` macro generates, so the field names
     appear only in the declaration.
     """
-    return require_record_field_identifier(key, language_name="Crystal")
+    return require_record_field_identifier(
+        key, language_name="Crystal", reserved=frozenset()
+    )
 
 
 @beartype

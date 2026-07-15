@@ -432,7 +432,7 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
 
 @beartype
 def _reject_object_variant_mixed_scalar_container_lists(
-    data: Value,
+    data: list[Value],
     /,
 ) -> None:
     """Reject lists that mix scalar and container elements.
@@ -443,8 +443,6 @@ def _reject_object_variant_mixed_scalar_container_lists(
     ``[1, []]`` cannot become a homogeneous ``seq``.  Reject it before
     rendering instead of returning Nim code that fails to compile.
     """
-    if not isinstance(data, list):
-        return
     has_scalar = any(
         scalar_type_bucket(value=item) is not None for item in data
     )
@@ -472,6 +470,63 @@ def _reject_object_variant_null_only_map(data: Value, /) -> None:
             "are all null"
         )
         raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _reject_object_variant_unsafe_containers(  # noqa: C901  # pylint: disable=too-complex
+    data: Value, /
+) -> None:
+    """Reject recursively nested containers that Nim cannot unify."""
+
+    def _visit(value: Value) -> None:  # noqa: C901
+        """Validate one value and recursively visit its children."""
+        if isinstance(value, list):
+            if value and all(item is None for item in value):
+                msg = "Nim OBJECT_VARIANT cannot infer a null-only seq"
+                raise UnrepresentableInputError(msg)
+            maps = [item for item in value if isinstance(item, dict)]
+            if maps and any(not item for item in maps) and any(maps):
+                msg = (
+                    "Nim OBJECT_VARIANT cannot unify empty and non-empty "
+                    "tables in one seq"
+                )
+                raise UnrepresentableInputError(msg)
+            _reject_object_variant_mixed_scalar_container_lists(value)
+            for item in value:
+                _visit(value=item)
+            return
+        if not isinstance(value, dict):
+            return
+        _reject_object_variant_null_only_map(value)
+        sibling_maps = [
+            item for item in value.values() if isinstance(item, dict) and item
+        ]
+        for key_set in {frozenset(item) for item in sibling_maps}:
+            siblings = [
+                item for item in sibling_maps if frozenset(item) == key_set
+            ]
+            for key in key_set:
+                integers: list[int] = []
+                for sibling in siblings:
+                    candidate = sibling[key]
+                    if isinstance(candidate, int) and not isinstance(
+                        candidate, bool
+                    ):
+                        integers.append(candidate)
+                if (
+                    integers
+                    and any(abs(item) > 2**31 - 1 for item in integers)
+                    and any(abs(item) <= 2**31 - 1 for item in integers)
+                ):
+                    msg = (
+                        "Nim OBJECT_VARIANT cannot unify table values "
+                        "with conflicting integer widths"
+                    )
+                    raise UnrepresentableInputError(msg)
+        for item in value.values():
+            _visit(value=item)
+
+    _visit(value=data)
 
 
 @beartype
@@ -1323,8 +1378,7 @@ class Nim(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Reject OBJECT_VARIANT data that cannot form a uniform seq."""
         if self._uses_object_variant:
-            _reject_object_variant_mixed_scalar_container_lists(data)
-            _reject_object_variant_null_only_map(data)
+            _reject_object_variant_unsafe_containers(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

@@ -40,6 +40,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -108,10 +109,13 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    UnrepresentableIntegerError,
+)
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -125,6 +129,7 @@ _v_element_to_type = make_element_to_type(
     bool_type="bool",
     int_type="int",
     wide_int_type="i64",
+    huge_int_type=None,
     float_type="f64",
     bytes_type="string",
     mixed_numeric_type="string",
@@ -149,6 +154,9 @@ def _format_v_u64_positive(value: int) -> str:
     """Format a positive value outside signed 64-bit range as a V
     ``u64`` typed conversion.
     """
+    if value > U64_MAX:
+        msg = f"V cannot represent integer {value} above u64 range."
+        raise UnrepresentableIntegerError(msg)
     return f"u64({value})"
 
 
@@ -265,6 +273,92 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
     )
+
+
+@beartype
+def _reject_v_unsafe_container_shapes(  # noqa: C901  # pylint: disable=too-complex
+    data: Value,
+    /,
+    *,
+    interface_strategy: bool,
+) -> None:
+    """Reject shapes that make the V compiler back end fail."""
+
+    def _visit(value: Value) -> None:
+        """Validate one container and recursively visit its children."""
+        if isinstance(value, list):
+            if value and all(item is None for item in value):
+                msg = "V cannot infer a safe element type for a null-only list"
+                raise UnrepresentableInputError(msg)
+            lists = [item for item in value if isinstance(item, list)]
+            maps = [item for item in value if isinstance(item, dict)]
+            for siblings, name in ((lists, "lists"), (maps, "maps")):
+                if (
+                    siblings
+                    and any(not item for item in siblings)
+                    and any(siblings)
+                ):
+                    msg = f"V cannot mix empty and non-empty nested {name}"
+                    raise UnrepresentableInputError(msg)
+            _reject_unsafe_interface_children(children=value)
+            for item in value:
+                _visit(value=item)
+        elif isinstance(value, dict):
+            if value and all(item is None for item in value.values()):
+                msg = "V cannot infer a safe value type for a null-only map"
+                raise UnrepresentableInputError(msg)
+            _reject_unsafe_interface_children(children=list(value.values()))
+            for item in value.values():
+                _visit(value=item)
+
+    def _reject_unsafe_interface_children(*, children: list[Value]) -> None:
+        """Reject only interface combinations V cannot type-check."""
+        if not interface_strategy:
+            return
+        containers = [
+            item for item in children if isinstance(item, (list, dict))
+        ]
+        scalar_types = {
+            type(item)
+            for item in children
+            if item is not None and not isinstance(item, (list, dict, set))
+        }
+        if {bool, int} <= scalar_types or (
+            scalar_types and any(not item for item in containers)
+        ):
+            msg = "V INTERFACE cannot safely type these collection elements"
+            raise UnrepresentableInputError(msg)
+
+        list_siblings = [item for item in containers if isinstance(item, list)]
+        map_siblings = [item for item in containers if isinstance(item, dict)]
+        for siblings, container_name in (
+            (list_siblings, "list"),
+            (map_siblings, "dict"),
+        ):
+            sibling_scalar_types: set[frozenset[type]] = {
+                types
+                for sibling in siblings
+                if (types := _direct_scalar_types(value=sibling))
+            }
+            if len(sibling_scalar_types) > 1:
+                msg = (
+                    "V INTERFACE cannot safely type heterogeneous "
+                    f"nested {container_name} values"
+                )
+                raise UnrepresentableInputError(msg)
+
+    def _direct_scalar_types(
+        *, value: list[Value] | dict[Scalar, Value]
+    ) -> frozenset[type]:
+        """Return the direct non-container scalar types in *value*."""
+        children = value.values() if isinstance(value, dict) else value
+        return frozenset(
+            type(child)
+            for child in children
+            if child is not None and not isinstance(child, (list, dict, set))
+        )
+
+    _visit(value=data)
 
 
 @beartype
@@ -537,7 +631,9 @@ def _v_record_field_identifier(key: str, /) -> str:
     V permits reserved words as identifiers when prefixed with ``@``,
     both in struct declarations and keyed struct literals.
     """
-    identifier = require_record_field_identifier(key, language_name="V")
+    identifier = require_record_field_identifier(
+        key, language_name="V", reserved=frozenset()
+    )
     return f"@{identifier}" if identifier in _V_KEYWORDS else identifier
 
 
@@ -976,7 +1072,12 @@ class V(metaclass=LanguageCls):
         {IdentifierCase.SNAKE}
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject data shapes that the V back end cannot compile."""
+        _reject_v_unsafe_container_shapes(
+            data,
+            interface_strategy=self.heterogeneous_strategy.name == "INTERFACE",
+        )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

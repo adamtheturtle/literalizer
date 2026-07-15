@@ -433,6 +433,7 @@ class Dart(metaclass=LanguageCls):
         dict_type_template="Map<{key_type}, {inner}>",
         fallback_value_type="dynamic",
         wide_int_type=None,
+        huge_int_type=None,
     )
 
     class DateFormats(enum.Enum):

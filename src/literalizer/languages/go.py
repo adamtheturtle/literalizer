@@ -1094,6 +1094,7 @@ class Go(metaclass=LanguageCls):
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
             wide_int_type=None,
+            huge_int_type="uint64",
         )
 
     @cached_property
@@ -1220,6 +1221,19 @@ class Go(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Format every element of an unsigned-width collection."""
+
+        def _format(value: int) -> str:
+            """Use a checked ``uint64`` conversion."""
+            if value < 0:
+                msg = "Go cannot mix negative integers with uint64 values."
+                raise UnrepresentableIntegerError(msg)
+            return _format_go_uint64_positive(value=value)
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:

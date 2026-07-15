@@ -767,7 +767,9 @@ def _java_record_field_identifier(key: str, /) -> str:
     Java record literals are positional, so reserved words can be
     made legal declaration identifiers by appending an underscore.
     """
-    identifier = require_record_field_identifier(key, language_name="Java")
+    identifier = require_record_field_identifier(
+        key, language_name="Java", reserved=frozenset()
+    )
     return f"{identifier}_" if identifier in _JAVA_KEYWORDS else identifier
 
 
@@ -914,6 +916,7 @@ class Java(metaclass=LanguageCls):
         dict_type_template=None,
         fallback_value_type=None,
         wide_int_type="long",
+        huge_int_type=None,
     )
 
     _opener_config_long = TypedOpenerConfig(
@@ -933,6 +936,7 @@ class Java(metaclass=LanguageCls):
         dict_type_template=None,
         fallback_value_type=None,
         wide_int_type=None,
+        huge_int_type=None,
     )
 
     class DateFormats(enum.Enum):

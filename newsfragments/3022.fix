@@ -1,0 +1,1 @@
+Widen integer collections consistently across signed 64-bit boundaries and reject values beyond target integer limits.

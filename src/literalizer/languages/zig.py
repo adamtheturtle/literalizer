@@ -36,10 +36,13 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
@@ -105,7 +108,6 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
-    UnrepresentableIntegerError,
     UnrepresentableSpecialFloatError,
 )
 
@@ -163,13 +165,6 @@ def _format_zig_entry(
         case bool():
             return formatted
         case int():
-            if original < I64_MIN:
-                msg = (
-                    f"Zig cannot represent negative integer {original} "
-                    "below the signed 64-bit range using the ZVal "
-                    "union's unsigned variant."
-                )
-                raise UnrepresentableIntegerError(msg)
             tag = "uint" if original > I64_MAX else "int"
         case float():
             tag = "float"
@@ -382,6 +377,7 @@ def _zig_record_field_identifier(key: str, /) -> str:
             require_record_field_identifier(
                 key,
                 language_name="Zig",
+                reserved=frozenset(),
             )
         return f'@"{key}"'
     return key
@@ -1673,8 +1669,13 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=I64_MIN,
+            max_value=U64_MAX,
+            fallback=raise_for_unrepresentable_int(language_name="Zig"),
         )
 
     @cached_property

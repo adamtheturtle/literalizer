@@ -78,9 +78,7 @@ class InvalidRecordFieldNameError(UnrepresentableInputError):
 
 
 class UnrepresentableStringError(UnrepresentableInputError):
-    """Raised when a string contains a target-unrepresentable
-    character.
-    """
+    """Raised when a target cannot represent a string character."""
 
     def __init__(self, *, language_name: str, character_name: str) -> None:
         """Create an ``UnrepresentableStringError``."""

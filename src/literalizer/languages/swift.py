@@ -502,7 +502,9 @@ def _swift_record_field_identifier(key: str, /) -> str:
     argument label uses the same word without backticks (the compiler
     rejects escaping it in that position).
     """
-    identifier = require_record_field_identifier(key, language_name="Swift")
+    identifier = require_record_field_identifier(
+        key, language_name="Swift", reserved=frozenset()
+    )
     return f"`{identifier}`" if identifier in _SWIFT_KEYWORDS else identifier
 
 

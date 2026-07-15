@@ -14,6 +14,7 @@ from literalizer import (
 from literalizer.exceptions import (
     HeterogeneousSiblingListsError,
     UnrepresentableInputError,
+    UnrepresentableIntegerError,
 )
 from literalizer.languages import (
     C,
@@ -28,6 +29,7 @@ from literalizer.languages import (
     Odin,
     Python,
     R,
+    Rust,
     Scala,
     Swift,
     V,
@@ -171,7 +173,7 @@ def test_string_literals_escape_nul(
     language: Language,
     escape: str,
 ) -> None:
-    """NUL data is represented by target-language escape syntax."""
+    """A zero byte uses target-language escape syntax."""
     rendered = _render(source='{"x": "\\u0000"}', language=language)
 
     assert "\0" not in rendered
@@ -182,9 +184,169 @@ def test_string_literals_escape_nul(
 def test_string_literals_reject_unrepresentable_nul(
     language: Language,
 ) -> None:
-    """Targets without embedded-NUL strings reject the value."""
+    """Targets without embedded zero bytes reject the value."""
     with pytest.raises(expected_exception=UnrepresentableInputError):
         _render(source='{"x": "\\u0000"}', language=language)
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "source", "type_name", "literal_marker"),
+    argvalues=[
+        (
+            Cpp(),
+            "[9223372036854775807, 9223372036854775808]",
+            "std::vector<unsigned long long>",
+            "ULL",
+        ),
+        (
+            Go(),
+            "[9223372036854775807, 9223372036854775808]",
+            "[]uint64",
+            "uint64(",
+        ),
+        (
+            Go(),
+            '{"a": 9223372036854775807, "b": 9223372036854775808}',
+            "map[string]uint64",
+            "uint64(",
+        ),
+        (
+            Rust(),
+            "[9223372036854775807, 9223372036854775808]",
+            "vec![",
+            "i128",
+        ),
+        (
+            Rust(),
+            '{"a": 9223372036854775807, "b": 9223372036854775808}',
+            "HashMap::from",
+            "i128",
+        ),
+        (
+            Scala(),
+            "[9223372036854775807, 9223372036854775808]",
+            "List[BigInt]",
+            "BigInt(",
+        ),
+        (
+            Scala(),
+            '{"a": 9223372036854775807, "b": 9223372036854775808}',
+            "Map[String, BigInt]",
+            "BigInt(",
+        ),
+        (
+            Kotlin(),
+            '{"a": 9223372036854775807, "b": 9223372036854775808}',
+            "mapOf<String, BigInteger>",
+            "BigInteger(",
+        ),
+    ],
+)
+def test_integer_collections_widen_past_signed_64_bit(
+    language: Language,
+    source: str,
+    type_name: str,
+    literal_marker: str,
+) -> None:
+    """The container type and every integer use one wider type."""
+    rendered = _render(source=source, language=language)
+
+    assert type_name in rendered
+    assert rendered.count(literal_marker) >= _DECLARATION_AND_LITERAL
+
+
+@pytest.mark.parametrize(argnames="language", argvalues=[V(), Zig()])
+def test_integers_above_unsigned_64_bit_are_rejected(
+    language: Language,
+) -> None:
+    """Targets capped at ``u64`` reject larger integer values."""
+    with pytest.raises(expected_exception=UnrepresentableIntegerError):
+        _render(source="1267650600228229401496703205376", language=language)
+
+
+def test_go_rejects_negative_and_unsigned_width_integer_mix() -> None:
+    """Go rejects a collection with no common integer type."""
+    with pytest.raises(expected_exception=UnrepresentableIntegerError):
+        _render(source=f"[-1, {2**63}]", language=Go())
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "source"),
+    argvalues=[
+        (Rust(), '[{}, {"x": 1}]'),
+        (
+            Rust(
+                heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+            ),
+            "[1, []]",
+        ),
+        (
+            Rust(
+                heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+            ),
+            "[1, {}]",
+        ),
+        (
+            Nim(
+                heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+            ),
+            '{"a": {"x": 1}, "b": {"x": 1099511627776}}',
+        ),
+        (
+            Nim(
+                heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+            ),
+            '[{}, {"x": 1}]',
+        ),
+        (
+            Nim(
+                heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+            ),
+            "[null]",
+        ),
+        (
+            Nim(
+                heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+            ),
+            "[1, {}]",
+        ),
+        (V(), "[[], [1]]"),
+        (V(), '[{}, {"x": 1}]'),
+        (V(), "[null]"),
+        (V(), '{"a": null}'),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            "[true, 1]",
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            '{"a": true, "b": 1}',
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            "[1, []]",
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            "[1, {}]",
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            '[[1], ["s"]]',
+        ),
+        (
+            V(heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE),
+            '{"a": [1], "b": ["s"]}',
+        ),
+    ],
+)
+def test_untypable_container_shapes_are_rejected(
+    language: Language,
+    source: str,
+) -> None:
+    """A target compiler never receives a collection with no safe type."""
+    with pytest.raises(expected_exception=UnrepresentableInputError):
+        _render(source=source, language=language)
 
 
 def test_java_nested_record_variant_list_uses_top_element_type() -> None:
@@ -375,6 +537,22 @@ def test_record_strategy_quotes_non_bare_field_names(
             V(heterogeneous_strategy=V.heterogeneous_strategies.RECORD),
             "a-b",
         ),
+        (
+            Kotlin(
+                heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
+            ),
+            r"a\nb",
+        ),
+        (
+            Scala(
+                heterogeneous_strategy=Scala.heterogeneous_strategies.RECORD,
+            ),
+            r"a\nb",
+        ),
+        (
+            Zig(heterogeneous_strategy=Zig.heterogeneous_strategies.RECORD),
+            r"a\nb",
+        ),
     ],
 )
 def test_record_strategy_rejects_unquotable_field_names(
@@ -421,6 +599,17 @@ def test_nim_object_variant_rejects_scalar_container_sequence() -> None:
         match="mixes scalar and container elements",
     ):
         _render(source="[1, []]", language=language)
+
+
+def test_nim_object_variant_accepts_a_non_list_container() -> None:
+    """Nim object variants still support heterogeneous maps."""
+    language = Nim(
+        heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
+    )
+
+    rendered = _render(source='{"a": 1, "b": "s"}', language=language)
+
+    assert "ValueKind = enum" in rendered
 
 
 def test_nim_object_variant_rejects_null_only_map() -> None:

@@ -786,6 +786,47 @@ def _build_error_preamble(
 
 
 @beartype
+def _reject_rust_unsafe_container_shapes(
+    data: Value,
+    /,
+    *,
+    tagged_enum: bool,
+) -> None:
+    """Reject collection shapes with no common inferred Rust type."""
+
+    def _visit(value: Value) -> None:
+        """Validate one container and recursively visit its children."""
+        if isinstance(value, list):
+            maps = [item for item in value if isinstance(item, dict)]
+            if maps and any(not item for item in maps) and any(maps):
+                msg = (
+                    "Rust cannot infer one HashMap type for empty and "
+                    "non-empty maps in a sequence"
+                )
+                raise UnrepresentableInputError(msg)
+            if tagged_enum:
+                has_scalar = any(
+                    not isinstance(item, (list, dict, set)) for item in value
+                )
+                has_container = any(
+                    isinstance(item, (list, dict, set)) for item in value
+                )
+                if has_scalar and has_container:
+                    msg = (
+                        "Rust TAGGED_ENUM cannot place scalar and container "
+                        "values in one homogeneous sequence"
+                    )
+                    raise UnrepresentableInputError(msg)
+            for item in value:
+                _visit(value=item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                _visit(value=item)
+
+    _visit(value=data)
+
+
+@beartype
 def _rust_value_scalar_wrapper(
     params: _StrategyParams,
     /,
@@ -3169,6 +3210,10 @@ class Rust(metaclass=LanguageCls):
         """Validate Rust-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data)
+        _reject_rust_unsafe_container_shapes(
+            data,
+            tagged_enum=self.heterogeneous_strategy.name == "TAGGED_ENUM",
+        )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -3299,6 +3344,24 @@ class Rust(metaclass=LanguageCls):
             max_value=_I128_MAX,
             fallback=raise_for_unrepresentable_int(language_name="Rust"),
         )
+
+    @cached_property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Format every element of a signed-128-bit collection."""
+        checked = make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=_I128_MIN,
+            max_value=_I128_MAX,
+            fallback=raise_for_unrepresentable_int(language_name="Rust"),
+        )
+
+        def _format(value: int) -> str:
+            """Append the collection's common ``i128`` suffix."""
+            return f"{checked(value)}i128"
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:

@@ -670,6 +670,7 @@ class CSharp(metaclass=LanguageCls):
         bool_type="bool",
         int_type="int",
         wide_int_type="long",
+        huge_int_type=None,
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="string",

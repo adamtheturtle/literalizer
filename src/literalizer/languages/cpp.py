@@ -62,6 +62,7 @@ from literalizer._formatters.tuple_strategy import (
 )
 from literalizer._formatters.type_inference import (
     DictType,
+    HugeInt,
     ListType,
     WideInt,
     infer_element_type,
@@ -159,6 +160,8 @@ def _narrowest_cpp_int_type(values: list[int]) -> str:
     """
     if all(_INT32_MIN <= v <= _INT32_MAX for v in values):
         return "int"
+    if any(v > I64_MAX for v in values):
+        return "unsigned long long"
     return "long long"
 
 
@@ -182,7 +185,7 @@ def _collect_int_leaves(
     """Collect int values that would occupy the int leaf of
     *element_type* when *items* is resolved to its C++ type.
     """
-    if element_type is int or element_type is WideInt:
+    if element_type in (int, WideInt, HugeInt):
         return [
             item
             for item in items
@@ -276,6 +279,7 @@ def _make_cpp_element_to_type(
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
         wide_int_type=None,
+        huge_int_type=None,
     )
 
 
@@ -2458,6 +2462,17 @@ class Cpp(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Add an unsigned-long-long suffix to every collection value."""
+        fallback = make_ull_fallback(language_name="C++")
+
+        def _format(value: int) -> str:
+            """Delegate to the checked unsigned formatter."""
+            return fallback(value)
+
+        return _format
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:

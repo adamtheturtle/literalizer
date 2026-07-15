@@ -639,6 +639,7 @@ def _kotlin_record_field_identifier(key: str, /) -> str:
             require_record_field_identifier(
                 key,
                 language_name="Kotlin",
+                reserved=frozenset(),
             )
         return f"`{key}`"
     return key
@@ -971,6 +972,7 @@ class Kotlin(metaclass=LanguageCls):
         bool_type="Boolean",
         int_type="Int",
         wide_int_type="Long",
+        huge_int_type="BigInteger",
         float_type="Double",
         bytes_type="String",
         mixed_numeric_type=None,
@@ -2130,6 +2132,11 @@ class Kotlin(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Format every element of a ``BigInteger`` collection."""
+        return _format_kotlin_biginteger_literal
 
     @cached_property
     def comment_config(self) -> CommentConfig:

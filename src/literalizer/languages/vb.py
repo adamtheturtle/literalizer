@@ -907,6 +907,7 @@ class VisualBasic(metaclass=LanguageCls):
             bool_type="Boolean",
             int_type="Integer",
             wide_int_type="Long",
+            huge_int_type=None,
             float_type="Double",
             mixed_numeric_type="Double",
             bytes_type="String",

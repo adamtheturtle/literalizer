@@ -53,12 +53,18 @@ class WideInt:
     """
 
 
+class HugeInt:
+    """Sentinel for integer collections exceeding signed 64-bit range."""
+
+
 # Signed 32-bit range; an int outside it widens to :class:`WideInt`.
 # Keep in sync with ``_SCALA_INT32_MIN`` / ``_SCALA_INT32_MAX`` in
 # :mod:`literalizer.languages.scala`, which derives a ``Long`` record
 # field type from the same threshold.
 _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
+_I64_MIN = -(2**63)
+_I64_MAX = 2**63 - 1
 
 
 @beartype
@@ -140,8 +146,16 @@ def _resolve_single_type(
             value_type=value_type,
             values=tuple(all_dict_values),
         )
-    if the_type is int and _int_needs_widening(items=items):
-        return WideInt
+    if the_type is int:
+        integers = [
+            item
+            for item in items
+            if isinstance(item, int) and not isinstance(item, bool)
+        ]
+        if any(not _I64_MIN <= item <= _I64_MAX for item in integers):
+            return HugeInt
+        if _int_needs_widening(items=items):
+            return WideInt
     return the_type
 
 

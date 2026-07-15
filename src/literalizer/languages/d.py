@@ -382,7 +382,9 @@ def _d_record_field_identifier(key: str, /) -> str:
     D struct literals are positional, so reserved words can be made
     legal declaration identifiers by appending an underscore.
     """
-    identifier = require_record_field_identifier(key, language_name="D")
+    identifier = require_record_field_identifier(
+        key, language_name="D", reserved=frozenset()
+    )
     return f"{identifier}_" if identifier in _D_KEYWORDS else identifier
 
 

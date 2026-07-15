@@ -25,6 +25,7 @@ from literalizer._comments_resolve import (
 )
 from literalizer._formatters.type_inference import (
     DictType,
+    HugeInt,
     WideInt,
     infer_element_type,
     record_shape_for_dict,
@@ -163,6 +164,16 @@ class _SupportsCallVariableWrapInFile(Protocol):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a call-result variable binding in a complete file."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _HasHugeIntegerFormatter(Protocol):
+    """A language with collection-wide huge-integer formatting."""
+
+    @property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Return the formatter for all integers in a huge collection."""
         ...  # pylint: disable=unnecessary-ellipsis
 
 
@@ -413,8 +424,11 @@ def _widened_int_formatter(
     out-of-i32 integer present) or when the language has no
     ``format_integer_widened`` (it resolves to ``None``).
     """
+    element_type = infer_element_type(items=items)
+    if element_type is HugeInt and isinstance(spec, _HasHugeIntegerFormatter):
+        return spec.format_integer_huge
     formatter = spec.format_integer_widened
-    if formatter is None or infer_element_type(items=items) is not WideInt:
+    if formatter is None or element_type not in (WideInt, HugeInt):
         return None
     return formatter
 

@@ -244,10 +244,10 @@ def reject_nul_string_formatter(
     *,
     language_name: str,
 ) -> Callable[[str], str]:
-    """Wrap *formatter* with a documented rejection for NUL."""
+    """Wrap *formatter* with a documented zero-byte rejection."""
 
     def _format(value: str) -> str:
-        """Reject NUL, then delegate to the wrapped formatter."""
+        """Reject a zero byte, then delegate to the wrapped formatter."""
         if "\0" in value:
             raise UnrepresentableStringError(
                 language_name=language_name,

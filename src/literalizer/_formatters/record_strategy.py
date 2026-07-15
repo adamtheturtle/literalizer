@@ -65,7 +65,7 @@ def require_record_field_identifier(
     /,
     *,
     language_name: str,
-    reserved: frozenset[str] = frozenset(),
+    reserved: frozenset[str],
 ) -> str:
     """Return *key* when it can be emitted as a bare field identifier.
 

@@ -450,6 +450,7 @@ def _scala_record_field_identifier(key: str, /) -> str:
             require_record_field_identifier(
                 key,
                 language_name="Scala",
+                reserved=frozenset(),
             )
         return f"`{key}`"
     return key
@@ -598,6 +599,7 @@ class Scala(metaclass=LanguageCls):
         bool_type="Boolean",
         int_type="Int",
         wide_int_type="Long",
+        huge_int_type="BigInt",
         float_type="Double",
         mixed_numeric_type="Double",
         bytes_type="String",
@@ -1675,6 +1677,11 @@ class Scala(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_huge(self) -> Callable[[int], str]:
+        """Format every element of a ``BigInt`` collection."""
+        return _format_scala_bigint_literal
 
     @cached_property
     def comment_config(self) -> CommentConfig:

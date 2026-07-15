@@ -667,7 +667,9 @@ def _python_record_field_identifier(key: str, /) -> str:
     conversion), matching the keyword-argument literal form
     ``Record0(id=1, ...)``.
     """
-    identifier = require_record_field_identifier(key, language_name="Python")
+    identifier = require_record_field_identifier(
+        key, language_name="Python", reserved=frozenset()
+    )
     return f"{identifier}_" if keyword.iskeyword(identifier) else identifier
 
 
