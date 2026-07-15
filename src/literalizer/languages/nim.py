@@ -54,6 +54,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
+from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     collect_sibling_map_wrap_ids,
@@ -104,7 +105,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -483,14 +484,27 @@ def _build_object_variant_preamble(
     datetime_type: str,
     indent: str,
     /,
+    *,
+    compute_wrap_ids: Callable[[Value], frozenset[int]] | None = None,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """OBJECT_VARIANT strategy: emit an object-variant ``type`` block."""
+    """Emit an object-variant ``type`` block for wrapped scalars.
+
+    ``OBJECT_VARIANT`` supplies no *compute_wrap_ids* and therefore
+    discovers every heterogeneous container itself.  ``RECORD`` uses
+    the same value carrier only for maps de-recordized by its shared
+    nested-map fallback, and supplies that narrower id collector.
+    """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the object-variant type declaration for *data*."""
-        wrap_ids = collect_heterogeneous_container_ids(
-            data=data
-        ) | collect_sibling_map_wrap_ids(data=data)
+        wrap_ids = (
+            compute_wrap_ids(data)
+            if compute_wrap_ids is not None
+            else (
+                collect_heterogeneous_container_ids(data=data)
+                | collect_sibling_map_wrap_ids(data=data)
+            )
+        )
         if not wrap_ids:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
@@ -1349,16 +1363,25 @@ class Nim(metaclass=LanguageCls):
             return _json_preamble
         if self._uses_record:
             record_preamble = self._record_strategy.preamble
+            variant_preamble = _build_object_variant_preamble(
+                self.heterogeneous_value_variant_name,
+                self._heterogeneous_variant_date_type,
+                self._heterogeneous_variant_datetime_type,
+                self.indent,
+                compute_wrap_ids=(
+                    self._record_strategy.behavior.compute_wrap_ids
+                ),
+            )
 
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
-                """Emit the ``object`` type blocks, preceded by the
-                ``UnusedImport`` opt-out and ``import tables`` (used by
-                any non-record dict / ordered map, harmlessly suppressed
-                otherwise).
+                """Emit value-variant and record ``object`` type blocks,
+                preceded by the ``UnusedImport`` opt-out and ``import
+                tables``.
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
                     "import tables",
+                    *variant_preamble(data),
                     *record_preamble(data),
                 )
 
@@ -1530,6 +1553,12 @@ class Nim(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"seq[{request.element_record_name}]"
+        if (
+            isinstance(request.value, dict)
+            and not isinstance(request.value, OrderedMap)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return f"Table[string, {self.heterogeneous_value_variant_name}]"
         return self._nim_value_field_type(request.value)
 
     @cached_property
@@ -1550,11 +1579,24 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``type``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
+            widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
+        )
+        variant_behavior = _build_object_variant_behavior(
+            self.heterogeneous_value_variant_name,
+            self._heterogeneous_variant_date_type,
+            self._heterogeneous_variant_datetime_type,
+        )
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior,
+                wrap_scalar=variant_behavior.wrap_scalar,
+                widens_nested_maps_by_wrapping_scalars=True,
+            ),
         )
 
     @cached_property
