@@ -2197,7 +2197,12 @@ def _apply_variable_wrapper(
             )
             normalized_name = (
                 format_new_variable_name(language=language, name=name)
-                if getattr(language, "normalizes_new_variable_names", False)
+                if (
+                    language.__class__.__dict__.get(
+                        "normalizes_new_variable_names", False
+                    )
+                    is True
+                )
                 else name
             )
             wrapped = declaration_formatter(
