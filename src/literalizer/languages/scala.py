@@ -68,6 +68,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     WideInt,
+    record_shape_for_dict,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -1125,7 +1126,7 @@ class Scala(metaclass=LanguageCls):
         )
         return self._scalar_field_type_resolver(element_type) or "Any"
 
-    def _scala_record_field_type(  # noqa: PLR0911
+    def _scala_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
@@ -1149,12 +1150,13 @@ class Scala(metaclass=LanguageCls):
         datetime is sized like the epoch integer it renders as
         (``Int``, or ``Long`` once it leaves 32-bit range past 2038).
 
-        A set or a non-record dict (an empty or non-string-keyed dict)
-        as a record field has no precise component type under the
-        ``RECORD`` strategy.  Per the cross-language decision in #2317,
-        Rust rejects such a field while Scala widens it to the top type
-        ``Any`` (documented best effort), which the rendered literal
-        still assigns into.
+        A record-eligible dict with no ``record_name`` was widened out
+        of record inference because its nested sibling maps cannot
+        share one shape.  Type that field as ``Map[String, Any]`` so the
+        uniform enclosing record survives (#2915).  A set or a genuinely
+        non-record dict (empty or non-string-keyed) still has no precise
+        component type; per the cross-language decision in #2317, Scala
+        widens it to the top type ``Any``.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1175,6 +1177,8 @@ class Scala(metaclass=LanguageCls):
                 opener = self.ordered_map_format_config.ordered_map_open(
                     value,
                 )
+            case dict() if record_shape_for_dict(value=value) is not None:
+                return "Map[String, Any]"
             case list():
                 opener = self.sequence_open(value)
             case bool():
@@ -1250,8 +1254,8 @@ class Scala(metaclass=LanguageCls):
             return build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=False,
-                widen_unrecordizable_nested_sibling_maps=False,
-                derecordized_map_open=None,
+                widen_unrecordizable_nested_sibling_maps=True,
+                derecordized_map_open="Map[String, Any](",
             )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(

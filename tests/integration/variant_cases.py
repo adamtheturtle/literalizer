@@ -701,14 +701,13 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     so the ``RECORD`` strategy would reject the sibling list.  The shared
     widening pass drops such families from the shape mapping, so the
     outer record survives.  Rust widens the field to ``HashMap<&'static
-    str, Value>`` and wraps the leaves in its value enum (issue #2910);
-    Go widens it to ``map[string]any`` (issue #2911), and Java widens it
-    to ``java.util.Map<String, Object>`` (issue #2912).  C# widens it to
-    ``Dictionary<string, object>`` (issue #2913).  The remaining
-    ``RECORD`` languages gain their own widening in later sub-issues of
-    #2909, so this stays out of all-languages base discovery.  Both
-    layouts are covered because their widened-map paths render compact
-    and multiline literals separately.
+    str, Value>`` and wraps the leaves in its value enum (issue #2910).
+    Go, Java, C#, Kotlin, Scala, and Swift use their universal top types
+    (issues #2911 through #2916).  The remaining ``RECORD`` languages
+    gain their own widening in later sub-issues of #2909, so this stays
+    out of all-languages base discovery.  Both layouts are covered
+    because their widened-map paths render compact and multiline
+    literals separately.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():

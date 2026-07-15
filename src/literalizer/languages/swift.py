@@ -58,6 +58,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
+from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -107,7 +108,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 @beartype
@@ -1086,16 +1087,23 @@ class Swift(metaclass=LanguageCls):
         is typed ``[RecordN]`` to match the element type Swift infers
         from the homogeneous array of ``RecordN`` literals.  Every other
         value is typed by the same :func:`_swift_type_hint` machinery
-        the typed variable declaration uses, so the declared type always
-        matches the rendered literal.  A set or non-record dict field is
-        out of scope for the base ``RECORD`` port (the cross-language
-        decision is tracked in #2317) and is not reached by any record
-        golden, so it falls through to that shared resolver.
+        the typed variable declaration uses.  A record-eligible dict
+        with no ``record_name`` was widened out of record inference
+        because its nested sibling maps cannot share one shape; type it
+        as ``[String: Any]`` so the uniform enclosing record survives
+        (#2916).  Other dict and set fields fall through to the shared
+        resolver.
         """
         if request.record_name is not None:
             return request.record_name
         if request.element_record_name is not None:
             return f"[{request.element_record_name}]"
+        if (
+            isinstance(request.value, dict)
+            and not isinstance(request.value, OrderedMap)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return "[String: Any]"
         return _swift_type_hint(
             data=request.value,
             date_hint=self._swift_date_hint,
@@ -1126,7 +1134,7 @@ class Swift(metaclass=LanguageCls):
             return build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=False,
-                widen_unrecordizable_nested_sibling_maps=False,
+                widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )
         return RecordStrategy(
