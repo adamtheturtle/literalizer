@@ -1628,7 +1628,7 @@ class Kotlin(metaclass=LanguageCls):
             return request.record_name
         return self._kotlin_value_field_type(request.value)
 
-    def _kotlin_value_field_type(  # noqa: PLR0911
+    def _kotlin_value_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         value: Value,
         /,

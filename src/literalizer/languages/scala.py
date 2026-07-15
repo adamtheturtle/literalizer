@@ -1115,7 +1115,7 @@ class Scala(metaclass=LanguageCls):
         )
         return self._scalar_field_type_resolver(element_type) or "Any"
 
-    def _scala_record_field_type(  # noqa: PLR0911
+    def _scala_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
