@@ -17,14 +17,27 @@ def test_zig_new_variable_valid_name_is_unchanged() -> None:
     assert "const value: ZVal = .{ .int = 1 };" in result.code
 
 
-def test_zig_new_variable_reserved_name_is_normalized() -> None:
-    """A reserved NewVariable name must not produce invalid Zig."""
+def test_zig_new_variable_malformed_name_is_normalized() -> None:
+    """A malformed NewVariable name must not produce invalid Zig."""
     result = literalize(
         source="1",
         input_format=InputFormat.JSON,
         language=Zig(),
-        variable_form=NewVariable(name="error", modifiers=frozenset()),
+        variable_form=NewVariable(name="a-b", modifiers=frozenset()),
         wrap_in_file=True,
     )
 
-    assert "const literalizer_error: ZVal = .{ .int = 1 };" in result.code
+    assert "const a_b: ZVal = .{ .int = 1 };" in result.code
+
+
+def test_zig_new_variable_leading_digit_is_normalized() -> None:
+    """A leading digit must not produce invalid Zig."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Zig(),
+        variable_form=NewVariable(name="1value", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "const literalizer_1value: ZVal = .{ .int = 1 };" in result.code
