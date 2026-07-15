@@ -1,0 +1,1 @@
+Reject malformed and reserved variable binding names before emitting invalid target-language source.

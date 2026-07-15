@@ -507,6 +507,24 @@ class VariableNameNotSupportedError(Exception):
         self.variable_name = variable_name
 
 
+class InvalidVariableNameError(Exception):
+    """Raised when a variable name is not an identifier in the target
+    language.
+
+    To resolve, choose a syntactically valid, non-reserved identifier for
+    the target language.
+    """
+
+    def __init__(self, *, language_name: str, variable_name: str) -> None:
+        """Create an ``InvalidVariableNameError``."""
+        super().__init__(
+            f"{variable_name!r} is not a valid variable name in "
+            f"{language_name}"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+
+
 class WrapInFileWithoutVariableNotSupportedError(Exception):
     """Raised when ``literalize`` is called with ``wrap_in_file=True``
     and ``variable_form=None`` for a target language that cannot

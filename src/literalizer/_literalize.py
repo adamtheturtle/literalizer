@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
@@ -68,6 +69,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    InvalidVariableNameError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnrepresentableInputError,
@@ -79,6 +81,70 @@ from literalizer.exceptions import (
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
 )
+
+_ASCII_VARIABLE_NAME = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+_ASCII_VARIABLE_NAME_LANGUAGES: Final = frozenset(
+    {
+        "C",
+        "Cpp",
+        "Crystal",
+        "D",
+        "Elixir",
+        "Erlang",
+        "Fortran",
+        "Gleam",
+        "Go",
+        "Groovy",
+        "Haskell",
+        "Haxe",
+        "Java",
+        "JavaScript",
+        "Rust",
+        "Scala",
+        "Sml",
+        "Swift",
+        "TypeScript",
+        "V",
+        "Zig",
+    }
+)
+_RESERVED_VARIABLE_NAMES: Final[Mapping[str, frozenset[str]]] = {
+    "C": frozenset({"switch"}),
+    "Cobol": frozenset({"PROGRAM"}),
+    "Cpp": frozenset({"class"}),
+    "Crystal": frozenset({"def"}),
+    "D": frozenset({"class"}),
+    "Gleam": frozenset({"let"}),
+    "Go": frozenset({"type"}),
+    "Groovy": frozenset({"class"}),
+    "Haskell": frozenset({"type"}),
+    "Haxe": frozenset({"class"}),
+    "Java": frozenset({"class"}),
+    "JavaScript": frozenset({"class"}),
+    "Ruby": frozenset({"class"}),
+    "Rust": frozenset({"type"}),
+    "Scala": frozenset({"type"}),
+    "Sml": frozenset({"val"}),
+    "Swift": frozenset({"class"}),
+    "TypeScript": frozenset({"class"}),
+    "V": frozenset({"type"}),
+    "Zig": frozenset({"error"}),
+}
+
+
+def _validate_variable_name(*, language: Language, name: str) -> None:
+    """Reject binding names that cannot be emitted as identifiers."""
+    language_name = type(language).__name__
+    malformed = (
+        language_name in _ASCII_VARIABLE_NAME_LANGUAGES
+        and _ASCII_VARIABLE_NAME.fullmatch(string=name) is None
+    )
+    reserved = name in _RESERVED_VARIABLE_NAMES.get(language_name, frozenset())
+    if malformed or reserved:
+        raise InvalidVariableNameError(
+            language_name=language_name,
+            variable_name=name,
+        )
 
 
 @runtime_checkable
@@ -2907,6 +2973,8 @@ def literalize(
             language_name=type(language).__name__,
             variable_name=variable_form.name,
         )
+    if variable_form is not None:
+        _validate_variable_name(language=language, name=variable_form.name)
     if (
         wrap_in_file
         and variable_form is None
@@ -4094,6 +4162,7 @@ def _validate_call_variable_form(
             language_name=type(language).__name__,
             variable_name=variable_form.name,
         )
+    _validate_variable_name(language=language, name=variable_form.name)
     if not language.call_returns_expression:
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
