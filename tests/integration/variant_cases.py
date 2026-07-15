@@ -703,9 +703,9 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     outer record survives.  Rust widens the field to ``HashMap<&'static
     str, Value>`` and wraps the leaves in its value enum (issue #2910).
     Go, Java, C#, Kotlin, Scala, and Swift use their universal top types
-    (issues #2911 through #2916), while Crystal uses a native scalar
-    union in ``Hash(String, LiteralizerRecordValue)`` (issue #2919).
-    The remaining ``RECORD`` languages gain their own widening in later
+    (issues #2911 through #2916). Crystal, Nim, V, D, Odin, and Zig use
+    language-specific value carriers (issues #2919 through #2923). The
+    remaining ``RECORD`` languages gain their own widening in later
     sub-issues of #2909, so this stays out of all-languages base
     discovery. Both layouts are covered because their widened-map paths
     render compact and multiline literals separately.
