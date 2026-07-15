@@ -414,8 +414,14 @@ class Sml(metaclass=LanguageCls):
     non_default_kwargs: ClassVar[dict[str, str]] = {}
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
+    # A portable Standard ML ``string`` is an 8-bit type.  Raw UTF-8 and
+    # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.
+    supports_non_ascii_string_literals = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         pre_indent_comment_scalar_variant=False,
+        fixture_module_name_template=None,
+        fixture_module_name_lowercase=False,
+        golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
         record_variants=frozenset(),
         nested_map_widening=NestedMapWideningVariant.NONE,

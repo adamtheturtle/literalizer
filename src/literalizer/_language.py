@@ -7,6 +7,8 @@ import math
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
+    Any,
+    ClassVar,
     Final,
     Protocol,
     assert_never,
@@ -788,6 +790,9 @@ class VariantMetadata:
     """
 
     pre_indent_comment_scalar_variant: bool
+    fixture_module_name_template: str | None
+    fixture_module_name_lowercase: bool
+    golden_filename_lowercase: bool
     collection_layout_category: str
     record_variants: frozenset[RecordVariant]
     nested_map_widening: NestedMapWideningVariant
@@ -863,6 +868,7 @@ class LanguageCls(type):
     pygments_name: str | None
     VersionFormats: type[enum.Enum]
     supports_special_floats: bool
+    supports_non_ascii_string_literals: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
@@ -920,6 +926,9 @@ class Language(Protocol):
     languages or override defaults, write a class that provides all the
     required attributes.
     """
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    variant_metadata: ClassVar[VariantMetadata]
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class

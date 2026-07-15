@@ -650,8 +650,12 @@ class CSharp(metaclass=LanguageCls):
     }
     json_type_variant_name_suffix = "json_node"
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
+    supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         pre_indent_comment_scalar_variant=False,
+        fixture_module_name_template=None,
+        fixture_module_name_lowercase=False,
+        golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
         record_variants=frozenset({RecordVariant.NONRECORD_DICT_FIELD}),
         nested_map_widening=NestedMapWideningVariant.NONE,
