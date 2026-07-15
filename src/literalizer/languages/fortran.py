@@ -435,6 +435,17 @@ class Fortran(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {
+        "null_name": "jnull",
+        "bool_name": "jbool",
+        "int_name": "jint",
+        "real_name": "jreal",
+        "str_name": "jstr",
+        "list_name": "jlist",
+        "map_name": "jmap",
+        "set_name": "jset",
+        "entry_name": "jentry",
+    }
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = False

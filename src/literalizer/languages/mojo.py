@@ -974,6 +974,13 @@ class Mojo(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
+    non_default_kwargs: ClassVar[dict[str, str]] = {
+        "default_set_element_type": "Int",
+        "default_sequence_element_type": "Int",
+        "default_dict_value_type": "Int",
+        "default_dict_key_type": "Int",
+        "heterogeneous_value_variant_name": "JsonValue",
+    }
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
     supports_non_string_dict_keys = True

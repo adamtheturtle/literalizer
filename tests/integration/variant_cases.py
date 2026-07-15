@@ -22,28 +22,21 @@ from literalizer.languages import (
     Cpp,
     Crystal,
     CSharp,
-    Dart,
     Dhall,
     Elm,
-    Fortran,
     FSharp,
     Gleam,
     Go,
-    Groovy,
     Haskell,
     Java,
     Kotlin,
-    Mojo,
     Nim,
     OCaml,
     Odin,
     PureScript,
     Python,
-    Roc,
     Rust,
     Scala,
-    Swift,
-    VisualBasic,
     Zig,
 )
 
@@ -66,74 +59,6 @@ def wrap_variable_form() -> literalizer.NewVariable:
     return literalizer.NewVariable(name="my_data")
 
 
-# ---------------------------------------------------------------------------
-# Test-only data keyed by language class.
-#
-# Keeping the language-specific test values here — keyed by the language
-# class itself, not by ``__name__`` — lets the parameterized variant
-# builders below iterate uniformly over ``ALL_LANGUAGES`` without any
-# ``if lang_cls.__name__ == "..."`` branches.  Genuine language facts
-# live on the language class; only arbitrary test fixtures (alternative
-# type names, fictional constructor prefixes, chosen field names, etc.)
-# belong in this block.
-# ---------------------------------------------------------------------------
-
-# Alternative type names passed to the various ``default_*_type`` kwargs.
-# Each value must differ from the language's own default *and* be a valid
-# type name for that language's linter / compiler.  Each mapping enumerates
-# every language whose dataclass exposes the corresponding kwargs entry.
-DEFAULT_SET_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
-    CSharp: "string",
-    Crystal: "Int32",
-    Dart: "String",
-    Go: "string",
-    Groovy: "String",
-    Kotlin: "String",
-    Mojo: "Int",
-    Odin: "int",
-    Python: "int",
-    Rust: "i32",
-    Swift: "String",
-    VisualBasic: "String",
-}
-
-DEFAULT_SEQUENCE_ELEMENT_TYPES: dict[literalizer.LanguageCls, str] = {
-    CSharp: "string",
-    Go: "interface{}",
-    Mojo: "Int",
-    Python: "int",
-    Rust: "i32",
-    Swift: "String",
-    VisualBasic: "String",
-}
-
-DEFAULT_DICT_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
-    CSharp: "object?",
-    Crystal: "Int32",
-    Dart: "Object?",
-    Go: "interface{}",
-    Kotlin: "Comparable<*>?",
-    Mojo: "Int",
-    Python: "int",
-    Rust: "i32",
-    Swift: "String",
-    VisualBasic: "String",
-}
-
-DEFAULT_DICT_KEY_TYPES: dict[literalizer.LanguageCls, str] = {
-    CSharp: "object",
-    Crystal: "Int32",
-    Dart: "Object",
-    Go: "any",
-    Kotlin: "Any",
-    Mojo: "Int",
-    Python: "int",
-    Rust: "&str",
-    Swift: "AnyHashable",
-    VisualBasic: "Object",
-}
-
-
 @beartype
 def _enum_member_by_name(
     *,
@@ -148,234 +73,56 @@ def _enum_member_by_name(
     raise ValueError(msg)
 
 
-DEFAULT_ORDERED_MAP_VALUE_TYPES: dict[literalizer.LanguageCls, str] = {
-    Go: "interface{}",
-}
-
-
-@runtime_checkable
-class _HasDefaultSetElementType(Protocol):
-    """Structural type for languages with a ``default_set_element_type``
-    field.
-    """
-
-    default_set_element_type: str
-
-
-@runtime_checkable
-class _HasDefaultSequenceElementType(Protocol):
-    """Structural type for languages with a
-    ``default_sequence_element_type`` field.
-    """
-
-    default_sequence_element_type: str
-
-
-@runtime_checkable
-class _HasDefaultDictValueType(Protocol):
-    """Structural type for languages with a ``default_dict_value_type``
-    field.
-    """
-
-    default_dict_value_type: str
-
-
-@runtime_checkable
-class _HasDefaultDictKeyType(Protocol):
-    """Structural type for languages with a ``default_dict_key_type``
-    field.
-    """
-
-    default_dict_key_type: str
-
-
-@runtime_checkable
-class _HasDefaultOrderedMapValueType(Protocol):
-    """Structural type for languages with a
-    ``default_ordered_map_value_type`` field.
-    """
-
-    default_ordered_map_value_type: str
-
-
-def _read_default_set_element_type(spec: literalizer.Language) -> str:
-    """Read ``default_set_element_type`` from a default-constructed
-    spec.
-    """
-    assert isinstance(spec, _HasDefaultSetElementType)  # noqa: S101
-    return spec.default_set_element_type
-
-
-def _read_default_sequence_element_type(spec: literalizer.Language) -> str:
-    """Read ``default_sequence_element_type`` from a default-constructed
-    spec.
-    """
-    assert isinstance(spec, _HasDefaultSequenceElementType)  # noqa: S101
-    return spec.default_sequence_element_type
-
-
-def _read_default_dict_value_type(spec: literalizer.Language) -> str:
-    """Read ``default_dict_value_type`` from a default-constructed
-    spec.
-    """
-    assert isinstance(spec, _HasDefaultDictValueType)  # noqa: S101
-    return spec.default_dict_value_type
-
-
-def _read_default_dict_key_type(spec: literalizer.Language) -> str:
-    """Read ``default_dict_key_type`` from a default-constructed spec."""
-    assert isinstance(spec, _HasDefaultDictKeyType)  # noqa: S101
-    return spec.default_dict_key_type
-
-
-def _read_default_ordered_map_value_type(spec: literalizer.Language) -> str:
-    """Read ``default_ordered_map_value_type`` from a default-constructed
-    spec.
-    """
-    assert isinstance(spec, _HasDefaultOrderedMapValueType)  # noqa: S101
-    return spec.default_ordered_map_value_type
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _DefaultTypeTable:
-    """Validation entry for one ``DEFAULT_*_TYPES`` override table."""
-
-    field_name: str
-    table: dict[literalizer.LanguageCls, str]
-    supports: Callable[[literalizer.LanguageCls], bool]
-    read_default: Callable[[literalizer.Language], str]
-
-
-def _check_default_type_tables() -> None:
-    """Validate the ``DEFAULT_*_TYPES`` tables at import time.
-
-    Each table must list exactly the languages whose dataclass exposes
-    the corresponding ``default_*_type`` field, and every override
-    value must differ from that field's own default; either kind of
-    drift would silently break variant coverage.
-    """
-    tables: tuple[_DefaultTypeTable, ...] = (
-        _DefaultTypeTable(
-            field_name="default_set_element_type",
-            table=DEFAULT_SET_ELEMENT_TYPES,
-            supports=lambda cls: cls.supports_default_set_element_type,
-            read_default=_read_default_set_element_type,
-        ),
-        _DefaultTypeTable(
-            field_name="default_sequence_element_type",
-            table=DEFAULT_SEQUENCE_ELEMENT_TYPES,
-            supports=lambda cls: cls.supports_default_sequence_element_type,
-            read_default=_read_default_sequence_element_type,
-        ),
-        _DefaultTypeTable(
-            field_name="default_dict_value_type",
-            table=DEFAULT_DICT_VALUE_TYPES,
-            supports=lambda cls: cls.supports_default_dict_value_type,
-            read_default=_read_default_dict_value_type,
-        ),
-        _DefaultTypeTable(
-            field_name="default_dict_key_type",
-            table=DEFAULT_DICT_KEY_TYPES,
-            supports=lambda cls: cls.supports_default_dict_key_type,
-            read_default=_read_default_dict_key_type,
-        ),
-        _DefaultTypeTable(
-            field_name="default_ordered_map_value_type",
-            table=DEFAULT_ORDERED_MAP_VALUE_TYPES,
-            supports=lambda cls: cls.supports_default_ordered_map_value_type,
-            read_default=_read_default_ordered_map_value_type,
-        ),
-    )
-    for entry in tables:
-        expected = {cls for cls in ALL_LANGUAGES if entry.supports(cls)}
-        assert set(entry.table.keys()) == expected, entry.field_name  # noqa: S101
-        for lang_cls, override in entry.table.items():
-            default = entry.read_default(make_spec(lang_cls=lang_cls))
-            assert override != default, (  # noqa: S101
-                f"{lang_cls.__name__}.{entry.field_name}={override!r}"
+def _check_default_type_variants() -> None:
+    """Validate language-owned default-type variant metadata."""
+    for lang_cls in ALL_LANGUAGES:
+        supported_fields = {
+            field_name
+            for field_name, supported in (
+                (
+                    "default_set_element_type",
+                    lang_cls.supports_default_set_element_type,
+                ),
+                (
+                    "default_sequence_element_type",
+                    lang_cls.supports_default_sequence_element_type,
+                ),
+                (
+                    "default_dict_value_type",
+                    lang_cls.supports_default_dict_value_type,
+                ),
+                (
+                    "default_dict_key_type",
+                    lang_cls.supports_default_dict_key_type,
+                ),
+                (
+                    "default_ordered_map_value_type",
+                    lang_cls.supports_default_ordered_map_value_type,
+                ),
+            )
+            if supported
+        }
+        configured_fields = set(lang_cls.non_default_kwargs) & {
+            "default_set_element_type",
+            "default_sequence_element_type",
+            "default_dict_value_type",
+            "default_dict_key_type",
+            "default_ordered_map_value_type",
+        }
+        assert configured_fields == supported_fields  # noqa: S101
+        default_spec = make_spec(lang_cls=lang_cls)
+        for field_name in configured_fields:
+            override = lang_cls.non_default_kwargs[field_name]
+            variant_spec = make_spec(
+                lang_cls=lang_cls,
+                **{field_name: override},
+            )
+            assert variant_spec != default_spec, (  # noqa: S101
+                f"{lang_cls.__name__}.{field_name}={override!r}"
             )
 
 
-_check_default_type_tables()
-
-# Languages that expose ``type_name`` / ``constructor_prefix`` kwargs for
-# the ADT they emit; the value is the test override to apply.
-TYPE_NAME_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Elm: "JsonVal",
-    FSharp: "JsonVal",
-    Gleam: "JsonVal",
-    Haskell: "JsonVal",
-    OCaml: "json_t",
-    PureScript: "JsonVal",
-    Roc: "JsonVal",
-}
-
-CONSTRUCTOR_PREFIX_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Elm: "J",
-    FSharp: "J",
-    Gleam: "J",
-    Haskell: "J",
-    OCaml: "J",
-    PureScript: "J",
-    Roc: "J",
-}
-
-# Languages whose heterogeneous-value enum name is configurable (Rust's
-# ``TAGGED_ENUM`` strategy); the value is the test override to apply.
-HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES: dict[literalizer.LanguageCls, str] = {
-    Rust: "JsonValue"
-}
-
-# Languages whose heterogeneous-value union name is configurable
-# (Dhall's ``UNION_TYPE`` strategy); the value is the test override
-# to apply.
-HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES: dict[
-    literalizer.LanguageCls, str
-] = {Dhall: "JsonValue"}
-
-# Languages whose heterogeneous-value variant name is configurable
-# (the Nim ``OBJECT_VARIANT`` strategy and the Mojo ``VARIANT``
-# strategy); the value is the test override to apply.
-HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES: dict[
-    literalizer.LanguageCls, str
-] = {Nim: "JsonValue", Mojo: "JsonValue"}
-
-# Languages that accept constructor-name kwargs (Fortran) or field-name
-# kwargs (C); the inner dict is the kwargs to pass to the constructor.
-CONSTRUCTOR_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
-    Fortran: {
-        "null_name": "jnull",
-        "bool_name": "jbool",
-        "int_name": "jint",
-        "real_name": "jreal",
-        "str_name": "jstr",
-        "list_name": "jlist",
-        "map_name": "jmap",
-        "set_name": "jset",
-        "entry_name": "jentry",
-    },
-}
-
-FIELD_NAME_OVERRIDES: dict[literalizer.LanguageCls, dict[str, str]] = {
-    C: {
-        "bool_field": "bl",
-        "int_field": "integer",
-        "uint_field": "uinteger",
-        "float_field": "fp",
-        "string_field": "str",
-        "array_field": "arr",
-        "map_field": "dict",
-        "key_field": "key",
-        "value_field": "val",
-    },
-}
-
-# Declaration-style → alternative-sequence-format overrides, by enum name.
-# Rust CONST and STATIC raise ``IncompatibleFormatsError`` with the default
-# ``Vec`` sequence format, so the test falls back to ``Array``.
-DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES: dict[
-    literalizer.LanguageCls, dict[str, str]
-] = {Rust: {"CONST": "ARRAY", "STATIC": "ARRAY"}}
+_check_default_type_variants()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -436,37 +183,41 @@ def build_non_default_variants(
 
 
 @beartype
-def build_default_set_element_type_variants() -> Iterable[Variant]:
-    """Build default-set-type variants for languages that support it."""
+def _build_default_type_variants(
+    *,
+    field_name: str,
+    variant_suffix: str,
+) -> list[Variant]:
+    """Build one configurable collection-default type axis."""
     return [
         Variant(
-            name=f"{lang_cls.__name__}_default_set_element_type_string",
-            spec=make_spec(
-                lang_cls=lang_cls, default_set_element_type=type_name
-            ),
+            name=f"{lang_cls.__name__}_{variant_suffix}",
+            spec=make_spec(lang_cls=lang_cls, **{field_name: type_name}),
             lang_cls=lang_cls,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         )
-        for lang_cls, type_name in DEFAULT_SET_ELEMENT_TYPES.items()
+        for lang_cls in sorted_languages()
+        if (type_name := lang_cls.non_default_kwargs.get(field_name))
+        is not None
     ]
 
 
 @beartype
+def build_default_set_element_type_variants() -> Iterable[Variant]:
+    """Build default-set-type variants for languages that support it."""
+    return _build_default_type_variants(
+        field_name="default_set_element_type",
+        variant_suffix="default_set_element_type_string",
+    )
+
+
+@beartype
 def build_default_sequence_element_type_variants() -> Iterable[Variant]:
-    """Build default-sequence-type variants for languages that support
-    it.
-    """
-    return [
-        Variant(
-            name=(f"{lang_cls.__name__}_default_sequence_element_type_string"),
-            spec=make_spec(
-                lang_cls=lang_cls, default_sequence_element_type=type_name
-            ),
-            lang_cls=lang_cls,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for lang_cls, type_name in DEFAULT_SEQUENCE_ELEMENT_TYPES.items()
-    ]
+    """Build default-sequence-type variants for supported languages."""
+    return _build_default_type_variants(
+        field_name="default_sequence_element_type",
+        variant_suffix="default_sequence_element_type_string",
+    )
 
 
 @runtime_checkable
@@ -481,18 +232,6 @@ class _HasJsonType(Protocol):
 
     json_type: enum.Enum | None
     json_types: type[enum.Enum]
-
-
-# ``json_type`` variant name suffixes that deliberately diverge from the
-# lower-case form of the selected enum member's name.  C# and F# both
-# select the ``SYSTEM_TEXT_JSON_NODE`` member yet name the variant (and
-# its golden) ``..._json_type_json_node``; the override keeps those
-# golden filenames stable rather than renaming them to
-# ``..._system_text_json_node``.
-JSON_TYPE_VARIANT_NAME_SUFFIXES: dict[literalizer.LanguageCls, str] = {
-    CSharp: "json_node",
-    FSharp: "json_node",
-}
 
 
 @beartype
@@ -521,8 +260,9 @@ def build_json_type_variants() -> Iterable[Variant]:
             suffix = (
                 "narrow"
                 if json_type is None
-                else JSON_TYPE_VARIANT_NAME_SUFFIXES.get(
-                    lang_cls, json_type.name.lower()
+                else (
+                    lang_cls.json_type_variant_name_suffix
+                    or json_type.name.lower()
                 )
             )
             variants.append(
@@ -542,9 +282,9 @@ def _check_json_type_variants() -> None:
     :func:`build_json_type_variants` must emit a variant for exactly the
     languages whose spec exposes a ``json_type`` field, so a future
     JSON-capable language cannot land without coverage.  Every entry in
-    :data:`JSON_TYPE_VARIANT_NAME_SUFFIXES` must name such a language and
-    actually differ from the member name it renames; either kind of
-    drift would silently break variant coverage or leave a dead override.
+    A language-owned filename suffix must belong to such a language and
+    actually differ from the member name it renames; either kind of drift
+    would silently break variant coverage or leave a dead override.
     """
     supported = {
         lang_cls
@@ -553,8 +293,13 @@ def _check_json_type_variants() -> None:
     }
     covered = {variant.lang_cls for variant in build_json_type_variants()}
     assert covered == supported  # noqa: S101
-    assert set(JSON_TYPE_VARIANT_NAME_SUFFIXES) <= supported  # noqa: S101
-    for lang_cls, suffix in JSON_TYPE_VARIANT_NAME_SUFFIXES.items():
+    suffix_overrides = {
+        lang_cls: lang_cls.json_type_variant_name_suffix
+        for lang_cls in ALL_LANGUAGES
+        if lang_cls.json_type_variant_name_suffix is not None
+    }
+    assert set(suffix_overrides) <= supported  # noqa: S101
+    for lang_cls, suffix in suffix_overrides.items():
         spec = make_spec(lang_cls=lang_cls)
         assert isinstance(spec, _HasJsonType)  # noqa: S101
         member_suffixes = {
@@ -619,36 +364,20 @@ def build_empty_dict_key_variants() -> Iterable[Variant]:
 
 @beartype
 def build_default_dict_value_type_variants() -> Iterable[Variant]:
-    """Build default-dict-value-type variants for languages that support
-    it.
-    """
-    return [
-        Variant(
-            name=f"{lang_cls.__name__}_default_dict_value_type_string",
-            spec=make_spec(
-                lang_cls=lang_cls, default_dict_value_type=type_name
-            ),
-            lang_cls=lang_cls,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for lang_cls, type_name in DEFAULT_DICT_VALUE_TYPES.items()
-    ]
+    """Build default-dict-value-type variants for supported languages."""
+    return _build_default_type_variants(
+        field_name="default_dict_value_type",
+        variant_suffix="default_dict_value_type_string",
+    )
 
 
 @beartype
 def build_default_dict_key_type_variants() -> Iterable[Variant]:
-    """Build default-dict-key-type variants for languages that support
-    it.
-    """
-    return [
-        Variant(
-            name=f"{lang_cls.__name__}_default_dict_key_type",
-            spec=make_spec(lang_cls=lang_cls, default_dict_key_type=type_name),
-            lang_cls=lang_cls,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for lang_cls, type_name in DEFAULT_DICT_KEY_TYPES.items()
-    ]
+    """Build default-dict-key-type variants for supported languages."""
+    return _build_default_type_variants(
+        field_name="default_dict_key_type",
+        variant_suffix="default_dict_key_type",
+    )
 
 
 @beartype
@@ -656,17 +385,10 @@ def build_default_ordered_map_value_type_variants() -> Iterable[Variant]:
     """Build default-ordered-map-value-type variants for every language
     that supports the option.
     """
-    return [
-        Variant(
-            name=f"{lang_cls.__name__}_default_ordered_map_value_type",
-            spec=make_spec(
-                lang_cls=lang_cls, default_ordered_map_value_type=type_name
-            ),
-            lang_cls=lang_cls,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for lang_cls, type_name in DEFAULT_ORDERED_MAP_VALUE_TYPES.items()
-    ]
+    return _build_default_type_variants(
+        field_name="default_ordered_map_value_type",
+        variant_suffix="default_ordered_map_value_type",
+    )
 
 
 @beartype
@@ -798,8 +520,9 @@ def _resolve_sequence_format_override(
     the same sequence-format override the standalone declaration-style
     variants use.
     """
-    overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(lang_cls, {})
-    seq_format_name = overrides.get(declaration_style.name)
+    seq_format_name = lang_cls.declaration_style_sequence_format_overrides.get(
+        declaration_style.name
+    )
     if seq_format_name is None:
         return None
     spec = make_spec(lang_cls=lang_cls)
@@ -908,13 +631,11 @@ def build_dict_decl_variants() -> Iterable[Variant]:
 
 @beartype
 def build_constructor_name_variants() -> Iterable[Variant]:
-    """Build constructor-name variants for languages listed in
-    :data:`CONSTRUCTOR_NAME_OVERRIDES` (e.g. Fortran).
-    """
+    """Build language-owned constructor-name variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = CONSTRUCTOR_NAME_OVERRIDES.get(lang_cls)
-        if kwargs is None:
+        kwargs = lang_cls.non_default_kwargs
+        if "null_name" not in kwargs:
             continue
         variants.append(
             Variant(
@@ -937,7 +658,7 @@ def build_type_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = TYPE_NAME_OVERRIDES.get(lang_cls)
+        custom_name = lang_cls.non_default_kwargs.get("type_name")
         if custom_name is None:
             continue
         variants.append(
@@ -958,7 +679,7 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_prefix = CONSTRUCTOR_PREFIX_OVERRIDES.get(lang_cls)
+        custom_prefix = lang_cls.non_default_kwargs.get("constructor_prefix")
         if custom_prefix is None:
             continue
         variants.append(
@@ -1476,7 +1197,9 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = HETEROGENEOUS_VALUE_ENUM_NAME_OVERRIDES.get(lang_cls)
+        custom_name = lang_cls.non_default_kwargs.get(
+            "heterogeneous_value_enum_name"
+        )
         if custom_name is None:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
@@ -1506,13 +1229,11 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
 
 @beartype
 def build_c_field_name_variants() -> Iterable[Variant]:
-    """Build field-name variants for languages listed in
-    :data:`FIELD_NAME_OVERRIDES` (e.g. C).
-    """
+    """Build language-owned field-name variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = FIELD_NAME_OVERRIDES.get(lang_cls)
-        if kwargs is None:
+        kwargs = lang_cls.non_default_kwargs
+        if "bool_field" not in kwargs:
             continue
         variants.append(
             Variant(
@@ -1572,7 +1293,9 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
                     enum_cls=Python.version_formats,
                     name="PY38",
                 ),
-                default_dict_value_type=DEFAULT_DICT_VALUE_TYPES[Python],
+                default_dict_value_type=Python.non_default_kwargs[
+                    "default_dict_value_type"
+                ],
             ),
             lang_cls=Python,
             collection_layout=literalizer.CollectionLayout.COMPACT,
@@ -1589,7 +1312,9 @@ def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = HETEROGENEOUS_VALUE_UNION_NAME_OVERRIDES.get(lang_cls)
+        custom_name = lang_cls.non_default_kwargs.get(
+            "heterogeneous_value_union_name"
+        )
         if custom_name is None:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
@@ -1628,7 +1353,9 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
     wrapping_strategy_names = {"OBJECT_VARIANT", "VARIANT"}
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = HETEROGENEOUS_VALUE_VARIANT_NAME_OVERRIDES.get(lang_cls)
+        custom_name = lang_cls.non_default_kwargs.get(
+            "heterogeneous_value_variant_name"
+        )
         if custom_name is None:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
@@ -2104,8 +1831,9 @@ def _build_declaration_style_variants() -> list[Variant]:
         """Build a spec for *fmt*, applying any sequence-format
         override.
         """
-        overrides = DECLARATION_STYLE_SEQUENCE_FORMAT_OVERRIDES.get(cls, {})
-        seq_format_name = overrides.get(fmt.name)
+        seq_format_name = cls.declaration_style_sequence_format_overrides.get(
+            fmt.name
+        )
         if seq_format_name is None:
             return make_spec(lang_cls=cls, declaration_style=fmt)
         spec = make_spec(lang_cls=cls)
