@@ -601,8 +601,8 @@ _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
 )
 
-# Nim keywords are case- and underscore-insensitive, matching Nim's
-# identifier comparison rules.  Backticks make them valid object field
+# Nim keywords are case- and underscore-insensitive, matching the
+# identifier comparison rules in Nim.  Backticks make them valid object field
 # identifiers in both declarations and constructors.
 _NIM_KEYWORDS_NORMALIZED: frozenset[str] = frozenset(
     {

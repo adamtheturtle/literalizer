@@ -372,7 +372,7 @@ def _zig_record_field_identifier(key: str, /) -> str:
     """Return the Zig ``struct`` member name for a dict *key*.
 
     Zig member identifiers are otherwise the dict keys verbatim (no case
-    conversion).  Keywords use Zig's quoted-identifier syntax so the
+    conversion).  Keywords use the quoted-identifier syntax in Zig so the
     same returned string works in a declaration and after the ``.`` of
     a designated initializer (issue #2963).
     """

@@ -65,6 +65,19 @@ def test_record_strategy_splits_conflicting_field_types(
     assert "Record1" in rendered
 
 
+def test_java_nested_record_variant_list_uses_top_element_type() -> None:
+    """A nested list spanning split records uses the Java top type."""
+    rendered = _render(
+        source='{"items": [{"x": 1}, {"x": "s"}]}',
+        language=Java(
+            heterogeneous_strategy=Java.heterogeneous_strategies.RECORD,
+        ),
+    )
+
+    assert "record Record0(Object[] items)" in rendered
+    assert "new Object[]{" in rendered
+
+
 @pytest.mark.parametrize(
     argnames=("language", "source", "escaped"),
     argvalues=[

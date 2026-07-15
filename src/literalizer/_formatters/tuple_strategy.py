@@ -186,9 +186,9 @@ def build_tuple_strategy(
         value = request.value
         if isinstance(value, list) and is_tuple_eligible(value=value):
             if not tuple_renderer.representable_arity(len(value)):
-                # Shape refinement runs before the dedicated arity
-                # validator.  Use a stable signature token here so that
-                # validator remains responsible for raising the public
+                # Shape refinement runs before the dedicated tuple-length
+                # check.  Use a stable signature token here so that the
+                # check remains responsible for raising the public
                 # TupleArityNotRepresentableError.
                 return f"\x00unrepresentable-tuple-arity-{len(value)}"
             return tuple_renderer.field_type(value)
