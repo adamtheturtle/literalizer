@@ -166,7 +166,7 @@ def _build_program(*, json_text: str) -> str:
     )
     parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)
     walk = ['        out = "{";']
-    for index, (key, value) in enumerate(parsed.items()):
+    for index, (key, value) in enumerate(iterable=parsed.items()):
         fragment = ("," if index else "") + json.dumps(obj=key) + ":"
         expr = _value_expr(value=value, access=f"{_VAR_NAME}[{index}].v")
         walk.append(
