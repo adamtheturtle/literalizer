@@ -1,6 +1,7 @@
 """Regression tests for generated names in ``NewVariable`` bindings."""
 
 from literalizer import InputFormat, NewVariable, literalize
+<<<<<<< HEAD
 from literalizer.languages import Swift, TypeScript
 
 
