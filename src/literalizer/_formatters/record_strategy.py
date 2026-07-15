@@ -802,6 +802,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         render_record_literal=_render_literal,
         compute_record_shapes=_compute_shapes,
         dict_open_for_wrap_ids=derecordized_map_open,
+        widens_unrecordizable_nested_sibling_maps=(
+            widen_unrecordizable_nested_sibling_maps
+        ),
     )
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
