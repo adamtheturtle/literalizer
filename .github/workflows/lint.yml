@@ -331,7 +331,14 @@ jobs:
                    jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
                    jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
             name=$(basename "$f")
-            curl -fsSL "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/$f" -o "/tmp/jackson-jars/$name"
+            # curl's default retry delay backs off exponentially. Bound
+            # both the retry window and each individual attempt so a
+            # persistent Maven Central failure still terminates the job.
+            curl --fail --show-error --silent --location \
+              --retry 5 --retry-all-errors --retry-max-time 120 \
+              --connect-timeout 10 --max-time 30 \
+              "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/$f" \
+              --output "/tmp/jackson-jars/$name"
           done
 
       - name: Lint Java
@@ -1897,7 +1904,14 @@ jobs:
           for f in kotlinx-serialization-json-jvm/$serialization_version/kotlinx-serialization-json-jvm-$serialization_version.jar \
                    kotlinx-serialization-core-jvm/$serialization_version/kotlinx-serialization-core-jvm-$serialization_version.jar; do
             name=$(basename "$f")
-            curl -fsSL "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/$f" -o "/tmp/kotlinx-jars/$name"
+            # curl's default retry delay backs off exponentially. Bound
+            # both the retry window and each individual attempt so a
+            # persistent Maven Central failure still terminates the job.
+            curl --fail --show-error --silent --location \
+              --retry 5 --retry-all-errors --retry-max-time 120 \
+              --connect-timeout 10 --max-time 30 \
+              "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/$f" \
+              --output "/tmp/kotlinx-jars/$name"
           done
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
