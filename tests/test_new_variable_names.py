@@ -43,3 +43,16 @@ def test_swift_new_variable_malformed_name_is_normalized() -> None:
     )
 
     assert "let a_b: Any = 1" in result.code
+
+
+def test_swift_new_variable_reserved_name_is_normalized() -> None:
+    """A reserved NewVariable name must not produce invalid Swift."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Swift(),
+        variable_form=NewVariable(name="class", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "let literalizer_class: Any = 1" in result.code
