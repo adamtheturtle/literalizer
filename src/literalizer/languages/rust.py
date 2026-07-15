@@ -56,6 +56,7 @@ from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
+    drop_unrecordizable_nested_sibling_maps,
     unify_record_shapes,
 )
 from literalizer._heterogeneous import (
@@ -102,7 +103,6 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_compute_call_slot_wrap_ids,
-    no_compute_wrap_ids,
     no_data_preamble,
     no_format_integer_widened,
     no_leading_preamble,
@@ -110,7 +110,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
@@ -783,17 +783,17 @@ def _build_error_preamble(
 
 
 @beartype
-def _build_tagged_enum_behavior(
+def _rust_value_scalar_wrapper(
     params: _StrategyParams,
     /,
-) -> HeterogeneousBehavior:
-    """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
+) -> Callable[[Scalar, str], str]:
+    """Return a callable wrapping a scalar in the value enum.
 
-    def _compute(data: Value) -> frozenset[int]:
-        """Return container ids whose scalar children should wrap."""
-        return collect_heterogeneous_container_ids(
-            data=data
-        ) | collect_sibling_map_wrap_ids(data=data)
+    Shared by the ``TAGGED_ENUM`` behavior and the ``RECORD`` behavior's
+    sibling-map widening (issue #2910): both render a scalar leaf as
+    ``{enum_name}::{Variant}(formatted)`` (or the payload-free
+    ``{enum_name}::{Variant}`` for a unit variant such as ``Null``).
+    """
 
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
@@ -806,13 +806,71 @@ def _build_tagged_enum_behavior(
             return f"{params.enum_name}::{signature.name}"
         return f"{params.enum_name}::{signature.name}({formatted})"
 
+    return _wrap
+
+
+@beartype
+def _build_tagged_enum_behavior(
+    params: _StrategyParams,
+    /,
+) -> HeterogeneousBehavior:
+    """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
+
+    def _compute(data: Value) -> frozenset[int]:
+        """Return container ids whose scalar children should wrap."""
+        return collect_heterogeneous_container_ids(
+            data=data
+        ) | collect_sibling_map_wrap_ids(data=data)
+
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
-        wrap_scalar=_wrap,
+        wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
     )
+
+
+@beartype
+def _rust_value_enum_lines(
+    *,
+    scalars: Sequence[Scalar],
+    enum_name: str,
+    date_type: str,
+    datetime_type: str,
+) -> list[str]:
+    """Return the value-enum declaration lines for *scalars*.
+
+    One variant per distinct scalar family present, in first-seen order.
+    Returns an empty list when *scalars* is empty (no enum is needed).
+    Shared by the ``TAGGED_ENUM`` preamble and the ``RECORD`` preamble's
+    sibling-map widening (issue #2910), which wraps scalar leaves in the
+    same enum.
+    """
+    variants: list[_VariantSignature] = []
+    seen: set[str] = set()
+    for scalar in scalars:
+        signature = _heterogeneous_variant_for_scalar(
+            value=scalar,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        )
+        if signature.name in seen:
+            continue
+        seen.add(signature.name)
+        variants.append(signature)
+    if not variants:
+        return []
+    lines: list[str] = [f"enum {enum_name} {{"]
+    for variant in variants:
+        body = (
+            variant.name
+            if variant.inner_type is None
+            else f"{variant.name}({variant.inner_type})"
+        )
+        lines.append(f"    {body},")
+    lines.append("}")
+    return lines
 
 
 @beartype
@@ -830,30 +888,63 @@ def _build_tagged_enum_preamble(
         if not wrap_ids:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        variants: list[_VariantSignature] = []
-        seen: set[str] = set()
-        for scalar in scalars:
-            signature = _heterogeneous_variant_for_scalar(
-                value=scalar,
+        return tuple(
+            _rust_value_enum_lines(
+                scalars=scalars,
+                enum_name=params.enum_name,
                 date_type=params.date_type,
                 datetime_type=params.datetime_type,
             )
-            if signature.name in seen:
-                continue
-            seen.add(signature.name)
-            variants.append(signature)
-        lines: list[str] = [f"enum {params.enum_name} {{"]
-        for variant in variants:
-            body = (
-                variant.name
-                if variant.inner_type is None
-                else f"{variant.name}({variant.inner_type})"
-            )
-            lines.append(f"    {body},")
-        lines.append("}")
-        return tuple(lines)
+        )
 
     return _preamble
+
+
+@beartype
+def _rust_derecordized_map_ids(
+    *,
+    data: Value,
+    unify_optional_fields: bool,
+) -> frozenset[int]:
+    """Return the ids of every dict widened to a plain map (issue #2910).
+
+    Recomputes the record-shape mapping the same way
+    ``compute_record_shapes`` does (collect, optionally unify, then drop
+    the nested sibling-map families that cannot share one record shape)
+    and returns the ids that the drop removed: exactly the maps whose
+    scalar leaves are wrapped in the value enum and whose declared field
+    type is the widened ``HashMap``.
+    """
+    raw_shapes_by_id = collect_record_shapes(data=data)
+    unified_shapes_by_id = (
+        unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
+        if unify_optional_fields
+        else raw_shapes_by_id
+    )
+    widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+        data=data,
+        shapes_by_id=unified_shapes_by_id,
+    )
+    return frozenset(set(unified_shapes_by_id) - set(widened_shapes_by_id))
+
+
+@beartype
+def _rust_is_derecordized_map(*, value: dict[Scalar, Value]) -> bool:
+    """Return whether *value* is a record-eligible dict that was widened
+    to a plain map (issue #2910).
+
+    A record-eligible dict (non-empty, string-keyed, not an ordered map)
+    absent from the shape mapping was dropped by
+    :func:`~literalizer._formatters.type_inference.drop_unrecordizable_nested_sibling_maps`,
+    so it renders as a widened ``HashMap`` rather than a struct; an empty,
+    non-string-keyed, or ordered-map dict is a genuine non-record field
+    the ``RECORD`` strategy rejects instead.
+    """
+    return (
+        not isinstance(value, OrderedMap)
+        and bool(value)
+        and all(isinstance(key, str) for key in value)
+    )
 
 
 @beartype
@@ -862,6 +953,7 @@ def _rust_record_field_type(
     value: Value,
     date_type: str,
     datetime_type: str,
+    value_enum_name: str,
     record_names: "dict[RecordShape, str]",
     shapes_by_id: "Mapping[int, RecordShape]",
     tuple_list_ids: frozenset[int],
@@ -875,7 +967,12 @@ def _rust_record_field_type(
     (composing the ``TUPLE`` and ``RECORD`` strategies); any other list
     field uses ``Vec<T>`` over the inferred inner type.  Nested record
     fields use the corresponding generated struct name, looked up via
-    *shapes_by_id* so unification-rewritten shapes match.
+    *shapes_by_id* so unification-rewritten shapes match.  A
+    record-eligible dict absent from *shapes_by_id* was widened to a
+    plain map (issue #2910): its sibling maps could not share one record
+    shape, so it renders as the widened ``HashMap<&'static str,
+    {value_enum_name}>`` whose scalar leaves are wrapped in the value
+    enum.
     """
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
@@ -894,6 +991,7 @@ def _rust_record_field_type(
                     value=item,
                     date_type=date_type,
                     datetime_type=datetime_type,
+                    value_enum_name=value_enum_name,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -907,6 +1005,7 @@ def _rust_record_field_type(
                     value=item,
                     date_type=date_type,
                     datetime_type=datetime_type,
+                    value_enum_name=value_enum_name,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -918,6 +1017,8 @@ def _rust_record_field_type(
             shape = shapes_by_id.get(id(value))
             if shape is not None and shape in record_names:
                 return record_names[shape]
+            if _rust_is_derecordized_map(value=value):
+                return f"HashMap<&'static str, {value_enum_name}>"
             msg = (
                 "Rust cannot represent a non-record dict (empty, "
                 "non-string-keyed, or an ordered map) as a field "
@@ -936,9 +1037,11 @@ def _rust_record_field_type(
                 date_type=date_type,
                 datetime_type=datetime_type,
             )
-            if signature.inner_type is None:
-                return "Option<()>"
-            return signature.inner_type
+            return (
+                "Option<()>"
+                if signature.inner_type is None
+                else signature.inner_type
+            )
 
 
 @beartype
@@ -1412,9 +1515,13 @@ def _record_behavior_impl(
             if params.unify_optional_fields
             else raw_shapes_by_id
         )
-        shapes_by_id = _refine_record_shapes(
+        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
             data=data,
             shapes_by_id=unified_shapes_by_id,
+        )
+        shapes_by_id = _refine_record_shapes(
+            data=data,
+            shapes_by_id=widened_shapes_by_id,
             tuple_list_ids=(
                 collect_tuple_list_ids(data=data)
                 if enable_tuples
@@ -1445,18 +1552,25 @@ def _record_behavior_impl(
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
-    ) -> RenderedRecordLiteral:
+    ) -> RenderedRecordLiteral | None:
         """Render a record-shape dict as a Rust struct literal.
 
         Looks up *value*'s (possibly unified) shape from the
         ``compute_record_shapes`` mapping populated during
-        ``check_data``.  Iterates the unified shape's keys: keys
-        missing from this instance render as ``None``; keys marked
-        optional render as ``Some(value)``; required keys render bare.
-        Returns the structured pieces (``Name {``, one entry per
-        field, ``}``, single-space compact padding) the shared
-        record-layout code assembles into compact or multiline form.
+        ``check_data``.  A record-eligible dict absent from that mapping
+        was widened to a plain map (issue #2910) -- its sibling maps
+        could not share one record shape -- so ``None`` is returned and
+        the shared formatter renders it as the widened ``HashMap``
+        instead.
+        Iterates the unified shape's keys: keys missing from this
+        instance render as ``None``; keys marked optional render as
+        ``Some(value)``; required keys render bare.  Returns the
+        structured pieces (``Name {``, one entry per field, ``}``,
+        single-space compact padding) the shared record-layout code
+        assembles into compact or multiline form.
         """
+        if id(value) not in id_to_shape:
+            return None
         shape = id_to_shape[id(value)]
         parts: list[str] = []
         for key in shape.keys:
@@ -1476,10 +1590,19 @@ def _record_behavior_impl(
             compact_pad=" ",
         )
 
+    def _compute_wrap_ids(data: Value) -> frozenset[int]:
+        """Return the widened-map ids whose scalars wrap in the value
+        enum (issue #2910).
+        """
+        return _rust_derecordized_map_ids(
+            data=data,
+            unify_optional_fields=params.unify_optional_fields,
+        )
+
     return HeterogeneousBehavior(
         skip_scalar_checks=False,
-        compute_wrap_ids=no_compute_wrap_ids,
-        wrap_scalar=None,
+        compute_wrap_ids=_compute_wrap_ids,
+        wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         render_record_literal=_render_literal,
@@ -1640,9 +1763,13 @@ def _record_preamble_impl(
             if params.unify_optional_fields
             else raw_shapes_by_id
         )
-        shapes_by_id: Mapping[int, RecordShape] = _refine_record_shapes(
+        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
             data=data,
             shapes_by_id=unified_shapes_by_id,
+        )
+        shapes_by_id: Mapping[int, RecordShape] = _refine_record_shapes(
+            data=data,
+            shapes_by_id=widened_shapes_by_id,
             tuple_list_ids=tuple_list_ids,
             date_type=params.date_type,
             datetime_type=params.datetime_type,
@@ -1679,6 +1806,7 @@ def _record_preamble_impl(
                     value=example,
                     date_type=params.date_type,
                     datetime_type=params.datetime_type,
+                    value_enum_name=params.enum_name,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -1689,7 +1817,21 @@ def _record_preamble_impl(
                 block.append(f"    {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
-        return tuple(struct_blocks)
+        # A widened nested sibling map (issue #2910) renders as a
+        # ``HashMap`` whose scalar leaves wrap in the value enum, so emit
+        # that enum ahead of the struct declarations that reference it.
+        wrap_ids = _rust_derecordized_map_ids(
+            data=data,
+            unify_optional_fields=params.unify_optional_fields,
+        )
+        enum_lines = _rust_value_enum_lines(
+            scalars=iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
+            enum_name=params.enum_name,
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
+        )
+        enum_block = ("\n".join(enum_lines),) if enum_lines else ()
+        return enum_block + tuple(struct_blocks)
 
     return _preamble
 

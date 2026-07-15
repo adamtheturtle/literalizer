@@ -2,22 +2,25 @@
 under the Rust ``RECORD`` strategy.
 
 Two dicts with the same key set share a generated struct, but when a
-field's value type differs between them (a nested record with
-different fields, or a different scalar type) one struct cannot
+field's value type differs between them (a different scalar type, or a
+tuple-eligible array versus a homogeneous list) one struct cannot
 describe both, so the struct declaration would take the field types
 of the first dict and the literal for the other dict would not
 compile (issue #2881).  Such dicts now resolve to distinct record
 shapes, so sibling lists spanning them fail the mixed-record-shape
 gate with
 :class:`~literalizer.exceptions.HeterogeneousSiblingListsError`
-rather than silently emitting mismatched field types.  The
-integration framework only exercises golden output that compiles, so
-these contracts need unit coverage.
+rather than silently emitting mismatched field types.  A field whose
+sibling values are nested *maps* of divergent or disjoint shape is the
+exception: the widening pass renders it as a plain map instead of
+rejecting the list (issue #2910), verified here to no longer raise.
+The integration framework only exercises golden output that compiles,
+so these contracts need unit coverage.
 """
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
@@ -54,46 +57,58 @@ _MIXED_LIST_FIELD_YAML = """
 """
 
 
+def test_sibling_records_with_conflicting_scalar_field_types_raise() -> None:
+    """Sibling dicts with equal key sets but a conflicting scalar field
+    type resolve to distinct record shapes, so the sibling list is
+    rejected rather than emitting one struct with mismatched field
+    types.  A scalar field is not a nested map, so the sibling-map
+    widening (issue #2910) does not touch it.
+    """
+    language = Rust(
+        heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
+    )
+    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
+        literalize(
+            source=_SCALAR_TYPE_CONFLICT_YAML,
+            input_format=InputFormat.YAML,
+            language=language,
+        )
+
+
 @pytest.mark.parametrize(
-    argnames="source",
+    argnames="language",
     argvalues=[
-        _NESTED_SHAPE_CONFLICT_YAML,
-        _SCALAR_TYPE_CONFLICT_YAML,
+        Rust(heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD),
+        Rust(
+            heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
+            record_unify_optional_fields=True,
+        ),
     ],
+    ids=["no_unify", "unify"],
 )
-def test_sibling_records_with_conflicting_field_types_raise(
-    source: str,
+def test_divergent_nested_sibling_maps_widen_instead_of_raising(
+    language: Language,
 ) -> None:
-    """Sibling dicts with equal key sets but conflicting field types
-    resolve to distinct record shapes, so the sibling list is rejected
-    rather than emitting one struct with mismatched field types.
+    """Sibling records whose nested map under one key has divergent or
+    disjoint shape widen to a plain map (issue #2910): the field wraps
+    its scalar leaves in the value enum, so the sibling list renders
+    instead of being rejected.  Unification only merges nested shapes
+    that share a key, so the disjoint nested maps here still widen under
+    ``record_unify_optional_fields`` too.
     """
-    language = Rust(
-        heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
+    result = literalize(
+        source=_NESTED_SHAPE_CONFLICT_YAML,
+        input_format=InputFormat.YAML,
+        language=language,
     )
-    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
-        literalize(
-            source=source,
-            input_format=InputFormat.YAML,
-            language=language,
-        )
-
-
-def test_conflict_not_rescued_by_optional_field_unification() -> None:
-    """Unification only merges nested shapes that share a key; nested
-    records with disjoint key sets still conflict, so the sibling list
-    is rejected under ``record_unify_optional_fields`` too.
-    """
-    language = Rust(
-        heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
-        record_unify_optional_fields=True,
+    widened_struct = (
+        "struct Record0 {\n    outer: HashMap<&'static str, Value>,\n}"
     )
-    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
-        literalize(
-            source=_NESTED_SHAPE_CONFLICT_YAML,
-            input_format=InputFormat.YAML,
-            language=language,
-        )
+    assert result.preamble == (
+        "use std::collections::HashMap;",
+        "enum Value {\n    Str(&'static str),\n    Bool(bool),\n}",
+        widened_struct,
+    )
 
 
 def test_tuple_field_versus_homogeneous_list_field_raises() -> None:

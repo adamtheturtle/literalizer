@@ -234,6 +234,180 @@ def collect_record_shapes(*, data: Value) -> dict[int, RecordShape]:
 
 
 @beartype
+def _accumulate_dicts_by_shape(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    out: dict[RecordShape, list[dict[Scalar, Value]]],
+) -> None:
+    """Group every record dict in *data* by its shape, in document order.
+
+    A dict aliased into the tree more than once appears once per group.
+    """
+    match data:
+        case OrderedMap():
+            for value in data.values():
+                _accumulate_dicts_by_shape(
+                    data=value, shapes_by_id=shapes_by_id, out=out
+                )
+        case dict():
+            shape = shapes_by_id.get(id(data))
+            if shape is not None:
+                bucket = out.setdefault(shape, [])
+                if all(existing is not data for existing in bucket):
+                    bucket.append(data)
+            for value in data.values():
+                _accumulate_dicts_by_shape(
+                    data=value, shapes_by_id=shapes_by_id, out=out
+                )
+        case list():
+            for item in data:
+                _accumulate_dicts_by_shape(
+                    data=item, shapes_by_id=shapes_by_id, out=out
+                )
+        case _:
+            return
+
+
+@beartype
+def _shapes_with_sibling_list_instances(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+) -> set[RecordShape]:
+    """Return every shape with two or more instances sharing one list.
+
+    A shape whose dicts only ever sit alone (each the value of a distinct
+    key, never two in one list) never forces a mixed-shape sibling list,
+    so a divergent nested field of such a shape is resolved by the
+    field-type-splitting refinement into distinct declarations rather
+    than widened to a plain map (see
+    :func:`drop_unrecordizable_nested_sibling_maps`).
+    """
+    result: set[RecordShape] = set()
+
+    def walk(node: Value) -> None:
+        """Record shapes with two or more instances in one list."""
+        match node:
+            case dict():
+                for value in node.values():
+                    walk(node=value)
+            case list():
+                min_instances_for_sibling_list = 2
+                counts: dict[RecordShape, int] = {}
+                for item in node:
+                    if isinstance(item, dict):
+                        shape = shapes_by_id.get(id(item))
+                        if shape is not None:
+                            counts[shape] = counts.get(shape, 0) + 1
+                result.update(
+                    shape
+                    for shape, count in counts.items()
+                    if count >= min_instances_for_sibling_list
+                )
+                for item in node:
+                    walk(node=item)
+            case _:
+                return
+
+    walk(node=data)
+    return result
+
+
+@beartype
+def _accumulate_dropped_record_ids(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    out: set[int],
+) -> None:
+    """Add the ids of *data* and every record dict nested within it.
+
+    A widened sibling map renders as a plain map, so every record shape
+    reachable inside it is dropped from the shape mapping too.
+    """
+    match data:
+        case dict():
+            if id(data) in shapes_by_id:
+                out.add(id(data))
+            for value in data.values():
+                _accumulate_dropped_record_ids(
+                    data=value, shapes_by_id=shapes_by_id, out=out
+                )
+        case list():
+            for item in data:
+                _accumulate_dropped_record_ids(
+                    data=item, shapes_by_id=shapes_by_id, out=out
+                )
+        case _:
+            return
+
+
+@beartype
+def drop_unrecordizable_nested_sibling_maps(
+    *,
+    data: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+) -> dict[int, RecordShape]:
+    """Drop nested sibling-map families that cannot share one record
+    shape, widening them to a plain map instead (issue #2910).
+
+    A list of records whose top-level keys are uniform but whose nested
+    map under one key differs in shape (divergent or disjoint key sets)
+    cannot render that field as a record: giving the two nested maps
+    different record shapes forces the enclosing records to split, so
+    their sibling list holds two record shapes and
+    :func:`~literalizer._checks.check_data` rejects it.  Detect each such
+    family and drop every dict it contains from *shapes_by_id*, so a
+    language's ``field_type`` hook falls back to its widened map type for
+    that field and the enclosing record stays uniform.
+
+    A family is examined only for a shape with two or more instances
+    sharing one list (see :func:`_shapes_with_sibling_list_instances`):
+    a shape whose dicts never share a list splits cleanly into distinct
+    declarations through the field-type-splitting refinement and needs
+    no widening.  Within such a shape, a field whose values across the
+    shape's instances are record dicts of two or more distinct shapes
+    cannot share one record shape; every dict in that field, and every
+    record dict nested inside it, is dropped.  Returns a fresh mapping;
+    *shapes_by_id* is not mutated, and the result equals it when nothing
+    is dropped.
+    """
+    dicts_by_shape: dict[RecordShape, list[dict[Scalar, Value]]] = {}
+    _accumulate_dicts_by_shape(
+        data=data, shapes_by_id=shapes_by_id, out=dicts_by_shape
+    )
+    sibling_list_shapes = _shapes_with_sibling_list_instances(
+        data=data, shapes_by_id=shapes_by_id
+    )
+    to_drop: list[dict[Scalar, Value]] = []
+    for shape, dicts in dicts_by_shape.items():
+        if shape not in sibling_list_shapes:
+            continue
+        for key in shape.keys:
+            members: list[dict[Scalar, Value]] = []
+            for d in dicts:
+                value = d.get(key)
+                if isinstance(value, dict) and id(value) in shapes_by_id:
+                    members.append(value)
+            member_shapes = {shapes_by_id[id(member)] for member in members}
+            if len(member_shapes) > 1:
+                to_drop.extend(members)
+    if not to_drop:
+        return dict(shapes_by_id)
+    dropped_ids: set[int] = set()
+    for member in to_drop:
+        _accumulate_dropped_record_ids(
+            data=member, shapes_by_id=shapes_by_id, out=dropped_ids
+        )
+    return {
+        dict_id: shape
+        for dict_id, shape in shapes_by_id.items()
+        if dict_id not in dropped_ids
+    }
+
+
+@beartype
 def unify_record_shapes(
     *,
     data: Value,

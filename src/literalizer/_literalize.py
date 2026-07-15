@@ -660,6 +660,11 @@ def _maybe_format_record_literal(
         for key in str_keys
     }
     rendered = render_record_literal(value, formatted_fields)
+    if rendered is None:
+        # The strategy widened this record-eligible dict to a plain map
+        # (a nested sibling map that cannot share one record shape, issue
+        # #2910); fall through to normal map rendering.
+        return None
     if not is_multiline:
         joined = ", ".join(rendered.entries)
         return (

@@ -569,9 +569,12 @@ class HeterogeneousBehavior:
     generated struct literal given its :class:`RecordShape` and a
     mapping of pre-formatted field values, returning a
     :class:`RenderedRecordLiteral` (structured pieces the shared
-    record-layout code assembles into compact or multiline form).
-    Defaults to ``None`` for strategies that do not opt into the
-    ``RECORD`` style.
+    record-layout code assembles into compact or multiline form).  It
+    returns ``None`` for a record-eligible dict the strategy does not
+    render as a struct after all -- a nested sibling map widened to a
+    plain map (issue #2910) -- so the shared formatter falls through to
+    normal map rendering.  The hook itself defaults to ``None`` for
+    strategies that do not opt into the ``RECORD`` style.
 
     ``compute_record_shapes`` walks the data once and returns a
     mapping from ``id(dict)`` to :class:`RecordShape` for every dict
@@ -614,7 +617,7 @@ class HeterogeneousBehavior:
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
-            RenderedRecordLiteral,
+            RenderedRecordLiteral | None,
         ]
         | None
     ) = None
