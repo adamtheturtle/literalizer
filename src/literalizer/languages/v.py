@@ -576,6 +576,7 @@ class V(metaclass=LanguageCls):
     pygments_name = "v"
     supports_special_floats = True
     supports_variable_names = True
+    normalizes_new_variable_names: ClassVar[bool] = True
     supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = False
     supports_dotted_calls = True

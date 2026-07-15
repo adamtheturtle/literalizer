@@ -43,6 +43,7 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
     decode_file_sections,
+    format_new_variable_name,
 )
 from literalizer._parsing import (
     InputFormat,
@@ -2194,7 +2195,22 @@ def _apply_variable_wrapper(
                 if is_call_binding
                 else language.format_variable_declaration
             )
-            wrapped = declaration_formatter(name, value, data, modifiers)
+            normalized_name = (
+                format_new_variable_name(language=language, name=name)
+                if (
+                    language.__class__.__dict__.get(
+                        "normalizes_new_variable_names", False
+                    )
+                    is True
+                )
+                else name
+            )
+            wrapped = declaration_formatter(
+                normalized_name,
+                value,
+                data,
+                modifiers,
+            )
         case _:
             assignment_formatter = (
                 language.format_call_variable_assignment
