@@ -1,0 +1,1 @@
+Reject Nim object-variant sequences that mix scalars with containers instead of emitting incompatible ``seq`` elements.

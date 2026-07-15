@@ -185,6 +185,12 @@ def build_tuple_strategy(
         """
         value = request.value
         if isinstance(value, list) and is_tuple_eligible(value=value):
+            if not tuple_renderer.representable_arity(len(value)):
+                # Shape refinement runs before the dedicated arity
+                # validator.  Use a stable signature token here so that
+                # validator remains responsible for raising the public
+                # TupleArityNotRepresentableError.
+                return f"\x00unrepresentable-tuple-arity-{len(value)}"
             return tuple_renderer.field_type(value)
         return record_renderer.field_type(request)
 
@@ -192,14 +198,17 @@ def build_tuple_strategy(
         record_renderer,
         field_type=_tuple_aware_field_type,
     )
-    # Field-type splitting (issue #2888) is a plain-``RECORD`` port; the
-    # ``TUPLE`` composition (shared across languages) keeps its existing
-    # behavior until ported in its own increment.
+    # The generated record declarations must also split when a nested
+    # field resolves to a different record type.  Without this, sibling
+    # records such as ``{input: {a: 1}}`` and ``{input: {b: 2}}`` reuse
+    # the first outer declaration even though their ``input`` field types
+    # differ (issues #2967 and #2969).
     record_strategy = build_record_strategy(
         renderer=wrapped_renderer,
-        split_conflicting_field_types=False,
+        split_conflicting_field_types=True,
         widen_unrecordizable_nested_sibling_maps=False,
         derecordized_map_open=None,
+        allow_same_key_record_variants_in_sequences=True,
     )
 
     def _compute_tuple_list_ids(data: Value, /) -> frozenset[int]:

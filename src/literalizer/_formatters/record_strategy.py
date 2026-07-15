@@ -622,9 +622,12 @@ def _list_element_record_name(
     ]
     if any(shape is None for shape in shapes):
         return None
-    # Every element is a record-shaped dict; the upstream mixed-shape
-    # guard guarantees one shared shape, so the first element names the
-    # whole list.
+    unique_shapes = {shape for shape in shapes if shape is not None}
+    if len(unique_shapes) != 1:
+        # A language whose sequence format supports heterogeneity can
+        # render this through its top/fallback element type; there is no
+        # single generated record name for the field declaration.
+        return None
     return name_by_shape[id_to_shape[id(field_value[0])]]
 
 
@@ -635,6 +638,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     split_conflicting_field_types: bool,
     widen_unrecordizable_nested_sibling_maps: bool,
     derecordized_map_open: str | None,
+    allow_same_key_record_variants_in_sequences: bool,
 ) -> RecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 
@@ -805,6 +809,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
+        allows_same_key_record_variants_in_sequences=(
+            allow_same_key_record_variants_in_sequences
+        ),
     )
 
     def _preamble(data: Value, /) -> tuple[str, ...]:

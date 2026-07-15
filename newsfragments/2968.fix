@@ -1,0 +1,1 @@
+Escape Scala keyword field names in generated case classes and constructors.

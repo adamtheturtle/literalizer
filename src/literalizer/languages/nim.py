@@ -10,6 +10,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -104,7 +105,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -431,6 +431,36 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
 
 
 @beartype
+def _reject_object_variant_mixed_scalar_container_lists(
+    data: Value,
+    /,
+) -> None:
+    """Reject lists that mix scalar and container elements.
+
+    Nim sequences require one element type.  ``OBJECT_VARIANT`` can
+    wrap heterogeneous scalars in its generated variant, but that
+    variant has no container-valued branch, so a list such as
+    ``[1, []]`` cannot become a homogeneous ``seq``.  Reject it before
+    rendering instead of returning Nim code that fails to compile
+    (issue #2965).
+    """
+    if not isinstance(data, list):
+        return
+    has_scalar = any(
+        scalar_type_bucket(value=item) is not None for item in data
+    )
+    has_container = any(
+        scalar_type_bucket(value=item) is None for item in data
+    )
+    if has_scalar and has_container:
+        msg = (
+            "Nim OBJECT_VARIANT cannot represent a list that mixes "
+            "scalar and container elements in one seq"
+        )
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _build_object_variant_behavior(
     variant_name: str,
     date_type: str,
@@ -571,6 +601,82 @@ _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
 )
 
+# Nim keywords are case- and underscore-insensitive, matching Nim's
+# identifier comparison rules.  Backticks make them valid object field
+# identifiers in both declarations and constructors.
+_NIM_KEYWORDS_NORMALIZED: frozenset[str] = frozenset(
+    {
+        "addr",
+        "and",
+        "as",
+        "asm",
+        "bind",
+        "block",
+        "break",
+        "case",
+        "cast",
+        "concept",
+        "const",
+        "continue",
+        "converter",
+        "defer",
+        "discard",
+        "distinct",
+        "div",
+        "do",
+        "elif",
+        "else",
+        "end",
+        "enum",
+        "except",
+        "export",
+        "finally",
+        "for",
+        "from",
+        "func",
+        "if",
+        "import",
+        "in",
+        "include",
+        "interface",
+        "is",
+        "isnot",
+        "iterator",
+        "let",
+        "macro",
+        "method",
+        "mixin",
+        "mod",
+        "nil",
+        "not",
+        "notin",
+        "object",
+        "of",
+        "or",
+        "out",
+        "proc",
+        "ptr",
+        "raise",
+        "ref",
+        "return",
+        "shl",
+        "shr",
+        "static",
+        "template",
+        "try",
+        "tuple",
+        "type",
+        "using",
+        "var",
+        "when",
+        "while",
+        "with",
+        "without",
+        "xor",
+        "yield",
+    }
+)
+
 
 @beartype
 def _nim_record_field_identifier(key: str, /) -> str:
@@ -580,9 +686,14 @@ def _nim_record_field_identifier(key: str, /) -> str:
     key, but the generated declaration and ``Record0(field: value,
     ...)`` literal read most naturally in the conventional Nim
     ``camelCase`` (e.g. ``is_done`` -> ``isDone``); the same conversion
-    is applied to both so they always agree.
+    is applied to both so they always agree.  A keyword is enclosed in
+    backticks so it remains a valid field name (issue #2966).
     """
-    return IdentifierCase.CAMEL.convert(name=key)
+    identifier = IdentifierCase.CAMEL.convert(name=key)
+    normalized = identifier.replace("_", "").lower()
+    if normalized in _NIM_KEYWORDS_NORMALIZED:
+        return f"`{identifier}`"
+    return identifier
 
 
 @beartype
@@ -1195,7 +1306,10 @@ class Nim(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject OBJECT_VARIANT data that cannot form a uniform seq."""
+        if self._uses_object_variant:
+            _reject_object_variant_mixed_scalar_container_lists(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1618,6 +1732,7 @@ class Nim(metaclass=LanguageCls):
             split_conflicting_field_types=False,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
+            allow_same_key_record_variants_in_sequences=False,
         )
         variant_behavior = _build_object_variant_behavior(
             self.heterogeneous_value_variant_name,

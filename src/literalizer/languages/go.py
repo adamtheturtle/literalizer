@@ -952,6 +952,7 @@ class Go(metaclass=LanguageCls):
                 split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open="map[string]any{",
+                allow_same_key_record_variants_in_sequences=False,
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

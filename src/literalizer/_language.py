@@ -606,6 +606,12 @@ class HeterogeneousBehavior:
     ``render_record_literal``: a behavior either sets both (RECORD)
     or neither.
 
+    ``allows_same_key_record_variants_in_sequences`` permits a sequence
+    whose record elements share one key set but resolve to different
+    generated declarations because their field types conflict.  It is
+    enabled only when the target's sequence literal has a genuine
+    heterogeneous/top-type representation for those declarations.
+
     ``render_tuple_literal`` renders a fixed-length heterogeneous
     scalar array as a native tuple given the raw list and its
     pre-formatted elements, returning a :class:`RenderedTupleLiteral`
@@ -654,6 +660,7 @@ class HeterogeneousBehavior:
         | None
     )
     compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None
+    allows_same_key_record_variants_in_sequences: bool = False
 
 
 @beartype

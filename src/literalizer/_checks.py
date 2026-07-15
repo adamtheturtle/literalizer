@@ -353,6 +353,7 @@ def _has_mixed_record_shapes(
     *,
     data: Value,
     shapes_by_id: "Mapping[int, RecordShape]",
+    allow_same_key_variants: bool,
 ) -> bool:
     """Recursively check whether sibling dicts in *data* resolve to
     different :class:`RecordShape` values.
@@ -366,7 +367,11 @@ def _has_mixed_record_shapes(
     match data:
         case dict():
             return any(
-                _has_mixed_record_shapes(data=v, shapes_by_id=shapes_by_id)
+                _has_mixed_record_shapes(
+                    data=v,
+                    shapes_by_id=shapes_by_id,
+                    allow_same_key_variants=allow_same_key_variants,
+                )
                 for v in data.values()
             )
         case list():
@@ -375,10 +380,17 @@ def _has_mixed_record_shapes(
                 shapes_by_id.get(id(d), frozenset(d.keys()))
                 for d in dicts_in_list
             }
-            if len(signatures) > 1:
+            key_sets = {frozenset(d.keys()) for d in dicts_in_list}
+            if len(signatures) > 1 and not (
+                allow_same_key_variants and len(key_sets) == 1
+            ):
                 return True
             return any(
-                _has_mixed_record_shapes(data=v, shapes_by_id=shapes_by_id)
+                _has_mixed_record_shapes(
+                    data=v,
+                    shapes_by_id=shapes_by_id,
+                    allow_same_key_variants=allow_same_key_variants,
+                )
                 for v in data
             )
         case _:
@@ -932,6 +944,9 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     if behavior.render_record_literal is not None and _has_mixed_record_shapes(
         data=data,
         shapes_by_id=record_shapes_by_id,
+        allow_same_key_variants=(
+            behavior.allows_same_key_record_variants_in_sequences
+        ),
     ):
         msg = (
             "Sibling list contains dicts with different record shapes; "

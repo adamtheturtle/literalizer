@@ -1,0 +1,1 @@
+Split Kotlin tuple-strategy records when sibling nested values require different generated types.

@@ -294,6 +294,63 @@ _ZIG_INFERRED_ELEMENT_TYPES: Mapping[object, str] = MappingProxyType(
     mapping={MixedNumeric: "f64"},
 )
 
+# Zig keywords cannot be used as bare struct-member names, but quoted
+# identifiers are accepted in both declarations (``@"error": T``) and
+# designated initializers (``.@"error" = value``).
+_ZIG_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "addrspace",
+        "align",
+        "allowzero",
+        "and",
+        "anyframe",
+        "anytype",
+        "asm",
+        "async",
+        "await",
+        "break",
+        "callconv",
+        "catch",
+        "comptime",
+        "const",
+        "continue",
+        "defer",
+        "else",
+        "enum",
+        "errdefer",
+        "error",
+        "export",
+        "extern",
+        "fn",
+        "for",
+        "if",
+        "inline",
+        "linksection",
+        "noalias",
+        "noinline",
+        "nosuspend",
+        "opaque",
+        "or",
+        "orelse",
+        "packed",
+        "pub",
+        "resume",
+        "return",
+        "struct",
+        "suspend",
+        "switch",
+        "test",
+        "threadlocal",
+        "try",
+        "union",
+        "unreachable",
+        "usingnamespace",
+        "var",
+        "volatile",
+        "while",
+    }
+)
+
 
 @beartype
 def _zig_int_sort_key(value: Value, /) -> int:
@@ -314,10 +371,13 @@ def _zig_int_sort_key(value: Value, /) -> int:
 def _zig_record_field_identifier(key: str, /) -> str:
     """Return the Zig ``struct`` member name for a dict *key*.
 
-    Zig member identifiers are the dict keys verbatim (no case
-    conversion), matching the designated-initializer literal form
-    ``Record0{ .id = 1, ... }``.
+    Zig member identifiers are otherwise the dict keys verbatim (no case
+    conversion).  Keywords use Zig's quoted-identifier syntax so the
+    same returned string works in a declaration and after the ``.`` of
+    a designated initializer (issue #2963).
     """
+    if key in _ZIG_KEYWORDS:
+        return f'@"{key}"'
     return key
 
 
@@ -1277,9 +1337,10 @@ class Zig(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=".{ .map = &.{",
+            allow_same_key_record_variants_in_sequences=True,
         )
 
         def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:

@@ -1,0 +1,1 @@
+Split Scala tuple-strategy records when sibling nested values require different generated types.

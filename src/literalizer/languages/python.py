@@ -1539,6 +1539,7 @@ class Python(metaclass=LanguageCls):
                 split_conflicting_field_types=False,
                 widen_unrecordizable_nested_sibling_maps=False,
                 derecordized_map_open=None,
+                allow_same_key_record_variants_in_sequences=False,
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

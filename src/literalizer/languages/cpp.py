@@ -2337,6 +2337,7 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=False,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            allow_same_key_record_variants_in_sequences=False,
         )
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:

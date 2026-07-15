@@ -847,7 +847,7 @@ class Java(metaclass=LanguageCls):
         set_opener_template="Set.of(",
         dict_type_template=None,
         fallback_value_type=None,
-        wide_int_type=None,
+        wide_int_type="long",
     )
 
     _opener_config_long = TypedOpenerConfig(
@@ -1781,9 +1781,10 @@ class Java(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=False,
+                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
+                allow_same_key_record_variants_in_sequences=True,
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

@@ -373,15 +373,79 @@ _SCALA_INT32_MAX = 2**31 - 1
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
+# Backtick identifiers let case-class parameters retain JSON keys that
+# collide with Scala 3 hard or soft keywords.  The set intentionally
+# includes contextual keywords: escaping them is harmless in contexts
+# where they would otherwise be accepted and prevents parser drift.
+_SCALA_KEYWORDS: frozenset[str] = frozenset(
+    {
+        "abstract",
+        "as",
+        "case",
+        "catch",
+        "class",
+        "def",
+        "derives",
+        "do",
+        "else",
+        "end",
+        "enum",
+        "export",
+        "extends",
+        "extension",
+        "false",
+        "final",
+        "finally",
+        "for",
+        "forSome",
+        "given",
+        "if",
+        "implicit",
+        "import",
+        "infix",
+        "inline",
+        "lazy",
+        "match",
+        "new",
+        "null",
+        "object",
+        "opaque",
+        "open",
+        "override",
+        "package",
+        "private",
+        "protected",
+        "return",
+        "sealed",
+        "super",
+        "then",
+        "this",
+        "throw",
+        "trait",
+        "transparent",
+        "true",
+        "try",
+        "type",
+        "using",
+        "val",
+        "var",
+        "while",
+        "with",
+        "yield",
+    }
+)
+
 
 @beartype
 def _scala_record_field_identifier(key: str, /) -> str:
     """Return the Scala ``case class`` field name for a dict *key*.
 
-    Scala field identifiers are the dict keys verbatim (no case
-    conversion), matching the keyword-argument literal form
-    ``Record0(id = 1, ...)``.
+    Scala field identifiers are otherwise the dict keys verbatim (no
+    case conversion).  Keywords are enclosed in backticks in both the
+    declaration and named argument (issue #2968).
     """
+    if key in _SCALA_KEYWORDS:
+        return f"`{key}`"
     return key
 
 
@@ -1261,6 +1325,7 @@ class Scala(metaclass=LanguageCls):
                 split_conflicting_field_types=False,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open="Map[String, Any](",
+                allow_same_key_record_variants_in_sequences=False,
             )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(
