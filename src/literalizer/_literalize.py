@@ -347,9 +347,10 @@ def _widened_int_formatter(
     out-of-i32 integer present) or when the language has no
     ``format_integer_widened`` (it resolves to ``None``).
     """
-    if infer_element_type(items=items) is not WideInt:
+    formatter = spec.format_integer_widened
+    if formatter is None or infer_element_type(items=items) is not WideInt:
         return None
-    return spec.format_integer_widened
+    return formatter
 
 
 _SCALAR_TYPES: Final = (
