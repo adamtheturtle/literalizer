@@ -272,8 +272,8 @@ def _build_v_interface_preamble(
     """Emit ``interface IVal {}`` when an interface-wrapped map is used.
 
     ``INTERFACE`` supplies its broad collector, while ``RECORD`` passes
-    the narrower set of maps de-recordized by its shared nested-map
-    fallback.
+    the narrower set of maps excluded from record rendering by its
+    shared nested-map fallback.
     """
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
@@ -522,7 +522,8 @@ def _build_v_record_preamble(
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
     Composes the ``interface IVal {}`` line (emitted for an empty
-    collection or a de-recordized nested map) followed by generated
+    collection or a nested map excluded from record rendering) followed by
+    generated
     ``struct`` declarations.  The interface precedes declarations so a
     declared field may name ``[]IVal`` or ``map[string]IVal``.
     """
@@ -1074,8 +1075,8 @@ class V(metaclass=LanguageCls):
 
         An ordered map remains out of scope for the base ``RECORD``
         port (the cross-language decision is tracked in #2317).  A
-        plain nested map de-recordized by the shared sibling-map
-        fallback is instead typed as ``map[string]IVal`` by
+        plain nested map excluded from record rendering by the shared
+        sibling-map fallback is instead typed as ``map[string]IVal`` by
         :meth:`_v_record_field_type`.
         """
         value = self._v_epoch_normalized(value)
