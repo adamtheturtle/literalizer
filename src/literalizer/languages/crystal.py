@@ -55,6 +55,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
+from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -105,6 +106,12 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
 
 _CRYSTAL_JSON_ANY = "JSON::Any"
+_CRYSTAL_RECORD_MAP_VALUE = "LiteralizerRecordValue"
+_CRYSTAL_RECORD_MAP_TYPE = f"Hash(String, {_CRYSTAL_RECORD_MAP_VALUE})"
+_CRYSTAL_RECORD_MAP_ALIAS = (
+    f"alias {_CRYSTAL_RECORD_MAP_VALUE} = "
+    "Bool | Float64 | Int128 | Int32 | Int64 | String | Nil"
+)
 
 
 @beartype
@@ -1077,15 +1084,24 @@ class Crystal(metaclass=LanguageCls):
         declared element type must be the record name (not the widened
         ``Array(Nil)`` :meth:`_crystal_type_for_value` would derive
         from the raw dicts).  Every other value is typed by
-        :meth:`_crystal_type_for_value`.  A set or non-record dict
-        field is out of scope for the base ``RECORD`` port (the
-        cross-language decision is tracked in #2317) and is not reached
-        by any record golden.
+        :meth:`_crystal_type_for_value`.  A record-eligible dict with no
+        ``record_name`` was widened out of record inference because its
+        nested sibling maps cannot share one shape; it uses a ``Hash``
+        over the generated native scalar union (#2919).  A set or
+        genuinely non-record dict field remains out of scope for the
+        base ``RECORD`` port (the cross-language decision is tracked in
+        #2317).
         """
         if request.record_name is not None:
             return request.record_name
         if request.element_record_name is not None:
             return f"Array({request.element_record_name})"
+        if (
+            isinstance(request.value, dict)
+            and not isinstance(request.value, OrderedMap)
+            and record_shape_for_dict(value=request.value) is not None
+        ):
+            return _CRYSTAL_RECORD_MAP_TYPE
         return self._crystal_type_for_value(request.value)
 
     @cached_property
@@ -1106,8 +1122,8 @@ class Crystal(metaclass=LanguageCls):
         return build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
-            widen_unrecordizable_nested_sibling_maps=False,
-            derecordized_map_open=None,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open=f"{_CRYSTAL_RECORD_MAP_TYPE}{{",
         )
 
     @cached_property
@@ -1469,7 +1485,12 @@ class Crystal(metaclass=LanguageCls):
             /,
         ) -> tuple[str, ...]:
             """Record declaration lines precede scalar body lines."""
-            return record_preamble(data) + scalar_body(types, data)
+            alias = (
+                (_CRYSTAL_RECORD_MAP_ALIAS,)
+                if self._record_strategy.behavior.compute_wrap_ids(data)
+                else ()
+            )
+            return alias + record_preamble(data) + scalar_body(types, data)
 
         return _compute
 
