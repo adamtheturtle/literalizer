@@ -7,6 +7,8 @@ import math
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
+    Any,
+    ClassVar,
     Final,
     Protocol,
     assert_never,
@@ -787,6 +789,9 @@ class VariantMetadata:
     the integration suite remains responsible for choosing input fixtures.
     """
 
+    fixture_module_name_template: str | None
+    fixture_module_name_lowercase: bool
+    golden_filename_lowercase: bool
     collection_layout_category: str
     record_variants: frozenset[RecordVariant]
     nested_map_widening: NestedMapWideningVariant
@@ -919,6 +924,9 @@ class Language(Protocol):
     languages or override defaults, write a class that provides all the
     required attributes.
     """
+
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    variant_metadata: ClassVar[VariantMetadata]
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class

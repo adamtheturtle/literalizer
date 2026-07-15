@@ -2140,6 +2140,9 @@ class Rust(metaclass=LanguageCls):
     }
     json_type_variant_name_suffix: ClassVar[str | None] = None
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        fixture_module_name_template=None,
+        fixture_module_name_lowercase=False,
+        golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
         record_variants=frozenset(
             {

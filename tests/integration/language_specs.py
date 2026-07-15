@@ -14,15 +14,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import (
-    ALL_LANGUAGES,
-    Crystal,
-    Erlang,
-    Gleam,
-    Haskell,
-    Haxe,
-    Scala,
-)
+from literalizer.languages import ALL_LANGUAGES
 
 
 @beartype
@@ -40,109 +32,23 @@ def _logical_stem(*, path: Path) -> str:
 
 
 @beartype
-def erlang_module_name(*, golden_path: Path) -> str:
-    """Return the Erlang module name for *golden_path*.
-
-    Produces a deterministic, per-fixture name so every compiled
-    ``.erl`` file in CI has a unique module declaration without needing
-    ``sed`` rewriting.
-    """
-    dir_name = golden_path.parent.name
-    stem = _logical_stem(path=golden_path)
-    return f"fixture_{dir_name}_{stem}".lower()
-
-
-@beartype
-def scala_module_name(*, golden_path: Path) -> str:
-    """Return the Scala object name for *golden_path*.
-
-    Produces a deterministic, per-fixture name so every compiled
-    ``.scala`` file in CI has a unique object declaration without needing
-    ``sed`` rewriting.
-    """
-    dir_name = golden_path.parent.name
-    stem = _logical_stem(path=golden_path)
-    return f"Fixture_{dir_name}_{stem}"
-
-
-@beartype
-def crystal_module_name(*, golden_path: Path) -> str:
-    """Return the Crystal module name for *golden_path*.
-
-    Produces a deterministic, per-fixture name so every compiled
-    ``.cr`` file in CI has a unique module declaration without needing
-    shell-level wrapping or ``sed`` rewriting.
-    """
-    dir_name = golden_path.parent.name
-    stem = _logical_stem(path=golden_path)
-    return f"Fixture_{dir_name}_{stem}"
-
-
-@beartype
-def haskell_module_name(*, golden_path: Path) -> str:
-    """Return the Haskell module name for *golden_path*.
-
-    Produces a deterministic, per-fixture name so every compiled
-    ``.hs`` file in CI has a unique module declaration without needing
-    ``sed`` rewriting.
-    """
-    dir_name = golden_path.parent.name
-    stem = _logical_stem(path=golden_path)
-    return f"Fixture_{dir_name}_{stem}"
-
-
-@beartype
-def haxe_module_name(*, golden_path: Path) -> str:
-    """Return the Haxe class name for *golden_path*.
-
-    Produces a deterministic, per-fixture name so every compiled
-    ``.hx`` file in CI has a unique class declaration (and so the file
-    can be renamed to match the class for ``haxe --main``) without
-    needing ``sed`` rewriting.
-    """
-    dir_name = golden_path.parent.name
-    stem = _logical_stem(path=golden_path)
-    return f"Fixture_{dir_name}_{stem}"
-
-
-@beartype
 def with_per_fixture_module_name(
     *,
     spec: literalizer.Language,
     golden_path: Path,
 ) -> literalizer.Language:
-    """Return *spec* with a per-fixture ``module_name`` if applicable.
-
-    Languages whose CI lint requires unique module names (Crystal, Erlang,
-    Haskell, Haxe, Scala) get a deterministic name derived from
-    *golden_path*; all other languages are returned unchanged.
-    """
-    if isinstance(spec, Crystal):
-        return dataclasses.replace(
-            spec,
-            module_name=crystal_module_name(golden_path=golden_path),
-        )
-    if isinstance(spec, Erlang):
-        return dataclasses.replace(
-            spec,
-            module_name=erlang_module_name(golden_path=golden_path),
-        )
-    if isinstance(spec, Haskell):
-        return dataclasses.replace(
-            spec,
-            module_name=haskell_module_name(golden_path=golden_path),
-        )
-    if isinstance(spec, Haxe):
-        return dataclasses.replace(
-            spec,
-            module_name=haxe_module_name(golden_path=golden_path),
-        )
-    if isinstance(spec, Scala):
-        return dataclasses.replace(
-            spec,
-            module_name=scala_module_name(golden_path=golden_path),
-        )
-    return spec
+    """Apply the language-owned per-fixture module naming policy."""
+    metadata = spec.variant_metadata
+    template = metadata.fixture_module_name_template
+    if template is None:
+        return spec
+    module_name = template.format(
+        parent=golden_path.parent.name,
+        stem=_logical_stem(path=golden_path),
+    )
+    if metadata.fixture_module_name_lowercase:
+        module_name = module_name.lower()
+    return dataclasses.replace(spec, module_name=module_name)
 
 
 @beartype
@@ -180,19 +86,13 @@ def make_golden_path(
     files.  The tag uses the member's lower-cased ``name`` (e.g.
     ``PY39`` -> ``py39``).
 
-    Gleam is special-cased: the entire file name (including the version
-    tag) is mapped to its lower-case form so it remains a valid Gleam
-    module identifier.  The CI Gleam-lint job drops each fixture into a
-    one-shot project as a real module path (e.g. ``binary/gleam_combined``),
-    which fails compilation if the file name starts with a capital
-    letter or contains an upper-case character.  The name passed in
-    (``Gleam_type_name_JsonVal``) keeps its original casing in pytest
-    test IDs and error messages; only the on-disk file name is mapped
-    down.
+    Languages declare whether the entire filename must be lower-cased
+    (for example, so it is also a valid module identifier).  The logical
+    name retains its original casing in pytest IDs and error messages.
     """
     version_tag = version.name.lower()
     filename = f"{name}@{version_tag}{extension}"
-    if lang_cls.__name__ == Gleam.__name__:
+    if lang_cls.variant_metadata.golden_filename_lowercase:
         filename = filename.lower()
     return parent / filename
 
