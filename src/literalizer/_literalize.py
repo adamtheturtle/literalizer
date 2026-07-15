@@ -299,7 +299,7 @@ def _format_scalar(
     *,
     value: Scalar,
     spec: Language,
-    int_formatter: Callable[[int], str] | None = None,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format a scalar JSON value as a native language literal.
 
@@ -598,6 +598,7 @@ def _format_ordered_map_value(
                 dict_open_override=None,
                 sequence_open_override=None,
                 ctx=ctx.compact(),
+                int_formatter=None,
             ),
             v,
             _maybe_wrap_child(
@@ -656,6 +657,7 @@ def _maybe_format_record_literal(
             dict_open_override=None,
             sequence_open_override=None,
             ctx=field_ctx,
+            int_formatter=None,
         )
         for key in str_keys
     }
@@ -721,6 +723,7 @@ def _maybe_format_tuple_literal(
             dict_open_override=None,
             sequence_open_override=None,
             ctx=element_ctx,
+            int_formatter=None,
         )
         for element in value
     ]
@@ -792,6 +795,7 @@ def _format_dict_value(
                 dict_open_override=None,
                 sequence_open_override=None,
                 ctx=ctx.compact(),
+                int_formatter=None,
             ),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
@@ -872,6 +876,7 @@ def _format_dict_entry_value(
         dict_open_override=None,
         sequence_open_override=None,
         ctx=ctx,
+        int_formatter=None,
     )
 
 
@@ -1405,6 +1410,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ctx=ctx,
+        int_formatter=None,
     )
 
 
@@ -1444,6 +1450,7 @@ def _format_list_value(
     if ctx.collection_layout is CollectionLayout.MULTILINE and value:
         return _format_multiline_collection_value(
             value=value,
+            dict_open_override=None,
             sequence_open_override=sequence_open_override,
             ctx=ctx,
         )
@@ -1510,7 +1517,7 @@ def _format_value(  # noqa: C901  # pylint: disable=too-complex
     dict_open_override: str | None,
     sequence_open_override: str | None,
     ctx: _RenderContext,
-    int_formatter: Callable[[int], str] | None = None,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format any JSON value as a native language literal.
 
@@ -1713,8 +1720,8 @@ def _format_multiline_collection_value(
     *,
     value: dict[Scalar, Value] | set[Scalar] | list[Value],
     ctx: _RenderContext,
-    dict_open_override: str | None = None,
-    sequence_open_override: str | None = None,
+    dict_open_override: str | None,
+    sequence_open_override: str | None,
 ) -> str:
     """Format a nested collection whose first delimiter has no leading
     prefix.
@@ -1822,6 +1829,7 @@ def _format_collection_lines(
                     dict_open_override=None,
                     sequence_open_override=None,
                     ctx=line_ctx.compact(),
+                    int_formatter=None,
                 )
                 formatted_val = _maybe_wrap_child(
                     parent_id=parent_id,
@@ -2040,7 +2048,12 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         datetime.time,
     )
     if isinstance(data, scalar_types) or data is None:
-        return f"{line_prefix}{_format_scalar(value=data, spec=language)}"
+        formatted_scalar = _format_scalar(
+            value=data,
+            spec=language,
+            int_formatter=None,
+        )
+        return f"{line_prefix}{formatted_scalar}"
 
     # Empty collections have no elements to lay out line-by-line, so
     # delegate to _format_value which already returns the correct
@@ -2051,6 +2064,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
             dict_open_override=None,
             sequence_open_override=None,
             ctx=ctx,
+            int_formatter=None,
         )
         return f"{line_prefix}{formatted}"
 
@@ -2071,6 +2085,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
             dict_open_override=None,
             sequence_open_override=None,
             ctx=ctx,
+            int_formatter=None,
         )
         return f"{line_prefix}{formatted}"
 
@@ -3271,6 +3286,7 @@ def _format_single_call_arg(
             dict_open_override=dict_open_override,
             sequence_open_override=None,
             ctx=ctx,
+            int_formatter=None,
         ),
     )
     wrap_scalar = language.heterogeneous_behavior.wrap_scalar
@@ -3612,8 +3628,8 @@ def _render_call_per_element(
     ref_key: str,
     comment_literals: Sequence[str] | None,
     variable_form: NewVariable | ExistingVariable | None,
-    collection_comments: CollectionComments | None = None,
-    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    collection_comments: CollectionComments | None,
+    collection_layout: CollectionLayout,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -4476,6 +4492,7 @@ def _render_zip_literal(
         dict_open_override=None,
         sequence_open_override=None,
         ctx=ctx,
+        int_formatter=None,
     )
 
 
@@ -5004,8 +5021,8 @@ def _literalize_call_with_declarations(
     language: Language,
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
-    extra_body_preamble: tuple[str, ...] = (),
-    extra_preamble: tuple[str, ...] = (),
+    extra_body_preamble: tuple[str, ...],
+    extra_preamble: tuple[str, ...],
 ) -> LiteralizeResult:
     r"""Render N ref declarations and a call into one coherent file.
 

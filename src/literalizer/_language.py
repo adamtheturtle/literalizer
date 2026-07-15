@@ -68,7 +68,7 @@ def date_scalar_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    extra: dict[type, tuple[str, ...]] | None = None,
+    extra: dict[type, tuple[str, ...]] | None,
 ) -> dict[type, tuple[str, ...]]:
     """Build the ``scalar_preamble`` dict for date/datetime formats.
 
@@ -2201,7 +2201,7 @@ class _NoPygmentsName(str):
 
     @beartype
     def __get__(
-        self, _instance: object | None, _owner: type[object] | None = None
+        self, _instance: object | None, _owner: type[object] | None
     ) -> None:
         """Return ``None`` for both class and instance access."""
         del self, _instance, _owner

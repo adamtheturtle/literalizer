@@ -33,6 +33,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     I64_MAX,
+    I64_MIN,
     U64_MAX,
     format_integer_binary,
     format_integer_hex,
@@ -1449,6 +1450,8 @@ class D(metaclass=LanguageCls):
                 format_positive=_make_d_ulong_positive_formatter(base=base),
                 language_name="D",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

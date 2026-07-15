@@ -819,6 +819,7 @@ class Java(metaclass=LanguageCls):
         set_opener_template="Set.of(",
         dict_type_template=None,
         fallback_value_type=None,
+        wide_int_type=None,
     )
 
     _opener_config_long = TypedOpenerConfig(
@@ -837,6 +838,7 @@ class Java(metaclass=LanguageCls):
         set_opener_template="Set.of(",
         dict_type_template=None,
         fallback_value_type=None,
+        wide_int_type=None,
     )
 
     class DateFormats(enum.Enum):
@@ -1660,6 +1662,7 @@ class Java(metaclass=LanguageCls):
             date_type=None,
             datetime_type=None,
             enable_dict_type=False,
+            dict_key_type="",
         )
 
     def _java_record_field_type(  # noqa: PLR0911
@@ -1920,6 +1923,7 @@ class Java(metaclass=LanguageCls):
             ),
             set_opener_template=None,
             narrow_dict_values=False,
+            dict_key_type="",
         )
         return typed_collection_open(
             type_to_opener=openers.seq,
@@ -1985,6 +1989,8 @@ class Java(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=make_long_suffix_formatter(base=base_int_formatter),
             fallback=_format_java_biginteger_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
@@ -2006,6 +2012,8 @@ class Java(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=suffixed,
             fallback=_format_java_biginteger_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

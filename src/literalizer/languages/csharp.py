@@ -1324,6 +1324,7 @@ class CSharp(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
             enable_dict_type=False,
+            dict_key_type="",
         )
 
     def _csharp_record_field_type(  # noqa: PLR0911

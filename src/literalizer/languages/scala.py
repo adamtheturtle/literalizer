@@ -239,6 +239,7 @@ def _list_sequence_open(
                 date_type=date_type,
                 datetime_type=datetime_type,
                 enable_dict_type=True,
+                dict_key_type="",
             ),
             opener_template="List[{type_name}](",
         ),
@@ -1087,6 +1088,7 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
             enable_dict_type=False,
+            dict_key_type="",
         )
 
     def _scala_int_magnitude_field_type(self, value: int, /) -> str:
@@ -1372,6 +1374,7 @@ class Scala(metaclass=LanguageCls):
                 self.set_format.value.set_opener_template or None
             ),
             narrow_dict_values=False,
+            dict_key_type="",
         )
 
     @cached_property
@@ -1487,6 +1490,7 @@ class Scala(metaclass=LanguageCls):
                         date_type=self._date_type_name,
                         datetime_type=self._datetime_type_name,
                         enable_dict_type=False,
+                        dict_key_type="",
                     ),
                     opener_template=dict_spec.opener_template,
                 ),
@@ -1565,6 +1569,8 @@ class Scala(metaclass=LanguageCls):
                 suffix="L",
             ),
             fallback=_format_scala_bigint_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

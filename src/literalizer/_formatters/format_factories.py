@@ -25,7 +25,7 @@ class _DictFormatBuilder(Protocol):
         self,
         default_type: str,
         *,
-        default_key_type: str = "",
+        default_key_type: str,
     ) -> DictFormatConfig:
         """Build a ``DictFormatConfig`` with the given default type."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -41,7 +41,7 @@ class _OrderedMapFormatBuilder(Protocol):
         self,
         default_type: str,
         *,
-        default_key_type: str = "",
+        default_key_type: str,
     ) -> OrderedMapFormatConfig:
         """Build an ``OrderedMapFormatConfig`` with the given default type."""
         ...  # pylint: disable=unnecessary-ellipsis
@@ -257,7 +257,7 @@ def dict_format_factory(
     def _build(
         default_type: str,
         *,
-        default_key_type: str = "",
+        default_key_type: str,
     ) -> DictFormatConfig:
         """Delegate to module-level implementation."""
         return _build_dict_format_config(
@@ -311,7 +311,7 @@ def ordered_map_format_factory(
     def _build(
         default_type: str,
         *,
-        default_key_type: str = "",
+        default_key_type: str,
     ) -> OrderedMapFormatConfig:
         """Delegate to module-level implementation."""
         return _build_ordered_map_format_config(

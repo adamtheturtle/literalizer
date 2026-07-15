@@ -30,6 +30,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_hex,
     format_integer_octal_c_style,
     make_overflow_fallback_formatter,
@@ -957,6 +959,8 @@ class ObjectiveC(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=self.integer_format,
             fallback=make_ull_fallback(language_name="Objective-C"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

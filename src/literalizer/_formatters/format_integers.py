@@ -229,15 +229,15 @@ def make_overflow_fallback_formatter(
     *,
     base: Callable[[int], str],
     fallback: Callable[[int], str],
-    min_value: int = I64_MIN,
-    max_value: int = I64_MAX,
+    min_value: int,
+    max_value: int,
 ) -> Callable[[int], str]:
     """Wrap a formatter so values outside ``[min_value, max_value]``
     delegate to *fallback* instead of *base*.
 
-    Defaults to the signed 64-bit range.  Used by language specifications
-    whose scalar integer code path can't emit a bare decimal literal
-    for values that exceed native fixed-width integer ranges.
+    Used by language specifications whose scalar integer code path can't
+    emit a bare decimal literal for values that exceed native fixed-width
+    integer ranges.
     """
 
     @beartype

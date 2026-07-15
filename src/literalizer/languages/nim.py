@@ -36,6 +36,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -1894,6 +1896,8 @@ class Nim(metaclass=LanguageCls):
                 numeric_separator=self.numeric_separator,
             ),
             fallback=raise_for_unrepresentable_int(language_name="Nim"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

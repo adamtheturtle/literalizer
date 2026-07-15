@@ -182,6 +182,7 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
         enable_list_type=True,
         dict_type_template="Hash(String, {inner})",
         fallback_value_type="String",
+        wide_int_type=None,
     ),
     template="[] of {type}",
     fallback_type="String",
@@ -1348,6 +1349,8 @@ class Crystal(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=base,
             fallback=_format_crystal_i128_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
