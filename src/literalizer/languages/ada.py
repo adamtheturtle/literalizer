@@ -32,6 +32,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
@@ -703,6 +705,8 @@ class Ada(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=str,
             fallback=raise_for_unrepresentable_int(language_name="Ada"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

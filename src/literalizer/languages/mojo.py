@@ -108,6 +108,7 @@ _mojo_element_to_type = make_element_to_type(
     enable_list_type=True,
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type="String",
+    wide_int_type=None,
 )
 
 # Strict resolver for call-argument typing: omits ``fallback_value_type``
@@ -130,6 +131,7 @@ _mojo_call_arg_element_to_type = make_element_to_type(
     enable_list_type=True,
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type=None,
+    wide_int_type=None,
 )
 
 
@@ -1584,6 +1586,7 @@ class Mojo(metaclass=LanguageCls):
                     enable_list_type=True,
                     dict_type_template=None,
                     fallback_value_type=None,
+                    wide_int_type=None,
                 ),
                 opener_template="Set[{type_name}](",
             ),

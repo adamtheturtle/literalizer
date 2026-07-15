@@ -1361,6 +1361,8 @@ class V(metaclass=LanguageCls):
                 format_positive=_format_v_u64_positive,
                 language_name="V",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
         return make_overflow_fallback_formatter(
             base=base,
@@ -1383,6 +1385,8 @@ class V(metaclass=LanguageCls):
                 format_positive=_format_v_u64_positive,
                 language_name="V",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

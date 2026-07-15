@@ -169,7 +169,7 @@ def _kotlin_list_sequence_open(
     cfg: TypedOpenerConfig,
     date_type: str | None,
     datetime_type: str | None,
-    dict_key_type: str = "",
+    dict_key_type: str,
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the Kotlin List format.
 
@@ -1559,6 +1559,7 @@ class Kotlin(metaclass=LanguageCls):
             date_type=None,
             datetime_type=None,
             enable_dict_type=False,
+            dict_key_type="",
         )
 
     def _kotlin_record_datetime_type(
@@ -2017,6 +2018,8 @@ class Kotlin(metaclass=LanguageCls):
                 numeric_separator=self.numeric_separator,
             ),
             fallback=_format_kotlin_biginteger_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
@@ -2030,6 +2033,8 @@ class Kotlin(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=make_long_suffix_formatter(base=base),
             fallback=_format_kotlin_biginteger_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

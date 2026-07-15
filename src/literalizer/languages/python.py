@@ -109,7 +109,7 @@ def _format_datetime_python(
     value: datetime.datetime,
     /,
     *,
-    utc_tzinfo_expr: str = "datetime.UTC",
+    utc_tzinfo_expr: str,
 ) -> str:
     """Format a datetime as a Python ``datetime.datetime(...)`` constructor
     call.
@@ -852,7 +852,10 @@ class Python(metaclass=LanguageCls):
         """Datetime formatting options for Python."""
 
         PYTHON = DatetimeFormatConfig(
-            formatter=_format_datetime_python,
+            formatter=functools.partial(
+                _format_datetime_python,
+                utc_tzinfo_expr="datetime.UTC",
+            ),
             preamble_lines=("import datetime",),
         )
         EPOCH = DatetimeFormatConfig(

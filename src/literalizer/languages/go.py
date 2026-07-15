@@ -42,6 +42,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     I64_MAX,
+    I64_MIN,
     U64_MAX,
     format_integer_binary,
     format_integer_hex,
@@ -1048,6 +1049,7 @@ class Go(metaclass=LanguageCls):
             enable_list_type=True,
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
+            wide_int_type=None,
         )
 
     @cached_property
@@ -1171,6 +1173,8 @@ class Go(metaclass=LanguageCls):
                 format_positive=_format_go_uint64_positive,
                 language_name="Go",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
@@ -1221,6 +1225,7 @@ class Go(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra=None,
         )
 
     @cached_property

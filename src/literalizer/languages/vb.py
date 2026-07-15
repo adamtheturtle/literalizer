@@ -40,6 +40,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_unsigned_overflow_fallback,
@@ -729,6 +731,8 @@ class VisualBasic(metaclass=LanguageCls):
                 format_positive=_format_vb_ulong_positive,
                 language_name="VB.NET",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
@@ -742,6 +746,8 @@ class VisualBasic(metaclass=LanguageCls):
                 format_positive=_format_vb_ulong_positive,
                 language_name="VB.NET",
             ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

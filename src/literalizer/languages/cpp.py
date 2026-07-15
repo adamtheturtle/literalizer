@@ -271,6 +271,7 @@ def _make_cpp_element_to_type(
         enable_list_type=True,
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
+        wide_int_type=None,
     )
 
 
@@ -2391,6 +2392,8 @@ class Cpp(metaclass=LanguageCls):
                 base=base_int_formatter,
             ),
             fallback=make_ull_fallback(language_name="C++"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

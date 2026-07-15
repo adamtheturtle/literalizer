@@ -32,6 +32,8 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
@@ -587,6 +589,8 @@ class Nix(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=str,
             fallback=_format_nix_fromjson_literal,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property

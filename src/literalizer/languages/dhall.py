@@ -135,6 +135,7 @@ _dhall_narrowed_empty_form = make_narrowed_empty_form(
         enable_list_type=True,
         dict_type_template=None,
         fallback_value_type="Text",
+        wide_int_type=None,
     ),
     template="[] : List {type}",
     fallback_type="Text",

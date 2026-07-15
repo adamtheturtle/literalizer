@@ -829,6 +829,7 @@ class Raku(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            extra=None,
         )
 
     @cached_property

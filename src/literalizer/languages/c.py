@@ -34,6 +34,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import (
     I64_MAX,
+    I64_MIN,
     format_integer_hex,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
@@ -1763,6 +1764,8 @@ class C(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=base,
             fallback=make_ull_fallback(language_name="C"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
