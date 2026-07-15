@@ -252,6 +252,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         wrap_non_scalar=_wrap_non_scalar,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
+        widens_nested_maps_by_wrapping_scalars=True,
     )
 
 
