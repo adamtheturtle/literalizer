@@ -1008,10 +1008,6 @@ def _build_cpp_record_preamble(
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            if value_type.startswith("std::variant<") and (
-                "#include <variant>" not in headers
-            ):
-                headers.append("#include <variant>")
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
         return (*headers, *value_alias, *record_preamble(data))
 
