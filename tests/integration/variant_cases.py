@@ -30,7 +30,6 @@ from literalizer.languages import (
     Haskell,
     Java,
     Kotlin,
-    Mojo,
     Nim,
     OCaml,
     Odin,
@@ -38,7 +37,6 @@ from literalizer.languages import (
     Python,
     Rust,
     Scala,
-    V,
     Zig,
 )
 
@@ -939,6 +937,24 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
 
 
 @beartype
+def _nested_map_scalar_wrapping_spec(
+    *,
+    lang_cls: literalizer.LanguageCls,
+) -> literalizer.Language | None:
+    """Return *lang_cls*'s nested-map scalar-wrapping spec, if any."""
+    default_spec = make_spec(lang_cls=lang_cls)
+    for strategy in default_spec.heterogeneous_strategies:
+        candidate = make_spec(
+            lang_cls=lang_cls,
+            heterogeneous_strategy=strategy,
+        )
+        behavior = candidate.heterogeneous_behavior
+        if behavior.widens_nested_maps_by_wrapping_scalars:
+            return candidate
+    return None
+
+
+@beartype
 def build_nested_map_widening_variants() -> Iterable[Variant]:
     """Build the ``nested_map_widening`` variants.
 
@@ -985,110 +1001,30 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
             ),
         )
     ]
-    rust_default_spec = make_spec(lang_cls=Rust)
-    rust_tagged_enum = next(
-        strategy
-        for strategy in rust_default_spec.heterogeneous_strategies
-        if strategy.name == "TAGGED_ENUM"
-    )
-    rust_spec = make_spec(
-        lang_cls=Rust,
-        heterogeneous_strategy=rust_tagged_enum,
-    )
-    variants.extend(
-        [
-            Variant(
-                name="Rust_nested_map_widening",
-                spec=rust_spec,
-                lang_cls=Rust,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            ),
-            Variant(
-                name="Rust_nested_map_widening_multiline",
-                spec=rust_spec,
-                lang_cls=Rust,
-                collection_layout=literalizer.CollectionLayout.MULTILINE,
-            ),
-        ]
-    )
-    nim_default_spec = make_spec(lang_cls=Nim)
-    nim_object_variant = next(
-        strategy
-        for strategy in nim_default_spec.heterogeneous_strategies
-        if strategy.name == "OBJECT_VARIANT"
-    )
-    nim_spec = make_spec(
-        lang_cls=Nim,
-        heterogeneous_strategy=nim_object_variant,
-    )
-    variants.extend(
-        [
-            Variant(
-                name="Nim_nested_map_widening",
-                spec=nim_spec,
-                lang_cls=Nim,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            ),
-            Variant(
-                name="Nim_nested_map_widening_multiline",
-                spec=nim_spec,
-                lang_cls=Nim,
-                collection_layout=literalizer.CollectionLayout.MULTILINE,
-            ),
-        ]
-    )
-    mojo_default_spec = make_spec(lang_cls=Mojo)
-    mojo_variant = next(
-        strategy
-        for strategy in mojo_default_spec.heterogeneous_strategies
-        if strategy.name == "VARIANT"
-    )
-    mojo_spec = make_spec(
-        lang_cls=Mojo,
-        heterogeneous_strategy=mojo_variant,
-    )
-    variants.extend(
-        [
-            Variant(
-                name="Mojo_nested_map_widening",
-                spec=mojo_spec,
-                lang_cls=Mojo,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            ),
-            Variant(
-                name="Mojo_nested_map_widening_multiline",
-                spec=mojo_spec,
-                lang_cls=Mojo,
-                collection_layout=literalizer.CollectionLayout.MULTILINE,
-            ),
-        ]
-    )
-    v_default_spec = make_spec(lang_cls=V)
-    v_interface = next(
-        strategy
-        for strategy in v_default_spec.heterogeneous_strategies
-        if strategy.name == "INTERFACE"
-    )
-    v_spec = make_spec(
-        lang_cls=V,
-        heterogeneous_strategy=v_interface,
-    )
-    variants.extend(
-        [
-            Variant(
-                name="V_nested_map_widening",
-                spec=v_spec,
-                lang_cls=V,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            ),
-            Variant(
-                name="V_nested_map_widening_multiline",
-                spec=v_spec,
-                lang_cls=V,
-                collection_layout=literalizer.CollectionLayout.MULTILINE,
-            ),
-        ]
-    )
+    for lang_cls in sorted_languages():
+        if lang_cls is Dhall:
+            continue
+        spec = _nested_map_scalar_wrapping_spec(lang_cls=lang_cls)
+        if spec is None:
+            continue
+        variants.extend(
+            [
+                Variant(
+                    name=f"{lang_cls.__name__}_nested_map_widening",
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_nested_map_widening_multiline"
+                    ),
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=(literalizer.CollectionLayout.MULTILINE),
+                ),
+            ]
+        )
     return variants
 
 
@@ -1106,16 +1042,8 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
     the widening fix (wrapping every sibling map's scalar leaves in the
     ``Value`` union) is exactly what makes the list type-check (#2897).
     """
-    dhall_default_spec = make_spec(lang_cls=Dhall)
-    dhall_union_type = next(
-        strategy
-        for strategy in dhall_default_spec.heterogeneous_strategies
-        if strategy.name == "UNION_TYPE"
-    )
-    dhall_spec = make_spec(
-        lang_cls=Dhall,
-        heterogeneous_strategy=dhall_union_type,
-    )
+    dhall_spec = _nested_map_scalar_wrapping_spec(lang_cls=Dhall)
+    assert dhall_spec is not None  # noqa: S101
     return [
         Variant(
             name="Dhall_nested_map_widening",

@@ -572,6 +572,12 @@ class HeterogeneousBehavior:
     a narrower scalar type (issue #2911).  Other wrapping strategies
     leave it as ``None`` and retain their normal inferred dict opener.
 
+    ``widens_nested_maps_by_wrapping_scalars`` identifies strategies
+    whose scalar wrapper also gives sibling nested maps one shared value
+    type.  This is strategy behavior rather than a language-wide fact:
+    strict languages expose it only when the corresponding non-default
+    heterogeneous strategy is selected.
+
     ``render_record_literal`` renders a record-shaped dict as a
     generated struct literal given its :class:`RecordShape` and a
     mapping of pre-formatted field values, returning a
@@ -622,6 +628,7 @@ class HeterogeneousBehavior:
     wrap_non_scalar: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
+    widens_nested_maps_by_wrapping_scalars: bool = False
     render_record_literal: (
         Callable[
             [dict[Scalar, Value], Mapping[str, str]],
