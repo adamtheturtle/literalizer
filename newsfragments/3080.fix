@@ -1,0 +1,1 @@
+Normalize reserved Zig ``NewVariable`` names to valid identifiers.
