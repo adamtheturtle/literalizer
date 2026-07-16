@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import math
-import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
@@ -26,29 +25,27 @@ from literalizer._formatters.type_inference import (
     RecordShape,
 )
 from literalizer._types import Scalar, Value
-from literalizer.exceptions import UnrepresentableEmptyDictError
+from literalizer.exceptions import (
+    InvalidVariableNameError,
+    UnrepresentableEmptyDictError,
+)
 
 
 @beartype
-def format_new_variable_name(*, language: "Language", name: str) -> str:
-    """Return a target-language-safe name for a new variable.
-
-    ``NewVariable`` names are emitted into generated source, so malformed
-    names must not be allowed to turn an otherwise valid literal into a
-    syntax error.  Keep ordinary names unchanged and make invalid names
-    deterministic by replacing non-identifier characters and prefixing the
-    result when necessary.  The prefix also keeps reserved words distinct.
-    """
+def validate_new_variable_name(*, language: "Language", name: str) -> None:
+    """Raise when *name* is not valid for a new variable declaration."""
     if name.isidentifier() and name not in language.reserved_identifiers:
-        return name
-    normalized = re.sub(pattern=r"[^0-9A-Za-z_]", repl="_", string=name)
-    if (
-        not normalized
-        or normalized[0].isdigit()
-        or name in language.reserved_identifiers
-    ):
-        normalized = "literalizer_" + normalized
-    return normalized
+        return
+    reason = (
+        "it is a reserved identifier"
+        if name in language.reserved_identifiers
+        else "it must be a valid identifier"
+    )
+    raise InvalidVariableNameError(
+        language_name=language.__class__.__name__,
+        variable_name=name,
+        reason=reason,
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -893,7 +890,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
     supports_variable_names: bool
-    normalizes_new_variable_names: bool
+    validates_new_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool

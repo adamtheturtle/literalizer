@@ -302,6 +302,31 @@ class InvalidRecordNameError(Exception):
     """
 
 
+class InvalidVariableNameError(Exception):
+    """Raised when a ``NewVariable`` name is invalid for the target
+    language.
+
+    To resolve, use a valid, non-reserved identifier for the target
+    language.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        variable_name: str,
+        reason: str,
+    ) -> None:
+        """Create an ``InvalidVariableNameError``."""
+        super().__init__(
+            f"{language_name} cannot use NewVariable name "
+            f"{variable_name!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+        self.reason = reason
+
+
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.

@@ -1,1 +1,1 @@
-Normalize malformed TypeScript ``NewVariable`` names to valid identifiers.
+Reject malformed TypeScript ``NewVariable`` names instead of emitting invalid source.
