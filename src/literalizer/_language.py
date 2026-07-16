@@ -1254,7 +1254,7 @@ class Language(Protocol):
         This is separate from :attr:`reserved_identifiers` because a word
         can be a valid property name in a dotted call while still being
         forbidden for a variable declaration (for example, TypeScript's
-        ``class``).
+        ``class`` in JavaScript and TypeScript).
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

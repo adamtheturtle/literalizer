@@ -1,1 +1,1 @@
-Reject reserved TypeScript ``NewVariable`` names with a clear error.
+Reject reserved JavaScript and TypeScript ``NewVariable`` names with a clear error.

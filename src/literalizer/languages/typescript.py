@@ -100,6 +100,9 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.languages.javascript import (
+    ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS,
+)
 
 
 @beartype
@@ -408,8 +411,8 @@ class TypeScript(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
-        {"class"}
+    reserved_variable_identifiers: ClassVar[frozenset[str]] = (
+        ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
