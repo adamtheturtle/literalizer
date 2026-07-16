@@ -38,7 +38,9 @@ def normalizing_languages() -> list[literalizer.LanguageCls]:
 def cases_for_language(
     *, lang_cls: literalizer.LanguageCls
 ) -> tuple[NewVariableNameCase, ...]:
-    """Return malformed, leading-digit, and reserved cases for a language."""
+    """Return malformed, leading-digit, and reserved cases for a
+    language.
+    """
     reserved_cases = tuple(
         NewVariableNameCase(
             name=f"reserved_{reserved_identifier}",
