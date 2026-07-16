@@ -86,11 +86,11 @@ jobs:
       # install the ``dkjson`` JSON library; Lua has no standard-library
       # JSON serializer.  Pinned to a recent ``leafo/gh-actions-luarocks``
       # release; the action picks the LuaRocks version compatible with
-      # the Lua installed above.  See ``.github/scripts/run_lua_roundtrip.py``.
+      # the Lua installed above.  See ``scripts/run_lua_roundtrip.py``.
       - name: Install LuaRocks
         uses: leafo/gh-actions-luarocks@v6
       # ``dkjson`` is the pure-Lua JSON library used by
-      # ``.github/scripts/run_lua_roundtrip.py``; pinned to a ``2.x``
+      # ``scripts/run_lua_roundtrip.py``; pinned to a ``2.x``
       # release.  Installed into the per-job tree provisioned above so
       # ``require "dkjson"`` resolves under the ``Lua roundtrip`` step.
       - name: Install dkjson
@@ -119,7 +119,7 @@ jobs:
       # ``src/literalizer/languages/tcl.py``; keep them in sync.
       # ``tcllib`` (pinned to the Ubuntu 24.04 build of ``1.21+dfsg-1``)
       # provides the ``json::write`` package used by
-      # ``.github/scripts/run_tcl_roundtrip.py`` to re-emit JSON from a
+      # ``scripts/run_tcl_roundtrip.py`` to re-emit JSON from a
       # literalized Tcl ``dict``; Tcl itself ships no JSON library.
       # The ``guile-3.0`` apt package pins Guile to the 3.x series,
       # which implements ``R7RS``, matching ``Scheme.language_version``
@@ -136,7 +136,7 @@ jobs:
           version: 1.0
       # The Forth Foundation Library (FFL) supplies the ``jos`` JSON
       # output-stream module used by
-      # ``.github/scripts/run_forth_roundtrip.py``; Forth itself ships
+      # ``scripts/run_forth_roundtrip.py``; Forth itself ships
       # no JSON serializer.  FFL is a source-only library, so the
       # checkout is pinned to a specific commit for reproducibility
       # (the repo is dormant: ``753d418`` from 2017 is its latest
@@ -148,7 +148,7 @@ jobs:
           git -C /tmp/ffl checkout --quiet 753d418081a48afe8c86196261fda3299d93ac98
           echo "LITERALIZER_FFL_PATH=/tmp/ffl" >> "$GITHUB_ENV"
       # guile-json supplies the ``(json)`` module used by
-      # ``.github/scripts/run_scheme_roundtrip.py``; Guile itself ships
+      # ``scripts/run_scheme_roundtrip.py``; Guile itself ships
       # no JSON library, and the apt-packaged variants on Ubuntu 24.04
       # are an unreliable source (the ``guile-json`` binary targets
       # Guile 2.2, no Guile-3.0-bound binary is published under either
@@ -266,9 +266,9 @@ jobs:
       # runner default, guarded by the ``Lint Bash`` step above); ``uv
       # run`` (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
-      # ``.github/scripts/run_bash_roundtrip.py``.
+      # ``scripts/run_bash_roundtrip.py``.
       - name: Bash roundtrip
-        run: uv run python .github/scripts/run_bash_roundtrip.py
+        run: uv run python -m scripts.run_bash_roundtrip
 
       # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
       # ``Ruby.language_version`` in ``src/literalizer/languages/ruby.py``;
@@ -289,9 +289,9 @@ jobs:
       # because this is the job with the Ruby toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_ruby_roundtrip.py`.
+      # `scripts/run_ruby_roundtrip.py`.
       - name: Ruby roundtrip
-        run: uv run python .github/scripts/run_ruby_roundtrip.py
+        run: uv run python -m scripts.run_ruby_roundtrip
 
       - name: Lint JavaScript
         run: |-
@@ -303,9 +303,9 @@ jobs:
       # here because this is the job with the Node toolchain (pinned by
       # the `Set up Node` step above); `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_javascript_roundtrip.py`.
+      # See `scripts/run_javascript_roundtrip.py`.
       - name: JavaScript roundtrip
-        run: uv run python .github/scripts/run_javascript_roundtrip.py
+        run: uv run python -m scripts.run_javascript_roundtrip
 
       # The host compiles each fixture into an in-memory assembly, then
       # reflectively constructs `Main` and invokes its `main()` method
@@ -356,11 +356,11 @@ jobs:
       # is required so `import literalizer` resolves. The runner uses
       # `LITERALIZER_LINT_CLASSPATH` to pass Jackson to `javac`/`java`
       # so it can serialize the literalized value with `ObjectMapper`.
-      # See `.github/scripts/run_java_roundtrip.py`.
+      # See `scripts/run_java_roundtrip.py`.
       - name: Java roundtrip
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
-        run: uv run python .github/scripts/run_java_roundtrip.py
+        run: uv run python -m scripts.run_java_roundtrip
 
       - name: Lint Php
         run: |-
@@ -371,9 +371,9 @@ jobs:
       # Basic JSON -> PHP -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the PHP toolchain; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_php_roundtrip.py`.
+      # resolves. See `scripts/run_php_roundtrip.py`.
       - name: Php roundtrip
-        run: uv run python .github/scripts/run_php_roundtrip.py
+        run: uv run python -m scripts.run_php_roundtrip
 
       # Parse every fixture inside a single pwsh invocation so the .NET
       # and PowerShell startup cost is paid once instead of per fixture.
@@ -389,19 +389,18 @@ jobs:
       - name: Lint PowerShell
         run: |-
           find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
-          pwsh -NoProfile -NonInteractive -File .github/scripts/lint-powershell.ps1 < /tmp/files-ps1
+          pwsh -NoProfile -NonInteractive -File scripts/lint-powershell.ps1 < /tmp/files-ps1
 
       - name: Run PowerShell files
-        run: pwsh -NoProfile -NonInteractive -File .github/scripts/run-powershell.ps1
-          < /tmp/files-ps1
+        run: pwsh -NoProfile -NonInteractive -File scripts/run-powershell.ps1 < /tmp/files-ps1
 
       # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the PowerShell toolchain; `uv
       # run` (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
-      # `.github/scripts/run_powershell_roundtrip.py`.
+      # `scripts/run_powershell_roundtrip.py`.
       - name: PowerShell roundtrip
-        run: uv run python .github/scripts/run_powershell_roundtrip.py
+        run: uv run python -m scripts.run_powershell_roundtrip
 
       # Every fixture defines its own `fval_m` module, and the syntax
       # check leaves an `fval_m.mod` in the working directory (gfortran
@@ -440,9 +439,9 @@ jobs:
       # because this is the job with the gfortran toolchain installed;
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_fortran_roundtrip.py`.
+      # `scripts/run_fortran_roundtrip.py`.
       - name: Fortran roundtrip
-        run: uv run python .github/scripts/run_fortran_roundtrip.py
+        run: uv run python -m scripts.run_fortran_roundtrip
 
       - name: Lint Lua
         run: |-
@@ -455,9 +454,9 @@ jobs:
       # `Install Lua` step above) and the `dkjson` rock provisioned by
       # the `Install dkjson` step; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_lua_roundtrip.py`.
+      # See `scripts/run_lua_roundtrip.py`.
       - name: Lua roundtrip
-        run: uv run python .github/scripts/run_lua_roundtrip.py
+        run: uv run python -m scripts.run_lua_roundtrip
 
       - name: Lint Nix
         run: |-
@@ -468,9 +467,9 @@ jobs:
       # because this is the job with the `nix-instantiate` binary on PATH
       # (the `Install Nix` step above); `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_nix_roundtrip.py`.
+      # See `scripts/run_nix_roundtrip.py`.
       - name: Nix roundtrip
-        run: uv run python .github/scripts/run_nix_roundtrip.py
+        run: uv run python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
         run: |-
@@ -481,14 +480,14 @@ jobs:
       # apt package (pinned by the `Install apt packages` step above) is
       # installed; `uv run` (project mode, not `--no-project`) is required
       # so `import literalizer` resolves.
-      # See `.github/scripts/run_tcl_roundtrip.py`.
+      # See `scripts/run_tcl_roundtrip.py`.
       - name: Tcl roundtrip
-        run: uv run python .github/scripts/run_tcl_roundtrip.py
+        run: uv run python -m scripts.run_tcl_roundtrip
 
       # The literalized `*.fth` fixtures are visitor streams that call
       # the `+obj`/`+arr`/`+key`/`+int`/... constructor words (issue
       # 2744).  Load the minimal stack-discipline bindings in
-      # `.github/scripts/forth_visitor_lint.fs` before each fixture so
+      # `scripts/forth_visitor_lint.fs` before each fixture so
       # those words resolve; that validates the generated code parses
       # and every word it names is defined.  The shipped FFL `jos`
       # default binding (`src/literalizer/languages/forth_prelude.fs`)
@@ -496,15 +495,15 @@ jobs:
       - name: Lint Forth
         run: |-
           find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth && test -s /tmp/files-forth
-          xargs -0 -P "$(nproc)" -I{} gforth .github/scripts/forth_visitor_lint.fs {} -e bye < /tmp/files-forth
+          xargs -0 -P "$(nproc)" -I{} gforth scripts/forth_visitor_lint.fs {} -e bye < /tmp/files-forth
 
       # Basic JSON -> Forth -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `gforth` toolchain on PATH;
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.
-      # See `.github/scripts/run_forth_roundtrip.py`.
+      # See `scripts/run_forth_roundtrip.py`.
       - name: Forth roundtrip
-        run: uv run python .github/scripts/run_forth_roundtrip.py
+        run: uv run python -m scripts.run_forth_roundtrip
 
       # Invoke ``guile-3.0`` directly rather than ``guile`` because
       # cache-apt-pkgs-action does not replay the package's
@@ -523,9 +522,9 @@ jobs:
       # because this is the job with the `guile-3.0` toolchain on PATH;
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.
-      # See `.github/scripts/run_scheme_roundtrip.py`.
+      # See `scripts/run_scheme_roundtrip.py`.
       - name: Scheme roundtrip
-        run: uv run python .github/scripts/run_scheme_roundtrip.py
+        run: uv run python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
         run: |-
@@ -539,9 +538,9 @@ jobs:
       # because this is the job with the `dhall` binary on PATH (the
       # `Install Dhall` step above); `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_dhall_roundtrip.py`.
+      # See `scripts/run_dhall_roundtrip.py`.
       - name: Dhall roundtrip
-        run: uv run python .github/scripts/run_dhall_roundtrip.py
+        run: uv run python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
         run: |-
@@ -552,9 +551,9 @@ jobs:
       # `wren_cli` binary (pinned by the `Install Wren CLI` step above)
       # is installed; `uv run` (project mode, not `--no-project`) is
       # required so `import literalizer` resolves.
-      # See `.github/scripts/run_wren_roundtrip.py`.
+      # See `scripts/run_wren_roundtrip.py`.
       - name: Wren roundtrip
-        run: uv run python .github/scripts/run_wren_roundtrip.py
+        run: uv run python -m scripts.run_wren_roundtrip
 
       # cJSON provides the ``cJSON *`` value type for the
       # ``C(json_type=CJSON)`` fixtures (which ``Lint C`` builds and runs
@@ -587,9 +586,9 @@ jobs:
       # by the ``Lint C`` step above and the ``libcjson-dev`` headers
       # installed just above; ``uv run`` (project mode, not
       # ``--no-project``) is required so ``import literalizer``
-      # resolves. See ``.github/scripts/run_c_roundtrip.py``.
+      # resolves. See ``scripts/run_c_roundtrip.py``.
       - name: C roundtrip
-        run: uv run python .github/scripts/run_c_roundtrip.py
+        run: uv run python -m scripts.run_c_roundtrip
 
   # Keep Odin isolated.  This fixture set is good at finding compiler
   # instability because many generated files combine [dynamic]any,
@@ -671,9 +670,9 @@ jobs:
       # because this is the job with the Odin toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves.
-      # See `.github/scripts/run_odin_roundtrip.py`.
+      # See `scripts/run_odin_roundtrip.py`.
       - name: Odin roundtrip
-        run: uv run python .github/scripts/run_odin_roundtrip.py
+        run: uv run python -m scripts.run_odin_roundtrip
 
   lint-roc:
     runs-on: ubuntu-latest
@@ -732,14 +731,14 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # The first invocation downloads and caches the basic-cli
       # platform tarball pinned in
-      # `.github/scripts/run_roc_roundtrip.py`.
+      # `scripts/run_roc_roundtrip.py`.
       - name: Roc roundtrip
-        run: uv run python .github/scripts/run_roc_roundtrip.py
+        run: uv run python -m scripts.run_roc_roundtrip
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
   # escaped quotes and the ``datetime`` builtin) are documented in
-  # .github/scripts/lint-matlab-fixture.sh.
+  # scripts/lint-matlab-fixture.sh.
   lint-matlab:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -756,7 +755,7 @@ jobs:
       - name: Lint Matlab
         run: |-
           find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
-          xargs -0 -P "$(nproc)" -n1 bash .github/scripts/lint-matlab-fixture.sh < /tmp/files-matlab
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
@@ -777,9 +776,9 @@ jobs:
       # because this is the job with the MATLAB toolchain (Octave, the
       # practical CI substitute) already installed; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_matlab_roundtrip.py`.
+      # resolves. See `scripts/run_matlab_roundtrip.py`.
       - name: MATLAB roundtrip
-        run: uv run python .github/scripts/run_matlab_roundtrip.py
+        run: uv run python -m scripts.run_matlab_roundtrip
 
   lint-perl:
     runs-on: ubuntu-latest
@@ -818,9 +817,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. ``JSON::PP`` and ``Math::BigInt``
       # are core in the pinned 5.36 interpreter so no extra ``cpanm``
-      # step is needed. See `.github/scripts/run_perl_roundtrip.py`.
+      # step is needed. See `scripts/run_perl_roundtrip.py`.
       - name: Perl roundtrip
-        run: uv run python .github/scripts/run_perl_roundtrip.py
+        run: uv run python -m scripts.run_perl_roundtrip
 
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
@@ -848,9 +847,9 @@ jobs:
       # because this is the job with the `jsonnet` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_jsonnet_roundtrip.py`.
+      # See `scripts/run_jsonnet_roundtrip.py`.
       - name: Jsonnet roundtrip
-        run: uv run python .github/scripts/run_jsonnet_roundtrip.py
+        run: uv run python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
         run: |-
@@ -860,9 +859,9 @@ jobs:
       # because this is the job with the `hcl2json` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_hcl_roundtrip.py`.
+      # See `scripts/run_hcl_roundtrip.py`.
       - name: Hcl roundtrip
-        run: uv run python .github/scripts/run_hcl_roundtrip.py
+        run: uv run python -m scripts.run_hcl_roundtrip
 
   # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
   # passes are split into sibling jobs (`lint-typescript-run`, `lint-elm`)
@@ -919,11 +918,11 @@ jobs:
       # binding; `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves, and `--with` layers `tree-sitter` on
       # top. The grammar's path is passed via `LITERALIZER_NORG_PARSER`.
-      # See `.github/scripts/run_norg_roundtrip.py`.
+      # See `scripts/run_norg_roundtrip.py`.
       - name: Norg roundtrip
         env:
           LITERALIZER_NORG_PARSER: /tmp/norg.so
-        run: uv run --with 'tree-sitter==0.25.2' python .github/scripts/run_norg_roundtrip.py
+        run: uv run --with 'tree-sitter==0.25.2' python -m scripts.run_norg_roundtrip
 
       # ``tsc`` parses these ``.ts`` fixtures at
       # ``TypeScript.language_version`` (``V5``) in
@@ -976,9 +975,9 @@ jobs:
       # here because this is the job with the Node + `tsx` toolchain;
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.  See
-      # `.github/scripts/run_typescript_roundtrip.py`.
+      # `scripts/run_typescript_roundtrip.py`.
       - name: TypeScript roundtrip
-        run: uv run python .github/scripts/run_typescript_roundtrip.py
+        run: uv run python -m scripts.run_typescript_roundtrip
 
   # Elm format + syntax check. Split from `lint-elm-run` so the two
   # `elm make`-based passes (compile-only vs. compile + Node execute)
@@ -1017,7 +1016,7 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          xargs -0 uv run --no-project python .github/scripts/check_elm_syntax.py < /tmp/files-elm
+          xargs -0 uv run --no-project python -m scripts.check_elm_syntax < /tmp/files-elm
 
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
@@ -1050,15 +1049,15 @@ jobs:
       - name: Run Elm
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
-          xargs -0 uv run --no-project python .github/scripts/run_elm.py < /tmp/files-elm
+          xargs -0 uv run --no-project python -m scripts.run_elm < /tmp/files-elm
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
       # npm-linters install above) and Node 22 already on PATH; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_elm_roundtrip.py`.
+      # `scripts/run_elm_roundtrip.py`.
       - name: Elm roundtrip
-        run: uv run python .github/scripts/run_elm_roundtrip.py
+        run: uv run python -m scripts.run_elm_roundtrip
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
@@ -1084,18 +1083,18 @@ jobs:
       - name: Lint Ada
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada && test -s /tmp/files-ada
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_ada_syntax.py < /tmp/files-ada
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_ada_syntax < /tmp/files-ada
       - name: Run Ada files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/run_ada.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.run_ada
           < /tmp/files-ada
 
       # Basic JSON -> Ada -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the GNAT toolchain; ``uv run``
       # (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
-      # ``.github/scripts/run_ada_roundtrip.py``.
+      # ``scripts/run_ada_roundtrip.py``.
       - name: Ada roundtrip
-        run: uv run python .github/scripts/run_ada_roundtrip.py
+        run: uv run python -m scripts.run_ada_roundtrip
 
       # KRoC (the only maintained Occam-pi compiler, last updated 2020) cannot
       # compile these fixtures for several fundamental reasons:
@@ -1124,7 +1123,7 @@ jobs:
       - name: Lint Occam
         run: |-
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam && test -s /tmp/files-occam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_occam_syntax.py < /tmp/files-occam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_occam_syntax < /tmp/files-occam
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
       # unlike every other language.  A round-trip must compile and run the
@@ -1148,22 +1147,22 @@ jobs:
       - name: Lint Toml
         run: |-
           find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
-          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python .github/scripts/check_toml_syntax.py < /tmp/files-toml
+          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python -m scripts.check_toml_syntax < /tmp/files-toml
 
       # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the ``tomli`` TOML parser already
       # configured; ``uv run`` (project mode, not ``--no-project``) is
       # required so ``import literalizer`` resolves, and ``--with`` adds
-      # ``tomli`` on top.  See ``.github/scripts/run_toml_roundtrip.py``.
+      # ``tomli`` on top.  See ``scripts/run_toml_roundtrip.py``.
       - name: Toml roundtrip
-        run: uv run --with 'tomli>=2.4.0' python .github/scripts/run_toml_roundtrip.py
+        run: uv run --with 'tomli>=2.4.0' python -m scripts.run_toml_roundtrip
 
       # Basic JSON -> JSON5 -> JSON round-trip (issue 1867).  ``pyjson5``
       # is already a core ``literalizer`` dependency, so plain ``uv run``
       # (project mode) resolves it without an extra ``--with`` layer.
-      # See ``.github/scripts/run_json5_roundtrip.py``.
+      # See ``scripts/run_json5_roundtrip.py``.
       - name: Json5 roundtrip
-        run: uv run python .github/scripts/run_json5_roundtrip.py
+        run: uv run python -m scripts.run_json5_roundtrip
 
       - name: Lint Yaml
         run: |-
@@ -1174,9 +1173,9 @@ jobs:
       # alongside the existing Yaml syntax check; ``uv run`` (project
       # mode, not ``--no-project``) is required so ``import literalizer``
       # resolves, and ``--with`` layers ``pyyaml`` on top.  See
-      # ``.github/scripts/run_yaml_roundtrip.py``.
+      # ``scripts/run_yaml_roundtrip.py``.
       - name: Yaml roundtrip
-        run: uv run --with 'pyyaml' python .github/scripts/run_yaml_roundtrip.py
+        run: uv run --with 'pyyaml' python -m scripts.run_yaml_roundtrip
 
   # .NET-hosted linters. Run host builds in parallel-looking sequential
   # steps so the .NET runtime startup is paid once for the whole job.
@@ -1196,13 +1195,13 @@ jobs:
       # of per fixture. Replaces `dotnet build` per fixture, which paid
       # MSBuild + NuGet restore + compiler startup each time.
       - name: Build C# lint host
-        run: dotnet publish .github/scripts/lint-csharp/lint-csharp.csproj -c Release
-          -o /tmp/lint-csharp --nologo
+        run: dotnet publish scripts/lint-csharp/lint-csharp.csproj -c Release -o /tmp/lint-csharp
+          --nologo
       # Build a small Roslyn host once, then feed every fixture through
       # its stdin so the .NET runtime and VB compiler load once instead
       # of per fixture.
       - name: Build VB lint host
-        run: dotnet publish .github/scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
+        run: dotnet publish scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
           --nologo
 
       # The host compiles each fixture into an in-memory assembly and
@@ -1225,9 +1224,9 @@ jobs:
       # because this is the job with the .NET toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_csharp_roundtrip.py`.
+      # `scripts/run_csharp_roundtrip.py`.
       - name: CSharp roundtrip
-        run: uv run python .github/scripts/run_csharp_roundtrip.py
+        run: uv run python -m scripts.run_csharp_roundtrip
 
       - name: Lint VisualBasic
         run: |-
@@ -1238,9 +1237,9 @@ jobs:
       # because this is the job with the .NET toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_vb_roundtrip.py`.
+      # `scripts/run_vb_roundtrip.py`.
       - name: VisualBasic roundtrip
-        run: uv run python .github/scripts/run_vb_roundtrip.py
+        run: uv run python -m scripts.run_vb_roundtrip
 
       # Generate an FSX driver that `#load`s every fixture, then
       # evaluate it in a single `dotnet fsi --exec` invocation so the
@@ -1264,9 +1263,9 @@ jobs:
       # because this is the job with the .NET toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_fsharp_roundtrip.py`.
+      # `scripts/run_fsharp_roundtrip.py`.
       - name: FSharp roundtrip
-        run: uv run python .github/scripts/run_fsharp_roundtrip.py
+        run: uv run python -m scripts.run_fsharp_roundtrip
 
   lint-sml:
     runs-on: ubuntu-latest
@@ -1304,9 +1303,9 @@ jobs:
       # Driven from `lint-sml` because that is the job where MLton (pinned
       # by the `Install MLton` step above) is installed; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_sml_roundtrip.py`.
+      # resolves. See `scripts/run_sml_roundtrip.py`.
       - name: SML roundtrip
-        run: uv run python .github/scripts/run_sml_roundtrip.py
+        run: uv run python -m scripts.run_sml_roundtrip
 
   lint-elixir:
     runs-on: ubuntu-latest
@@ -1335,7 +1334,7 @@ jobs:
       - name: Lint Elixir
         run: |-
           python3 -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
-          elixir .github/scripts/lint-elixir.exs < /tmp/files-elixir
+          elixir scripts/lint-elixir.exs < /tmp/files-elixir
 
       # `uv` is needed by the `Elixir roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
@@ -1349,9 +1348,9 @@ jobs:
       # PATH, Elixir 1.18's built-in `JSON` module available); `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_elixir_roundtrip.py`.
+      # `scripts/run_elixir_roundtrip.py`.
       - name: Elixir roundtrip
-        run: uv run python .github/scripts/run_elixir_roundtrip.py
+        run: uv run python -m scripts.run_elixir_roundtrip
 
   lint-erlang:
     runs-on: ubuntu-latest
@@ -1421,9 +1420,9 @@ jobs:
       # on PATH, OTP 27's built-in `json` module available); `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_erlang_roundtrip.py`.
+      # `scripts/run_erlang_roundtrip.py`.
       - name: Erlang roundtrip
-        run: uv run python .github/scripts/run_erlang_roundtrip.py
+        run: uv run python -m scripts.run_erlang_roundtrip
 
   lint-gleam:
     runs-on: ubuntu-latest
@@ -1454,7 +1453,7 @@ jobs:
       - name: Prime Gleam project
         run: |-
           mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
-          cp .github/scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
+          cp scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
           (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
 
       # All ~350 fixtures are checked in a single `gleam check` invocation
@@ -1466,7 +1465,7 @@ jobs:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --no-project python .github/scripts/check_gleam_syntax.py < /tmp/files-gleam
+          uv run --no-project python -m scripts.check_gleam_syntax < /tmp/files-gleam
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
@@ -1476,18 +1475,18 @@ jobs:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
           python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --no-project python .github/scripts/run_gleam.py < /tmp/files-gleam
+          uv run --no-project python -m scripts.run_gleam < /tmp/files-gleam
 
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
       # project (with `gleam_json` already downloaded) on disk; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_gleam_roundtrip.py`.
+      # `scripts/run_gleam_roundtrip.py`.
       - name: Gleam roundtrip
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run python .github/scripts/run_gleam_roundtrip.py
+        run: uv run python -m scripts.run_gleam_roundtrip
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
@@ -1534,7 +1533,7 @@ jobs:
       - name: Lint Groovy
         run: |-
           find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
-          groovy .github/scripts/lint-groovy.groovy < /tmp/files-groovy
+          groovy scripts/lint-groovy.groovy < /tmp/files-groovy
 
       # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
       # steps below; they run their helpers in project mode so
@@ -1550,17 +1549,17 @@ jobs:
       # ships built in with Babashka so no extra rock is needed.
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.
-      # See `.github/scripts/run_clojure_roundtrip.py`.
+      # See `scripts/run_clojure_roundtrip.py`.
       - name: Clojure roundtrip
-        run: uv run python .github/scripts/run_clojure_roundtrip.py
+        run: uv run python -m scripts.run_clojure_roundtrip
 
       # Basic JSON -> Groovy -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Groovy toolchain (pinned by the
       # `Install Groovy` step above); `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_groovy_roundtrip.py`.
+      # See `scripts/run_groovy_roundtrip.py`.
       - name: Groovy roundtrip
-        run: uv run python .github/scripts/run_groovy_roundtrip.py
+        run: uv run python -m scripts.run_groovy_roundtrip
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
@@ -1586,7 +1585,7 @@ jobs:
             ~/.cabal/store
             ~/.cabal/packages
           key: cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version
-            }}-${{ hashFiles('.github/scripts/run_haskell_roundtrip.py') }}
+            }}-${{ hashFiles('scripts/run_haskell_roundtrip.py') }}
           restore-keys: |
             cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version }}-
       # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
@@ -1664,26 +1663,25 @@ jobs:
       # here because this is the job with the GHC toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_haskell_roundtrip.py`.
+      # `scripts/run_haskell_roundtrip.py`.
       - name: Haskell roundtrip
-        run: uv run python .github/scripts/run_haskell_roundtrip.py
+        run: uv run python -m scripts.run_haskell_roundtrip
 
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript && test -s /tmp/files-purescript
-          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python .github/scripts/check_purescript_syntax.py < /tmp/files-purescript
+          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python -m scripts.check_purescript_syntax < /tmp/files-purescript
       - name: Run PureScript files
-        run: xargs -0 uv run --no-project python .github/scripts/run_purescript.py
-          < /tmp/files-purescript
+        run: xargs -0 uv run --no-project python -m scripts.run_purescript < /tmp/files-purescript
 
       # Basic JSON -> PureScript -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the `purs` binary (from
       # `setup-purescript`) and Node already on PATH; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_purescript_roundtrip.py`.
+      # `scripts/run_purescript_roundtrip.py`.
       - name: PureScript roundtrip
-        run: uv run python .github/scripts/run_purescript_roundtrip.py
+        run: uv run python -m scripts.run_purescript_roundtrip
 
   # Ubuntu's packaged clang-tidy is several releases behind and is the
   # dominant cost of this job on runners. Pull a recent build from PyPI
@@ -1807,9 +1805,9 @@ jobs:
       # because this is the job with the pinned GnuCOBOL toolchain
       # installed; `uv run` (project mode, not `--no-project`) is required
       # so `import literalizer` resolves. See
-      # `.github/scripts/run_cobol_roundtrip.py`.
+      # `scripts/run_cobol_roundtrip.py`.
       - name: Cobol roundtrip
-        run: uv run python .github/scripts/run_cobol_roundtrip.py
+        run: uv run python -m scripts.run_cobol_roundtrip
 
   lint-cpp:
     runs-on: ubuntu-latest
@@ -1834,8 +1832,7 @@ jobs:
       # ``-std=c++20`` matches ``Cpp.language_version`` in
       # ``src/literalizer/languages/cpp.py``; keep them in sync.
       - name: Build precompiled header
-        run: clang++ -std=c++20 -x c++-header .github/scripts/lint-cpp-pch.hpp -o
-          /tmp/pch.hpp.pch
+        run: clang++ -std=c++20 -x c++-header scripts/lint-cpp-pch.hpp -o /tmp/pch.hpp.pch
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
@@ -1860,9 +1857,9 @@ jobs:
       # because this is the job with the C++ toolchain and the
       # `nlohmann-json3-dev` package; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_cpp_roundtrip.py`.
+      # See `scripts/run_cpp_roundtrip.py`.
       - name: C++ roundtrip
-        run: uv run python .github/scripts/run_cpp_roundtrip.py
+        run: uv run python -m scripts.run_cpp_roundtrip
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -1893,7 +1890,7 @@ jobs:
       # K2JVMCompiler script host. Pinned to a recent 1.x release;
       # bump together. The classpath is exported through
       # `LITERALIZER_LINT_CLASSPATH`, which
-      # `.github/scripts/lint-kotlin.main.kts` forwards via `-classpath`
+      # `scripts/lint-kotlin.main.kts` forwards via `-classpath`
       # to every per-fixture compile. Keep this enum value paired with
       # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
       # `src/literalizer/languages/kotlin.py`.
@@ -1920,7 +1917,7 @@ jobs:
       - name: Check Kotlin syntax
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        run: kotlin .github/scripts/lint-kotlin.main.kts < /tmp/files-to-lint
+        run: kotlin scripts/lint-kotlin.main.kts < /tmp/files-to-lint
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
@@ -1936,11 +1933,11 @@ jobs:
       # classpath points at the kotlinx-serialization jars set up above.
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_kotlin_roundtrip.py`.
+      # `scripts/run_kotlin_roundtrip.py`.
       - name: Kotlin roundtrip
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        run: uv run python .github/scripts/run_kotlin_roundtrip.py
+        run: uv run python -m scripts.run_kotlin_roundtrip
 
   lint-swift:
     runs-on: ubuntu-latest
@@ -1983,9 +1980,9 @@ jobs:
       # because this is the job with the Swift toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_swift_roundtrip.py`.
+      # `scripts/run_swift_roundtrip.py`.
       - name: Swift roundtrip
-        run: uv run python .github/scripts/run_swift_roundtrip.py
+        run: uv run python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
     runs-on: ubuntu-latest
@@ -2039,9 +2036,9 @@ jobs:
       # because this is the job with the OCaml toolchain; ``uv run``
       # (project mode, not ``--no-project``) is required so
       # ``import literalizer`` resolves. See
-      # ``.github/scripts/run_ocaml_roundtrip.py``.
+      # ``scripts/run_ocaml_roundtrip.py``.
       - name: OCaml roundtrip
-        run: opam exec -- uv run python .github/scripts/run_ocaml_roundtrip.py
+        run: opam exec -- uv run python -m scripts.run_ocaml_roundtrip
 
   lint-commonlisp:
     runs-on: ubuntu-latest
@@ -2097,9 +2094,9 @@ jobs:
       # com.inuoe.jzon`` step above; ``uv run`` (project mode, not
       # ``--no-project``) is required so ``import literalizer``
       # resolves.
-      # See ``.github/scripts/run_common_lisp_roundtrip.py``.
+      # See ``scripts/run_common_lisp_roundtrip.py``.
       - name: Common Lisp roundtrip
-        run: uv run python .github/scripts/run_common_lisp_roundtrip.py
+        run: uv run python -m scripts.run_common_lisp_roundtrip
 
   lint-scala:
     runs-on: ubuntu-latest
@@ -2157,9 +2154,9 @@ jobs:
       # because this is the job with the Scala toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.  See
-      # `.github/scripts/run_scala_roundtrip.py`.
+      # `scripts/run_scala_roundtrip.py`.
       - name: Scala roundtrip
-        run: uv run python .github/scripts/run_scala_roundtrip.py
+        run: uv run python -m scripts.run_scala_roundtrip
 
   lint-haxe:
     runs-on: ubuntu-latest
@@ -2211,9 +2208,9 @@ jobs:
       # because this is the job with the Haxe toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
-      # `.github/scripts/run_haxe_roundtrip.py`.
+      # `scripts/run_haxe_roundtrip.py`.
       - name: Haxe roundtrip
-        run: uv run python .github/scripts/run_haxe_roundtrip.py
+        run: uv run python -m scripts.run_haxe_roundtrip
 
   lint-dart:
     runs-on: ubuntu-latest
@@ -2283,9 +2280,9 @@ jobs:
       # because this is the job with the Dart toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
-      # `.github/scripts/run_dart_roundtrip.py`.
+      # `scripts/run_dart_roundtrip.py`.
       - name: Dart roundtrip
-        run: uv run python .github/scripts/run_dart_roundtrip.py
+        run: uv run python -m scripts.run_dart_roundtrip
 
   lint-julia:
     runs-on: ubuntu-latest
@@ -2305,7 +2302,7 @@ jobs:
         with:
           version: '1.9'
       # `JSON` is needed by the `Julia roundtrip` step below (see
-      # `.github/scripts/run_julia_roundtrip.py`); `DataStructures`
+      # `scripts/run_julia_roundtrip.py`); `DataStructures`
       # backs the `OrderedDict` literals the fixture goldens use.
       - name: Set up Julia project
         run: |
@@ -2327,11 +2324,11 @@ jobs:
       # subprocess at that project so `using JSON` resolves. `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_julia_roundtrip.py`.
+      # `scripts/run_julia_roundtrip.py`.
       - name: Julia roundtrip
         env:
           JULIA_PROJECT: /tmp/julia-lint
-        run: uv run python .github/scripts/run_julia_roundtrip.py
+        run: uv run python -m scripts.run_julia_roundtrip
 
   lint-go:
     runs-on: ubuntu-latest
@@ -2370,9 +2367,9 @@ jobs:
       # Basic JSON -> Go -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Go toolchain; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_go_roundtrip.py`.
+      # resolves. See `scripts/run_go_roundtrip.py`.
       - name: Go roundtrip
-        run: uv run python .github/scripts/run_go_roundtrip.py
+        run: uv run python -m scripts.run_go_roundtrip
 
   lint-rust:
     runs-on: ubuntu-latest
@@ -2435,9 +2432,9 @@ jobs:
       # because this is the job with the Rust toolchain and a prebuilt
       # `libserde_json-*.rlib`; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_rust_roundtrip.py`.
+      # See `scripts/run_rust_roundtrip.py`.
       - name: Rust roundtrip
-        run: uv run python .github/scripts/run_rust_roundtrip.py "$RUST_DEPS" "$RUST_SERDE_JSON_RLIB"
+        run: uv run python -m scripts.run_rust_roundtrip "$RUST_DEPS" "$RUST_SERDE_JSON_RLIB"
 
   lint-r:
     runs-on: ubuntu-latest
@@ -2464,7 +2461,7 @@ jobs:
       - name: Run R files
         run: xargs -0 -P "$(nproc)" -n1 Rscript < /tmp/files-to-lint
       # `jsonlite` is needed by the `R roundtrip` step below (see
-      # `.github/scripts/run_r_roundtrip.py`); install it into a
+      # `scripts/run_r_roundtrip.py`); install it into a
       # per-job library directory and point `R_LIBS_USER` at it so the
       # script's `Rscript` subprocess can `library(jsonlite)`.
       - name: Install jsonlite
@@ -2483,11 +2480,11 @@ jobs:
       # subprocess at that library so `library(jsonlite)` resolves.
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_r_roundtrip.py`.
+      # `scripts/run_r_roundtrip.py`.
       - name: R roundtrip
         env:
           R_LIBS_USER: /tmp/r-lint-libs
-        run: uv run python .github/scripts/run_r_roundtrip.py
+        run: uv run python -m scripts.run_r_roundtrip
 
   lint-d:
     runs-on: ubuntu-latest
@@ -2543,9 +2540,9 @@ jobs:
       # Basic JSON -> D -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the D toolchain; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_d_roundtrip.py`.
+      # resolves. See `scripts/run_d_roundtrip.py`.
       - name: D roundtrip
-        run: uv run python .github/scripts/run_d_roundtrip.py
+        run: uv run python -m scripts.run_d_roundtrip
 
   lint-crystal:
     runs-on: ubuntu-latest
@@ -2598,9 +2595,9 @@ jobs:
       # because this is the job with the Crystal toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
-      # `.github/scripts/run_crystal_roundtrip.py`.
+      # `scripts/run_crystal_roundtrip.py`.
       - name: Crystal roundtrip
-        run: uv run python .github/scripts/run_crystal_roundtrip.py
+        run: uv run python -m scripts.run_crystal_roundtrip
 
   # Mojo reserves ~3.6 GB of virtual address space per invocation
   # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
@@ -2635,9 +2632,9 @@ jobs:
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves *and* so uv's managed CPython is on PATH for
       # the script's `std.python` JSON interop. See
-      # `.github/scripts/run_mojo_roundtrip.py`.
+      # `scripts/run_mojo_roundtrip.py`.
       - name: Mojo roundtrip
-        run: uv run python .github/scripts/run_mojo_roundtrip.py
+        run: uv run python -m scripts.run_mojo_roundtrip
 
   lint-nim:
     runs-on: ubuntu-latest
@@ -2765,9 +2762,9 @@ jobs:
       # because this is the job with the Nim toolchain (pinned by the
       # ``Install Nim`` step above); ``uv run`` (project mode, not
       # ``--no-project``) is required so ``import literalizer`` resolves.
-      # See ``.github/scripts/run_nim_roundtrip.py``.
+      # See ``scripts/run_nim_roundtrip.py``.
       - name: Nim roundtrip
-        run: uv run python .github/scripts/run_nim_roundtrip.py
+        run: uv run python -m scripts.run_nim_roundtrip
 
   lint-python:
     runs-on: ubuntu-latest
@@ -2841,9 +2838,9 @@ jobs:
       # because this is the job with the Racket toolchain (`racket` on
       # PATH, the built-in `json` module available); `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `.github/scripts/run_racket_roundtrip.py`.
+      # resolves. See `scripts/run_racket_roundtrip.py`.
       - name: Racket roundtrip
-        run: uv run python .github/scripts/run_racket_roundtrip.py
+        run: uv run python -m scripts.run_racket_roundtrip
 
   lint-raku:
     runs-on: ubuntu-latest
@@ -2870,7 +2867,7 @@ jobs:
       # ``Raku roundtrip`` step below; Rakudo has no standard-library
       # JSON serializer.  ``--/test`` skips the module's own test suite
       # to keep the install fast.  See
-      # ``.github/scripts/run_raku_roundtrip.py``.
+      # ``scripts/run_raku_roundtrip.py``.
       - name: Install JSON::Fast
         run: zef install --/test JSON::Fast
       - name: Check Raku syntax
@@ -2889,9 +2886,9 @@ jobs:
       # `Install Raku` step above) and ``JSON::Fast`` provisioned by the
       # `Install JSON::Fast` step; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
-      # See `.github/scripts/run_raku_roundtrip.py`.
+      # See `scripts/run_raku_roundtrip.py`.
       - name: Raku roundtrip
-        run: uv run python .github/scripts/run_raku_roundtrip.py
+        run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
     runs-on: ubuntu-latest
@@ -2955,9 +2952,9 @@ jobs:
       # because this is the job with the Zig toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_zig_roundtrip.py`.
+      # `scripts/run_zig_roundtrip.py`.
       - name: Zig roundtrip
-        run: uv run python .github/scripts/run_zig_roundtrip.py
+        run: uv run python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
     runs-on: ubuntu-latest
@@ -2999,9 +2996,9 @@ jobs:
       # here because this is the job with Verilator installed; `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_systemverilog_roundtrip.py`.
+      # `scripts/run_systemverilog_roundtrip.py`.
       - name: SystemVerilog roundtrip
-        run: uv run python .github/scripts/run_systemverilog_roundtrip.py
+        run: uv run python -m scripts.run_systemverilog_roundtrip
 
   lint-v:
     runs-on: ubuntu-latest
@@ -3049,7 +3046,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python .github/scripts/check_v_syntax.py
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_v_syntax
           < /tmp/files-to-lint
       - name: Run V files
         run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
@@ -3057,9 +3054,9 @@ jobs:
       # `v` binary (installed by the `Install V` step above) is on
       # `PATH`; `uv run` (project mode, not `--no-project`) is required
       # so `import literalizer` resolves.
-      # See `.github/scripts/run_v_roundtrip.py`.
+      # See `scripts/run_v_roundtrip.py`.
       - name: V roundtrip
-        run: uv run python .github/scripts/run_v_roundtrip.py
+        run: uv run python -m scripts.run_v_roundtrip
 
   lint-objectivec:
     # ``macos-15`` pins the runner image (the current ``macos-latest``
@@ -3085,7 +3082,7 @@ jobs:
       # runs in a separate job (`lint-objectivec-tidy`) and deliberately
       # skips the PCH — see the note on `lint-cpp-tidy`.
       - name: Build precompiled header
-        run: clang -x objective-c-header .github/scripts/lint-objc-pch.h -o /tmp/pch.h.pch
+        run: clang -x objective-c-header scripts/lint-objc-pch.h -o /tmp/pch.h.pch
       - name: Check Objective-C syntax
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
           /tmp/pch.h.pch < /tmp/files-to-lint
@@ -3115,9 +3112,9 @@ jobs:
       # (Apple `clang` plus the `Foundation` framework); `uv run`
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
-      # `.github/scripts/run_objective_c_roundtrip.py`.
+      # `scripts/run_objective_c_roundtrip.py`.
       - name: Objective-C roundtrip
-        run: uv run python .github/scripts/run_objective_c_roundtrip.py
+        run: uv run python -m scripts.run_objective_c_roundtrip
 
   lint-objectivec-tidy:
     # ``macos-15`` pins the runner image to match ``lint-objectivec`` so

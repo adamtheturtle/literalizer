@@ -1413,7 +1413,7 @@ class Kotlin(metaclass=LanguageCls):
         hash=False,
     )
     # Keep in sync with the version flags passed to the Kotlin lint host in
-    # `.github/scripts/lint-kotlin.main.kts`.
+    # `scripts/lint-kotlin.main.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
 

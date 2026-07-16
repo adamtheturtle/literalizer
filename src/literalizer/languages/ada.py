@@ -701,7 +701,7 @@ class Ada(metaclass=LanguageCls):
     )
     call_style: CallStyles = CallStyles.KEYWORD
     # Keep in sync with the `-gnat2022` flag passed to the Ada linter in
-    # `.github/scripts/check_ada_syntax.py` and `.github/scripts/run_ada.py`.
+    # `scripts/check_ada_syntax.py` and `scripts/run_ada.py`.
     language_version: VersionFormats = VersionFormats.ADA_2022
     indent: str = "    "
 
