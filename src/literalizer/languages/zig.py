@@ -100,6 +100,9 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
+from literalizer._reserved_variable_identifiers import (
+    RESERVED_VARIABLE_IDENTIFIERS,
+)
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -539,8 +542,8 @@ class Zig(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
-        {"error"}
+    reserved_variable_identifiers: frozenset[str] = (
+        RESERVED_VARIABLE_IDENTIFIERS["Zig"]
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

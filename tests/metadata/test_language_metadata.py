@@ -33,6 +33,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "json_type_variant_name_suffix",
         "non_default_kwargs",
         "supports_non_ascii_string_literals",
+        "reserved_variable_identifiers",
         "variant_metadata",
     }
 )

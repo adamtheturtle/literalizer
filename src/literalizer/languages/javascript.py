@@ -94,6 +94,9 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._reserved_variable_identifiers import (
+    RESERVED_VARIABLE_IDENTIFIERS,
+)
 from literalizer._types import Value
 
 
@@ -112,11 +115,6 @@ def _js_call_stub(
         handler = f"get: function g() {{ return {proxy}; }}"
         return (f"var {root} = new Proxy({{}}, {{{handler}}});",)
     return (f"function {root}() {{}}",)
-
-
-# ECMAScript permits reserved words after a dot (for example, ``foo.class``)
-# even though they cannot be used as variable binding names.
-ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = frozenset({"class"})
 
 
 @beartype
@@ -160,7 +158,9 @@ class JavaScript(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS
+    reserved_variable_identifiers: ClassVar[frozenset[str]] = (
+        RESERVED_VARIABLE_IDENTIFIERS["JavaScript"]
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

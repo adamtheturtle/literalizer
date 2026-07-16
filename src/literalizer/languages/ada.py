@@ -78,6 +78,9 @@ from literalizer._language import (
     prepend_body_preamble,
     reject_empty_dicts,
 )
+from literalizer._reserved_variable_identifiers import (
+    RESERVED_VARIABLE_IDENTIFIERS,
+)
 from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
@@ -293,7 +296,9 @@ class Ada(metaclass=LanguageCls):
     allows_empty_call_parens = False
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers: frozenset[str] = (
+        RESERVED_VARIABLE_IDENTIFIERS["Ada"]
+    )
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = True

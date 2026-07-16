@@ -2,9 +2,16 @@
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize, literalize_call
+from literalizer import (
+    InputFormat,
+    LanguageCls,
+    NewVariable,
+    literalize,
+    literalize_call,
+)
 from literalizer.exceptions import ReservedVariableNameError
 from literalizer.languages import (
+    ALL_LANGUAGES,
     JavaScript,
     Sml,
     Swift,
@@ -36,12 +43,7 @@ from literalizer.languages import (
     ),
 )
 def test_reserved_new_variable_name_raises(
-    language_cls: type[JavaScript]
-    | type[Sml]
-    | type[Swift]
-    | type[TypeScript]
-    | type[V]
-    | type[Zig],
+    language_cls: LanguageCls,
     language_name: str,
     reserved_name: str,
 ) -> None:
@@ -70,7 +72,7 @@ def test_reserved_new_variable_name_raises(
     ids=("javascript", "typescript"),
 )
 def test_ecmascript_reserved_property_call_remains_valid(
-    language_cls: type[JavaScript] | type[TypeScript],
+    language_cls: LanguageCls,
 ) -> None:
     """Reserved variable names do not block valid property calls."""
     result = literalize_call(
@@ -82,3 +84,33 @@ def test_ecmascript_reserved_property_call_remains_valid(
     )
 
     assert result.code
+
+
+_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
+    language_cls
+    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    if language_cls.reserved_variable_identifiers
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES,
+    ids=lambda language_cls: language_cls.__name__,
+)
+def test_all_declared_reserved_names_raise(
+    language_cls: LanguageCls,
+) -> None:
+    """Every language-specific reserved declaration name is rejected."""
+    for reserved_name in sorted(language_cls.reserved_variable_identifiers):
+        with pytest.raises(expected_exception=ReservedVariableNameError):
+            literalize(
+                source="1",
+                input_format=InputFormat.JSON,
+                language=language_cls(),
+                variable_form=NewVariable(
+                    name=reserved_name,
+                    modifiers=frozenset(),
+                ),
+                wrap_in_file=True,
+            )

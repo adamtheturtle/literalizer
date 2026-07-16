@@ -86,6 +86,9 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
+from literalizer._reserved_variable_identifiers import (
+    RESERVED_VARIABLE_IDENTIFIERS,
+)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import UnrepresentableSpecialFloatError
 
@@ -707,7 +710,9 @@ class Gleam(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers: frozenset[str] = (
+        RESERVED_VARIABLE_IDENTIFIERS["Gleam"]
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True
