@@ -26,7 +26,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
-    InvalidVariableNameError,
+    ReservedVariableNameError,
     UnrepresentableEmptyDictError,
 )
 
@@ -34,9 +34,14 @@ from literalizer.exceptions import (
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* is reserved for a new variable declaration."""
-    if name not in language.reserved_identifiers:
+    reserved_identifiers = getattr(
+        language,
+        "reserved_variable_identifiers",
+        language.reserved_identifiers,
+    )
+    if name not in reserved_identifiers:
         return
-    raise InvalidVariableNameError(
+    raise ReservedVariableNameError(
         language_name=language.__class__.__name__,
         variable_name=name,
         reason="it is a reserved identifier",

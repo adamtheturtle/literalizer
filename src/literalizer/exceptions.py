@@ -302,7 +302,7 @@ class InvalidRecordNameError(Exception):
     """
 
 
-class InvalidVariableNameError(Exception):
+class ReservedVariableNameError(Exception):
     """Raised when a ``NewVariable`` name is reserved by the target
     language.
 
@@ -316,7 +316,7 @@ class InvalidVariableNameError(Exception):
         variable_name: str,
         reason: str,
     ) -> None:
-        """Create an ``InvalidVariableNameError``."""
+        """Create a ``ReservedVariableNameError``."""
         super().__init__(
             f"{language_name} cannot use NewVariable name "
             f"{variable_name!r}: {reason}"
