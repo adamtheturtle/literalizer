@@ -42,7 +42,7 @@ def _build_document(json_text: str) -> str:
 def main() -> None:
     """Round-trip the shared document through the JSON5 backend."""
     document = _build_document(json_text=roundtrip_common.read_input())
-    parsed: dict[str, object] = pyjson5.loads(s=document)
+    parsed: dict[str, object] = pyjson5.loads(document)
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,
