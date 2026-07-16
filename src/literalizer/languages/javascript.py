@@ -116,9 +116,7 @@ def _js_call_stub(
 
 # ECMAScript permits reserved words after a dot (for example, ``foo.class``)
 # even though they cannot be used as variable binding names.
-ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = frozenset(
-    {"class"}
-)
+ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = frozenset({"class"})
 
 
 @beartype
