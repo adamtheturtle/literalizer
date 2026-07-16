@@ -1,0 +1,1 @@
+Normalize malformed Swift ``NewVariable`` names to valid identifiers.
