@@ -1,0 +1,1 @@
+Normalize malformed TypeScript ``NewVariable`` names to valid identifiers.
