@@ -12,6 +12,7 @@ from literalizer import (
 from literalizer.exceptions import ReservedVariableNameError
 from literalizer.languages import (
     ALL_LANGUAGES,
+    Ada,
     Cobol,
     Erlang,
     Fortran,
@@ -100,11 +101,17 @@ def test_ecmascript_reserved_property_call_remains_valid(
 @pytest.mark.parametrize(
     argnames=("language_cls", "reserved_name"),
     argvalues=[
+        (Ada, "IF"),
         (Cobol, "PROGRAM"),
         (Fortran, "Module"),
         (VisualBasic, "AddHandler"),
     ],
-    ids=("cobol-program", "fortran-module", "visual-basic-add-handler"),
+    ids=(
+        "ada-if",
+        "cobol-program",
+        "fortran-module",
+        "visual-basic-add-handler",
+    ),
 )
 def test_case_insensitive_reserved_names_raise(
     language_cls: LanguageCls,
