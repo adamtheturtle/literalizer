@@ -394,8 +394,50 @@ class Sml(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset({"op"})
-    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
-        {"op", "val"}
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstype",
+            "and",
+            "andalso",
+            "as",
+            "case",
+            "datatype",
+            "do",
+            "else",
+            "end",
+            "eqtype",
+            "exception",
+            "fn",
+            "fun",
+            "functor",
+            "handle",
+            "if",
+            "in",
+            "include",
+            "infix",
+            "infixr",
+            "let",
+            "local",
+            "nonfix",
+            "of",
+            "op",
+            "open",
+            "orelse",
+            "raise",
+            "rec",
+            "sharing",
+            "sig",
+            "signature",
+            "struct",
+            "structure",
+            "then",
+            "type",
+            "val",
+            "where",
+            "while",
+            "with",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

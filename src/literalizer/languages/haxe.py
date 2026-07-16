@@ -240,7 +240,56 @@ class Haxe(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = _HAXE_RESERVED
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "break",
+            "case",
+            "cast",
+            "catch",
+            "class",
+            "continue",
+            "default",
+            "do",
+            "dynamic",
+            "else",
+            "enum",
+            "extends",
+            "extern",
+            "false",
+            "final",
+            "for",
+            "function",
+            "if",
+            "implements",
+            "import",
+            "in",
+            "inline",
+            "interface",
+            "macro",
+            "new",
+            "null",
+            "operator",
+            "overload",
+            "override",
+            "package",
+            "private",
+            "public",
+            "return",
+            "static",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typedef",
+            "untyped",
+            "using",
+            "var",
+            "while",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

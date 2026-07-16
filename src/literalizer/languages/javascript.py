@@ -114,11 +114,6 @@ def _js_call_stub(
     return (f"function {root}() {{}}",)
 
 
-# ECMAScript permits reserved words after a dot (for example, ``foo.class``)
-# even though they cannot be used as variable binding names.
-ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = frozenset({"class"})
-
-
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class JavaScript(metaclass=LanguageCls):
@@ -160,7 +155,50 @@ class JavaScript(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = ECMASCRIPT_RESERVED_VARIABLE_IDENTIFIERS
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {
+            "await",
+            "break",
+            "case",
+            "catch",
+            "class",
+            "const",
+            "continue",
+            "debugger",
+            "default",
+            "delete",
+            "do",
+            "else",
+            "export",
+            "extends",
+            "false",
+            "finally",
+            "for",
+            "function",
+            "if",
+            "import",
+            "in",
+            "instanceof",
+            "let",
+            "new",
+            "null",
+            "return",
+            "static",
+            "super",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typeof",
+            "var",
+            "void",
+            "while",
+            "with",
+            "yield",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

@@ -581,8 +581,43 @@ class V(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
-        {"type"}
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "__global",
+            "as",
+            "assert",
+            "atomic",
+            "break",
+            "const",
+            "continue",
+            "defer",
+            "else",
+            "enum",
+            "false",
+            "fn",
+            "for",
+            "go",
+            "if",
+            "import",
+            "in",
+            "interface",
+            "is",
+            "match",
+            "module",
+            "mut",
+            "none",
+            "or",
+            "pub",
+            "return",
+            "select",
+            "shared",
+            "struct",
+            "true",
+            "type",
+            "unsafe",
+            "unwrap",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

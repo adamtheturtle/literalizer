@@ -414,7 +414,58 @@ class Crystal(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "alias",
+            "asm",
+            "begin",
+            "break",
+            "case",
+            "class",
+            "def",
+            "do",
+            "else",
+            "elsif",
+            "end",
+            "ensure",
+            "extend",
+            "false",
+            "for",
+            "if",
+            "in",
+            "include",
+            "lib",
+            "macro",
+            "module",
+            "next",
+            "nil",
+            "of",
+            "out",
+            "private",
+            "protected",
+            "require",
+            "rescue",
+            "return",
+            "select",
+            "self",
+            "sizeof",
+            "struct",
+            "super",
+            "then",
+            "true",
+            "type",
+            "typeof",
+            "union",
+            "unless",
+            "until",
+            "when",
+            "while",
+            "with",
+            "yield",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

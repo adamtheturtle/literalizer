@@ -352,7 +352,39 @@ class Go(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "break",
+            "case",
+            "chan",
+            "const",
+            "continue",
+            "default",
+            "defer",
+            "else",
+            "fallthrough",
+            "false",
+            "for",
+            "func",
+            "go",
+            "goto",
+            "if",
+            "import",
+            "interface",
+            "map",
+            "nil",
+            "package",
+            "range",
+            "return",
+            "select",
+            "struct",
+            "switch",
+            "true",
+            "type",
+            "var",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

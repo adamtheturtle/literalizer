@@ -2110,7 +2110,61 @@ class Rust(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "Self",
+            "abstract",
+            "as",
+            "async",
+            "await",
+            "become",
+            "box",
+            "break",
+            "const",
+            "continue",
+            "crate",
+            "dyn",
+            "else",
+            "enum",
+            "extern",
+            "false",
+            "fn",
+            "for",
+            "if",
+            "impl",
+            "in",
+            "let",
+            "loop",
+            "macro",
+            "match",
+            "mod",
+            "move",
+            "mut",
+            "override",
+            "priv",
+            "pub",
+            "ref",
+            "return",
+            "self",
+            "static",
+            "struct",
+            "super",
+            "trait",
+            "true",
+            "try",
+            "type",
+            "typeof",
+            "union",
+            "unsafe",
+            "unsized",
+            "use",
+            "virtual",
+            "where",
+            "while",
+            "yield",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

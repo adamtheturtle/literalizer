@@ -707,7 +707,33 @@ class Gleam(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "as",
+            "assert",
+            "auto",
+            "case",
+            "const",
+            "delegate",
+            "derive",
+            "echo",
+            "else",
+            "fn",
+            "if",
+            "implement",
+            "import",
+            "let",
+            "macro",
+            "opaque",
+            "panic",
+            "pub",
+            "test",
+            "todo",
+            "type",
+            "use",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True

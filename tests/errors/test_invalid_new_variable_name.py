@@ -2,14 +2,27 @@
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize, literalize_call
+from literalizer import (
+    InputFormat,
+    LanguageCls,
+    NewVariable,
+    literalize,
+    literalize_call,
+)
 from literalizer.exceptions import ReservedVariableNameError
 from literalizer.languages import (
+    ALL_LANGUAGES,
+    Ada,
+    Cobol,
+    Erlang,
+    Fortran,
+    Go,
     JavaScript,
     Sml,
     Swift,
     TypeScript,
     V,
+    VisualBasic,
     Zig,
 )
 
@@ -22,6 +35,9 @@ from literalizer.languages import (
         (Sml, "Sml", "val"),
         (Swift, "Swift", "class"),
         (TypeScript, "TypeScript", "class"),
+        (TypeScript, "TypeScript", "await"),
+        (Go, "Go", "var"),
+        (Go, "Go", "type"),
         (V, "V", "type"),
         (Zig, "Zig", "error"),
     ],
@@ -31,17 +47,15 @@ from literalizer.languages import (
         "sml-val",
         "swift-class",
         "typescript-class",
+        "typescript-await",
+        "go-var",
+        "go-type",
         "v-type",
         "zig-error",
     ),
 )
 def test_reserved_new_variable_name_raises(
-    language_cls: type[JavaScript]
-    | type[Sml]
-    | type[Swift]
-    | type[TypeScript]
-    | type[V]
-    | type[Zig],
+    language_cls: LanguageCls,
     language_name: str,
     reserved_name: str,
 ) -> None:
@@ -70,7 +84,7 @@ def test_reserved_new_variable_name_raises(
     ids=("javascript", "typescript"),
 )
 def test_ecmascript_reserved_property_call_remains_valid(
-    language_cls: type[JavaScript] | type[TypeScript],
+    language_cls: LanguageCls,
 ) -> None:
     """Reserved variable names do not block valid property calls."""
     result = literalize_call(
@@ -82,3 +96,81 @@ def test_ecmascript_reserved_property_call_remains_valid(
     )
 
     assert result.code
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "reserved_name"),
+    argvalues=[
+        (Ada, "IF"),
+        (Cobol, "PROGRAM"),
+        (Fortran, "Module"),
+        (VisualBasic, "AddHandler"),
+    ],
+    ids=(
+        "ada-if",
+        "cobol-program",
+        "fortran-module",
+        "visual-basic-add-handler",
+    ),
+)
+def test_case_insensitive_reserved_names_raise(
+    language_cls: LanguageCls,
+    reserved_name: str,
+) -> None:
+    """Case-insensitive languages reject differently-cased keywords."""
+    with pytest.raises(expected_exception=ReservedVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=language_cls(),
+            variable_form=NewVariable(
+                name=reserved_name,
+                modifiers=frozenset(),
+            ),
+            wrap_in_file=True,
+        )
+
+
+def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
+    """Erlang variables capitalize names, so lowercase keywords are
+    valid.
+    """
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Erlang(),
+        variable_form=NewVariable(name="if", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "If =" in result.code
+
+
+_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
+    language_cls
+    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    if language_cls.reserved_variable_identifiers
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES,
+    ids=lambda language_cls: language_cls.__name__,
+)
+def test_all_declared_reserved_names_raise(
+    language_cls: LanguageCls,
+) -> None:
+    """Every language-specific reserved declaration name is rejected."""
+    for reserved_name in sorted(language_cls.reserved_variable_identifiers):
+        with pytest.raises(expected_exception=ReservedVariableNameError):
+            literalize(
+                source="1",
+                input_format=InputFormat.JSON,
+                language=language_cls(),
+                variable_form=NewVariable(
+                    name=reserved_name,
+                    modifiers=frozenset(),
+                ),
+                wrap_in_file=True,
+            )

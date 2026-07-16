@@ -499,7 +499,49 @@ class Odin(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "asm",
+            "auto_cast",
+            "bit_field",
+            "break",
+            "case",
+            "cast",
+            "context",
+            "continue",
+            "defer",
+            "distinct",
+            "do",
+            "dynamic",
+            "else",
+            "enum",
+            "false",
+            "for",
+            "for_all",
+            "for_any",
+            "foreign",
+            "if",
+            "import",
+            "in",
+            "inline",
+            "map",
+            "matrix",
+            "or_return",
+            "package",
+            "proc",
+            "return",
+            "struct",
+            "switch",
+            "transmute",
+            "true",
+            "typeid",
+            "union",
+            "using",
+            "when",
+            "where",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

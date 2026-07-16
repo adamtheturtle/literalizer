@@ -791,7 +791,52 @@ class Cobol(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = False
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "accept",
+            "add",
+            "alter",
+            "call",
+            "cancel",
+            "close",
+            "compute",
+            "continue",
+            "delete",
+            "display",
+            "divide",
+            "else",
+            "end",
+            "evaluate",
+            "exec",
+            "exit",
+            "goback",
+            "if",
+            "initialize",
+            "inspect",
+            "move",
+            "multiply",
+            "next",
+            "not",
+            "open",
+            "perform",
+            "program",
+            "read",
+            "return",
+            "rewrite",
+            "search",
+            "set",
+            "sort",
+            "start",
+            "stop",
+            "subtract",
+            "then",
+            "transform",
+            "use",
+            "when",
+            "write",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = False

@@ -865,7 +865,56 @@ class C(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "_Alignas",
+            "_Alignof",
+            "_Atomic",
+            "_Bool",
+            "_Complex",
+            "_Generic",
+            "_Imaginary",
+            "_Noreturn",
+            "_Static_assert",
+            "_Thread_local",
+            "auto",
+            "break",
+            "case",
+            "char",
+            "const",
+            "continue",
+            "default",
+            "do",
+            "double",
+            "else",
+            "enum",
+            "extern",
+            "float",
+            "for",
+            "goto",
+            "if",
+            "inline",
+            "int",
+            "long",
+            "register",
+            "restrict",
+            "return",
+            "short",
+            "signed",
+            "sizeof",
+            "static",
+            "struct",
+            "switch",
+            "typedef",
+            "typeof",
+            "union",
+            "unsigned",
+            "void",
+            "volatile",
+            "while",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

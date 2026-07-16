@@ -212,7 +212,60 @@ class Raku(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "BEGIN",
+            "CHECK",
+            "END",
+            "INIT",
+            "UNITCHECK",
+            "after",
+            "and",
+            "andthen",
+            "augment",
+            "class",
+            "constant",
+            "do",
+            "else",
+            "elsif",
+            "enum",
+            "for",
+            "given",
+            "grammar",
+            "if",
+            "implements",
+            "in",
+            "is",
+            "last",
+            "loop",
+            "method",
+            "module",
+            "next",
+            "not",
+            "or",
+            "our",
+            "package",
+            "proto",
+            "redo",
+            "repeat",
+            "require",
+            "return",
+            "role",
+            "state",
+            "sub",
+            "subset",
+            "trait",
+            "try",
+            "unless",
+            "until",
+            "use",
+            "when",
+            "while",
+            "with",
+            "xor",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True

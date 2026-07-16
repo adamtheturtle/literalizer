@@ -539,8 +539,61 @@ class Zig(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: ClassVar[frozenset[str]] = frozenset(
-        {"error"}
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "addrspace",
+            "align",
+            "allowzero",
+            "and",
+            "anyframe",
+            "anytype",
+            "asm",
+            "async",
+            "await",
+            "break",
+            "callconv",
+            "catch",
+            "comptime",
+            "const",
+            "continue",
+            "defer",
+            "else",
+            "enum",
+            "errdefer",
+            "error",
+            "export",
+            "extern",
+            "fn",
+            "for",
+            "if",
+            "inline",
+            "linksection",
+            "no_runtime",
+            "noalias",
+            "noasync",
+            "noinline",
+            "nosuspend",
+            "opaque",
+            "or",
+            "orelse",
+            "packed",
+            "pub",
+            "resume",
+            "return",
+            "struct",
+            "suspend",
+            "switch",
+            "test",
+            "threadlocal",
+            "try",
+            "union",
+            "unreachable",
+            "usingnamespace",
+            "var",
+            "volatile",
+            "while",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

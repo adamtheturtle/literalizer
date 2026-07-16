@@ -486,7 +486,50 @@ class Scala(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers = reserved_identifiers
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "case",
+            "catch",
+            "class",
+            "def",
+            "do",
+            "else",
+            "extends",
+            "false",
+            "final",
+            "finally",
+            "for",
+            "forSome",
+            "if",
+            "implicit",
+            "import",
+            "lazy",
+            "match",
+            "new",
+            "null",
+            "object",
+            "override",
+            "package",
+            "private",
+            "protected",
+            "return",
+            "sealed",
+            "super",
+            "this",
+            "throw",
+            "trait",
+            "true",
+            "try",
+            "type",
+            "val",
+            "var",
+            "while",
+            "with",
+            "yield",
+        }
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
