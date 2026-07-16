@@ -53,7 +53,7 @@ def main() -> None:
         runner_calls: list[str] = []
         for fixture in fixtures:
             relative = _strip_version(
-                relative=fixture.relative_to(  # type: ignore[call-arg]
+                relative=fixture.relative_to(  # type: ignore[call-arg, unused-ignore]
                     _FIXTURE_PREFIX,
                 ),
             )

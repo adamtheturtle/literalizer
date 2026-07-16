@@ -54,7 +54,7 @@ _EXCLUDED_KEYS = ("biginteger", "float_large_exponent")
 # The shipped default visitor prelude (FFL `jos` JSON writer).  Included
 # by absolute path so the round-trip exercises the exact file users get.
 _PRELUDE_PATH = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parent.parent
     / "src"
     / "literalizer"
     / "languages"
