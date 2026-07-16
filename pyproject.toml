@@ -99,7 +99,7 @@ optional-dependencies.dev = [
     "strict-kwargs==2026.6.8.post1",
     "towncrier==25.8.0",
     # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
-    # ``Norg roundtrip`` check (``.github/scripts/run_norg_roundtrip.py``);
+    # ``Norg roundtrip`` check (``scripts/run_norg_roundtrip.py``);
     # listed here so the type checkers resolve its (``py.typed``) imports.
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
@@ -344,6 +344,8 @@ ignore = [
     "newsfragments",
     "newsfragments/**",
     "repro.py",
+    "scripts",
+    "scripts/**",
     "spelling_private_dict.txt",
     "tests",
     "tests/**",
@@ -530,7 +532,7 @@ module = [
 ignore_errors = true
 
 [tool.pyrefly]
-search_path = [ ".", ".github/scripts", "src" ]
+search_path = [ ".", "src" ]
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
@@ -557,7 +559,6 @@ executionEnvironments = [
 
 [tool.ty]
 src.exclude = [ "repro.py" ]
-environment.extra-paths = [ ".github/scripts" ]
 terminal.error-on-warning = true
 overrides = []
 analysis.respect-type-ignore-comments = false

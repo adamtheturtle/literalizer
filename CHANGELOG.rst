@@ -225,7 +225,7 @@ Changelog
 
 - Add ``OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T)`` to render values directly as ``Yojson.Safe.t`` polymorphic-variant literals (``Bool``, ``Int``, ``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``) so the binding has the static type ``Yojson.Safe.t`` instead of OCaml's generated ``val_t`` algebraic type; arbitrary-precision integers route through the ``Intlit`` escape hatch.
 
-- Document the F# ``Val`` discriminated union's JSON serialization limitations: the ``FMap`` tuple-list shape (chosen to preserve insertion order) and ``FSharp.SystemTextJson``'s ``Untagged`` encoding both prevent ``System.Text.Json.JsonSerializer.Serialize`` from producing valid JSON without a custom converter.  The ``FSharp`` language module now describes both pitfalls and points users at the ``writeVal`` helper in ``.github/scripts/run_fsharp_roundtrip.py`` as a starting template.
+- Document the F# ``Val`` discriminated union's JSON serialization limitations: the ``FMap`` tuple-list shape (chosen to preserve insertion order) and ``FSharp.SystemTextJson``'s ``Untagged`` encoding both prevent ``System.Text.Json.JsonSerializer.Serialize`` from producing valid JSON without a custom converter.  The ``FSharp`` language module now describes both pitfalls and points users at the ``writeVal`` helper in ``scripts/run_fsharp_roundtrip.py`` as a starting template.
 
 - Add ``Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE)`` to render values as idiomatic ``elm/json`` ``Json.Encode.*`` calls producing a ``Json.Encode.Value`` directly, replacing the per-fixture ``Val`` ADT.
 

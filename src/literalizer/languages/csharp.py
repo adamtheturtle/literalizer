@@ -1251,7 +1251,7 @@ class CSharp(metaclass=LanguageCls):
     )
     json_type: JsonTypes | None = None
     # Keep in sync with the `LanguageVersion` passed to the C# lint host
-    # in `.github/scripts/lint-csharp/Program.cs`.
+    # in `scripts/lint-csharp/Program.cs`.
     language_version: VersionFormats = VersionFormats.V10
     indent: str = "    "
 
