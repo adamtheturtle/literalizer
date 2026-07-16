@@ -311,24 +311,8 @@ class Erlang(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "after",
-            "begin",
-            "case",
-            "catch",
-            "cond",
-            "end",
-            "fun",
-            "if",
-            "let",
-            "of",
-            "query",
-            "receive",
-            "try",
-            "when",
-        }
-    )
+    reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifiers: frozenset[str] = frozenset()
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
     call_returns_expression = True

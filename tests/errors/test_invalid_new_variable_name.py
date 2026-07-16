@@ -12,11 +12,15 @@ from literalizer import (
 from literalizer.exceptions import ReservedVariableNameError
 from literalizer.languages import (
     ALL_LANGUAGES,
+    Cobol,
+    Erlang,
+    Fortran,
     JavaScript,
     Sml,
     Swift,
     TypeScript,
     V,
+    VisualBasic,
     Zig,
 )
 
@@ -84,6 +88,48 @@ def test_ecmascript_reserved_property_call_remains_valid(
     )
 
     assert result.code
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "reserved_name"),
+    argvalues=[
+        (Cobol, "PROGRAM"),
+        (Fortran, "Module"),
+        (VisualBasic, "AddHandler"),
+    ],
+    ids=("cobol-program", "fortran-module", "visual-basic-add-handler"),
+)
+def test_case_insensitive_reserved_names_raise(
+    language_cls: LanguageCls,
+    reserved_name: str,
+) -> None:
+    """Case-insensitive languages reject differently-cased keywords."""
+    with pytest.raises(expected_exception=ReservedVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=language_cls(),
+            variable_form=NewVariable(
+                name=reserved_name,
+                modifiers=frozenset(),
+            ),
+            wrap_in_file=True,
+        )
+
+
+def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
+    """Erlang variables capitalize names, so lowercase keywords are
+    valid.
+    """
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Erlang(),
+        variable_form=NewVariable(name="if", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+
+    assert "If =" in result.code
 
 
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(

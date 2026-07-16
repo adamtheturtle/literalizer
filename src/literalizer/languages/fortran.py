@@ -421,6 +421,7 @@ class Fortran(metaclass=LanguageCls):
     allows_empty_call_parens = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "allocatable",

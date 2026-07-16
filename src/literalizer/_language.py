@@ -34,7 +34,15 @@ from literalizer.exceptions import (
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* is reserved for a new variable declaration."""
-    if name not in language.reserved_variable_identifiers:
+    if language.reserved_variable_identifiers_case_sensitive:
+        is_reserved = name in language.reserved_variable_identifiers
+    else:
+        folded_name = name.casefold()
+        is_reserved = any(
+            folded_name == reserved_name.casefold()
+            for reserved_name in language.reserved_variable_identifiers
+        )
+    if not is_reserved:
         return
     raise ReservedVariableNameError(
         language_name=language.__class__.__name__,
@@ -889,6 +897,7 @@ class LanguageCls(type):
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
     reserved_variable_identifiers: frozenset[str]
+    reserved_variable_identifiers_case_sensitive: bool
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
@@ -1255,6 +1264,13 @@ class Language(Protocol):
         can be a valid property name in a dotted call while still being
         forbidden for a variable declaration (for example, TypeScript's
         ``class`` in JavaScript and TypeScript).
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def reserved_variable_identifiers_case_sensitive(self) -> bool:
+        """Whether reserved variable identifiers must match case
+        exactly.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

@@ -293,6 +293,7 @@ class Ada(metaclass=LanguageCls):
     allows_empty_call_parens = False
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "abort",
