@@ -1,0 +1,1 @@
+Reject reserved Standard ML ``NewVariable`` names with a clear error.
