@@ -31,9 +31,7 @@ from literalizer.exceptions import (
     UnrepresentableEmptyDictError,
 )
 
-_KEBAB_IDENTIFIER_PATTERN = re.compile(
-    pattern=r"[A-Za-z_][A-Za-z0-9_-]*\Z"
-)
+_KEBAB_IDENTIFIER_PATTERN = re.compile(pattern=r"[A-Za-z_][A-Za-z0-9_-]*\Z")
 
 
 @beartype
