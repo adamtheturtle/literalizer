@@ -381,6 +381,8 @@ class Go(metaclass=LanguageCls):
             "struct",
             "switch",
             "true",
+            "type",
+            "var",
         }
     )
     allows_empty_call_parens = True

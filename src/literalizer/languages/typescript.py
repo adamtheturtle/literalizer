@@ -415,6 +415,7 @@ class TypeScript(metaclass=LanguageCls):
             "any",
             "as",
             "asserts",
+            "await",
             "bigint",
             "boolean",
             "break",
