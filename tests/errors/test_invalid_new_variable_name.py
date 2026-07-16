@@ -6,7 +6,7 @@ import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import InvalidVariableNameError
-from literalizer.languages import TypeScript
+from literalizer.languages import Scheme, TypeScript
 
 
 @pytest.mark.parametrize("name", ["a-b", "1value"])
@@ -29,3 +29,19 @@ def test_invalid_typescript_new_variable_name_raises(name: str) -> None:
             ),
             wrap_in_file=True,
         )
+
+
+def test_scheme_kebab_new_variable_name_remains_valid() -> None:
+    """Languages that support kebab-case retain that valid syntax."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Scheme(),
+        variable_form=NewVariable(
+            name="my-data",
+            modifiers=frozenset(),
+        ),
+        wrap_in_file=True,
+    )
+
+    assert result.code

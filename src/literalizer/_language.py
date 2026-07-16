@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import math
+import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
@@ -30,11 +31,19 @@ from literalizer.exceptions import (
     UnrepresentableEmptyDictError,
 )
 
+_KEBAB_IDENTIFIER_PATTERN = re.compile(
+    pattern=r"[A-Za-z_][A-Za-z0-9_-]*\Z"
+)
+
 
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* is not valid for a new variable declaration."""
-    if name.isidentifier() and name not in language.reserved_identifiers:
+    is_identifier = name.isidentifier() or (
+        IdentifierCase.KEBAB in language.supported_ref_cases
+        and _KEBAB_IDENTIFIER_PATTERN.fullmatch(string=name) is not None
+    )
+    if is_identifier and name not in language.reserved_identifiers:
         return
     reason = (
         "it is a reserved identifier"
@@ -890,7 +899,6 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
     supports_variable_names: bool
-    validates_new_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
