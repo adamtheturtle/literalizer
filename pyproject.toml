@@ -444,8 +444,6 @@ ignore_names = [
     "NAMED",
     "nitpicky",
     "NO",
-    # Language capability flags are read dynamically from language classes.
-    "normalizes_new_variable_names",
     "OBJECT",
     "OBJECT_VARIANT",
     "OCTAL",

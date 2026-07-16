@@ -146,9 +146,6 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # back end.  It stays variant-only because the ``json_type`` axis is
         # its sole consumer.
         "json_string_escaping",
-        # ``new_variable_names`` is consumed by the dedicated golden test
-        # because its variable names are intentionally malformed or reserved.
-        "new_variable_names",
     }
 )
 

@@ -24,7 +24,6 @@ from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
 )
-from .new_variable_cases import expected_new_variable_golden_files
 from .variant_cases import build_variant_cases
 
 
@@ -155,7 +154,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
-    expected.update(expected_new_variable_golden_files(cases_dir=cases_dir))
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
