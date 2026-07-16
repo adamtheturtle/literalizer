@@ -893,6 +893,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
     supports_variable_names: bool
+    normalizes_new_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
