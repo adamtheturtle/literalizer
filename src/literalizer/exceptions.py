@@ -302,6 +302,28 @@ class InvalidRecordNameError(Exception):
     """
 
 
+class ReservedVariableNameError(Exception):
+    """Raised when a ``NewVariable`` name is reserved by the target
+    language.
+
+    To resolve, use a non-reserved identifier for the target language.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        variable_name: str,
+    ) -> None:
+        """Create a ``ReservedVariableNameError``."""
+        super().__init__(
+            f"{language_name} cannot use NewVariable name "
+            f"{variable_name!r}: it is a reserved identifier"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+
+
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.

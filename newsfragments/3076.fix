@@ -1,0 +1,1 @@
+Reject reserved JavaScript and TypeScript ``NewVariable`` names with a clear error.
