@@ -34,12 +34,7 @@ from literalizer.exceptions import (
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* is reserved for a new variable declaration."""
-    reserved_identifiers = getattr(
-        language,
-        "reserved_variable_identifiers",
-        language.reserved_identifiers,
-    )
-    if name not in reserved_identifiers:
+    if name not in language.reserved_variable_identifiers:
         return
     raise ReservedVariableNameError(
         language_name=language.__class__.__name__,
@@ -894,6 +889,7 @@ class LanguageCls(type):
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
+    reserved_variable_identifiers: frozenset[str]
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
@@ -1249,6 +1245,17 @@ class Language(Protocol):
         cannot appear as the innermost segment of ``target_function``.
         :func:`~literalizer.literalize_call` rejects such targets with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def reserved_variable_identifiers(self) -> frozenset[str]:
+        """Identifiers that cannot be used for new variable declarations.
+
+        This is separate from :attr:`reserved_identifiers` because a word
+        can be a valid property name in a dotted call while still being
+        forbidden for a variable declaration (for example, TypeScript's
+        ``class``).
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

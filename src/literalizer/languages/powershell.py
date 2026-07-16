@@ -193,6 +193,7 @@ class PowerShell(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_variable_identifiers = reserved_identifiers
     allows_empty_call_parens = False
     supports_dotted_call_stub = False
     call_returns_expression = True

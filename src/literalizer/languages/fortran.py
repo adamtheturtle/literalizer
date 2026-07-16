@@ -421,6 +421,7 @@ class Fortran(metaclass=LanguageCls):
     allows_empty_call_parens = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_variable_identifiers = reserved_identifiers
     supports_dotted_call_stub = False
     call_returns_expression = True
     supports_zero_parameter_calls = True
