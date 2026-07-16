@@ -314,16 +314,14 @@ class ReservedVariableNameError(Exception):
         *,
         language_name: str,
         variable_name: str,
-        reason: str,
     ) -> None:
         """Create a ``ReservedVariableNameError``."""
         super().__init__(
             f"{language_name} cannot use NewVariable name "
-            f"{variable_name!r}: {reason}"
+            f"{variable_name!r}: it is a reserved identifier"
         )
         self.language_name = language_name
         self.variable_name = variable_name
-        self.reason = reason
 
 
 class UnrepresentableIntegerError(Exception):

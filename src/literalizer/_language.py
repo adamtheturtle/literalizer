@@ -39,7 +39,6 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     raise ReservedVariableNameError(
         language_name=language.__class__.__name__,
         variable_name=name,
-        reason="it is a reserved identifier",
     )
 
 
