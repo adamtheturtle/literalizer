@@ -1,0 +1,1 @@
+Reject malformed Standard ML ``NewVariable`` names instead of emitting invalid source.

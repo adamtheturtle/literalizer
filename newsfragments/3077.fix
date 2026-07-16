@@ -1,0 +1,1 @@
+Reject malformed V ``NewVariable`` names instead of emitting invalid source.
