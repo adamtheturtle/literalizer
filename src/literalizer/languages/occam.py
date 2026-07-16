@@ -78,9 +78,6 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
@@ -167,8 +164,48 @@ class Occam(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Occam"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "alt",
+            "asm",
+            "assert",
+            "barrier",
+            "bitsin",
+            "bitsout",
+            "bool",
+            "byte",
+            "case",
+            "chan",
+            "claim",
+            "clock",
+            "else",
+            "exit",
+            "false",
+            "for",
+            "if",
+            "initial",
+            "int",
+            "is",
+            "mobile",
+            "of",
+            "par",
+            "place",
+            "pri",
+            "proc",
+            "protocol",
+            "real32",
+            "real64",
+            "retypes",
+            "seq",
+            "skip",
+            "stop",
+            "string",
+            "timer",
+            "true",
+            "val",
+            "virtual",
+            "while",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

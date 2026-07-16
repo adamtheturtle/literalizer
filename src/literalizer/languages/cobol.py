@@ -83,9 +83,6 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
@@ -794,8 +791,49 @@ class Cobol(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Cobol"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "accept",
+            "add",
+            "alter",
+            "call",
+            "cancel",
+            "close",
+            "compute",
+            "continue",
+            "delete",
+            "display",
+            "divide",
+            "else",
+            "end",
+            "evaluate",
+            "exec",
+            "exit",
+            "goback",
+            "if",
+            "initialize",
+            "inspect",
+            "move",
+            "multiply",
+            "next",
+            "not",
+            "open",
+            "perform",
+            "read",
+            "return",
+            "rewrite",
+            "search",
+            "set",
+            "sort",
+            "start",
+            "stop",
+            "subtract",
+            "then",
+            "transform",
+            "use",
+            "when",
+            "write",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False

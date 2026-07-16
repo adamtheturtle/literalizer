@@ -103,9 +103,6 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._preamble import HeterogeneousElements
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -802,8 +799,46 @@ class Python(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Python"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "False",
+            "None",
+            "True",
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "case",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "finally",
+            "for",
+            "from",
+            "global",
+            "if",
+            "import",
+            "in",
+            "is",
+            "lambda",
+            "match",
+            "nonlocal",
+            "not",
+            "or",
+            "pass",
+            "raise",
+            "return",
+            "try",
+            "while",
+            "with",
+            "yield",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

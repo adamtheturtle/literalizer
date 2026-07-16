@@ -79,9 +79,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -173,8 +170,32 @@ class Scheme(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Scheme"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "and",
+            "begin",
+            "case",
+            "cond",
+            "define",
+            "define-syntax",
+            "delay",
+            "do",
+            "else",
+            "guard",
+            "if",
+            "lambda",
+            "let",
+            "let*",
+            "let-syntax",
+            "letrec",
+            "letrec*",
+            "letrec-syntax",
+            "or",
+            "quasiquote",
+            "quote",
+            "set!",
+            "syntax-rules",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

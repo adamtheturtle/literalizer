@@ -108,9 +108,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -509,8 +506,73 @@ class Swift(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Swift"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "associatedtype",
+            "break",
+            "case",
+            "catch",
+            "class",
+            "continue",
+            "convenience",
+            "default",
+            "defer",
+            "deinit",
+            "didSet",
+            "do",
+            "else",
+            "enum",
+            "extension",
+            "fallthrough",
+            "fileprivate",
+            "final",
+            "for",
+            "func",
+            "get",
+            "guard",
+            "if",
+            "import",
+            "indirect",
+            "infix",
+            "init",
+            "inout",
+            "internal",
+            "is",
+            "let",
+            "mutating",
+            "nonisolated",
+            "nonmutating",
+            "open",
+            "operator",
+            "optional",
+            "override",
+            "postfix",
+            "precedencegroup",
+            "prefix",
+            "private",
+            "protocol",
+            "public",
+            "repeat",
+            "required",
+            "rethrows",
+            "return",
+            "set",
+            "some",
+            "static",
+            "struct",
+            "subscript",
+            "super",
+            "switch",
+            "throw",
+            "throws",
+            "try",
+            "typealias",
+            "unowned",
+            "var",
+            "weak",
+            "where",
+            "willSet",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

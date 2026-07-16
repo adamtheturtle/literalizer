@@ -79,9 +79,6 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
@@ -243,8 +240,54 @@ class Haxe(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = _HAXE_RESERVED
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Haxe"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "break",
+            "case",
+            "cast",
+            "catch",
+            "class",
+            "continue",
+            "default",
+            "do",
+            "dynamic",
+            "else",
+            "enum",
+            "extends",
+            "extern",
+            "false",
+            "final",
+            "for",
+            "function",
+            "if",
+            "implements",
+            "import",
+            "in",
+            "inline",
+            "interface",
+            "macro",
+            "new",
+            "null",
+            "operator",
+            "overload",
+            "override",
+            "package",
+            "private",
+            "public",
+            "return",
+            "static",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typedef",
+            "untyped",
+            "using",
+            "var",
+            "while",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

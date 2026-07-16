@@ -89,9 +89,6 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
@@ -369,8 +366,57 @@ class OCaml(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["OCaml"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "and",
+            "as",
+            "assert",
+            "begin",
+            "class",
+            "constraint",
+            "do",
+            "done",
+            "downto",
+            "else",
+            "end",
+            "exception",
+            "external",
+            "false",
+            "for",
+            "fun",
+            "function",
+            "functor",
+            "if",
+            "in",
+            "include",
+            "inherit",
+            "initializer",
+            "lazy",
+            "let",
+            "match",
+            "method",
+            "module",
+            "mutable",
+            "new",
+            "object",
+            "of",
+            "open",
+            "or",
+            "private",
+            "rec",
+            "sig",
+            "struct",
+            "then",
+            "to",
+            "true",
+            "try",
+            "type",
+            "val",
+            "virtual",
+            "when",
+            "while",
+            "with",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False

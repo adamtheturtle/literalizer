@@ -91,9 +91,6 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -482,8 +479,75 @@ class FSharp(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["FSharp"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "and",
+            "as",
+            "assert",
+            "atomic",
+            "base",
+            "begin",
+            "class",
+            "default",
+            "delegate",
+            "do",
+            "done",
+            "downcast",
+            "downto",
+            "elif",
+            "else",
+            "end",
+            "exception",
+            "extern",
+            "false",
+            "finally",
+            "for",
+            "fun",
+            "function",
+            "global",
+            "if",
+            "in",
+            "inherit",
+            "inline",
+            "interface",
+            "internal",
+            "lazy",
+            "let",
+            "match",
+            "member",
+            "module",
+            "mutable",
+            "namespace",
+            "new",
+            "null",
+            "of",
+            "open",
+            "or",
+            "override",
+            "private",
+            "public",
+            "rec",
+            "return",
+            "sig",
+            "static",
+            "struct",
+            "then",
+            "this",
+            "throw",
+            "to",
+            "true",
+            "try",
+            "type",
+            "upcast",
+            "use",
+            "val",
+            "void",
+            "when",
+            "while",
+            "with",
+            "yield",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

@@ -87,9 +87,6 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -1320,8 +1317,36 @@ class Haskell(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Haskell"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "as",
+            "case",
+            "class",
+            "data",
+            "default",
+            "deriving",
+            "do",
+            "family",
+            "forall",
+            "foreign",
+            "hiding",
+            "if",
+            "import",
+            "in",
+            "infix",
+            "infixl",
+            "infixr",
+            "instance",
+            "let",
+            "module",
+            "newtype",
+            "of",
+            "qualified",
+            "safe",
+            "then",
+            "type",
+            "where",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False

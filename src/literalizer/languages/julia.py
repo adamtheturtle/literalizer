@@ -92,9 +92,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
@@ -186,8 +183,36 @@ class Julia(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Julia"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "baremodule",
+            "begin",
+            "break",
+            "catch",
+            "const",
+            "continue",
+            "do",
+            "else",
+            "elseif",
+            "end",
+            "export",
+            "finally",
+            "for",
+            "function",
+            "global",
+            "if",
+            "import",
+            "let",
+            "local",
+            "macro",
+            "module",
+            "quote",
+            "return",
+            "struct",
+            "try",
+            "using",
+            "while",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

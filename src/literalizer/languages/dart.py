@@ -96,9 +96,6 @@ from literalizer._language import (
     value_contains,
     wrap_in_file_noop,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -373,8 +370,71 @@ class Dart(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Dart"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "case",
+            "catch",
+            "class",
+            "const",
+            "continue",
+            "covariant",
+            "default",
+            "deferred",
+            "do",
+            "dynamic",
+            "else",
+            "enum",
+            "export",
+            "extends",
+            "extension",
+            "external",
+            "factory",
+            "false",
+            "final",
+            "finally",
+            "for",
+            "function",
+            "get",
+            "hide",
+            "if",
+            "implements",
+            "import",
+            "in",
+            "interface",
+            "is",
+            "late",
+            "library",
+            "mixin",
+            "new",
+            "null",
+            "on",
+            "operator",
+            "part",
+            "required",
+            "rethrow",
+            "return",
+            "set",
+            "show",
+            "static",
+            "super",
+            "switch",
+            "sync",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "typedef",
+            "var",
+            "void",
+            "while",
+            "with",
+            "yield",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

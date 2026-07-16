@@ -78,9 +78,6 @@ from literalizer._language import (
     prepend_body_preamble,
     reject_empty_dicts,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
@@ -296,8 +293,79 @@ class Ada(metaclass=LanguageCls):
     allows_empty_call_parens = False
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Ada"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abort",
+            "abstract",
+            "accept",
+            "access",
+            "aliased",
+            "all",
+            "array",
+            "at",
+            "begin",
+            "body",
+            "case",
+            "constant",
+            "declare",
+            "delay",
+            "delta",
+            "digits",
+            "do",
+            "else",
+            "elsif",
+            "end",
+            "entry",
+            "exception",
+            "exit",
+            "for",
+            "function",
+            "generic",
+            "goto",
+            "if",
+            "in",
+            "interface",
+            "is",
+            "limited",
+            "loop",
+            "mod",
+            "new",
+            "not",
+            "null",
+            "of",
+            "or",
+            "others",
+            "out",
+            "overriding",
+            "package",
+            "pragma",
+            "private",
+            "procedure",
+            "protected",
+            "raise",
+            "range",
+            "record",
+            "rem",
+            "renames",
+            "requeue",
+            "return",
+            "reverse",
+            "select",
+            "separate",
+            "subtype",
+            "synchronized",
+            "tagged",
+            "task",
+            "terminate",
+            "then",
+            "type",
+            "until",
+            "use",
+            "when",
+            "while",
+            "with",
+            "xor",
+        }
     )
     supports_dotted_call_stub = False
     call_returns_expression = True

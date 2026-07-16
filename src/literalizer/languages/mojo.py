@@ -90,9 +90,6 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
@@ -967,8 +964,44 @@ class Mojo(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Mojo"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "False",
+            "None",
+            "True",
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "finally",
+            "fn",
+            "for",
+            "from",
+            "if",
+            "import",
+            "in",
+            "is",
+            "let",
+            "not",
+            "or",
+            "pass",
+            "raise",
+            "return",
+            "struct",
+            "try",
+            "while",
+            "with",
+            "yield",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

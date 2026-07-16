@@ -75,9 +75,6 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -758,8 +755,23 @@ class Elm(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Elm"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "alias",
+            "as",
+            "case",
+            "else",
+            "if",
+            "import",
+            "in",
+            "let",
+            "module",
+            "of",
+            "port",
+            "then",
+            "type",
+            "where",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False

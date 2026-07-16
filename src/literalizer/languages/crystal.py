@@ -103,9 +103,6 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._reserved_variable_identifiers import (
-    RESERVED_VARIABLE_IDENTIFIERS,
-)
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -417,8 +414,56 @@ class Crystal(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers: frozenset[str] = (
-        RESERVED_VARIABLE_IDENTIFIERS["Crystal"]
+    reserved_variable_identifiers: frozenset[str] = frozenset(
+        {
+            "abstract",
+            "alias",
+            "asm",
+            "begin",
+            "break",
+            "case",
+            "class",
+            "def",
+            "do",
+            "else",
+            "elsif",
+            "end",
+            "ensure",
+            "extend",
+            "false",
+            "for",
+            "if",
+            "in",
+            "include",
+            "lib",
+            "macro",
+            "module",
+            "next",
+            "nil",
+            "of",
+            "out",
+            "private",
+            "protected",
+            "require",
+            "rescue",
+            "return",
+            "select",
+            "self",
+            "sizeof",
+            "struct",
+            "super",
+            "then",
+            "true",
+            "type",
+            "typeof",
+            "union",
+            "unless",
+            "until",
+            "when",
+            "while",
+            "with",
+            "yield",
+        }
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
