@@ -46,9 +46,7 @@ def cases_for_language(
             name=f"reserved_{reserved_identifier}",
             variable_name=reserved_identifier,
         )
-        for reserved_identifier in sorted(
-            lang_cls().reserved_identifiers
-        )
+        for reserved_identifier in sorted(lang_cls().reserved_identifiers)
     )
     return (*_BASE_CASES, *reserved_cases)
 
