@@ -155,9 +155,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
-    expected.update(
-        expected_new_variable_golden_files(cases_dir=cases_dir)
-    )
+    expected.update(expected_new_variable_golden_files(cases_dir=cases_dir))
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
