@@ -1,10 +1,18 @@
 """Unit tests for shared integer-width element-type inference."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from literalizer._formatters.type_inference import (
     BeyondI64,
+    DictType,
     WideInt,
     infer_element_type,
 )
+
+if TYPE_CHECKING:
+    from literalizer._types import Value
 
 
 def test_infer_element_type_widens_past_i32() -> None:
@@ -29,8 +37,8 @@ def test_infer_element_type_beyond_i64_beats_wide_int() -> None:
 
 def test_infer_element_type_dict_values_use_same_join() -> None:
     """Map values use the same integer LUB as list elements."""
-    inferred = infer_element_type(
-        items=[{"a": 1, "b": 1099511627776}],
-    )
-    assert inferred is not None
-    assert getattr(inferred, "value_type", None) is WideInt
+    mapping: dict[str, Value] = {"a": 1, "b": 1099511627776}
+    items: list[Value] = [mapping]
+    inferred = infer_element_type(items=items)
+    assert isinstance(inferred, DictType)
+    assert inferred.value_type is WideInt
