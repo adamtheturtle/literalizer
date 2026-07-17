@@ -12,7 +12,7 @@ from literalizer._formatters.type_inference import (
 )
 
 if TYPE_CHECKING:
-    from literalizer._types import Value
+    from literalizer._types import Scalar, Value
 
 
 def test_infer_element_type_widens_past_i32() -> None:
@@ -37,7 +37,7 @@ def test_infer_element_type_beyond_i64_beats_wide_int() -> None:
 
 def test_infer_element_type_dict_values_use_same_join() -> None:
     """Map values use the same integer LUB as list elements."""
-    mapping: dict[str, Value] = {"a": 1, "b": 1099511627776}
+    mapping: dict[Scalar, Value] = {"a": 1, "b": 1099511627776}
     items: list[Value] = [mapping]
     inferred = infer_element_type(items=items)
     assert isinstance(inferred, DictType)
