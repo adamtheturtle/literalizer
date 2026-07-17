@@ -1,0 +1,5 @@
+import json
+let my_data = %* {
+    "a": 1,
+    "b": 1099511627776
+}

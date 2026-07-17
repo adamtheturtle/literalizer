@@ -943,6 +943,7 @@ class Kotlin(metaclass=LanguageCls):
         bool_type="Boolean",
         int_type="Int",
         wide_int_type="Long",
+        beyond_i64_type="BigInteger",
         float_type="Double",
         bytes_type="String",
         mixed_numeric_type=None,
@@ -2101,6 +2102,13 @@ class Kotlin(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``BigInteger`` formatter for collections that exceed
+        signed 64-bit range.
+        """
+        return _format_kotlin_biginteger_literal
 
     @cached_property
     def comment_config(self) -> CommentConfig:

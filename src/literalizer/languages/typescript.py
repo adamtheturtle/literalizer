@@ -92,6 +92,7 @@ from literalizer._language import (
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -390,6 +391,7 @@ class TypeScript(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)

@@ -60,6 +60,7 @@ from literalizer._formatters.tuple_strategy import (
     is_tuple_eligible,
 )
 from literalizer._formatters.type_inference import (
+    BeyondI64,
     DictType,
     ListType,
     WideInt,
@@ -109,6 +110,7 @@ from literalizer._language import (
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -151,11 +153,16 @@ _IntTypeResolver = Callable[[list[int]], str]
 @beartype
 def _narrowest_cpp_int_type(values: list[int]) -> str:
     """Return the narrowest C++ integer type holding every value in
-    *values*: ``int`` when every value fits in 32 bits, else
-    ``long long``.  Empty inputs return ``"int"``.  ``long`` is skipped
-    because its width is platform-dependent (32-bit on Windows, 64-bit
-    on Unix).
+    *values*: ``int`` when every value fits in 32 bits, ``long long``
+    when every value fits in signed 64 bits, else
+    ``unsigned long long``.  Empty inputs return ``"int"``.  ``long``
+    is skipped because its width is platform-dependent (32-bit on
+    Windows, 64-bit on Unix).
     """
+    if not values:
+        return "int"
+    if any(not I64_MIN <= v <= I64_MAX for v in values):
+        return "unsigned long long"
     if all(_INT32_MIN <= v <= _INT32_MAX for v in values):
         return "int"
     return "long long"
@@ -181,7 +188,11 @@ def _collect_int_leaves(
     """Collect int values that would occupy the int leaf of
     *element_type* when *items* is resolved to its C++ type.
     """
-    if element_type is int or element_type is WideInt:
+    if (
+        element_type is int
+        or element_type is WideInt
+        or element_type is BeyondI64
+    ):
         return [
             item
             for item in items
@@ -1436,6 +1447,7 @@ class Cpp(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )

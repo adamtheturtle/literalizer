@@ -220,6 +220,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "mixed_set",
             "empty_set",
             "set_mixed_int_widths",
+            "list_mixed_int_widths",
+            "map_mixed_int_widths",
             "mixed_number_list",
             "nested_sequence",
             "dict_with_list_value",
@@ -261,6 +263,8 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             "time_dict",
             "binary",
             "set_mixed_int_widths",
+            "list_mixed_int_widths",
+            "map_mixed_int_widths",
         )
     ),
     "dict_format": DICT_FORMAT_INPUTS,

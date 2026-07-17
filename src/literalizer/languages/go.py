@@ -103,6 +103,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -333,6 +334,7 @@ class Go(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -1124,6 +1126,7 @@ class Go(metaclass=LanguageCls):
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
             wide_int_type=None,
+            beyond_i64_type="uint64",
         )
 
     @cached_property

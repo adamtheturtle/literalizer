@@ -23,6 +23,7 @@ from literalizer._comments_resolve import (
     resolve_yaml_comments,
 )
 from literalizer._formatters.type_inference import (
+    BeyondI64,
     DictType,
     WideInt,
     infer_element_type,
@@ -344,13 +345,19 @@ def _widened_int_formatter(
 ) -> Callable[[int], str] | None:
     """Return a widened integer formatter for *items* or ``None``.
 
-    Returns ``None`` when *items* do not require widening (no
-    out-of-i32 integer present) or when the language has no
-    ``format_integer_widened`` (it resolves to ``None``).
+    Returns ``None`` when *items* do not require widening or when the
+    language has no matching widened formatter (it resolves to
+    ``None``).  A collection whose ints exceed signed 64-bit range uses
+    :attr:`~Language.format_integer_beyond_i64`; one whose ints only
+    exceed signed 32-bit range uses
+    :attr:`~Language.format_integer_widened`.
     """
-    if infer_element_type(items=items) is not WideInt:
-        return None
-    return spec.format_integer_widened
+    inferred = infer_element_type(items=items)
+    if inferred is BeyondI64:
+        return spec.format_integer_beyond_i64
+    if inferred is WideInt:
+        return spec.format_integer_widened
+    return None
 
 
 _SCALAR_TYPES: Final = (
@@ -592,6 +599,10 @@ def _format_ordered_map_value(
         list_values=sibling_list_values,
         spec=spec,
     )
+    map_int_formatter = _widened_int_formatter(
+        items=[v for _, v in ordered_map_items],
+        spec=spec,
+    )
     pairs = [
         spec.format_ordered_map_entry(
             _format_value(
@@ -610,6 +621,7 @@ def _format_ordered_map_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
+                    int_formatter=map_int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -789,6 +801,10 @@ def _format_dict_value(
         list_values=sibling_list_values,
         spec=spec,
     )
+    map_int_formatter = _widened_int_formatter(
+        items=list(dict_items.values()),
+        spec=spec,
+    )
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
@@ -807,6 +823,7 @@ def _format_dict_value(
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
+                    int_formatter=map_int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -853,6 +870,7 @@ def _format_dict_entry_value(
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ctx: _RenderContext,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format a dict entry's value, threading sequence-opener overrides
     into list-typed values so the outer and inner sequences render with
@@ -863,6 +881,8 @@ def _format_dict_entry_value(
     *position_overrides* supplies per-position openers for the list's
     immediate child lists (so nested sequences at matching positions
     across sibling entries share a widened type).
+    *int_formatter* is the map's mixed-magnitude integer widener when
+    values inferred :class:`WideInt` or :class:`BeyondI64`.
     """
     if isinstance(value, list):
         tuple_literal = _maybe_format_tuple_literal(
@@ -882,7 +902,7 @@ def _format_dict_entry_value(
         dict_open_override=None,
         sequence_open_override=None,
         ctx=ctx,
-        int_formatter=None,
+        int_formatter=int_formatter,
     )
 
 
@@ -1365,6 +1385,7 @@ def _format_sequence_child(
     dict_open_override: str | None,
     child_sequence_open_overrides: Sequence[str | None],
     ctx: _RenderContext,
+    int_formatter: Callable[[int], str] | None,
 ) -> str:
     """Format a single sequence child with sibling-aware typed empty.
 
@@ -1377,6 +1398,10 @@ def _format_sequence_child(
     sibling-derived ``sequence_open_override`` to make the empty list
     render as ``opener + close`` for languages where that is valid
     (Java, Go, Rust, ...).
+
+    *int_formatter* is the parent's mixed-magnitude integer widener when
+    the enclosing list inferred :class:`WideInt` or :class:`BeyondI64`;
+    nested containers ignore it and compute their own.
     """
     parent_override = (
         child_sequence_open_overrides[position]
@@ -1416,7 +1441,7 @@ def _format_sequence_child(
             parent_override if parent_override is not None else sibling_open
         ),
         ctx=ctx,
-        int_formatter=None,
+        int_formatter=int_formatter,
     )
 
 
@@ -1465,6 +1490,7 @@ def _format_list_value(
         spec=spec,
     )
     parent_id = id(value)
+    int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
         spec.format_sequence_entry(
             v,
@@ -1480,6 +1506,7 @@ def _format_list_value(
                         child_sequence_open_overrides
                     ),
                     ctx=ctx,
+                    int_formatter=int_formatter,
                 ),
                 ctx=ctx,
             ),
@@ -1833,6 +1860,10 @@ def _format_collection_lines(
                 list_values=sibling_list_values,
                 spec=spec,
             )
+            map_int_formatter = _widened_int_formatter(
+                items=[v for _, v in entries],
+                spec=spec,
+            )
             formatted_entries: list[str] = []
             for k, v in entries:
                 formatted_key: str = _format_value(
@@ -1850,6 +1881,7 @@ def _format_collection_lines(
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ctx=line_ctx,
+                        int_formatter=map_int_formatter,
                     ),
                     ctx=ctx,
                 )
@@ -1925,6 +1957,10 @@ def _format_collection_lines(
                 items=list_data,
                 spec=spec,
             )
+            list_int_formatter = _widened_int_formatter(
+                items=list_data,
+                spec=spec,
+            )
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
@@ -1938,6 +1974,7 @@ def _format_collection_lines(
                             dict_open_override=dict_open_override,
                             child_sequence_open_overrides=(),
                             ctx=line_ctx,
+                            int_formatter=list_int_formatter,
                         ),
                         ctx=ctx,
                     ),

@@ -92,6 +92,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -846,6 +847,7 @@ class C(metaclass=LanguageCls):
     """C language specification."""
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )

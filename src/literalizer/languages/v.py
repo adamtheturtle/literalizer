@@ -124,6 +124,7 @@ _v_element_to_type = make_element_to_type(
     bool_type="bool",
     int_type="int",
     wide_int_type="i64",
+    beyond_i64_type="u64",
     float_type="f64",
     bytes_type="string",
     mixed_numeric_type="string",
@@ -1492,6 +1493,16 @@ class V(metaclass=LanguageCls):
             ),
             min_value=I64_MIN,
             max_value=I64_MAX,
+        )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``u64(...)``-cast formatter for collections that
+        exceed signed 64-bit range.
+        """
+        return make_unsigned_overflow_fallback(
+            format_positive=_format_v_u64_positive,
+            language_name="V",
         )
 
     @cached_property

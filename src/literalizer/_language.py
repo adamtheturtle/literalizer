@@ -1526,11 +1526,28 @@ class Language(Protocol):
         """Widened-integer formatter for mixed-magnitude int collections,
         or ``None`` when the language has no widening behavior.
 
-        Used only when a sequence/set mixes integers that do not all fit
-        one fixed-width type (e.g. an ``i32`` and a value past ``i32``'s
-        range); the formatter then casts every element to the wider
-        type.  Languages with no such widening (the common case) return
-        ``None`` via :data:`no_format_integer_widened`.
+        Used when a sequence/set/map mixes integers that do not all fit
+        signed 32-bit range (inferred as
+        :class:`~literalizer._formatters.type_inference.WideInt`); the
+        formatter then casts every element to the wider fixed-width type
+        (e.g. ``long`` / ``i64``).  Languages with no such widening (the
+        common case) return ``None`` via
+        :data:`no_format_integer_widened`.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def format_integer_beyond_i64(self) -> Callable[[int], str] | None:
+        """Integer formatter for collections that exceed signed 64-bit
+        range, or ``None`` when the language has no such widening.
+
+        Used when a sequence/set/map mixes integers that do not all fit
+        signed 64-bit range (inferred as
+        :class:`~literalizer._formatters.type_inference.BeyondI64`); the
+        formatter then casts every element to the language's further-
+        widened type (e.g. ``BigInt``, ``uint64``, ``i128``).  Languages
+        with no such widening return ``None`` via
+        :data:`no_format_integer_beyond_i64`.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 
@@ -2432,6 +2449,23 @@ def _no_format_integer_widened(self: "Language") -> None:
 no_format_integer_widened: property = property(fget=_no_format_integer_widened)
 """Shared ``format_integer_widened`` descriptor for languages with no
 mixed-magnitude integer widening.  Resolves to ``None`` so the renderer
+falls back to the language's normal integer formatter.
+"""
+
+
+@beartype
+def _no_format_integer_beyond_i64(self: "Language") -> None:
+    """Default ``format_integer_beyond_i64`` -- no beyond-i64 integer
+    widening, so the renderer keeps the normal integer formatter.
+    """
+    del self
+
+
+no_format_integer_beyond_i64: property = property(
+    fget=_no_format_integer_beyond_i64
+)
+"""Shared ``format_integer_beyond_i64`` descriptor for languages with no
+beyond-i64 integer widening.  Resolves to ``None`` so the renderer
 falls back to the language's normal integer formatter.
 """
 

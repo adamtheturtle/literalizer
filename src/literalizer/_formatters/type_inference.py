@@ -53,12 +53,30 @@ class WideInt:
     """
 
 
+class BeyondI64:
+    """Sentinel class for int collections containing values outside the
+    signed 64-bit range.
+
+    Used as a key in scalar type mapping dicts so each language can
+    decide what further-widened integer type (e.g. ``uint64``,
+    ``BigInt``, ``i128``, ``unsigned long long``) the collection's
+    element/value type should be annotated as.  Takes precedence over
+    :class:`WideInt` when both would apply.
+    """
+
+
 # Signed 32-bit range; an int outside it widens to :class:`WideInt`.
 # Keep in sync with ``_SCALA_INT32_MIN`` / ``_SCALA_INT32_MAX`` in
 # :mod:`literalizer.languages.scala`, which derives a ``Long`` record
 # field type from the same threshold.
 _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
+
+# Signed 64-bit range; an int outside it widens to :class:`BeyondI64`.
+# Keep in sync with ``I64_MIN`` / ``I64_MAX`` in
+# :mod:`literalizer._formatters.format_integers`.
+_I64_MIN = -(2**63)
+_I64_MAX = 2**63 - 1
 
 
 @beartype
@@ -68,6 +86,17 @@ def _int_needs_widening(items: list[Value]) -> bool:
         isinstance(item, int)
         and not isinstance(item, bool)
         and not _I32_MIN <= item <= _I32_MAX
+        for item in items
+    )
+
+
+@beartype
+def _int_needs_beyond_i64(items: list[Value]) -> bool:
+    """Return ``True`` if any int in *items* is outside i64 range."""
+    return any(
+        isinstance(item, int)
+        and not isinstance(item, bool)
+        and not _I64_MIN <= item <= _I64_MAX
         for item in items
     )
 
@@ -131,8 +160,8 @@ def _resolve_single_type(
     """Resolve a unique element type to its inferred return value.
 
     Handles the ``dict`` -> :class:`DictType` and the int-widening to
-    :class:`WideInt` branches; falls through to ``the_type`` itself
-    otherwise.
+    :class:`WideInt` / :class:`BeyondI64` branches; falls through to
+    ``the_type`` itself otherwise.
     """
     if the_type is dict:
         value_type = infer_element_type(items=all_dict_values)
@@ -140,8 +169,11 @@ def _resolve_single_type(
             value_type=value_type,
             values=tuple(all_dict_values),
         )
-    if the_type is int and _int_needs_widening(items=items):
-        return WideInt
+    if the_type is int:
+        if _int_needs_beyond_i64(items=items):
+            return BeyondI64
+        if _int_needs_widening(items=items):
+            return WideInt
     return the_type
 
 
