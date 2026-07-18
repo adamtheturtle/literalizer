@@ -97,6 +97,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -196,6 +197,7 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
         dict_type_template="Hash(String, {inner})",
         fallback_value_type="String",
         wide_int_type=None,
+        beyond_i64_type=None,
     ),
     template="[] of {type}",
     fallback_type="String",
@@ -395,6 +397,7 @@ class Crystal(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(_constructor_target)
     )

@@ -83,6 +83,7 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -111,6 +112,7 @@ _mojo_element_to_type = make_element_to_type(
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type="String",
     wide_int_type=None,
+    beyond_i64_type=None,
 )
 
 # Strict resolver for call-argument typing: omits ``fallback_value_type``
@@ -134,6 +136,7 @@ _mojo_call_arg_element_to_type = make_element_to_type(
     dict_type_template="Dict[String, {inner}]",
     fallback_value_type=None,
     wide_int_type=None,
+    beyond_i64_type=None,
 )
 
 
@@ -945,6 +948,7 @@ class Mojo(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
@@ -1660,6 +1664,7 @@ class Mojo(metaclass=LanguageCls):
                     dict_type_template=None,
                     fallback_value_type=None,
                     wide_int_type=None,
+                    beyond_i64_type=None,
                 ),
                 opener_template="Set[{type_name}](",
             ),

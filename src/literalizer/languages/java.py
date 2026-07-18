@@ -906,7 +906,8 @@ class Java(metaclass=LanguageCls):
         set_opener_template="Set.of(",
         dict_type_template=None,
         fallback_value_type=None,
-        wide_int_type=None,
+        wide_int_type="long",
+        beyond_i64_type="BigInteger",
     )
 
     _opener_config_long = TypedOpenerConfig(
@@ -926,6 +927,7 @@ class Java(metaclass=LanguageCls):
         dict_type_template=None,
         fallback_value_type=None,
         wide_int_type=None,
+        beyond_i64_type="BigInteger",
     )
 
     class DateFormats(enum.Enum):
@@ -2091,6 +2093,13 @@ class Java(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``BigInteger`` integer formatter for collections that
+        exceed signed 64-bit range.
+        """
+        return _format_java_biginteger_literal
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

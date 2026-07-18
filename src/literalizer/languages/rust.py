@@ -265,6 +265,24 @@ def _make_rust_integer_suffix_formatter(
 
 
 @beartype
+def _make_rust_i128_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap a formatter to always append the ``i128`` type suffix.
+
+    Used for homogeneous collections whose least upper bound is
+    ``i128`` (mixed signed-64-bit / beyond-i64 magnitudes) so every
+    element agrees with the container type rustc infers.
+    """
+
+    def _format(value: int) -> str:
+        """Format *value* as ``<base>i128``."""
+        return f"{base(value)}i128"
+
+    return _format
+
+
+@beartype
 def _format_constructor_target(class_name: str, /) -> str:
     """Return a Rust ``ClassName::new`` constructor call target."""
     return f"{class_name}::new"
@@ -3346,6 +3364,22 @@ class Rust(metaclass=LanguageCls):
         """
         return make_overflow_fallback_formatter(
             base=_make_rust_integer_suffix_formatter(
+                base=self.integer_format.get_formatter(
+                    numeric_separator=self.numeric_separator,
+                ),
+            ),
+            min_value=_I128_MIN,
+            max_value=_I128_MAX,
+            fallback=raise_for_unrepresentable_int(language_name="Rust"),
+        )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``i128``-suffixed formatter for collections that
+        exceed signed 64-bit range.
+        """
+        return make_overflow_fallback_formatter(
+            base=_make_rust_i128_formatter(
                 base=self.integer_format.get_formatter(
                     numeric_separator=self.numeric_separator,
                 ),

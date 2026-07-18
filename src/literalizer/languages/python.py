@@ -96,6 +96,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_validate_call_arg,
     no_validate_spec_for_data,
@@ -782,6 +783,7 @@ class Python(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )

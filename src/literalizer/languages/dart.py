@@ -500,6 +500,7 @@ class Dart(metaclass=LanguageCls):
         dict_type_template="Map<{key_type}, {inner}>",
         fallback_value_type="dynamic",
         wide_int_type=None,
+        beyond_i64_type="BigInt",
     )
 
     class DateFormats(enum.Enum):
@@ -1231,6 +1232,13 @@ class Dart(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``BigInt.parse`` formatter for collections that
+        exceed signed 64-bit range.
+        """
+        return _format_dart_bigint_literal
 
     @cached_property
     def comment_config(self) -> CommentConfig:

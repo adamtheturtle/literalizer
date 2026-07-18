@@ -572,6 +572,7 @@ class Scala(metaclass=LanguageCls):
         bool_type="Boolean",
         int_type="Int",
         wide_int_type="Long",
+        beyond_i64_type="BigInt",
         float_type="Double",
         mixed_numeric_type="Double",
         bytes_type="String",
@@ -1648,6 +1649,13 @@ class Scala(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``BigInt`` formatter for collections that exceed
+        signed 64-bit range.
+        """
+        return _format_scala_bigint_literal
 
     @cached_property
     def comment_config(self) -> CommentConfig:

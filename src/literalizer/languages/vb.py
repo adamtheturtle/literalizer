@@ -924,6 +924,16 @@ class VisualBasic(metaclass=LanguageCls):
         )
 
     @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-unsigned formatter for collections that exceed signed
+        64-bit range.
+        """
+        return make_unsigned_overflow_fallback(
+            format_positive=_format_vb_ulong_positive,
+            language_name="VB.NET",
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -1055,6 +1065,7 @@ class VisualBasic(metaclass=LanguageCls):
             bool_type="Boolean",
             int_type="Integer",
             wide_int_type="Long",
+            beyond_i64_type="ULong",
             float_type="Double",
             mixed_numeric_type="Double",
             bytes_type="String",

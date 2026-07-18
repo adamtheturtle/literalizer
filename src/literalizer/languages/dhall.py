@@ -74,6 +74,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
     no_data_preamble,
+    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_pygments_name,
@@ -138,6 +139,7 @@ _dhall_narrowed_empty_form = make_narrowed_empty_form(
         dict_type_template=None,
         fallback_value_type="Text",
         wide_int_type=None,
+        beyond_i64_type=None,
     ),
     template="[] : List {type}",
     fallback_type="Text",
@@ -579,6 +581,7 @@ class Dhall(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
+    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
