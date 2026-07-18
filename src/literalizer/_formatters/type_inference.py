@@ -80,22 +80,25 @@ _I64_MAX = 2**63 - 1
 
 
 @beartype
-def _widen_homogeneous_int_type(items: list[Value]) -> type:
-    """Return :class:`BeyondI64`, :class:`WideInt`, or ``int``.
+def _int_needs_widening(items: list[Value]) -> bool:
+    """Return ``True`` if any int in *items* is outside i32 range."""
+    return any(
+        isinstance(item, int)
+        and not isinstance(item, bool)
+        and not _I32_MIN <= item <= _I32_MAX
+        for item in items
+    )
 
-    *items* is assumed to be a homogeneous int collection (the
-    ``the_type is int`` branch of :func:`_resolve_single_type`).  A
-    single pass picks the least upper bound.
-    """
-    widest: type = int
-    for item in items:
-        if isinstance(item, bool) or not isinstance(item, int):
-            continue
-        if not _I64_MIN <= item <= _I64_MAX:
-            return BeyondI64
-        if widest is int and not _I32_MIN <= item <= _I32_MAX:
-            widest = WideInt
-    return widest
+
+@beartype
+def _int_needs_beyond_i64(items: list[Value]) -> bool:
+    """Return ``True`` if any int in *items* is outside i64 range."""
+    return any(
+        isinstance(item, int)
+        and not isinstance(item, bool)
+        and not _I64_MIN <= item <= _I64_MAX
+        for item in items
+    )
 
 
 @beartype
@@ -111,9 +114,7 @@ def int_widening_tier(items: list[Value]) -> type | None:
         return None
     widest: type | None = None
     for item in items:
-        # ``type(item) is int`` excludes ``bool`` (a subclass of
-        # ``int``) and is cheaper than ``isinstance`` on this hot path.
-        if type(item) is not int:
+        if isinstance(item, bool) or not isinstance(item, int):
             return None
         if item < _I64_MIN or item > _I64_MAX:
             widest = BeyondI64
@@ -191,7 +192,10 @@ def _resolve_single_type(
             values=tuple(all_dict_values),
         )
     if the_type is int:
-        return _widen_homogeneous_int_type(items=items)
+        if _int_needs_beyond_i64(items=items):
+            return BeyondI64
+        if _int_needs_widening(items=items):
+            return WideInt
     return the_type
 
 
