@@ -68,5 +68,7 @@ def test_int_widening_tier_magnitude_boundaries() -> None:
 
 
 def test_infer_element_type_skips_bool_when_widening_ints() -> None:
-    """Bools are not ints for widening; a bool+int list stays mixed."""
+    """A boolean is not an integer for widening; mixed lists stay
+    mixed.
+    """
     assert infer_element_type(items=[True, 1]) is None
