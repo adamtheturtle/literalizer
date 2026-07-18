@@ -38,6 +38,16 @@ def _literalize_scalar(language: Language, value: int) -> None:
     )
 
 
+def _literalize_list(language: Language, values: list[int]) -> None:
+    """Literalize *values* as a list under *language*, discarding it."""
+    literalize(
+        source=json.dumps(obj=values),
+        input_format=InputFormat.JSON,
+        language=language,
+        variable_form=NewVariable(name="x", modifiers=frozenset()),
+    )
+
+
 def test_go_raises_above_unsigned_64_bit_range() -> None:
     """Go has no native literal for values above ``math.MaxUint64``."""
     with pytest.raises(
@@ -45,6 +55,19 @@ def test_go_raises_above_unsigned_64_bit_range() -> None:
         match=r"^Go cannot represent integer \d+" + _ABOVE_U64_MSG,
     ):
         _literalize_scalar(language=Go(), value=_BEYOND_U64)
+
+
+def test_go_raises_for_in_range_negative_in_uint64_collection() -> None:
+    """A ``BeyondI64`` collection opens as ``[]uint64``, so an in-range
+    negative sibling that renders fine as a scalar cannot be represented
+    inside the unsigned element type.
+    """
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=r"^Go cannot represent negative integer -\d+"
+        + _UNSIGNED_FALLBACK_MSG,
+    ):
+        _literalize_list(language=Go(), values=[2**63, -5])
 
 
 def test_cpp_raises_above_unsigned_64_bit_range() -> None:

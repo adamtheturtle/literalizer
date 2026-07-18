@@ -103,7 +103,6 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
-    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -334,7 +333,6 @@ class Go(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -1251,6 +1249,34 @@ class Go(metaclass=LanguageCls):
                 language_name="Go",
             ),
             min_value=I64_MIN,
+            max_value=I64_MAX,
+        )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Formatter for collections whose integers exceed signed 64-bit
+        range.
+
+        Such a collection opens as ``[]uint64`` / ``map[...]uint64``
+        (see :attr:`_init_element_to_type`), so every element must fit
+        the unsigned 64-bit element type.  Non-negative values within
+        signed 64-bit range render as bare literals, values above it use
+        the ``uint64(...)`` typed conversion, and negatives raise
+        :class:`UnrepresentableIntegerError` because ``uint64`` has no
+        signed representation.  The bare literal is used inside the typed
+        slice or map literal without the scalar ``int64(...)`` cast,
+        which would mismatch the ``uint64`` element type.
+        """
+        base_int_formatter = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=base_int_formatter,
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=_format_go_uint64_positive,
+                language_name="Go",
+            ),
+            min_value=0,
             max_value=I64_MAX,
         )
 
