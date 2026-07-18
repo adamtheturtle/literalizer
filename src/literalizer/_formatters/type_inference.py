@@ -80,25 +80,46 @@ _I64_MAX = 2**63 - 1
 
 
 @beartype
-def _int_needs_widening(items: list[Value]) -> bool:
-    """Return ``True`` if any int in *items* is outside i32 range."""
-    return any(
-        isinstance(item, int)
-        and not isinstance(item, bool)
-        and not _I32_MIN <= item <= _I32_MAX
-        for item in items
-    )
+def _widen_homogeneous_int_type(items: list[Value]) -> type:
+    """Return :class:`BeyondI64`, :class:`WideInt`, or ``int``.
+
+    *items* is assumed to be a homogeneous int collection (the
+    ``the_type is int`` branch of :func:`_resolve_single_type`).  A
+    single pass picks the least upper bound.
+    """
+    widest: type = int
+    for item in items:
+        if isinstance(item, bool) or not isinstance(item, int):
+            continue
+        if not _I64_MIN <= item <= _I64_MAX:
+            return BeyondI64
+        if widest is int and not _I32_MIN <= item <= _I32_MAX:
+            widest = WideInt
+    return widest
 
 
 @beartype
-def _int_needs_beyond_i64(items: list[Value]) -> bool:
-    """Return ``True`` if any int in *items* is outside i64 range."""
-    return any(
-        isinstance(item, int)
-        and not isinstance(item, bool)
-        and not _I64_MIN <= item <= _I64_MAX
-        for item in items
-    )
+def int_widening_tier(items: list[Value]) -> type | None:
+    """Return :class:`BeyondI64`, :class:`WideInt`, or ``None``.
+
+    ``None`` when *items* is empty, contains a non-int (including
+    ``bool``), or every int fits in signed 32-bit range.  Used by
+    collection formatting to select a widened integer formatter without
+    running full :func:`infer_element_type`.
+    """
+    if not items:
+        return None
+    widest: type | None = None
+    for item in items:
+        # ``type(item) is int`` excludes ``bool`` (a subclass of
+        # ``int``) and is cheaper than ``isinstance`` on this hot path.
+        if type(item) is not int:
+            return None
+        if item < _I64_MIN or item > _I64_MAX:
+            widest = BeyondI64
+        elif widest is None and (item < _I32_MIN or item > _I32_MAX):
+            widest = WideInt
+    return widest
 
 
 @dataclass(frozen=True)
@@ -170,10 +191,7 @@ def _resolve_single_type(
             values=tuple(all_dict_values),
         )
     if the_type is int:
-        if _int_needs_beyond_i64(items=items):
-            return BeyondI64
-        if _int_needs_widening(items=items):
-            return WideInt
+        return _widen_homogeneous_int_type(items=items)
     return the_type
 
 

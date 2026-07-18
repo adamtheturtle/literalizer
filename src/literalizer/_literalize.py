@@ -27,6 +27,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     WideInt,
     infer_element_type,
+    int_widening_tier,
     record_shape_for_dict,
 )
 from literalizer._language import (
@@ -351,12 +352,21 @@ def _widened_int_formatter(
     range uses :attr:`~Language.format_integer_beyond_i64`; one whose
     integer values only exceed signed 32-bit range uses
     :attr:`~Language.format_integer_widened`.
+
+    Languages without either widened formatter (e.g. Python) return
+    immediately so list/map formatting does not pay for a width scan.
+    Otherwise :func:`int_widening_tier` selects the tier without full
+    element-type inference.
     """
-    inferred = infer_element_type(items=items)
-    if inferred is BeyondI64:
-        return spec.format_integer_beyond_i64
-    if inferred is WideInt:
-        return spec.format_integer_widened
+    beyond = spec.format_integer_beyond_i64
+    widened = spec.format_integer_widened
+    if beyond is None and widened is None:
+        return None
+    tier = int_widening_tier(items=items)
+    if tier is BeyondI64:
+        return beyond
+    if tier is WideInt:
+        return widened
     return None
 
 
