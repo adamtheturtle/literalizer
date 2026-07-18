@@ -54,6 +54,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_underscore,
     make_overflow_fallback_formatter,
+    make_unsigned_overflow_fallback,
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
@@ -112,7 +113,6 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
-    no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -520,6 +520,17 @@ def _csharp_render_record_declaration(
 
 
 @beartype
+def _format_csharp_ulong_positive(value: int) -> str:
+    """Format a non-negative integer as a C# ``ulong`` literal.
+
+    The ``UL`` suffix forces unsigned 64-bit typing so a homogeneous
+    ``ulong`` collection can include values that would otherwise be
+    inferred as signed ``long``.
+    """
+    return f"{value}UL"
+
+
+@beartype
 def _csharp_int_field_type(*, value: int) -> str:
     """Return the C# record-component type for an integer.
 
@@ -607,7 +618,6 @@ class CSharp(metaclass=LanguageCls):
     """
 
     format_integer_widened = no_format_integer_widened
-    format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -756,6 +766,7 @@ class CSharp(metaclass=LanguageCls):
         bool_type="bool",
         int_type="int",
         wide_int_type="long",
+        beyond_i64_type="ulong",
         float_type="double",
         mixed_numeric_type="double",
         bytes_type="string",
@@ -1972,6 +1983,16 @@ class CSharp(metaclass=LanguageCls):
             fallback=raise_for_unrepresentable_int(language_name="C#"),
             min_value=I64_MIN,
             max_value=2**64 - 1,
+        )
+
+    @cached_property
+    def format_integer_beyond_i64(self) -> Callable[[int], str]:
+        """Always-``UL``-suffixed formatter for collections that exceed
+        signed 64-bit range.
+        """
+        return make_unsigned_overflow_fallback(
+            format_positive=_format_csharp_ulong_positive,
+            language_name="C#",
         )
 
     @cached_property

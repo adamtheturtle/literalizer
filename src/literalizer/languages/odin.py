@@ -1429,6 +1429,7 @@ class Odin(metaclass=LanguageCls):
             dict_type_template="map[string]{inner}",
             fallback_value_type="string",
             wide_int_type=None,
+            beyond_i64_type=None,
         )
         base_set_config: SetFormatConfig = self.set_format(
             default_type=self.default_set_element_type,

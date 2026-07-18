@@ -9,6 +9,8 @@ ANull
 ASet
 AStr
 Args
+BigInt
+BigInteger
 Bool
 CPP
 CPython
@@ -60,6 +62,7 @@ Haxe
 Hcl
 JSONDecodeError
 Jsonnet
+LUB
 LocalDate
 Lua
 Mixin
@@ -227,6 +230,7 @@ representable
 reproducibility
 roundtrip
 ruamel
+rustc
 scala
 scalac
 sigil

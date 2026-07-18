@@ -197,6 +197,7 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
         dict_type_template="Hash(String, {inner})",
         fallback_value_type="String",
         wide_int_type=None,
+        beyond_i64_type=None,
     ),
     template="[] of {type}",
     fallback_type="String",

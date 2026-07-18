@@ -54,7 +54,7 @@ def make_element_to_type(
     dict_type_template: str | None,
     fallback_value_type: str | None,
     wide_int_type: str | None,
-    beyond_i64_type: str | None = None,
+    beyond_i64_type: str | None,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
@@ -380,7 +380,7 @@ class TypedOpenerConfig:
         dict_type_template: str | None,
         fallback_value_type: str | None,
         wide_int_type: str | None,
-        beyond_i64_type: str | None = None,
+        beyond_i64_type: str | None,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type

@@ -347,9 +347,9 @@ def _widened_int_formatter(
 
     Returns ``None`` when *items* do not require widening or when the
     language has no matching widened formatter (it resolves to
-    ``None``).  A collection whose ints exceed signed 64-bit range uses
-    :attr:`~Language.format_integer_beyond_i64`; one whose ints only
-    exceed signed 32-bit range uses
+    ``None``).  A collection whose integer values exceed signed 64-bit
+    range uses :attr:`~Language.format_integer_beyond_i64`; one whose
+    integer values only exceed signed 32-bit range uses
     :attr:`~Language.format_integer_widened`.
     """
     inferred = infer_element_type(items=items)

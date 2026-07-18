@@ -1065,6 +1065,7 @@ class VisualBasic(metaclass=LanguageCls):
             bool_type="Boolean",
             int_type="Integer",
             wide_int_type="Long",
+            beyond_i64_type="ULong",
             float_type="Double",
             mixed_numeric_type="Double",
             bytes_type="String",

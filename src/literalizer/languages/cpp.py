@@ -286,6 +286,7 @@ def _make_cpp_element_to_type(
         dict_type_template="std::map<std::string, {inner}>",
         fallback_value_type=None,
         wide_int_type=None,
+        beyond_i64_type=None,
     )
 
 
