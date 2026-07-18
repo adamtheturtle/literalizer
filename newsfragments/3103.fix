@@ -1,0 +1,1 @@
+A Go homogeneous integer collection whose values exceed the signed 64-bit range now opens as ``[]uint64`` / ``map[...]uint64`` with every element formatted for the unsigned element type, so an in-range negative sibling raises ``UnrepresentableIntegerError`` instead of rendering as a signed literal that Go rejects at compile time.
