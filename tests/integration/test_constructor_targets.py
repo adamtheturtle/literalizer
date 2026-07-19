@@ -109,7 +109,7 @@ def _supports_default_constructor_binding(
     """Return whether *spec* supports constructor call bindings here."""
     return (
         not isinstance(spec.call_style_config, enum.Enum)
-        and spec.__class__.supports_variable_names
+        and spec.supports_variable_names
         and spec.supports_zero_parameter_calls
         and spec.call_returns_expression
     )
