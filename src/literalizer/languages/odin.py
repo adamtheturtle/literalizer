@@ -78,6 +78,7 @@ from literalizer._language import (
     NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordVariant,
     RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -577,7 +578,7 @@ class Odin(metaclass=LanguageCls):
         fixture_module_name_lowercase=False,
         golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
-        record_variants=frozenset(),
+        record_variants=frozenset({RecordVariant.FIELD_TYPE_SPLIT}),
         nested_map_widening=NestedMapWideningVariant.NONE,
         modifier_sequence_format_overrides={},
     )
@@ -1214,7 +1215,7 @@ class Odin(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=False,
+                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )
