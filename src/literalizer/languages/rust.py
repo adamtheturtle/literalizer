@@ -3469,10 +3469,74 @@ class Rust(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
             )
-        return self.dict_format(
-            default_type=self.default_dict_value_type,
-            default_key_type=self.default_dict_key_type,
+        return dataclasses.replace(
+            self.dict_format(
+                default_type=self.default_dict_value_type,
+                default_key_type=self.default_dict_key_type,
+            ),
+            narrowed_empty_form=self._narrowed_empty_dict_form,
         )
+
+    @cached_property
+    def _narrowed_empty_dict_form(
+        self,
+    ) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
+        """Render an empty map that borrows a non-empty sibling's type.
+
+        ``[{}, {"x": 1}]`` renders the empty map as
+        ``<HashMap<&str, i32>>::from([])`` so it shares the concrete
+        key/value types Rust infers for the non-empty sibling
+        ``HashMap::from([("x", 1)])``; without the annotation the empty
+        map defaults to ``HashMap<String, String>`` and the list fails
+        to type-check (issue #3013).
+        """
+
+        def recurse(element: Value) -> str:
+            """Resolve a sibling element to its Rust type annotation."""
+            return _rust_type_annotation(
+                data=element,
+                date_type=self._declaration_date_type,
+                datetime_type=self._declaration_datetime_type,
+                sequence_format_type_annotation=(
+                    self.sequence_format.format_type_annotation
+                ),
+                sequence_supports_heterogeneity=(
+                    self.sequence_format.supports_heterogeneity
+                ),
+                set_format_type_annotation=(
+                    self.set_format.format_type_annotation
+                ),
+                dict_format_type_annotation=(
+                    self.dict_format.format_type_annotation
+                ),
+                default_sequence_element_type=(
+                    self.default_sequence_element_type
+                ),
+                default_set_element_type=self.default_set_element_type,
+                default_dict_key_type=self.default_dict_key_type,
+                default_dict_value_type=self.default_dict_value_type,
+            )
+
+        def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
+            """Type the empty map from its first non-empty sibling."""
+            sibling = siblings[0]
+            key_type = _rust_homogeneous_element_type(
+                elements=list(sibling),
+                infer=recurse,
+                default_type=self.default_dict_key_type,
+            )
+            value_type = _rust_homogeneous_element_type(
+                elements=list(sibling.values()),
+                infer=recurse,
+                default_type=self.default_dict_value_type,
+            )
+            annotation = self.dict_format.format_type_annotation(
+                key_type=key_type,
+                value_type=value_type,
+            )
+            return f"<{annotation}>::from([])"
+
+        return _form
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -3585,6 +3649,27 @@ class Rust(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    def _declaration_date_type(self) -> str:
+        """Rust type used to annotate :class:`datetime.date` values."""
+        return (
+            "&str"
+            if self.date_format.value.type_produced is str
+            else "NaiveDate"
+        )
+
+    @cached_property
+    def _declaration_datetime_type(self) -> str:
+        """Rust type used to annotate :class:`datetime.datetime`
+        values.
+        """
+        produced = self.datetime_format.value.type_produced
+        if produced is int:
+            return "i64"
+        if produced is str:
+            return "&str"
+        return "NaiveDateTime"
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -3596,20 +3681,8 @@ class Rust(metaclass=LanguageCls):
                 json_type=self.json_type.value,
             )
         return self.declaration_style.build_formatter(
-            date_type=(
-                "&str"
-                if self.date_format.value.type_produced is str
-                else "NaiveDate"
-            ),
-            datetime_type=(
-                "i64"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "&str"
-                    if self.datetime_format.value.type_produced is str
-                    else "NaiveDateTime"
-                )
-            ),
+            date_type=self._declaration_date_type,
+            datetime_type=self._declaration_datetime_type,
             sequence_format_type_annotation=(
                 self.sequence_format.format_type_annotation
             ),
