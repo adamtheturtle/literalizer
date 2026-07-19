@@ -370,6 +370,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "nested_map_widening": (
         _ci(case_dir_name="nested_map_widening", suffix=""),
     ),
+    "empty_map_narrowing": (
+        _ci(case_dir_name="empty_map_narrowing", suffix=""),
+    ),
     "dhall_nested_map_widening": (
         _ci(case_dir_name="dhall_nested_map_widening", suffix=""),
     ),

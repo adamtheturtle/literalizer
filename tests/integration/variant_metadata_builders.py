@@ -344,6 +344,45 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_empty_map_narrowing_variants() -> Iterable[Variant]:
+    """Build the ``empty_map_narrowing`` variants.
+
+    An empty map beside a non-empty map sibling must borrow the
+    sibling's concrete value type, or the empty literal's fallback type
+    disagrees with the sibling and the list fails to compile (V issue
+    #3015: ``[map[string]IVal{}, {'x': 1}]`` is rejected because the
+    ``int`` value cannot coerce to the ``IVal`` interface).  Only
+    languages whose ``dict_format_config`` declares a
+    ``narrowed_empty_form`` narrow the empty map this way, so the case
+    is single-language today and its directory stays out of the
+    all-languages base discovery (other statically typed languages have
+    their own, still-divergent handling of this shape).
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        if spec.dict_format_config.narrowed_empty_form is None:
+            continue
+        variants.extend(
+            (
+                Variant(
+                    name=f"{lang_cls.__name__}_empty_map_narrowing",
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                ),
+                Variant(
+                    name=f"{lang_cls.__name__}_empty_map_narrowing_multiline",
+                    spec=spec,
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.MULTILINE,
+                ),
+            )
+        )
+    return variants
+
+
+@beartype
 def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
     """Build old-version x non-default dict-value-type variants.
 

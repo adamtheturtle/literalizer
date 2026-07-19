@@ -644,6 +644,7 @@ _JSON_NODE_DICT_CONFIG = DictFormatConfig(
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
+    narrowed_empty_form=None,
 )
 
 _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
@@ -1088,6 +1089,7 @@ class Java(metaclass=LanguageCls):
             preamble_lines=("import java.util.Map;",),
             narrowed_open=None,
             supports_trailing_comma=False,
+            narrowed_empty_form=None,
         )
         HASH_MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new HashMap<>(Map.ofEntries("),
@@ -1103,6 +1105,7 @@ class Java(metaclass=LanguageCls):
             ),
             narrowed_open=None,
             supports_trailing_comma=False,
+            narrowed_empty_form=None,
         )
 
     class EmptyDictKey(enum.Enum):
