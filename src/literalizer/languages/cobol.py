@@ -38,6 +38,9 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_json_value import JsonValue, to_jsonable
+from literalizer._formatters.format_strings import (
+    reject_nul_string_formatter,
+)
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -861,6 +864,7 @@ class Cobol(metaclass=LanguageCls):
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        string_literals_escape_null_byte=False,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -1278,8 +1282,21 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
-        """Format a string value as a quoted literal."""
-        return _format_string_cobol
+        """Format a string value as a quoted literal.
+
+        Plain COBOL string literals have no escape for an embedded null
+        byte and a raw null byte terminates the literal, so such values
+        are rejected.  Under ``json_type=CJSON`` the value tree is
+        discarded and each string is rebuilt as a null-terminated
+        ``cJSON`` node (which can splice a null byte as an ``X"00"``
+        fragment), so no rejection applies there.
+        """
+        if self._json_type_active:
+            return _format_string_cobol
+        return reject_nul_string_formatter(
+            _format_string_cobol,
+            language_name="COBOL",
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

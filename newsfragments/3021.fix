@@ -1,0 +1,1 @@
+Handle embedded null bytes without emitting invalid target-language string literals.

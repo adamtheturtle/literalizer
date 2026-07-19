@@ -35,7 +35,10 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import format_integer_hex
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    reject_nul_string_formatter,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -237,6 +240,7 @@ class R(metaclass=LanguageCls):
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        string_literals_escape_null_byte=False,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -631,7 +635,10 @@ class R(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return reject_nul_string_formatter(
+            format_string_backslash,
+            language_name="R",
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

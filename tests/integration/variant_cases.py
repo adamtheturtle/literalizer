@@ -16,7 +16,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Cobol
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -880,6 +880,59 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_string_embedded_nul_variants() -> Iterable[Variant]:
+    r"""Build embedded-null-byte variants for the languages that escape it.
+
+    The ``string_embedded_nul`` input carries a bare null byte and a
+    null byte immediately followed by a digit.  Each golden file pins the
+    escape a language emits and its distinctness before a following digit
+    (issue #3006).  Participation is driven by
+    ``variant_metadata.string_literals_escape_null_byte``: languages that
+    reject the value (R, COBOL) or still emit a raw null byte are
+    excluded.  A language with more than one string format (Python, whose
+    raw and single-quoted formats carry their own null-byte handling)
+    contributes one variant per format.  COBOL's default formatter
+    rejects the value, but its ``json_type=CJSON`` build rebuilds each
+    string as a null-terminated ``cJSON`` node that splices the byte as
+    ``X"00"``, so that spec is added explicitly.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if not lang_cls.variant_metadata.string_literals_escape_null_byte:
+            continue
+        string_formats = list(make_spec(lang_cls=lang_cls).string_formats)
+        for string_format in string_formats:
+            suffix = (
+                ""
+                if len(string_formats) == 1
+                else f"_{string_format.name.lower()}"
+            )
+            variants.append(
+                Variant(
+                    name=f"{lang_cls.__name__}_string_embedded_nul{suffix}",
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        string_format=string_format,
+                    ),
+                    lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    variants.append(
+        Variant(
+            name="Cobol_string_embedded_nul_cjson",
+            spec=make_spec(
+                lang_cls=Cobol,
+                json_type=Cobol.json_types.CJSON,
+            ),
+            lang_cls=Cobol,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    )
+    return variants
+
+
+@beartype
 def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     """Build nested-map fallback variants for capable ``RECORD``
     strategies.
@@ -1703,6 +1756,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_keyword_field": build_record_keyword_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
     "record_nested_map_fallback": build_record_nested_map_fallback_variants,
+    "string_embedded_nul": build_string_embedded_nul_variants,
     "nested_map_widening": build_nested_map_widening_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "empty_map_narrowing": build_empty_map_narrowing_variants,
