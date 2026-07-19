@@ -14,7 +14,7 @@ import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableIntegerError
-from literalizer.languages import Cpp, D, Go, Rust, TypeScript
+from literalizer.languages import Cpp, D, Go, Rust, TypeScript, V, Zig
 
 _BEYOND_U64 = 2**64
 _BEYOND_NEG_I64 = -(2**63) - 1
@@ -55,6 +55,65 @@ def test_go_raises_above_unsigned_64_bit_range() -> None:
         match=r"^Go cannot represent integer \d+" + _ABOVE_U64_MSG,
     ):
         _literalize_scalar(language=Go(), value=_BEYOND_U64)
+
+
+@pytest.mark.parametrize(argnames="language", argvalues=[V(), Zig()])
+def test_v_and_zig_raise_above_unsigned_64_bit_range(
+    language: Language,
+) -> None:
+    """Neither target has a native integer type wider than ``u64``."""
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=(r"^(?:V|Zig) cannot represent integer \d+" + _ABOVE_U64_MSG),
+    ):
+        _literalize_scalar(language=language, value=_BEYOND_U64)
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        V(),
+        Zig(),
+    ],
+    ids=["v", "zig_zval"],
+)
+def test_v_and_zig_containers_raise_above_unsigned_64_bit_range(
+    language: Language,
+) -> None:
+    """Integer members cannot overflow V/Zig collection or record
+    types.
+    """
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=(r"^(?:V|Zig) cannot represent integer \d+" + _ABOVE_U64_MSG),
+    ):
+        _literalize_list(language=language, values=[_BEYOND_U64])
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        V(heterogeneous_strategy=V.heterogeneous_strategies.RECORD),
+        Zig(heterogeneous_strategy=Zig.heterogeneous_strategies.RECORD),
+    ],
+    ids=["v", "zig"],
+)
+def test_v_and_zig_record_fields_raise_above_unsigned_64_bit_range(
+    language: Language,
+) -> None:
+    """Record field literals cannot overflow their inferred ``u64``
+    type.
+    """
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=(r"^(?:V|Zig) cannot represent integer \d+" + _ABOVE_U64_MSG),
+    ):
+        literalize(
+            source=json.dumps(obj={"value": _BEYOND_U64}),
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name="x", modifiers=frozenset()),
+        )
 
 
 def test_go_raises_for_in_range_negative_in_uint64_collection() -> None:

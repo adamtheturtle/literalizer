@@ -36,6 +36,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -129,6 +130,32 @@ def _format_datetime_zig(value: datetime.datetime) -> str:
     if value.tzinfo is None:
         value = value.replace(tzinfo=datetime.UTC)
     return str(object=int(value.timestamp()))
+
+
+@beartype
+def _make_zig_integer_formatter(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Return a Zig formatter bounded by its native ``u64`` maximum.
+
+    Zig's untyped integer literals are coerced to the surrounding
+    fixed-width type.  A positive value above ``u64::MAX`` therefore
+    cannot form a valid scalar, union payload, collection member, or
+    record field.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format *value*, rejecting positive values beyond ``u64``."""
+        if value > U64_MAX:
+            msg = (
+                f"Zig cannot represent integer {value} above the unsigned "
+                "64-bit range."
+            )
+            raise UnrepresentableIntegerError(msg)
+        return base(value)
+
+    return _format
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1688,9 +1715,16 @@ class Zig(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        """Callable that formats an int value as a native literal.
+
+        Positive values above ``u64::MAX`` have no valid fixed-width Zig
+        target, so reject them before formatting rather than emitting an
+        overflowing literal or ``ZVal.uint`` payload.
+        """
+        return _make_zig_integer_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
         )
 
     @cached_property

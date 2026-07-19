@@ -1,0 +1,1 @@
+V and Zig now reject positive integers above ``u64::MAX`` with ``UnrepresentableIntegerError`` instead of emitting overflowing fixed-width literals or union payloads.
