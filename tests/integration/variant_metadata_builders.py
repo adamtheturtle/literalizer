@@ -123,12 +123,16 @@ def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
 def build_record_keyword_field_variants() -> Iterable[Variant]:
     """Build keyword-field variants for languages that escape them.
 
-    Dict keys that collide with Rust keywords (``type``, ``match``)
-    must render as raw identifiers (``r#type``) in both the generated
-    struct declaration and its literals, or the output fails to
-    compile (issue #2880).  Only Rust escapes keyword field names this
-    way, so the variant is single-language and its case directory
-    stays out of the all-languages base discovery.
+    Dict keys that collide with a target-language keyword must render
+    as escaped field names in both the generated struct declaration and
+    its literals, or the output fails to compile.  Rust escapes its
+    keywords (``type``, ``match``) as raw identifiers (``r#type``, issue
+    #2880); Zig escapes its keywords (``error``, ``switch``) as quoted
+    identifiers (``@"error"``, issue #2963).  The shared case input
+    carries every participating language's keywords; a key that is not
+    one language's keyword renders verbatim there.  Only languages that
+    escape keyword field names opt in via ``RecordVariant.KEYWORD_FIELD``,
+    so the case directory stays out of the all-languages base discovery.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
