@@ -953,8 +953,8 @@ def _rust_empty_container_wrapper(
     so the input is always an empty list or empty map.  The formatted
     empty-collection literal carries its own element type (e.g.
     ``Vec::<String>::new()``), which the enum variant's type would
-    reject, so an untyped ``vec![]`` / ``HashMap::new()`` is emitted
-    instead and inferred against the variant's ``Vec<Value>`` /
+    reject, so a bare ``vec![]`` / ``HashMap::new()`` is emitted instead
+    and inferred against the variant's ``Vec<Value>`` /
     ``HashMap<&'static str, Value>``.
     """
 
