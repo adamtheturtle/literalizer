@@ -105,7 +105,7 @@ format_string_backslash_nul_hex = _build_backslash_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00")],
 )
-r"""Format a double-quoted string and escape NUL as ``\x00``.
+r"""Format a double-quoted string and escape the null byte as ``\x00``.
 
 Fixed-width hex avoids digit-greedy octal/decimal escapes such as
 ``\0`` followed by ``0``-``7`` (or Nim's decimal ``\0``).
@@ -127,7 +127,7 @@ format_string_backslash_single_nul_hex = _build_backslash_formatter(
     quote_char="'",
     extra_replacements=[("\0", "\\x00")],
 )
-r"""Format a single-quoted string and escape NUL as ``\x00``."""
+r"""Format a single-quoted string and escape the null byte as ``\x00``."""
 
 format_string_backslash_dollar = _build_backslash_formatter(
     quote_char='"',
@@ -205,7 +205,8 @@ format_string_backslash_hash_nul_hex = _build_backslash_formatter(
     quote_char='"',
     extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],
 )
-r"""Format a Crystal-style string, escaping ``#{`` interpolation and NUL."""
+r"""Format a Crystal-style string, escaping ``#{`` interpolation and the
+null byte."""
 
 format_string_backslash_tcl = _build_backslash_formatter(
     quote_char='"',
@@ -238,7 +239,8 @@ format_string_backslash_dollar_single_nul_hex = _build_backslash_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
 )
-r"""Format a single-quoted ``$``-interpolated string and escape NUL."""
+r"""Format a single-quoted ``$``-interpolated string and escape the null
+byte."""
 
 
 @beartype
@@ -248,10 +250,10 @@ def reject_nul_string_formatter(
     *,
     language_name: str,
 ) -> Callable[[str], str]:
-    """Wrap *formatter* to reject strings that contain embedded NUL."""
+    """Wrap *formatter* to reject strings with an embedded null byte."""
 
     def _format(value: str) -> str:
-        """Reject NUL, then delegate to the wrapped formatter."""
+        """Reject a null byte, then delegate to the wrapped formatter."""
         if "\0" in value:
             raise UnrepresentableStringError(
                 language_name=language_name,
@@ -437,14 +439,14 @@ def format_string_raw_python(value: str) -> str:
     need no escaping.
 
     Falls back to a regular backslash-escaped string when the value
-    cannot be represented as a raw literal (contains NUL, ends with an
-    odd number of backslashes, or contains both ``"`` and ``'''``).
-    Embedded NUL falls back to ``\x00`` escaping, since a raw literal
-    cannot encode that code point safely.
+    cannot be represented as a raw literal (contains a null byte, ends
+    with an odd number of backslashes, or contains both ``"`` and
+    ``'''``).  An embedded null byte falls back to ``\x00`` escaping,
+    since a raw literal cannot encode that code point safely.
 
     Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
     """
-    # Raw strings cannot embed NUL or end with an odd number of
+    # Raw strings cannot embed a null byte or end with an odd number of
     # backslashes.
     if "\0" in value:
         return format_string_backslash_nul_hex(value)

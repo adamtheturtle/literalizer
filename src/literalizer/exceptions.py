@@ -69,8 +69,9 @@ class UnrepresentableStringError(UnrepresentableInputError):
     cannot represent in a string literal.
 
     Used when the language or selected string format has no safe escape
-    or embedding for a given code point (for example embedded NUL in R
-    or COBOL).  To resolve, remove the offending character, or target a
+    or embedding for a given code point (for example an embedded null
+    byte in R or COBOL).  To resolve, remove the offending character, or
+    target a
     language whose string literals can represent it.
     """
 

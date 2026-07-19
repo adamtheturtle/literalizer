@@ -38,6 +38,9 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_json_value import JsonValue, to_jsonable
+from literalizer._formatters.format_strings import (
+    reject_nul_string_formatter,
+)
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -85,10 +88,7 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    UnrepresentableStringError,
-)
+from literalizer.exceptions import CallArgNotSupportedError
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
@@ -114,17 +114,8 @@ def _format_string_cobol(value: str) -> str:
     and have no escape sequences.  Double quotes are escaped by doubling
     them, then the whole string is wrapped in double quotes.
 
-    Embedded NUL cannot be represented: COBOL has no escape for it, and
-    a raw NUL byte terminates the literal.  Such values raise
-    :class:`~literalizer.exceptions.UnrepresentableStringError`.
-
     Example: ``say "hi" loud`` becomes ``"say ""hi"" loud"``.
     """
-    if "\0" in value:
-        raise UnrepresentableStringError(
-            language_name="COBOL",
-            character_name="NUL",
-        )
     cleaned = value
     for char, replacement in {"\n": " ", "\r": " ", "\t": " "}.items():
         cleaned = cleaned.replace(char, replacement)
@@ -1290,8 +1281,21 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
-        """Format a string value as a quoted literal."""
-        return _format_string_cobol
+        """Format a string value as a quoted literal.
+
+        Plain COBOL string literals have no escape for an embedded null
+        byte and a raw null byte terminates the literal, so such values
+        are rejected.  Under ``json_type=CJSON`` the value tree is
+        discarded and each string is rebuilt as a null-terminated
+        ``cJSON`` node (which can splice a null byte as an ``X"00"``
+        fragment), so no rejection applies there.
+        """
+        if self._json_type_active:
+            return _format_string_cobol
+        return reject_nul_string_formatter(
+            _format_string_cobol,
+            language_name="COBOL",
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
