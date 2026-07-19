@@ -1164,6 +1164,46 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_tagged_enum_empty_container_variants() -> Iterable[Variant]:
+    """Build the ``tagged_enum_empty_container`` variants.
+
+    A scalar beside an empty list/map (``[1, []]`` / ``[1, {}]``) has no
+    single element type, so a ``TAGGED_ENUM`` strategy wraps the scalar
+    in its value enum and the empty container in a ``List`` / ``Map``
+    variant of that enum (issue #3028).  Only languages that expose a
+    ``TAGGED_ENUM`` strategy participate, so the case directories stay
+    out of the all-languages base discovery (other statically typed
+    languages reject or diverge on this shape).
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        tagged_enum = next(
+            (
+                strategy
+                for strategy in default_spec.heterogeneous_strategies
+                if strategy.name == "TAGGED_ENUM"
+            ),
+            None,
+        )
+        if tagged_enum is None:
+            continue
+        spec = make_spec(
+            lang_cls=lang_cls,
+            heterogeneous_strategy=tagged_enum,
+        )
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_tagged_enum_empty_container",
+                spec=spec,
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
+@beartype
 def build_c_field_name_variants() -> Iterable[Variant]:
     """Build language-owned field-name variants."""
     variants: list[Variant] = []
@@ -1760,6 +1800,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "nested_map_widening": build_nested_map_widening_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "empty_map_narrowing": build_empty_map_narrowing_variants,
+    "tagged_enum_empty_container": build_tagged_enum_empty_container_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,

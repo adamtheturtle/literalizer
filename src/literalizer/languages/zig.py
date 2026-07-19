@@ -312,6 +312,9 @@ def _zig_int_sort_key(value: Value, /) -> int:
     return value if isinstance(value, int) else 0
 
 
+# Zig keywords, shared by the variable-name collision check and the
+# ``RECORD`` field-name escaping below.  Keeping one source avoids the
+# two lists drifting apart.
 _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
     {
         "addrspace",
@@ -368,21 +371,28 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
     }
 )
 
-_ZIG_BARE_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+# A dict key usable verbatim as a Zig ``struct`` member: a plain
+# identifier that is not a keyword.  Anything else is escaped as a
+# quoted identifier (``@"error"``).
+_ZIG_IDENTIFIER = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 @beartype
 def _zig_record_field_identifier(key: str, /) -> str:
     """Return the Zig ``struct`` member name for a dict *key*.
 
-    Zig member identifiers are the dict keys verbatim (no case
-    conversion), matching the designated-initializer literal form
-    ``Record0{ .id = 1, ... }``.  A key that is a Zig keyword (such as
-    ``error``) or is otherwise not a bare Zig identifier is quoted with
-    the ``@"..."`` builtin-identifier syntax, which is valid in both the
-    ``struct`` declaration and the ``.field = value`` literal.
+    A key that is a plain, non-keyword identifier names the member
+    verbatim (no case conversion), matching the designated-initializer
+    literal form ``Record0{ .id = 1, ... }``.  A key that collides with
+    a Zig keyword (``error``, ``switch``, ...) or is not identifier-
+    shaped text is escaped as a quoted identifier (``@"error"``), which
+    is valid in both the ``struct`` declaration (``@"error": T``) and
+    its literal (``.@"error" = value``), so the output compiles
+    (issue #2963).
     """
-    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_BARE_IDENTIFIER.match(key):
+    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_IDENTIFIER.match(
+        string=key
+    ):
         escaped = key.replace("\\", "\\\\").replace('"', '\\"')
         return f'@"{escaped}"'
     return key
@@ -638,7 +648,12 @@ class Zig(metaclass=LanguageCls):
         fixture_module_name_lowercase=False,
         golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
-        record_variants=frozenset({RecordVariant.FIELD_TYPE_SPLIT}),
+        record_variants=frozenset(
+            {
+                RecordVariant.KEYWORD_FIELD,
+                RecordVariant.FIELD_TYPE_SPLIT,
+            }
+        ),
         nested_map_widening=NestedMapWideningVariant.NONE,
         modifier_sequence_format_overrides={},
     )

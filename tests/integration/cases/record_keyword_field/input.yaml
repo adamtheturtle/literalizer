@@ -1,3 +1,5 @@
 - type: a
   match: b
+  error: c
+  switch: d
   id: 1

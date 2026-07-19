@@ -1,0 +1,1 @@
+Wrap an empty list or map that sits beside a scalar in a Rust ``TAGGED_ENUM`` sequence, emitting a ``List`` / ``Map`` value-enum variant so the generated source compiles.

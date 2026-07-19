@@ -123,12 +123,16 @@ def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
 def build_record_keyword_field_variants() -> Iterable[Variant]:
     """Build keyword-field variants for languages that escape them.
 
-    Dict keys that collide with Rust keywords (``type``, ``match``)
-    must render as raw identifiers (``r#type``) in both the generated
-    struct declaration and its literals, or the output fails to
-    compile (issue #2880).  Only Rust escapes keyword field names this
-    way, so the variant is single-language and its case directory
-    stays out of the all-languages base discovery.
+    Dict keys that collide with a target-language keyword must render
+    as escaped field names in both the generated struct declaration and
+    its literals, or the output fails to compile.  Rust escapes its
+    keywords (``type``, ``match``) as raw identifiers (``r#type``, issue
+    #2880); Zig escapes its keywords (``error``, ``switch``) as quoted
+    identifiers (``@"error"``, issue #2963).  The shared case input
+    carries every participating language's keywords; a key that is not
+    one language's keyword renders verbatim there.  Only languages that
+    escape keyword field names opt in via ``RecordVariant.KEYWORD_FIELD``,
+    so the case directory stays out of the all-languages base discovery.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
@@ -348,15 +352,16 @@ def build_empty_map_narrowing_variants() -> Iterable[Variant]:
     """Build the ``empty_map_narrowing`` variants.
 
     An empty map beside a non-empty map sibling must borrow the
-    sibling's concrete value type, or the empty literal's fallback type
-    disagrees with the sibling and the list fails to compile (V issue
-    #3015: ``[map[string]IVal{}, {'x': 1}]`` is rejected because the
-    ``int`` value cannot coerce to the ``IVal`` interface).  Only
-    languages whose ``dict_format_config`` declares a
-    ``narrowed_empty_form`` narrow the empty map this way, so the case
-    is single-language today and its directory stays out of the
-    all-languages base discovery (other statically typed languages have
-    their own, still-divergent handling of this shape).
+    sibling's concrete key/value types, or the empty literal's fallback
+    type disagrees with the sibling and the list fails to compile (V
+    issue #3015: ``[map[string]IVal{}, {'x': 1}]`` is rejected because
+    the ``int`` value cannot coerce to the ``IVal`` interface; Rust
+    issue #3013: ``HashMap::<String, String>::from([])`` disagrees with
+    the sibling ``HashMap<&str, i32>``).  Only languages whose
+    ``dict_format_config`` declares a ``narrowed_empty_form`` narrow the
+    empty map this way, so the case stays out of the all-languages base
+    discovery (other statically typed languages have their own,
+    still-divergent handling of this shape).
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():

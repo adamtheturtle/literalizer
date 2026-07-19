@@ -89,12 +89,14 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "heterogeneous_time_string",
         "dict_wide_int_key",
         # ``record_keyword_field`` carries dict keys that collide with
-        # Rust keywords (``type``, ``match``) to exercise the RECORD
-        # strategy's raw-identifier escaping (``r#type``, issue #2880).
-        # The Rust ``record_keyword_field`` variant is the sole
-        # consumer: other languages have their own keyword sets and
-        # escape mechanisms, so base-discovering it for every language
-        # would emit golden files that may fail to compile.
+        # Rust keywords (``type``, ``match``) and Zig keywords
+        # (``error``, ``switch``) to exercise the field-name escaping in
+        # each RECORD language: Rust raw identifiers (``r#type``, issue
+        # #2880) and Zig quoted identifiers (``@"error"``, issue #2963).
+        # Every key that is not one language's keyword renders verbatim
+        # there, so both golden files compile.  Only languages that
+        # escape keyword field names opt in, so base-discovering it for
+        # every language would emit golden files that may fail to compile.
         "record_keyword_field",
         # ``record_field_type_split`` carries same-key-set dicts whose
         # field types conflict (a nested record with different fields,
@@ -136,11 +138,21 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``empty_map_narrowing`` carries an empty map beside a non-empty
         # map sibling (``[{}, {"x": 1}]``).  Only languages whose
         # ``dict_format_config`` declares a ``narrowed_empty_form`` type
-        # the empty literal from the sibling's value type so the list
-        # compiles (V issue #3015); other statically typed languages
-        # still render this shape divergently, so it stays out of the
-        # all-languages base discovery.
+        # the empty literal from the sibling's key/value types so the list
+        # compiles (V issue #3015, Rust issue #3013); other statically
+        # typed languages still render this shape divergently, so it stays
+        # out of the all-languages base discovery.
         "empty_map_narrowing",
+        # ``tagged_enum_empty_list`` / ``tagged_enum_empty_map`` carry a
+        # scalar beside an empty list / map (``[1, []]`` / ``[1, {}]``),
+        # which has no single element type.  Only a ``TAGGED_ENUM``
+        # strategy renders this shape as code that compiles, wrapping the
+        # scalar in its value enum and the empty container in a ``List`` /
+        # ``Map`` variant (issue #3028); other statically typed languages
+        # reject or diverge on it, so both directories stay out of the
+        # all-languages base discovery.
+        "tagged_enum_empty_list",
+        "tagged_enum_empty_map",
         # ``dhall_nested_map_widening`` is the Dhall counterpart of
         # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
         # records typed by their field set, so it needs a dedicated input

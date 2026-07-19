@@ -1,0 +1,1 @@
+Type an empty Rust map from its non-empty sibling so a list mixing empty and non-empty maps compiles.

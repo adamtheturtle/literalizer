@@ -717,6 +717,7 @@ def _build_variant_behavior(
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
         wrap_non_scalar=None,
+        wrap_empty_container=None,
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,

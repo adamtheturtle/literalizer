@@ -831,6 +831,145 @@ def _rust_value_scalar_wrapper(
 
 
 @beartype
+def _rust_is_empty_container(*, value: Value) -> bool:
+    """Return whether *value* is an empty list or empty map."""
+    return isinstance(value, (list, dict)) and len(value) == 0
+
+
+@beartype
+def _rust_empty_container_wrap_ids(data: Value, /) -> frozenset[int]:
+    """Return ids of lists mixing scalars with empty containers.
+
+    A list element position that holds both a scalar and an empty
+    list/map has no single Rust element type, so the ``TAGGED_ENUM``
+    strategy wraps every element in the value enum: scalars through their
+    scalar variant and each empty container through a ``List`` / ``Map``
+    variant (issue #3028).  A list that also holds a *non-empty*
+    container is left untouched -- wrapping its populated elements is a
+    broader, separate concern -- so only pure scalar-plus-empty lists are
+    marked.
+
+    Only lists are marked.  A dict whose values mix a scalar with a
+    container is already a documented rejection
+    (:class:`~literalizer.exceptions.MixedDictValuesError`); the walk
+    still descends dicts so a list nested inside one is reached.
+    """
+    ids: set[int] = set()
+
+    def _visit(item: Value) -> None:
+        """Mark *item* when it is a scalar-plus-empty-container list."""
+        match item:
+            case dict():
+                children: list[Value] = list(item.values())
+            case list():
+                children = list(item)
+            case _:
+                return
+        for child in children:
+            _visit(item=child)
+        if not isinstance(item, list):
+            return
+        has_scalar = any(
+            not isinstance(child, (list, dict, set)) for child in children
+        )
+        has_empty = any(
+            _rust_is_empty_container(value=child) for child in children
+        )
+        has_populated_container = any(
+            isinstance(child, (list, dict, set))
+            and not _rust_is_empty_container(value=child)
+            for child in children
+        )
+        if has_scalar and has_empty and not has_populated_container:
+            ids.add(id(item))
+
+    _visit(item=data)
+    return frozenset(ids)
+
+
+@beartype
+def _tagged_enum_wrap_ids(data: Value, /) -> frozenset[int]:
+    """Return every container id the ``TAGGED_ENUM`` strategy wraps.
+
+    Unions the shared heterogeneous-scalar and sibling-map collectors
+    with the Rust-specific scalar-plus-empty-container collector so the
+    behavior and preamble agree on which children are wrapped.
+    """
+    return (
+        collect_heterogeneous_container_ids(data=data)
+        | collect_sibling_map_wrap_ids(data=data)
+        | _rust_empty_container_wrap_ids(data)
+    )
+
+
+@beartype
+def _rust_wrapped_empty_container_kinds(
+    *,
+    data: Value,
+    wrap_ids: frozenset[int],
+) -> tuple[bool, bool]:
+    """Return ``(has_empty_list, has_empty_map)`` for wrapped children.
+
+    Mirrors :func:`iter_wrapped_scalars`: an empty list/map whose
+    immediate container id appears in *wrap_ids* renders as a ``List`` /
+    ``Map`` variant of the value enum, so the enum declaration must
+    carry that variant.
+    """
+    has_list = False
+    has_map = False
+
+    def _visit(item: Value) -> None:
+        """Record which empty-container kinds *item* wraps."""
+        nonlocal has_list, has_map
+        match item:
+            case dict():
+                children: list[Value] = list(item.values())
+            case list():
+                children = list(item)
+            case _:
+                return
+        parent_wrapped = id(item) in wrap_ids
+        for child in children:
+            if parent_wrapped and _rust_is_empty_container(value=child):
+                match child:
+                    case list():
+                        has_list = True
+                    case _:
+                        has_map = True
+            _visit(item=child)
+
+    _visit(item=data)
+    return (has_list, has_map)
+
+
+@beartype
+def _rust_empty_container_wrapper(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], str]:
+    """Return a callable wrapping an empty container in the value enum.
+
+    Invoked only for the scalar-plus-empty-container mix (issue #3028),
+    so the input is always an empty list or empty map.  The formatted
+    empty-collection literal carries its own element type (e.g.
+    ``Vec::<String>::new()``), which the enum variant's type would
+    reject, so a bare ``vec![]`` / ``HashMap::new()`` is emitted instead
+    and inferred against the variant's ``Vec<Value>`` /
+    ``HashMap<&'static str, Value>``.
+    """
+
+    def _wrap(raw_value: Value) -> str:
+        """Wrap an empty container as ``{enum_name}::{List,Map}(...)``."""
+        match raw_value:
+            case list():
+                return f"{params.enum_name}::List(vec![])"
+            case _:
+                return f"{params.enum_name}::Map(HashMap::new())"
+
+    return _wrap
+
+
+@beartype
 def _build_tagged_enum_behavior(
     params: _StrategyParams,
     /,
@@ -838,16 +977,15 @@ def _build_tagged_enum_behavior(
     """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
 
     def _compute(data: Value) -> frozenset[int]:
-        """Return container ids whose scalar children should wrap."""
-        return collect_heterogeneous_container_ids(
-            data=data
-        ) | collect_sibling_map_wrap_ids(data=data)
+        """Return container ids whose children should wrap."""
+        return _tagged_enum_wrap_ids(data)
 
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
+        wrap_empty_container=_rust_empty_container_wrapper(params),
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -866,14 +1004,19 @@ def _rust_value_enum_lines(
     enum_name: str,
     date_type: str,
     datetime_type: str,
+    include_list_variant: bool,
+    include_map_variant: bool,
 ) -> list[str]:
     """Return the value-enum declaration lines for *scalars*.
 
-    One variant per distinct scalar family present, in first-seen order.
-    Returns an empty list when *scalars* is empty (no enum is needed).
-    Shared by the ``TAGGED_ENUM`` preamble and the ``RECORD`` preamble's
-    sibling-map widening (issue #2910), which wraps scalar leaves in the
-    same enum.
+    One variant per distinct scalar family present, in first-seen order,
+    followed by a ``List(Vec<{enum}>)`` and/or
+    ``Map(HashMap<&'static str, {enum}>)`` variant when an empty list /
+    map is wrapped alongside the scalars (issue #3028).  Returns an empty
+    list when no variant is needed.  Shared by the ``TAGGED_ENUM``
+    preamble and the ``RECORD`` preamble's sibling-map widening (issue
+    #2910), which wraps scalar leaves in the same enum and never wraps
+    empty containers (so it passes ``include_*_variant=False``).
     """
     variants: list[_VariantSignature] = []
     seen: set[str] = set()
@@ -887,6 +1030,17 @@ def _rust_value_enum_lines(
             continue
         seen.add(signature.name)
         variants.append(signature)
+    if include_list_variant:
+        variants.append(
+            _VariantSignature(name="List", inner_type=f"Vec<{enum_name}>")
+        )
+    if include_map_variant:
+        variants.append(
+            _VariantSignature(
+                name="Map",
+                inner_type=f"HashMap<&'static str, {enum_name}>",
+            )
+        )
     if not variants:
         return []
     lines: list[str] = [f"enum {enum_name} {{"]
@@ -910,18 +1064,22 @@ def _build_tagged_enum_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
-        wrap_ids = collect_heterogeneous_container_ids(
-            data=data
-        ) | collect_sibling_map_wrap_ids(data=data)
+        wrap_ids = _tagged_enum_wrap_ids(data)
         if not wrap_ids:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        has_list, has_map = _rust_wrapped_empty_container_kinds(
+            data=data,
+            wrap_ids=wrap_ids,
+        )
         return tuple(
             _rust_value_enum_lines(
                 scalars=scalars,
                 enum_name=params.enum_name,
                 date_type=params.date_type,
                 datetime_type=params.datetime_type,
+                include_list_variant=has_list,
+                include_map_variant=has_map,
             )
         )
 
@@ -1629,6 +1787,7 @@ def _record_behavior_impl(
         compute_wrap_ids=_compute_wrap_ids,
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
+        wrap_empty_container=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=False,
@@ -1859,6 +2018,8 @@ def _record_preamble_impl(
             enum_name=params.enum_name,
             date_type=params.date_type,
             datetime_type=params.datetime_type,
+            include_list_variant=False,
+            include_map_variant=False,
         )
         enum_block = ("\n".join(enum_lines),) if enum_lines else ()
         return enum_block + tuple(struct_blocks)
@@ -3308,10 +3469,74 @@ class Rust(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
             )
-        return self.dict_format(
-            default_type=self.default_dict_value_type,
-            default_key_type=self.default_dict_key_type,
+        return dataclasses.replace(
+            self.dict_format(
+                default_type=self.default_dict_value_type,
+                default_key_type=self.default_dict_key_type,
+            ),
+            narrowed_empty_form=self._narrowed_empty_dict_form,
         )
+
+    @cached_property
+    def _narrowed_empty_dict_form(
+        self,
+    ) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
+        """Render an empty map that borrows a non-empty sibling's type.
+
+        ``[{}, {"x": 1}]`` renders the empty map as
+        ``<HashMap<&str, i32>>::from([])`` so it shares the concrete
+        key/value types Rust infers for the non-empty sibling
+        ``HashMap::from([("x", 1)])``; without the annotation the empty
+        map defaults to ``HashMap<String, String>`` and the list fails
+        to type-check (issue #3013).
+        """
+
+        def recurse(element: Value) -> str:
+            """Resolve a sibling element to its Rust type annotation."""
+            return _rust_type_annotation(
+                data=element,
+                date_type=self._declaration_date_type,
+                datetime_type=self._declaration_datetime_type,
+                sequence_format_type_annotation=(
+                    self.sequence_format.format_type_annotation
+                ),
+                sequence_supports_heterogeneity=(
+                    self.sequence_format.supports_heterogeneity
+                ),
+                set_format_type_annotation=(
+                    self.set_format.format_type_annotation
+                ),
+                dict_format_type_annotation=(
+                    self.dict_format.format_type_annotation
+                ),
+                default_sequence_element_type=(
+                    self.default_sequence_element_type
+                ),
+                default_set_element_type=self.default_set_element_type,
+                default_dict_key_type=self.default_dict_key_type,
+                default_dict_value_type=self.default_dict_value_type,
+            )
+
+        def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
+            """Type the empty map from its first non-empty sibling."""
+            sibling = siblings[0]
+            key_type = _rust_homogeneous_element_type(
+                elements=list(sibling),
+                infer=recurse,
+                default_type=self.default_dict_key_type,
+            )
+            value_type = _rust_homogeneous_element_type(
+                elements=list(sibling.values()),
+                infer=recurse,
+                default_type=self.default_dict_value_type,
+            )
+            annotation = self.dict_format.format_type_annotation(
+                key_type=key_type,
+                value_type=value_type,
+            )
+            return f"<{annotation}>::from([])"
+
+        return _form
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -3424,6 +3649,27 @@ class Rust(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    def _declaration_date_type(self) -> str:
+        """Rust type used to annotate :class:`datetime.date` values."""
+        return (
+            "&str"
+            if self.date_format.value.type_produced is str
+            else "NaiveDate"
+        )
+
+    @cached_property
+    def _declaration_datetime_type(self) -> str:
+        """Rust type used to annotate :class:`datetime.datetime`
+        values.
+        """
+        produced = self.datetime_format.value.type_produced
+        if produced is int:
+            return "i64"
+        if produced is str:
+            return "&str"
+        return "NaiveDateTime"
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -3435,20 +3681,8 @@ class Rust(metaclass=LanguageCls):
                 json_type=self.json_type.value,
             )
         return self.declaration_style.build_formatter(
-            date_type=(
-                "&str"
-                if self.date_format.value.type_produced is str
-                else "NaiveDate"
-            ),
-            datetime_type=(
-                "i64"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "&str"
-                    if self.datetime_format.value.type_produced is str
-                    else "NaiveDateTime"
-                )
-            ),
+            date_type=self._declaration_date_type,
+            datetime_type=self._declaration_datetime_type,
             sequence_format_type_annotation=(
                 self.sequence_format.format_type_annotation
             ),
