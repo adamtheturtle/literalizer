@@ -140,6 +140,16 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # still render this shape divergently, so it stays out of the
         # all-languages base discovery.
         "empty_map_narrowing",
+        # ``tagged_enum_empty_list`` / ``tagged_enum_empty_map`` carry a
+        # scalar beside an empty list / map (``[1, []]`` / ``[1, {}]``),
+        # which has no single element type.  Only a ``TAGGED_ENUM``
+        # strategy renders this shape as code that compiles, wrapping the
+        # scalar in its value enum and the empty container in a ``List`` /
+        # ``Map`` variant (issue #3028); other statically typed languages
+        # reject or diverge on it, so both directories stay out of the
+        # all-languages base discovery.
+        "tagged_enum_empty_list",
+        "tagged_enum_empty_map",
         # ``dhall_nested_map_widening`` is the Dhall counterpart of
         # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
         # records typed by their field set, so it needs a dedicated input

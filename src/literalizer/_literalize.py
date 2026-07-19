@@ -471,6 +471,10 @@ def _maybe_wrap_child(
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     and non-scalar children (ref markers, containers) through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
+    A behavior that wraps only scalars still wraps an *empty* container
+    child through
+    :attr:`~literalizer._language.HeterogeneousBehavior.wrap_empty_container`
+    (Rust's ``TAGGED_ENUM``, issue #3028).
     """
     spec = ctx.spec
     behavior = spec.heterogeneous_behavior
@@ -480,9 +484,19 @@ def _maybe_wrap_child(
             return formatted_value
         return wrap_scalar(raw_value, formatted_value)
     wrap_non_scalar = behavior.wrap_non_scalar
-    if wrap_non_scalar is None or parent_id not in ctx.wrap_ids:
-        return formatted_value
-    return wrap_non_scalar(raw_value, formatted_value)
+    if wrap_non_scalar is not None:
+        if parent_id not in ctx.wrap_ids:
+            return formatted_value
+        return wrap_non_scalar(raw_value, formatted_value)
+    wrap_empty_container = behavior.wrap_empty_container
+    if wrap_empty_container is not None and parent_id in ctx.wrap_ids:
+        # ``compute_wrap_ids`` only marks a container's non-scalar child
+        # for ``wrap_empty_container`` when that child is an empty list or
+        # map (Rust's scalar-plus-empty-container list, issue #3028), so
+        # the wrapper always receives an empty collection to render as a
+        # payload-free ``List`` / ``Map`` variant.
+        return wrap_empty_container(raw_value)
+    return formatted_value
 
 
 @beartype
