@@ -434,6 +434,112 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
 
 
 @beartype
+def _nim_object_variant_wrap_ids(  # noqa: C901
+    *, data: Value
+) -> frozenset[int]:
+    """Return containers whose children need the recursive ``Value`` type.
+
+    Nim's object variant has list and table payloads as well as scalar
+    payloads.  Once a container is represented by ``Value``, every
+    container below it must use the same recursive element/value type too;
+    otherwise (for example) ``Value(... tableVal: Table[string, int])``
+    cannot satisfy a ``Table[string, Value]`` field.
+    """
+    wrap_ids = set(
+        collect_heterogeneous_container_ids(data=data)
+        | collect_sibling_map_wrap_ids(data=data)
+    )
+
+    def _children(item: Value) -> list[Value] | None:
+        """Return the direct children of a supported container."""
+        match item:
+            case dict():
+                return list(item.values())
+            case list():
+                return list(item)
+            case _:
+                return None
+
+    def _visit(item: Value) -> None:
+        """Mark containers that require a recursive value type."""
+        children = _children(item)
+        if children is None:
+            return
+        for child in children:
+            _visit(child)
+        # Empty containers need a concrete type when placed beside a
+        # populated container; null is only representable by vkNull.
+        if not children or any(child is None for child in children):
+            wrap_ids.add(id(item))
+            return
+        child_types = {type(child) for child in children}
+        containers = [
+            child for child in children if isinstance(child, (list, dict))
+        ]
+        wrapped_containers = [
+            child for child in containers if id(child) in wrap_ids
+        ]
+        if len(child_types) > 1 or (
+            wrapped_containers and len(wrapped_containers) < len(containers)
+        ):
+            wrap_ids.add(id(item))
+
+    _visit(data)
+
+    # Close over nested containers after the bottom-up decision above.
+    # This gives every list/table payload its declared seq[Value] or
+    # Table[string, Value] type, including otherwise homogeneous children.
+    def _close(item: Value, *, ancestor_wrapped: bool = False) -> None:
+        """Mark nested containers below an already wrapped container."""
+        children = _children(item)
+        if children is None:
+            return
+        wrapped = ancestor_wrapped or id(item) in wrap_ids
+        if ancestor_wrapped:
+            wrap_ids.add(id(item))
+        for child in children:
+            _close(
+                child,
+                ancestor_wrapped=(wrapped and isinstance(child, (list, dict))),
+            )
+
+    _close(data)
+    return frozenset(wrap_ids)
+
+
+@beartype
+def _nim_wrapped_container_kinds(
+    *, data: Value, wrap_ids: frozenset[int]
+) -> tuple[bool, bool]:
+    """Return whether a wrapped child needs the list or table branch."""
+    has_list = False
+    has_table = False
+
+    def _visit(item: Value) -> None:
+        """Find container branches used by wrapped children."""
+        nonlocal has_list, has_table
+        match item:
+            case dict():
+                children = list(item.values())
+            case list():
+                children = list(item)
+            case _:
+                return
+        for child in children:
+            if id(item) in wrap_ids:
+                if isinstance(child, list):
+                    has_list = True
+                elif isinstance(child, dict) and not isinstance(
+                    child, OrderedMap
+                ):
+                    has_table = True
+            _visit(child)
+
+    _visit(data)
+    return (has_list, has_table)
+
+
+@beartype
 def _build_object_variant_behavior(
     variant_name: str,
     date_type: str,
@@ -443,10 +549,8 @@ def _build_object_variant_behavior(
     """OBJECT_VARIANT strategy: wrap scalars and skip scalar checks."""
 
     def _compute(data: Value) -> frozenset[int]:
-        """Return container ids whose scalar children should wrap."""
-        return collect_heterogeneous_container_ids(
-            data=data
-        ) | collect_sibling_map_wrap_ids(data=data)
+        """Return container ids whose children should use ``Value``."""
+        return _nim_object_variant_wrap_ids(data=data)
 
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}(kind: ..., ...Val: ...)``."""
@@ -467,11 +571,33 @@ def _build_object_variant_behavior(
             f"{signature.field_name}: {payload})"
         )
 
+    def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
+        """Wrap a nested native collection in its recursive branch."""
+        match raw_value:
+            case list():
+                payload = (
+                    formatted if raw_value else f"newSeq[{variant_name}]()"
+                )
+                return f"{variant_name}(kind: vkList, listVal: {payload})"
+            case dict() if not isinstance(raw_value, OrderedMap):
+                payload = (
+                    formatted
+                    if raw_value
+                    else f"initTable[string, {variant_name}]()"
+                )
+                return f"{variant_name}(kind: vkTable, tableVal: {payload})"
+            case _:
+                msg = (
+                    "Nim OBJECT_VARIANT cannot represent a set or ordered "
+                    "map alongside another value type"
+                )
+                raise UnrepresentableInputError(msg)
+
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
         compute_wrap_ids=_compute,
         wrap_scalar=_wrap,
-        wrap_non_scalar=None,
+        wrap_non_scalar=_wrap_non_scalar,
         wrap_empty_container=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
@@ -520,6 +646,28 @@ def _build_object_variant_preamble(
                 continue
             seen.add(signature.kind_name)
             variants.append(signature)
+        has_list, has_table = _nim_wrapped_container_kinds(
+            data=data,
+            wrap_ids=wrap_ids,
+        )
+        if has_list:
+            variants.append(
+                _VariantSignature(
+                    kind_name="vkList",
+                    field_name="listVal",
+                    field_type=f"seq[{variant_name}]",
+                )
+            )
+        if has_table:
+            variants.append(
+                _VariantSignature(
+                    kind_name="vkTable",
+                    field_name="tableVal",
+                    field_type=f"Table[string, {variant_name}]",
+                )
+            )
+        if not variants:
+            return ()
         half_indent = " " * (len(indent) // 2)
         kind_type = f"{variant_name}Kind"
         lines: list[str] = [
@@ -554,9 +702,7 @@ def _build_default_object_variant_preamble(
 
     def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
         """Collect every heterogeneous container requiring a variant."""
-        return collect_heterogeneous_container_ids(
-            data=data,
-        ) | collect_sibling_map_wrap_ids(data=data)
+        return _nim_object_variant_wrap_ids(data=data)
 
     return _build_object_variant_preamble(
         variant_name,
