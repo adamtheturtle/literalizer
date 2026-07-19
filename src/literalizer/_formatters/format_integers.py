@@ -323,22 +323,13 @@ def make_ull_fallback(
 
     Shared by C and C++ where signed 64-bit literals are rejected above
     ``LLONG_MAX`` and ``unsigned long long`` holds positive values up to
-    ``ULLONG_MAX``.  Values above ``ULLONG_MAX`` have no native literal
-    so we raise ``UnrepresentableIntegerError`` rather than emit code
-    the compiler will reject.
+    ``ULLONG_MAX``.  The shared unsigned fallback rejects values above
+    that maximum before this formatter is called.
     """
 
     @beartype
     def _format_positive_ull(value: int) -> str:
-        """Format a non-negative integer with a ``ULL`` suffix, raising
-        for values above ``ULLONG_MAX``.
-        """
-        if value > U64_MAX:
-            msg = (
-                f"{language_name} cannot represent integer {value} above "
-                "the unsigned 64-bit range."
-            )
-            raise UnrepresentableIntegerError(msg)
+        """Format a non-negative integer with a ``ULL`` suffix."""
         return f"{value}ULL"
 
     return make_unsigned_overflow_fallback(

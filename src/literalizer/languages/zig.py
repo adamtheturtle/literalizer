@@ -138,10 +138,9 @@ def _make_zig_integer_formatter(
 ) -> Callable[[int], str]:
     """Return a Zig formatter bounded by its native ``u64`` maximum.
 
-    Zig's untyped integer literals are coerced to the surrounding
-    fixed-width type.  A positive value above ``u64::MAX`` therefore
-    cannot form a valid scalar, union payload, collection member, or
-    record field.
+    Zig integer constants are coerced to the surrounding fixed-width
+    type.  A positive value above ``u64::MAX`` therefore cannot form a
+    valid scalar, union payload, collection member, or record field.
     """
 
     @beartype

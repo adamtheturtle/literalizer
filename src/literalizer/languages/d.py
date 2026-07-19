@@ -34,7 +34,6 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
-    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
@@ -105,7 +104,6 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
-    UnrepresentableIntegerError,
 )
 
 
@@ -116,23 +114,14 @@ def _make_d_ulong_positive_formatter(
     """Return a formatter for positive values above ``long.max``.
 
     Reuses *base* (which honors the configured ``integer_format`` and
-    ``numeric_separator``) and appends D's ``UL`` suffix.  Values above
-    the unsigned 64-bit range have no native D literal, so raise
-    :class:`UnrepresentableIntegerError` rather than emit a literal the
-    compiler rejects.
+    ``numeric_separator``) and appends D's ``UL`` suffix.  The shared
+    unsigned fallback rejects values above the unsigned 64-bit range
+    before this formatter is called.
     """
 
     @beartype
     def _format(value: int) -> str:
-        """Append ``UL`` to *base*'s rendering, raising past unsigned
-        64-bit max.
-        """
-        if value > U64_MAX:
-            msg = (
-                f"D cannot represent integer {value} above the unsigned "
-                "64-bit range."
-            )
-            raise UnrepresentableIntegerError(msg)
+        """Append ``UL`` to *base*'s rendering."""
         return f"{base(value)}UL"
 
     return _format
