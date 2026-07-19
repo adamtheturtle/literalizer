@@ -1,12 +1,13 @@
 {.warning[UnusedImport]:off.}
 type
   ValueKind = enum
-    vkBool, vkInt, vkFloat
+    vkInt, vkBool, vkFloat, vkList
   Value = object
     case kind: ValueKind
-    of vkBool: boolVal: bool
     of vkInt: intVal: int
+    of vkBool: boolVal: bool
     of vkFloat: floatVal: float
+    of vkList: listVal: seq[Value]
 template process(args: varargs[untyped]) = discard
 var my_int = 1
 var my_bool = true

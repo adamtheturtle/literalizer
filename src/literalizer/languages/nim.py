@@ -489,7 +489,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901
     # Close over nested containers after the bottom-up decision above.
     # This gives every list/table payload its declared seq[Value] or
     # Table[string, Value] type, including otherwise homogeneous children.
-    def _close(item: Value, *, ancestor_wrapped: bool = False) -> None:
+    def _close(item: Value, *, ancestor_wrapped: bool) -> None:
         """Mark nested containers below an already wrapped container."""
         children = _children(item)
         if children is None:
@@ -503,7 +503,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901
                 ancestor_wrapped=(wrapped and isinstance(child, (list, dict))),
             )
 
-    _close(data)
+    _close(data, ancestor_wrapped=False)
     return frozenset(wrap_ids)
 
 
