@@ -586,6 +586,16 @@ class HeterogeneousBehavior:
     non-scalars; languages whose ``compute_wrap_ids`` only marks parents
     with all-scalar children leave this as ``None``.
 
+    ``wrap_empty_container`` wraps an *empty* list/map child of a marked
+    container when ``wrap_non_scalar`` is ``None``.  A strategy that wraps
+    only scalars still cannot hold a populated container in its value
+    type, but an empty one carries no inner values, so Rust's
+    ``TAGGED_ENUM`` renders it as a payload-free ``List(vec![])`` /
+    ``Map(HashMap::new())`` variant (issue #3028) while keeping the
+    scalar-plus-populated-container mix a documented rejection.  ``None``
+    for every other behavior, including ``wrap_non_scalar`` strategies
+    (which already wrap any non-scalar uniformly).
+
     ``compute_call_slot_wrap_ids`` is called per positional-argument
     slot with the per-call values gathered at that slot.  It returns
     the ids of top-level scalar call arguments that should be wrapped
@@ -661,6 +671,7 @@ class HeterogeneousBehavior:
     compute_wrap_ids: Callable[[Value], frozenset[int]]
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
+    wrap_empty_container: Callable[[Value], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
     widens_nested_maps_by_wrapping_scalars: bool
@@ -713,6 +724,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     compute_wrap_ids=no_compute_wrap_ids,
     wrap_scalar=None,
     wrap_non_scalar=None,
+    wrap_empty_container=None,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
     dict_open_for_wrap_ids=None,
     widens_nested_maps_by_wrapping_scalars=False,

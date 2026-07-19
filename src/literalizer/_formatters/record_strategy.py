@@ -795,6 +795,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             else None
         ),
         wrap_non_scalar=None,
+        wrap_empty_container=None,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=derecordized_map_open,
         widens_nested_maps_by_wrapping_scalars=False,
