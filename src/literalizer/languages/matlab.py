@@ -431,6 +431,7 @@ class Matlab(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
         CONTAINERS_MAP = DictFormatConfig(
             dict_open=_containers_map_open,
@@ -440,6 +441,7 @@ class Matlab(metaclass=LanguageCls):
             format_entry=_format_containers_map_entry,
             empty_dict="containers.Map()",
             preamble_lines=(),
+            narrowed_empty_form=None,
         )
 
     class EmptyDictKey(enum.Enum):

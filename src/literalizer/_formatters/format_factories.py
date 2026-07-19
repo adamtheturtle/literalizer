@@ -232,6 +232,7 @@ def _build_dict_format_config(
         preamble_lines=preamble_lines,
         narrowed_open=narrowed_open,
         supports_trailing_comma=supports_trailing_comma,
+        narrowed_empty_form=None,
     )
 
 

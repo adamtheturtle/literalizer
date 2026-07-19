@@ -1444,6 +1444,23 @@ def _format_sequence_child(
                 other for other in value if isinstance(other, list) and other
             ]
             return narrowed_empty_form(non_empty_siblings)
+    if (
+        parent_override is None
+        and isinstance(child, dict)
+        and not isinstance(child, OrderedMap)
+        and not child
+    ):
+        narrowed_empty_dict = ctx.spec.dict_format_config.narrowed_empty_form
+        if narrowed_empty_dict is not None:
+            non_empty_map_siblings = [
+                other
+                for other in value
+                if isinstance(other, dict)
+                and not isinstance(other, OrderedMap)
+                and other
+            ]
+            if non_empty_map_siblings:
+                return narrowed_empty_dict(non_empty_map_siblings)
     return _format_value(
         value=child,
         dict_open_override=dict_open_override,

@@ -706,6 +706,7 @@ _JSON_NODE_DICT_CONFIG = DictFormatConfig(
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
+    narrowed_empty_form=None,
 )
 
 _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
@@ -2044,6 +2045,7 @@ class Kotlin(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=(),
+            narrowed_empty_form=None,
         )
 
     @cached_property

@@ -1,0 +1,1 @@
+Under V's default strategy, an empty map beside a non-empty map sibling was emitted at the ``map[string]IVal{}`` interface fallback type, which the V compiler rejected because the sibling's concrete value could not coerce to ``IVal``.  The empty map now borrows the sibling's value type (for example ``map[string]int{}``) so the list compiles.

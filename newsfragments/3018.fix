@@ -1,0 +1,1 @@
+V's default strategy now raises ``NullInCollectionError`` for a non-empty map whose values are all null instead of emitting a ``voidptr`` map that the V/C back end rejected; select the ``INTERFACE`` or ``RECORD`` heterogeneous strategy to materialize such data.
