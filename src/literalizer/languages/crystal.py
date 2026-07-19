@@ -47,7 +47,9 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
     make_overflow_fallback_formatter,
 )
-from literalizer._formatters.format_strings import format_string_backslash_hash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_hash_nul_hex,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -1029,7 +1031,7 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_hash
+        return format_string_backslash_hash_nul_hex
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

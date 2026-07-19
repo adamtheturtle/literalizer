@@ -73,6 +73,9 @@ Raised at the formatting boundary when an individual value has no faithful repre
 .. autoexception:: literalizer.exceptions.UnrepresentableInputError
    :no-index:
 
+.. autoexception:: literalizer.exceptions.UnrepresentableStringError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.InvalidDictKeyError
    :no-index:
 

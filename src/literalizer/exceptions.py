@@ -64,6 +64,26 @@ class UnrepresentableInputError(Exception):
     """
 
 
+class UnrepresentableStringError(UnrepresentableInputError):
+    """Raised when a string contains a character the target language
+    cannot represent in a string literal.
+
+    Used when the language or selected string format has no safe escape
+    or embedding for a given code point (for example embedded NUL in R
+    or COBOL).  To resolve, remove the offending character, or target a
+    language whose string literals can represent it.
+    """
+
+    def __init__(self, *, language_name: str, character_name: str) -> None:
+        """Create an ``UnrepresentableStringError``."""
+        super().__init__(
+            f"{language_name} string literals cannot represent "
+            f"{character_name}"
+        )
+        self.language_name = language_name
+        self.character_name = character_name
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.

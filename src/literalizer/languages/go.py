@@ -52,7 +52,9 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_unsigned_overflow_fallback,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_hex,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -883,7 +885,7 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul_hex
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

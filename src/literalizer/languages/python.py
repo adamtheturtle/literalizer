@@ -41,8 +41,8 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
-    format_string_backslash_single,
+    format_string_backslash_nul_hex,
+    format_string_backslash_single_nul_hex,
     format_string_raw_python,
 )
 from literalizer._formatters.record_strategy import (
@@ -1230,8 +1230,8 @@ class Python(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_backslash_single)
+        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
         RAW = enum.member(value=format_string_raw_python)
 
         def __call__(self, value: str, /) -> str:
