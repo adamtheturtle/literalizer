@@ -1443,6 +1443,7 @@ class Elm(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     @cached_property

@@ -1143,6 +1143,7 @@ _AESON_VALUE_DICT_CONFIG = DictFormatConfig(
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
+    narrowed_empty_form=None,
 )
 
 _AESON_VALUE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
@@ -1965,6 +1966,7 @@ class Haskell(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     @cached_property

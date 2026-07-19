@@ -28,6 +28,7 @@ from .variant_inputs import AXIS_INPUTS
 from .variant_metadata_builders import (
     build_collection_layout_variants,
     build_dhall_nested_map_widening_variants,
+    build_empty_map_narrowing_variants,
     build_language_version_cross_dict_type_variants,
     build_modifier_variant_cases,
     build_nested_map_widening_variants,
@@ -1758,6 +1759,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "string_embedded_nul": build_string_embedded_nul_variants,
     "nested_map_widening": build_nested_map_widening_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
+    "empty_map_narrowing": build_empty_map_narrowing_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,

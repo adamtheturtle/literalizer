@@ -1368,6 +1368,7 @@ _NLOHMANN_JSON_DICT_CONFIG = DictFormatConfig(
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
+    narrowed_empty_form=None,
 )
 
 
@@ -1749,6 +1750,7 @@ class Cpp(metaclass=LanguageCls):
                 preamble_lines=("#include <map>",),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             ),
             opener_template="std::map<std::string, {type_name}>{{",
         )
@@ -1763,6 +1765,7 @@ class Cpp(metaclass=LanguageCls):
                 preamble_lines=("#include <unordered_map>",),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             ),
             opener_template=("std::unordered_map<std::string, {type_name}>{{"),
         )

@@ -14,6 +14,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    make_narrowed_empty_dict_form,
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
@@ -107,10 +108,10 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import NullInCollectionError
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -140,6 +141,12 @@ _v_element_to_type = make_element_to_type(
 _v_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=_v_element_to_type,
     template="[]{type}{{}}",
+    fallback_type=_V_IFACE_NAME,
+)
+
+_v_narrowed_empty_dict_form = make_narrowed_empty_dict_form(
+    element_to_type=_v_element_to_type,
+    template="map[string]{type}{{}}",
     fallback_type=_V_IFACE_NAME,
 )
 
@@ -322,6 +329,29 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
         return (_V_IFACE_DECL,)
 
     return _preamble
+
+
+@beartype
+def _has_null_only_container(item: Value) -> bool:
+    """Return ``True`` if *item* or a descendant is a non-empty list,
+    set, or map whose members are all ``None``.
+
+    Such a container has no element type V can infer: the default
+    ``ERROR`` strategy renders each ``None`` member as a bare
+    ``unsafe { nil }`` (a ``voidptr``), and a homogeneous ``voidptr``
+    collection is rejected by the V/C back end rather than the compiler
+    front end (issues #3017 and #3018).
+    """
+    match item:
+        case dict():
+            children: list[Value] = list(item.values())
+        case list() | set():
+            children = list(item)
+        case _:
+            return False
+    if children and all(child is None for child in children):
+        return True
+    return any(_has_null_only_container(item=child) for child in children)
 
 
 @beartype
@@ -967,7 +997,26 @@ class V(metaclass=LanguageCls):
         {IdentifierCase.SNAKE}
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject shapes V's default strategy cannot type.
+
+        A non-empty list, set, or map whose members are all ``None`` has
+        no element type to infer.  Under the default ``ERROR`` strategy
+        its members render as bare ``unsafe { nil }`` and the V/C back end
+        rejects the result (issues #3017 and #3018), so the shape is
+        refused up front.  The ``INTERFACE`` strategy wraps such nulls in
+        ``IVal(...)`` and the ``RECORD`` strategy fields them, so those
+        strategies keep rendering.
+        """
+        if self.heterogeneous_strategy.name != "ERROR":
+            return
+        if _has_null_only_container(item=data):
+            msg = (
+                "V cannot infer an element type for a collection whose "
+                "members are all null; remove the nulls or select the "
+                "INTERFACE or RECORD heterogeneous strategy."
+            )
+            raise NullInCollectionError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1405,6 +1454,7 @@ class V(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=_v_narrowed_empty_dict_form,
         )
 
     @cached_property

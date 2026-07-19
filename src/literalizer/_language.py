@@ -174,6 +174,11 @@ class DictFormatConfig:
     preamble_lines: tuple[str, ...]
     narrowed_open: str | None
     supports_trailing_comma: bool
+    narrowed_empty_form: Callable[[Sequence[dict[Scalar, Value]]], str] | None
+    """Callback that renders an empty dict beside non-empty map siblings
+    (e.g. V's ``map[string]int{}`` when a sibling is ``{"x": 1}``).
+    ``None`` keeps the language's default ``empty_dict`` / opener path.
+    """
 
 
 @dataclasses.dataclass(frozen=True)

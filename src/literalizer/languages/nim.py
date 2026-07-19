@@ -1989,6 +1989,7 @@ class Nim(metaclass=LanguageCls):
                 preamble_lines=(),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             )
         if self._uses_native_nim_collections:
             return DictFormatConfig(
@@ -2004,6 +2005,7 @@ class Nim(metaclass=LanguageCls):
                 ),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
@@ -2016,6 +2018,7 @@ class Nim(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     @cached_property

@@ -1552,6 +1552,7 @@ class Scala(metaclass=LanguageCls):
                 ),
                 empty_dict="Json.obj()",
                 preamble_lines=(),
+                narrowed_empty_form=None,
             )
         dict_spec: _ScalaDictSpec = self.dict_format.value
         return DictFormatConfig(
@@ -1583,6 +1584,7 @@ class Scala(metaclass=LanguageCls):
             ),
             empty_dict=None,
             preamble_lines=dict_spec.preamble_lines,
+            narrowed_empty_form=None,
         )
 
     @cached_property

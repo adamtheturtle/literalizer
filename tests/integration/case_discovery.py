@@ -132,6 +132,14 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # Mojo, V, and C++ ``nested_map_widening`` variants are the sole
         # consumers, so it stays out of the all-languages base discovery.
         "nested_map_widening",
+        # ``empty_map_narrowing`` carries an empty map beside a non-empty
+        # map sibling (``[{}, {"x": 1}]``).  Only languages whose
+        # ``dict_format_config`` declares a ``narrowed_empty_form`` type
+        # the empty literal from the sibling's value type so the list
+        # compiles (V issue #3015); other statically typed languages
+        # still render this shape divergently, so it stays out of the
+        # all-languages base discovery.
+        "empty_map_narrowing",
         # ``dhall_nested_map_widening`` is the Dhall counterpart of
         # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
         # records typed by their field set, so it needs a dedicated input

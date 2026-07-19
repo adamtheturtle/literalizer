@@ -1872,6 +1872,7 @@ class CSharp(metaclass=LanguageCls):
                 preamble_lines=(),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             )
         cfg = self._opener_config
         resolved = self._resolved_dict_opener
@@ -1903,6 +1904,7 @@ class CSharp(metaclass=LanguageCls):
             preamble_lines=("using System.Collections.Generic;",),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     @cached_property

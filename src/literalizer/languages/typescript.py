@@ -715,6 +715,7 @@ class TypeScript(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
         MAP = DictFormatConfig(
             dict_open=fixed_open(open_str="new Map<string, unknown>(["),
@@ -727,6 +728,7 @@ class TypeScript(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     class EmptyDictKey(enum.Enum):

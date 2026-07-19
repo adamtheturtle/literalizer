@@ -1238,6 +1238,7 @@ class FSharp(metaclass=LanguageCls):
                 preamble_lines=(),
                 narrowed_open=None,
                 supports_trailing_comma=False,
+                narrowed_empty_form=None,
             )
         return DictFormatConfig(
             dict_open=fixed_open(
@@ -1251,6 +1252,7 @@ class FSharp(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     @cached_property

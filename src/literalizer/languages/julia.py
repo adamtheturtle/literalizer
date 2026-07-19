@@ -403,6 +403,7 @@ class Julia(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
         ORDERED = DictFormatConfig(
             dict_open=fixed_open(open_str="OrderedDict("),
@@ -415,6 +416,7 @@ class Julia(metaclass=LanguageCls):
             preamble_lines=("using DataStructures",),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
     class EmptyDictKey(enum.Enum):

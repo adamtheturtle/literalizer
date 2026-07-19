@@ -439,6 +439,7 @@ _STD_JSON_DICT_CONFIG = DictFormatConfig(
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
+    narrowed_empty_form=None,
 )
 
 _STD_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
@@ -1614,6 +1615,7 @@ class Zig(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
         if self._record_strategy_active:
             return dataclasses.replace(base, empty_dict=".{}")

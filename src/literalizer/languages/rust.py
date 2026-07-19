@@ -3306,6 +3306,7 @@ class Rust(metaclass=LanguageCls):
                 preamble_lines=(),
                 narrowed_open=None,
                 supports_trailing_comma=True,
+                narrowed_empty_form=None,
             )
         return self.dict_format(
             default_type=self.default_dict_value_type,

@@ -373,6 +373,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "string_embedded_nul": (
         _ci(case_dir_name="string_embedded_nul", suffix=""),
     ),
+    "empty_map_narrowing": (
+        _ci(case_dir_name="empty_map_narrowing", suffix=""),
+    ),
     "dhall_nested_map_widening": (
         _ci(case_dir_name="dhall_nested_map_widening", suffix=""),
     ),
