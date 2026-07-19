@@ -76,6 +76,7 @@ from literalizer._language import (
     NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordVariant,
     RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -311,14 +312,79 @@ def _zig_int_sort_key(value: Value, /) -> int:
     return value if isinstance(value, int) else 0
 
 
+_ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
+    {
+        "addrspace",
+        "align",
+        "allowzero",
+        "and",
+        "anyframe",
+        "anytype",
+        "asm",
+        "async",
+        "await",
+        "break",
+        "callconv",
+        "catch",
+        "comptime",
+        "const",
+        "continue",
+        "defer",
+        "else",
+        "enum",
+        "errdefer",
+        "error",
+        "export",
+        "extern",
+        "fn",
+        "for",
+        "if",
+        "inline",
+        "linksection",
+        "no_runtime",
+        "noalias",
+        "noasync",
+        "noinline",
+        "nosuspend",
+        "opaque",
+        "or",
+        "orelse",
+        "packed",
+        "pub",
+        "resume",
+        "return",
+        "struct",
+        "suspend",
+        "switch",
+        "test",
+        "threadlocal",
+        "try",
+        "union",
+        "unreachable",
+        "usingnamespace",
+        "var",
+        "volatile",
+        "while",
+    }
+)
+
+_ZIG_BARE_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+
+
 @beartype
 def _zig_record_field_identifier(key: str, /) -> str:
     """Return the Zig ``struct`` member name for a dict *key*.
 
     Zig member identifiers are the dict keys verbatim (no case
     conversion), matching the designated-initializer literal form
-    ``Record0{ .id = 1, ... }``.
+    ``Record0{ .id = 1, ... }``.  A key that is a Zig keyword (such as
+    ``error``) or is otherwise not a bare Zig identifier is quoted with
+    the ``@"..."`` builtin-identifier syntax, which is valid in both the
+    ``struct`` declaration and the ``.field = value`` literal.
     """
+    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_BARE_IDENTIFIER.match(key):
+        escaped = key.replace("\\", "\\\\").replace('"', '\\"')
+        return f'@"{escaped}"'
     return key
 
 
@@ -543,61 +609,7 @@ class Zig(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "addrspace",
-            "align",
-            "allowzero",
-            "and",
-            "anyframe",
-            "anytype",
-            "asm",
-            "async",
-            "await",
-            "break",
-            "callconv",
-            "catch",
-            "comptime",
-            "const",
-            "continue",
-            "defer",
-            "else",
-            "enum",
-            "errdefer",
-            "error",
-            "export",
-            "extern",
-            "fn",
-            "for",
-            "if",
-            "inline",
-            "linksection",
-            "no_runtime",
-            "noalias",
-            "noasync",
-            "noinline",
-            "nosuspend",
-            "opaque",
-            "or",
-            "orelse",
-            "packed",
-            "pub",
-            "resume",
-            "return",
-            "struct",
-            "suspend",
-            "switch",
-            "test",
-            "threadlocal",
-            "try",
-            "union",
-            "unreachable",
-            "usingnamespace",
-            "var",
-            "volatile",
-            "while",
-        }
-    )
+    reserved_variable_identifiers: frozenset[str] = _ZIG_RESERVED_IDENTIFIERS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -626,7 +638,7 @@ class Zig(metaclass=LanguageCls):
         fixture_module_name_lowercase=False,
         golden_filename_lowercase=False,
         collection_layout_category="collection_layout",
-        record_variants=frozenset(),
+        record_variants=frozenset({RecordVariant.FIELD_TYPE_SPLIT}),
         nested_map_widening=NestedMapWideningVariant.NONE,
         modifier_sequence_format_overrides={},
     )
@@ -1337,7 +1349,7 @@ class Zig(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=False,
+            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=".{ .map = &.{",
         )

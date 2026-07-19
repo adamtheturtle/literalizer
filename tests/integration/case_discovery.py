@@ -101,11 +101,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # differing scalar types) in positions that never share a
         # sibling list, so a field-type-splitting RECORD strategy
         # resolves each group to its own struct (Rust issue #2881, Go
-        # issue #2888, Java issue #2961).  The Rust, Go, and Java
-        # ``record_field_type_split`` variants are the sole consumers:
-        # the remaining RECORD languages still key shapes by key set
-        # alone, so base-discovering it would emit golden files that
-        # fail to compile.
+        # issue #2888, the remaining RECORD languages issue #2961).  Only
+        # the RECORD strategies that split shapes by field type consume
+        # the ``record_field_type_split`` variant; the non-RECORD
+        # languages would key nothing by field type, so base-discovering
+        # it for every language would emit golden files that fail to
+        # compile.
         "record_field_type_split",
         # ``record_nested_map_fallback`` carries a list of records whose
         # uniform top-level keys hold nested sibling maps of divergent /
