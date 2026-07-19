@@ -89,12 +89,14 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "heterogeneous_time_string",
         "dict_wide_int_key",
         # ``record_keyword_field`` carries dict keys that collide with
-        # Rust keywords (``type``, ``match``) to exercise the RECORD
-        # strategy's raw-identifier escaping (``r#type``, issue #2880).
-        # The Rust ``record_keyword_field`` variant is the sole
-        # consumer: other languages have their own keyword sets and
-        # escape mechanisms, so base-discovering it for every language
-        # would emit golden files that may fail to compile.
+        # Rust keywords (``type``, ``match``) and Zig keywords
+        # (``error``, ``switch``) to exercise each RECORD backend's
+        # field-name escaping: Rust raw identifiers (``r#type``, issue
+        # #2880) and Zig quoted identifiers (``@"error"``, issue #2963).
+        # Every key that is not one language's keyword renders verbatim
+        # there, so both goldens compile.  Only languages that escape
+        # keyword field names opt in, so base-discovering it for every
+        # language would emit golden files that may fail to compile.
         "record_keyword_field",
         # ``record_field_type_split`` carries same-key-set dicts whose
         # field types conflict (a nested record with different fields,
