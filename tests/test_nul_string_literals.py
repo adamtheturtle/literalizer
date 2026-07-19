@@ -1,27 +1,16 @@
-r"""Embedded null bytes in string literals (#3006).
+r"""Embedded null bytes in string literals that a language cannot escape.
 
-Targets that can escape the null byte emit a fixed-width ``\x00`` form
-so the source stays compiler-valid even when digits follow the escape.
-Languages whose string model cannot hold a null byte (R, COBOL) raise
-:class:`~literalizer.exceptions.UnrepresentableStringError` before
-source is returned.
+Languages whose string model can escape a null byte are covered by the
+``string_embedded_nul`` golden-file axis (issue #3006); this module holds
+the two behaviors a golden file cannot express: the languages that reject
+the value, and COBOL's ``json_type=CJSON`` byte-splicing path.
 """
 
 import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableStringError
-from literalizer.languages import (
-    Cobol,
-    Crystal,
-    D,
-    Go,
-    Nim,
-    Odin,
-    Python,
-    R,
-    V,
-)
+from literalizer.languages import Cobol, R
 
 
 def _render(*, language: Language, source: str = '{"x": "\\u0000"}') -> str:
@@ -32,48 +21,6 @@ def _render(*, language: Language, source: str = '{"x": "\\u0000"}') -> str:
         language=language,
         variable_form=NewVariable(name="my_data", modifiers=frozenset()),
     ).code
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        Crystal(),
-        D(),
-        Go(),
-        Nim(),
-        Odin(),
-        Python(),
-        Python(string_format=Python.string_formats.SINGLE),
-        Python(string_format=Python.string_formats.RAW),
-        V(),
-    ],
-)
-def test_string_literals_escape_nul(language: Language) -> None:
-    r"""A null byte is represented by ``\x00``, never a raw null byte."""
-    rendered = _render(language=language)
-
-    assert "\0" not in rendered
-    assert r"\x00" in rendered
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        Crystal(),
-        D(),
-        Go(),
-        Nim(),
-        Odin(),
-        Python(),
-        V(),
-    ],
-)
-def test_string_literals_escape_nul_before_digit(language: Language) -> None:
-    r"""``\x00`` stays distinct when a digit follows the null byte."""
-    rendered = _render(language=language, source='{"x": "\\u00001"}')
-
-    assert "\0" not in rendered
-    assert r"\x001" in rendered
 
 
 @pytest.mark.parametrize(argnames="language", argvalues=[R(), Cobol()])

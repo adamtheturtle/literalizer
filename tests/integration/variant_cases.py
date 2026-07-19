@@ -16,7 +16,16 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import (
+    ALL_LANGUAGES,
+    Crystal,
+    D,
+    Go,
+    Nim,
+    Odin,
+    Python,
+    V,
+)
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -878,6 +887,49 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     return variants
 
 
+# Language classes whose default string formatter escapes an embedded
+# null byte as a fixed-width ``\x00`` (issue #3006).  Python is handled
+# separately below so all three of its string formats are covered.
+_NUL_ESCAPING_LANGS: frozenset[literalizer.LanguageCls] = frozenset(
+    {Crystal, D, Go, Nim, Odin, V}
+)
+
+
+@beartype
+def build_string_embedded_nul_variants() -> Iterable[Variant]:
+    r"""Build embedded-null-byte variants for the languages that escape it.
+
+    The ``string_embedded_nul`` input carries a bare null byte and a
+    null byte immediately followed by a digit.  Each language's golden
+    file pins the fixed-width ``\x00`` escape and its distinctness before
+    a following digit (issue #3006).  R and COBOL reject the value and
+    the remaining languages still emit a raw null byte, so only the
+    languages hardened here participate.  Python contributes one variant
+    per string format because its raw and single-quoted formats carry
+    their own null-byte handling distinct from the double-quoted default.
+    """
+    variants: list[Variant] = [
+        Variant(
+            name=f"{lang_cls.__name__}_string_embedded_nul",
+            spec=make_spec(lang_cls=lang_cls),
+            lang_cls=lang_cls,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for lang_cls in sorted_languages()
+        if lang_cls in _NUL_ESCAPING_LANGS
+    ]
+    variants.extend(
+        Variant(
+            name=f"Python_string_embedded_nul_{string_format.name.lower()}",
+            spec=make_spec(lang_cls=Python, string_format=string_format),
+            lang_cls=Python,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for string_format in make_spec(lang_cls=Python).string_formats
+    )
+    return variants
+
+
 @beartype
 def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     """Build nested-map fallback variants for capable ``RECORD``
@@ -1702,6 +1754,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "record_keyword_field": build_record_keyword_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
     "record_nested_map_fallback": build_record_nested_map_fallback_variants,
+    "string_embedded_nul": build_string_embedded_nul_variants,
     "nested_map_widening": build_nested_map_widening_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
