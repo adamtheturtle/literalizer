@@ -805,10 +805,19 @@ class NestedMapWideningVariant(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class VariantMetadata:
-    """Language-owned metadata for constructing integration variants.
+    r"""Language-owned metadata for constructing integration variants.
 
     These values describe supported behaviors and compatibility constraints;
     the integration suite remains responsible for choosing input fixtures.
+
+    ``string_literals_escape_null_byte`` is ``True`` only for languages
+    whose default string formatter faithfully escapes an embedded null
+    byte, including immediately before a digit (the
+    ``string_embedded_nul`` golden axis renders such languages).  A
+    language that rejects the value, emits a raw null byte, or emits a
+    digit-greedy escape (for example Haskell's variable-length ``\x``,
+    where ``"\x001"`` denotes U+0001 rather than a null byte followed by
+    ``1``) stays ``False`` until its own escaping is corrected.
     """
 
     pre_indent_comment_scalar_variant: bool
@@ -819,6 +828,7 @@ class VariantMetadata:
     record_variants: frozenset[RecordVariant]
     nested_map_widening: NestedMapWideningVariant
     modifier_sequence_format_overrides: dict[str, str]
+    string_literals_escape_null_byte: bool
 
 
 @beartype

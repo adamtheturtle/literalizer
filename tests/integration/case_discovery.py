@@ -147,12 +147,13 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # its sole consumer.
         "json_string_escaping",
         # ``string_embedded_nul`` carries a bare embedded null byte and a
-        # null byte immediately followed by a digit, to pin the
-        # fixed-width ``\x00`` escape (and its distinctness before a
-        # following digit) for the languages whose default string
-        # formatter this hardened (issue #3006).  The 39 other languages
-        # still emit a raw null byte (a separate latent gap) and R / COBOL
-        # reject the value, so only the ``string_embedded_nul`` axis
+        # null byte immediately followed by a digit, to pin the escape
+        # each language emits (and its distinctness before a following
+        # digit) for the languages whose ``variant_metadata`` sets
+        # ``string_literals_escape_null_byte`` (issue #3006), plus COBOL's
+        # ``json_type=CJSON`` byte-splicing build.  Languages that reject
+        # the value, emit a raw null byte, or emit a digit-greedy escape
+        # do not participate, so only the ``string_embedded_nul`` axis
         # consumes it and it stays out of the all-languages base discovery.
         "string_embedded_nul",
     }

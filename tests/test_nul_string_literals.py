@@ -1,9 +1,9 @@
-r"""Embedded null bytes in string literals that a language cannot escape.
+"""Embedded null bytes that a language rejects rather than escaping.
 
-Languages whose string model can escape a null byte are covered by the
-``string_embedded_nul`` golden-file axis (issue #3006); this module holds
-the two behaviors a golden file cannot express: the languages that reject
-the value, and COBOL's ``json_type=CJSON`` byte-splicing path.
+Languages that can represent a null byte in their output are covered by
+the ``string_embedded_nul`` golden-file axis (issue #3006); this module
+holds the one behavior a golden file cannot express: the languages that
+raise :class:`~literalizer.exceptions.UnrepresentableStringError`.
 """
 
 import pytest
@@ -34,15 +34,3 @@ def test_string_literals_reject_unrepresentable_nul(
         _render(language=language)
 
     assert caught.value.character_name == "NUL"
-
-
-def test_cobol_cjson_embeds_nul_hex_byte() -> None:
-    r"""COBOL ``json_type=CJSON`` splices a null byte as an ``X"00"`` byte.
-
-    The cJSON tree build rebuilds each string as a null-terminated
-    buffer, so an embedded null byte is representable there and must not
-    raise.
-    """
-    rendered = _render(language=Cobol(json_type=Cobol.json_types.CJSON))
-
-    assert 'X"00" & X"00"' in rendered

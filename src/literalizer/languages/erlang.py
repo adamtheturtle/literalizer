@@ -337,6 +337,7 @@ class Erlang(metaclass=LanguageCls):
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        string_literals_escape_null_byte=False,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template="Fixture_{parent}_{stem}",
         fixture_module_name_lowercase=True,
