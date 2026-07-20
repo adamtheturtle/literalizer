@@ -518,7 +518,16 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         if not children or any(child is None for child in children):
             wrap_ids.add(id(item))
             return
-        child_types = {_literal_type(item=child) for child in children}
+        # Collections widen integer siblings to their widest native Nim
+        # element type. Match that decision here so a list such as
+        # ``[1, 2**31]`` stays a native ``seq[int64]`` rather than being
+        # treated as mixed and wrapped in the object variant.
+        widening_tier = int_widening_tier(items=children)
+        child_types = (
+            {widening_tier}
+            if widening_tier is not None
+            else {_literal_type(item=child) for child in children}
+        )
         containers = [
             child for child in children if isinstance(child, (list, dict))
         ]
