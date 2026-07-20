@@ -20,6 +20,7 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 import literalizer
+from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
 from .call_cases import CALL_CASE_CONFIGS
@@ -181,6 +182,21 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
 )
 
 
+KEBAB_NEW_VARIABLE_CASE_DIR = "new_variable_kebab_name"
+"""Golden case that verifies a hyphenated ``NewVariable`` binding."""
+
+
+@beartype
+def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
+    """Return languages whose declaration syntax admits hyphens."""
+    return tuple(
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls.new_variable_name_syntax
+        is NewVariableNameSyntax.ASCII_KEBAB
+    )
+
+
 @functools.cache
 @beartype
 def _specialized_case_dirs() -> frozenset[str]:
@@ -195,6 +211,7 @@ def _specialized_case_dirs() -> frozenset[str]:
         | frozenset(
             cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
         )
+        | frozenset((KEBAB_NEW_VARIABLE_CASE_DIR,))
         | VARIANT_ONLY_CASE_DIRS
     )
 

@@ -345,6 +345,29 @@ class ReservedVariableNameError(Exception):
         self.variable_name = variable_name
 
 
+class InvalidNewVariableNameError(Exception):
+    """Raised when a ``NewVariable`` name is not a syntactically valid
+    declaration identifier for the target language.
+
+    Literalizer does not repair or escape variable names.  To resolve, use
+    a name whose spelling is valid for the target language.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        variable_name: str,
+    ) -> None:
+        """Create an ``InvalidNewVariableNameError``."""
+        super().__init__(
+            f"{language_name} cannot use NewVariable name "
+            f"{variable_name!r}: it is not a valid identifier"
+        )
+        self.language_name = language_name
+        self.variable_name = variable_name
+
+
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.

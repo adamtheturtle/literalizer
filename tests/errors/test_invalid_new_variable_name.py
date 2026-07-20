@@ -1,4 +1,4 @@
-"""Validation tests for reserved ``NewVariable`` names."""
+"""Validation tests for ``NewVariable`` names."""
 
 import pytest
 
@@ -9,15 +9,30 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer.exceptions import ReservedVariableNameError
+from literalizer.exceptions import (
+    InvalidNewVariableNameError,
+    ReservedVariableNameError,
+)
 from literalizer.languages import (
     ALL_LANGUAGES,
     Ada,
+    C,
     Cobol,
+    Cpp,
+    Crystal,
+    D,
+    Elixir,
     Erlang,
     Fortran,
+    Gleam,
     Go,
+    Groovy,
+    Haskell,
+    Haxe,
+    Java,
     JavaScript,
+    Rust,
+    Scala,
     Sml,
     Swift,
     TypeScript,
@@ -25,6 +40,81 @@ from literalizer.languages import (
     VisualBasic,
     Zig,
 )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[
+        C,
+        Cpp,
+        Crystal,
+        D,
+        Elixir,
+        Erlang,
+        Fortran,
+        Gleam,
+        Go,
+        Groovy,
+        Haskell,
+        Haxe,
+        Java,
+        JavaScript,
+        Rust,
+        Scala,
+        Sml,
+        Swift,
+        TypeScript,
+        V,
+        Zig,
+    ],
+    ids=lambda language_cls: language_cls.__name__,
+)
+def test_hyphenated_new_variable_name_raises(
+    language_cls: LanguageCls,
+) -> None:
+    """Declaration names are rejected rather than repaired."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=language_cls(),
+            variable_form=NewVariable(name="a-b", modifiers=frozenset()),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("language_cls", "name"),
+    argvalues=[
+        (Crystal, "Value"),
+        (Elixir, "Value"),
+        (Fortran, "_value"),
+        (Gleam, "Value"),
+        (Haskell, "Value"),
+        (Sml, "Value"),
+    ],
+    ids=(
+        "crystal-uppercase",
+        "elixir-uppercase",
+        "fortran-underscore",
+        "gleam-uppercase",
+        "haskell-uppercase",
+        "sml-uppercase",
+    ),
+)
+def test_language_specific_new_variable_syntax_raises(
+    language_cls: LanguageCls,
+    name: str,
+) -> None:
+    """Backend grammar restrictions are validated before rendering."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=language_cls(),
+            variable_form=NewVariable(name=name, modifiers=frozenset()),
+            wrap_in_file=True,
+        )
 
 
 @pytest.mark.parametrize(

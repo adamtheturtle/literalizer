@@ -102,6 +102,12 @@ Raised when ``variable_form`` or ``ref_case`` asks for output the target languag
 .. autoexception:: literalizer.exceptions.VariableNameNotSupportedError
    :no-index:
 
+.. autoexception:: literalizer.exceptions.InvalidNewVariableNameError
+   :no-index:
+
+.. autoexception:: literalizer.exceptions.ReservedVariableNameError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError
    :no-index:
 

@@ -10,6 +10,7 @@ import literalizer
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
+    KEBAB_NEW_VARIABLE_CASE_DIR,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
     build_no_variable_form_cases,
@@ -18,6 +19,7 @@ from .case_discovery import (
     case_input,
     discover_cases,
     discover_combined_cases,
+    kebab_new_variable_languages,
 )
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
@@ -154,6 +156,16 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
+
+    for lang_cls in kebab_new_variable_languages():
+        expected.update(
+            _paths_for_versions(
+                parent=cases_dir / KEBAB_NEW_VARIABLE_CASE_DIR,
+                name=lang_cls.__name__,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+            )
+        )
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
