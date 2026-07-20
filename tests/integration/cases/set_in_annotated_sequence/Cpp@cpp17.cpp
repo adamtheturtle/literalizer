@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <variant>
 int main() {
-auto my_data = std::vector<std::variant<std::initializer_list<std::nullptr_t>, std::initializer_list<int>, std::vector<std::nullptr_t>>>{
-    std::initializer_list<std::nullptr_t>{},
-    std::initializer_list<int>{1, 2},
+auto my_data = std::vector<std::variant<std::vector<std::nullptr_t>, std::vector<int>>>{
+    std::vector<std::nullptr_t>{},
+    std::vector<int>{1, 2},
     std::vector<std::nullptr_t>{},
 };
     (void)my_data;

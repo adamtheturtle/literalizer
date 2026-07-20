@@ -1,14 +1,15 @@
 #include <initializer_list>
 #include <string>
+#include <vector>
 #include <variant>
 int main() {
-auto my_data = std::initializer_list<std::variant<bool, int, std::string>>{
+auto my_data = std::vector<std::variant<bool, int, std::string>>{
     true,
     42,
     "apple",
 };
 (void)my_data;
-my_data = std::initializer_list<std::variant<bool, int, std::string>>{
+my_data = std::vector<std::variant<bool, int, std::string>>{
     true,
     42,
     "apple",

@@ -3,8 +3,8 @@
 #include <vector>
 #include <variant>
 int main() {
-auto my_data = std::vector<std::initializer_list<std::string>>{
-    std::initializer_list<std::string>{"a", "b"},
+auto my_data = std::vector<std::vector<std::string>>{
+    std::vector<std::string>{"a", "b"},
 };
     (void)my_data;
     return 0;

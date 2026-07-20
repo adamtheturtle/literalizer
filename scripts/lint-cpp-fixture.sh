@@ -20,6 +20,8 @@ if grep -qE '^[[:space:]]*\.[[:alpha:]_][[:alnum:]_]*[[:space:]]*=' "$fixture_pa
     standard=c++20
 elif [ "$standard" = c++14 ] && grep -qF 'std::variant' "$fixture_path"; then
     standard=c++17
+elif [ "$standard" = c++14 ] && grep -qF 'std::vector{' "$fixture_path"; then
+    standard=c++17
 fi
 
 case "$mode" in

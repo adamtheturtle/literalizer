@@ -555,7 +555,7 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=False,
             )
-            return f"std::initializer_list<{inner_type}>"
+            return f"std::vector<{inner_type}>"
         case _:
             cpp_type = element_to_type(type(item))
             if cpp_type is not None:
@@ -1102,13 +1102,13 @@ def _apply_cpp_variant_set_open(
     items: list[Value],
     type_ctx: _CppTypeCtx,
 ) -> str:
-    """Return a typed ``std::initializer_list`` opener."""
+    """Return a typed, owning ``std::vector`` opener."""
     inner = _compute_element_type_for_items(
         items=items,
         type_ctx=type_ctx,
         in_mapping_value=False,
     )
-    return f"std::initializer_list<{inner}>{{"
+    return f"std::vector<{inner}>{{"
 
 
 @beartype
@@ -1169,7 +1169,7 @@ def _build_variant_set_open(
     *,
     type_ctx: _CppTypeCtx,
 ) -> Callable[[list[Value]], str]:
-    """Build a set opener that uses typed ``std::initializer_list``."""
+    """Build a set opener that uses a typed, owning ``std::vector``."""
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
@@ -1752,7 +1752,7 @@ class Cpp(metaclass=LanguageCls):
             set_open=lambda _items: "{",
             close="}",
             empty_set=None,
-            preamble_lines=(),
+            preamble_lines=("#include <vector>",),
             set_opener_template="",
             supports_heterogeneity=True,
             supports_trailing_comma=True,

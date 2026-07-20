@@ -4,9 +4,9 @@
 template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 };
 int main() {
-auto my_data = std::vector<LiteralizerVariant<std::initializer_list<std::nullptr_t>, std::initializer_list<int>, std::vector<std::nullptr_t>>>{
-    std::initializer_list<std::nullptr_t>{},
-    std::initializer_list<int>{1, 2},
+auto my_data = std::vector<LiteralizerVariant<std::vector<std::nullptr_t>, std::vector<int>>>{
+    std::vector<std::nullptr_t>{},
+    std::vector<int>{1, 2},
     std::vector<std::nullptr_t>{},
 };
     (void)my_data;
