@@ -677,6 +677,7 @@ class Zig(metaclass=LanguageCls):
         record_variants=frozenset(
             {
                 RecordVariant.KEYWORD_FIELD,
+                RecordVariant.QUOTED_FIELD,
                 RecordVariant.FIELD_TYPE_SPLIT,
             }
         ),
