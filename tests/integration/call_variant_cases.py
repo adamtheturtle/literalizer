@@ -12,7 +12,6 @@ from collections.abc import Callable, Iterable
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Odin
 
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
@@ -69,28 +68,12 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
 
 @functools.cache
 @beartype
-def build_odin_json_type_call_variants() -> list[Variant]:
-    """Return the Odin ``json_type`` variant for call-result binding.
-
-    Scoped to Odin: the other ``json_type`` languages route their
-    call-binding declaration through code paths the existing golden files
-    already cover, so adding the whole family here would just produce
-    redundant golden files.  Odin newly needs this case to cover its
-    overrides for :attr:`format_call_variable_declaration` and
-    :attr:`format_call_variable_assignment`, which keep the formatted
-    call expression instead of substituting the ``_json_parse``
-    shortcut that literal bindings use.
-    """
+def build_call_result_json_type_variants() -> list[Variant]:
+    """Return JSON-type variants whose calls can be bound to a result."""
     return [
-        Variant(
-            name="Odin_json_type_json_value",
-            spec=make_spec(
-                lang_cls=Odin,
-                json_type=Odin.json_types.JSON_VALUE,
-            ),
-            lang_cls=Odin,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        ),
+        variant
+        for variant in build_json_type_variants()
+        if variant.lang_cls.call_returns_expression
     ]
 
 
@@ -124,14 +107,9 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_scalar_args", build_json_type_variants),
-    # Bind a call result under ``json_type=`` so Odin's call-variable
-    # declaration and assignment formatters cover the path where the
-    # framework-formatted call expression must survive (rather than
-    # being substituted with the ``_json_parse`` shortcut applied to
-    # literal bindings).  The other ``json_type`` languages route their
-    # call binding through other code paths that the existing golden files
-    # already cover, so this entry is Odin-only by design.
-    ("call_variable_form_new", build_odin_json_type_call_variants),
+    # Bind a call result under every non-default ``json_type`` whose
+    # language represents calls as expressions.
+    ("call_variable_form_new", build_call_result_json_type_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
     (
         "call_mixed_type_dicts",
