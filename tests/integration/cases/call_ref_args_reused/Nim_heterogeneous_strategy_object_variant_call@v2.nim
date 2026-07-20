@@ -1,4 +1,11 @@
 {.warning[UnusedImport]:off.}
+type
+  ValueKind = enum
+    vkInt, vkList
+  Value = object
+    case kind: ValueKind
+    of vkInt: intVal: int
+    of vkList: listVal: seq[Value]
 template process(args: varargs[untyped]) = discard
 var single_var = @[
     4,
