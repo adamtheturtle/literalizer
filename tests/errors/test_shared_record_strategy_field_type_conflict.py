@@ -57,6 +57,19 @@ _CUSTOM_NAME_SPLIT_YAML = textwrap.dedent(
     """,
 )
 
+_NESTED_TUPLE_SHAPE_CONFLICT_YAML = textwrap.dedent(
+    text="""\
+    - outer:
+        pair:
+          - 1
+          - first
+    - outer:
+        pair:
+          - false
+          - second
+    """,
+)
+
 _FIELD_TYPE_SPLIT_LANGUAGES: tuple[LanguageCls, ...] = (
     C,
     Cpp,
@@ -131,6 +144,36 @@ def test_custom_name_for_split_key_set_raises(
     with pytest.raises(expected_exception=UnrepresentableInputError):
         literalize(
             source=_CUSTOM_NAME_SPLIT_YAML,
+            input_format=InputFormat.YAML,
+            language=language,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[Kotlin, Scala],
+    ids=[language_cls.__name__ for language_cls in (Kotlin, Scala)],
+)
+def test_nested_tuple_field_type_conflicts_split_enclosing_shapes(
+    language_cls: LanguageCls,
+) -> None:
+    """A tuple field's positional types refine nested record identities.
+
+    The inner ``pair`` records have the same key set, but their tuple
+    fields are ``Pair<Int, String>``/``(Int, String)`` and
+    ``Pair<Boolean, String>``/``(Boolean, String)`` respectively.  The
+    split propagates to their enclosing records, so the sibling list is
+    rejected instead of reusing declarations with incompatible fields.
+    """
+    tuple_strategy = next(
+        strategy
+        for strategy in language_cls().heterogeneous_strategies
+        if strategy.name == "TUPLE"
+    )
+    language: Language = language_cls(heterogeneous_strategy=tuple_strategy)
+    with pytest.raises(expected_exception=HeterogeneousSiblingListsError):
+        literalize(
+            source=_NESTED_TUPLE_SHAPE_CONFLICT_YAML,
             input_format=InputFormat.YAML,
             language=language,
         )
