@@ -757,8 +757,11 @@ def _build_variant_preamble(
             else:
                 lines.append(
                     "template <typename... Types> struct "
-                    "LiteralizerVariant { template <typename T> "
-                    "LiteralizerVariant(T&&) {} };"
+                    "LiteralizerVariant { "
+                    "template <typename T> LiteralizerVariant(T) {} "
+                    "// NOLINT(google-explicit-constructor,"
+                    "hicpp-explicit-conversions)\n"
+                    "};"
                 )
         return tuple(lines)
 

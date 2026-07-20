@@ -2,7 +2,8 @@
 #include <string>
 #include <map>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+};
 int main() {
 auto my_data = std::map<std::string, LiteralizerVariant<std::vector<int>, std::vector<LiteralizerVariant<int, std::string>>>>{
     {"scores", std::vector<int>{10, 20, 30}},

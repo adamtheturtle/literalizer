@@ -2,7 +2,8 @@
 #include <string>
 #include <cstddef>
 #include <map>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+};
 int main() {
 auto my_data = std::map<std::string, std::nullptr_t>{
     {"a", nullptr},
