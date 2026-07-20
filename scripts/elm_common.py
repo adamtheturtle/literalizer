@@ -138,14 +138,17 @@ def worker_elm_home() -> Path:
 _ELM_TRANSIENT_BINARY_FILE_MARKERS = ("openBinaryFile", "withBinaryFile")
 _ELM_TRANSIENT_BUSY_MARKER = "resource busy (file is locked)"
 _ELM_TRANSIENT_CORRUPT_MARKER = "CORRUPT CACHE"
+_ELM_TRANSIENT_NETWORK_MARKER = "ConnectionTimeout"
 
 
 def _is_elm_transient_error(result: subprocess.CompletedProcess[str]) -> bool:
-    """Return True if ``elm make`` failed with one of the transient
-    cache-related errors documented above ``NOINDEX_SUFFIX``.
+    """Return True if ``elm make`` failed with a transient cache or
+    dependency-download error.
     """
     output = result.stderr + result.stdout
-    if _ELM_TRANSIENT_CORRUPT_MARKER in output:
+    if _ELM_TRANSIENT_CORRUPT_MARKER in output or (
+        _ELM_TRANSIENT_NETWORK_MARKER in output
+    ):
         return True
     if _ELM_TRANSIENT_BUSY_MARKER not in output:
         return False

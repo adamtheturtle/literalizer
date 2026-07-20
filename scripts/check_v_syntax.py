@@ -1,4 +1,4 @@
-"""Check syntax of a V golden file using ``v fmt``.
+"""Check a V golden file using ``v fmt`` and ``v -check``.
 
 ``v fmt`` parses the file and rewrites it in canonical form.  If parsing
 fails the exit code is non-zero, which we treat as a syntax error.
@@ -6,6 +6,10 @@ We deliberately do **not** use ``v fmt -verify`` because the
 literalizer's output style (trailing commas in maps, no colon
 alignment) differs from V's canonical formatting while still being
 syntactically valid.
+
+``v -check`` additionally type-checks the source without linking it.
+This catches invalid interface conversions such as a generated
+heterogeneous collection whose elements cannot inhabit ``IVal``.
 """
 
 import shutil
@@ -34,6 +38,18 @@ def main() -> None:
         )
         if result.returncode != 0:
             msg = f"{filename}: v fmt failed\n{result.stderr}{result.stdout}"
+            sys.stderr.write(msg)
+            sys.exit(1)
+        result = subprocess.run(
+            args=[v_path, "-check", target],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            msg = (
+                f"{filename}: v -check failed\n{result.stderr}{result.stdout}"
+            )
             sys.stderr.write(msg)
             sys.exit(1)
 
