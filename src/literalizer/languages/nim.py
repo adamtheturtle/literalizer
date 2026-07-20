@@ -434,12 +434,12 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
 
 
 @beartype
-def _nim_object_variant_wrap_ids(  # noqa: C901
+def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
     *, data: Value
 ) -> frozenset[int]:
     """Return containers whose children need the recursive ``Value`` type.
 
-    Nim's object variant has list and table payloads as well as scalar
+    The Nim object variant has list and table payloads as well as scalar
     payloads.  Once a container is represented by ``Value``, every
     container below it must use the same recursive element/value type too;
     otherwise (for example) ``Value(... tableVal: Table[string, int])``
@@ -462,11 +462,11 @@ def _nim_object_variant_wrap_ids(  # noqa: C901
 
     def _visit(item: Value) -> None:
         """Mark containers that require a recursive value type."""
-        children = _children(item)
+        children = _children(item=item)
         if children is None:
             return
         for child in children:
-            _visit(child)
+            _visit(item=child)
         # Empty containers need a concrete type when placed beside a
         # populated container; null is only representable by vkNull.
         if not children or any(child is None for child in children):
@@ -484,14 +484,14 @@ def _nim_object_variant_wrap_ids(  # noqa: C901
         ):
             wrap_ids.add(id(item))
 
-    _visit(data)
+    _visit(item=data)
 
     # Close over nested containers after the bottom-up decision above.
     # This gives every list/table payload its declared seq[Value] or
     # Table[string, Value] type, including otherwise homogeneous children.
     def _close(item: Value, *, ancestor_wrapped: bool) -> None:
         """Mark nested containers below an already wrapped container."""
-        children = _children(item)
+        children = _children(item=item)
         if children is None:
             return
         wrapped = ancestor_wrapped or id(item) in wrap_ids
@@ -499,11 +499,11 @@ def _nim_object_variant_wrap_ids(  # noqa: C901
             wrap_ids.add(id(item))
         for child in children:
             _close(
-                child,
+                item=child,
                 ancestor_wrapped=(wrapped and isinstance(child, (list, dict))),
             )
 
-    _close(data, ancestor_wrapped=False)
+    _close(item=data, ancestor_wrapped=False)
     return frozenset(wrap_ids)
 
 
@@ -533,9 +533,9 @@ def _nim_wrapped_container_kinds(
                     child, OrderedMap
                 ):
                     has_table = True
-            _visit(child)
+            _visit(item=child)
 
-    _visit(data)
+    _visit(item=data)
     return (has_list, has_table)
 
 
