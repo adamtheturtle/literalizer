@@ -145,6 +145,9 @@ class CallCaseConfig:
     # the resulting fixture and are skipped (no golden) instead of
     # emitting non-compiling output.
     requires_dict_literal_as_free_expression: bool
+    # Exclude a targeted regression fixture from the all-languages default
+    # matrix; its explicitly configured variant supplies the intended spec.
+    variant_only: bool = False
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -226,6 +229,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         comment_source=None,
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
+        variant_only=True,
     ),
     CallCaseConfig(
         case_dir_name="call_line_comments",
@@ -1665,6 +1669,8 @@ def discover_call_cases() -> list[CallCase]:
     """Return call test cases for all languages."""
     cases: list[CallCase] = []
     for config in CALL_CASE_CONFIGS:
+        if config.variant_only:
+            continue
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue

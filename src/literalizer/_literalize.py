@@ -4587,7 +4587,7 @@ def _preamble_data_with_zip(
     )
     argument_slots = tuple(
         [row[index] for row in rows if index < len(row)]
-        for index in range(max(map(len, rows), default=0))
+        for index in range(max((len(row) for row in rows), default=0))
     )
     if zip_resolution is not None:
         argument_values += tuple(zip_resolution.values)

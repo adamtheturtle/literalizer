@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterable
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Odin
+from literalizer.languages import Odin, Rust
 
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
@@ -121,6 +121,30 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def build_rust_tagged_enum_call_variant() -> list[Variant]:
+    """Return the Rust tagged-enum spec for its cross-call map
+    regression.
+    """
+    tagged_enum = next(
+        strategy
+        for strategy in Rust.heterogeneous_strategies
+        if strategy.name == "TAGGED_ENUM"
+    )
+    return [
+        Variant(
+            name="Rust_heterogeneous_strategy_tagged_enum",
+            spec=make_spec(
+                lang_cls=Rust,
+                heterogeneous_strategy=tagged_enum,
+            ),
+            lang_cls=Rust,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+    ]
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_scalar_args", build_json_type_variants),
@@ -161,7 +185,7 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ),
     (
         "call_sibling_maps",
-        build_heterogeneous_strategy_call_variants,
+        build_rust_tagged_enum_call_variant,
     ),
     (
         "call_ref_args_heterogeneous_list",
