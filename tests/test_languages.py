@@ -13,6 +13,7 @@ from literalizer.languages import (
     Dart,
     Haskell,
     Python,
+    Rust,
 )
 
 # Issue #2518 replaced the per-language ``datetime.time`` coverage
@@ -181,6 +182,42 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         '    <String, int>{"n": 1},\n'
         '    <String, int>{"n": 2},\n'
         "]"
+    )
+
+
+def test_rust_tagged_enum_call_preamble_ignores_call_rows() -> None:
+    """Rust does not declare ``Value`` for unrendered call structure."""
+    tagged_enum = next(
+        strategy
+        for strategy in Rust.heterogeneous_strategies
+        if strategy.name == "TAGGED_ENUM"
+    )
+    result = literalize_call(
+        source="- []\n- 99\n",
+        input_format=InputFormat.YAML,
+        language=Rust(heterogeneous_strategy=tagged_enum),
+        target_function="process",
+        parameter_names=["value"],
+        wrap_in_file=True,
+    )
+
+    assert "enum Value" not in result.code
+    assert "process();" in result.code
+    assert "process(99);" in result.code
+
+    whole_result = literalize_call(
+        source="[99, []]",
+        input_format=InputFormat.JSON,
+        language=Rust(heterogeneous_strategy=tagged_enum),
+        target_function="process",
+        parameter_names=["value"],
+        per_element=False,
+        wrap_in_file=True,
+    )
+
+    assert "enum Value" in whole_result.code
+    assert "process(vec![Value::I32(99), Value::List(vec![])]);" in (
+        whole_result.code
     )
 
 

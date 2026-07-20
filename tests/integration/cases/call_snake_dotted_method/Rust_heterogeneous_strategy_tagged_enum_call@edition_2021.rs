@@ -1,8 +1,3 @@
-enum Value {
-    Str(&'static str),
-    I32(i32),
-    Bool(bool),
-}
 fn main() {
     struct Http_ClientType_;
     impl Http_ClientType_ { fn fetch<A>(&self, _payload: A) {} }

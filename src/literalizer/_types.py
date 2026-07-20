@@ -18,6 +18,27 @@ type Scalar = (
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 
 
+class CallPreambleData(list[Value]):
+    """Call-rendering preamble input with its rendered arguments.
+
+    ``literalize_call(per_element=True)`` uses its outer list and any
+    nested row lists as call structure, rather than rendering those
+    containers as literals.  ``argument_values`` retains the values that
+    actually appear in the generated calls for language preambles whose
+    type discovery depends on container structure.
+    """
+
+    def __init__(
+        self,
+        data: list[Value],
+        *,
+        argument_values: tuple[Value, ...],
+    ) -> None:
+        """Store the original preamble data and rendered arguments."""
+        super().__init__(data)
+        self.argument_values = argument_values
+
+
 @runtime_checkable
 class ValueItemsMap[K, V](Protocol):
     """Covariant-key read-only view of the mapping arm of ``ValueInput``.

@@ -1,7 +1,3 @@
-enum Value {
-    I32(i32),
-    List(Vec<Value>),
-}
 fn main() {
     fn process<A, B>(_data: A, _count: B) {}
     let my_ints = vec![

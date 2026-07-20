@@ -113,7 +113,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
@@ -1064,14 +1064,37 @@ def _build_tagged_enum_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
-        wrap_ids = _tagged_enum_wrap_ids(data)
+        values: tuple[Value, ...] = (
+            data.argument_values
+            if isinstance(data, CallPreambleData)
+            else (data,)
+        )
+        wrap_ids = frozenset(
+            wrap_id
+            for value in values
+            for wrap_id in _tagged_enum_wrap_ids(value)
+        )
         if not wrap_ids:
             return ()
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        has_list, has_map = _rust_wrapped_empty_container_kinds(
-            data=data,
-            wrap_ids=wrap_ids,
+        scalars = tuple(
+            scalar
+            for value in values
+            for scalar in iter_wrapped_scalars(
+                data=value,
+                wrap_ids=wrap_ids,
+            )
         )
+        has_list = False
+        has_map = False
+        for value in values:
+            value_has_list, value_has_map = (
+                _rust_wrapped_empty_container_kinds(
+                    data=value,
+                    wrap_ids=wrap_ids,
+                )
+            )
+            has_list = has_list or value_has_list
+            has_map = has_map or value_has_map
         return tuple(
             _rust_value_enum_lines(
                 scalars=scalars,
