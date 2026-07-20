@@ -1931,9 +1931,21 @@ class Cpp(metaclass=LanguageCls):
     bool_formats = BoolFormats
 
     class VersionFormats(enum.Enum):
-        """Version options for C++."""
+        """C++ language-standard targets.
+
+        Select one with :attr:`Cpp.language_version`, for example
+        ``Cpp(language_version=Cpp.version_formats.CPP17)``.  The
+        default is :attr:`CPP20`.
+        """
+
+        CPP14 = enum.auto()
+        """ISO C++14 (``-std=c++14``)."""
+
+        CPP17 = enum.auto()
+        """ISO C++17 (``-std=c++17``)."""
 
         CPP20 = enum.auto()
+        """ISO C++20 (``-std=c++20``; default)."""
 
     version_formats = VersionFormats
 
@@ -2164,8 +2176,8 @@ class Cpp(metaclass=LanguageCls):
     )
     json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
-    # Keep in sync with the ``-std=`` flag passed to clang++ in
-    # ``.github/workflows/lint.yml``.
+    # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
+    # Earlier standards remain selectable through ``VersionFormats``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 

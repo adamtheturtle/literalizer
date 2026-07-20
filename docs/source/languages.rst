@@ -177,7 +177,7 @@ The remaining languages differ only in the emitted form and a few extra constrai
    * - C++
      - ``NLOHMANN_JSON``
      - ``nlohmann::json::parse(R"json(...)json")`` plus an ``#include <nlohmann/json.hpp>`` preamble line
-     - Input must not encode the raw-string terminator ``)json"``.
+     - Targets C++14, C++17, or C++20 through ``language_version`` (C++20 is the default). Input must not encode the raw-string terminator ``)json"``.
    * - Gleam
      - ``GLEAM_JSON_JSON``
      - ``json.int`` / ``json.string`` / ``json.preprocessed_array`` / ``json.object`` builders yielding ``gleam/json.Json``

@@ -1,0 +1,1 @@
+static const auto p = Playlist();
