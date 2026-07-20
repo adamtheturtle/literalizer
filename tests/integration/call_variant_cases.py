@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterable
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Odin, Rust
+from literalizer.languages import Odin
 
 from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
 from .language_specs import make_spec, sorted_languages
@@ -27,7 +27,7 @@ from .variant_cases import (
 @dataclasses.dataclass(frozen=True)
 class CallVariantCase:
     """A ``literalize_call`` golden-file case run with a non-default
-    language spec (e.g. Rust's ``TAGGED_ENUM`` strategy).
+    language spec (e.g. a ``TAGGED_ENUM`` strategy).
     """
 
     config: CallCaseConfig
@@ -123,26 +123,35 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
 
 @functools.cache
 @beartype
-def build_rust_tagged_enum_call_variant() -> list[Variant]:
-    """Return the Rust tagged-enum spec for its cross-call map
-    regression.
-    """
-    tagged_enum = next(
-        strategy
-        for strategy in Rust.heterogeneous_strategies
-        if strategy.name == "TAGGED_ENUM"
-    )
-    return [
-        Variant(
-            name="Rust_heterogeneous_strategy_tagged_enum",
-            spec=make_spec(
-                lang_cls=Rust,
-                heterogeneous_strategy=tagged_enum,
+def build_tagged_enum_call_variants() -> list[Variant]:
+    """Return call variants for languages with ``TAGGED_ENUM`` support."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        tagged_enum = next(
+            (
+                strategy
+                for strategy in spec.heterogeneous_strategies
+                if strategy.name == "TAGGED_ENUM"
             ),
-            lang_cls=Rust,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
+            None,
         )
-    ]
+        if tagged_enum is None:
+            continue
+        variants.append(
+            Variant(
+                name=(
+                    f"{lang_cls.__name__}_heterogeneous_strategy_tagged_enum"
+                ),
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=tagged_enum,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
 
 
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
@@ -185,7 +194,7 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ),
     (
         "call_sibling_maps",
-        build_rust_tagged_enum_call_variant,
+        build_tagged_enum_call_variants,
     ),
     (
         "call_ref_args_heterogeneous_list",
