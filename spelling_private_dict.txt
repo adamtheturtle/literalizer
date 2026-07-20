@@ -124,6 +124,7 @@ ZKV
 ZVal
 Zig
 accessor
+arity
 backtick
 backticks
 beartype
@@ -140,6 +141,7 @@ datetime
 datetimes
 deduplicated
 dicts
+divergently
 durations
 elixirc
 enum
