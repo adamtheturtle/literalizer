@@ -96,6 +96,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "object_variant_null_only_list",
         "object_variant_scalar_empty_map",
         "object_variant_nested_empty_list_table",
+        "object_variant_all_wrapped_children",
         # ``record_keyword_field`` carries dict keys that collide with
         # Rust keywords (``type``, ``match``) and Zig keywords
         # (``error``, ``switch``) to exercise the field-name escaping in
