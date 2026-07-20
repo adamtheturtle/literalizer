@@ -88,6 +88,13 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_triple_top_level",
         "heterogeneous_time_string",
         "dict_wide_int_key",
+        "object_variant_mixed_scalar_empty_list",
+        "object_variant_null_only_map",
+        "object_variant_nested_tables_mixed_int_widths",
+        "object_variant_empty_and_nonempty_maps",
+        "object_variant_null_only_list",
+        "object_variant_scalar_empty_map",
+        "object_variant_nested_empty_list_table",
         # ``record_keyword_field`` carries dict keys that collide with
         # Rust keywords (``type``, ``match``) and Zig keywords
         # (``error``, ``switch``) to exercise the field-name escaping in
@@ -140,7 +147,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``dict_format_config`` declares a ``narrowed_empty_form`` type
         # the empty literal from the sibling's key/value types so the list
         # compiles (V issue #3015, Rust issue #3013); other statically
-        # typed languages still render this shape divergently, so it stays
+        # typed languages still render this shape differently, so it stays
         # out of the all-languages base discovery.
         "empty_map_narrowing",
         # ``tagged_enum_empty_list`` / ``tagged_enum_empty_map`` carry a

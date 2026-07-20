@@ -14,7 +14,7 @@ import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableIntegerError
-from literalizer.languages import Cpp, D, Go, Rust, TypeScript, V, Zig
+from literalizer.languages import Cpp, D, Go, Nim, Rust, TypeScript, V, Zig
 
 _BEYOND_U64 = 2**64
 _BEYOND_NEG_I64 = -(2**63) - 1
@@ -127,6 +127,28 @@ def test_go_raises_for_in_range_negative_in_uint64_collection() -> None:
         + _UNSIGNED_FALLBACK_MSG,
     ):
         _literalize_list(language=Go(), values=[2**63, -5])
+
+
+def test_nim_object_variant_raises_for_integer_above_i64() -> None:
+    """Object-variant shape inference preserves an out-of-range tier.
+
+    The preamble compares the two table value shapes before formatting
+    rejects the integer, so this also covers that comparison path.
+    """
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=r"^Nim cannot represent integer \d+" + _NO_BIGINT_MSG,
+    ):
+        literalize(
+            source=json.dumps(obj=[{"small": 1}, {"large": 2**63}]),
+            input_format=InputFormat.JSON,
+            language=Nim(
+                heterogeneous_strategy=(
+                    Nim.heterogeneous_strategies.OBJECT_VARIANT
+                )
+            ),
+            variable_form=NewVariable(name="x", modifiers=frozenset()),
+        )
 
 
 def test_cpp_raises_above_unsigned_64_bit_range() -> None:

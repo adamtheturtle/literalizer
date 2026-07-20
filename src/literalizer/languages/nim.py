@@ -56,7 +56,12 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
 )
-from literalizer._formatters.type_inference import record_shape_for_dict
+from literalizer._formatters.type_inference import (
+    BeyondI64,
+    WideInt,
+    int_widening_tier,
+    record_shape_for_dict,
+)
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     collect_sibling_map_wrap_ids,
@@ -460,6 +465,46 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
             case _:
                 return None
 
+    def _literal_type(  # noqa: C901, PLR0911
+        item: Value,
+    ) -> object:
+        """Return the native Nim type shape inferred for *item*.
+
+        Python's ``type`` alone is not enough for nested collections:
+        two dicts can both be ``dict`` while rendering as incompatible
+        ``Table[string, seq[string]]`` and ``Table[string, seq[int]]``.
+        Keep the integer widening tier in the shape as well, matching
+        the magnitude-aware collection-literal inference.
+        """
+        match item:
+            case bool():
+                return bool
+            case int():
+                tier = int_widening_tier(items=[item])
+                if tier is WideInt:
+                    return WideInt
+                if tier is BeyondI64:
+                    return BeyondI64
+                return int
+            case list():
+                child_types = {_literal_type(item=child) for child in item}
+                if not child_types:
+                    return (list, None)
+                if len(child_types) == 1:
+                    return (list, next(iter(child_types)))
+                return (list, "mixed")
+            case dict() if not isinstance(item, OrderedMap):
+                child_types = {
+                    _literal_type(item=child) for child in item.values()
+                }
+                if not child_types:
+                    return (dict, None)
+                if len(child_types) == 1:
+                    return (dict, next(iter(child_types)))
+                return (dict, "mixed")
+            case _:
+                return type(item)
+
     def _visit(item: Value) -> None:
         """Mark containers that require a recursive value type."""
         children = _children(item=item)
@@ -472,7 +517,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         if not children or any(child is None for child in children):
             wrap_ids.add(id(item))
             return
-        child_types = {type(child) for child in children}
+        child_types = {_literal_type(item=child) for child in children}
         containers = [
             child for child in children if isinstance(child, (list, dict))
         ]
