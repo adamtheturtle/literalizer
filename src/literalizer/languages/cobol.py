@@ -60,6 +60,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -762,6 +763,10 @@ class Cobol(metaclass=LanguageCls):
     scalars become elementary data items with VALUE clauses, and
     sequences / dicts become group items with 05-level sub-items.
     """
+
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.ASCII_KEBAB
+    )
 
     #: :attr:`~literalizer.FileSection.name` of the declarations region a
     #: ``json_type=CJSON`` ``wrap_in_file=False`` result exposes through

@@ -51,6 +51,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PrefixCallStyle,
     SequenceFormatConfig,
@@ -150,6 +151,10 @@ def _scheme_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scheme(metaclass=LanguageCls):
     """Scheme language specification."""
+
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.ASCII_KEBAB
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64

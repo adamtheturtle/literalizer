@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import math
+import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from typing import (
@@ -26,14 +27,52 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
+    InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
 )
 
 
+class NewVariableNameSyntax(enum.Enum):
+    """Conservative lexical grammars for ``NewVariable`` declarations.
+
+    The grammar describes source names exactly as supplied to a language's
+    declaration formatter.  It intentionally does not repair, quote, or
+    otherwise transform a caller-provided name.
+    """
+
+    ASCII = enum.auto()
+    """An ASCII identifier beginning with a letter or underscore."""
+
+    ASCII_KEBAB = enum.auto()
+    """An ASCII identifier that may contain hyphens after its start."""
+
+    LOWER_ASCII = enum.auto()
+    """An ASCII identifier beginning with a lowercase letter or underscore."""
+
+    ASCII_LETTER_START = enum.auto()
+    """An ASCII identifier that must begin with a letter."""
+
+    def accepts(self, *, name: str) -> bool:
+        """Return whether *name* matches this lexical grammar."""
+        match self:
+            case NewVariableNameSyntax.ASCII:
+                pattern = r"[A-Za-z_][A-Za-z0-9_]*"
+            case NewVariableNameSyntax.ASCII_KEBAB:
+                pattern = r"[A-Za-z_][A-Za-z0-9_-]*"
+            case NewVariableNameSyntax.LOWER_ASCII:
+                pattern = r"[a-z_][A-Za-z0-9_]*"
+            case NewVariableNameSyntax.ASCII_LETTER_START:
+                pattern = r"[A-Za-z][A-Za-z0-9_]*"
+            case _:  # pragma: no cover - enum exhaustiveness assertion
+                assert_never(self)
+        return re.fullmatch(pattern=pattern, string=name) is not None
+
+
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
-    """Raise when *name* is reserved for a new variable declaration."""
+    """Raise when *name* cannot be used for a new variable declaration."""
+    language_name = language.__class__.__name__
     if language.reserved_variable_identifiers_case_sensitive:
         is_reserved = name in language.reserved_variable_identifiers
     else:
@@ -42,12 +81,21 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
             folded_name == reserved_name.casefold()
             for reserved_name in language.reserved_variable_identifiers
         )
-    if not is_reserved:
-        return
-    raise ReservedVariableNameError(
-        language_name=language.__class__.__name__,
-        variable_name=name,
-    )
+    if is_reserved:
+        raise ReservedVariableNameError(
+            language_name=language_name,
+            variable_name=name,
+        )
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "NewVariable validation requires a LanguageCls language"
+        raise TypeError(msg)
+    syntax = language_cls.new_variable_name_syntax
+    if not syntax.accepts(name=name):
+        raise InvalidNewVariableNameError(
+            language_name=language_name,
+            variable_name=name,
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -926,6 +974,9 @@ class LanguageCls(type):
     reserved_identifiers: frozenset[str]
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
+    new_variable_name_syntax: NewVariableNameSyntax = (
+        NewVariableNameSyntax.ASCII
+    )
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool

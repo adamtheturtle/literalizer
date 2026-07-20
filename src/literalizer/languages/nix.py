@@ -57,6 +57,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -195,6 +196,10 @@ class Nix(metaclass=LanguageCls):
     Dict keys that cannot be represented as Nix attribute names raise
     :class:`~literalizer.exceptions.InvalidDictKeyError`.
     """
+
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.ASCII_KEBAB
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64

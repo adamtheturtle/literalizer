@@ -32,6 +32,7 @@ from literalizer.exceptions import (
 from literalizer.languages.rust import Rust
 
 from .case_discovery import (
+    KEBAB_NEW_VARIABLE_CASE_DIR,
     HeterogeneousStrategyCombinedCase,
     IndentCase,
     NoVariableFormCase,
@@ -45,6 +46,7 @@ from .case_discovery import (
     case_input,
     group_cases_by_language,
     group_combined_cases_by_language,
+    kebab_new_variable_languages,
 )
 from .language_specs import (
     find_redefinition_styles,
@@ -210,6 +212,59 @@ def test_golden_file(
                     newline="",
                     fullpath=golden_path,
                 )
+
+
+@pytest.mark.parametrize(
+    argnames="lang_cls",
+    argvalues=kebab_new_variable_languages(),
+    ids=lang_cls_name,
+)
+def test_kebab_new_variable_golden_file(
+    lang_cls: literalizer.LanguageCls,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
+) -> None:
+    """Hyphen-friendly languages preserve a hyphenated declaration
+    name.
+    """
+    input_info = case_input(case_dir=cases_dir / KEBAB_NEW_VARIABLE_CASE_DIR)
+    source_text = input_info.path.read_text(encoding="utf-8")
+    for version_format in lang_cls.VersionFormats:
+        with subtests.test(version=version_format.name):
+            golden_path = make_golden_path(
+                parent=input_info.path.parent,
+                name=lang_cls.__name__,
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+                version=version_format,
+            )
+            spec = with_per_fixture_module_name(
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    language_version=version_format,
+                ),
+                golden_path=golden_path,
+            )
+            result = literalizer.literalize(
+                source=source_text,
+                input_format=input_info.input_format,
+                language=spec,
+                pre_indent_level=0,
+                include_delimiters=True,
+                variable_form=literalizer.NewVariable(
+                    name="a-b",
+                    modifiers=frozenset(),
+                ),
+                wrap_in_file=True,
+            )
+            file_regression.check(
+                contents=result.code + "\n",
+                encoding="utf-8",
+                extension=lang_cls.extension,
+                newline=None,
+                fullpath=golden_path,
+            )
 
 
 @pytest.mark.parametrize(

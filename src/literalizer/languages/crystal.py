@@ -77,6 +77,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RecordVariant,
@@ -398,6 +399,10 @@ class Crystal(metaclass=LanguageCls):
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``{1, 2, 3}``.
     """
+
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_ASCII
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
