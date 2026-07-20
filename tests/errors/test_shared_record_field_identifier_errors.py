@@ -78,7 +78,7 @@ def test_record_strategy_rejects_colliding_transformed_field_keys() -> None:
     returned.
     """
     language = Go(
-        heterogeneous_strategy=_record_strategy_for(language_cls=Go),
+        heterogeneous_strategy=Go.heterogeneous_strategies.RECORD,
     )
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
