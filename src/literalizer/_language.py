@@ -64,7 +64,7 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[a-z_][A-Za-z0-9_]*"
             case NewVariableNameSyntax.ASCII_LETTER_START:
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
-            case _:
+            case _:  # pragma: no cover - enum exhaustiveness assertion
                 assert_never(self)
         return re.fullmatch(pattern=pattern, string=name) is not None
 
@@ -87,7 +87,7 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
             variable_name=name,
         )
     language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "NewVariable validation requires a LanguageCls language"
         raise TypeError(msg)
     syntax = language_cls.new_variable_name_syntax

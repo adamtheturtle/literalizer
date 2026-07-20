@@ -106,7 +106,7 @@ def test_language_specific_new_variable_syntax_raises(
     language_cls: LanguageCls,
     name: str,
 ) -> None:
-    """Backend grammar restrictions are validated before rendering."""
+    """Target-language grammar restrictions are validated before rendering."""
     with pytest.raises(expected_exception=InvalidNewVariableNameError):
         literalize(
             source="1",
