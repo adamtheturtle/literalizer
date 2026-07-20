@@ -35,6 +35,7 @@ from .variant_metadata_builders import (
     build_record_field_type_split_variants,
     build_record_keyword_field_variants,
     build_record_nonrecord_dict_field_variants,
+    build_record_quoted_field_variants,
     build_record_unify_optional_fields_variants,
 )
 from .variant_types import (
@@ -1794,6 +1795,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_record_nonrecord_dict_field_variants
     ),
     "record_keyword_field": build_record_keyword_field_variants,
+    "record_quoted_field": build_record_quoted_field_variants,
     "record_field_type_split": build_record_field_type_split_variants,
     "record_nested_map_fallback": build_record_nested_map_fallback_variants,
     "string_embedded_nul": build_string_embedded_nul_variants,

@@ -1,0 +1,1 @@
+The shared ``RECORD`` renderer now rejects a dict key whose backend field-name mapping is not a lexical identifier before returning target source.  This prevents invalid declarations and literals for keys such as ``a-b``; Zig continues to use its quoted ``@"a-b"`` identifier form consistently.

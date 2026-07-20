@@ -98,6 +98,10 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # escape keyword field names opt in, so base-discovering it for
         # every language would emit golden files that may fail to compile.
         "record_keyword_field",
+        # ``record_quoted_field`` covers Zig's quoted identifiers for keys
+        # such as ``a-b``.  Only Zig opts into this capability, so the case
+        # remains outside all-languages base discovery.
+        "record_quoted_field",
         # ``record_field_type_split`` carries same-key-set dicts whose
         # field types conflict (a nested record with different fields,
         # differing scalar types) in positions that never share a

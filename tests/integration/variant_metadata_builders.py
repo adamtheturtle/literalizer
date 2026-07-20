@@ -162,6 +162,41 @@ def build_record_keyword_field_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_record_quoted_field_variants() -> Iterable[Variant]:
+    """Build record-field variants for languages with quoted identifiers.
+
+    Zig quoted identifiers can represent field keys that are not plain
+    identifiers, such as ``a-b``.  The dedicated golden case verifies the
+    escaped spelling in both its generated declaration and literal.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if (
+            RecordVariant.QUOTED_FIELD
+            not in lang_cls.variant_metadata.record_variants
+        ):
+            continue
+        default_spec = make_spec(lang_cls=lang_cls)
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
+        )
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_record_quoted_field",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=record_strategy,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
+@beartype
 def build_record_field_type_split_variants() -> Iterable[Variant]:
     """Build the ``record_field_type_split`` variants.
 

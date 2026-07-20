@@ -36,6 +36,7 @@ shape's key-set).
 """
 
 import dataclasses
+import re
 from collections import Counter
 from collections.abc import Callable, Hashable, Mapping, Sequence
 
@@ -54,6 +55,15 @@ from literalizer._language import (
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
+
+# A shared record renderer may use a conventional ASCII identifier, or an
+# escaped identifier in the syntax currently used by Zig.  Backends that need
+# another spelling must make ``field_identifier`` produce one of these forms
+# (or reject the key themselves) so a generated declaration and literal never
+# interpolate arbitrary JSON-key text as source code.
+_RECORD_FIELD_IDENTIFIER = re.compile(
+    pattern=r'^(?:[A-Za-z_][A-Za-z0-9_]*|@"(?:[^"\\]|\\["\\])*")$',
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -111,8 +121,12 @@ class RecordRenderer:
     (``frozenset`` of its keys) to a custom struct name; a mapped shape
     uses that name and the auto ``{prefix}{index}`` counter advances
     only for the shapes with no custom name (mirrors Rust).
-    ``field_identifier`` maps an original dict key to the language's
-    field identifier (identity for most languages, PascalCase for Go).
+    ``field_identifier`` maps an original dict key to a lexical field
+    identifier (identity for most languages, PascalCase for Go).  Its result
+    must be a conventional ASCII identifier or a quoted Zig-style identifier;
+    the shared renderer rejects any other result before it returns target
+    source.  This makes the mapping safe to use consistently in both
+    declarations and literals.
     ``field_type`` maps a :class:`RecordFieldType`
     (raw field value plus any resolved nested-record name) to its
     declared type, using the language's own collection openers rather
@@ -146,6 +160,40 @@ class RecordStrategy:
 
     behavior: HeterogeneousBehavior
     preamble: Callable[[Value], tuple[str, ...]]
+
+
+@beartype
+def _validate_field_identifiers(
+    *,
+    renderer: RecordRenderer,
+    shapes: Sequence[RecordShape],
+) -> None:
+    """Reject keys whose rendered field spelling is not lexical source.
+
+    The shared strategy uses the spelling in both the declaration and literal.
+    Validating it while shapes are computed ensures invalid JSON keys fail
+    during data checking instead of yielding a complete, non-compiling target
+    file.
+    """
+    for shape in shapes:
+        identifiers: set[str] = set()
+        for key in shape.keys:
+            identifier = renderer.field_identifier(key)
+            if not _RECORD_FIELD_IDENTIFIER.match(string=identifier):
+                msg = (
+                    f"cannot represent the dict key {key!r} as a lexical "
+                    "field identifier under the RECORD heterogeneous strategy"
+                )
+                raise UnrepresentableInputError(msg)
+            if identifier in identifiers:
+                msg = (
+                    f"cannot represent the dict key {key!r} under the "
+                    "RECORD heterogeneous strategy: its field identifier "
+                    f"{identifier!r} collides with another key in the same "
+                    "record"
+                )
+                raise UnrepresentableInputError(msg)
+            identifiers.add(identifier)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -704,6 +752,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             data=data,
             shapes_by_id=shapes_by_id,
         )
+        _validate_field_identifiers(renderer=renderer, shapes=ordered)
         name_by_shape.update(
             _assign_names(
                 shapes=ordered,
