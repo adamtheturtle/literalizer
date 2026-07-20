@@ -1736,7 +1736,7 @@ jobs:
       - name: Run clang-tidy on C++ files in their target standard
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy && test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh {} tidy < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
@@ -1842,7 +1842,7 @@ jobs:
       # separate `-fsyntax-only` pass would be redundant.
       - name: Run C++ files
         run: |-
-          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh {} run < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh run < /tmp/files-to-lint
       # `uv` is needed by the `C++ roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv

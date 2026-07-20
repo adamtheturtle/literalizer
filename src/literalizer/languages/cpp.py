@@ -2364,7 +2364,11 @@ class Cpp(metaclass=LanguageCls):
                 args,
                 supports_abbreviated_templates=self._uses_cpp20,
                 supports_nodiscard=(
-                    self.language_version is not self.version_formats.CPP14
+                    self.language_version
+                    in (
+                        self.version_formats.CPP17,
+                        self.version_formats.CPP20,
+                    )
                 ),
             )
 
@@ -2598,9 +2602,9 @@ class Cpp(metaclass=LanguageCls):
             datetime_type=self._cpp_datetime_type,
             tuple_strategy=self._tuple_strategy_active,
             variant_type_name=(
-                "std::variant"
-                if self.language_version is not self.version_formats.CPP14
-                else "LiteralizerVariant"
+                "LiteralizerVariant"
+                if self.language_version is self.version_formats.CPP14
+                else "std::variant"
             ),
         )
 

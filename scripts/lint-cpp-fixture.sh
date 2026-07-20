@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-fixture_path=$1
-mode=$2
+mode=$1
+fixture_path=$2
 
 case "$fixture_path" in
 *@cpp14.cpp) standard=c++14 ;;
