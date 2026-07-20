@@ -998,6 +998,8 @@ class LanguageCls(type):
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
+    supports_json_call_result_binding: bool = False
+    """Whether call-result bindings preserve an active JSON value type."""
     supports_zero_parameter_calls: bool
     max_call_parameters: int
     supports_inline_multiline_dict_args: bool

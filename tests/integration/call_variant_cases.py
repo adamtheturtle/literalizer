@@ -69,11 +69,11 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
 @functools.cache
 @beartype
 def build_call_result_json_type_variants() -> list[Variant]:
-    """Return JSON-type variants whose calls can be bound to a result."""
+    """Return JSON-type variants with JSON-aware call-result bindings."""
     return [
         variant
         for variant in build_json_type_variants()
-        if variant.lang_cls.call_returns_expression
+        if variant.lang_cls.supports_json_call_result_binding
     ]
 
 
@@ -107,8 +107,8 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_scalar_args", build_json_type_variants),
-    # Bind a call result under every non-default ``json_type`` whose
-    # language represents calls as expressions.
+    # Bind a call result under each non-default ``json_type`` whose language
+    # preserves call expressions while JSON rendering is active.
     ("call_variable_form_new", build_call_result_json_type_variants),
     ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
     (
