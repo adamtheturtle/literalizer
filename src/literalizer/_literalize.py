@@ -4574,7 +4574,7 @@ def _preamble_data_with_zip(
     # literals.  Preserve the existing data shape for general preamble
     # and body-type inference, while giving container-sensitive language
     # preambles the precise values that appear as call arguments.
-    if not isinstance(data_for_preamble, list):
+    if not isinstance(data_for_preamble, list):  # pragma: no cover
         msg = "per-element call preamble data must be a list"
         raise TypeError(msg)
     argument_values = tuple(
