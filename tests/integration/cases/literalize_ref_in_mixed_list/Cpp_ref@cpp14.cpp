@@ -2,7 +2,8 @@
 #include <string>
 #include <map>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+};
 int main() {
 auto ref_x = std::map<std::string, std::string>{
     {"_", "_"},
