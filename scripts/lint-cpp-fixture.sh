@@ -11,6 +11,16 @@ case "$fixture_path" in
 *) standard=c++20 ;;
 esac
 
+# Some cross-format fixtures retain their versioned filename while an
+# explicitly selected format requires a newer C++ library or syntax.
+# Compile them with the minimum standard required by their generated code.
+if grep -qE '^[[:space:]]*\.[[:alpha:]_][[:alnum:]_]*[[:space:]]*=' "$fixture_path" ||
+    grep -qF 'std::chrono::year_month_day' "$fixture_path"; then
+    standard=c++20
+elif [ "$standard" = c++14 ] && grep -qF 'std::variant' "$fixture_path"; then
+    standard=c++17
+fi
+
 case "$mode" in
 tidy)
     clang-tidy "$fixture_path" -- "-std=$standard"
