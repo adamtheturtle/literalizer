@@ -81,6 +81,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1325,7 +1326,7 @@ class Nim(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Nim."""
 
         JSON_NODE = "JsonNode"

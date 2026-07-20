@@ -72,6 +72,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -962,7 +963,7 @@ class Zig(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Zig."""
 
         STD_JSON_VALUE = "std.json.Value"

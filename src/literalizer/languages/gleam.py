@@ -55,6 +55,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1092,7 +1093,7 @@ class Gleam(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Gleam."""
 
         GLEAM_JSON_JSON = "gleam/json.Json"

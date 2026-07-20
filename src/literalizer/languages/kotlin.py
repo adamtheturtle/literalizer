@@ -89,6 +89,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
@@ -1346,7 +1347,7 @@ class Kotlin(metaclass=LanguageCls):
 
     bool_formats = BoolFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Kotlin."""
 
         KOTLINX_JSON_ELEMENT = "kotlinx.serialization.json.JsonElement"

@@ -57,6 +57,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1084,7 +1085,7 @@ class Cobol(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for COBOL."""
 
         CJSON = "cJSON"
@@ -1096,6 +1097,13 @@ class Cobol(metaclass=LanguageCls):
         record, so arbitrary string keys, JSON booleans, real numbers,
         heterogeneous arrays, and the empty string are all faithful.
         """
+
+        @property
+        def string_literals_escape_null_byte(self) -> bool:
+            """Return whether this JSON type faithfully encodes null
+            bytes.
+            """
+            return self is self.CJSON
 
     json_types = JsonTypes
 

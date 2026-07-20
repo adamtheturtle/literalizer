@@ -51,6 +51,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -605,7 +606,7 @@ class Erlang(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Erlang."""
 
         OTP_JSON = enum.auto()

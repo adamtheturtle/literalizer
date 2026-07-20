@@ -60,6 +60,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1663,7 +1664,7 @@ class Haskell(metaclass=LanguageCls):
 
     bool_formats = BoolFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Haskell."""
 
         AESON_VALUE = "Data.Aeson.Value"

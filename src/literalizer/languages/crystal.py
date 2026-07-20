@@ -73,6 +73,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
@@ -740,7 +741,7 @@ class Crystal(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Crystal."""
 
         JSON_ANY = _CRYSTAL_JSON_ANY

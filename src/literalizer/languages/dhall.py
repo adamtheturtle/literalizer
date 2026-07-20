@@ -56,6 +56,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -897,7 +898,7 @@ class Dhall(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """Empty: this language has no JSON value-type variants."""
 
     json_types = JsonTypes

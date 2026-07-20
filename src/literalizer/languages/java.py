@@ -80,6 +80,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1225,7 +1226,7 @@ class Java(metaclass=LanguageCls):
 
     bool_formats = BoolFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Java."""
 
         JACKSON_JSON_NODE = "com.fasterxml.jackson.databind.JsonNode"
