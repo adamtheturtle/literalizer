@@ -20,6 +20,7 @@ MANIFEST
 .pytest_cache/
 .hypothesis/
 *.obtained.*
+*.profraw
 
 # Sphinx
 docs/build/
