@@ -192,12 +192,13 @@ def build_tuple_strategy(
         record_renderer,
         field_type=_tuple_aware_field_type,
     )
-    # Field-type splitting (issue #2888) is a plain-``RECORD`` port; the
-    # ``TUPLE`` composition (shared across languages) keeps its existing
-    # behavior until ported in its own increment.
+    # Field-type splitting is also needed for the tuple composition:
+    # same-key-set records can disagree on a tuple field's per-position
+    # types.  The wrapped field-type hook captures that tuple signature,
+    # and refinement propagates a nested split to every enclosing shape.
     record_strategy = build_record_strategy(
         renderer=wrapped_renderer,
-        split_conflicting_field_types=False,
+        split_conflicting_field_types=True,
         widen_unrecordizable_nested_sibling_maps=False,
         derecordized_map_open=None,
     )

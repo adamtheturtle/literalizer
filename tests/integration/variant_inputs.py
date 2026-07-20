@@ -378,6 +378,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "record_keyword_field": (
         _ci(case_dir_name="record_keyword_field", suffix=""),
     ),
+    "record_quoted_field": (
+        _ci(case_dir_name="record_quoted_field", suffix=""),
+    ),
     "record_field_type_split": (
         _ci(case_dir_name="record_field_type_split", suffix=""),
     ),

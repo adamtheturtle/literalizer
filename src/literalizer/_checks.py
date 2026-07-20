@@ -910,6 +910,16 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
     behavior = spec.heterogeneous_behavior
+    # Validate tuple arity before record-shape refinement asks the
+    # tuple-aware field-type hook to derive a native tuple type.  In
+    # particular, Kotlin only has Pair and Triple, and its hook cannot
+    # type an otherwise eligible four-element tuple.
+    compute_tuple_list_ids = behavior.compute_tuple_list_ids
+    tuple_list_ids: frozenset[int] = (
+        compute_tuple_list_ids(data)
+        if compute_tuple_list_ids is not None
+        else frozenset()
+    )
     compute_record_shapes = behavior.compute_record_shapes
     record_shapes_by_id: Mapping[int, RecordShape] = (
         compute_record_shapes(data)
@@ -917,12 +927,6 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
         else {}
     )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
-    compute_tuple_list_ids = behavior.compute_tuple_list_ids
-    tuple_list_ids: frozenset[int] = (
-        compute_tuple_list_ids(data)
-        if compute_tuple_list_ids is not None
-        else frozenset()
-    )
     _check_unrepresentable_sibling_maps(
         data=data,
         spec=spec,

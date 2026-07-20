@@ -809,6 +809,7 @@ class RecordVariant(enum.Enum):
     UNIFY_OPTIONAL_FIELDS = enum.auto()
     NONRECORD_DICT_FIELD = enum.auto()
     KEYWORD_FIELD = enum.auto()
+    QUOTED_FIELD = enum.auto()
     FIELD_TYPE_SPLIT = enum.auto()
 
 
