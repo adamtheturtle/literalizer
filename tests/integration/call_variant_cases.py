@@ -14,7 +14,11 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import Odin
 
-from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
+from .call_cases import (
+    CALL_CASE_CONFIGS,
+    CALL_VARIANT_CASE_CONFIGS,
+    CallCaseConfig,
+)
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
@@ -27,7 +31,7 @@ from .variant_cases import (
 @dataclasses.dataclass(frozen=True)
 class CallVariantCase:
     """A ``literalize_call`` golden-file case run with a non-default
-    language spec (e.g. Rust's ``TAGGED_ENUM`` strategy).
+    language spec (e.g. a ``TAGGED_ENUM`` strategy).
     """
 
     config: CallCaseConfig
@@ -121,6 +125,39 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def build_tagged_enum_call_variants() -> list[Variant]:
+    """Return call variants for languages with ``TAGGED_ENUM`` support."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        tagged_enum = next(
+            (
+                strategy
+                for strategy in spec.heterogeneous_strategies
+                if strategy.name == "TAGGED_ENUM"
+            ),
+            None,
+        )
+        if tagged_enum is None:
+            continue
+        variants.append(
+            Variant(
+                name=(
+                    f"{lang_cls.__name__}_heterogeneous_strategy_tagged_enum"
+                ),
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=tagged_enum,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_scalar_args", build_json_type_variants),
@@ -160,6 +197,10 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
         build_heterogeneous_strategy_call_variants,
     ),
     (
+        "call_sibling_maps",
+        build_tagged_enum_call_variants,
+    ),
+    (
         "call_ref_args_heterogeneous_list",
         build_heterogeneous_strategy_call_variants,
     ),
@@ -184,7 +225,7 @@ def build_call_variant_cases() -> list[CallVariantCase]:
     for case_dir_name, builder in CALL_VARIANT_SOURCES:
         config = next(
             cfg
-            for cfg in CALL_CASE_CONFIGS
+            for cfg in CALL_CASE_CONFIGS + CALL_VARIANT_CASE_CONFIGS
             if cfg.case_dir_name == case_dir_name
         )
         cases.extend(

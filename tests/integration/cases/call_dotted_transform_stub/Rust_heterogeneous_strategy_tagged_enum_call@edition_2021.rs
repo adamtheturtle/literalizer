@@ -1,8 +1,3 @@
-enum Value {
-    Str(&'static str),
-    I32(i32),
-    Bool(bool),
-}
 fn main() {
     fn process<A>(_value: A) {}
     struct TracerType_;

@@ -1,8 +1,3 @@
-enum Value {
-    Bool(bool),
-    I32(i32),
-    F64(f64),
-}
 fn main() {
     fn process<A, B>(_value: A, _count: B) {}
     let my_int = 1;

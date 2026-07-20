@@ -1,8 +1,3 @@
-enum Value {
-    Str(&'static str),
-    I32(i32),
-    Bool(bool),
-}
 fn main() {
     struct ClientType_;
     impl ClientType_ { fn post<A>(&self, _data: A) {} }

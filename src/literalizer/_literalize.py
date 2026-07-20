@@ -59,6 +59,7 @@ from literalizer._preamble import (
     deduplicate_preamble_entries,
 )
 from literalizer._types import (
+    CallPreambleData,
     OrderedMap,
     Scalar,
     Value,
@@ -4549,6 +4550,7 @@ def _preamble_data_with_zip(
     *,
     data_for_preamble: Value,
     zip_resolution: "_ZipResolution | None",
+    per_element: bool,
 ) -> Value:
     """Fold the parsed ``zip_source`` values into the data used for
     preamble inference.
@@ -4563,9 +4565,41 @@ def _preamble_data_with_zip(
     as siblings; only the *set of types present* matters here, not the
     structure.
     """
-    if zip_resolution is None:
-        return data_for_preamble
-    return [data_for_preamble, *zip_resolution.values]
+    if not per_element:
+        if zip_resolution is None:
+            return data_for_preamble
+        return [data_for_preamble, *zip_resolution.values]
+
+    # The top-level list and any list row are call syntax, not rendered
+    # literals.  Preserve the existing data shape for general preamble
+    # and body-type inference, while giving container-sensitive language
+    # preambles the precise values that appear as call arguments.
+    if not isinstance(data_for_preamble, list):  # pragma: no cover
+        msg = "per-element call preamble data must be a list"
+        raise TypeError(msg)
+    argument_values = tuple(
+        argument
+        for row in data_for_preamble
+        for argument in (row if isinstance(row, list) else [row])
+    )
+    rows = tuple(
+        row if isinstance(row, list) else [row] for row in data_for_preamble
+    )
+    argument_slots = tuple(
+        [row[index] for row in rows if index < len(row)]
+        for index in range(max((len(row) for row in rows), default=0))
+    )
+    if zip_resolution is not None:
+        argument_values += tuple(zip_resolution.values)
+        argument_slots += tuple([value] for value in zip_resolution.values)
+        preamble_data = [data_for_preamble, *zip_resolution.values]
+    else:
+        preamble_data = data_for_preamble
+    return CallPreambleData(
+        data=preamble_data,
+        argument_values=argument_values,
+        argument_slots=argument_slots,
+    )
 
 
 @beartype
@@ -5079,6 +5113,7 @@ def literalize_call(
     preamble_data = _preamble_data_with_zip(
         data_for_preamble=data_for_preamble,
         zip_resolution=zip_resolution,
+        per_element=per_element,
     )
     computed = compute_preamble(
         data=preamble_data,

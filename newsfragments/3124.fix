@@ -1,0 +1,1 @@
+Emit the Rust TAGGED_ENUM declaration when per-element calls need to widen homogeneous maps in the same argument position.
