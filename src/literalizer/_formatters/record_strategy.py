@@ -57,10 +57,10 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
 
 # A shared record renderer may use a conventional ASCII identifier, or an
-# escaped identifier in the syntax currently used by Zig.  Backends that need
-# another spelling must make ``field_identifier`` produce one of these forms
-# (or reject the key themselves) so a generated declaration and literal never
-# interpolate arbitrary JSON-key text as source code.
+# escaped identifier in the syntax currently used by Zig.  Languages that
+# need another spelling must make ``field_identifier`` produce one of these
+# forms (or reject the key themselves) so a generated declaration and literal
+# never interpolate arbitrary JSON-key text as source code.
 _RECORD_FIELD_IDENTIFIER = re.compile(
     pattern=r'^(?:[A-Za-z_][A-Za-z0-9_]*|@"(?:[^"\\]|\\["\\])*")$',
 )

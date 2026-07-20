@@ -98,7 +98,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # escape keyword field names opt in, so base-discovering it for
         # every language would emit golden files that may fail to compile.
         "record_keyword_field",
-        # ``record_quoted_field`` covers Zig's quoted identifiers for keys
+        # ``record_quoted_field`` covers quoted identifiers in Zig for keys
         # such as ``a-b``.  Only Zig opts into this capability, so the case
         # remains outside all-languages base discovery.
         "record_quoted_field",
@@ -144,8 +144,8 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``dict_format_config`` declares a ``narrowed_empty_form`` type
         # the empty literal from the sibling's key/value types so the list
         # compiles (V issue #3015, Rust issue #3013); other statically
-        # typed languages still render this shape divergently, so it stays
-        # out of the all-languages base discovery.
+        # typed languages still render this shape in different ways, so it
+        # stays out of the all-languages base discovery.
         "empty_map_narrowing",
         # ``tagged_enum_empty_list`` / ``tagged_enum_empty_map`` carry a
         # scalar beside an empty list / map (``[1, []]`` / ``[1, {}]``),

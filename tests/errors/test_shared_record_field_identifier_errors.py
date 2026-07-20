@@ -9,6 +9,7 @@ from literalizer.languages import (
     Cpp,
     Crystal,
     D,
+    Go,
     Java,
     Kotlin,
     Odin,
@@ -19,7 +20,7 @@ from literalizer.languages import (
 )
 
 # Zig safely renders this key as a quoted identifier, so it is covered by its
-# existing identifier-escaping tests.  The remaining affected backends use a
+# existing identifier-escaping tests.  The remaining affected languages use a
 # shared renderer but have no syntax for this key in a generated record field.
 _UNESCAPABLE_FIELD_LANGUAGES: tuple[LanguageCls, ...] = (
     C,
@@ -55,7 +56,9 @@ def _record_strategy_for(language_cls: LanguageCls) -> object:
 def test_record_strategy_rejects_hyphenated_field_key(
     language_cls: LanguageCls,
 ) -> None:
-    """A hyphenated key fails before a backend returns invalid source."""
+    """A hyphenated key fails before a target language returns invalid
+    source.
+    """
     language: Language = language_cls(
         heterogeneous_strategy=_record_strategy_for(language_cls=language_cls),
     )
@@ -65,6 +68,24 @@ def test_record_strategy_rejects_hyphenated_field_key(
     ):
         literalize(
             source='[{"a-b": 1}]',
+            input_format=InputFormat.JSON,
+            language=language,
+        )
+
+
+def test_record_strategy_rejects_colliding_transformed_field_keys() -> None:
+    """Keys that map to one Go field name fail before source is
+    returned.
+    """
+    language = Go(
+        heterogeneous_strategy=_record_strategy_for(language_cls=Go),
+    )
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="collides with another key",
+    ):
+        literalize(
+            source='[{"a-b": 1, "a_b": 2}]',
             input_format=InputFormat.JSON,
             language=language,
         )
