@@ -2,10 +2,10 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
-    std::map<std::string, std::variant<std::string, int>>{{"key", "hello   world"}, {"value", 1}},
+auto my_data = std::vector<std::map<std::string, LiteralizerVariant<std::string, int>>>{
+    std::map<std::string, LiteralizerVariant<std::string, int>>{{"key", "hello   world"}, {"value", 1}},
 };
     (void)my_data;
     return 0;

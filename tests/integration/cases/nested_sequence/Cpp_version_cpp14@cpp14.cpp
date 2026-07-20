@@ -2,9 +2,9 @@
 #include <string>
 #include <cstddef>
 #include <vector>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::vector<std::variant<bool, std::string, std::vector<int>, std::nullptr_t>>{
+auto my_data = std::vector<LiteralizerVariant<bool, std::string, std::vector<int>, std::nullptr_t>>{
     true,
     "hi",
     std::vector<int>{1, 2},

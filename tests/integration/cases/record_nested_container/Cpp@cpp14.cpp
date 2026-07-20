@@ -2,9 +2,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, std::vector<std::string>, int>>{
+auto my_data = std::map<std::string, LiteralizerVariant<std::string, std::vector<std::string>, int>>{
     {"title", "report"},
     {"tags", std::vector<std::string>{"draft", "urgent", "review"}},
     {"priority", 2},

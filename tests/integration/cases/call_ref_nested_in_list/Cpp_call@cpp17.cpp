@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <variant>
-auto process(auto...) { return 0; }
+template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto my_var = 42;
 auto my_other = 7;

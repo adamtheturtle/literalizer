@@ -1,9 +1,9 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::vector<std::variant<std::vector<int>, std::vector<std::string>>>{
+auto my_data = std::vector<LiteralizerVariant<std::vector<int>, std::vector<std::string>>>{
     std::vector<int>{1, 2},
     std::vector<std::string>{"a", "b"},
 };

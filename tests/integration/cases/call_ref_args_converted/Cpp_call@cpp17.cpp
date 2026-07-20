@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <vector>
 #include <variant>
-auto process(auto...) { return 0; }
+template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto my_var = std::vector<int>{
     1,

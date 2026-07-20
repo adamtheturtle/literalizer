@@ -1,9 +1,9 @@
 #include <initializer_list>
 #include <vector>
 #include <cstddef>
-#include <variant>
-auto process(auto...) { return 0; }
-auto emit(auto...) { return 0; }
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+template <typename... Args> auto process(Args...) { return 0; }
+template <typename... Args> auto emit(Args...) { return 0; }
 int main() {
 emit(process());
 emit(process());

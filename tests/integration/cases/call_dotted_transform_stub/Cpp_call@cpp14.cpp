@@ -1,9 +1,9 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
-auto process(auto...) { return 0; }
-struct tracerType_ { void emit(auto...) const {} };
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+template <typename... Args> auto process(Args...) { return 0; }
+struct tracerType_ { template <typename... Args> void emit(Args...) const {} };
 const tracerType_ tracer;
 int main() {
 tracer.emit(process("hello"));

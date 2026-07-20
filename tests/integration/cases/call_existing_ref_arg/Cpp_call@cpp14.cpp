@@ -1,6 +1,6 @@
 #include <initializer_list>
 #include <vector>
-auto process(auto...) { return 0; }
+template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto existing = 42;
 process(existing);

@@ -1,8 +1,8 @@
 #include <initializer_list>
 #include <string>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::initializer_list<std::variant<bool, int, std::string>>{
+auto my_data = std::initializer_list<LiteralizerVariant<bool, int, std::string>>{
     true,
     42,
     "apple",

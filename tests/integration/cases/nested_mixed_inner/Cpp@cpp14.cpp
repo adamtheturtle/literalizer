@@ -1,11 +1,11 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::vector<std::vector<std::variant<int, std::string>>>{
-    std::vector<std::variant<int, std::string>>{1, "a"},
-    std::vector<std::variant<int, std::string>>{2, "b"},
+auto my_data = std::vector<std::vector<LiteralizerVariant<int, std::string>>>{
+    std::vector<LiteralizerVariant<int, std::string>>{1, "a"},
+    std::vector<LiteralizerVariant<int, std::string>>{2, "b"},
 };
     (void)my_data;
     return 0;

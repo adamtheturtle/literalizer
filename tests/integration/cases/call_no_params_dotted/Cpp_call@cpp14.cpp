@@ -1,8 +1,8 @@
 #include <initializer_list>
 #include <vector>
 #include <cstddef>
-#include <variant>
-struct throttlerType_ { void check(auto...) const {} };
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
+struct throttlerType_ { template <typename... Args> void check(Args...) const {} };
 const throttlerType_ throttler;
 int main() {
 throttler.check();

@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <vector>
-auto process(auto...) { return 0; }
+template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 // Test cases
 process(std::map<std::string, std::string>{{"type", "create"}, {"pr_id", "pr_1"}});  // first case

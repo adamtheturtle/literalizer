@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 #include <variant>
-struct mgrType_ { void run(auto...) const {} };
+struct mgrType_ { template <typename... Args> void run(Args...) const {} };
 struct appType_ { mgrType_ mgr; };
 const appType_ app;
 int main() {

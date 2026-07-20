@@ -2,15 +2,15 @@
 #include <string>
 #include <cstddef>
 #include <map>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, bool>>{
+auto my_data = std::map<std::string, LiteralizerVariant<std::string, std::nullptr_t, bool>>{
     {"host", "localhost"},
     {"port", nullptr},  // not configured yet
     {"debug", true},
 };
 (void)my_data;
-my_data = std::map<std::string, std::variant<std::string, std::nullptr_t, bool>>{
+my_data = std::map<std::string, LiteralizerVariant<std::string, std::nullptr_t, bool>>{
     {"host", "localhost"},
     {"port", nullptr},  // not configured yet
     {"debug", true},

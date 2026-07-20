@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 #include <cstddef>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
 auto my_data = std::vector<std::map<std::string, std::nullptr_t>>{
     std::map<std::string, std::nullptr_t>{},

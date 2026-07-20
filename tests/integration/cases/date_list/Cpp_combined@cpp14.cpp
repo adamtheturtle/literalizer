@@ -1,15 +1,15 @@
 #include <initializer_list>
-#include <chrono>
+#include <string>
 #include <vector>
 int main() {
-auto my_data = std::vector<std::chrono::year_month_day>{
-    std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},
-    std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{2}, std::chrono::day{20}},
+auto my_data = std::vector<std::string>{
+    "2024-01-15",
+    "2024-02-20",
 };
 (void)my_data;
-my_data = std::vector<std::chrono::year_month_day>{
-    std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},
-    std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{2}, std::chrono::day{20}},
+my_data = std::vector<std::string>{
+    "2024-01-15",
+    "2024-02-20",
 };
     (void)my_data;
     return 0;

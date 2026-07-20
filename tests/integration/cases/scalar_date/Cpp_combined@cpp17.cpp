@@ -1,9 +1,9 @@
 #include <initializer_list>
-#include <chrono>
+#include <string>
 int main() {
-auto my_data = std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}};
+const auto* my_data = "2024-01-15";
 (void)my_data;
-my_data = std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}};
+my_data = "2024-01-15";
     (void)my_data;
     return 0;
 }

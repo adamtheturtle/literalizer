@@ -2,7 +2,7 @@
 #include <vector>
 #include <cstddef>
 #include <variant>
-struct throttlerType_ { void check(auto...) const {} };
+struct throttlerType_ { template <typename... Args> void check(Args...) const {} };
 const throttlerType_ throttler;
 int main() {
 throttler.check();

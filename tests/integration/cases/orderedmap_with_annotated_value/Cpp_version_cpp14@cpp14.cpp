@@ -3,9 +3,9 @@
 #include <vector>
 #include <utility>
 #include <cstddef>
-#include <variant>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T&&) {} };
 int main() {
-auto my_data = std::vector<std::pair<std::string, std::variant<std::vector<std::nullptr_t>, int>>>{
+auto my_data = std::vector<std::pair<std::string, LiteralizerVariant<std::vector<std::nullptr_t>, int>>>{
     {"a", std::vector<std::nullptr_t>{}},
     {"b", 1},
 };
