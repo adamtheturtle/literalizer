@@ -232,6 +232,7 @@ class Wren(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
+    supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
     # The Wren compiler rejects methods with more than 16 parameters
     # (``Methods cannot have more than 16 parameters.``).
