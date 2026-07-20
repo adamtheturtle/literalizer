@@ -196,6 +196,9 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
 KEBAB_NEW_VARIABLE_CASE_DIR = "new_variable_kebab_name"
 """Golden case that verifies a hyphenated ``NewVariable`` binding."""
 
+PRIMED_NEW_VARIABLE_CASE_DIR = "new_variable_prime_suffix"
+"""Golden case that verifies a primed ``NewVariable`` binding."""
+
 
 @beartype
 def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
@@ -205,6 +208,17 @@ def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
         for lang_cls in sorted_languages()
         if lang_cls.new_variable_name_syntax
         is NewVariableNameSyntax.ASCII_KEBAB
+    )
+
+
+@beartype
+def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
+    """Return languages whose declaration syntax admits prime suffixes."""
+    return tuple(
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls.new_variable_name_syntax
+        is NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
     )
 
 
@@ -222,7 +236,9 @@ def _specialized_case_dirs() -> frozenset[str]:
         | frozenset(
             cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
         )
-        | frozenset((KEBAB_NEW_VARIABLE_CASE_DIR,))
+        | frozenset(
+            (KEBAB_NEW_VARIABLE_CASE_DIR, PRIMED_NEW_VARIABLE_CASE_DIR),
+        )
         | VARIANT_ONLY_CASE_DIRS
     )
 

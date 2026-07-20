@@ -11,6 +11,7 @@ from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
     KEBAB_NEW_VARIABLE_CASE_DIR,
+    PRIMED_NEW_VARIABLE_CASE_DIR,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
     build_no_variable_form_cases,
@@ -20,6 +21,7 @@ from .case_discovery import (
     discover_cases,
     discover_combined_cases,
     kebab_new_variable_languages,
+    primed_new_variable_languages,
 )
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
@@ -126,6 +128,28 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
 
 
 @beartype
+def _expected_specialized_new_variable_golden_files(
+    cases_dir: Path,
+) -> set[Path]:
+    """Return expected paths for specialized NewVariable fixtures."""
+    expected: set[Path] = set()
+    for case_dir_name, languages in (
+        (KEBAB_NEW_VARIABLE_CASE_DIR, kebab_new_variable_languages()),
+        (PRIMED_NEW_VARIABLE_CASE_DIR, primed_new_variable_languages()),
+    ):
+        for lang_cls in languages:
+            expected.update(
+                _paths_for_versions(
+                    parent=cases_dir / case_dir_name,
+                    name=lang_cls.__name__,
+                    extension=lang_cls.extension,
+                    lang_cls=lang_cls,
+                )
+            )
+    return expected
+
+
+@beartype
 def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """Return the set of all golden files that parameterized tests
     cover.
@@ -157,15 +181,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
 
     expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
 
-    for lang_cls in kebab_new_variable_languages():
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / KEBAB_NEW_VARIABLE_CASE_DIR,
-                name=lang_cls.__name__,
-                extension=lang_cls.extension,
-                lang_cls=lang_cls,
-            )
-        )
+    expected.update(
+        _expected_specialized_new_variable_golden_files(cases_dir=cases_dir),
+    )
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:

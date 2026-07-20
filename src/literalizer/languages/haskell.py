@@ -1304,7 +1304,7 @@ class Haskell(metaclass=LanguageCls):
     """
 
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
-        NewVariableNameSyntax.LOWER_ASCII
+        NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
     )
 
     format_integer_widened = no_format_integer_widened
