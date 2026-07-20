@@ -286,18 +286,25 @@ def make_unsigned_overflow_fallback(
     out-of-range values raise ``UnrepresentableIntegerError``.
 
     Languages whose overflow fallback produces an unsigned 64-bit
-    literal cannot represent values below ``-2^63``: the signed range
-    lower bound excludes them and the unsigned range starts at zero.
+    literal cannot represent values below ``-2^63`` or above
+    ``2^64 - 1``: the signed range lower bound excludes the former,
+    and the unsigned type's upper bound excludes the latter.
     """
 
     @beartype
     def _format(value: int) -> str:
-        """Delegate to *format_positive*, raising for negatives."""
+        """Delegate to *format_positive*, raising outside ``u64``."""
         if value < 0:
             msg = (
                 f"{language_name} cannot represent negative integer "
                 f"{value} below the signed 64-bit range using an "
                 "unsigned fallback."
+            )
+            raise UnrepresentableIntegerError(msg)
+        if value > U64_MAX:
+            msg = (
+                f"{language_name} cannot represent integer {value} above "
+                "the unsigned 64-bit range."
             )
             raise UnrepresentableIntegerError(msg)
         return format_positive(value)
@@ -316,22 +323,13 @@ def make_ull_fallback(
 
     Shared by C and C++ where signed 64-bit literals are rejected above
     ``LLONG_MAX`` and ``unsigned long long`` holds positive values up to
-    ``ULLONG_MAX``.  Values above ``ULLONG_MAX`` have no native literal
-    so we raise ``UnrepresentableIntegerError`` rather than emit code
-    the compiler will reject.
+    ``ULLONG_MAX``.  The shared unsigned fallback rejects values above
+    that maximum before this formatter is called.
     """
 
     @beartype
     def _format_positive_ull(value: int) -> str:
-        """Format a non-negative integer with a ``ULL`` suffix, raising
-        for values above ``ULLONG_MAX``.
-        """
-        if value > U64_MAX:
-            msg = (
-                f"{language_name} cannot represent integer {value} above "
-                "the unsigned 64-bit range."
-            )
-            raise UnrepresentableIntegerError(msg)
+        """Format a non-negative integer with a ``ULL`` suffix."""
         return f"{value}ULL"
 
     return make_unsigned_overflow_fallback(

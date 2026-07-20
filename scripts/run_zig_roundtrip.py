@@ -12,9 +12,9 @@ This lives here, driven by a step of the ``lint-zig`` job in
 toolchain is installed.  It shares the same input and comparison logic
 as the other per-language round-trip helpers.
 
-``std.json.Value`` carries integers wider than ``i64`` as ``.number_string``
-which ``std.json.stringify`` writes back verbatim, so the shared input's
-26-digit ``biginteger`` field needs no exclusion under this strategy.
+Zig's fixed-width ``u64`` literal limit excludes the shared input's
+26-digit ``biginteger`` field.  It is trimmed before literalization and
+comparison, as with other backends that cannot represent the field.
 """
 
 import shutil
@@ -24,13 +24,18 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "Zig"
+_EXCLUDED_KEYS = ("biginteger",)
 
 
 def _build_program(json_text: str) -> str:
     """Return a runnable Zig program literalized from *json_text*."""
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
     result = roundtrip_common.literalize_new_variable(
         language=Zig(json_type=Zig.json_types.STD_JSON_VALUE),
-        json_text=json_text,
+        json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=1,
     )
@@ -68,7 +73,7 @@ def main() -> None:
                 failure_label="zig run error",
             ),
         ],
-        excluded_keys=(),
+        excluded_keys=_EXCLUDED_KEYS,
     )
 
 
