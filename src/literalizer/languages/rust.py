@@ -1071,7 +1071,11 @@ def _build_tagged_enum_preamble(
         )
         wrap_ids = frozenset(
             wrap_id
-            for value in values
+            for value in (
+                data.argument_slots
+                if isinstance(data, CallPreambleData)
+                else values
+            )
             for wrap_id in _tagged_enum_wrap_ids(value)
         )
         if not wrap_ids:

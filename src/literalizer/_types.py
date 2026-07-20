@@ -25,7 +25,9 @@ class CallPreambleData(list[Value]):
     nested row lists as call structure, rather than rendering those
     containers as literals.  ``argument_values`` retains the values that
     actually appear in the generated calls for language preambles whose
-    type discovery depends on container structure.
+    type discovery depends on container structure.  ``argument_slots``
+    also preserves positional grouping across calls for strategies that
+    widen siblings in the same parameter slot.
     """
 
     def __init__(
@@ -33,10 +35,12 @@ class CallPreambleData(list[Value]):
         data: list[Value],
         *,
         argument_values: tuple[Value, ...],
+        argument_slots: tuple[list[Value], ...],
     ) -> None:
         """Store the original preamble data and rendered arguments."""
         super().__init__(data)
         self.argument_values = argument_values
+        self.argument_slots = argument_slots
 
 
 @runtime_checkable

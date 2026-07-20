@@ -160,6 +160,10 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
         build_heterogeneous_strategy_call_variants,
     ),
     (
+        "call_sibling_maps",
+        build_heterogeneous_strategy_call_variants,
+    ),
+    (
         "call_ref_args_heterogeneous_list",
         build_heterogeneous_strategy_call_variants,
     ),

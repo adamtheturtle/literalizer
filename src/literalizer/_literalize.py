@@ -4582,14 +4582,23 @@ def _preamble_data_with_zip(
         for row in data_for_preamble
         for argument in (row if isinstance(row, list) else [row])
     )
+    rows = tuple(
+        row if isinstance(row, list) else [row] for row in data_for_preamble
+    )
+    argument_slots = tuple(
+        [row[index] for row in rows if index < len(row)]
+        for index in range(max(map(len, rows), default=0))
+    )
     if zip_resolution is not None:
         argument_values += tuple(zip_resolution.values)
+        argument_slots += tuple([value] for value in zip_resolution.values)
         preamble_data = [data_for_preamble, *zip_resolution.values]
     else:
         preamble_data = data_for_preamble
     return CallPreambleData(
         data=preamble_data,
         argument_values=argument_values,
+        argument_slots=argument_slots,
     )
 
 
