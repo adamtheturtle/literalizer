@@ -331,6 +331,11 @@ class _CppTypeCtx:
     date_type: str | None
     datetime_type: str | None
     tuple_strategy: bool
+    variant_type_name: str
+
+    def variant_type(self, types: Sequence[str], /) -> str:
+        """Return the active heterogeneous-value carrier type."""
+        return f"{self.variant_type_name}<{', '.join(types)}>"
 
     def element_to_type(
         self,
@@ -550,7 +555,7 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=False,
             )
-            return f"std::initializer_list<{inner_type}>"
+            return f"std::vector<{inner_type}>"
         case _:
             cpp_type = element_to_type(type(item))
             if cpp_type is not None:
@@ -649,7 +654,7 @@ def _compute_element_type_for_items(
         case [single]:
             return single
         case types:
-            return f"std::variant<{', '.join(types)}>"
+            return type_ctx.variant_type(types)
 
 
 @beartype
@@ -738,9 +743,7 @@ def _build_variant_preamble(
     *,
     type_ctx: _CppTypeCtx,
 ) -> Callable[[Value], tuple[str, ...]]:
-    """Build a ``data_dependent_preamble`` that emits
-    ``#include <variant>`` when the data needs variant types.
-    """
+    """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
 
     def _variant_preamble(data: Value, /) -> tuple[str, ...]:
@@ -749,7 +752,17 @@ def _build_variant_preamble(
         if _has_empty_collection(data=data):
             lines.append("#include <cstddef>")
         if _needs_variant_type(data=data, element_to_type=element_to_type):
-            lines.append("#include <variant>")
+            if type_ctx.variant_type_name == "std::variant":
+                lines.append("#include <variant>")
+            else:
+                lines.append(
+                    "template <typename... Types> struct "
+                    "LiteralizerVariant { "
+                    "template <typename T> LiteralizerVariant(T) {} "
+                    "// NOLINT(google-explicit-constructor,"
+                    "hicpp-explicit-conversions)\n"
+                    "};"
+                )
         return tuple(lines)
 
     return _variant_preamble
@@ -918,6 +931,26 @@ def _cpp_record_literal(
 
 
 @beartype
+def _cpp_record_literal_positional(
+    name: str,
+    fields: Sequence[RecordLiteralField],
+    /,
+) -> RenderedRecordLiteral:
+    """Render a pre-C++20 positional aggregate initializer.
+
+    C++14 and C++17 do not support designated initializers.  The shared
+    record strategy preserves document order for both declarations and
+    literals, so positional aggregate initialization remains well-formed.
+    """
+    return RenderedRecordLiteral(
+        head=f"{name}{{",
+        entries=tuple(field.formatted for field in fields),
+        closer="}",
+        compact_pad="",
+    )
+
+
+@beartype
 def _cpp_render_record_declaration(
     name: str,
     fields: Sequence[RecordDeclarationField],
@@ -1069,13 +1102,13 @@ def _apply_cpp_variant_set_open(
     items: list[Value],
     type_ctx: _CppTypeCtx,
 ) -> str:
-    """Return a typed ``std::initializer_list`` opener."""
+    """Return a typed, owning ``std::vector`` opener."""
     inner = _compute_element_type_for_items(
         items=items,
         type_ctx=type_ctx,
         in_mapping_value=False,
     )
-    return f"std::initializer_list<{inner}>{{"
+    return f"std::vector<{inner}>{{"
 
 
 @beartype
@@ -1136,7 +1169,7 @@ def _build_variant_set_open(
     *,
     type_ctx: _CppTypeCtx,
 ) -> Callable[[list[Value]], str]:
-    """Build a set opener that uses typed ``std::initializer_list``."""
+    """Build a set opener that uses a typed, owning ``std::vector``."""
 
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
@@ -1275,20 +1308,36 @@ def _cpp_call_stub(
     stub_return: StubReturn,
     _args: Sequence[Value],
     /,
+    *,
+    supports_abbreviated_templates: bool,
+    supports_nodiscard: bool,
 ) -> tuple[str, ...]:
     """Return C++ stub declarations for a call name."""
+    if supports_abbreviated_templates:
+        parameter_pack = "auto..."
+        template_prefix = ""
+    else:
+        parameter_pack = "Args..."
+        template_prefix = "template <typename... Args> "
+    nodiscard_prefix = "[[nodiscard]] " if supports_nodiscard else ""
     if len(parts) == 1:
-        return (f"auto {parts[0]}(auto...) {{ return 0; }}",)
+        return (
+            f"{template_prefix}auto {parts[0]}({parameter_pack}) "
+            "{ return 0; }",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if not fields:
         type_name = f"{root}Type_"
         if stub_return is StubReturn.VOID:
-            method_decl = f"void {method}(auto...) const {{}}"
+            method_decl = (
+                f"{template_prefix}void {method}({parameter_pack}) const {{}}"
+            )
         else:
             method_decl = (
-                f"[[nodiscard]] auto {method}(auto...) const {{ return 0; }}"
+                f"{template_prefix}{nodiscard_prefix}auto {method}"
+                f"({parameter_pack}) const {{ return 0; }}"
             )
         return (
             f"struct {type_name} {{ {method_decl} }};",
@@ -1299,12 +1348,14 @@ def _cpp_call_stub(
     if stub_return is StubReturn.VALUE:
         lines.append(
             f"struct {inner_type} {{"
-            f" [[nodiscard]] auto {method}(auto...) const"
+            f" {template_prefix}{nodiscard_prefix}auto {method}"
+            f"({parameter_pack}) const"
             f" {{ return 0; }} }};"
         )
     else:
         lines.append(
-            f"struct {inner_type} {{ void {method}(auto...) const {{}} }};"
+            f"struct {inner_type} {{ {template_prefix}void {method}"
+            f"({parameter_pack}) const {{}} }};"
         )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -1701,7 +1752,7 @@ class Cpp(metaclass=LanguageCls):
             set_open=lambda _items: "{",
             close="}",
             empty_set=None,
-            preamble_lines=(),
+            preamble_lines=("#include <vector>",),
             set_opener_template="",
             supports_heterogeneity=True,
             supports_trailing_comma=True,
@@ -1931,9 +1982,31 @@ class Cpp(metaclass=LanguageCls):
     bool_formats = BoolFormats
 
     class VersionFormats(enum.Enum):
-        """Version options for C++."""
+        """C++ language-standard targets.
+
+        Select one with :attr:`Cpp.language_version`, for example
+        ``Cpp(language_version=Cpp.version_formats.CPP17)``.  The
+        default is :attr:`CPP20`.
+        """
+
+        CPP14 = enum.auto()
+        """ISO C++14 (``-std=c++14``).
+
+        Uses a local value carrier in place of ``std::variant``, positional
+        aggregate initialization, ISO date/datetime strings, and explicit
+        template parameter packs in generated call stubs.
+        """
+
+        CPP17 = enum.auto()
+        """ISO C++17 (``-std=c++17``).
+
+        Uses ``std::variant`` while retaining positional aggregate
+        initialization, ISO date/datetime strings, and explicit template
+        parameter packs in generated call stubs.
+        """
 
         CPP20 = enum.auto()
+        """ISO C++20 (``-std=c++20``; default)."""
 
     version_formats = VersionFormats
 
@@ -2164,8 +2237,8 @@ class Cpp(metaclass=LanguageCls):
     )
     json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
-    # Keep in sync with the ``-std=`` flag passed to clang++ in
-    # ``.github/workflows/lint.yml``.
+    # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
+    # Earlier standards remain selectable through ``VersionFormats``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
@@ -2276,7 +2349,30 @@ class Cpp(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return file-scope stubs for a call expression."""
-        return _cpp_call_stub
+
+        def _formatter(
+            parts: Sequence[str],
+            params: Sequence[str],
+            stub_return: StubReturn,
+            args: Sequence[Value],
+        ) -> tuple[str, ...]:
+            """Render a stub in the selected C++ language mode."""
+            return _cpp_call_stub(
+                parts,
+                params,
+                stub_return,
+                args,
+                supports_abbreviated_templates=self._uses_cpp20,
+                supports_nodiscard=(
+                    self.language_version
+                    in (
+                        self.version_formats.CPP17,
+                        self.version_formats.CPP20,
+                    )
+                ),
+            )
+
+        return _formatter
 
     @cached_property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -2371,12 +2467,34 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def _cpp_date_type(self) -> str:
         """Resolved C++ type name for the chosen date format."""
-        return self.date_format.cpp_type
+        return self._resolved_date_format.cpp_type
 
     @cached_property
     def _cpp_datetime_type(self) -> str:
         """Resolved C++ type name for the chosen datetime format."""
-        return self.datetime_format.cpp_type
+        return self._resolved_datetime_format.cpp_type
+
+    @cached_property
+    def _uses_cpp20(self) -> bool:
+        """Return whether C++20-only syntax and chrono types are available."""
+        return self.language_version is self.version_formats.CPP20
+
+    @cached_property
+    def _resolved_date_format(self) -> DateFormats:
+        """Return the selected date representation for the target standard."""
+        if not self._uses_cpp20 and self.date_format is self.date_formats.CPP:
+            return self.date_formats.ISO
+        return self.date_format
+
+    @cached_property
+    def _resolved_datetime_format(self) -> DatetimeFormats:
+        """Return the selected datetime representation for the target."""
+        if (
+            not self._uses_cpp20
+            and self.datetime_format is self.datetime_formats.CPP
+        ):
+            return self.datetime_formats.ISO
+        return self.datetime_format
 
     @cached_property
     def _tuple_strategy_active(self) -> bool:
@@ -2445,7 +2563,11 @@ class Cpp(metaclass=LanguageCls):
             field_identifier=_cpp_record_field_identifier,
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
-            render_literal=_cpp_record_literal,
+            render_literal=(
+                _cpp_record_literal
+                if self._uses_cpp20
+                else _cpp_record_literal_positional
+            ),
         )
 
     @cached_property
@@ -2479,6 +2601,11 @@ class Cpp(metaclass=LanguageCls):
             date_type=self._cpp_date_type,
             datetime_type=self._cpp_datetime_type,
             tuple_strategy=self._tuple_strategy_active,
+            variant_type_name=(
+                "LiteralizerVariant"
+                if self.language_version is self.version_formats.CPP14
+                else "std::variant"
+            ),
         )
 
     @cached_property
@@ -2537,7 +2664,7 @@ class Cpp(metaclass=LanguageCls):
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
-        return self.date_format
+        return self._resolved_date_format
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
@@ -2547,7 +2674,7 @@ class Cpp(metaclass=LanguageCls):
             and self.datetime_format.value.type_produced is not int
         ):
             return format_datetime_iso
-        return self.datetime_format
+        return self._resolved_datetime_format
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
@@ -2674,8 +2801,8 @@ class Cpp(metaclass=LanguageCls):
                 return f"{prefix}auto {name} = {expr};"
 
             return _json_formatter
-        date_type = self.date_format.value.type_produced
-        datetime_type = self.datetime_format.value.type_produced
+        date_type = self._resolved_date_format.value.type_produced
+        datetime_type = self._resolved_datetime_format.value.type_produced
 
         def _formatter(
             name: str,
@@ -2703,8 +2830,8 @@ class Cpp(metaclass=LanguageCls):
         if self._json_type_active:
             return {}
         return date_scalar_preamble(
-            date_format=self.date_format,
-            datetime_format=self.datetime_format,
+            date_format=self._resolved_date_format,
+            datetime_format=self._resolved_datetime_format,
             extra={
                 str: ("#include <string>",),
                 bytes: ("#include <string>",),

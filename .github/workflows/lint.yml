@@ -1731,12 +1731,12 @@ jobs:
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
         run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
-      # ``-std=c++20`` matches ``Cpp.language_version`` in
-      # ``src/literalizer/languages/cpp.py``; keep them in sync.
-      - name: Run clang-tidy on C++ files
+      # The generated filename encodes the requested C++ standard:
+      # ``@cpp14.cpp``, ``@cpp17.cpp``, or the default C++20.
+      - name: Run clang-tidy on C++ files in their target standard
         run: |-
           find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy && test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c++20 < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
@@ -1829,23 +1829,20 @@ jobs:
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
-      # ``-std=c++20`` matches ``Cpp.language_version`` in
-      # ``src/literalizer/languages/cpp.py``; keep them in sync.
-      - name: Build precompiled header
-        run: clang++ -std=c++20 -x c++-header scripts/lint-cpp-pch.hpp -o /tmp/pch.hpp.pch
+      # Build one precompiled header for each C++ target selected by a
+      # fixture filename (``@cpp14.cpp``, ``@cpp17.cpp``, or C++20).
+      - name: Build precompiled headers
+        run: |-
+          for standard in c++14 c++17 c++20; do
+            clang++ "-std=$standard" -x c++-header scripts/lint-cpp-pch.hpp \
+              -o "/tmp/lint-cpp-$standard.hpp.pch"
+          done
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
       - name: Run C++ files
         run: |-
-          cat > /tmp/run-cpp.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang++ -std=c++20 -include-pch /tmp/pch.hpp.pch "$1" \
-            -o "$tmpdir/run" || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cpp.sh < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh run < /tmp/files-to-lint
       # `uv` is needed by the `C++ roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv

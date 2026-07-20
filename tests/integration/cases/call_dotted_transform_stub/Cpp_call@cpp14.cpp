@@ -1,0 +1,14 @@
+#include <initializer_list>
+#include <string>
+#include <vector>
+template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
+};
+template <typename... Args> auto process(Args...) { return 0; }
+struct tracerType_ { template <typename... Args> void emit(Args...) const {} };
+const tracerType_ tracer;
+int main() {
+tracer.emit(process("hello"));
+tracer.emit(process(42));
+tracer.emit(process(true));
+    return 0;
+}
