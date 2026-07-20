@@ -3,11 +3,16 @@
 import dataclasses
 from typing import ClassVar
 
+import pytest
+
 from literalizer import (
     InputFormat,
     NewVariable,
     literalize,
     literalize_call,
+)
+from literalizer._literalize import (
+    _preamble_data_with_zip,  # pyright: ignore[reportPrivateUsage]
 )
 from literalizer.languages import (
     Dart,
@@ -186,7 +191,7 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
 
 
 def test_rust_tagged_enum_call_preamble_ignores_call_rows() -> None:
-    """Rust does not declare ``Value`` for unrendered call structure."""
+    """Rust omits ``Value`` for structural call rows."""
     tagged_enum = next(
         strategy
         for strategy in Rust.heterogeneous_strategies
@@ -219,6 +224,19 @@ def test_rust_tagged_enum_call_preamble_ignores_call_rows() -> None:
     assert "process(vec![Value::I32(99), Value::List(vec![])]);" in (
         whole_result.code
     )
+
+
+def test_per_element_call_preamble_requires_list_data() -> None:
+    """Only a top-level list can supply per-element call arguments."""
+    with pytest.raises(
+        expected_exception=TypeError,
+        match="per-element call preamble data must be a list",
+    ):
+        _preamble_data_with_zip(
+            data_for_preamble=1,
+            zip_resolution=None,
+            per_element=True,
+        )
 
 
 def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:

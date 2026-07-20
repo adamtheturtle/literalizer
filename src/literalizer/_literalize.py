@@ -4565,13 +4565,10 @@ def _preamble_data_with_zip(
     as siblings; only the *set of types present* matters here, not the
     structure.
     """
-    preamble_data: Value
-    if zip_resolution is None:
-        preamble_data = data_for_preamble
-    else:
-        preamble_data = [data_for_preamble, *zip_resolution.values]
     if not per_element:
-        return preamble_data
+        if zip_resolution is None:
+            return data_for_preamble
+        return [data_for_preamble, *zip_resolution.values]
 
     # The top-level list and any list row are call syntax, not rendered
     # literals.  Preserve the existing data shape for general preamble
@@ -4587,9 +4584,9 @@ def _preamble_data_with_zip(
     )
     if zip_resolution is not None:
         argument_values += tuple(zip_resolution.values)
-    if not isinstance(preamble_data, list):
-        msg = "per-element call preamble data must be a list"
-        raise TypeError(msg)
+        preamble_data = [data_for_preamble, *zip_resolution.values]
+    else:
+        preamble_data = data_for_preamble
     return CallPreambleData(
         data=preamble_data,
         argument_values=argument_values,
