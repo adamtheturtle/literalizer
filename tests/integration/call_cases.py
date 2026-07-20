@@ -145,9 +145,6 @@ class CallCaseConfig:
     # the resulting fixture and are skipped (no golden) instead of
     # emitting non-compiling output.
     requires_dict_literal_as_free_expression: bool
-    # Exclude a targeted regression fixture from the all-languages default
-    # matrix; its explicitly configured variant supplies the intended spec.
-    variant_only: bool = False
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -204,32 +201,6 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         comment_source=None,
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
-    ),
-    CallCaseConfig(
-        # Values in this position are homogeneous per call but require
-        # TAGGED_ENUM widening across sibling calls.
-        case_dir_name="call_sibling_maps",
-        target_function="process",
-        parameter_names=["value"],
-        call_transform=None,
-        transform_stub_names=[],
-        per_element=True,
-        call_style_type=None,
-        ref_declarations={},
-        wrap_in_file=False,
-        ref_case_per_language=False,
-        consumable_refs=frozenset[str](),
-        requires_call_returns_expression=False,
-        requires_inline_multiline_dict_args=False,
-        requires_standalone_wrapped_comments=False,
-        self_contained_mirror_variable_form=None,
-        variable_form=None,
-        zip_source=None,
-        zip_input_format=None,
-        comment_source=None,
-        transform_stub_param_names=["_arg"],
-        requires_dict_literal_as_free_expression=False,
-        variant_only=True,
     ),
     CallCaseConfig(
         case_dir_name="call_line_comments",
@@ -1504,6 +1475,37 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
 ]
 
 
+# Cases owned exclusively by ``test_call_variant_golden_file``.  Keeping
+# them separate means the default call matrix needs no case-specific opt-out.
+CALL_VARIANT_CASE_CONFIGS: list[CallCaseConfig] = [
+    CallCaseConfig(
+        # Values in this position are homogeneous per call but require
+        # TAGGED_ENUM widening across sibling calls.
+        case_dir_name="call_sibling_maps",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+    ),
+]
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -1669,8 +1671,6 @@ def discover_call_cases() -> list[CallCase]:
     """Return call test cases for all languages."""
     cases: list[CallCase] = []
     for config in CALL_CASE_CONFIGS:
-        if config.variant_only:
-            continue
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue

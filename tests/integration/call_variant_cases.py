@@ -14,7 +14,11 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import Odin
 
-from .call_cases import CALL_CASE_CONFIGS, CallCaseConfig
+from .call_cases import (
+    CALL_CASE_CONFIGS,
+    CALL_VARIANT_CASE_CONFIGS,
+    CallCaseConfig,
+)
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
@@ -221,7 +225,7 @@ def build_call_variant_cases() -> list[CallVariantCase]:
     for case_dir_name, builder in CALL_VARIANT_SOURCES:
         config = next(
             cfg
-            for cfg in CALL_CASE_CONFIGS
+            for cfg in CALL_CASE_CONFIGS + CALL_VARIANT_CASE_CONFIGS
             if cfg.case_dir_name == case_dir_name
         )
         cases.extend(

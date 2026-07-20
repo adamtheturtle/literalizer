@@ -23,7 +23,7 @@ import literalizer
 from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
-from .call_cases import CALL_CASE_CONFIGS
+from .call_cases import CALL_CASE_CONFIGS, CALL_VARIANT_CASE_CONFIGS
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -217,7 +217,10 @@ def _specialized_case_dirs() -> frozenset[str]:
     directories plus :data:`VARIANT_ONLY_CASE_DIRS`.
     """
     return (
-        frozenset(cfg.case_dir_name for cfg in CALL_CASE_CONFIGS)
+        frozenset(
+            cfg.case_dir_name
+            for cfg in CALL_CASE_CONFIGS + CALL_VARIANT_CASE_CONFIGS
+        )
         | frozenset(cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS)
         | frozenset(
             cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
