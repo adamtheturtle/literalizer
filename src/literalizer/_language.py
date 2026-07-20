@@ -821,6 +821,19 @@ class NestedMapWideningVariant(enum.Enum):
     UNIFORM_KEYS = enum.auto()
 
 
+class JsonType(enum.Enum):
+    """Base class for JSON value-type options.
+
+    JSON representations opt into embedded-null-byte integration variants
+    by overriding :attr:`string_literals_escape_null_byte`.
+    """
+
+    @property
+    def string_literals_escape_null_byte(self) -> bool:
+        """Return whether this JSON type faithfully encodes null bytes."""
+        return False
+
+
 @dataclasses.dataclass(frozen=True)
 class VariantMetadata:
     r"""Language-owned metadata for constructing integration variants.
@@ -907,7 +920,7 @@ class LanguageCls(type):
     CallStyles: type[enum.Enum]
     Modifiers: type[enum.Enum]
     HeterogeneousStrategies: type[enum.Enum]
-    JsonTypes: type[enum.Enum]
+    JsonTypes: type[JsonType]
     BoolFormats: type[enum.Enum]
     identifier_cases: tuple[IdentifierCase, ...]
     supported_ref_cases: frozenset[IdentifierCase]
@@ -1168,7 +1181,7 @@ class Language(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
     @property
-    def json_types(self) -> type[enum.Enum]:
+    def json_types(self) -> type[JsonType]:
         """Enum class whose members list the JSON value-type options
         this language supports.
 

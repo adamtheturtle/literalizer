@@ -57,6 +57,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1175,7 +1176,7 @@ class PureScript(metaclass=LanguageCls):
 
     bool_formats = BoolFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for PureScript."""
 
         ARGONAUT_JSON = "Data.Argonaut.Core.Json"

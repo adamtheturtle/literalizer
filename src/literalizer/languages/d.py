@@ -69,6 +69,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -843,7 +844,7 @@ class D(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for D.
 
         D's default rendering already wraps every value in

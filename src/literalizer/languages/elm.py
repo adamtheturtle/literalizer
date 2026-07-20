@@ -51,6 +51,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -1044,7 +1045,7 @@ class Elm(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Elm."""
 
         JSON_ENCODE_VALUE = enum.auto()

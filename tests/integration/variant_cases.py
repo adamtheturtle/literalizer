@@ -16,7 +16,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES, Cobol
+from literalizer.languages import ALL_LANGUAGES
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -892,44 +892,53 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
     reject the value (R, COBOL) or still emit a raw null byte are
     excluded.  A language with more than one string format (Python, whose
     raw and single-quoted formats carry their own null-byte handling)
-    contributes one variant per format.  COBOL's default formatter
-    rejects the value, but its ``json_type=CJSON`` build rebuilds each
-    string as a null-terminated ``cJSON`` node that splices the byte as
-    ``X"00"``, so that spec is added explicitly.
+    contributes one variant per format. JSON type variants that can
+    represent null bytes opt in through their
+    ``string_literals_escape_null_byte`` property.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if not lang_cls.variant_metadata.string_literals_escape_null_byte:
-            continue
-        string_formats = list(make_spec(lang_cls=lang_cls).string_formats)
-        for string_format in string_formats:
+        if lang_cls.variant_metadata.string_literals_escape_null_byte:
+            string_formats = list(
+                make_spec(lang_cls=lang_cls).string_formats,
+            )
+            for string_format in string_formats:
+                suffix = (
+                    ""
+                    if len(string_formats) == 1
+                    else f"_{string_format.name.lower()}"
+                )
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_cls.__name__}_string_embedded_nul{suffix}"
+                        ),
+                        spec=make_spec(
+                            lang_cls=lang_cls,
+                            string_format=string_format,
+                        ),
+                        lang_cls=lang_cls,
+                        collection_layout=literalizer.CollectionLayout.COMPACT,
+                    )
+                )
+        for json_type in lang_cls.JsonTypes:
+            if not json_type.string_literals_escape_null_byte:
+                continue
             suffix = (
-                ""
-                if len(string_formats) == 1
-                else f"_{string_format.name.lower()}"
+                lang_cls.json_type_variant_name_suffix
+                or json_type.name.lower()
             )
             variants.append(
                 Variant(
-                    name=f"{lang_cls.__name__}_string_embedded_nul{suffix}",
+                    name=(f"{lang_cls.__name__}_string_embedded_nul_{suffix}"),
                     spec=make_spec(
                         lang_cls=lang_cls,
-                        string_format=string_format,
+                        json_type=json_type,
                     ),
                     lang_cls=lang_cls,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
-    variants.append(
-        Variant(
-            name="Cobol_string_embedded_nul_cjson",
-            spec=make_spec(
-                lang_cls=Cobol,
-                json_type=Cobol.json_types.CJSON,
-            ),
-            lang_cls=Cobol,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-    )
     return variants
 
 

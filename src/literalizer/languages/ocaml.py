@@ -61,6 +61,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     LanguageCls,
     ModifierCombination,
     NestedMapWideningVariant,
@@ -744,7 +745,7 @@ class OCaml(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for OCaml."""
 
         YOJSON_SAFE_T = _YOJSON_SAFE_T

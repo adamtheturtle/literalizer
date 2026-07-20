@@ -84,6 +84,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
@@ -1152,7 +1153,7 @@ class CSharp(metaclass=LanguageCls):
 
     variable_type_hints_formats = VariableTypeHints
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for C#."""
 
         SYSTEM_TEXT_JSON_NODE = "JsonNode"

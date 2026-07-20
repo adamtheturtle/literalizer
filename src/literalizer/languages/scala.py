@@ -84,6 +84,7 @@ from literalizer._language import (
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
@@ -917,7 +918,7 @@ class Scala(metaclass=LanguageCls):
 
     version_formats = VersionFormats
 
-    class JsonTypes(enum.Enum):
+    class JsonTypes(JsonType):
         """JSON value type options for Scala."""
 
         CIRCE = _CIRCE_JSON_TYPE
