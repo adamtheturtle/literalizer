@@ -107,6 +107,7 @@ OBJECT_VARIANT_CONTAINER_INPUTS: tuple[CaseInput, ...] = tuple(
         "object_variant_null_only_list",
         "object_variant_scalar_empty_map",
         "object_variant_nested_empty_list_table",
+        "object_variant_all_wrapped_children",
     )
 )
 

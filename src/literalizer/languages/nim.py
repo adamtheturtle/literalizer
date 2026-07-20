@@ -524,9 +524,10 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         wrapped_containers = [
             child for child in containers if id(child) in wrap_ids
         ]
-        if len(child_types) > 1 or (
-            wrapped_containers and len(wrapped_containers) < len(containers)
-        ):
+        # A native parent must use Value for any child container that
+        # already uses recursive Value elements. This applies even when
+        # every child is wrapped and their native shapes match.
+        if len(child_types) > 1 or wrapped_containers:
             wrap_ids.add(id(item))
 
     _visit(item=data)
