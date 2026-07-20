@@ -610,6 +610,7 @@ class D(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
+    supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
     max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True

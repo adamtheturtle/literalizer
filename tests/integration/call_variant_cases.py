@@ -73,8 +73,7 @@ def build_call_result_json_type_variants() -> list[Variant]:
     return [
         variant
         for variant in build_json_type_variants()
-        if "supports_json_call_result_binding" in vars(variant.lang_cls)
-        and variant.lang_cls.supports_json_call_result_binding
+        if variant.lang_cls.supports_json_call_result_binding
     ]
 
 
