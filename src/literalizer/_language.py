@@ -50,6 +50,9 @@ class NewVariableNameSyntax(enum.Enum):
     LOWER_ASCII = enum.auto()
     """An ASCII identifier beginning with a lowercase letter or underscore."""
 
+    LOWER_ASCII_PRIME_SUFFIX = enum.auto()
+    """A lower-ASCII identifier with an optional trailing prime suffix."""
+
     ASCII_LETTER_START = enum.auto()
     """An ASCII identifier that must begin with a letter."""
 
@@ -62,6 +65,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[A-Za-z_][A-Za-z0-9_-]*"
             case NewVariableNameSyntax.LOWER_ASCII:
                 pattern = r"[a-z_][A-Za-z0-9_]*"
+            case NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX:
+                pattern = r"[a-z_][A-Za-z0-9_]*'*"
             case NewVariableNameSyntax.ASCII_LETTER_START:
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
             case _:  # pragma: no cover - enum exhaustiveness assertion
