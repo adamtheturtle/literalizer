@@ -64,6 +64,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     WideInt,
+    collect_record_shapes,
     infer_element_type,
     record_shape_for_dict,
 )
@@ -689,6 +690,9 @@ def _items_need_variant(
 def _needs_variant_type(
     data: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
+    *,
+    tuple_list_ids: frozenset[int] = frozenset(),
+    record_dict_ids: frozenset[int] = frozenset(),
 ) -> bool:
     """Check whether *data* would produce ``std::variant`` or
     ``std::nullptr_t`` types in the generated C++ code.
@@ -706,11 +710,27 @@ def _needs_variant_type(
                 element_to_type=element_to_type,
             )
         case list():
+            if id(data) in tuple_list_ids:
+                return False
             return _items_need_variant(
                 items=data,
                 element_to_type=element_to_type,
             )
         case dict():
+            if id(data) in record_dict_ids:
+                # A record gives every field its own declared type.  Do
+                # not mistake its mixed fields for a map value variant,
+                # but keep walking so a genuinely dynamic nested field
+                # still requests the carrier it needs.
+                return any(
+                    _needs_variant_type(
+                        data=value,
+                        element_to_type=element_to_type,
+                        tuple_list_ids=tuple_list_ids,
+                        record_dict_ids=record_dict_ids,
+                    )
+                    for value in data.values()
+                )
             return _items_need_variant(
                 items=list(data.values()),
                 element_to_type=element_to_type,
@@ -742,6 +762,8 @@ def _has_empty_collection(data: Value) -> bool:
 def _build_variant_preamble(
     *,
     type_ctx: _CppTypeCtx,
+    tuple_list_ids: frozenset[int] = frozenset(),
+    record_dict_ids: frozenset[int] = frozenset(),
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
@@ -751,7 +773,12 @@ def _build_variant_preamble(
         lines: list[str] = []
         if _has_empty_collection(data=data):
             lines.append("#include <cstddef>")
-        if _needs_variant_type(data=data, element_to_type=element_to_type):
+        if _needs_variant_type(
+            data=data,
+            element_to_type=element_to_type,
+            tuple_list_ids=tuple_list_ids,
+            record_dict_ids=record_dict_ids,
+        ):
             if type_ctx.variant_type_name == "std::variant":
                 lines.append("#include <variant>")
             else:
@@ -783,12 +810,16 @@ def _build_tuple_preamble(
     heterogeneous array) -- C++ has no ``RECORD`` strategy, so this is
     the only thing that pulls in the tuple header.
     """
-    variant_preamble = _build_variant_preamble(type_ctx=type_ctx)
 
     def _tuple_preamble(data: Value, /) -> tuple[str, ...]:
         """Return the variant headers plus ``<tuple>`` when needed."""
+        tuple_list_ids = collect_tuple_list_ids(data=data)
+        variant_preamble = _build_variant_preamble(
+            type_ctx=type_ctx,
+            tuple_list_ids=tuple_list_ids,
+        )
         lines = list(variant_preamble(data))
-        if collect_tuple_list_ids(data=data):
+        if tuple_list_ids:
             lines.append("#include <tuple>")
         return tuple(lines)
 
@@ -1029,6 +1060,7 @@ def _build_cpp_record_preamble(
     type_ctx: _CppTypeCtx,
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
+    include_tuple_header: bool = False,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1041,15 +1073,27 @@ def _build_cpp_record_preamble(
     still, by the type-driven preamble the core assembles before this
     one.
     """
-    variant_preamble = _build_variant_preamble(type_ctx=type_ctx)
 
     def _record_pre(data: Value, /) -> tuple[str, ...]:
         """Return the ``std::variant`` / ``std::nullptr_t`` headers plus
         the ``struct`` declarations.
         """
         wrap_ids = compute_wrap_ids(data)
+        # Do not re-run the record strategy's shape computation here: its
+        # render-time cache already holds the field requests that the
+        # declaration preamble consumes.  The raw shape walk is enough to
+        # distinguish a struct's independent fields from map values.
+        record_dict_ids = frozenset(collect_record_shapes(data=data))
+        tuple_list_ids = collect_tuple_list_ids(data=data)
+        variant_preamble = _build_variant_preamble(
+            type_ctx=type_ctx,
+            tuple_list_ids=tuple_list_ids,
+            record_dict_ids=record_dict_ids,
+        )
         value_alias: tuple[str, ...] = ()
         headers = list(variant_preamble(data))
+        if include_tuple_header and tuple_list_ids:
+            headers.append("#include <tuple>")
         if wrap_ids:
             value_type = _compute_element_type_for_items(
                 items=list(iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)),
@@ -1521,7 +1565,6 @@ class Cpp(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
-    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -2506,6 +2549,30 @@ class Cpp(metaclass=LanguageCls):
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return self.heterogeneous_strategy.name == "RECORD"
 
+    @cached_property
+    def _cpp14_rejects_implicit_heterogeneity(self) -> bool:
+        """Return whether C++14 must reject the private carrier path."""
+        return self.language_version is self.version_formats.CPP14
+
+    @cached_property
+    def _uses_cpp14_tuple_record_strategy(self) -> bool:
+        """Return whether ``TUPLE`` should also render C++14 records."""
+        return (
+            self.language_version is self.version_formats.CPP14
+            and self._tuple_strategy_active
+        )
+
+    @property
+    def dict_supports_heterogeneous_values(self) -> bool:
+        """Whether the selected C++ mode has an implicit map carrier.
+
+        C++14 has no standard ``std::variant``.  Its historical local
+        carrier was an implementation detail; the ``TUPLE`` and
+        ``RECORD`` hooks carve out their fixed-shape inputs before this
+        generic map check runs.
+        """
+        return not self._cpp14_rejects_implicit_heterogeneity
+
     def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the C++ ``struct`` field type for a record field,
         derived structurally from the raw value.
@@ -2594,6 +2661,47 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _tuple_record_strategy(self) -> RecordStrategy:
+        """Compose C++14's candidate-facing tuple and record forms.
+
+        A tuple-eligible field belongs to a generated record just as
+        naturally as a scalar field.  Keeping the two native forms in
+        one strategy prevents C++14 from falling back to the private
+        ``LiteralizerVariant`` carrier for otherwise fixed-shape data.
+        """
+
+        def _field_type(request: RecordFieldType) -> str:
+            """Resolve a tuple-eligible record field positionally."""
+            value = request.value
+            if isinstance(value, list) and is_tuple_eligible(value=value):
+                return _cpp_tuple_type(items=value, type_ctx=self._type_ctx)
+            return self._cpp_record_field_type(request)
+
+        renderer = dataclasses.replace(
+            self._record_renderer,
+            field_type=_field_type,
+        )
+        strategy = build_record_strategy(
+            renderer=renderer,
+            split_conflicting_field_types=True,
+            widen_unrecordizable_nested_sibling_maps=True,
+            derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+        )
+
+        def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
+            """Wrap a scalar widened beside an unrecordizable map."""
+            return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
+
+        behavior = dataclasses.replace(
+            strategy.behavior,
+            wrap_scalar=_wrap_scalar,
+            widens_nested_maps_by_wrapping_scalars=True,
+            render_tuple_literal=_render_cpp_tuple,
+            compute_tuple_list_ids=_cpp_tuple_list_ids,
+        )
+        return dataclasses.replace(strategy, behavior=behavior)
+
+    @cached_property
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
         return _CppTypeCtx(
@@ -2613,14 +2721,20 @@ class Cpp(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
             return _NLOHMANN_JSON_SEQUENCE_CONFIG
-        return self.sequence_format.get_config(type_ctx=self._type_ctx)
+        config = self.sequence_format.get_config(type_ctx=self._type_ctx)
+        if self._cpp14_rejects_implicit_heterogeneity:
+            return dataclasses.replace(config, supports_heterogeneity=False)
+        return config
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
             return _NLOHMANN_JSON_SET_CONFIG
-        return self.set_format.get_config(type_ctx=self._type_ctx)
+        config = self.set_format.get_config(type_ctx=self._type_ctx)
+        if self._cpp14_rejects_implicit_heterogeneity:
+            return dataclasses.replace(config, supports_heterogeneity=False)
+        return config
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
@@ -2743,6 +2857,15 @@ class Cpp(metaclass=LanguageCls):
                     self._record_strategy.behavior.compute_wrap_ids
                 ),
             )
+        if self._uses_cpp14_tuple_record_strategy:
+            return _build_cpp_record_preamble(
+                type_ctx=self._type_ctx,
+                record_preamble=self._tuple_record_strategy.preamble,
+                compute_wrap_ids=(
+                    self._tuple_record_strategy.behavior.compute_wrap_ids
+                ),
+                include_tuple_header=True,
+            )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)
         return _build_variant_preamble(type_ctx=self._type_ctx)
@@ -2763,6 +2886,8 @@ class Cpp(metaclass=LanguageCls):
             )
         if self._record_strategy_active:
             return self._record_strategy.behavior
+        if self._uses_cpp14_tuple_record_strategy:
+            return self._tuple_record_strategy.behavior
         if self._tuple_strategy_active:
             return _CPP_TUPLE_BEHAVIOR
         return NO_HETEROGENEOUS_BEHAVIOR

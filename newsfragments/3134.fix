@@ -1,0 +1,1 @@
+Make C++14 heterogeneous literals candidate-facing: fixed scalar sequences use ``std::tuple`` under ``TUPLE``, object-shaped data uses generated structs, and unhandled heterogeneous input now raises instead of exposing ``LiteralizerVariant``.
