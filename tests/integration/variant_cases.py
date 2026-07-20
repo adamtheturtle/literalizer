@@ -1424,6 +1424,41 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
 
 
 @beartype
+def build_object_variant_container_variants() -> list[Variant]:
+    """Build focused variants for languages with ``OBJECT_VARIANT``.
+
+    The input shapes target Nim today, the only built-in language with
+    this strategy.  Discovering it from :data:`ALL_LANGUAGES` keeps the
+    regression matrix extensible when another language opts into the
+    same recursive object-variant representation.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__):
+        strategy = next(
+            (
+                candidate
+                for candidate in lang_cls.HeterogeneousStrategies
+                if candidate.name == "OBJECT_VARIANT"
+            ),
+            None,
+        )
+        if strategy is None:
+            continue
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_object_variant_containers",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=strategy,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
+@beartype
 def build_type_hints_cross_variants() -> list[Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -1776,6 +1811,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "heterogeneous_strategy_datetime_cross": (
         build_heterogeneous_strategy_datetime_cross_variants
     ),
+    "object_variant_containers": (build_object_variant_container_variants),
     "type_name": build_type_name_variants,
     "constructor_prefix": build_constructor_prefix_variants,
     "constructor_name": build_constructor_name_variants,

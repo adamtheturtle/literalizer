@@ -94,6 +94,22 @@ HETEROGENEOUS_STRATEGY_INPUTS: tuple[CaseInput, ...] = (
     _ci(case_dir_name="empty_dict", suffix=""),
 )
 
+# These compiler-verified regressions exercise recursive object-variant
+# container carriers. Keep them on their focused axis rather than expanding
+# every language's heterogeneous matrix.
+OBJECT_VARIANT_CONTAINER_INPUTS: tuple[CaseInput, ...] = tuple(
+    _ci(case_dir_name=case_dir_name, suffix="")
+    for case_dir_name in (
+        "object_variant_mixed_scalar_empty_list",
+        "object_variant_null_only_map",
+        "object_variant_nested_tables_mixed_int_widths",
+        "object_variant_empty_and_nonempty_maps",
+        "object_variant_null_only_list",
+        "object_variant_scalar_empty_map",
+        "object_variant_nested_empty_list_table",
+    )
+)
+
 DICT_FORMAT_INPUTS: tuple[CaseInput, ...] = (
     _ci(case_dir_name="simple_dict", suffix=""),
     _ci(case_dir_name="dict_with_list_value", suffix="_list_val"),
@@ -342,6 +358,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         # (issue #2518).
         _ci(case_dir_name="heterogeneous_time_string", suffix=""),
     ),
+    "object_variant_containers": OBJECT_VARIANT_CONTAINER_INPUTS,
     "heterogeneous_strategy_datetime_cross": (
         _ci(case_dir_name="dict_all_scalar_types", suffix=""),
     ),

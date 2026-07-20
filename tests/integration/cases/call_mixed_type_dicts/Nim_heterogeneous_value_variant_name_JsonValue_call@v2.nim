@@ -2,11 +2,12 @@ import tables
 {.warning[UnusedImport]:off.}
 type
   JsonValueKind = enum
-    vkStr, vkBool
+    vkStr, vkBool, vkTable
   JsonValue = object
     case kind: JsonValueKind
     of vkStr: strVal: string
     of vkBool: boolVal: bool
+    of vkTable: tableVal: Table[string, JsonValue]
 type MgrType = object
 type AppType = object
     mgr: MgrType
