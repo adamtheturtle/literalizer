@@ -90,6 +90,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "heterogeneous_time_string",
         "dict_wide_int_key",
         "object_variant_mixed_scalar_empty_list",
+        "object_variant_integer_widening_tiers",
         "object_variant_null_only_map",
         "object_variant_nested_tables_mixed_int_widths",
         "object_variant_empty_and_nonempty_maps",
