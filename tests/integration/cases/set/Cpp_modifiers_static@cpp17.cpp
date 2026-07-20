@@ -1,7 +1,7 @@
-#include <initializer_list>
+#include <vector>
 #include <string>
 int main() {
-static auto my_data = std::initializer_list<std::string>{
+static auto my_data = std::vector<std::string>{
     "apple",
     "banana",
     "cherry",

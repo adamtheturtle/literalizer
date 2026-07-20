@@ -1,7 +1,7 @@
-#include <initializer_list>
+#include <vector>
 #include <cstddef>
 int main() {
-const auto my_data = std::initializer_list<std::nullptr_t>{};
+const auto my_data = std::vector<std::nullptr_t>{};
     (void)my_data;
     return 0;
 }

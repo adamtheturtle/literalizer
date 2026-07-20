@@ -1,6 +1,6 @@
-#include <initializer_list>
+#include <vector>
 int main() {
-auto my_data = std::initializer_list<long>{
+auto my_data = std::vector<long>{
     1L,
     2L,
     3L,
