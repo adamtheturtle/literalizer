@@ -950,9 +950,7 @@ class LanguageCls(type):
     or ``type: ignore``.
     """
 
-    empty_container_type_hint_variant_kwargs: Mapping[str, object] | None = (
-        None
-    )
+    empty_container_type_hint_variant_kwargs: Mapping[str, object] | None
     """Golden-test settings for languages with empty-container hints."""
 
     DateFormats: type[enum.Enum]
