@@ -1600,7 +1600,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex
+def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-many-branches
     *,
     value: Value,
     dict_open_override: str | None,

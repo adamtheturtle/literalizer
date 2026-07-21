@@ -995,8 +995,8 @@ def _rust_values_by_path(*, data: Value) -> dict[EmptyContainerPath, Value]:
         """Index *value* and its descendants by their input paths."""
         by_path[path] = value
         if isinstance(value, list):
-            for index in range(len(value)):
-                _visit(value=value[index], path=(*path, index))
+            for index, child in enumerate(iterable=value):
+                _visit(value=child, path=(*path, index))
         elif isinstance(value, dict):
             for key, child in value.items():
                 if isinstance(key, str):
@@ -1040,7 +1040,9 @@ def _rust_empty_container_literal_override_hook(
     params: _StrategyParams,
     /,
 ) -> Callable[[Value], Mapping[int, str]]:
-    """Return an empty-container override hook configured by *params*."""
+    """Return an empty-container override hook with this strategy
+    configuration.
+    """
 
     def _overrides(data: Value, /) -> Mapping[int, str]:
         """Resolve typed empty-container literals in *data*."""
