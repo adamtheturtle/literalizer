@@ -949,8 +949,6 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
             case dict():
                 for item in value.values():
                     _collect(value=item)
-            case set():
-                return
             case _:
                 return
 

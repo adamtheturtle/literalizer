@@ -363,6 +363,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "object_variant_containers": OBJECT_VARIANT_CONTAINER_INPUTS,
     "nested_tuple_strategy": (
         _ci(case_dir_name="nested_tuple_strategy", suffix=""),
+        _ci(case_dir_name="nested_tuple_strategy_mixed", suffix="_mixed"),
     ),
     "heterogeneous_strategy_datetime_cross": (
         _ci(case_dir_name="dict_all_scalar_types", suffix=""),

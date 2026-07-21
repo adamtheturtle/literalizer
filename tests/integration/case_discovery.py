@@ -92,6 +92,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # #3140). Its dedicated axis discovers every language exposing a
         # ``TUPLE`` heterogeneous strategy.
         "nested_tuple_strategy",
+        "nested_tuple_strategy_mixed",
         "heterogeneous_time_string",
         "dict_wide_int_key",
         "object_variant_mixed_scalar_empty_list",
