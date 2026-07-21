@@ -333,6 +333,7 @@ class _CppTypeCtx:
     datetime_type: str | None
     tuple_strategy: bool
     variant_type_name: str
+    reject_implicit_variant: bool
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
@@ -816,7 +817,11 @@ def _build_tuple_preamble(
         tuple_list_ids = collect_tuple_list_ids(data=data)
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
-            tuple_list_ids=tuple_list_ids,
+            tuple_list_ids=(
+                tuple_list_ids
+                if type_ctx.variant_type_name == "LiteralizerVariant"
+                else frozenset()
+            ),
         )
         lines = list(variant_preamble(data))
         if tuple_list_ids:
@@ -1083,11 +1088,19 @@ def _build_cpp_record_preamble(
         # render-time cache already holds the field requests that the
         # declaration preamble consumes.  The raw shape walk is enough to
         # distinguish a struct's independent fields from map values.
-        record_dict_ids = frozenset(collect_record_shapes(data=data))
+        record_dict_ids: frozenset[int] = (
+            frozenset(collect_record_shapes(data=data))
+            if type_ctx.variant_type_name == "LiteralizerVariant"
+            else frozenset()
+        )
         tuple_list_ids = collect_tuple_list_ids(data=data)
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
-            tuple_list_ids=tuple_list_ids,
+            tuple_list_ids=(
+                tuple_list_ids
+                if type_ctx.variant_type_name == "LiteralizerVariant"
+                else frozenset()
+            ),
             record_dict_ids=record_dict_ids,
         )
         value_alias: tuple[str, ...] = ()
@@ -1134,6 +1147,12 @@ def _apply_cpp_variant_dict_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
+    if type_ctx.reject_implicit_variant and "LiteralizerVariant" in value_type:
+        msg = (
+            "C++14 cannot render heterogeneous map values without an "
+            "explicit named strategy"
+        )
+        raise UnrepresentableInputError(msg)
     map_kind = (
         "std::unordered_map" if "unordered" in opener_template else "std::map"
     )
@@ -1565,6 +1584,7 @@ class Cpp(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
+    dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -2552,7 +2572,11 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def _cpp14_rejects_implicit_heterogeneity(self) -> bool:
         """Return whether C++14 must reject the private carrier path."""
-        return self.language_version is self.version_formats.CPP14
+        return (
+            self.language_version is self.version_formats.CPP14
+            and self.heterogeneous_strategy
+            is self.heterogeneous_strategies.ERROR
+        )
 
     @cached_property
     def _uses_cpp14_tuple_record_strategy(self) -> bool:
@@ -2561,17 +2585,6 @@ class Cpp(metaclass=LanguageCls):
             self.language_version is self.version_formats.CPP14
             and self._tuple_strategy_active
         )
-
-    @property
-    def dict_supports_heterogeneous_values(self) -> bool:
-        """Whether the selected C++ mode has an implicit map carrier.
-
-        C++14 has no standard ``std::variant``.  Its historical local
-        carrier was an implementation detail; the ``TUPLE`` and
-        ``RECORD`` hooks carve out their fixed-shape inputs before this
-        generic map check runs.
-        """
-        return not self._cpp14_rejects_implicit_heterogeneity
 
     def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the C++ ``struct`` field type for a record field,
@@ -2713,6 +2726,9 @@ class Cpp(metaclass=LanguageCls):
                 "LiteralizerVariant"
                 if self.language_version is self.version_formats.CPP14
                 else "std::variant"
+            ),
+            reject_implicit_variant=(
+                self._cpp14_rejects_implicit_heterogeneity
             ),
         )
 
