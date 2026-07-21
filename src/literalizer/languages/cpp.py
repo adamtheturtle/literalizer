@@ -662,6 +662,9 @@ def _compute_element_type_for_items(
 def _items_need_variant(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
+    *,
+    tuple_list_ids: frozenset[int],
+    record_dict_ids: frozenset[int],
 ) -> bool:
     """Check whether a collection's items need ``std::variant``."""
     if not items:
@@ -681,6 +684,8 @@ def _items_need_variant(
         _needs_variant_type(
             data=v,
             element_to_type=element_to_type,
+            tuple_list_ids=tuple_list_ids,
+            record_dict_ids=record_dict_ids,
         )
         for v in items
     )
@@ -691,8 +696,8 @@ def _needs_variant_type(
     data: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
     *,
-    tuple_list_ids: frozenset[int] = frozenset(),
-    record_dict_ids: frozenset[int] = frozenset(),
+    tuple_list_ids: frozenset[int],
+    record_dict_ids: frozenset[int],
 ) -> bool:
     """Check whether *data* would produce ``std::variant`` or
     ``std::nullptr_t`` types in the generated C++ code.
@@ -708,6 +713,8 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=sorted_items,
                 element_to_type=element_to_type,
+                tuple_list_ids=tuple_list_ids,
+                record_dict_ids=record_dict_ids,
             )
         case list():
             if id(data) in tuple_list_ids:
@@ -715,6 +722,8 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=data,
                 element_to_type=element_to_type,
+                tuple_list_ids=tuple_list_ids,
+                record_dict_ids=record_dict_ids,
             )
         case dict():
             if id(data) in record_dict_ids:
@@ -734,6 +743,8 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=list(data.values()),
                 element_to_type=element_to_type,
+                tuple_list_ids=tuple_list_ids,
+                record_dict_ids=record_dict_ids,
             )
         case _:
             return False
@@ -762,8 +773,8 @@ def _has_empty_collection(data: Value) -> bool:
 def _build_variant_preamble(
     *,
     type_ctx: _CppTypeCtx,
-    tuple_list_ids: frozenset[int] = frozenset(),
-    record_dict_ids: frozenset[int] = frozenset(),
+    tuple_list_ids: frozenset[int],
+    record_dict_ids: frozenset[int],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
@@ -821,6 +832,7 @@ def _build_tuple_preamble(
                 if type_ctx.variant_type_name == "LiteralizerVariant"
                 else frozenset()
             ),
+            record_dict_ids=frozenset(),
         )
         lines = list(variant_preamble(data))
         if tuple_list_ids:
@@ -1064,7 +1076,7 @@ def _build_cpp_record_preamble(
     type_ctx: _CppTypeCtx,
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
-    include_tuple_header: bool = False,
+    include_tuple_header: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -2847,6 +2859,7 @@ class Cpp(metaclass=LanguageCls):
                 compute_wrap_ids=(
                     self._record_strategy.behavior.compute_wrap_ids
                 ),
+                include_tuple_header=False,
             )
         if self._uses_cpp14_tuple_record_strategy:
             return _build_cpp_record_preamble(
@@ -2859,7 +2872,11 @@ class Cpp(metaclass=LanguageCls):
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)
-        return _build_variant_preamble(type_ctx=self._type_ctx)
+        return _build_variant_preamble(
+            type_ctx=self._type_ctx,
+            tuple_list_ids=frozenset(),
+            record_dict_ids=frozenset(),
+        )
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
