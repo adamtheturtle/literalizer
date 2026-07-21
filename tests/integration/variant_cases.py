@@ -1214,6 +1214,25 @@ def build_tagged_enum_empty_container_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_empty_container_type_hint_variants() -> Iterable[Variant]:
+    """Build variants for languages declaring empty-container hint support."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        kwargs = lang_cls.empty_container_type_hint_variant_kwargs
+        if kwargs is None:
+            continue
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_empty_container_type_hint",
+                spec=lang_cls(**kwargs),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
+@beartype
 def build_c_field_name_variants() -> Iterable[Variant]:
     """Build language-owned field-name variants."""
     variants: list[Variant] = []
@@ -1848,6 +1867,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "empty_map_narrowing": build_empty_map_narrowing_variants,
     "tagged_enum_empty_container": build_tagged_enum_empty_container_variants,
+    "empty_container_type_hint": build_empty_container_type_hint_variants,
     "record_epoch_i32_overflow": build_record_epoch_i32_overflow_variants,
     "record_numeric_cross": build_record_numeric_cross_variants,
     "language_version": build_language_version_variants,

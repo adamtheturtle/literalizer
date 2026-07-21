@@ -94,6 +94,18 @@ The generated type's name is configurable (for example ``Rust.heterogeneous_valu
        "}",
    )
 
+Rust empty-container type hints
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Rust's ``TAGGED_ENUM`` strategy normally represents an empty map beside a
+scalar as ``Value::Map(HashMap::new())``. When the caller has schema knowledge,
+pass ``empty_container_type_hints`` to ``Rust`` to supply the concrete type at
+an input path. Paths consist of mapping keys and list indexes; ``()`` is the
+document root. For example, ``{(1,): "HashMap<String, String>"}`` renders the
+empty map in ``[1, {}]`` as ``Value::Map(<HashMap<String, String>>::new())``
+and makes the matching enum variant carry ``HashMap<String, String>``. Omitting
+the hint preserves the default ``HashMap<&'static str, Value>`` variant.
+
 A tagged enum cannot wrap container values, so it does not help a record-shaped dict whose fields mix scalars with a list or another dict.
 Use ``RECORD`` for that.
 

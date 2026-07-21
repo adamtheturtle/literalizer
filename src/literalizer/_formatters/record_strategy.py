@@ -52,6 +52,7 @@ from literalizer._language import (
     RenderedRecordLiteral,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
+    no_empty_container_literal_overrides,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
@@ -845,6 +846,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         ),
         wrap_non_scalar=None,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=derecordized_map_open,
         widens_nested_maps_by_wrapping_scalars=False,

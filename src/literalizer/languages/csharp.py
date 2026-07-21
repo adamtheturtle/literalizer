@@ -1068,6 +1068,8 @@ class CSharp(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
+    empty_container_type_hint_variant_kwargs = None
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
             name="public_static_readonly",

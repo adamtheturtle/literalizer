@@ -107,6 +107,7 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
+    no_empty_container_literal_overrides,
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -266,6 +267,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         wrap_scalar=_wrap_scalar,
         wrap_non_scalar=_wrap_non_scalar,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -992,6 +994,8 @@ class V(metaclass=LanguageCls):
         V0_4 = enum.auto()
 
     version_formats = VersionFormats
+
+    empty_container_type_hint_variant_kwargs = None
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (

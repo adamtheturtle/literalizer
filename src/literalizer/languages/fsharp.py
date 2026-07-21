@@ -872,6 +872,8 @@ class FSharp(metaclass=LanguageCls):
     json_types = JsonTypes
 
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
+    empty_container_type_hint_variant_kwargs = None
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.CAMEL,

@@ -724,7 +724,8 @@ class HeterogeneousBehavior:
     compute_wrap_ids: Callable[[Value], frozenset[int]]
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
-    wrap_empty_container: Callable[[Value], str] | None
+    wrap_empty_container: Callable[[Value, str], str] | None
+    empty_container_literal_overrides: Callable[[Value], Mapping[int, str]]
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
     widens_nested_maps_by_wrapping_scalars: bool
@@ -764,6 +765,12 @@ def _no_compute_call_slot_wrap_ids(
     return frozenset()
 
 
+@beartype
+def no_empty_container_literal_overrides(_data: Value, /) -> Mapping[int, str]:
+    """Return no empty-container literal replacements."""
+    return {}
+
+
 no_compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]] = (
     _no_compute_call_slot_wrap_ids
 )
@@ -778,6 +785,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     wrap_scalar=None,
     wrap_non_scalar=None,
     wrap_empty_container=None,
+    empty_container_literal_overrides=no_empty_container_literal_overrides,
     compute_call_slot_wrap_ids=_no_compute_call_slot_wrap_ids,
     dict_open_for_wrap_ids=None,
     widens_nested_maps_by_wrapping_scalars=False,
@@ -949,6 +957,9 @@ class LanguageCls(type):
     ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
     or ``type: ignore``.
     """
+
+    empty_container_type_hint_variant_kwargs: Mapping[str, object] | None
+    """Golden-test settings for languages with empty-container hints."""
 
     DateFormats: type[enum.Enum]
     DatetimeFormats: type[enum.Enum]

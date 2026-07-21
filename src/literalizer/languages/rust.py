@@ -108,6 +108,7 @@ from literalizer._language import (
     no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_data_preamble,
+    no_empty_container_literal_overrides,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -223,6 +224,10 @@ _I64_MAX = 2**63 - 1
 _I128_MIN = -(2**127)
 _I128_MAX = 2**127 - 1
 _SERDE_JSON_MACRO = "serde_json::json!"
+
+# A location in parsed input: list indexes are integers and mapping keys are
+# strings.  ``()`` identifies the document root.
+type EmptyContainerPath = tuple[str | int, ...]
 
 
 @beartype
@@ -764,6 +769,7 @@ class _StrategyParams:
     record_prefix: str
     record_shape_names: Mapping[frozenset[str], str]
     unify_optional_fields: bool
+    empty_container_type_hints: Mapping[EmptyContainerPath, str]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -947,7 +953,7 @@ def _rust_wrapped_empty_container_kinds(
 def _rust_empty_container_wrapper(
     params: _StrategyParams,
     /,
-) -> Callable[[Value], str]:
+) -> Callable[[Value, str], str]:
     """Return a callable wrapping an empty container in the value enum.
 
     Invoked only for the scalar-plus-empty-container mix (issue #3028),
@@ -959,15 +965,110 @@ def _rust_empty_container_wrapper(
     ``HashMap<&'static str, Value>``.
     """
 
-    def _wrap(raw_value: Value) -> str:
+    def _wrap(raw_value: Value, formatted_value: str) -> str:
         """Wrap an empty container as ``{enum_name}::{List,Map}(...)``."""
         match raw_value:
             case list():
-                return f"{params.enum_name}::List(vec![])"
+                payload = (
+                    formatted_value
+                    if formatted_value.startswith("<")
+                    else "vec![]"
+                )
+                return f"{params.enum_name}::List({payload})"
             case _:
-                return f"{params.enum_name}::Map(HashMap::new())"
+                payload = (
+                    formatted_value
+                    if formatted_value.startswith("<")
+                    else "HashMap::new()"
+                )
+                return f"{params.enum_name}::Map({payload})"
 
     return _wrap
+
+
+@beartype
+def _rust_values_by_path(*, data: Value) -> dict[EmptyContainerPath, Value]:
+    """Return *data* and its descendants indexed by input path."""
+    by_path: dict[EmptyContainerPath, Value] = {}
+
+    def _visit(value: Value, path: EmptyContainerPath) -> None:
+        """Index *value* and its descendants by their input paths."""
+        by_path[path] = value
+        if isinstance(value, list):
+            for index, child in enumerate(iterable=value):
+                _visit(value=child, path=(*path, index))
+        elif isinstance(value, dict):
+            for key, child in value.items():
+                if isinstance(key, str):
+                    _visit(value=child, path=(*path, key))
+
+    _visit(value=data, path=())
+    return by_path
+
+
+@beartype
+def _rust_empty_container_literal_overrides(
+    *,
+    data: Value,
+    hints: Mapping[EmptyContainerPath, str],
+) -> Mapping[int, str]:
+    """Resolve configured empty-container paths to typed Rust literals."""
+    by_path = _rust_values_by_path(data=data)
+    overrides: dict[int, str] = {}
+    for path, type_name in hints.items():
+        value = by_path.get(path)
+        if value is None:
+            continue
+        if not type_name:
+            msg = (
+                f"empty-container type hint at {path!r} must be a "
+                "non-empty string"
+            )
+            raise ValueError(msg)
+        if not _rust_is_empty_container(value=value):
+            msg = (
+                f"empty-container type hint at {path!r} does not target "
+                "an empty list or map"
+            )
+            raise ValueError(msg)
+        overrides[id(value)] = f"<{type_name}>::new()"
+    return overrides
+
+
+@beartype
+def _rust_empty_container_literal_override_hook(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], Mapping[int, str]]:
+    """Return an empty-container override hook with this strategy
+    configuration.
+    """
+
+    def _overrides(data: Value, /) -> Mapping[int, str]:
+        """Resolve typed empty-container literals in *data*."""
+        return _rust_empty_container_literal_overrides(
+            data=data,
+            hints=params.empty_container_type_hints,
+        )
+
+    return _overrides
+
+
+@beartype
+def _rust_empty_container_hint_types(
+    *, data: Value, hints: Mapping[EmptyContainerPath, str]
+) -> tuple[set[str], set[str]]:
+    """Return the configured ``(list_types, map_types)`` for *data*."""
+    by_path = _rust_values_by_path(data=data)
+    list_types: set[str] = set()
+    map_types: set[str] = set()
+    for path, type_name in hints.items():
+        value = by_path.get(path)
+        if isinstance(value, list):
+            list_types.add(type_name)
+        elif isinstance(value, dict):
+            map_types.add(type_name)
+    return (list_types, map_types)
 
 
 @beartype
@@ -987,6 +1088,7 @@ def _build_tagged_enum_behavior(
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         wrap_empty_container=_rust_empty_container_wrapper(params),
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -1007,6 +1109,8 @@ def _rust_value_enum_lines(
     datetime_type: str,
     include_list_variant: bool,
     include_map_variant: bool,
+    list_inner_type: str | None,
+    map_inner_type: str | None,
 ) -> list[str]:
     """Return the value-enum declaration lines for *scalars*.
 
@@ -1033,13 +1137,17 @@ def _rust_value_enum_lines(
         variants.append(signature)
     if include_list_variant:
         variants.append(
-            _VariantSignature(name="List", inner_type=f"Vec<{enum_name}>")
+            _VariantSignature(
+                name="List", inner_type=list_inner_type or f"Vec<{enum_name}>"
+            )
         )
     if include_map_variant:
         variants.append(
             _VariantSignature(
                 name="Map",
-                inner_type=f"HashMap<&'static str, {enum_name}>",
+                inner_type=(
+                    map_inner_type or f"HashMap<&'static str, {enum_name}>"
+                ),
             )
         )
     if not variants:
@@ -1100,6 +1208,30 @@ def _build_tagged_enum_preamble(
             )
             has_list = has_list or value_has_list
             has_map = has_map or value_has_map
+        hinted_types = [
+            _rust_empty_container_hint_types(
+                data=value,
+                hints=params.empty_container_type_hints,
+            )
+            for value in values
+        ]
+        list_hint_types: set[str] = set()
+        map_hint_types: set[str] = set()
+        for list_types, map_types in hinted_types:
+            list_hint_types.update(list_types)
+            map_hint_types.update(map_types)
+        if len(list_hint_types) > 1:
+            msg = (
+                "TAGGED_ENUM can use only one concrete empty-list type per "
+                "literal; supply the same type for each hinted empty list."
+            )
+            raise ValueError(msg)
+        if len(map_hint_types) > 1:
+            msg = (
+                "TAGGED_ENUM can use only one concrete empty-map type per "
+                "literal; supply the same type for each hinted empty map."
+            )
+            raise ValueError(msg)
         return tuple(
             _rust_value_enum_lines(
                 scalars=scalars,
@@ -1108,6 +1240,8 @@ def _build_tagged_enum_preamble(
                 datetime_type=params.datetime_type,
                 include_list_variant=has_list,
                 include_map_variant=has_map,
+                list_inner_type=next(iter(list_hint_types), None),
+                map_inner_type=next(iter(map_hint_types), None),
             )
         )
 
@@ -1816,6 +1950,7 @@ def _record_behavior_impl(
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=False,
@@ -2048,6 +2183,8 @@ def _record_preamble_impl(
             datetime_type=params.datetime_type,
             include_list_variant=False,
             include_map_variant=False,
+            list_inner_type=None,
+            map_inner_type=None,
         )
         enum_block = ("\n".join(enum_lines),) if enum_lines else ()
         return enum_block + tuple(struct_blocks)
@@ -3001,6 +3138,16 @@ class Rust(metaclass=LanguageCls):
 
     heterogeneous_strategies = HeterogeneousStrategies
 
+    empty_container_type_hint_variant_kwargs: ClassVar[
+        Mapping[str, object]
+    ] = {
+        "heterogeneous_strategy": HeterogeneousStrategies.TAGGED_ENUM,
+        "empty_container_type_hints": {
+            (1,): "HashMap<String, String>",
+        },
+    }
+    """Golden-test configuration for concrete empty-container hints."""
+
     class BoolFormats(enum.Enum):
         """Empty: this language has no alternative boolean formats."""
 
@@ -3094,6 +3241,20 @@ class Rust(metaclass=LanguageCls):
         default_factory=lambda: MappingProxyType(mapping={}),
         hash=False,
     )
+    empty_container_type_hints: Mapping[EmptyContainerPath, str] = (
+        dataclasses.field(
+            default_factory=lambda: MappingProxyType(mapping={}),
+            hash=False,
+        )
+    )
+    """Concrete Rust types for empty lists or maps at input paths.
+
+    This opt-in escape hatch is useful with ``TAGGED_ENUM`` when schema
+    knowledge is available but an empty container has no elements from which
+    Rust can infer a type.  Paths use mapping keys and list indexes; for
+    example, ``{(1,): "HashMap<String, String>"}`` targets the second item
+    of ``[1, {}]``.  The supplied type is emitted as ``<TYPE>::new()``.
+    """
     record_unify_optional_fields: bool = False
     # Keep in sync with the ``--edition`` flag in
     # ``.github/workflows/lint.yml``.
@@ -3194,6 +3355,7 @@ class Rust(metaclass=LanguageCls):
             record_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             unify_optional_fields=self.record_unify_optional_fields,
+            empty_container_type_hints=self.empty_container_type_hints,
         )
 
     @cached_property
@@ -3205,8 +3367,15 @@ class Rust(metaclass=LanguageCls):
                 skip_scalar_checks=True,
                 wrap_non_scalar=_rust_json_non_scalar_child,
             )
-        return self.heterogeneous_strategy.value.build_behavior(
-            self._strategy_params,
+        return dataclasses.replace(
+            self.heterogeneous_strategy.value.build_behavior(
+                self._strategy_params,
+            ),
+            empty_container_literal_overrides=(
+                _rust_empty_container_literal_override_hook(
+                    self._strategy_params
+                )
+            ),
         )
 
     @cached_property

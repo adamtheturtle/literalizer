@@ -21,6 +21,7 @@ from .call_cases import (
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
+    build_empty_container_type_hint_variants,
     build_heterogeneous_value_name_variants,
     build_heterogeneous_value_variant_name_variants,
     build_json_type_variants,
@@ -142,6 +143,10 @@ def build_tagged_enum_call_variants() -> list[Variant]:
 
 
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
+    (
+        "call_empty_container_type_hint",
+        build_empty_container_type_hint_variants,
+    ),
     ("call_scalar_args", build_statement_terminator_style_call_variants),
     ("call_scalar_args", build_json_type_variants),
     # Bind a call result under each non-default ``json_type`` whose language

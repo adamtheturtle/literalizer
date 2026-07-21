@@ -661,6 +661,8 @@ class SystemVerilog(metaclass=LanguageCls):
     version_formats = VersionFormats
 
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
+    empty_container_type_hint_variant_kwargs = None
+
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,

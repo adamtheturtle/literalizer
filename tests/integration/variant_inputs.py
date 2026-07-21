@@ -402,6 +402,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="tagged_enum_empty_list", suffix=""),
         _ci(case_dir_name="tagged_enum_empty_map", suffix=""),
     ),
+    "empty_container_type_hint": (
+        _ci(case_dir_name="tagged_enum_empty_map", suffix=""),
+    ),
     "dhall_nested_map_widening": (
         _ci(case_dir_name="dhall_nested_map_widening", suffix=""),
     ),

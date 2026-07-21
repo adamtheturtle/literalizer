@@ -84,6 +84,7 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
+    no_empty_container_literal_overrides,
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
@@ -719,6 +720,7 @@ def _build_variant_behavior(
         wrap_scalar=_wrap,
         wrap_non_scalar=None,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -1329,6 +1331,8 @@ class Mojo(metaclass=LanguageCls):
         V24_5 = enum.auto()
 
     version_formats = VersionFormats
+
+    empty_container_type_hint_variant_kwargs = None
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (

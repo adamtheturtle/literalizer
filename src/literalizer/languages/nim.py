@@ -108,6 +108,7 @@ from literalizer._language import (
     no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_data_preamble,
+    no_empty_container_literal_overrides,
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
@@ -655,6 +656,7 @@ def _build_object_variant_behavior(
         wrap_scalar=_wrap,
         wrap_non_scalar=_wrap_non_scalar,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -1470,6 +1472,8 @@ class Nim(metaclass=LanguageCls):
         V2 = enum.auto()
 
     version_formats = VersionFormats
+
+    empty_container_type_hint_variant_kwargs = None
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
