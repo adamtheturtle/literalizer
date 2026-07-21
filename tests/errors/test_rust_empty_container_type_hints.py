@@ -4,7 +4,7 @@ from collections.abc import Mapping
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize
+from literalizer import InputFormat, NewVariable, literalize, literalize_call
 from literalizer.languages import Rust
 
 
@@ -79,3 +79,19 @@ def test_tagged_enum_rejects_conflicting_empty_container_types(
     """A tagged enum has one inner type for each container variant."""
     with pytest.raises(expected_exception=ValueError, match=match):
         _literalize(source=source, hints=hints)
+
+
+def test_call_hints_apply_only_to_arguments_containing_their_path() -> None:
+    """A hint for one call argument does not reject another argument."""
+    result = literalize_call(
+        source="[[[1, {}], 42]]",
+        input_format=InputFormat.JSON,
+        language=Rust(
+            heterogeneous_strategy=Rust.heterogeneous_strategies.TAGGED_ENUM,
+            empty_container_type_hints={(1,): "HashMap<String, String>"},
+        ),
+        target_function="process",
+        parameter_names=["values", "count"],
+    )
+    assert "    Map(HashMap<String, String>)," in result.preamble
+    assert "process(" in result.declaration_code

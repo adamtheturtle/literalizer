@@ -987,12 +987,8 @@ def _rust_empty_container_wrapper(
 
 
 @beartype
-def _rust_empty_container_literal_overrides(
-    *,
-    data: Value,
-    hints: Mapping[EmptyContainerPath, str],
-) -> Mapping[int, str]:
-    """Resolve configured empty-container paths to typed Rust literals."""
+def _rust_values_by_path(*, data: Value) -> dict[EmptyContainerPath, Value]:
+    """Return *data* and its descendants indexed by input path."""
     by_path: dict[EmptyContainerPath, Value] = {}
 
     def _visit(value: Value, path: EmptyContainerPath) -> None:
@@ -1007,16 +1003,29 @@ def _rust_empty_container_literal_overrides(
                     _visit(value=child, path=(*path, key))
 
     _visit(value=data, path=())
+    return by_path
+
+
+@beartype
+def _rust_empty_container_literal_overrides(
+    *,
+    data: Value,
+    hints: Mapping[EmptyContainerPath, str],
+) -> Mapping[int, str]:
+    """Resolve configured empty-container paths to typed Rust literals."""
+    by_path = _rust_values_by_path(data=data)
     overrides: dict[int, str] = {}
     for path, type_name in hints.items():
         value = by_path.get(path)
+        if value is None:
+            continue
         if not type_name:
             msg = (
                 f"empty-container type hint at {path!r} must be a "
                 "non-empty string"
             )
             raise ValueError(msg)
-        if not isinstance(value, (list, dict)) or value:
+        if not _rust_is_empty_container(value=value):
             msg = (
                 f"empty-container type hint at {path!r} does not target "
                 "an empty list or map"
@@ -1048,20 +1057,7 @@ def _rust_empty_container_hint_types(
     *, data: Value, hints: Mapping[EmptyContainerPath, str]
 ) -> tuple[set[str], set[str]]:
     """Return the configured ``(list_types, map_types)`` for *data*."""
-    by_path: dict[EmptyContainerPath, Value] = {}
-
-    def _visit(value: Value, path: EmptyContainerPath) -> None:
-        """Index *value* and its descendants by their input paths."""
-        by_path[path] = value
-        if isinstance(value, list):
-            for index in range(len(value)):
-                _visit(value=value[index], path=(*path, index))
-        elif isinstance(value, dict):
-            for key, child in value.items():
-                if isinstance(key, str):
-                    _visit(value=child, path=(*path, key))
-
-    _visit(value=data, path=())
+    by_path = _rust_values_by_path(data=data)
     list_types: set[str] = set()
     map_types: set[str] = set()
     for path, type_name in hints.items():
