@@ -845,13 +845,12 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     shape_keys = frozenset({"id", "description", "is_done", "blocks"})
     custom_name = "NamedType"
     for lang_cls in sorted_languages():
-        if not lang_cls.record_shape_names_emit_declarations:
-            # The mapped type is supplied by starter code, so a standalone
-            # golden fixture cannot declare it. A focused language test
-            # covers the rendered expression instead.
-            continue
         default_spec = make_spec(lang_cls=lang_cls)
         if not isinstance(default_spec, _HasRecordShapeNames):
+            continue
+        if not lang_cls.record_shape_names_emit_declarations:
+            # A standalone golden fixture cannot declare a mapped type. A
+            # focused language test covers the rendered expression instead.
             continue
         # A spec exposing ``record_shape_names`` always also exposes the
         # RECORD strategy the field configures, so ``next`` cannot miss.
