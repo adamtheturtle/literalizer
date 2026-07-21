@@ -1218,11 +1218,7 @@ def build_empty_container_type_hint_variants() -> Iterable[Variant]:
     """Build variants for languages declaring empty-container hint support."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = getattr(
-            lang_cls,
-            "empty_container_type_hint_variant_kwargs",
-            None,
-        )
+        kwargs = lang_cls.empty_container_type_hint_variant_kwargs
         if kwargs is None:
             continue
         variants.append(
