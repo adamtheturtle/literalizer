@@ -567,6 +567,7 @@ class Scala(metaclass=LanguageCls):
     )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
+    record_shape_names_emit_declarations = True
     supports_non_string_dict_keys = False
 
     module_name: str = "Check"

@@ -31,6 +31,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
     {
         "declaration_style_sequence_format_overrides",
         "json_type_variant_name_suffix",
+        "record_shape_names_emit_declarations",
         "non_default_kwargs",
         "supports_non_ascii_string_literals",
         "reserved_variable_identifiers",
@@ -285,6 +286,19 @@ def test_supports_record_shape_names_matches_constructor(
     spec = language_cls()
     accepts_kwarg = isinstance(spec, _HasRecordShapeNames)
     assert language_cls.supports_record_shape_names == accepts_kwarg
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SORTED_LANGUAGES,
+    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+)
+def test_record_shape_name_declaration_property_is_boolean(
+    *,
+    language_cls: LanguageCls,
+) -> None:
+    """Every language exposes its record-shape declaration behavior."""
+    assert isinstance(language_cls.record_shape_names_emit_declarations, bool)
 
 
 def test_supported_ref_cases_independent_of_identifier_cases() -> None:

@@ -460,6 +460,7 @@ class OCaml(metaclass=LanguageCls):
     )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
+    record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):

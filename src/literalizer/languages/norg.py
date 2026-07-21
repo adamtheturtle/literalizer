@@ -159,6 +159,7 @@ class Norg(metaclass=LanguageCls):
     )
     supports_record_struct_name_prefix = False
     supports_record_shape_names = False
+    record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (

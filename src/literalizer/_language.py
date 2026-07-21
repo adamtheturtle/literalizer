@@ -1029,6 +1029,13 @@ class LanguageCls(type):
     """Stable filename suffix for a non-default JSON type variant."""
     supports_record_struct_name_prefix: bool
     supports_record_shape_names: bool
+    record_shape_names_emit_declarations: bool
+    """Whether ``record_shape_names`` mappings emit declarations.
+
+    When ``False``, the mapping supplies only the type used by record
+    literals. Generic standalone-fixture builders exclude that mode because
+    the mapped type is not declared by literalizer.
+    """
     dict_supports_heterogeneous_values: bool
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":

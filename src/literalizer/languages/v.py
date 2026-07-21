@@ -688,6 +688,7 @@ class V(metaclass=LanguageCls):
     )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
+    record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
