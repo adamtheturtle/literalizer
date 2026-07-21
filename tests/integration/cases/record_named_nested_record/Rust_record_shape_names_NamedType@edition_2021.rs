@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-struct Task {
+struct NamedType {
     id: i32,
     description: &'static str,
     is_done: bool,
@@ -7,12 +7,12 @@ struct Task {
 }
 struct Record0 {
     project: &'static str,
-    lead_task: Task,
+    lead_task: NamedType,
 }
 fn main() {
     let my_data = Record0 {
         project: "alpha",
-        lead_task: Task {
+        lead_task: NamedType {
             id: 100,
             description: "first task",
             is_done: false,

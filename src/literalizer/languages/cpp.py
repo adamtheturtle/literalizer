@@ -3,10 +3,11 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -124,6 +125,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidRecordNameError,
     UnrepresentableInputError,
 )
 
@@ -149,6 +151,7 @@ class _CppModifiers(enum.Enum):
 
 _INT32_MIN = -(1 << 31)
 _INT32_MAX = (1 << 31) - 1
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 _IntTypeResolver = Callable[[list[int]], str]
@@ -930,12 +933,6 @@ _CPP_SCALAR_FIELD_TYPES: frozenset[str] = frozenset(
     },
 )
 
-# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
-# names (no ``record_shape_names``), so the shared renderer always gets
-# an empty custom-name mapping.
-_CPP_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
-    mapping={},
-)
 _CPP_RECORD_MAP_VALUE = "LiteralizerRecordValue"
 _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
@@ -1042,7 +1039,10 @@ def _cpp_int_field_type(
 
 
 @beartype
-def _all_record_shaped(items: list[Value], /) -> bool:
+def _all_record_shaped(
+    items: list[Value],
+    /,
+) -> TypeGuard[list[dict[str, Value]]]:
     """Return whether *items* is a non-empty list whose every element
     is a record-shaped dict (non-empty, all-string-keyed, not an
     ordered map).
@@ -1073,12 +1073,84 @@ def _all_record_shaped(items: list[Value], /) -> bool:
 
 
 @beartype
+def _is_external_record_graph(
+    *,
+    data: Value,
+    record_shape_names: Mapping[frozenset[str], str],
+) -> bool:
+    """Return whether *data* contains only caller-declared records.
+
+    Such a graph does not need C++14's private variant carrier: each
+    record field is supplied by the surrounding domain type.  Scalar values
+    and homogeneous containers are harmless leaves; every dict must be a
+    mapped record shape.
+    """
+    match data:
+        case dict():
+            shape = record_shape_for_dict(value=data)
+            return (
+                shape is not None
+                and frozenset(shape.keys) in record_shape_names
+                and all(
+                    _is_external_record_graph(
+                        data=value,
+                        record_shape_names=record_shape_names,
+                    )
+                    for value in data.values()
+                )
+            )
+        case list():
+            return all(
+                _is_external_record_graph(
+                    data=value,
+                    record_shape_names=record_shape_names,
+                )
+                for value in data
+            )
+        case _:
+            return True
+
+
+@beartype
+def _contains_external_record(
+    *,
+    data: Value,
+    record_shape_names: Mapping[frozenset[str], str],
+) -> bool:
+    """Return whether *data* contains a record mapped to external code."""
+    match data:
+        case dict():
+            shape = record_shape_for_dict(value=data)
+            return (
+                shape is not None
+                and frozenset(shape.keys) in record_shape_names
+            ) or any(
+                _contains_external_record(
+                    data=value,
+                    record_shape_names=record_shape_names,
+                )
+                for value in data.values()
+            )
+        case list():
+            return any(
+                _contains_external_record(
+                    data=value,
+                    record_shape_names=record_shape_names,
+                )
+                for value in data
+            )
+        case _:
+            return False
+
+
+@beartype
 def _build_cpp_record_preamble(
     *,
     type_ctx: _CppTypeCtx,
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     include_tuple_header: bool,
+    record_shape_names: Mapping[frozenset[str], str],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1117,7 +1189,20 @@ def _build_cpp_record_preamble(
             record_dict_ids=record_dict_ids,
         )
         value_alias: tuple[str, ...] = ()
-        headers = list(variant_preamble(data))
+        headers = (
+            []
+            if (
+                _contains_external_record(
+                    data=data,
+                    record_shape_names=record_shape_names,
+                )
+                and _is_external_record_graph(
+                    data=data,
+                    record_shape_names=record_shape_names,
+                )
+            )
+            else list(variant_preamble(data))
+        )
         if include_tuple_header and tuple_list_ids:
             headers.append("#include <tuple>")
         if wrap_ids:
@@ -1727,7 +1812,8 @@ class Cpp(metaclass=LanguageCls):
         modifier_sequence_format_overrides={},
     )
     supports_record_struct_name_prefix = True
-    supports_record_shape_names = False
+    supports_record_shape_names = True
+    record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
 
     class DateFormats(enum.Enum):
@@ -2115,6 +2201,45 @@ class Cpp(metaclass=LanguageCls):
     def __post_init__(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit."""
         self._validate_json_type_spec()
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate externally declared C++ record type names.
+
+        Mapped names are referenced but never declared by literalizer, so
+        they must be unambiguous PascalCase C++ identifiers and must not
+        collide with a generated ``RecordN`` name.
+        """
+        auto_name_pattern = re.compile(
+            pattern=(
+                rf"^{re.escape(pattern=self.record_struct_name_prefix)}\d+$"
+            ),
+        )
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase C++ "
+                    "identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated {self.record_struct_name_prefix!r}-"
+                    "prefixed struct names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    "record_shape_names maps multiple key-sets to "
+                    f"{name!r}; externally declared type names must be "
+                    "unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
@@ -2309,6 +2434,10 @@ class Cpp(metaclass=LanguageCls):
     )
     json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
     # Earlier standards remain available through ``VersionFormats``.
     language_version: VersionFormats = VersionFormats.CPP20
@@ -2639,7 +2768,7 @@ class Cpp(metaclass=LanguageCls):
         """C++ syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
-            record_shape_names=_CPP_NO_RECORD_SHAPE_NAMES,
+            record_shape_names=self.record_shape_names,
             field_identifier=_cpp_record_field_identifier,
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
@@ -2648,6 +2777,7 @@ class Cpp(metaclass=LanguageCls):
                 if self._uses_cpp20
                 else _cpp_record_literal_positional
             ),
+            suppress_custom_name_declarations=True,
         )
 
     @cached_property
@@ -2744,23 +2874,31 @@ class Cpp(metaclass=LanguageCls):
         """Callable that returns the opening delimiter for a sequence.
 
         Under the ``RECORD`` strategy a list whose every element is a
-        record-shaped dict renders each element as a generated
-        ``RecordN`` literal; the variant opener would type such a list
+        record-shaped dict renders each element as an aggregate literal;
+        the variant opener would type such a list
         ``std::vector<std::map<...>>`` (the homogeneous-map element type)
         which the struct literals cannot initialize.  Such a list is
         instead opened with a bare ``std::vector{`` so class-template
-        argument deduction infers ``std::vector<RecordN>`` from the
-        literals.  Every other list keeps the typed variant opener.
+        argument deduction infers ``std::vector<RecordN>`` (or an
+        externally supplied record type) from the literals. Every other
+        list keeps the typed variant opener.
         """
         base_open = self.sequence_format_config.sequence_open
         if not self._record_strategy_active:
             return base_open
 
         def _open(items: list[Value]) -> str:
-            """Return the CTAD ``std::vector{`` opener for an all-record
-            list, else the typed variant opener.
+            """Return the typed C++14 record-list opener when needed,
+            else the typed variant opener.
             """
             if _all_record_shaped(items):
+                if self.language_version is self.version_formats.CPP14:
+                    first_item = items[0]
+                    name = self.record_shape_names.get(
+                        frozenset(first_item.keys()),
+                    )
+                    if name is not None:
+                        return f"std::vector<{name}>{{"
                 return "std::vector{"
             return base_open(items)
 
@@ -2860,6 +2998,7 @@ class Cpp(metaclass=LanguageCls):
                     self._record_strategy.behavior.compute_wrap_ids
                 ),
                 include_tuple_header=False,
+                record_shape_names=self.record_shape_names,
             )
         if self._uses_cpp14_tuple_record_strategy:
             return _build_cpp_record_preamble(
@@ -2869,6 +3008,7 @@ class Cpp(metaclass=LanguageCls):
                     self._tuple_record_strategy.behavior.compute_wrap_ids
                 ),
                 include_tuple_header=True,
+                record_shape_names=self.record_shape_names,
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)

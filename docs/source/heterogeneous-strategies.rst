@@ -240,7 +240,7 @@ The strategies that synthesize a declaration accept a constructor argument that 
    * - ``heterogeneous_value_variant_name`` (default ``"Value"``)
      - ``VARIANT`` on Mojo, ``OBJECT_VARIANT`` on Nim
 
-Rust, Go, Java, Kotlin, and Scala additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name; see each language's reference entry.
+Rust, Go, Java, Kotlin, and Scala additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name. Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration. This is useful when documentation starter code already defines the domain type.
 
 .. seealso::
 

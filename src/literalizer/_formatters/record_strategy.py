@@ -151,6 +151,14 @@ class RecordRenderer:
         [str, Sequence[RecordLiteralField]],
         RenderedRecordLiteral,
     ]
+    suppress_custom_name_declarations: bool = False
+    """Whether a shape named through ``record_shape_names`` is declared
+    by the caller rather than emitted in this literal's preamble.
+
+    C++ uses this for starter-code types: the mapping supplies a type name
+    for the aggregate literal, but emitting ``struct`` again would conflict
+    with the declaration already in the surrounding program.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
@@ -882,6 +890,11 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         )
         blocks: list[str] = []
         for shape in emit_order:
+            if (
+                renderer.suppress_custom_name_declarations
+                and frozenset(shape.keys) in renderer.record_shape_names
+            ):
+                continue
             requests = request_by_shape[shape]
             fields = [
                 RecordDeclarationField(

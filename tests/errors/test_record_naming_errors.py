@@ -5,7 +5,34 @@
 import pytest
 
 from literalizer.exceptions import InvalidRecordNameError
-from literalizer.languages import Go, Java, Kotlin, Rust, Scala
+from literalizer.languages import Cpp, Go, Java, Kotlin, Rust, Scala
+
+
+@pytest.mark.parametrize(
+    argnames="name",
+    argvalues=["task", "My-Task", "9Task"],
+)
+def test_cpp_invalid_shape_name_raises(name: str) -> None:
+    """Externally declared C++ record names must be PascalCase."""
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Cpp(record_shape_names={frozenset({"id", "name"}): name})
+
+
+def test_cpp_shape_name_collides_with_auto_generated_raises() -> None:
+    """An external C++ type cannot take a generated ``RecordN`` name."""
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Cpp(record_shape_names={frozenset({"id", "name"}): "Record0"})
+
+
+def test_cpp_duplicate_shape_names_raises() -> None:
+    """Distinct C++ record shapes need distinct external type names."""
+    with pytest.raises(expected_exception=InvalidRecordNameError):
+        Cpp(
+            record_shape_names={
+                frozenset({"id", "name"}): "Task",
+                frozenset({"id", "title"}): "Task",
+            },
+        )
 
 
 @pytest.mark.parametrize(

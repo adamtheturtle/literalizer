@@ -1,5 +1,5 @@
 package main
-type Task struct {
+type NamedType struct {
 	Id int
 	Description string
 	IsDone bool
@@ -7,13 +7,13 @@ type Task struct {
 }
 type Record0 struct {
 	Project string
-	LeadTask Task
+	LeadTask NamedType
 }
 
 func main() {
 my_data := Record0{
 	Project: "alpha",
-	LeadTask: Task{
+	LeadTask: NamedType{
 		Id: 100,
 		Description: "first task",
 		IsDone: false,
