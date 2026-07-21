@@ -2697,13 +2697,9 @@ class Cpp(metaclass=LanguageCls):
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
         )
 
-        def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
-            """Wrap a scalar widened beside a map that is not a record."""
-            return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
-
         behavior = dataclasses.replace(
             strategy.behavior,
-            wrap_scalar=_wrap_scalar,
+            wrap_scalar=self._record_strategy.behavior.wrap_scalar,
             widens_nested_maps_by_wrapping_scalars=True,
             render_tuple_literal=_render_cpp_tuple,
             compute_tuple_list_ids=_cpp_tuple_list_ids,
