@@ -531,14 +531,10 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
 def _empty_container_literal_overrides(
     *, data: Value, spec: Language
 ) -> Mapping[int, str]:
-    """Return language-specific literal replacements for empty containers.
-
-    Most language specifications expose no replacement hook. Rust uses this
-    optional surface for caller-supplied empty-container type hints while
-    leaving every other language's public configuration unchanged.
+    """Return language-specific literal replacements for empty
+    containers.
     """
-    get_overrides = getattr(spec, "empty_container_literal_overrides", None)
-    return get_overrides(data) if callable(get_overrides) else {}
+    return spec.heterogeneous_behavior.empty_container_literal_overrides(data)
 
 
 @beartype

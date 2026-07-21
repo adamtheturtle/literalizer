@@ -108,6 +108,7 @@ from literalizer._language import (
     no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_data_preamble,
+    no_empty_container_literal_overrides,
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
@@ -1009,7 +1010,7 @@ def _rust_empty_container_literal_overrides(
     overrides: dict[int, str] = {}
     for path, type_name in hints.items():
         value = by_path.get(path)
-        if not isinstance(type_name, str) or not type_name:
+        if not type_name:
             msg = (
                 f"empty-container type hint at {path!r} must be a "
                 "non-empty string"
@@ -1023,6 +1024,23 @@ def _rust_empty_container_literal_overrides(
             raise ValueError(msg)
         overrides[id(value)] = f"<{type_name}>::new()"
     return overrides
+
+
+@beartype
+def _rust_empty_container_literal_override_hook(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], Mapping[int, str]]:
+    """Return an empty-container override hook configured by *params*."""
+
+    def _overrides(data: Value, /) -> Mapping[int, str]:
+        """Resolve typed empty-container literals in *data*."""
+        return _rust_empty_container_literal_overrides(
+            data=data,
+            hints=params.empty_container_type_hints,
+        )
+
+    return _overrides
 
 
 @beartype
@@ -1072,6 +1090,7 @@ def _build_tagged_enum_behavior(
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         wrap_empty_container=_rust_empty_container_wrapper(params),
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
@@ -1198,8 +1217,11 @@ def _build_tagged_enum_preamble(
             )
             for value in values
         ]
-        list_hint_types = set().union(*(types[0] for types in hinted_types))
-        map_hint_types = set().union(*(types[1] for types in hinted_types))
+        list_hint_types: set[str] = set()
+        map_hint_types: set[str] = set()
+        for list_types, map_types in hinted_types:
+            list_hint_types.update(list_types)
+            map_hint_types.update(map_types)
         if len(list_hint_types) > 1:
             msg = (
                 "TAGGED_ENUM can use only one concrete empty-list type per "
@@ -1930,6 +1952,7 @@ def _record_behavior_impl(
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
         wrap_empty_container=None,
+        empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=False,
@@ -3346,23 +3369,15 @@ class Rust(metaclass=LanguageCls):
                 skip_scalar_checks=True,
                 wrap_non_scalar=_rust_json_non_scalar_child,
             )
-        return self.heterogeneous_strategy.value.build_behavior(
-            self._strategy_params,
-        )
-
-    def empty_container_literal_overrides(
-        self,
-        data: Value,
-        /,
-    ) -> Mapping[int, str]:
-        """Return caller-configured typed literals for empty
-        containers.
-        """
-        if self._json_type_active:
-            return {}
-        return _rust_empty_container_literal_overrides(
-            data=data,
-            hints=self.empty_container_type_hints,
+        return dataclasses.replace(
+            self.heterogeneous_strategy.value.build_behavior(
+                self._strategy_params,
+            ),
+            empty_container_literal_overrides=(
+                _rust_empty_container_literal_override_hook(
+                    self._strategy_params
+                )
+            ),
         )
 
     @cached_property
