@@ -333,7 +333,6 @@ class _CppTypeCtx:
     datetime_type: str | None
     tuple_strategy: bool
     variant_type_name: str
-    reject_implicit_variant: bool
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
@@ -1087,7 +1086,7 @@ def _build_cpp_record_preamble(
         # Do not re-run the record strategy's shape computation here: its
         # render-time cache already holds the field requests that the
         # declaration preamble consumes.  The raw shape walk is enough to
-        # distinguish a struct's independent fields from map values.
+        # distinguish individual struct fields from map values.
         record_dict_ids: frozenset[int] = (
             frozenset(collect_record_shapes(data=data))
             if type_ctx.variant_type_name == "LiteralizerVariant"
@@ -1147,12 +1146,6 @@ def _apply_cpp_variant_dict_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    if type_ctx.reject_implicit_variant and "LiteralizerVariant" in value_type:
-        msg = (
-            "C++14 cannot render heterogeneous map values without an "
-            "explicit named strategy"
-        )
-        raise UnrepresentableInputError(msg)
     map_kind = (
         "std::unordered_map" if "unordered" in opener_template else "std::map"
     )
@@ -2301,7 +2294,7 @@ class Cpp(metaclass=LanguageCls):
     json_type: JsonTypes | None = None
     record_struct_name_prefix: str = "Record"
     # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
-    # Earlier standards remain selectable through ``VersionFormats``.
+    # Earlier standards remain available through ``VersionFormats``.
     language_version: VersionFormats = VersionFormats.CPP20
     indent: str = "    "
 
@@ -2570,15 +2563,6 @@ class Cpp(metaclass=LanguageCls):
         return self.heterogeneous_strategy.name == "RECORD"
 
     @cached_property
-    def _cpp14_rejects_implicit_heterogeneity(self) -> bool:
-        """Return whether C++14 must reject the private carrier path."""
-        return (
-            self.language_version is self.version_formats.CPP14
-            and self.heterogeneous_strategy
-            is self.heterogeneous_strategies.ERROR
-        )
-
-    @cached_property
     def _uses_cpp14_tuple_record_strategy(self) -> bool:
         """Return whether ``TUPLE`` should also render C++14 records."""
         return (
@@ -2702,7 +2686,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
-            """Wrap a scalar widened beside an unrecordizable map."""
+            """Wrap a scalar widened beside a map that is not a record."""
             return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
 
         behavior = dataclasses.replace(
@@ -2727,9 +2711,6 @@ class Cpp(metaclass=LanguageCls):
                 if self.language_version is self.version_formats.CPP14
                 else "std::variant"
             ),
-            reject_implicit_variant=(
-                self._cpp14_rejects_implicit_heterogeneity
-            ),
         )
 
     @cached_property
@@ -2737,20 +2718,14 @@ class Cpp(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
             return _NLOHMANN_JSON_SEQUENCE_CONFIG
-        config = self.sequence_format.get_config(type_ctx=self._type_ctx)
-        if self._cpp14_rejects_implicit_heterogeneity:
-            return dataclasses.replace(config, supports_heterogeneity=False)
-        return config
+        return self.sequence_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
             return _NLOHMANN_JSON_SET_CONFIG
-        config = self.set_format.get_config(type_ctx=self._type_ctx)
-        if self._cpp14_rejects_implicit_heterogeneity:
-            return dataclasses.replace(config, supports_heterogeneity=False)
-        return config
+        return self.set_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
