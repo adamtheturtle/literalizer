@@ -1491,6 +1491,39 @@ def build_object_variant_container_variants() -> list[Variant]:
 
 
 @beartype
+def build_nested_tuple_strategy_variants() -> list[Variant]:
+    """Build tuple-strategy regressions for every supporting language."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        tuple_strategy = next(
+            (
+                strategy
+                for strategy in lang_cls.HeterogeneousStrategies
+                if strategy.name == "TUPLE"
+            ),
+            None,
+        )
+        if tuple_strategy is None:
+            continue
+        variants.extend(
+            Variant(
+                name=(
+                    f"{lang_cls.__name__}_heterogeneous_strategy_tuple_nested"
+                ),
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    heterogeneous_strategy=tuple_strategy,
+                    language_version=version,
+                ),
+                lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+            for version in lang_cls.VersionFormats
+        )
+    return variants
+
+
+@beartype
 def build_type_hints_cross_variants() -> list[Variant]:
     """Build cross-product variants: each non-default type-hint format
     combined with each non-default value of another format axis.
@@ -1844,6 +1877,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_heterogeneous_strategy_datetime_cross_variants
     ),
     "object_variant_containers": (build_object_variant_container_variants),
+    "nested_tuple_strategy": build_nested_tuple_strategy_variants,
     "type_name": build_type_name_variants,
     "constructor_prefix": build_constructor_prefix_variants,
     "constructor_name": build_constructor_name_variants,

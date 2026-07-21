@@ -87,6 +87,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "tuple_pair_top_level",
         "tuple_triple_record_field",
         "tuple_triple_top_level",
+        # ``nested_tuple_strategy`` verifies recursive composition of a
+        # tuple-eligible list through homogeneous outer lists (issue
+        # #3140). Its dedicated axis discovers every language exposing a
+        # ``TUPLE`` heterogeneous strategy.
+        "nested_tuple_strategy",
+        "nested_tuple_strategy_mixed",
         "heterogeneous_time_string",
         "dict_wide_int_key",
         "object_variant_mixed_scalar_empty_list",

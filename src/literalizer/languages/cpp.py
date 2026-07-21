@@ -57,7 +57,6 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.tuple_strategy import (
-    collect_tuple_list_ids,
     is_tuple_eligible,
 )
 from literalizer._formatters.type_inference import (
@@ -325,8 +324,7 @@ class _CppTypeCtx:
     so that the int type can be specialized per-collection.
 
     ``tuple_strategy`` is ``True`` under the ``TUPLE`` heterogeneous
-    strategy: a tuple-eligible heterogeneous scalar array in a mapping
-    value (the document root needs no opener type) is then typed
+    strategy: a tuple-eligible heterogeneous scalar array is then typed
     ``std::tuple<T0, ...>`` instead of
     ``std::vector<std::variant<...>>``, matching the
     ``std::make_tuple`` literal the strategy renders.
@@ -482,7 +480,6 @@ def _cpp_tuple_element_type(
         item=value,
         element_to_type=element_to_type,
         type_ctx=type_ctx,
-        in_mapping_value=False,
     )
 
 
@@ -506,18 +503,16 @@ def _compute_cpp_type(  # noqa: PLR0911
     item: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
     type_ctx: _CppTypeCtx,
-    in_mapping_value: bool,
 ) -> str:
     """Return the C++ type string for a single value.
 
     *element_to_type* must have the int type already narrowed for the
     enclosing collection's variant arm (or homogeneous leaf).  When the
     value is a sub-collection, recursion re-narrows independently via
-    *type_ctx*.  *in_mapping_value* is ``True`` when *item* is a dict /
-    ordered-map value: a tuple-eligible heterogeneous scalar array in
-    that position is typed ``std::tuple<...>`` under the ``TUPLE``
-    strategy (the same lists :func:`collect_tuple_list_ids` marks,
-    which are dict values or the document root, never list elements).
+    *type_ctx*. Under the ``TUPLE`` strategy, a tuple-eligible
+    heterogeneous scalar array is typed ``std::tuple<...>`` at every
+    nesting level, allowing homogeneous enclosing lists to become
+    ``std::vector<std::tuple<...>>``.
     """
     match item:
         case OrderedMap():
@@ -537,10 +532,8 @@ def _compute_cpp_type(  # noqa: PLR0911
                 in_mapping_value=True,
             )
             return f"std::map<std::string, {value_type}>"
-        case list() if (
-            in_mapping_value
-            and type_ctx.tuple_strategy
-            and is_tuple_eligible(value=item)
+        case list() if type_ctx.tuple_strategy and is_tuple_eligible(
+            value=item,
         ):
             return _cpp_tuple_type(items=item, type_ctx=type_ctx)
         case list():
@@ -574,7 +567,6 @@ def _collect_unique_cpp_types(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
     type_ctx: _CppTypeCtx,
-    in_mapping_value: bool,
 ) -> list[str]:
     """Collect unique C++ type names for each item, preserving order."""
     unique_cpp_types: list[str] = []
@@ -584,7 +576,6 @@ def _collect_unique_cpp_types(
             item=item,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
-            in_mapping_value=in_mapping_value,
         )
         if item_type not in seen:
             seen.add(item_type)
@@ -597,7 +588,7 @@ def _compute_element_type_for_items(
     *,
     items: list[Value],
     type_ctx: _CppTypeCtx,
-    in_mapping_value: bool,
+    **_ignored_context: bool,
 ) -> str:
     """Return the C++ element type for a collection of items.
 
@@ -606,21 +597,17 @@ def _compute_element_type_for_items(
     ``std::nullptr_t`` for empty collections.  Narrows int-valued leaves
     to the narrowest C++ int type that holds the actual values.
 
-    When *in_mapping_value* is set under the ``TUPLE`` strategy and any
-    item is a tuple-eligible array, the homogeneous fast path is
-    bypassed: each item is typed individually so a tuple-eligible array
-    becomes ``std::tuple<...>`` (the fast path would otherwise widen a
-    uniform list-of-arrays to ``std::vector<std::variant<...>>``).
+    Under the ``TUPLE`` strategy, when any item is a tuple-eligible
+    array, the homogeneous fast path is bypassed: each item is typed
+    individually so a tuple-eligible array becomes ``std::tuple<...>``
+    (the fast path would otherwise widen a uniform list-of-arrays to
+    ``std::vector<std::variant<...>>``).
     """
     if not items:
         return "std::nullptr_t"
-    has_tuple_item = (
-        in_mapping_value
-        and type_ctx.tuple_strategy
-        and any(
-            isinstance(item, list) and is_tuple_eligible(value=item)
-            for item in items
-        )
+    has_tuple_item = type_ctx.tuple_strategy and any(
+        isinstance(item, list) and is_tuple_eligible(value=item)
+        for item in items
     )
     element_type = None if has_tuple_item else infer_element_type(items=items)
     if element_type is not None:
@@ -654,7 +641,6 @@ def _compute_element_type_for_items(
         items=items,
         element_to_type=variant_element_to_type,
         type_ctx=type_ctx,
-        in_mapping_value=in_mapping_value,
     ):
         case [single]:
             return single
@@ -663,18 +649,52 @@ def _compute_element_type_for_items(
 
 
 @beartype
-def _items_need_variant(
+def _items_need_variant(  # noqa: PLR0911
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
     *,
+    type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
     record_dict_ids: frozenset[int],
 ) -> bool:
     """Check whether a collection's items need ``std::variant``."""
     if not items:
         return False
+    # ``infer_element_type`` deliberately has no fixed-size tuple arm,
+    # so a homogeneous list of C++ tuple-strategy lists would otherwise
+    # look heterogeneous here even though its declared element type is
+    # one ``std::tuple<...>``.  The nested tuple collector has already
+    # established that every item is such a tuple.
+    if all(
+        isinstance(item, list) and id(item) in tuple_list_ids for item in items
+    ):
+        return False
     element_type = infer_element_type(items=items)
     if element_type is None:
+        # Nested tuple containers are outside the generic inference
+        # model.  Resolve their actual C++ types instead: identical
+        # types need no carrier, while different tuple signatures still
+        # correctly request one.
+        if any(
+            _contains_cpp_tuple(data=item, tuple_list_ids=tuple_list_ids)
+            for item in items
+        ):
+            types = _collect_unique_cpp_types(
+                items=items,
+                element_to_type=element_to_type,
+                type_ctx=type_ctx,
+            )
+            if len(types) == 1:
+                return any(
+                    _needs_variant_type(
+                        data=item,
+                        element_to_type=element_to_type,
+                        type_ctx=type_ctx,
+                        tuple_list_ids=tuple_list_ids,
+                        record_dict_ids=record_dict_ids,
+                    )
+                    for item in items
+                )
         return True
     match element_type:
         case DictType(value_type=vt):
@@ -688,6 +708,7 @@ def _items_need_variant(
         _needs_variant_type(
             data=v,
             element_to_type=element_to_type,
+            type_ctx=type_ctx,
             tuple_list_ids=tuple_list_ids,
             record_dict_ids=record_dict_ids,
         )
@@ -696,10 +717,39 @@ def _items_need_variant(
 
 
 @beartype
+def _contains_cpp_tuple(
+    *,
+    data: Value,
+    tuple_list_ids: frozenset[int],
+) -> bool:
+    """Return whether *data* contains a tuple-strategy list."""
+    match data:
+        case list():
+            return id(data) in tuple_list_ids or any(
+                _contains_cpp_tuple(
+                    data=item,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for item in data
+            )
+        case dict():
+            return any(
+                _contains_cpp_tuple(
+                    data=item,
+                    tuple_list_ids=tuple_list_ids,
+                )
+                for item in data.values()
+            )
+        case _:
+            return False
+
+
+@beartype
 def _needs_variant_type(
     data: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
     *,
+    type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
     record_dict_ids: frozenset[int],
 ) -> bool:
@@ -717,6 +767,7 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=sorted_items,
                 element_to_type=element_to_type,
+                type_ctx=type_ctx,
                 tuple_list_ids=tuple_list_ids,
                 record_dict_ids=record_dict_ids,
             )
@@ -726,6 +777,7 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=data,
                 element_to_type=element_to_type,
+                type_ctx=type_ctx,
                 tuple_list_ids=tuple_list_ids,
                 record_dict_ids=record_dict_ids,
             )
@@ -739,6 +791,7 @@ def _needs_variant_type(
                     _needs_variant_type(
                         data=value,
                         element_to_type=element_to_type,
+                        type_ctx=type_ctx,
                         tuple_list_ids=tuple_list_ids,
                         record_dict_ids=record_dict_ids,
                     )
@@ -747,6 +800,7 @@ def _needs_variant_type(
             return _items_need_variant(
                 items=list(data.values()),
                 element_to_type=element_to_type,
+                type_ctx=type_ctx,
                 tuple_list_ids=tuple_list_ids,
                 record_dict_ids=record_dict_ids,
             )
@@ -791,6 +845,7 @@ def _build_variant_preamble(
         if _needs_variant_type(
             data=data,
             element_to_type=element_to_type,
+            type_ctx=type_ctx,
             tuple_list_ids=tuple_list_ids,
             record_dict_ids=record_dict_ids,
         ):
@@ -820,7 +875,7 @@ def _build_tuple_preamble(
     Composes the variant preamble and additionally emits
     ``#include <tuple>`` whenever the data carries any tuple-eligible
     heterogeneous scalar array.  The ``<tuple>`` line is emitted off
-    :func:`collect_tuple_list_ids` alone, so it fires even when the
+    :func:`_cpp_tuple_list_ids` alone, so it fires even when the
     data has no record-shaped dicts at all (e.g. a bare top-level
     heterogeneous array) -- C++ has no ``RECORD`` strategy, so this is
     the only thing that pulls in the tuple header.
@@ -828,7 +883,7 @@ def _build_tuple_preamble(
 
     def _tuple_preamble(data: Value, /) -> tuple[str, ...]:
         """Return the variant headers plus ``<tuple>`` when needed."""
-        tuple_list_ids = collect_tuple_list_ids(data=data)
+        tuple_list_ids = _cpp_tuple_list_ids(data=data)
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(
@@ -853,7 +908,7 @@ def _render_cpp_tuple(
 ) -> RenderedTupleLiteral:
     """Render a heterogeneous scalar array as ``std::make_tuple(...)``.
 
-    ``collect_tuple_list_ids`` only marks arrays spanning at least two
+    :func:`_cpp_tuple_list_ids` only marks arrays spanning at least two
     scalar buckets, so the call always has at least two arguments.  The
     shared layout assembler joins *elements* into the compact
     ``std::make_tuple(a, b)`` or one-per-line multiline form; *value* is
@@ -873,11 +928,32 @@ def _render_cpp_tuple(
 
 
 @beartype
-def _cpp_tuple_list_ids(data: Value, /) -> frozenset[int]:
-    """Adapt :func:`collect_tuple_list_ids` to the positional
-    ``compute_tuple_list_ids`` hook signature.
+def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
+    """Return C++ tuple-eligible lists at every nesting level.
+
+    Unlike the shared tuple strategy, C++ can use a nested tuple as a
+    homogeneous outer sequence's element type.  Traverse every container
+    so ``[[1, "x"]]`` becomes ``std::vector<std::tuple<int, std::string>>``
+    rather than a vector of variant vectors.
     """
-    return collect_tuple_list_ids(data=data)
+    ids: set[int] = set()
+
+    def _collect(value: Value) -> None:
+        """Collect tuple-eligible lists reachable from *value*."""
+        match value:
+            case list():
+                if is_tuple_eligible(value=value):
+                    ids.add(id(value))
+                for item in value:
+                    _collect(value=item)
+            case dict():
+                for item in value.values():
+                    _collect(value=item)
+            case _:
+                return
+
+    _collect(value=data)
+    return frozenset(ids)
 
 
 _CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
@@ -1178,7 +1254,7 @@ def _build_cpp_record_preamble(
             if type_ctx.variant_type_name == "LiteralizerVariant"
             else frozenset()
         )
-        tuple_list_ids = collect_tuple_list_ids(data=data)
+        tuple_list_ids = _cpp_tuple_list_ids(data=data)
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(
@@ -2760,7 +2836,6 @@ class Cpp(metaclass=LanguageCls):
             item=value,
             element_to_type=element_to_type,
             type_ctx=self._type_ctx,
-            in_mapping_value=False,
         )
 
     @cached_property
