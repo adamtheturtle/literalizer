@@ -392,6 +392,7 @@ class _RenderContext:
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
+    empty_container_overrides: Mapping[int, str]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
     expand_refs: bool
@@ -408,6 +409,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -432,6 +434,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -449,6 +452,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -496,7 +500,7 @@ def _maybe_wrap_child(
         # map (Rust's scalar-plus-empty-container list, issue #3028), so
         # the wrapper always receives an empty collection to render as a
         # payload-free ``List`` / ``Map`` variant.
-        return wrap_empty_container(raw_value)
+        return wrap_empty_container(raw_value, formatted_value)
     return formatted_value
 
 
@@ -521,6 +525,20 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
     """
     compute = spec.heterogeneous_behavior.compute_tuple_list_ids
     return compute(data) if compute is not None else frozenset()
+
+
+@beartype
+def _empty_container_literal_overrides(
+    *, data: Value, spec: Language
+) -> Mapping[int, str]:
+    """Return language-specific literal replacements for empty containers.
+
+    Most language specifications expose no replacement hook. Rust uses this
+    optional surface for caller-supplied empty-container type hints while
+    leaving every other language's public configuration unchanged.
+    """
+    get_overrides = getattr(spec, "empty_container_literal_overrides", None)
+    return get_overrides(data) if callable(get_overrides) else {}
 
 
 @beartype
@@ -1586,7 +1604,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(  # noqa: C901  # pylint: disable=too-complex
+def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex
     *,
     value: Value,
     dict_open_override: str | None,
@@ -1644,6 +1662,9 @@ def _format_value(  # noqa: C901  # pylint: disable=too-complex
                 if ctx.expand_refs
                 else spec.format_call_ref_identifier(ref_name, ref_value)
             )
+    empty_override = ctx.empty_container_overrides.get(id(value))
+    if empty_override is not None:
+        return empty_override
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
@@ -2114,6 +2135,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
         dict_open_overrides=_collect_dict_open_overrides(
+            data=data, spec=language
+        ),
+        empty_container_overrides=_empty_container_literal_overrides(
             data=data, spec=language
         ),
         ref_case=ref_case,
@@ -3383,6 +3407,9 @@ def _format_single_call_arg(
         # already reconcile sibling dict types across slots via
         # ``_compute_call_slot_overrides``, so this map stays empty here.
         dict_open_overrides={},
+        empty_container_overrides=_empty_container_literal_overrides(
+            data=value, spec=language
+        ),
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=True,
@@ -4627,6 +4654,9 @@ def _render_zip_literal(
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
+            data=value, spec=language
+        ),
+        empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
         ),
         ref_case=None,

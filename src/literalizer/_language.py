@@ -724,7 +724,7 @@ class HeterogeneousBehavior:
     compute_wrap_ids: Callable[[Value], frozenset[int]]
     wrap_scalar: Callable[[Scalar, str], str] | None
     wrap_non_scalar: Callable[[Value, str], str] | None
-    wrap_empty_container: Callable[[Value], str] | None
+    wrap_empty_container: Callable[[Value, str], str] | None
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
     dict_open_for_wrap_ids: str | None
     widens_nested_maps_by_wrapping_scalars: bool
