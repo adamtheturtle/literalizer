@@ -1092,8 +1092,8 @@ def _rust_value_enum_lines(
     datetime_type: str,
     include_list_variant: bool,
     include_map_variant: bool,
-    list_inner_type: str | None = None,
-    map_inner_type: str | None = None,
+    list_inner_type: str | None,
+    map_inner_type: str | None,
 ) -> list[str]:
     """Return the value-enum declaration lines for *scalars*.
 
@@ -2162,6 +2162,8 @@ def _record_preamble_impl(
             datetime_type=params.datetime_type,
             include_list_variant=False,
             include_map_variant=False,
+            list_inner_type=None,
+            map_inner_type=None,
         )
         enum_block = ("\n".join(enum_lines),) if enum_lines else ()
         return enum_block + tuple(struct_blocks)
