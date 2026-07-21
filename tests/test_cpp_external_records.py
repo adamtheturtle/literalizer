@@ -39,3 +39,19 @@ def test_cpp14_external_record_shape_uses_typed_positional_aggregate() -> None:
     assert "Record" not in result.code
     assert "std::variant" not in result.code
     assert "LiteralizerVariant" not in "\n".join(result.preamble)
+
+
+def test_cpp14_unmapped_record_shape_uses_deduced_vector() -> None:
+    """Unmapped C++14 records retain the generated-record vector form."""
+    result = literalize(
+        source='[{"id":100},{"id":101}]',
+        input_format=InputFormat.JSON,
+        language=Cpp(
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+            language_version=Cpp.version_formats.CPP14,
+        ),
+    )
+
+    assert result.code == (
+        "std::vector{\n    Record0{100},\n    Record0{101},\n}"
+    )

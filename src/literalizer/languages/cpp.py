@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -1037,7 +1037,10 @@ def _cpp_int_field_type(
 
 
 @beartype
-def _all_record_shaped(items: list[Value], /) -> bool:
+def _all_record_shaped(
+    items: list[Value],
+    /,
+) -> TypeGuard[list[dict[str, Value]]]:
     """Return whether *items* is a non-empty list whose every element
     is a record-shaped dict (non-empty, all-string-keyed, not an
     ordered map).
@@ -2887,16 +2890,11 @@ class Cpp(metaclass=LanguageCls):
             if _all_record_shaped(items):
                 if self.language_version is self.version_formats.CPP14:
                     first_item = items[0]
-                    if isinstance(first_item, dict):
-                        shape = record_shape_for_dict(value=first_item)
-                    else:
-                        shape = None
-                    if shape is not None:
-                        name = self.record_shape_names.get(
-                            frozenset(shape.keys),
-                        )
-                        if name is not None:
-                            return f"std::vector<{name}>{{"
+                    name = self.record_shape_names.get(
+                        frozenset(first_item.keys()),
+                    )
+                    if name is not None:
+                        return f"std::vector<{name}>{{"
                 return "std::vector{"
             return base_open(items)
 
