@@ -945,16 +945,16 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
                 if is_tuple_eligible(value=value):
                     ids.add(id(value))
                 for item in value:
-                    _collect(item)
+                    _collect(value=item)
             case dict():
                 for item in value.values():
-                    _collect(item)
+                    _collect(value=item)
             case set():
                 return
             case _:
                 return
 
-    _collect(data)
+    _collect(value=data)
     return frozenset(ids)
 
 
