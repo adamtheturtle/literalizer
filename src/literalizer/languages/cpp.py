@@ -930,6 +930,9 @@ def _render_cpp_tuple(
     )
 
 
+_MIN_CPP_TUPLE_ARITY = 2
+
+
 @beartype
 def _is_cpp_tuple_eligible(*, value: list[Value]) -> bool:
     """Return whether a list can use C++'s positional tuple form.
@@ -943,7 +946,7 @@ def _is_cpp_tuple_eligible(*, value: list[Value]) -> bool:
     """
     if is_tuple_eligible(value=value):
         return True
-    if len(value) < 2:
+    if len(value) < _MIN_CPP_TUPLE_ARITY:
         return False
     has_reference = False
     for item in value:
