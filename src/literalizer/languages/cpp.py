@@ -2474,6 +2474,7 @@ class Cpp(metaclass=LanguageCls):
         if self._native_only_cpp14_active and not self._json_type_active:
 
             def _validate(value: Value) -> None:
+                """Reject a call argument requiring a variant carrier."""
                 element_to_type = self._type_ctx.element_to_type(
                     int_type="long long",
                 )
