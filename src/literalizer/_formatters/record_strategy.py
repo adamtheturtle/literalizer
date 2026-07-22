@@ -692,7 +692,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     split_conflicting_field_types: bool,
     widen_unrecordizable_nested_sibling_maps: bool,
     derecordized_map_open: str | None,
-    record_shape_allowed: Callable[[RecordShape], bool] | None = None,
+    record_shape_allowed: (
+        Callable[[dict[Scalar, Value], RecordShape], bool] | None
+    ) = None,
 ) -> RecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 
@@ -738,10 +740,18 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         """
         raw_shapes_by_id = collect_record_shapes(data=data)
         if record_shape_allowed is not None:
+            record_dicts = _record_dicts_in_document_order(
+                data=data,
+                shapes_by_id=raw_shapes_by_id,
+            )
+            record_by_id = {id(record): record for record in record_dicts}
             raw_shapes_by_id = {
                 dict_id: shape
                 for dict_id, shape in raw_shapes_by_id.items()
-                if record_shape_allowed(shape)
+                if record_shape_allowed(
+                    record_by_id[dict_id],
+                    shape,
+                )
             }
         widened_shapes_by_id = (
             drop_unrecordizable_nested_sibling_maps(

@@ -1,16 +1,15 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+#include <tuple>
 int main() {
-auto my_data = std::vector<LiteralizerVariant<int, double, bool, std::string>>{
+auto my_data = std::make_tuple(
     42,
     3.14,
     true,
     false,
-    "hello \"world\"",
-};
+    "hello \"world\""
+);
     (void)my_data;
     return 0;
 }

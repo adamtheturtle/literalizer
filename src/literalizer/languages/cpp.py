@@ -1027,16 +1027,24 @@ def _cpp_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
-def _cpp_record_shape_has_valid_identifiers(shape: RecordShape, /) -> bool:
-    """Return whether *shape* can be a naturally named C++ record.
+def _cpp_candidate_safe_record_shape(
+    value: dict[Scalar, Value],
+    shape: RecordShape,
+    /,
+) -> bool:
+    """Return whether *value* needs a naturally named C++ record.
 
     Candidate-safe C++14 rendering must leave mapping-shaped data with
     keys such as ``"003"`` as a ``std::map``: treating those keys as
-    member names would emit invalid source.  Explicit record rendering
-    retains its existing focused diagnostic for such keys; this predicate
-    is only the automatic policy's record/map boundary.
+    member names would emit invalid source.  It also prefers a standard
+    map whenever all values share one representable element type; records
+    are reserved for the heterogeneous objects that would otherwise need
+    a helper carrier.
     """
-    return all(_CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys)
+    return (
+        infer_element_type(items=list(value.values())) is None
+        and all(_CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys)
+    )
 
 
 @beartype
@@ -2379,7 +2387,11 @@ class Cpp(metaclass=LanguageCls):
         leaking ``LiteralizerVariant`` into candidate-facing source.
         """
         behavior = self._tuple_record_strategy.behavior
-        record_dict_ids = frozenset(behavior.compute_record_shapes(data))
+        compute_record_shapes = behavior.compute_record_shapes
+        if compute_record_shapes is None:
+            msg = "C++14 candidate-safe rendering requires record shapes"
+            raise RuntimeError(msg)
+        record_dict_ids = frozenset(compute_record_shapes(data))
         tuple_list_ids = _cpp_tuple_list_ids(data=data)
         element_to_type = self._type_ctx.element_to_type(int_type="long long")
         if _needs_variant_type(
@@ -2969,7 +2981,7 @@ class Cpp(metaclass=LanguageCls):
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
             record_shape_allowed=(
-                _cpp_record_shape_has_valid_identifiers
+                _cpp_candidate_safe_record_shape
                 if self._candidate_safe_cpp14_active
                 else None
             ),

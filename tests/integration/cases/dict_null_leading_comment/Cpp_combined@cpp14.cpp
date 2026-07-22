@@ -2,19 +2,18 @@
 #include <string>
 #include <cstddef>
 #include <map>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record0 { std::string name; std::nullptr_t score{}; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<std::string, std::nullptr_t>>{
+auto my_data = Record0{
     // comment
-    {"name", "Alice"},
-    {"score", nullptr},
+    "Alice",
+    nullptr,
 };
 (void)my_data;
-my_data = std::map<std::string, LiteralizerVariant<std::string, std::nullptr_t>>{
+my_data = Record0{
     // comment
-    {"name", "Alice"},
-    {"score", nullptr},
+    "Alice",
+    nullptr,
 };
     (void)my_data;
     return 0;

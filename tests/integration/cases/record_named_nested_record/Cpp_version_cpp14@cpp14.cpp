@@ -2,12 +2,20 @@
 #include <string>
 #include <map>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record1 { int id{}; std::string description; bool is_done{}; std::vector<int> blocks; };
+struct Record0 { std::string project; Record1 lead_task; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<std::string, std::map<std::string, LiteralizerVariant<int, std::string, bool, std::vector<int>>>>>{
-    {"project", "alpha"},
-    {"lead_task", std::map<std::string, LiteralizerVariant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"description", "first task"}, {"is_done", false}, {"blocks", std::vector<int>{102, 103}}}},
+auto my_data = Record0{
+    "alpha",
+    Record1{
+        100,
+        "first task",
+        false,
+        std::vector<int>{
+            102,
+            103,
+        },
+    },
 };
     (void)my_data;
     return 0;

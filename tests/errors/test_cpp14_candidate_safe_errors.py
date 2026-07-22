@@ -10,7 +10,7 @@ from literalizer.languages import Cpp
 def test_cpp14_rejects_shape_requiring_helper_carrier() -> None:
     """Unsupported mixed shapes fail instead of emitting a tool type."""
     with pytest.raises(
-        UnrepresentableInputError,
+        expected_exception=UnrepresentableInputError,
         match=r"candidate-safe rendering cannot represent.*LiteralizerVariant",
     ):
         literalize(

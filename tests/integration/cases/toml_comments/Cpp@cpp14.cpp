@@ -1,13 +1,12 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record0 { int answer{}; std::string plain; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<int, std::string>>{
+auto my_data = Record0{
     // before
-    {"answer", 42},  // inline
-    {"plain", "ok"},
+    42,  // inline
+    "ok",
     // trailing
 };
     (void)my_data;
