@@ -952,9 +952,13 @@ def _is_cpp_tuple_eligible(*, value: list[Value]) -> bool:
     for item in value:
         if scalar_type_bucket(value=item) is not None:
             continue
-        if isinstance(item, dict) and len(item) == 1 and isinstance(
-            item.get("$ref"),
-            str,
+        if (
+            isinstance(item, dict)
+            and len(item) == 1
+            and isinstance(
+                item.get("$ref"),
+                str,
+            )
         ):
             has_reference = True
             continue
