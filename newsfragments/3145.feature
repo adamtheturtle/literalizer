@@ -1,0 +1,1 @@
+Make C++14's default heterogeneous rendering candidate-safe: use native tuples and records where possible, retain standard maps for non-identifier keys, and reject shapes that would require ``LiteralizerVariant``.

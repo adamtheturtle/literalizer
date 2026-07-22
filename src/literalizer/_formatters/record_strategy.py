@@ -692,6 +692,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     split_conflicting_field_types: bool,
     widen_unrecordizable_nested_sibling_maps: bool,
     derecordized_map_open: str | None,
+    record_shape_allowed: Callable[[RecordShape], bool] | None = None,
 ) -> RecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 
@@ -736,6 +737,12 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         naming and later the mixed-record-shape gate treat them apart.
         """
         raw_shapes_by_id = collect_record_shapes(data=data)
+        if record_shape_allowed is not None:
+            raw_shapes_by_id = {
+                dict_id: shape
+                for dict_id, shape in raw_shapes_by_id.items()
+                if record_shape_allowed(shape)
+            }
         widened_shapes_by_id = (
             drop_unrecordizable_nested_sibling_maps(
                 data=data,

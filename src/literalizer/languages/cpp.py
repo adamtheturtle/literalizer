@@ -63,6 +63,7 @@ from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
     ListType,
+    RecordShape,
     WideInt,
     collect_record_shapes,
     infer_element_type,
@@ -151,6 +152,7 @@ class _CppModifiers(enum.Enum):
 _INT32_MIN = -(1 << 31)
 _INT32_MAX = (1 << 31) - 1
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+_CPP_FIELD_IDENTIFIER = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 _IntTypeResolver = Callable[[list[int]], str]
@@ -1025,6 +1027,19 @@ def _cpp_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
+def _cpp_record_shape_has_valid_identifiers(shape: RecordShape, /) -> bool:
+    """Return whether *shape* can be a naturally named C++ record.
+
+    Candidate-safe C++14 rendering must leave mapping-shaped data with
+    keys such as ``"003"`` as a ``std::map``: treating those keys as
+    member names would emit invalid source.  Explicit record rendering
+    retains its existing focused diagnostic for such keys; this predicate
+    is only the automatic policy's record/map boundary.
+    """
+    return all(_CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys)
+
+
+@beartype
 def _cpp_record_literal(
     name: str,
     fields: Sequence[RecordLiteralField],
@@ -1227,6 +1242,7 @@ def _build_cpp_record_preamble(
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
+    candidate_safe: bool = False,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1267,7 +1283,8 @@ def _build_cpp_record_preamble(
         value_alias: tuple[str, ...] = ()
         headers = (
             []
-            if (
+            if candidate_safe
+            or (
                 _contains_external_record(
                     data=data,
                     record_shape_names=record_shape_names,
@@ -2349,6 +2366,36 @@ class Cpp(metaclass=LanguageCls):
         """Validate C++-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
+        if self._candidate_safe_cpp14_active:
+            self._validate_candidate_safe_cpp14_data(data=data)
+
+    def _validate_candidate_safe_cpp14_data(self, *, data: Value) -> None:
+        """Reject C++14 shapes that would require a helper value carrier.
+
+        The automatic C++14 policy deliberately has no analogue of
+        ``std::variant``.  Its record and tuple hooks cover naturally
+        named objects and fixed scalar sequences; anything left that would
+        infer a mixed carrier is reported before formatting rather than
+        leaking ``LiteralizerVariant`` into candidate-facing source.
+        """
+        behavior = self._tuple_record_strategy.behavior
+        record_dict_ids = frozenset(behavior.compute_record_shapes(data))
+        tuple_list_ids = _cpp_tuple_list_ids(data=data)
+        element_to_type = self._type_ctx.element_to_type(int_type="long long")
+        if _needs_variant_type(
+            data=data,
+            element_to_type=element_to_type,
+            type_ctx=self._type_ctx,
+            tuple_list_ids=tuple_list_ids,
+            record_dict_ids=record_dict_ids,
+        ):
+            msg = (
+                "C++14 candidate-safe rendering cannot represent this "
+                "heterogeneous shape without LiteralizerVariant. Use a "
+                "valid record schema, a homogeneous standard container, "
+                "or a JSON representation."
+            )
+            raise UnrepresentableInputError(msg)
 
     def _validate_json_value_keys(self, *, data: Value) -> None:
         """Reject non-string object keys for ``nlohmann::json``.
@@ -2775,8 +2822,24 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _tuple_strategy_active(self) -> bool:
-        """Return whether the ``TUPLE`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "TUPLE"
+        """Return whether native tuple rendering is active.
+
+        C++14's default policy is candidate-safe: fixed heterogeneous
+        arrays use ``std::tuple`` instead of literalizer's private value
+        carrier.  Later C++ standards retain the opt-in ``TUPLE`` mode.
+        """
+        return (
+            self.heterogeneous_strategy.name == "TUPLE"
+            or self._candidate_safe_cpp14_active
+        )
+
+    @cached_property
+    def _candidate_safe_cpp14_active(self) -> bool:
+        """Return whether the automatic C++14 native-only policy is active."""
+        return (
+            self.language_version is self.version_formats.CPP14
+            and self.heterogeneous_strategy.name == "ERROR"
+        )
 
     @cached_property
     def _record_strategy_active(self) -> bool:
@@ -2785,10 +2848,11 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _uses_cpp14_tuple_record_strategy(self) -> bool:
-        """Return whether ``TUPLE`` should also render C++14 records."""
-        return (
-            self.language_version is self.version_formats.CPP14
-            and self._tuple_strategy_active
+        """Return whether C++14 should compose native tuples and
+        records.
+        """
+        return self.language_version is self.version_formats.CPP14 and (
+            self._tuple_strategy_active or self._candidate_safe_cpp14_active
         )
 
     def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -2904,6 +2968,11 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            record_shape_allowed=(
+                _cpp_record_shape_has_valid_identifiers
+                if self._candidate_safe_cpp14_active
+                else None
+            ),
         )
 
         behavior = dataclasses.replace(
@@ -2959,7 +3028,10 @@ class Cpp(metaclass=LanguageCls):
         list keeps the typed variant opener.
         """
         base_open = self.sequence_format_config.sequence_open
-        if not self._record_strategy_active:
+        if not (
+            self._record_strategy_active
+            or self._uses_cpp14_tuple_record_strategy
+        ):
             return base_open
 
         def _open(items: list[Value]) -> str:
@@ -3084,6 +3156,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
+                candidate_safe=self._candidate_safe_cpp14_active,
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)
