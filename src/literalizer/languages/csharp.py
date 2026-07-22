@@ -1555,6 +1555,7 @@ class CSharp(metaclass=LanguageCls):
             split_conflicting_field_types=False,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open="new Dictionary<string, object> {",
+            record_shape_allowed=None,
         )
 
     @cached_property

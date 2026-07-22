@@ -1,13 +1,12 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+#include <tuple>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto my_var = 42;
 auto my_other = 7;
-process(std::vector<LiteralizerVariant<int, std::string>>{my_var, 42, "static"});
-process(std::vector<LiteralizerVariant<int, std::string>>{my_other, 7, "label"});
+process(std::make_tuple(my_var, 42, "static"));
+process(std::make_tuple(my_other, 7, "label"));
     return 0;
 }

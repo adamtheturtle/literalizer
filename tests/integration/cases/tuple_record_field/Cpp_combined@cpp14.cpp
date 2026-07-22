@@ -2,17 +2,27 @@
 #include <string>
 #include <map>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+#include <tuple>
+struct Record0 { std::string call; std::tuple<int, std::string, std::string, int> args; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<std::string, std::vector<LiteralizerVariant<int, std::string>>>>{
-    {"call", "send"},
-    {"args", std::vector<LiteralizerVariant<int, std::string>>{1, "email", "a@gmail.com", 100}},
+auto my_data = Record0{
+    "send",
+    std::make_tuple(
+        1,
+        "email",
+        "a@gmail.com",
+        100
+    ),
 };
 (void)my_data;
-my_data = std::map<std::string, LiteralizerVariant<std::string, std::vector<LiteralizerVariant<int, std::string>>>>{
-    {"call", "send"},
-    {"args", std::vector<LiteralizerVariant<int, std::string>>{1, "email", "a@gmail.com", 100}},
+my_data = Record0{
+    "send",
+    std::make_tuple(
+        1,
+        "email",
+        "a@gmail.com",
+        100
+    ),
 };
     (void)my_data;
     return 0;

@@ -2,13 +2,11 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <cstddef>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record0 { std::vector<std::nullptr_t> a; std::vector<std::nullptr_t> b; };
 int main() {
-auto my_data = std::map<std::string, std::vector<std::nullptr_t>>{
-    {"a", std::vector<std::nullptr_t>{}},
-    {"b", std::vector<std::nullptr_t>{}},
+auto my_data = Record0{
+    std::vector<std::nullptr_t>{},
+    std::vector<std::nullptr_t>{},
 };
     (void)my_data;
     return 0;

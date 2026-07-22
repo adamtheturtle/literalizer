@@ -1258,6 +1258,7 @@ class D(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open="JSONValue([",
+            record_shape_allowed=None,
         )
 
     @cached_property

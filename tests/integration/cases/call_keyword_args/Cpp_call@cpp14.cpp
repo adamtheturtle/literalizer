@@ -1,8 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+#include <tuple>
 struct throttlerType_ { template <typename... Args> auto check(Args...) const { return 0; } };
 const throttlerType_ throttler;
 template <typename... Args> auto emit(Args...) { return 0; }

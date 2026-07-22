@@ -248,13 +248,13 @@ def _nested_map_scalar_wrapping_spec(
     """Return *lang_cls*'s nested-map scalar-wrapping spec, if any."""
     default_spec = make_spec(lang_cls=lang_cls)
     for strategy in default_spec.heterogeneous_strategies:
-        candidate = make_spec(
+        alternative = make_spec(
             lang_cls=lang_cls,
             heterogeneous_strategy=strategy,
         )
-        behavior = candidate.heterogeneous_behavior
+        behavior = alternative.heterogeneous_behavior
         if behavior.widens_nested_maps_by_wrapping_scalars:
-            return candidate
+            return alternative
     return None
 
 

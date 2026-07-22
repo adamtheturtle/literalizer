@@ -28,6 +28,7 @@ import literalizer
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
 
@@ -233,7 +234,7 @@ def run_literalize_ref_golden_case(
             bound_refs=bound_refs_input or None,
             ref_key=config.ref_key,
         )
-    except HeterogeneousCollectionError:
+    except (HeterogeneousCollectionError, UnrepresentableInputError):
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_cls.__name__} cannot represent this heterogeneous input",

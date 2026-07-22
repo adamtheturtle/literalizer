@@ -1313,6 +1313,7 @@ class Scala(metaclass=LanguageCls):
                 split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open="Map[String, Any](",
+                record_shape_allowed=None,
             )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(

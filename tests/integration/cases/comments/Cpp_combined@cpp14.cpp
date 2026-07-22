@@ -1,23 +1,22 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record0 { std::string host; int port{}; bool debug{}; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<std::string, int, bool>>{
+auto my_data = Record0{
     // Server configuration
-    {"host", "localhost"},  // default host
-    {"port", 8080},
+    "localhost",  // default host
+    8080,
     // Enable debug mode
-    {"debug", true},
+    true,
 };
 (void)my_data;
-my_data = std::map<std::string, LiteralizerVariant<std::string, int, bool>>{
+my_data = Record0{
     // Server configuration
-    {"host", "localhost"},  // default host
-    {"port", 8080},
+    "localhost",  // default host
+    8080,
     // Enable debug mode
-    {"debug", true},
+    true,
 };
     (void)my_data;
     return 0;

@@ -9,10 +9,10 @@ auto val_x = std::map<std::string, std::string>{
 auto val_y = std::map<std::string, std::string>{
     {"_", "_"},
 };
-auto my_data = std::vector<std::map<std::string, std::string>>{
+auto my_data = std::make_tuple(
     std::move(val_x),
-    std::move(val_y),
-};
+    std::move(val_y)
+);
     (void)my_data;
     return 0;
 }

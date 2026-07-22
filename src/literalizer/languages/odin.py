@@ -1223,6 +1223,7 @@ class Odin(metaclass=LanguageCls):
                 split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
+                record_shape_allowed=None,
             )
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,

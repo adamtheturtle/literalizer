@@ -1,8 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+#include <tuple>
 struct clientType_ { template <typename... Args> void post(Args...) const {} };
 struct apiType_ { clientType_ client; };
 struct objType_ { apiType_ api; };

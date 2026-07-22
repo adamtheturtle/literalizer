@@ -1,12 +1,15 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
+struct Record1 { std::string name; int age{}; };
+struct Record0 { int id{}; Record1 owner; };
 int main() {
-auto my_data = std::map<std::string, LiteralizerVariant<int, std::map<std::string, LiteralizerVariant<std::string, int>>>>{
-    {"id", 1},
-    {"owner", std::map<std::string, LiteralizerVariant<std::string, int>>{{"name", "Alice"}, {"age", 30}}},
+auto my_data = Record0{
+    1,
+    Record1{
+        "Alice",
+        30,
+    },
 };
     (void)my_data;
     return 0;

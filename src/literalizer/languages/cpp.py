@@ -11,6 +11,7 @@ from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
+from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
@@ -63,6 +64,7 @@ from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
     ListType,
+    RecordShape,
     WideInt,
     collect_record_shapes,
     infer_element_type,
@@ -151,6 +153,7 @@ class _CppModifiers(enum.Enum):
 _INT32_MIN = -(1 << 31)
 _INT32_MAX = (1 << 31) - 1
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+_CPP_FIELD_IDENTIFIER = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 _IntTypeResolver = Callable[[list[int]], str]
@@ -927,6 +930,42 @@ def _render_cpp_tuple(
     )
 
 
+_MIN_CPP_TUPLE_ARITY = 2
+
+
+@beartype
+def _is_cpp_tuple_eligible(*, value: list[Value]) -> bool:
+    """Return whether a list can use C++'s positional tuple form.
+
+    Call arguments can contain ``{"$ref": name}`` placeholders.  They are
+    later emitted as bare identifiers, which are valid ``std::make_tuple``
+    arguments but are not scalars while the tuple ids are being collected.
+    Treat those placeholders as positional tuple elements so validation and
+    formatting agree.  A list containing a reference still needs another
+    element: a one-element list remains an ordinary sequence.
+    """
+    if is_tuple_eligible(value=value):
+        return True
+    if len(value) < _MIN_CPP_TUPLE_ARITY:
+        return False
+    has_reference = False
+    for item in value:
+        if scalar_type_bucket(value=item) is not None:
+            continue
+        if (
+            isinstance(item, dict)
+            and len(item) == 1
+            and isinstance(
+                item.get("$ref"),
+                str,
+            )
+        ):
+            has_reference = True
+            continue
+        return False
+    return has_reference
+
+
 @beartype
 def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
     """Return C++ tuple-eligible lists at every nesting level.
@@ -942,7 +981,7 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
         """Collect tuple-eligible lists reachable from *value*."""
         match value:
             case list():
-                if is_tuple_eligible(value=value):
+                if _is_cpp_tuple_eligible(value=value):
                     ids.add(id(value))
                 for item in value:
                     _collect(value=item)
@@ -1022,6 +1061,26 @@ def _cpp_record_field_identifier(key: str, /) -> str:
     ``Record0{.id = 1, ...}``.
     """
     return key
+
+
+@beartype
+def _cpp_native_only_record_shape(
+    value: dict[Scalar, Value],
+    shape: RecordShape,
+    /,
+) -> bool:
+    """Return whether *value* needs a naturally named C++ record.
+
+    Native-only C++14 rendering must leave mapping-shaped data with
+    keys such as ``"003"`` as a ``std::map``: treating those keys as
+    member names would emit invalid source.  It also prefers a standard
+    map whenever all values share one representable element type; records
+    are reserved for the heterogeneous objects that would otherwise need
+    a helper carrier.
+    """
+    return infer_element_type(items=list(value.values())) is None and all(
+        _CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys
+    )
 
 
 @beartype
@@ -1227,6 +1286,7 @@ def _build_cpp_record_preamble(
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
+    native_only: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1267,7 +1327,8 @@ def _build_cpp_record_preamble(
         value_alias: tuple[str, ...] = ()
         headers = (
             []
-            if (
+            if native_only
+            or (
                 _contains_external_record(
                     data=data,
                     record_shape_names=record_shape_names,
@@ -2349,6 +2410,40 @@ class Cpp(metaclass=LanguageCls):
         """Validate C++-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
+        if self._native_only_cpp14_active and not self._json_type_active:
+            self._validate_native_only_cpp14_data(data=data)
+
+    def _validate_native_only_cpp14_data(self, *, data: Value) -> None:
+        """Reject C++14 shapes that would require a helper value carrier.
+
+        The automatic C++14 policy deliberately has no analogue of
+        ``std::variant``.  Its record and tuple hooks cover naturally
+        named objects and fixed scalar sequences; anything left that would
+        infer a mixed carrier is reported before formatting rather than
+        leaking ``LiteralizerVariant`` into native-only source.
+        """
+        behavior = self._tuple_record_strategy.behavior
+        compute_record_shapes = behavior.compute_record_shapes
+        if compute_record_shapes is None:  # pragma: no cover
+            msg = "C++14 native-only rendering requires record shapes"
+            raise RuntimeError(msg)
+        record_dict_ids = frozenset(compute_record_shapes(data))
+        tuple_list_ids = _cpp_tuple_list_ids(data=data)
+        element_to_type = self._type_ctx.element_to_type(int_type="long long")
+        if _needs_variant_type(
+            data=data,
+            element_to_type=element_to_type,
+            type_ctx=self._type_ctx,
+            tuple_list_ids=tuple_list_ids,
+            record_dict_ids=record_dict_ids,
+        ):
+            msg = (
+                "C++14 native-only rendering cannot represent this "
+                "heterogeneous shape without LiteralizerVariant. Use a "
+                "valid record schema, a homogeneous standard container, "
+                "or a JSON representation."
+            )
+            raise UnrepresentableInputError(msg)
 
     def _validate_json_value_keys(self, *, data: Value) -> None:
         """Reject non-string object keys for ``nlohmann::json``.
@@ -2376,6 +2471,29 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self._native_only_cpp14_active and not self._json_type_active:
+
+            def _validate(value: Value) -> None:
+                """Reject a call argument requiring a variant carrier."""
+                element_to_type = self._type_ctx.element_to_type(
+                    int_type="long long",
+                )
+                if _needs_variant_type(
+                    data=value,
+                    element_to_type=element_to_type,
+                    type_ctx=self._type_ctx,
+                    tuple_list_ids=_cpp_tuple_list_ids(data=value),
+                    record_dict_ids=frozenset(),
+                ):
+                    msg = (
+                        "C++14 native-only call rendering cannot represent "
+                        "this heterogeneous argument without "
+                        "LiteralizerVariant. Use a homogeneous standard "
+                        "container or a JSON representation."
+                    )
+                    raise UnrepresentableInputError(msg)
+
+            return _validate
         return no_validate_call_arg
 
     @cached_property
@@ -2775,8 +2893,24 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _tuple_strategy_active(self) -> bool:
-        """Return whether the ``TUPLE`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "TUPLE"
+        """Return whether native tuple rendering is active.
+
+        C++14's default policy is native-only: fixed heterogeneous
+        arrays use ``std::tuple`` instead of literalizer's private value
+        carrier.  Later C++ standards retain the opt-in ``TUPLE`` mode.
+        """
+        return (
+            self.heterogeneous_strategy.name == "TUPLE"
+            or self._native_only_cpp14_active
+        )
+
+    @cached_property
+    def _native_only_cpp14_active(self) -> bool:
+        """Return whether the automatic C++14 native-only policy is active."""
+        return (
+            self.language_version is self.version_formats.CPP14
+            and self.heterogeneous_strategy.name == "ERROR"
+        )
 
     @cached_property
     def _record_strategy_active(self) -> bool:
@@ -2785,10 +2919,11 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _uses_cpp14_tuple_record_strategy(self) -> bool:
-        """Return whether ``TUPLE`` should also render C++14 records."""
-        return (
-            self.language_version is self.version_formats.CPP14
-            and self._tuple_strategy_active
+        """Return whether C++14 should compose native tuples and
+        records.
+        """
+        return self.language_version is self.version_formats.CPP14 and (
+            self._tuple_strategy_active or self._native_only_cpp14_active
         )
 
     def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -2819,7 +2954,8 @@ class Cpp(metaclass=LanguageCls):
             return f"std::vector<{request.element_record_name}>"
         value = request.value
         if (
-            isinstance(value, dict)
+            not self._native_only_cpp14_active
+            and isinstance(value, dict)
             and not isinstance(value, OrderedMap)
             and record_shape_for_dict(value=value) is not None
         ):
@@ -2863,6 +2999,7 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            record_shape_allowed=None,
         )
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
@@ -2880,7 +3017,7 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _tuple_record_strategy(self) -> RecordStrategy:
-        """Compose C++14's candidate-facing tuple and record forms.
+        """Compose C++14's native tuple and record forms.
 
         A tuple-eligible field belongs to a generated record just as
         naturally as a scalar field.  Keeping the two native forms in
@@ -2904,6 +3041,11 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            record_shape_allowed=(
+                _cpp_native_only_record_shape
+                if self._native_only_cpp14_active
+                else None
+            ),
         )
 
         behavior = dataclasses.replace(
@@ -2959,7 +3101,10 @@ class Cpp(metaclass=LanguageCls):
         list keeps the typed variant opener.
         """
         base_open = self.sequence_format_config.sequence_open
-        if not self._record_strategy_active:
+        if not (
+            self._record_strategy_active
+            or self._uses_cpp14_tuple_record_strategy
+        ):
             return base_open
 
         def _open(items: list[Value]) -> str:
@@ -3074,6 +3219,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
+                native_only=False,
             )
         if self._uses_cpp14_tuple_record_strategy:
             return _build_cpp_record_preamble(
@@ -3084,6 +3230,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
+                native_only=self._native_only_cpp14_active,
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)

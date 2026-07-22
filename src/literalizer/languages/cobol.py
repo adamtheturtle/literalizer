@@ -270,10 +270,10 @@ def _unique_cobol_name(base: str, used: set[str]) -> str:
     while True:
         suffix = f"-{counter}"
         head = base[: _MAX_COBOL_NAME_LENGTH - len(suffix)].rstrip("-")
-        candidate = f"{head}{suffix}"
-        if candidate not in used:
-            used.add(candidate)
-            return candidate
+        proposed_name = f"{head}{suffix}"
+        if proposed_name not in used:
+            used.add(proposed_name)
+            return proposed_name
         counter += 1
 
 
