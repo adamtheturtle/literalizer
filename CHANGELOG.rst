@@ -21,7 +21,11 @@ No significant changes.
 2026.07.20.1
 ------------
 
-No significant changes.
+- Add ``literalize(record_null_substitutions=...)`` for replacing null-valued
+  record fields by name before validation, type inference, and rendering. This
+  lets a single language-neutral fixture use target-appropriate sentinels (for
+  example C++ ``-1`` integers and empty strings) while unconfigured fields and
+  languages retain their existing null behavior (issue #3143).
 
 2026.07.20
 ----------
