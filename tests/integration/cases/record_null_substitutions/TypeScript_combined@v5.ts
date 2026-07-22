@@ -1,9 +1,7 @@
-let my_data = [
-  {"replacement": null, "present": 1},
-  {"replacement": 2, "present": 3},
-];
-my_data = [
-  {"replacement": null, "present": 1},
-  {"replacement": 2, "present": 3},
-];
+let my_data = {
+  "rows": [{"replacement": null, "present": 1}, {"replacement": 2, "present": 3}],
+};
+my_data = {
+  "rows": [{"replacement": null, "present": 1}, {"replacement": 2, "present": 3}],
+};
 export {};

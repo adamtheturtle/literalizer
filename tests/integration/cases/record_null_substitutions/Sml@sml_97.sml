@@ -3,8 +3,7 @@ datatype val_t =
   | SStr of string
   | SList of val_t list
   | SMap of (string * val_t) list
-val my_data : val_t = SList [
-    SMap [("replacement", SInt (~1)), ("present", SInt 1)],
-    SMap [("replacement", SInt 2), ("present", SInt 3)]
+val my_data : val_t = SMap [
+    ("rows", SList [SMap [("replacement", SInt (~1)), ("present", SInt 1)], SMap [("replacement", SInt 2), ("present", SInt 3)]])
 ]
 val _ = my_data

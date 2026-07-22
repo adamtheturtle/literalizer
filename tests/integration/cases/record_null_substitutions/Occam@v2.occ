@@ -12,9 +12,8 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC main ()
-    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "replacement"; MOBILE LIT(lit.int; -1)), MOBILE LIT(lit.pair; MOBILE []BYTE "present"; MOBILE LIT(lit.int; 1))]),
-        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "replacement"; MOBILE LIT(lit.int; 2)), MOBILE LIT(lit.pair; MOBILE []BYTE "present"; MOBILE LIT(lit.int; 3))])
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "rows"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "replacement"; MOBILE LIT(lit.int; -1)), MOBILE LIT(lit.pair; MOBILE []BYTE "present"; MOBILE LIT(lit.int; 1))]), MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "replacement"; MOBILE LIT(lit.int; 2)), MOBILE LIT(lit.pair; MOBILE []BYTE "present"; MOBILE LIT(lit.int; 3))])]))
     ]):
     SEQ
         SKIP
