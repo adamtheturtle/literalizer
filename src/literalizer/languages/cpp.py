@@ -2434,6 +2434,27 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self._native_only_cpp14_active and not self._json_type_active:
+            def _validate(value: Value) -> None:
+                element_to_type = self._type_ctx.element_to_type(
+                    int_type="long long",
+                )
+                if _needs_variant_type(
+                    data=value,
+                    element_to_type=element_to_type,
+                    type_ctx=self._type_ctx,
+                    tuple_list_ids=frozenset(),
+                    record_dict_ids=frozenset(),
+                ):
+                    msg = (
+                        "C++14 native-only call rendering cannot represent "
+                        "this heterogeneous argument without "
+                        "LiteralizerVariant. Use a homogeneous standard "
+                        "container or a JSON representation."
+                    )
+                    raise UnrepresentableInputError(msg)
+
+            return _validate
         return no_validate_call_arg
 
     @cached_property

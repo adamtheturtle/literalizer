@@ -32,6 +32,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
     HeterogeneousCollectionError,
+    UnrepresentableInputError,
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
 )
@@ -1854,7 +1855,7 @@ def _run_call_with_declarations(
             f"{lang_name} does not support variable-name wrapping "
             f"for ref declarations",
         )
-    except HeterogeneousCollectionError:
+    except (HeterogeneousCollectionError, UnrepresentableInputError):
         golden_path.unlink(missing_ok=True)
         pytest.skip(
             f"{lang_name} cannot represent this heterogeneous input",
