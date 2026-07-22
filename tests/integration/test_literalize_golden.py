@@ -13,7 +13,7 @@ member so the loop runs once per language and case.
 """
 
 from pathlib import Path
-from typing import NoReturn
+from typing import Final, NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -108,6 +108,9 @@ _VARIANT_SKIP_REASONS: _SkipReasons = (
     (UnrepresentableInputError, "cannot represent this input", True),
 )
 
+_RECORD_NULL_SUBSTITUTIONS_CASE: Final = "record_null_substitutions"
+_RECORD_NULL_SUBSTITUTIONS: Final = {"replacement": -1}
+
 
 def _skip_unrepresentable(
     *,
@@ -179,6 +182,11 @@ def test_golden_file(
                             include_delimiters=True,
                             variable_form=wrap_variable_form(),
                             wrap_in_file=True,
+                            record_null_substitutions=(
+                                _RECORD_NULL_SUBSTITUTIONS
+                                if case_name == _RECORD_NULL_SUBSTITUTIONS_CASE
+                                else None
+                            ),
                         )
                     except VariableNameNotSupportedError:
                         result = literalizer.literalize(
@@ -189,6 +197,11 @@ def test_golden_file(
                             include_delimiters=True,
                             variable_form=None,
                             wrap_in_file=True,
+                            record_null_substitutions=(
+                                _RECORD_NULL_SUBSTITUTIONS
+                                if case_name == _RECORD_NULL_SUBSTITUTIONS_CASE
+                                else None
+                            ),
                         )
                 except (
                     UnrepresentableIntegerError,

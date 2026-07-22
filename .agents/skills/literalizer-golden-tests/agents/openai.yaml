@@ -1,0 +1,5 @@
+---
+interface:
+  display_name: Literalizer Golden Tests
+  short_description: Maintain cross-language golden rendering tests.
+  default_prompt: Add or update Literalizer golden-file coverage for this behavior.

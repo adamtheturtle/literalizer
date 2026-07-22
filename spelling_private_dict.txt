@@ -250,6 +250,7 @@ tomlkit
 toolchain
 ty
 typeclass
+unconfigured
 unescape
 unhandled
 unicode

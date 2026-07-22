@@ -323,6 +323,8 @@ omit-covered-files = true
 
 [tool.check-manifest]
 ignore = [
+    ".agents",
+    ".agents/**",
     ".clang-tidy",
     ".clj-kondo",
     ".clj-kondo/**",

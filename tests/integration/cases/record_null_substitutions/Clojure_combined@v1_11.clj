@@ -1,0 +1,8 @@
+(def my_data [
+    {"replacement" nil "present" 1}
+    {"replacement" 2 "present" 3}
+])
+(def my_data [
+    {"replacement" nil "present" 1}
+    {"replacement" 2 "present" 3}
+])

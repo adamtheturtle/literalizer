@@ -2347,6 +2347,7 @@ def _literalize_pre_form(
     ref_case: IdentifierCase | None,
     ref_values: Mapping[str, Value] | None,
     ref_key: str,
+    record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
@@ -2356,7 +2357,10 @@ def _literalize_pre_form(
     """
     line_prefix = language.indent * pre_indent_level
     parsed = parse_input(source=source, input_format=input_format)
-    data = parsed.data
+    data = _substitute_record_nulls(
+        data=parsed.data,
+        substitutions=record_null_substitutions,
+    )
     active_ref_key = _active_literalize_ref_key(
         source=source,
         input_format=input_format,
@@ -2430,6 +2434,52 @@ def _literalize_pre_form(
         resolved=resolved,
         line_prefix=line_prefix,
     )
+
+
+@beartype
+def _substitute_record_nulls(
+    *,
+    data: Value,
+    substitutions: Mapping[str, Value] | None,
+) -> Value:
+    """Replace configured null-valued record fields before rendering.
+
+    Replacements are copied for every matching field so configured containers
+    cannot alias between parsed records. Ordered maps remain positional maps
+    and are never considered records.
+    """
+    if not substitutions:
+        return data
+    if isinstance(data, list):
+        return [
+            _substitute_record_nulls(data=item, substitutions=substitutions)
+            for item in data
+        ]
+    if isinstance(data, dict):
+        if isinstance(data, OrderedMap):
+            return OrderedMap(
+                {
+                    key: _substitute_record_nulls(
+                        data=item, substitutions=substitutions
+                    )
+                    for key, item in data.items()
+                }
+            )
+        is_record = record_shape_for_dict(value=data) is not None
+        return {
+            key: (
+                _materialize_value_input(value=substitutions[key])
+                if is_record
+                and isinstance(key, str)
+                and item is None
+                and key in substitutions
+                else _substitute_record_nulls(
+                    data=item, substitutions=substitutions
+                )
+            )
+            for key, item in data.items()
+        }
+    return data
 
 
 @beartype
@@ -2530,6 +2580,7 @@ def _literalize_both_forms(
     ref_case: IdentifierCase | None,
     ref_values: Mapping[str, Value] | None,
     ref_key: str,
+    record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
@@ -2542,6 +2593,7 @@ def _literalize_both_forms(
         ref_case=ref_case,
         ref_values=ref_values,
         ref_key=ref_key,
+        record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
     )
     declaration = _literalize_apply_form(
@@ -2605,6 +2657,7 @@ def _literalize_bound_refs(
     explicit_ref_values: Mapping[str, Value] | None,
     bound_refs: Mapping[str, Value],
     ref_key: str,
+    record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Emit a binding for each supplied ref before its first use.
@@ -2648,6 +2701,7 @@ def _literalize_bound_refs(
         ref_case=ref_case,
         ref_values=effective_ref_values or None,
         ref_key=ref_key,
+        record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
     )
     main_result = _literalize_apply_form(
@@ -2833,6 +2887,7 @@ def literalize(
     ref_values: Mapping[str, ValueInput] | None = None,
     bound_refs: Mapping[str, ValueInput] | None = None,
     ref_key: str = "$ref",
+    record_null_substitutions: Mapping[str, ValueInput] | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
@@ -2919,6 +2974,11 @@ def literalize(
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
             ref marker.  Defaults to ``"$ref"``.
+        record_null_substitutions: Optional replacements for null-valued
+            record fields, keyed by original field name. Replacements are
+            applied before validation and type inference, so their normal
+            target-language literals and inferred types are used. A field
+            remains unchanged when it is non-null or has no mapping.
         collection_layout: Controls layout for collections nested
             inside other collections.  ``CollectionLayout.COMPACT``
             preserves the existing one-line nested rendering, while
@@ -2976,6 +3036,14 @@ def literalize(
         if bound_refs is not None
         else {}
     )
+    materialized_record_null_substitutions: Mapping[str, Value] | None = (
+        {
+            name: _materialize_value_input(value=value)
+            for name, value in record_null_substitutions.items()
+        }
+        if record_null_substitutions is not None
+        else None
+    )
     # ``bound_refs`` entries double as ``ref_values`` so a name need not
     # be repeated in both mappings; an explicit ``ref_values`` entry for
     # the same name wins (it is the caller's stated type intent).
@@ -3017,6 +3085,7 @@ def literalize(
             ref_case=ref_case,
             ref_values=materialized_ref_values,
             ref_key=ref_key,
+            record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,
         )
 
@@ -3036,6 +3105,7 @@ def literalize(
             explicit_ref_values=explicit_ref_values or None,
             bound_refs=materialized_bound_refs,
             ref_key=ref_key,
+            record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,
         )
 
@@ -3048,6 +3118,7 @@ def literalize(
         ref_case=ref_case,
         ref_values=materialized_ref_values,
         ref_key=ref_key,
+        record_null_substitutions=materialized_record_null_substitutions,
         collection_layout=collection_layout,
     )
     return _literalize_apply_form(
