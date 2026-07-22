@@ -55,3 +55,36 @@ def test_cpp14_unmapped_record_shape_uses_deduced_vector() -> None:
     assert result.code == (
         "std::vector{\n    Record0{100},\n    Record0{101},\n}"
     )
+
+
+def test_cpp14_record_null_substitutions_drive_field_types() -> None:
+    """Different field substitutions are applied before record
+    inference.
+    """
+    result = literalize(
+        source=(
+            '[{"due_date":null,"parent_id":null,"assignee":null},'
+            '{"due_date":10,"parent_id":20,"assignee":"alice"}]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Cpp(
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+            language_version=Cpp.version_formats.CPP14,
+        ),
+        record_null_substitutions={
+            "due_date": -1,
+            "parent_id": -1,
+            "assignee": "",
+        },
+    )
+
+    assert result.code == (
+        "std::vector{\n"
+        '    Record0{-1, -1, ""},\n'
+        '    Record0{10, 20, "alice"},\n'
+        "}"
+    )
+    assert result.preamble[-1] == (
+        "struct Record0 { int due_date{}; int parent_id{}; "
+        "std::string assignee; };"
+    )
