@@ -5,9 +5,8 @@ type val_t =
   | OStr of string
   | OList of val_t list
   | OMap of (string * val_t) list
-let my_data : val_t = OList [
-    OMap [("replacement", OInt (-1)); ("present", OInt 1)];
-    OMap [("replacement", OInt 2); ("present", OInt 3)]
+let my_data : val_t = OMap [
+    ("rows", OList [OMap [("replacement", OInt (-1)); ("present", OInt 1)]; OMap [("replacement", OInt 2); ("present", OInt 3)]])
 ]
 
 end
