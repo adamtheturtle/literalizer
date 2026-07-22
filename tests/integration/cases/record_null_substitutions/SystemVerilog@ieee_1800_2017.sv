@@ -11,9 +11,8 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
-static _VVal my_data[] = '{
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"replacement\", v: _VVal'{tag: _VVAL_INT, i: -1, r: 0.0, s: \"\"}}, _VKV'{k: \"present\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"replacement\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}, _VKV'{k: \"present\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}}}"}
+static _VKV my_data[] = '{
+    _VKV'{k: "rows", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"replacement\\\", v: _VVal'{tag: _VVAL_INT, i: -1, r: 0.0, s: \\\"\\\"}}, _VKV'{k: \\\"present\\\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \\\"\\\"}}}\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"replacement\\\", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \\\"\\\"}}, _VKV'{k: \\\"present\\\", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \\\"\\\"}}}\"}}"}}
 };
 end
 endmodule

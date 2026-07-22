@@ -7,15 +7,13 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
 let private _mainDeclaration () =
-    let mutable my_data: Val = FList [
-        FMap [("replacement", FNull); ("present", FInt 1L)];
-        FMap [("replacement", FInt 2L); ("present", FInt 3L)]
+    let mutable my_data: Val = FMap [
+        ("rows", FList [FMap [("replacement", FNull); ("present", FInt 1L)]; FMap [("replacement", FInt 2L); ("present", FInt 3L)]])
     ]
     ignore my_data
 
 let private _mainAssignment () =
-    let my_data: Val = FList [
-        FMap [("replacement", FNull); ("present", FInt 1L)];
-        FMap [("replacement", FInt 2L); ("present", FInt 3L)]
+    let my_data: Val = FMap [
+        ("rows", FList [FMap [("replacement", FNull); ("present", FInt 1L)]; FMap [("replacement", FInt 2L); ("present", FInt 3L)]])
     ]
     ignore my_data

@@ -9,9 +9,8 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
 my_data :: Val
-my_data = HList [
-    HMap [("replacement", -1), ("present", 1)],
-    HMap [("replacement", 2), ("present", 3)]
+my_data = HMap [
+    ("rows", HList [HMap [("replacement", -1), ("present", 1)], HMap [("replacement", 2), ("present", 3)]])
     ]
 main :: IO ()
 main = seq my_data (return ())

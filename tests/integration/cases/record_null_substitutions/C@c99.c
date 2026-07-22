@@ -15,9 +15,8 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal my_data = ((CVal){.a = (CVal[]){
-    ((CVal){.m = (CKV[]){{"replacement", ((CVal){.i = -1})}, {"present", ((CVal){.i = 1})}}}),
-    ((CVal){.m = (CKV[]){{"replacement", ((CVal){.i = 2})}, {"present", ((CVal){.i = 3})}}}),
+CVal my_data = ((CVal){.m = (CKV[]){
+    {"rows", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"replacement", ((CVal){.i = -1})}, {"present", ((CVal){.i = 1})}}}), ((CVal){.m = (CKV[]){{"replacement", ((CVal){.i = 2})}, {"present", ((CVal){.i = 3})}}})}})},
 }});
     (void)my_data;
     return 0;

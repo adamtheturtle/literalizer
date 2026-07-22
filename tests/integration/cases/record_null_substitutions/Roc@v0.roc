@@ -8,7 +8,6 @@ Val : [
 ]
 
 my_data : Val
-my_data = RList [
-    RDict [("replacement", RInt -1i128), ("present", RInt 1i128)],
-    RDict [("replacement", RInt 2i128), ("present", RInt 3i128)],
+my_data = RDict [
+    ("rows", RList [RDict [("replacement", RInt -1i128), ("present", RInt 1i128)], RDict [("replacement", RInt 2i128), ("present", RInt 3i128)]]),
     ]
