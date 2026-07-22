@@ -1041,9 +1041,8 @@ def _cpp_candidate_safe_record_shape(
     are reserved for the heterogeneous objects that would otherwise need
     a helper carrier.
     """
-    return (
-        infer_element_type(items=list(value.values())) is None
-        and all(_CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys)
+    return infer_element_type(items=list(value.values())) is None and all(
+        _CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys
     )
 
 
