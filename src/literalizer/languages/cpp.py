@@ -2387,7 +2387,7 @@ class Cpp(metaclass=LanguageCls):
         """
         behavior = self._tuple_record_strategy.behavior
         compute_record_shapes = behavior.compute_record_shapes
-        if compute_record_shapes is None:
+        if compute_record_shapes is None:  # pragma: no cover
             msg = "C++14 native-only rendering requires record shapes"
             raise RuntimeError(msg)
         record_dict_ids = frozenset(compute_record_shapes(data))
