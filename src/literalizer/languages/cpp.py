@@ -11,6 +11,7 @@ from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
+from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
@@ -930,6 +931,35 @@ def _render_cpp_tuple(
 
 
 @beartype
+def _is_cpp_tuple_eligible(*, value: list[Value]) -> bool:
+    """Return whether a list can use C++'s positional tuple form.
+
+    Call arguments can contain ``{"$ref": name}`` placeholders.  They are
+    later emitted as bare identifiers, which are valid ``std::make_tuple``
+    arguments but are not scalars while the tuple ids are being collected.
+    Treat those placeholders as positional tuple elements so validation and
+    formatting agree.  A list containing a reference still needs another
+    element: a one-element list remains an ordinary sequence.
+    """
+    if is_tuple_eligible(value=value):
+        return True
+    if len(value) < 2:
+        return False
+    has_reference = False
+    for item in value:
+        if scalar_type_bucket(value=item) is not None:
+            continue
+        if isinstance(item, dict) and len(item) == 1 and isinstance(
+            item.get("$ref"),
+            str,
+        ):
+            has_reference = True
+            continue
+        return False
+    return has_reference
+
+
+@beartype
 def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
     """Return C++ tuple-eligible lists at every nesting level.
 
@@ -944,7 +974,7 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
         """Collect tuple-eligible lists reachable from *value*."""
         match value:
             case list():
-                if is_tuple_eligible(value=value):
+                if _is_cpp_tuple_eligible(value=value):
                     ids.add(id(value))
                 for item in value:
                     _collect(value=item)
@@ -2444,7 +2474,7 @@ class Cpp(metaclass=LanguageCls):
                     data=value,
                     element_to_type=element_to_type,
                     type_ctx=self._type_ctx,
-                    tuple_list_ids=frozenset(),
+                    tuple_list_ids=_cpp_tuple_list_ids(data=value),
                     record_dict_ids=frozenset(),
                 ):
                     msg = (
