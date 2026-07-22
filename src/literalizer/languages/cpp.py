@@ -2373,7 +2373,7 @@ class Cpp(metaclass=LanguageCls):
         """Validate C++-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
-        if self._native_only_cpp14_active:
+        if self._native_only_cpp14_active and not self._json_type_active:
             self._validate_native_only_cpp14_data(data=data)
 
     def _validate_native_only_cpp14_data(self, *, data: Value) -> None:
@@ -2894,7 +2894,8 @@ class Cpp(metaclass=LanguageCls):
             return f"std::vector<{request.element_record_name}>"
         value = request.value
         if (
-            isinstance(value, dict)
+            not self._native_only_cpp14_active
+            and isinstance(value, dict)
             and not isinstance(value, OrderedMap)
             and record_shape_for_dict(value=value) is not None
         ):

@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 #include <map>
-struct Record0 { std::map<std::string, LiteralizerRecordValue> a; int b{}; };
+struct Record0 { std::map<std::string, int> a; int b{}; };
 int main() {
 auto my_data = Record0{
     std::map<std::string, int>{
