@@ -2,8 +2,6 @@
 #include <string>
 #include <map>
 #include <vector>
-template <typename... Types> struct LiteralizerVariant { template <typename T> LiteralizerVariant(T) {} // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
-};
 struct mgrType_ { template <typename... Args> void run(Args...) const {} };
 struct appType_ { mgrType_ mgr; };
 const appType_ app;
