@@ -1271,6 +1271,7 @@ class V(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
+            record_shape_allowed=None,
         )
         interface_behavior = _build_v_interface_behavior()
         return dataclasses.replace(

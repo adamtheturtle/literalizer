@@ -1027,14 +1027,14 @@ def _cpp_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
-def _cpp_candidate_safe_record_shape(
+def _cpp_native_only_record_shape(
     value: dict[Scalar, Value],
     shape: RecordShape,
     /,
 ) -> bool:
     """Return whether *value* needs a naturally named C++ record.
 
-    Candidate-safe C++14 rendering must leave mapping-shaped data with
+    Native-only C++14 rendering must leave mapping-shaped data with
     keys such as ``"003"`` as a ``std::map``: treating those keys as
     member names would emit invalid source.  It also prefers a standard
     map whenever all values share one representable element type; records
@@ -1249,7 +1249,7 @@ def _build_cpp_record_preamble(
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
-    candidate_safe: bool = False,
+    native_only: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1290,7 +1290,7 @@ def _build_cpp_record_preamble(
         value_alias: tuple[str, ...] = ()
         headers = (
             []
-            if candidate_safe
+            if native_only
             or (
                 _contains_external_record(
                     data=data,
@@ -2373,22 +2373,22 @@ class Cpp(metaclass=LanguageCls):
         """Validate C++-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
-        if self._candidate_safe_cpp14_active:
-            self._validate_candidate_safe_cpp14_data(data=data)
+        if self._native_only_cpp14_active:
+            self._validate_native_only_cpp14_data(data=data)
 
-    def _validate_candidate_safe_cpp14_data(self, *, data: Value) -> None:
+    def _validate_native_only_cpp14_data(self, *, data: Value) -> None:
         """Reject C++14 shapes that would require a helper value carrier.
 
         The automatic C++14 policy deliberately has no analogue of
         ``std::variant``.  Its record and tuple hooks cover naturally
         named objects and fixed scalar sequences; anything left that would
         infer a mixed carrier is reported before formatting rather than
-        leaking ``LiteralizerVariant`` into candidate-facing source.
+        leaking ``LiteralizerVariant`` into native-only source.
         """
         behavior = self._tuple_record_strategy.behavior
         compute_record_shapes = behavior.compute_record_shapes
         if compute_record_shapes is None:
-            msg = "C++14 candidate-safe rendering requires record shapes"
+            msg = "C++14 native-only rendering requires record shapes"
             raise RuntimeError(msg)
         record_dict_ids = frozenset(compute_record_shapes(data))
         tuple_list_ids = _cpp_tuple_list_ids(data=data)
@@ -2401,7 +2401,7 @@ class Cpp(metaclass=LanguageCls):
             record_dict_ids=record_dict_ids,
         ):
             msg = (
-                "C++14 candidate-safe rendering cannot represent this "
+                "C++14 native-only rendering cannot represent this "
                 "heterogeneous shape without LiteralizerVariant. Use a "
                 "valid record schema, a homogeneous standard container, "
                 "or a JSON representation."
@@ -2835,17 +2835,17 @@ class Cpp(metaclass=LanguageCls):
     def _tuple_strategy_active(self) -> bool:
         """Return whether native tuple rendering is active.
 
-        C++14's default policy is candidate-safe: fixed heterogeneous
+        C++14's default policy is native-only: fixed heterogeneous
         arrays use ``std::tuple`` instead of literalizer's private value
         carrier.  Later C++ standards retain the opt-in ``TUPLE`` mode.
         """
         return (
             self.heterogeneous_strategy.name == "TUPLE"
-            or self._candidate_safe_cpp14_active
+            or self._native_only_cpp14_active
         )
 
     @cached_property
-    def _candidate_safe_cpp14_active(self) -> bool:
+    def _native_only_cpp14_active(self) -> bool:
         """Return whether the automatic C++14 native-only policy is active."""
         return (
             self.language_version is self.version_formats.CPP14
@@ -2863,7 +2863,7 @@ class Cpp(metaclass=LanguageCls):
         records.
         """
         return self.language_version is self.version_formats.CPP14 and (
-            self._tuple_strategy_active or self._candidate_safe_cpp14_active
+            self._tuple_strategy_active or self._native_only_cpp14_active
         )
 
     def _cpp_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -2938,6 +2938,7 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            record_shape_allowed=None,
         )
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
@@ -2955,7 +2956,7 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def _tuple_record_strategy(self) -> RecordStrategy:
-        """Compose C++14's candidate-facing tuple and record forms.
+        """Compose C++14's native tuple and record forms.
 
         A tuple-eligible field belongs to a generated record just as
         naturally as a scalar field.  Keeping the two native forms in
@@ -2980,8 +2981,8 @@ class Cpp(metaclass=LanguageCls):
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
             record_shape_allowed=(
-                _cpp_candidate_safe_record_shape
-                if self._candidate_safe_cpp14_active
+                _cpp_native_only_record_shape
+                if self._native_only_cpp14_active
                 else None
             ),
         )
@@ -3157,6 +3158,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
+                native_only=False,
             )
         if self._uses_cpp14_tuple_record_strategy:
             return _build_cpp_record_preamble(
@@ -3167,7 +3169,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
-                candidate_safe=self._candidate_safe_cpp14_active,
+                native_only=self._native_only_cpp14_active,
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)

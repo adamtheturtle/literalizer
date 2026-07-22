@@ -1908,6 +1908,7 @@ class Nim(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
+            record_shape_allowed=None,
         )
         variant_behavior = _build_object_variant_behavior(
             self.heterogeneous_value_variant_name,

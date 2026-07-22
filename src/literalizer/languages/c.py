@@ -1474,6 +1474,7 @@ class C(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=self._map_open_str,
+            record_shape_allowed=None,
         )
 
     @cached_property

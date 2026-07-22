@@ -18,9 +18,9 @@ def test_only_end_user_facing_callables_have_defaults() -> None:
     for source_path in source_root.rglob(pattern="*.py"):
         tree = ast.parse(source=source_path.read_text())
         parents: dict[ast.AST, ast.AST] = {}
-        for candidate_parent in ast.walk(node=tree):
-            for child in ast.iter_child_nodes(node=candidate_parent):
-                parents[child] = candidate_parent
+        for possible_parent in ast.walk(node=tree):
+            for child in ast.iter_child_nodes(node=possible_parent):
+                parents[child] = possible_parent
         for node in ast.walk(node=tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue

@@ -1208,6 +1208,7 @@ class Crystal(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CRYSTAL_RECORD_MAP_TYPE}{{",
+            record_shape_allowed=None,
         )
 
     @cached_property

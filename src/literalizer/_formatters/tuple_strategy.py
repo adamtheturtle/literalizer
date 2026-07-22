@@ -201,6 +201,7 @@ def build_tuple_strategy(
         split_conflicting_field_types=True,
         widen_unrecordizable_nested_sibling_maps=False,
         derecordized_map_open=None,
+        record_shape_allowed=None,
     )
 
     def _compute_tuple_list_ids(data: Value, /) -> frozenset[int]:

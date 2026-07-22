@@ -214,7 +214,7 @@ def build_json_type_variants() -> Iterable[Variant]:
     exposes a ``json_type`` field.
 
     For each such language, emit a variant for every ``json_type``
-    setting other than its default.  The candidate settings are ``None``
+        setting other than its default.  The available settings are ``None``
     (the narrow, no-JSON-type rendering) together with each member of the
     language's ``json_types`` enum.  Every current language offers a
     single non-default setting: the JSON-capable languages default to
@@ -227,8 +227,8 @@ def build_json_type_variants() -> Iterable[Variant]:
         if not isinstance(spec, _HasJsonType):
             continue
         default_json_type = spec.json_type
-        candidates: list[enum.Enum | None] = [None, *spec.json_types]
-        for json_type in candidates:
+        json_type_options: list[enum.Enum | None] = [None, *spec.json_types]
+        for json_type in json_type_options:
             if json_type is default_json_type:
                 continue
             suffix = (
@@ -1468,9 +1468,9 @@ def build_object_variant_container_variants() -> list[Variant]:
     for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__):
         strategy = next(
             (
-                candidate
-                for candidate in lang_cls.HeterogeneousStrategies
-                if candidate.name == "OBJECT_VARIANT"
+                strategy_option
+                for strategy_option in lang_cls.HeterogeneousStrategies
+                if strategy_option.name == "OBJECT_VARIANT"
             ),
             None,
         )

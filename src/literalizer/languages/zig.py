@@ -1399,6 +1399,7 @@ class Zig(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=".{ .map = &.{",
+            record_shape_allowed=None,
         )
 
         def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:

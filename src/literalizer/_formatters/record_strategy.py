@@ -694,7 +694,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     derecordized_map_open: str | None,
     record_shape_allowed: (
         Callable[[dict[Scalar, Value], RecordShape], bool] | None
-    ) = None,
+    ),
 ) -> RecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 

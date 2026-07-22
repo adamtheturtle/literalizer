@@ -1,4 +1,4 @@
-"""C++14 candidate-safe rendering errors."""
+"""C++14 native-only rendering errors."""
 
 import pytest
 
@@ -11,7 +11,7 @@ def test_cpp14_rejects_shape_requiring_helper_carrier() -> None:
     """Unsupported mixed shapes fail instead of emitting a tool type."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
-        match=r"candidate-safe rendering cannot represent.*LiteralizerVariant",
+        match=r"native-only rendering cannot represent.*LiteralizerVariant",
     ):
         literalize(
             source='{"003": [1, {"x": true}]}',
