@@ -12,12 +12,12 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "missing", .val = .nil }, .{ .key = "present", .val = .{ .int = 1 } }}},
-        .{ .map = &.{.{ .key = "missing", .val = .{ .int = 2 } }, .{ .key = "present", .val = .{ .int = 3 } }}},
+        .{ .map = &.{.{ .key = "replacement", .val = .nil }, .{ .key = "present", .val = .{ .int = 1 } }}},
+        .{ .map = &.{.{ .key = "replacement", .val = .{ .int = 2 } }, .{ .key = "present", .val = .{ .int = 3 } }}},
     }};
     my_data = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "missing", .val = .nil }, .{ .key = "present", .val = .{ .int = 1 } }}},
-        .{ .map = &.{.{ .key = "missing", .val = .{ .int = 2 } }, .{ .key = "present", .val = .{ .int = 3 } }}},
+        .{ .map = &.{.{ .key = "replacement", .val = .nil }, .{ .key = "present", .val = .{ .int = 1 } }}},
+        .{ .map = &.{.{ .key = "replacement", .val = .{ .int = 2 } }, .{ .key = "present", .val = .{ .int = 3 } }}},
     }};
     my_data = .nil;
 }

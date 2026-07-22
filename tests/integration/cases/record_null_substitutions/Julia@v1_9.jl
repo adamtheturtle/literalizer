@@ -1,4 +1,4 @@
 my_data = [
-    Dict("missing" => -1, "present" => 1),
-    Dict("missing" => 2, "present" => 3),
+    Dict("replacement" => -1, "present" => 1),
+    Dict("replacement" => 2, "present" => 3),
 ]

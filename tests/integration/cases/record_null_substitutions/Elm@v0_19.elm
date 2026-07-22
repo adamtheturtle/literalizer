@@ -10,6 +10,6 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EDict [("missing", EInt (-1)), ("present", EInt 1)],
-    EDict [("missing", EInt 2), ("present", EInt 3)]
+    EDict [("replacement", EInt (-1)), ("present", EInt 1)],
+    EDict [("replacement", EInt 2), ("present", EInt 3)]
     ]

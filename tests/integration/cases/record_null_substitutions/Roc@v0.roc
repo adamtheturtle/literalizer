@@ -9,6 +9,6 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RDict [("missing", RInt -1i128), ("present", RInt 1i128)],
-    RDict [("missing", RInt 2i128), ("present", RInt 3i128)],
+    RDict [("replacement", RInt -1i128), ("present", RInt 1i128)],
+    RDict [("replacement", RInt 2i128), ("present", RInt 3i128)],
     ]

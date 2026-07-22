@@ -109,7 +109,7 @@ _VARIANT_SKIP_REASONS: _SkipReasons = (
 )
 
 _RECORD_NULL_SUBSTITUTIONS_CASE: Final = "record_null_substitutions"
-_RECORD_NULL_SUBSTITUTIONS: Final = {"missing": -1}
+_RECORD_NULL_SUBSTITUTIONS: Final = {"replacement": -1}
 
 
 def _skip_unrepresentable(

@@ -7,12 +7,12 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GList([
-    GDict([#("missing", GNull), #("present", GInt(1))]),
-    GDict([#("missing", GInt(2)), #("present", GInt(3))]),
+    GDict([#("replacement", GNull), #("present", GInt(1))]),
+    GDict([#("replacement", GInt(2)), #("present", GInt(3))]),
   ])
   let my_data = GList([
-    GDict([#("missing", GNull), #("present", GInt(1))]),
-    GDict([#("missing", GInt(2)), #("present", GInt(3))]),
+    GDict([#("replacement", GNull), #("present", GInt(1))]),
+    GDict([#("replacement", GInt(2)), #("present", GInt(3))]),
   ])
   let _ = my_data
 }

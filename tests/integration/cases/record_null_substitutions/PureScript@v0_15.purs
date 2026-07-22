@@ -12,6 +12,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "missing" (PInt (-1))), (Tuple "present" (PInt 1))],
-    PDict [(Tuple "missing" (PInt 2)), (Tuple "present" (PInt 3))]
+    PDict [(Tuple "replacement" (PInt (-1))), (Tuple "present" (PInt 1))],
+    PDict [(Tuple "replacement" (PInt 2)), (Tuple "present" (PInt 3))]
     ]

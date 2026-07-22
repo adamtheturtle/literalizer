@@ -2,12 +2,12 @@ package main
 
 func main() {
 my_data := []map[string]any{
-	{"missing": nil, "present": 1},
-	{"missing": 2, "present": 3},
+	{"replacement": nil, "present": 1},
+	{"replacement": 2, "present": 3},
 }
 my_data = []map[string]any{
-	{"missing": nil, "present": 1},
-	{"missing": 2, "present": 3},
+	{"replacement": nil, "present": 1},
+	{"replacement": 2, "present": 3},
 }
 _ = my_data
 }

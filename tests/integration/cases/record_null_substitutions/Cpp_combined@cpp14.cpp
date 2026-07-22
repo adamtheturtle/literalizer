@@ -7,13 +7,13 @@ template <typename... Types> struct LiteralizerVariant { template <typename T> L
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>>{
-    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"missing", nullptr}, {"present", 1}},
-    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"missing", 2}, {"present", 3}},
+    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"replacement", nullptr}, {"present", 1}},
+    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"replacement", 2}, {"present", 3}},
 };
 (void)my_data;
 my_data = std::vector<std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>>{
-    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"missing", nullptr}, {"present", 1}},
-    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"missing", 2}, {"present", 3}},
+    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"replacement", nullptr}, {"present", 1}},
+    std::map<std::string, LiteralizerVariant<std::nullptr_t, int>>{{"replacement", 2}, {"present", 3}},
 };
     (void)my_data;
     return 0;
