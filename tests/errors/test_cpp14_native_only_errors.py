@@ -24,7 +24,9 @@ def test_cpp14_rejects_call_argument_requiring_helper_carrier() -> None:
     """Calls reject arguments that would require a helper carrier."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
-        match=r"native-only call rendering cannot represent.*LiteralizerVariant",
+        match=(
+            r"native-only call rendering cannot represent.*LiteralizerVariant"
+        ),
     ):
         literalize_call(
             source='{"first": 1, "second": "x"}',
