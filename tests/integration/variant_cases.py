@@ -16,7 +16,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES, Cpp
+from literalizer.languages import ALL_LANGUAGES
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -1350,26 +1350,33 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
     ``heterogeneous_value_variant_name`` constructor parameter lets
     users customize that name.
     """
-    wrapping_strategy_names = {"ERROR", "OBJECT_VARIANT", "VARIANT"}
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         custom_name = lang_cls.non_default_kwargs.get(
             "heterogeneous_value_variant_name"
         )
+        metadata = lang_cls.variant_metadata
+        strategy_name = metadata.heterogeneous_value_variant_name_strategy
+        version_name = metadata.heterogeneous_value_variant_name_version
         if custom_name is None:
+            assert strategy_name is None  # noqa: S101
+            assert version_name is None  # noqa: S101
             continue
+        assert strategy_name is not None  # noqa: S101
         default_spec = make_spec(lang_cls=lang_cls)
-        wrapping_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name in wrapping_strategy_names
+        wrapping_strategy = _enum_member_by_name(
+            enum_cls=default_spec.heterogeneous_strategies,
+            name=strategy_name,
         )
         kwargs: dict[str, object] = {
             "heterogeneous_strategy": wrapping_strategy,
             "heterogeneous_value_variant_name": custom_name,
         }
-        if lang_cls.__name__ == "Cpp":
-            kwargs["language_version"] = Cpp.version_formats.CPP14
+        if version_name is not None:
+            kwargs["language_version"] = _enum_member_by_name(
+                enum_cls=default_spec.version_formats,
+                name=version_name,
+            )
         spec = make_spec(lang_cls=lang_cls, **kwargs)
         variants.append(
             Variant(

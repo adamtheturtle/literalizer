@@ -1074,6 +1074,9 @@ class Nim(metaclass=LanguageCls):
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=True,
+        supports_ref_elements_in_tuple_strategy=False,
+        heterogeneous_value_variant_name_strategy="OBJECT_VARIANT",
+        heterogeneous_value_variant_name_version=None,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -1908,7 +1911,6 @@ class Nim(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
-            record_shape_allowed=None,
         )
         variant_behavior = _build_object_variant_behavior(
             self.heterogeneous_value_variant_name,

@@ -2,7 +2,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <variant>
 int main() {
 auto my_data = std::map<std::string, std::vector<std::string>>{
     {"vals", std::vector<std::string>{"2024-01-15", "09:30:00"}},

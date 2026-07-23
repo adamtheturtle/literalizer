@@ -64,7 +64,6 @@ from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
     ListType,
-    RecordShape,
     WideInt,
     collect_record_shapes,
     infer_element_type,
@@ -676,31 +675,29 @@ def _items_need_variant(  # noqa: PLR0911
         return False
     element_type = infer_element_type(items=items)
     if element_type is None:
-        # Nested tuple containers are outside the generic inference
-        # model.  Resolve their actual C++ types instead: identical
-        # types need no carrier, while different tuple signatures still
-        # correctly request one.
-        if any(
-            _contains_cpp_tuple(data=item, tuple_list_ids=tuple_list_ids)
-            for item in items
-        ):
-            types = _collect_unique_cpp_types(
-                items=items,
+        # Python types can differ while their rendered C++ types agree
+        # (for example ``date`` and ``time`` both become
+        # ``std::string``).  Nested tuple containers are likewise
+        # outside the generic inference model.  Decide from the actual
+        # C++ types, then keep walking an agreed container type in case
+        # one of its descendants still needs a carrier.
+        types = _collect_unique_cpp_types(
+            items=items,
+            element_to_type=element_to_type,
+            type_ctx=type_ctx,
+        )
+        if len(types) != 1:
+            return True
+        return any(
+            _needs_variant_type(
+                data=item,
                 element_to_type=element_to_type,
                 type_ctx=type_ctx,
+                tuple_list_ids=tuple_list_ids,
+                record_dict_ids=record_dict_ids,
             )
-            if len(types) == 1:
-                return any(
-                    _needs_variant_type(
-                        data=item,
-                        element_to_type=element_to_type,
-                        type_ctx=type_ctx,
-                        tuple_list_ids=tuple_list_ids,
-                        record_dict_ids=record_dict_ids,
-                    )
-                    for item in items
-                )
-        return True
+            for item in items
+        )
     match element_type:
         case DictType(value_type=vt):
             if vt is None or element_to_type(vt) is None:
@@ -719,34 +716,6 @@ def _items_need_variant(  # noqa: PLR0911
         )
         for v in items
     )
-
-
-@beartype
-def _contains_cpp_tuple(
-    *,
-    data: Value,
-    tuple_list_ids: frozenset[int],
-) -> bool:
-    """Return whether *data* contains a tuple-strategy list."""
-    match data:
-        case list():
-            return id(data) in tuple_list_ids or any(
-                _contains_cpp_tuple(
-                    data=item,
-                    tuple_list_ids=tuple_list_ids,
-                )
-                for item in data
-            )
-        case dict():
-            return any(
-                _contains_cpp_tuple(
-                    data=item,
-                    tuple_list_ids=tuple_list_ids,
-                )
-                for item in data.values()
-            )
-        case _:
-            return False
 
 
 @beartype
@@ -865,30 +834,44 @@ def _build_variant_preamble(
                         "#include <utility>",
                         f"struct {name} {{",
                         " private:",
-                        "  struct Holder { virtual ~Holder() {} };",
+                        "  struct Holder {",
+                        "    Holder() = default;",
+                        "    Holder(const Holder&) = delete;",
+                        "    Holder(Holder&&) = delete;",
+                        "    Holder& operator=(const Holder&) = delete;",
+                        "    Holder& operator=(Holder&&) = delete;",
+                        "    virtual ~Holder() = default;",
+                        "  };",
                         "  template <typename T> struct "
                         "TypedHolder : Holder {",
                         "    explicit TypedHolder(T value) "
-                        ": value(std::move(value)) {}",
-                        "    T value;",
-                        "  };",
+                        ": value_(std::move(value)) {}",
+                        "    T& get() { return value_; }",
+                        "    const T& get() const { return value_; }"
+                        " // NOLINT(modernize-use-nodiscard)",
+                        "   private:",
+                        "    T value_;",
+                        "  }; // TypedHolder",
                         "  std::shared_ptr<Holder> value_;",
                         " public:",
                         f"  {name}() : value_(new "
                         "TypedHolder<std::nullptr_t>(nullptr)) {}",
+                        "  // NOLINTNEXTLINE(google-explicit-constructor,"
+                        "hicpp-explicit-conversions)",
                         f"  template <typename T> {name}(T value)"
                         " : value_(new TypedHolder<T>(std::move(value))) {}",
-                        "  template <typename T> bool is() const {",
+                        "  template <typename T> bool is() const"
+                        " { // NOLINT(modernize-use-nodiscard)",
                         "    return dynamic_cast<TypedHolder<T>*>"
                         "(value_.get()) != nullptr;",
                         "  }",
                         "  template <typename T> T& get() {",
                         "    return static_cast<TypedHolder<T>*>"
-                        "(value_.get())->value;",
+                        "(value_.get())->get();",
                         "  } // get",
                         "  template <typename T> const T& get() const {",
                         "    return static_cast<const TypedHolder<T>*>"
-                        "(value_.get())->value;",
+                        "(value_.get())->get();",
                         "  } // get const",
                         "};",
                     )
@@ -1091,26 +1074,6 @@ def _cpp_record_field_identifier(key: str, /) -> str:
     ``Record0{.id = 1, ...}``.
     """
     return key
-
-
-@beartype
-def _cpp_native_only_record_shape(
-    value: dict[Scalar, Value],
-    shape: RecordShape,
-    /,
-) -> bool:
-    """Return whether *value* needs a naturally named C++ record.
-
-    Native-only C++14 rendering must leave mapping-shaped data with
-    keys such as ``"003"`` as a ``std::map``: treating those keys as
-    member names would emit invalid source.  It also prefers a standard
-    map whenever all values share one representable element type; records
-    are reserved for the heterogeneous objects that would otherwise need
-    a helper carrier.
-    """
-    return infer_element_type(items=list(value.values())) is None and all(
-        _CPP_FIELD_IDENTIFIER.match(string=key) for key in shape.keys
-    )
 
 
 @beartype
@@ -1976,6 +1939,9 @@ class Cpp(metaclass=LanguageCls):
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
+        supports_ref_elements_in_tuple_strategy=True,
+        heterogeneous_value_variant_name_strategy="ERROR",
+        heterogeneous_value_variant_name_version="CPP14",
         pre_indent_comment_scalar_variant=True,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -2400,6 +2366,13 @@ class Cpp(metaclass=LanguageCls):
             msg = (
                 f"heterogeneous_value_variant_name {value_name!r} is a "
                 "reserved C++ identifier."
+            )
+            raise InvalidRecordNameError(msg)
+        if auto_name_pattern.match(string=value_name):
+            msg = (
+                f"heterogeneous_value_variant_name {value_name!r} collides "
+                f"with the auto-generated "
+                f"{self.record_struct_name_prefix!r}-prefixed struct names."
             )
             raise InvalidRecordNameError(msg)
         seen_names: set[str] = set()
@@ -2901,11 +2874,6 @@ class Cpp(metaclass=LanguageCls):
         return self.heterogeneous_strategy.name == "TUPLE"
 
     @cached_property
-    def _native_only_cpp14_active(self) -> bool:
-        """Retained for compatibility with older C++14 policy hooks."""
-        return False
-
-    @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return self.heterogeneous_strategy.name == "RECORD"
@@ -2948,8 +2916,7 @@ class Cpp(metaclass=LanguageCls):
             return f"std::vector<{request.element_record_name}>"
         value = request.value
         if (
-            not self._native_only_cpp14_active
-            and isinstance(value, dict)
+            isinstance(value, dict)
             and not isinstance(value, OrderedMap)
             and record_shape_for_dict(value=value) is not None
         ):
@@ -2993,7 +2960,6 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
-            record_shape_allowed=None,
         )
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
@@ -3035,11 +3001,6 @@ class Cpp(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
-            record_shape_allowed=(
-                _cpp_native_only_record_shape
-                if self._native_only_cpp14_active
-                else None
-            ),
         )
 
         behavior = dataclasses.replace(

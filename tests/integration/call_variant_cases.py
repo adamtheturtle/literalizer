@@ -111,6 +111,22 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
 
 @functools.cache
 @beartype
+def build_tuple_strategy_call_variants() -> list[Variant]:
+    """Return tuple variants that support reference-placeholder
+    elements.
+    """
+    return [
+        variant
+        for variant in build_heterogeneous_strategy_call_variants()
+        if variant.spec.heterogeneous_strategy.name == "TUPLE"
+        and (
+            variant.lang_cls.variant_metadata.supports_ref_elements_in_tuple_strategy
+        )
+    ]
+
+
+@functools.cache
+@beartype
 def build_tagged_enum_call_variants() -> list[Variant]:
     """Return call variants for languages with ``TAGGED_ENUM`` support."""
     variants: list[Variant] = []
@@ -186,6 +202,10 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     (
         "call_ref_args_heterogeneous_list",
         build_heterogeneous_strategy_call_variants,
+    ),
+    (
+        "call_ref_nested_in_list",
+        build_tuple_strategy_call_variants,
     ),
     (
         "call_ref_args_reused",

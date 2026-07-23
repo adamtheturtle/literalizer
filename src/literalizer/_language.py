@@ -921,6 +921,9 @@ class VariantMetadata:
     nested_map_widening: NestedMapWideningVariant
     modifier_sequence_format_overrides: dict[str, str]
     string_literals_escape_null_byte: bool
+    supports_ref_elements_in_tuple_strategy: bool
+    heterogeneous_value_variant_name_strategy: str | None
+    heterogeneous_value_variant_name_version: str | None
 
 
 @beartype

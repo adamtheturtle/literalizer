@@ -1,7 +1,6 @@
 #include <initializer_list>
 #include <vector>
 #include <cstddef>
-#include <variant>
 struct throttlerType_ { void check(auto...) const {} };
 const throttlerType_ throttler;
 int main() {

@@ -2,7 +2,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <variant>
 struct Record0 { std::vector<std::string> vals; };
 int main() {
 auto my_data = Record0{
