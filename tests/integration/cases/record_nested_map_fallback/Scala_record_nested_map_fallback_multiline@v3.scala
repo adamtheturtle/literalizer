@@ -7,6 +7,7 @@ val my_data = List(
             "type" -> "create",
             "pr_id" -> "pr_1",
             "draft" -> true,
+            "missing" -> null,
         ),
         expected = Map[String, Any](
             "pr_id" -> "pr_1",

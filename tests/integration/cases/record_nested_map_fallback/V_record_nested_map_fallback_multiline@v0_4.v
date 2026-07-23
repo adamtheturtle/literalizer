@@ -13,6 +13,7 @@ fn main() {
 				'type': IVal('create'),
 				'pr_id': IVal('pr_1'),
 				'draft': IVal(true),
+				'missing': IVal(unsafe { nil }),
 			},
 			expected: {
 				'pr_id': IVal('pr_1'),

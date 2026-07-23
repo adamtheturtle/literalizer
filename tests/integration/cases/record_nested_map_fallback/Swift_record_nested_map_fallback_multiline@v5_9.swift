@@ -6,6 +6,7 @@ let my_data: Any = [
             "type": "create",
             "pr_id": "pr_1",
             "draft": true,
+            "missing": nil,
         ],
         expected: [
             "pr_id": "pr_1",

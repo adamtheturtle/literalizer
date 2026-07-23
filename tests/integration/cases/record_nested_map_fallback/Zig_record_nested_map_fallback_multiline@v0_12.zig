@@ -19,6 +19,7 @@ pub fn main() void {
                 .{ .key = "type", .val = .{ .str = "create" } },
                 .{ .key = "pr_id", .val = .{ .str = "pr_1" } },
                 .{ .key = "draft", .val = .{ .bool = true } },
+                .{ .key = "missing", .val = .nil },
             }},
             .expected = .{ .map = &.{
                 .{ .key = "pr_id", .val = .{ .str = "pr_1" } },

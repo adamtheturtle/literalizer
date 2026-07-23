@@ -10,6 +10,7 @@ my_data := [dynamic]any{
 			"type" = "create",
 			"pr_id" = "pr_1",
 			"draft" = true,
+			"missing" = nil,
 		},
 		expected = map[string]any{
 			"pr_id" = "pr_1",
