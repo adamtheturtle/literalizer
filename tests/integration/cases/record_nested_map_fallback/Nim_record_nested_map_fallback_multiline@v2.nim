@@ -2,11 +2,12 @@
 import tables
 type
   ValueKind = enum
-    vkStr, vkBool
+    vkStr, vkBool, vkNull
   Value = object
     case kind: ValueKind
     of vkStr: strVal: string
     of vkBool: boolVal: bool
+    of vkNull: discard
 type Record0 = object
     name: string
     input: Table[string, Value]
@@ -17,7 +18,8 @@ var my_data = @[
         input: {
             "type": Value(kind: vkStr, strVal: "create"),
             "pr_id": Value(kind: vkStr, strVal: "pr_1"),
-            "draft": Value(kind: vkBool, boolVal: true)
+            "draft": Value(kind: vkBool, boolVal: true),
+            "missing": Value(kind: vkNull)
         }.toTable,
         expected: {
             "pr_id": Value(kind: vkStr, strVal: "pr_1"),

@@ -8,7 +8,8 @@ var my_data = new[] {
         new Dictionary<string, object> {
             ["type"] = "create",
             ["pr_id"] = "pr_1",
-            ["draft"] = true
+            ["draft"] = true,
+            ["missing"] = (object?)null
         },
         new Dictionary<string, object> {
             ["pr_id"] = "pr_1",

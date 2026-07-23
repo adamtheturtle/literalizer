@@ -66,6 +66,25 @@ def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
         )
 
 
+def test_cobol_literalize_call_rejects_compound_arg() -> None:
+    """COBOL compound values cannot appear inline after ``USING``."""
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError,
+        match=(
+            r"COBOL cannot accept this value as a call argument: compound "
+            r"values are DATA DIVISION entries"
+        ),
+    ):
+        literalize_call(
+            source='[1, "x"]',
+            input_format=InputFormat.JSON,
+            language=Cobol(),
+            target_function="PROCESS",
+            parameter_names=["value"],
+            per_element=False,
+        )
+
+
 def test_literalize_call_per_element_non_list_raises() -> None:
     """Literalize_call raises PerElementNotListError for non-list."""
     with pytest.raises(

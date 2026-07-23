@@ -1,6 +1,6 @@
 ---
 - name: test_1
-  input: {type: create, pr_id: pr_1, draft: true}
+  input: {type: create, pr_id: pr_1, draft: true, missing: null}
   expected: {pr_id: pr_1, status: draft}
 - name: test_2
   input: {type: publish, pr_id: pr_1}

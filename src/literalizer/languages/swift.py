@@ -1173,9 +1173,11 @@ class Swift(metaclass=LanguageCls):
         the typed variable declaration uses.  A record-eligible dict
         with no ``record_name`` was widened out of record inference
         because its nested sibling maps cannot share one shape; type it
-        as ``[String: Any]`` so the uniform enclosing record survives
-        (#2916).  Other dict and set fields fall through to the shared
-        resolver.
+        as ``[String: Any?]`` so the uniform enclosing record survives
+        (#2916) even when one sibling contains a null.  Using plain
+        ``Any`` would make Swift warn while coercing the inferred
+        optional dictionary values.  Other dict and set fields fall
+        through to the shared resolver.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1186,7 +1188,7 @@ class Swift(metaclass=LanguageCls):
             and not isinstance(request.value, OrderedMap)
             and record_shape_for_dict(value=request.value) is not None
         ):
-            return "[String: Any]"
+            return "[String: Any?]"
         return _swift_type_hint(
             data=request.value,
             date_hint=self._swift_date_hint,

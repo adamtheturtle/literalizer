@@ -198,6 +198,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         ),
         _ci(case_dir_name="float_special_values", suffix="_float_specials"),
     ),
+    "json_type_language_version_cross": (
+        _ci(case_dir_name="json_native_only_nested_dict", suffix=""),
+    ),
     "json_type_bytes_cross": (_ci(case_dir_name="binary", suffix=""),),
     "json_type_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix=""),

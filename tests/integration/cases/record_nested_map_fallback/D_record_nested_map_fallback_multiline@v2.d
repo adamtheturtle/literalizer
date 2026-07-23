@@ -8,6 +8,7 @@ auto my_data = [
             "type": JSONValue("create"),
             "pr_id": JSONValue("pr_1"),
             "draft": JSONValue(true),
+            "missing": JSONValue(null),
         ]),
         JSONValue([
             "pr_id": JSONValue("pr_1"),

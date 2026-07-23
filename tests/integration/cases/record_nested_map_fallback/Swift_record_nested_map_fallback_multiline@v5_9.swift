@@ -1,4 +1,4 @@
-struct Record0 { let name: String; let input: [String: Any]; let expected: [String: Any] }
+struct Record0 { let name: String; let input: [String: Any?]; let expected: [String: Any?] }
 let my_data: Any = [
     Record0(
         name: "test_1",
@@ -6,6 +6,7 @@ let my_data: Any = [
             "type": "create",
             "pr_id": "pr_1",
             "draft": true,
+            "missing": nil,
         ],
         expected: [
             "pr_id": "pr_1",

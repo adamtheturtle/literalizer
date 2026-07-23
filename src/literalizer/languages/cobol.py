@@ -357,8 +357,21 @@ def _cobol_call_target(parts: Sequence[str], /) -> str:
 
 
 @beartype
-def _cobol_format_call_arg(_value: Value, formatted: str, /) -> str:
-    """Prepend ``BY CONTENT`` to a COBOL CALL argument."""
+def _cobol_format_call_arg(value: Value, formatted: str, /) -> str:
+    """Prepend ``BY CONTENT`` to a scalar COBOL CALL argument.
+
+    COBOL compound literals are DATA DIVISION entries, rather than
+    expressions that can appear after ``USING BY CONTENT``.  Callers must
+    bind those values before passing them to a program.
+    """
+    if isinstance(value, list | dict | set):
+        raise CallArgNotSupportedError(
+            language_name="COBOL",
+            reason=(
+                "compound values are DATA DIVISION entries, not inline "
+                "CALL arguments"
+            ),
+        )
     return f"BY CONTENT {formatted}"
 
 

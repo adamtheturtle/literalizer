@@ -6,6 +6,7 @@ val my_data = listOf<Any?>(
             "type" to "create",
             "pr_id" to "pr_1",
             "draft" to true,
+            "missing" to null,
         ),
         expected = mapOf<String, Any?>(
             "pr_id" to "pr_1",

@@ -23,6 +23,7 @@ struct Record0 my_data[] = {
             {"type", ((CVal){.s = "create"})},
             {"pr_id", ((CVal){.s = "pr_1"})},
             {"draft", ((CVal){.b = true})},
+            {"missing", ((CVal){.s = NULL})},
         }}),
         .expected = ((CVal){.m = (CKV[]){
             {"pr_id", ((CVal){.s = "pr_1"})},
