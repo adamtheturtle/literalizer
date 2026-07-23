@@ -976,8 +976,10 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
     through #2924). The remaining ``RECORD`` languages gain their own
     widening in later sub-issues of #2909, so this stays out of
     all-languages base
-    discovery. Both layouts are covered because their widened-map paths
-    render compact and multiline literals separately.
+    discovery. Every effective language version is covered because the
+    widened carrier and aggregate syntax can vary by target standard.
+    Both layouts are covered because their widened-map paths render
+    compact and multiline literals separately.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
@@ -992,32 +994,37 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
         )
         if record_strategy is None:
             continue
-        spec = make_spec(
+        default_spec = make_spec(
             lang_cls=lang_cls,
             heterogeneous_strategy=record_strategy,
         )
-        behavior = spec.heterogeneous_behavior
+        behavior = default_spec.heterogeneous_behavior
         if not behavior.widens_unrecordizable_nested_sibling_maps:
             continue
-        variants.extend(
-            [
-                Variant(
-                    name=(f"{lang_cls.__name__}_record_nested_map_fallback"),
-                    spec=spec,
-                    lang_cls=lang_cls,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
-                ),
-                Variant(
-                    name=(
-                        f"{lang_cls.__name__}_record_nested_map_fallback_"
-                        "multiline"
-                    ),
-                    spec=spec,
-                    lang_cls=lang_cls,
-                    collection_layout=(literalizer.CollectionLayout.MULTILINE),
-                ),
-            ]
-        )
+        specs_by_version: dict[enum.Enum, literalizer.Language] = {}
+        for version in lang_cls.VersionFormats:
+            version_spec = make_spec(
+                lang_cls=lang_cls,
+                heterogeneous_strategy=record_strategy,
+                language_version=version,
+            )
+            specs_by_version[version_spec.language_version] = version_spec
+        for spec in specs_by_version.values():
+            for suffix, layout in (
+                ("", literalizer.CollectionLayout.COMPACT),
+                ("_multiline", literalizer.CollectionLayout.MULTILINE),
+            ):
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_cls.__name__}_record_nested_map_fallback"
+                            f"{suffix}"
+                        ),
+                        spec=spec,
+                        lang_cls=lang_cls,
+                        collection_layout=layout,
+                    )
+                )
     return variants
 
 
