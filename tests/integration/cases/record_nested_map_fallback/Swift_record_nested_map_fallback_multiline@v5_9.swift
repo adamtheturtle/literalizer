@@ -1,4 +1,4 @@
-struct Record0 { let name: String; let input: [String: Any]; let expected: [String: Any] }
+struct Record0 { let name: String; let input: [String: Any?]; let expected: [String: Any?] }
 let my_data: Any = [
     Record0(
         name: "test_1",
