@@ -16,7 +16,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Cpp
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -1350,7 +1350,7 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
     ``heterogeneous_value_variant_name`` constructor parameter lets
     users customize that name.
     """
-    wrapping_strategy_names = {"OBJECT_VARIANT", "VARIANT"}
+    wrapping_strategy_names = {"ERROR", "OBJECT_VARIANT", "VARIANT"}
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         custom_name = lang_cls.non_default_kwargs.get(
@@ -1364,11 +1364,13 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
             for strategy in default_spec.heterogeneous_strategies
             if strategy.name in wrapping_strategy_names
         )
-        spec = make_spec(
-            lang_cls=lang_cls,
-            heterogeneous_strategy=wrapping_strategy,
-            heterogeneous_value_variant_name=custom_name,
-        )
+        kwargs: dict[str, object] = {
+            "heterogeneous_strategy": wrapping_strategy,
+            "heterogeneous_value_variant_name": custom_name,
+        }
+        if lang_cls.__name__ == "Cpp":
+            kwargs["language_version"] = Cpp.version_formats.CPP14
+        spec = make_spec(lang_cls=lang_cls, **kwargs)
         variants.append(
             Variant(
                 name=(

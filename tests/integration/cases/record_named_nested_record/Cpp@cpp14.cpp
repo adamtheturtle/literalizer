@@ -2,20 +2,34 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Record1 { int id{}; std::string description; bool is_done{}; std::vector<int> blocks; };
-struct Record0 { std::string project; Record1 lead_task; };
+#include <cstddef>
+#include <memory>
+#include <utility>
+struct Value {
+ private:
+  struct Holder { virtual ~Holder() {} };
+  template <typename T> struct TypedHolder : Holder {
+    explicit TypedHolder(T value) : value(std::move(value)) {}
+    T value;
+  };
+  std::shared_ptr<Holder> value_;
+ public:
+  Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> bool is() const {
+    return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
+  }
+  template <typename T> T& get() {
+    return static_cast<TypedHolder<T>*>(value_.get())->value;
+  } // get
+  template <typename T> const T& get() const {
+    return static_cast<const TypedHolder<T>*>(value_.get())->value;
+  } // get const
+};
 int main() {
-auto my_data = Record0{
-    "alpha",
-    Record1{
-        100,
-        "first task",
-        false,
-        std::vector<int>{
-            102,
-            103,
-        },
-    },
+auto my_data = std::map<std::string, Value>{
+    {"project", "alpha"},
+    {"lead_task", std::map<std::string, Value>{{"id", 100}, {"description", "first task"}, {"is_done", false}, {"blocks", std::vector<int>{102, 103}}}},
 };
     (void)my_data;
     return 0;

@@ -180,7 +180,11 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
 Render a fixed-length heterogeneous **scalar** array (all elements scalar, spanning at least two scalar types) as the language's native fixed-length tuple instead of rejecting it or widening it to a homogeneous list.
 Where the language also has ``RECORD``, ``TUPLE`` composes with it, so a record field whose value is such an array becomes a tuple-typed field.
 Some languages cap the tuple length (:class:`~literalizer.Kotlin` has only ``Pair`` and ``Triple`` and raises :class:`~literalizer.exceptions.TupleArityNotRepresentableError` otherwise); :class:`~literalizer.Rust` and :class:`~literalizer.Scala` impose no length limit.
-For C++14, ``TUPLE`` also renders record-shaped objects as generated structs, so fixed-shape heterogeneous data remains native-only.
+For C++14, heterogeneous standard-library collections use a generated
+``Value`` carrier by default (configurable with
+``heterogeneous_value_variant_name``). Its ``is<T>()`` and ``get<T>()``
+methods inspect and retrieve the active value without requiring C++17's
+``std::variant``. ``TUPLE`` remains available for fixed-length scalar lists.
 
 Which should I use? Heterogeneous strategies vs. JSON value types
 -----------------------------------------------------------------
