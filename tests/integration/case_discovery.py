@@ -197,6 +197,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # do not participate, so only the ``string_embedded_nul`` axis
         # consumes it and it stays out of the all-languages base discovery.
         "string_embedded_nul",
+        # ``json_native_only_nested_dict`` is exercised only through the
+        # ``json_type`` axis. C++14's native-only renderer rejects the
+        # nested heterogeneous map without JSON mode, while JSON-capable
+        # variants render it through their respective JSON back ends.
+        "json_native_only_nested_dict",
     }
 )
 

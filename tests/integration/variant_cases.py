@@ -348,6 +348,17 @@ def build_json_type_bytes_cross_variants() -> list[Variant]:
     )
 
 
+@beartype
+def build_json_type_language_version_cross_variants() -> list[Variant]:
+    """Build every non-default JSON type + language-version cross."""
+    return build_json_type_cross_variants(
+        category="version",
+        kwarg="language_version",
+        get_default=lambda spec: spec.language_version,
+        get_formats=lambda spec: spec.version_formats,
+    )
+
+
 @runtime_checkable
 class _HasEmptyDictKey(Protocol):
     """Structural type for languages that expose an ``empty_dict_key``
@@ -1844,6 +1855,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "json_type": build_json_type_variants,
     "json_type_bytes_cross": build_json_type_bytes_cross_variants,
+    "json_type_language_version_cross": (
+        build_json_type_language_version_cross_variants
+    ),
     "json_type_datetime_cross": build_json_type_datetime_cross_variants,
     "json_type_declaration_cross": (
         build_json_type_declaration_cross_variants
