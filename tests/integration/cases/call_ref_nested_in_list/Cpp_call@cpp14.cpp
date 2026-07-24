@@ -24,8 +24,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -40,7 +39,7 @@ template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto my_var = 42;
 auto my_other = 7;
-process(std::vector<Value>{my_var, 42, "static"});
-process(std::vector<Value>{my_other, 7, "label"});
+process(std::vector<Value>{Value{my_var}, Value{42}, Value{"static"}});
+process(std::vector<Value>{Value{my_other}, Value{7}, Value{"label"}});
     return 0;
 }

@@ -1,6 +1,7 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
+import datetime
 from typing import ClassVar
 
 from literalizer import (
@@ -10,6 +11,7 @@ from literalizer import (
     literalize_call,
 )
 from literalizer.languages import (
+    Cpp,
     Dart,
     Haskell,
     Python,
@@ -31,6 +33,25 @@ from literalizer.languages import (
 # the arm.  So, like the Dart ``skip_null_dict_values`` cases below,
 # this Python-only arm stays a focused pytest test driven through the
 # public API.
+
+
+def test_cpp14_time_call_slot_uses_explicit_value_carrier() -> None:
+    """C++14 wraps every temporal scalar in a heterogeneous call slot."""
+    time = datetime.time(hour=9, minute=30)
+    timestamp = datetime.datetime(
+        year=2024,
+        month=1,
+        day=15,
+        tzinfo=datetime.UTC,
+    )
+    behavior = Cpp(
+        language_version=Cpp.version_formats.CPP14,
+    ).heterogeneous_behavior
+
+    wrap_ids = behavior.compute_call_slot_wrap_ids([time, timestamp, 1])
+
+    assert id(time) in wrap_ids
+    assert id(timestamp) in wrap_ids
 
 
 def test_python_time_union_annotation_renders() -> None:

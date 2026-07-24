@@ -1,3 +1,4 @@
 ---
 - - key: { $ref: my_var }
     count: 42
+    label: example

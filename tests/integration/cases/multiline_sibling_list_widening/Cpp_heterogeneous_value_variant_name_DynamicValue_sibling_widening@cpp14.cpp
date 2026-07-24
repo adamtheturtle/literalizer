@@ -25,8 +25,7 @@ struct DynamicValue {
   std::shared_ptr<Holder> value_;
  public:
   DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,9 +38,9 @@ struct DynamicValue {
 };
 int main() {
 auto my_data = std::map<std::string, DynamicValue>{
-    {"omap_value", std::vector<std::pair<std::string, int>>{{"first", 1}}},
-    {"sibling_lists", std::map<std::string, DynamicValue>{{"numbers", std::vector<int>{1, 2}}, {"strings", std::vector<std::string>{"x", "y"}}}},
-    {"ref_marker_present", std::vector<std::string>{"$keep", "z"}},
+    {"omap_value", DynamicValue{std::vector<std::pair<std::string, int>>{{"first", 1}}}},
+    {"sibling_lists", DynamicValue{std::map<std::string, DynamicValue>{{"numbers", DynamicValue{std::vector<int>{1, 2}}}, {"strings", DynamicValue{std::vector<std::string>{"x", "y"}}}}}},
+    {"ref_marker_present", DynamicValue{std::vector<std::string>{"$keep", "z"}}},
 };
     (void)my_data;
     return 0;

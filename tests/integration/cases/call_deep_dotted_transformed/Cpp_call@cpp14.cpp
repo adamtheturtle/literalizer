@@ -24,8 +24,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -41,8 +40,8 @@ struct appType_ { clientType_ client; };
 const appType_ app;
 template <typename... Args> auto emit(Args...) { return 0; }
 int main() {
-emit(app.client.fetch("hello"));
-emit(app.client.fetch(42));
-emit(app.client.fetch(true));
+emit(app.client.fetch(Value{"hello"}));
+emit(app.client.fetch(Value{42}));
+emit(app.client.fetch(Value{true}));
     return 0;
 }

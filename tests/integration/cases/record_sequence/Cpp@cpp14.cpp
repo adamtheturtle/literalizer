@@ -25,8 +25,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,9 +38,9 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", 1}, {"label", "first"}, {"tags", std::vector<std::nullptr_t>{}}},
-    std::map<std::string, Value>{{"id", 2}, {"label", "second"}, {"tags", std::vector<std::nullptr_t>{}}},
-    std::map<std::string, Value>{{"id", 3}, {"label", "third"}, {"tags", std::vector<std::nullptr_t>{}}},
+    std::map<std::string, Value>{{"id", Value{1}}, {"label", Value{"first"}}, {"tags", Value{std::vector<std::nullptr_t>{}}}},
+    std::map<std::string, Value>{{"id", Value{2}}, {"label", Value{"second"}}, {"tags", Value{std::vector<std::nullptr_t>{}}}},
+    std::map<std::string, Value>{{"id", Value{3}}, {"label", Value{"third"}}, {"tags", Value{std::vector<std::nullptr_t>{}}}},
 };
     (void)my_data;
     return 0;

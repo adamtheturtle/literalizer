@@ -24,8 +24,7 @@ struct DynamicValue {
   std::shared_ptr<Holder> value_;
  public:
   DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -38,8 +37,8 @@ struct DynamicValue {
 };
 int main() {
 auto my_data = std::vector<std::vector<DynamicValue>>{
-    std::vector<DynamicValue>{1, "a"},
-    std::vector<DynamicValue>{2, "b"},
+    std::vector<DynamicValue>{DynamicValue{1}, DynamicValue{"a"}},
+    std::vector<DynamicValue>{DynamicValue{2}, DynamicValue{"b"}},
 };
     (void)my_data;
     return 0;

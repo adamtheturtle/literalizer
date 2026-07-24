@@ -25,8 +25,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,13 +38,13 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"call", "send"}, {"args", std::vector<Value>{1, "email", "a@gmail.com", 100}}},
-    std::map<std::string, Value>{{"call", "recv"}, {"args", std::vector<Value>{2, "sms", "b@example.com", 200}}},
+    std::map<std::string, Value>{{"call", Value{"send"}}, {"args", Value{std::vector<Value>{Value{1}, Value{"email"}, Value{"a@gmail.com"}, Value{100}}}}},
+    std::map<std::string, Value>{{"call", Value{"recv"}}, {"args", Value{std::vector<Value>{Value{2}, Value{"sms"}, Value{"b@example.com"}, Value{200}}}}},
 };
 (void)my_data;
 my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"call", "send"}, {"args", std::vector<Value>{1, "email", "a@gmail.com", 100}}},
-    std::map<std::string, Value>{{"call", "recv"}, {"args", std::vector<Value>{2, "sms", "b@example.com", 200}}},
+    std::map<std::string, Value>{{"call", Value{"send"}}, {"args", Value{std::vector<Value>{Value{1}, Value{"email"}, Value{"a@gmail.com"}, Value{100}}}}},
+    std::map<std::string, Value>{{"call", Value{"recv"}}, {"args", Value{std::vector<Value>{Value{2}, Value{"sms"}, Value{"b@example.com"}, Value{200}}}}},
 };
     (void)my_data;
     return 0;

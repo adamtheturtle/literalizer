@@ -856,9 +856,7 @@ def _build_variant_preamble(
                         " public:",
                         f"  {name}() : value_(new "
                         "TypedHolder<std::nullptr_t>(nullptr)) {}",
-                        "  // NOLINTNEXTLINE(google-explicit-constructor,"
-                        "hicpp-explicit-conversions)",
-                        f"  template <typename T> {name}(T value)"
+                        f"  template <typename T> explicit {name}(T value)"
                         " : value_(new TypedHolder<T>(std::move(value))) {}",
                         "  template <typename T> bool is() const"
                         " { // NOLINT(modernize-use-nodiscard)",
@@ -1006,6 +1004,165 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
 
     _collect(value=data)
     return frozenset(ids)
+
+
+@beartype
+def _cpp14_variant_parent_ids(
+    *,
+    data: Value,
+    type_ctx: _CppTypeCtx,
+    excluded_ids: frozenset[int],
+) -> frozenset[int]:
+    """Return containers whose children initialize the fallback variant.
+
+    C++14's generated carrier has an explicit converting constructor, so
+    children of a ``Value``-typed collection must render as ``Value{...}``.
+    Record and tuple literals have their own field/element types and are
+    excluded even when generic collection inference would otherwise see
+    them as heterogeneous.
+    """
+    ids: set[int] = set()
+
+    def _collect(value: Value) -> None:
+        """Collect carrier-typed parents recursively."""
+        children: list[Value] = []
+        type_children: list[Value]
+        match value:
+            case OrderedMap():
+                children.extend(value.values())
+                type_children = children
+            case dict():
+                children.extend(value.values())
+                type_children = [
+                    child
+                    for child in children
+                    if not (
+                        isinstance(child, dict)
+                        and len(child) == 1
+                        and isinstance(child.get("$ref"), str)
+                    )
+                ]
+            case list():
+                children.extend(value)
+                type_children = children
+                sibling_maps = [
+                    child
+                    for child in children
+                    if isinstance(child, dict)
+                    and not isinstance(child, OrderedMap)
+                    and id(child) not in excluded_ids
+                ]
+                sibling_values = [
+                    child_value
+                    for sibling in sibling_maps
+                    for child_value in sibling.values()
+                ]
+                if (
+                    len(sibling_maps) > 1
+                    and _compute_element_type_for_items(
+                        items=sibling_values,
+                        type_ctx=type_ctx,
+                    )
+                    == type_ctx.variant_type_name
+                ):
+                    ids.update(id(sibling) for sibling in sibling_maps)
+            case set():
+                children.extend(
+                    sorted(
+                        value,
+                        key=lambda child: (type(child).__name__, repr(child)),
+                    )
+                )
+                type_children = children
+            case _:
+                return
+        if (
+            id(value) not in excluded_ids
+            and type_children
+            and _compute_element_type_for_items(
+                items=type_children,
+                type_ctx=type_ctx,
+            )
+            == type_ctx.variant_type_name
+        ):
+            ids.add(id(value))
+        for child in children:
+            _collect(value=child)
+
+    _collect(value=data)
+    return frozenset(ids)
+
+
+@beartype
+def _cpp14_explicit_variant_behavior(
+    *,
+    base: HeterogeneousBehavior,
+    type_ctx: _CppTypeCtx,
+) -> HeterogeneousBehavior:
+    """Add explicit fallback-variant construction to *base* behavior."""
+
+    def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+        """Combine strategy-specific and fallback-variant parent ids."""
+        record_ids: frozenset[int] = (
+            frozenset(base.compute_record_shapes(data))
+            if base.compute_record_shapes is not None
+            else frozenset()
+        )
+        tuple_ids: frozenset[int] = (
+            base.compute_tuple_list_ids(data)
+            if base.compute_tuple_list_ids is not None
+            else frozenset()
+        )
+        return base.compute_wrap_ids(data) | _cpp14_variant_parent_ids(
+            data=data,
+            type_ctx=type_ctx,
+            excluded_ids=record_ids | tuple_ids,
+        )
+
+    def _wrap(_raw_value: Value, formatted: str) -> str:
+        """Direct-list-initialize the fallback carrier."""
+        return f"{type_ctx.variant_type_name}{{{formatted}}}"
+
+    def _compute_call_slot_wrap_ids(
+        values: Sequence[Value],
+        /,
+    ) -> frozenset[int]:
+        """Wrap divergent scalar call arguments passed as the carrier."""
+        base_ids = base.compute_call_slot_wrap_ids(values)
+        if (
+            values
+            and _compute_element_type_for_items(
+                items=list(values),
+                type_ctx=type_ctx,
+            )
+            == type_ctx.variant_type_name
+        ):
+            return base_ids | frozenset(
+                id(value)
+                for value in values
+                if isinstance(
+                    value,
+                    (
+                        bool,
+                        int,
+                        float,
+                        str,
+                        bytes,
+                        datetime.date,
+                        datetime.time,
+                    ),
+                )
+                or value is None
+            )
+        return base_ids
+
+    return dataclasses.replace(
+        base,
+        compute_wrap_ids=_compute_wrap_ids,
+        wrap_scalar=_wrap,
+        wrap_non_scalar=_wrap,
+        compute_call_slot_wrap_ids=_compute_call_slot_wrap_ids,
+    )
 
 
 _CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
@@ -3214,12 +3371,19 @@ class Cpp(metaclass=LanguageCls):
                 skip_scalar_checks=True,
             )
         if self._record_strategy_active:
-            return self._record_strategy.behavior
-        if self._uses_cpp14_tuple_record_strategy:
-            return self._tuple_record_strategy.behavior
-        if self._tuple_strategy_active:
-            return _CPP_TUPLE_BEHAVIOR
-        return NO_HETEROGENEOUS_BEHAVIOR
+            behavior = self._record_strategy.behavior
+        elif self._uses_cpp14_tuple_record_strategy:
+            behavior = self._tuple_record_strategy.behavior
+        elif self._tuple_strategy_active:
+            behavior = _CPP_TUPLE_BEHAVIOR
+        else:
+            behavior = NO_HETEROGENEOUS_BEHAVIOR
+        if self.language_version is self.version_formats.CPP14:
+            return _cpp14_explicit_variant_behavior(
+                base=behavior,
+                type_ctx=self._type_ctx,
+            )
+        return behavior
 
     @cached_property
     def format_variable_declaration(

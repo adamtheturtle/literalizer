@@ -25,8 +25,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,13 +38,13 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},
-    std::map<std::string, Value>{{"id", 101}, {"label", "second entry"}, {"enabled", true}, {"related_ids", std::vector<int>{100}}},
+    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
+    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second entry"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
 };
 (void)my_data;
 my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},
-    std::map<std::string, Value>{{"id", 101}, {"label", "second entry"}, {"enabled", true}, {"related_ids", std::vector<int>{100}}},
+    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
+    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second entry"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
 };
     (void)my_data;
     return 0;
