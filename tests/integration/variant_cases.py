@@ -946,7 +946,7 @@ def build_cpp14_error_record_shape_names_variants() -> Iterable[Variant]:
             heterogeneous_strategy=Cpp.heterogeneous_strategies.ERROR,
             module_name="main",
             record_shape_names={
-                frozenset({"expense_id", "trip_id", "amount_usd"}): "Expense",
+                frozenset({"first", "last"}): "Expense",
             },
         ),
         lang_cls=Cpp,

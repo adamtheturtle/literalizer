@@ -1,7 +1,0 @@
----
-- expense_id: "001"
-  trip_id: "001"
-  amount_usd: "49.99"
-- expense_id: "002"
-  trip_id: "001"
-  currency: USD
