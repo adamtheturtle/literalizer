@@ -1,5 +1,5 @@
 const process: any = () => {};
 const emit: any = () => {};
-emit(process({ value: "hello" }), true);
-emit(process({ value: 42 }), false);
+emit(process({ value: "hello" }), "one");
+emit(process({ value: 42 }), "zero");
 export {};

@@ -1,4 +1,4 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
 def emit(*_args: object, **_kwargs: object) -> object: ...
-emit(process(value="hello"), True)
-emit(process(value=42), False)
+emit(process(value="hello"), "one")
+emit(process(value=42), "zero")

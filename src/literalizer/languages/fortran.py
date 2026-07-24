@@ -1425,33 +1425,51 @@ class Fortran(metaclass=LanguageCls):
             "    integer :: t = 0",
             "  end type fval_t",
             "contains",
-            f"  function {self.null_name}() result(v)"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.bool_name}(b) result(v)"
-            "; logical, intent(in) :: b"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.int_name}(n) result(v)"
-            "; integer(kind=int64), intent(in) :: n"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.real_name}(x) result(v)"
-            "; real(kind=real64), intent(in) :: x"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.str_name}(s) result(v)"
-            "; character(len=*), intent(in) :: s"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.list_name}(a) result(v)"
-            "; type(fval_t), intent(in) :: a(:)"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.map_name}(a) result(v)"
-            "; type(fval_t), intent(in) :: a(:)"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.set_name}(a) result(v)"
-            "; type(fval_t), intent(in) :: a(:)"
-            "; type(fval_t) :: v; end function",
-            f"  function {self.entry_name}(k, u) result(v)"
-            "; character(len=*), intent(in) :: k"
-            "; type(fval_t), intent(in) :: u"
-            "; type(fval_t) :: v; end function",
+            (
+                f"  function {self.null_name}() result(v)"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.bool_name}(b) result(v)"
+                "; logical, intent(in) :: b"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.int_name}(n) result(v)"
+                "; integer(kind=int64), intent(in) :: n"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.real_name}(x) result(v)"
+                "; real(kind=real64), intent(in) :: x"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.str_name}(s) result(v)"
+                "; character(len=*), intent(in) :: s"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.list_name}(a) result(v)"
+                "; type(fval_t), intent(in) :: a(:)"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.map_name}(a) result(v)"
+                "; type(fval_t), intent(in) :: a(:)"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.set_name}(a) result(v)"
+                "; type(fval_t), intent(in) :: a(:)"
+                "; type(fval_t) :: v; end function"
+            ),
+            (
+                f"  function {self.entry_name}(k, u) result(v)"
+                "; character(len=*), intent(in) :: k"
+                "; type(fval_t), intent(in) :: u"
+                "; type(fval_t) :: v; end function"
+            ),
             "end module fval_m",
         )
 

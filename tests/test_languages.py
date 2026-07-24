@@ -234,16 +234,20 @@ def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
     )
 
     assert result.body_preamble == (
-        "data Val = HInt Integer | HStr String | HList [Val] | HMap "
-        "[(String, Val)]",
-        "instance Num Val where\n"
-        "    fromInteger = HInt\n"
-        '    _ + _ = error "not implemented"\n'
-        '    _ * _ = error "not implemented"\n'
-        '    abs _ = error "not implemented"\n'
-        '    signum _ = error "not implemented"\n'
-        "    negate (HInt n) = HInt (negate n)\n"
-        '    negate _ = error "not implemented"',
+        (
+            "data Val = HInt Integer | HStr String | HList [Val] | HMap "
+            "[(String, Val)]"
+        ),
+        (
+            "instance Num Val where\n"
+            "    fromInteger = HInt\n"
+            '    _ + _ = error "not implemented"\n'
+            '    _ * _ = error "not implemented"\n'
+            '    abs _ = error "not implemented"\n'
+            '    signum _ = error "not implemented"\n'
+            "    negate (HInt n) = HInt (negate n)\n"
+            '    negate _ = error "not implemented"'
+        ),
     )
 
 

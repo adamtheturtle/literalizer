@@ -1,4 +1,4 @@
 const process: any = () => {};
 const emit: any = () => {};
-emit(process({ value: 42 }), true);
+emit(process({ value: 42 }), "one");
 export {};

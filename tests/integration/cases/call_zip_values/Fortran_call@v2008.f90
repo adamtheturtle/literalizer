@@ -18,8 +18,8 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call emit(process(fstr('hello')), fbool(.true.))
-    call emit(process(fint(42_int64)), fbool(.false.))
+    call emit(process(fstr('hello')), 'one')
+    call emit(process(fint(42_int64)), 'zero')
 contains
     function process(value) result(r)
         implicit none

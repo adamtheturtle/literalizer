@@ -1,4 +1,4 @@
 sub process {}
 sub emit {}
-emit(process("hello"), 1);
-emit(process(42), 0);
+emit(process("hello"), "one");
+emit(process(42), "zero");

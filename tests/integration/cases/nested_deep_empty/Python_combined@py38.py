@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Any, Tuple
-my_data: Tuple[Tuple[Tuple[Any, ...], ...], ...] = (
+from typing import Any
+my_data: tuple[tuple[tuple[Any, ...], ...], ...] = (
     ((), ()),
 )
 my_data = (

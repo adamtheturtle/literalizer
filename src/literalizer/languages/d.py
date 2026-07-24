@@ -174,8 +174,10 @@ def _d_call_stub(
     if not fields:
         type_name = f"{root.title()}Type_"
         return (
-            f"struct {type_name} {{"
-            f" int {method}(T...)(T args) {{ return 0; }} }}",
+            (
+                f"struct {type_name} {{"
+                f" int {method}(T...)(T args) {{ return 0; }} }}"
+            ),
             f"{type_name} {root};",
         )
     lines: list[str] = []

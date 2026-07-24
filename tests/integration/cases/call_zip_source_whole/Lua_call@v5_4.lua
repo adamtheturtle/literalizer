@@ -1,3 +1,3 @@
 function process(...) end
 function emit(...) end
-emit(process(42), true)
+emit(process(42), "one")

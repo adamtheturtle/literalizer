@@ -3,6 +3,6 @@ fn process(args ...ICallArg_) ICallArg_ { return 0 }
 fn emit(args ...ICallArg_) {}
 
 fn main() {
-	emit(process('hello'), true);
-	emit(process(42), false);
+	emit(process('hello'), 'one');
+	emit(process(42), 'zero');
 }

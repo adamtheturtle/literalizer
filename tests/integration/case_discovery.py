@@ -457,11 +457,11 @@ type _CaseScalar = (
     | int
     | float
     | bool
-    | None
     | datetime.date
     | datetime.datetime
     | datetime.time
     | bytes
+    | None
 )
 # Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
 # loader (and JSON/JSON5/TOML natively), so containers are plain

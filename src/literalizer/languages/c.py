@@ -593,20 +593,28 @@ def _c_call_stub(
         case [single]:
             return (
                 *nolint,
-                f"static {return_keyword} {single}({stub_signature}) "
-                f"{stub_body}",
+                (
+                    f"static {return_keyword} {single}({stub_signature}) "
+                    f"{stub_body}"
+                ),
             )
         case [root, method]:
             stub_fn = f"{root}_{method}_stub_"
             type_name = f"{root}Type_"
             return (
                 *nolint,
-                f"static {return_keyword} {stub_fn}({stub_signature}) "
-                f"{stub_body}",
-                f"struct {type_name} "
-                f"{{ {return_keyword} (*{method})({proto}); }};",
-                f"static const struct {type_name} {root} = "
-                f"{{ .{method} = {stub_fn} }};",
+                (
+                    f"static {return_keyword} {stub_fn}({stub_signature}) "
+                    f"{stub_body}"
+                ),
+                (
+                    f"struct {type_name} "
+                    f"{{ {return_keyword} (*{method})({proto}); }};"
+                ),
+                (
+                    f"static const struct {type_name} {root} = "
+                    f"{{ .{method} = {stub_fn} }};"
+                ),
             )
         case _:
             pass

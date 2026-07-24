@@ -64,13 +64,13 @@ from scripts import roundtrip_common
 # ``json.loads`` returns this recursive shape; typing the value helper
 # against it lets ``isinstance`` narrow cleanly under the type checkers.
 type JsonValue = (
-    None
-    | bool
+    bool
     | int
     | float
     | str
     | list["JsonValue"]
     | dict[str, "JsonValue"]
+    | None
 )
 
 _VAR_NAME = "my_data"

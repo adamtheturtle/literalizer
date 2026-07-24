@@ -1,6 +1,6 @@
 from __future__ import annotations
 import datetime
-my_data: dict[str, str | int | bool | None | datetime.date | datetime.datetime] = {
+my_data: dict[str, str | int | bool | datetime.date | datetime.datetime | None] = {
     "name": "Alice",
     "age": 30,
     "active": True,
