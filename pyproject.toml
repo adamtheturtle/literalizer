@@ -150,20 +150,11 @@ lint.ignore = [
     # but doesn't enforce D205 (blank line after summary) or D212 (summary on first line).
     "D205",
     "D212",
-    "FBT003",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
-    "ISC004",
-    "N801",
-    "N816",
     # literalize has 8 keyword-only arguments, which is justified by the
     # public API design.
     "PLR0913",
-    "RUF036",
-    "UP006",
-    "UP007",
-    "UP017",
-    "UP035",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles

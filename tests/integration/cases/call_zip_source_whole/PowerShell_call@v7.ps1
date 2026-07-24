@@ -1,3 +1,3 @@
 function process {}
 function emit {}
-emit(process(42), $true)
+emit(process(42), 1)

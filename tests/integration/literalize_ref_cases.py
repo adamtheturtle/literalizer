@@ -50,11 +50,11 @@ type _Scalar = (
     | int
     | float
     | bool
-    | None
     | datetime.date
     | datetime.datetime
     | datetime.time
     | bytes
+    | None
 )
 type _ValueInput = (
     _Scalar

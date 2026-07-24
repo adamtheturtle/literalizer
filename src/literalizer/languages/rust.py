@@ -2360,9 +2360,11 @@ def _rust_call_stub(
         type_name = f"{root.title()}Type_"
         return (
             f"struct {type_name};",
-            f"impl {type_name} {{"
-            f" fn {method}<{generic_decl}>"
-            f"(&self, {param_list}) {{}} }}",
+            (
+                f"impl {type_name} {{"
+                f" fn {method}<{generic_decl}>"
+                f"(&self, {param_list}) {{}} }}"
+            ),
             f"let {root} = {type_name};",
         )
     lines: list[str] = []

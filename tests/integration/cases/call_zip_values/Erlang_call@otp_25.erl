@@ -3,5 +3,5 @@
 process(_) -> undefined.
 emit(_, _) -> ok.
 x() ->
-    emit(process("hello"), true),
-    emit(process(42), false).
+    emit(process("hello"), 1),
+    emit(process(42), 0).

@@ -1,1 +1,1 @@
-_0 = emit(process(42), true)
+_0 = emit(process(42), 1)

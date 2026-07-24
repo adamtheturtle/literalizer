@@ -3,4 +3,4 @@ def process(value: Int) -> None:
 def emit[*Ts: AnyType](*args: *Ts):
     pass
 def main():
-    emit(process(42), True)
+    emit(process(42), 1)

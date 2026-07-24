@@ -478,8 +478,10 @@ def _mojo_call_preamble_stub(
                 f"def {parts[0]}({param_list}){return_suffix}:\n{indent}pass",
             )
         return (
-            f"def {parts[0]}[*Ts: AnyType](*args: *Ts)"
-            f"{return_suffix}:\n{indent}pass",
+            (
+                f"def {parts[0]}[*Ts: AnyType](*args: *Ts)"
+                f"{return_suffix}:\n{indent}pass"
+            ),
         )
     root = parts[0]
     method = parts[-1]
@@ -499,9 +501,11 @@ def _mojo_call_preamble_stub(
     if not fields:
         type_name = f"_{root.capitalize()}Type"
         return (
-            f"@fieldwise_init\n"
-            f"struct {type_name}{struct_header}:\n"
-            f"{method_stub}",
+            (
+                f"@fieldwise_init\n"
+                f"struct {type_name}{struct_header}:\n"
+                f"{method_stub}"
+            ),
         )
     blocks: list[str] = []
     inner_type = f"_{fields[-1].capitalize()}Type"

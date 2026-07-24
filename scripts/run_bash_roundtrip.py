@@ -37,13 +37,13 @@ from scripts import roundtrip_common
 # it lets `isinstance` narrow cleanly under pyright, pyrefly, and ty
 # without `cast`.
 type JsonValue = (
-    None
-    | bool
+    bool
     | int
     | float
     | str
     | list["JsonValue"]
     | dict[str, "JsonValue"]
+    | None
 )
 
 _VAR_NAME = "myData"

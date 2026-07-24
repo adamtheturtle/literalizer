@@ -842,36 +842,57 @@ def _build_variant_preamble(
                         "    Holder& operator=(Holder&&) = delete;",
                         "    virtual ~Holder() = default;",
                         "  };",
-                        "  template <typename T> struct "
-                        "TypedHolder : Holder {",
-                        "    explicit TypedHolder(T value) "
-                        ": value_(std::move(value)) {}",
+                        (
+                            "  template <typename T> struct "
+                            "TypedHolder : Holder {"
+                        ),
+                        (
+                            "    explicit TypedHolder(T value) "
+                            ": value_(std::move(value)) {}"
+                        ),
                         "    T& get() { return value_; }",
-                        "    const T& get() const { return value_; }"
-                        " // NOLINT(modernize-use-nodiscard)",
+                        (
+                            "    const T& get() const { return value_; }"
+                            " // NOLINT(modernize-use-nodiscard)"
+                        ),
                         "   private:",
                         "    T value_;",
                         "  }; // TypedHolder",
                         "  std::shared_ptr<Holder> value_;",
                         " public:",
-                        f"  {name}() : value_(new "
-                        "TypedHolder<std::nullptr_t>(nullptr)) {}",
-                        "  // NOLINTNEXTLINE(google-explicit-constructor,"
-                        "hicpp-explicit-conversions)",
-                        f"  template <typename T> {name}(T value)"
-                        " : value_(new TypedHolder<T>(std::move(value))) {}",
-                        "  template <typename T> bool is() const"
-                        " { // NOLINT(modernize-use-nodiscard)",
-                        "    return dynamic_cast<TypedHolder<T>*>"
-                        "(value_.get()) != nullptr;",
+                        (
+                            f"  {name}() : value_(new "
+                            "TypedHolder<std::nullptr_t>(nullptr)) {}"
+                        ),
+                        (
+                            "  // NOLINTNEXTLINE(google-explicit-constructor,"
+                            "hicpp-explicit-conversions)"
+                        ),
+                        (
+                            f"  template <typename T> {name}(T value)"
+                            f" : value_(new TypedHolder<T>"
+                            f"(std::move(value))) {{}}"
+                        ),
+                        (
+                            "  template <typename T> bool is() const"
+                            " { // NOLINT(modernize-use-nodiscard)"
+                        ),
+                        (
+                            "    return dynamic_cast<TypedHolder<T>*>"
+                            "(value_.get()) != nullptr;"
+                        ),
                         "  }",
                         "  template <typename T> T& get() {",
-                        "    return static_cast<TypedHolder<T>*>"
-                        "(value_.get())->get();",
+                        (
+                            "    return static_cast<TypedHolder<T>*>"
+                            "(value_.get())->get();"
+                        ),
                         "  } // get",
                         "  template <typename T> const T& get() const {",
-                        "    return static_cast<const TypedHolder<T>*>"
-                        "(value_.get())->get();",
+                        (
+                            "    return static_cast<const TypedHolder<T>*>"
+                            "(value_.get())->get();"
+                        ),
                         "  } // get const",
                         "};",
                     )
@@ -1607,8 +1628,10 @@ def _cpp_call_stub(
     nodiscard_prefix = "[[nodiscard]] " if supports_nodiscard else ""
     if len(parts) == 1:
         return (
-            f"{template_prefix}auto {parts[0]}({parameter_pack}) "
-            "{ return 0; }",
+            (
+                f"{template_prefix}auto {parts[0]}({parameter_pack}) "
+                "{ return 0; }"
+            ),
         )
     root = parts[0]
     method = parts[-1]

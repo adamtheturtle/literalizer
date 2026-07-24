@@ -580,18 +580,20 @@ class Occam(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
     static_preamble: ClassVar[Sequence[str]] = (
-        "MOBILE DATA TYPE LIT IS\n"
-        "  CASE\n"
-        "    lit.null\n"
-        "    lit.bool ; BOOL\n"
-        "    lit.int ; INT\n"
-        "    lit.float ; REAL32\n"
-        "    lit.str ; MOBILE []BYTE\n"
-        "    lit.list ; MOBILE []MOBILE LIT\n"
-        "    lit.map ; MOBILE []MOBILE LIT\n"
-        "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
-        "    lit.set ; MOBILE []MOBILE LIT\n"
-        ":",
+        (
+            "MOBILE DATA TYPE LIT IS\n"
+            "  CASE\n"
+            "    lit.null\n"
+            "    lit.bool ; BOOL\n"
+            "    lit.int ; INT\n"
+            "    lit.float ; REAL32\n"
+            "    lit.str ; MOBILE []BYTE\n"
+            "    lit.list ; MOBILE []MOBILE LIT\n"
+            "    lit.map ; MOBILE []MOBILE LIT\n"
+            "    lit.pair ; MOBILE []BYTE ; MOBILE LIT\n"
+            "    lit.set ; MOBILE []MOBILE LIT\n"
+            ":"
+        ),
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()

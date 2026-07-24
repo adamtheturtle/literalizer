@@ -426,8 +426,10 @@ def _csharp_call_stub(
     if not fields:
         type_name = f"{root.title()}Type_"
         return (
-            f"class {type_name} {{"
-            f" public object {method}({param_list}) => null; }}",
+            (
+                f"class {type_name} {{"
+                f" public object {method}({param_list}) => null; }}"
+            ),
             f"static {type_name} {root} = new {type_name}();",
         )
     lines: list[str] = []

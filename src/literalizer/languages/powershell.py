@@ -127,8 +127,10 @@ def _powershell_call_stub(
     if not fields:
         type_name = f"{root.title()}Type_"
         return (
-            f"class {type_name}"
-            f" {{ [object] {method}({param_list}) {{ return $null }} }}",
+            (
+                f"class {type_name}"
+                f" {{ [object] {method}({param_list}) {{ return $null }} }}"
+            ),
             f"${root} = [{type_name}]::new()",
         )
     lines: list[str] = []

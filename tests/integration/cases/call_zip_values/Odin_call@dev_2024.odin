@@ -4,6 +4,6 @@ process :: proc(args: ..any) -> any { return nil }
 emit :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
-emit(process("hello"), true);
-emit(process(42), false);
+emit(process("hello"), 1);
+emit(process(42), 0);
 }

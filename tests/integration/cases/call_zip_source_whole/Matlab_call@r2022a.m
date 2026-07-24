@@ -1,3 +1,3 @@
 process = @(varargin) [];
 emit = @(varargin) [];
-emit(process(42), true)
+emit(process(42), 1)

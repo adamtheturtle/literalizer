@@ -1,4 +1,4 @@
 sub process(*@a, *%kw) {}
 sub emit(*@a, *%kw) {}
-emit(process('hello'), True);
-emit(process(42), False);
+emit(process('hello'), 1);
+emit(process(42), 0);

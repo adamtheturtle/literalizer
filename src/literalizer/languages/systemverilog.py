@@ -193,9 +193,11 @@ def _sv_call_stub(
         if stub_return is StubReturn.VOID:
             return (f"task {name}({param_str}); endtask",)
         return (
-            f"function _VVal {name}({param_str});\n"
-            f"{indent}{name} = {_SV_NULL};\n"
-            f"endfunction",
+            (
+                f"function _VVal {name}({param_str});\n"
+                f"{indent}{name} = {_SV_NULL};\n"
+                f"endfunction"
+            ),
         )
 
     method = parts[-1]

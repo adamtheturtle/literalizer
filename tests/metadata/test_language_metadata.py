@@ -10,7 +10,7 @@ from pygments.lexers import find_lexer_class_by_name
 from typing_extensions import get_protocol_members
 
 import literalizer.languages
-from literalizer import Language, LanguageCls
+from literalizer import IdentifierCase, Language, LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import Python, Raku
 
@@ -301,14 +301,11 @@ def test_record_shape_name_declaration_property_is_boolean(
     assert isinstance(language_cls.record_shape_names_emit_declarations, bool)
 
 
-def test_supported_ref_cases_independent_of_identifier_cases() -> None:
-    """``supported_ref_cases`` is not derived from ``identifier_cases``.
-
-    The two attributes answer different questions -- syntactic validity
-    vs. stylistic preference -- and one is not a function of the other.
-    """
+def test_python_supported_ref_cases_are_lint_clean() -> None:
+    """Python reference cases comply with its configured naming rules."""
     python = Python()
-    assert frozenset(python.identifier_cases) != python.supported_ref_cases
+    assert python.supported_ref_cases == frozenset(python.identifier_cases)
+    assert IdentifierCase.CAMEL not in python.supported_ref_cases
     assert frozenset(python.identifier_cases) <= python.supported_ref_cases
 
     raku = Raku()
