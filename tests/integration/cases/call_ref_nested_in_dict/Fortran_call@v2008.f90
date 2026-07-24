@@ -20,7 +20,7 @@ program main
     implicit none
     type(fval_t) :: my_var
     my_var = fint(42_int64)
-    call process(fmap([fval_t :: fentry('key', my_var), fentry('count', fint(42_int64))]))
+    call process(fmap([fval_t :: fentry('key', my_var), fentry('count', fint(42_int64)), fentry('label', fstr('example'))]))
 contains
     subroutine process(data)
         implicit none

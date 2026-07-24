@@ -1026,21 +1026,25 @@ def _cpp14_variant_parent_ids(
     def _collect(value: Value) -> None:
         """Collect carrier-typed parents recursively."""
         children: list[Value] = []
+        type_children: list[Value]
         match value:
             case OrderedMap():
                 children.extend(value.values())
-                has_ref_child = False
+                type_children = children
             case dict():
                 children.extend(value.values())
-                has_ref_child = any(
-                    isinstance(child, dict)
-                    and len(child) == 1
-                    and isinstance(child.get("$ref"), str)
+                type_children = [
+                    child
                     for child in children
-                )
+                    if not (
+                        isinstance(child, dict)
+                        and len(child) == 1
+                        and isinstance(child.get("$ref"), str)
+                    )
+                ]
             case list():
                 children.extend(value)
-                has_ref_child = False
+                type_children = children
                 sibling_maps = [
                     child
                     for child in children
@@ -1069,15 +1073,14 @@ def _cpp14_variant_parent_ids(
                         key=lambda child: (type(child).__name__, repr(child)),
                     )
                 )
-                has_ref_child = False
+                type_children = children
             case _:
                 return
         if (
             id(value) not in excluded_ids
-            and not has_ref_child
-            and children
+            and type_children
             and _compute_element_type_for_items(
-                items=children,
+                items=type_children,
                 type_ctx=type_ctx,
             )
             == type_ctx.variant_type_name
@@ -1139,7 +1142,15 @@ def _cpp14_explicit_variant_behavior(
                 for value in values
                 if isinstance(
                     value,
-                    (bool, int, float, str, bytes, datetime.date),
+                    (
+                        bool,
+                        int,
+                        float,
+                        str,
+                        bytes,
+                        datetime.date,
+                        datetime.time,
+                    ),
                 )
                 or value is None
             )

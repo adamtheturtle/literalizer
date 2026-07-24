@@ -5,6 +5,6 @@ Module Check
     End Function
     Sub _calls()
         Dim my_var = 42
-        process(New Dictionary(Of String, Object) From {{"key", my_var}, {"count", 42}})
+        process(New Dictionary(Of String, Object) From {{"key", my_var}, {"count", 42}, {"label", "example"}})
     End Sub
 End Module
