@@ -3217,6 +3217,12 @@ class Cpp(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
+        In C++14, a homogeneous list of maps whose key shape has an
+        externally supplied name uses that name as the vector element
+        type.  The map literals themselves retain their native rendering,
+        so aliases such as ``using Expense = std::map<...>`` work without
+        switching to aggregate-record syntax.
+
         Under the ``RECORD`` strategy a list whose every element is a
         record-shaped dict renders each element as an aggregate literal;
         the variant opener would type such a list
@@ -3228,9 +3234,14 @@ class Cpp(metaclass=LanguageCls):
         list keeps the typed variant opener.
         """
         base_open = self.sequence_format_config.sequence_open
+        use_external_map_name = (
+            self.language_version is self.version_formats.CPP14
+            and bool(self.record_shape_names)
+        )
         if not (
             self._record_strategy_active
             or self._uses_cpp14_tuple_record_strategy
+            or use_external_map_name
         ):
             return base_open
 
@@ -3238,6 +3249,21 @@ class Cpp(metaclass=LanguageCls):
             """Return the typed C++14 record-list opener when needed,
             else the typed variant opener.
             """
+            if use_external_map_name and items:
+                first_item = items[0]
+                if isinstance(first_item, dict) and not isinstance(
+                    first_item,
+                    OrderedMap,
+                ):
+                    keys = frozenset(first_item)
+                    name = self.record_shape_names.get(keys)
+                    if name is not None and all(
+                        isinstance(item, dict)
+                        and not isinstance(item, OrderedMap)
+                        and frozenset(item) == keys
+                        for item in items
+                    ):
+                        return f"std::vector<{name}>{{"
             if _all_record_shaped(items):
                 if self.language_version is self.version_formats.CPP14:
                     first_item = items[0]

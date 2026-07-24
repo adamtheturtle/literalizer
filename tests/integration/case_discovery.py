@@ -146,6 +146,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # later sub-issues of #2909, so this case stays out of
         # all-languages base discovery.
         "record_nested_map_fallback",
+        # ``named_homogeneous_map_sequence`` verifies that languages which
+        # accept caller-supplied record-shape names without emitting their
+        # declarations can apply a name to a native homogeneous map.  Its
+        # dedicated axis supplies the external alias used by the fixture.
+        "named_homogeneous_map_sequence",
         # ``nested_map_widening`` carries sibling dict values that are
         # maps whose value types diverge (issue #2878).  Each inner map
         # otherwise renders at its own narrower value type while the

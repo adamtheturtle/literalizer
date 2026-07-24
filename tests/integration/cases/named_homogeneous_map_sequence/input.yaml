@@ -1,0 +1,5 @@
+---
+- expense_id: "001"
+  vendor: restaurant
+- expense_id: "002"
+  vendor: retailer

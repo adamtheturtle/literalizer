@@ -937,6 +937,42 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_native_map_record_shape_names_variants() -> Iterable[Variant]:
+    """Build variants that name native homogeneous maps externally."""
+    shape_keys = frozenset({"expense_id", "vendor"})
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if (
+            not lang_cls.supports_record_shape_names
+            or lang_cls.record_shape_names_emit_declarations
+            or default_spec.heterogeneous_strategy.name != "ERROR"
+        ):
+            continue
+        spec_kwargs: dict[str, object] = {
+            "record_shape_names": {shape_keys: "NamedMap"},
+            "language_version": enum_member_by_name(
+                enum_cls=lang_cls.VersionFormats,
+                name="CPP14",
+            ),
+        }
+        if lang_cls.supports_module_name:
+            spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
+                name="main",
+            )
+        spec = lang_cls(**spec_kwargs)
+        yield Variant(
+            name=f"{lang_cls.__name__}_native_map_record_shape_names",
+            spec=spec,
+            lang_cls=lang_cls,
+            fixture_prefix=(
+                '#include "../../cpp_support/include/named_map.hpp"\n'
+            ),
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+
+
+@beartype
 def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` variant for every language that names generated
     record structs.
@@ -2036,6 +2072,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "c_field_name": build_c_field_name_variants,
     "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
     "record_shape_names": build_record_shape_names_variants,
+    "native_map_record_shape_names": (
+        build_native_map_record_shape_names_variants
+    ),
     "record_null_substitutions_record": (
         build_record_null_substitutions_record_variants
     ),

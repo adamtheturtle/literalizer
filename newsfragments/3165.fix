@@ -1,0 +1,3 @@
+C++14 now applies a matching caller-supplied ``record_shape_names`` entry to
+the element type of a homogeneous native-map sequence, while retaining native
+``std::map`` expressions for its elements.
