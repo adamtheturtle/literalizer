@@ -693,10 +693,10 @@ class Python(metaclass=LanguageCls):
 
         language_version: The minimum Python version to target.
 
-            * ``VersionFormats.PY38`` — use ``typing.List``, ``typing.Dict``,
-              etc. for generic collection type hints (PEP 484 style).
-            * ``VersionFormats.PY39`` — use built-in ``list``, ``dict``, etc.
-              directly as generic aliases (PEP 585, default).
+            The compatibility names ``VersionFormats.PY38`` and
+            ``VersionFormats.PY39`` both emit built-in ``list``,
+            ``dict``, etc. directly as generic aliases for this
+            package's Python 3.12 runtime floor.
 
         heterogeneous_strategy: How to render a record-shaped dict
             (non-empty, string-keyed).
@@ -1274,6 +1274,7 @@ class Python(metaclass=LanguageCls):
         PY39 = enum.auto()
 
     version_formats = VersionFormats
+    legacy_version_format: ClassVar[enum.Enum] = VersionFormats.PY38
 
     empty_container_type_hint_variant_kwargs = None
 

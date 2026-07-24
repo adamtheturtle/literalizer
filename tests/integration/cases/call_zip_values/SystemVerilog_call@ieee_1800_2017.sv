@@ -15,7 +15,7 @@ function _VVal process(input _VVal value);
 endfunction
 task emit(input _VVal _call, input _VVal _zip); endtask
 initial begin
-emit(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}), "one");
-emit(process(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}), "zero");
+emit(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}), _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "one"});
+emit(process(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}), _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "zero"});
 end
 endmodule

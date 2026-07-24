@@ -3,6 +3,6 @@ procedure Main is
     function Process (Value : A_Val) return A_Val is (ANull);
     procedure Emit (Call : A_Val; Zip : A_Val) is begin null; end Emit;
 begin
-    emit(Process(value => AStr ("hello")), "one");
-    emit(Process(value => AInt (42)), "zero");
+    emit(Process(value => AStr ("hello")), AStr ("one"));
+    emit(Process(value => AInt (42)), AStr ("zero"));
 end Main;

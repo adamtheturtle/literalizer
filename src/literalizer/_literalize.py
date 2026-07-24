@@ -4733,12 +4733,15 @@ def _render_zip_literal(
         collection_layout=collection_layout,
         multiline_prefix="",
     )
-    return _format_value(
-        value=value,
-        dict_open_override=None,
-        sequence_open_override=None,
-        ctx=ctx,
-        int_formatter=None,
+    return language.format_call_arg(
+        value,
+        _format_value(
+            value=value,
+            dict_open_override=None,
+            sequence_open_override=None,
+            ctx=ctx,
+            int_formatter=None,
+        ),
     )
 
 

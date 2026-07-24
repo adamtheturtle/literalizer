@@ -18,7 +18,7 @@ PROC emit (VAL MOBILE LIT _call, VAL MOBILE LIT _zip)
     SKIP
 :
 PROC main ()
-    emit(process(MOBILE LIT(lit.int; 42)), "one")
+    emit(process(MOBILE LIT(lit.int; 42)), MOBILE LIT(lit.str; MOBILE []BYTE "one"))
     SEQ
         SKIP
 :

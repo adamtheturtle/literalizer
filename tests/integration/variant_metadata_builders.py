@@ -17,6 +17,7 @@ from literalizer._language import (
     NestedMapWideningVariant,
     RecordVariant,
 )
+from literalizer.languages.python import Python
 
 from .language_specs import make_spec, sorted_languages
 from .variant_types import Variant, VariantCase, enum_member_by_name
@@ -432,13 +433,8 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        old_version = next(
-            (
-                version
-                for version in lang_cls.VersionFormats
-                if version.name == "PY38"
-            ),
-            None,
+        old_version = (
+            Python.legacy_version_format if lang_cls is Python else None
         )
         dict_value_type = lang_cls.non_default_kwargs.get(
             "default_dict_value_type"
