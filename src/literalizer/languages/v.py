@@ -1266,6 +1266,7 @@ class V(metaclass=LanguageCls):
             field_type=self._v_record_field_type,
             render_declaration=self._v_render_record_declaration,
             render_literal=_v_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

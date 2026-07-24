@@ -1848,6 +1848,7 @@ class Java(metaclass=LanguageCls):
             field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,
             render_literal=_java_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

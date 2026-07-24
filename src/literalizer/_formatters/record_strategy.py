@@ -151,7 +151,7 @@ class RecordRenderer:
         [str, Sequence[RecordLiteralField]],
         RenderedRecordLiteral,
     ]
-    suppress_custom_name_declarations: bool = False
+    suppress_custom_name_declarations: bool
     """Whether a shape named through ``record_shape_names`` is declared
     by the caller rather than emitted in this literal's preamble.
 
