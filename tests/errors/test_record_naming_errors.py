@@ -10,7 +10,7 @@ from literalizer.languages import Cpp, Go, Java, Kotlin, Rust, Scala
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task"],
+    argvalues=["entry", "My-Entry", "9Entry"],
 )
 def test_cpp_invalid_shape_name_raises(name: str) -> None:
     """Externally declared C++ record names must be PascalCase."""
@@ -29,8 +29,8 @@ def test_cpp_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Cpp(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )
 
@@ -49,7 +49,7 @@ def test_invalid_prefix_raises(prefix: str) -> None:
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task", "Self"],
+    argvalues=["entry", "My-Entry", "9Entry", "Self"],
 )
 def test_invalid_shape_name_raises(name: str) -> None:
     """Values in ``record_shape_names`` must be PascalCase identifiers
@@ -66,8 +66,8 @@ def test_shape_name_collides_with_enum_name_raises() -> None:
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Rust(
-            heterogeneous_value_enum_name="Task",
-            record_shape_names={frozenset({"id", "name"}): "Task"},
+            heterogeneous_value_enum_name="Entry",
+            record_shape_names={frozenset({"id", "name"}): "Entry"},
         )
 
 
@@ -85,15 +85,15 @@ def test_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Rust(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )
 
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task"],
+    argvalues=["entry", "My-Entry", "9Entry"],
 )
 def test_go_invalid_shape_name_raises(name: str) -> None:
     """Values in Go's ``record_shape_names`` must be PascalCase
@@ -120,15 +120,15 @@ def test_go_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Go(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )
 
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task"],
+    argvalues=["entry", "My-Entry", "9Entry"],
 )
 def test_kotlin_invalid_shape_name_raises(name: str) -> None:
     """Values in Kotlin's ``record_shape_names`` must be PascalCase
@@ -157,15 +157,15 @@ def test_kotlin_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Kotlin(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )
 
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task"],
+    argvalues=["entry", "My-Entry", "9Entry"],
 )
 def test_java_invalid_shape_name_raises(name: str) -> None:
     """Values in Java's ``record_shape_names`` must be PascalCase
@@ -186,8 +186,8 @@ def test_java_shape_name_collides_with_module_name_raises() -> None:
     """
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Java(
-            module_name="Task",
-            record_shape_names={frozenset({"id", "name"}): "Task"},
+            module_name="Entry",
+            record_shape_names={frozenset({"id", "name"}): "Entry"},
         )
 
 
@@ -207,15 +207,15 @@ def test_java_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Java(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )
 
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["task", "My-Task", "9Task"],
+    argvalues=["entry", "My-Entry", "9Entry"],
 )
 def test_scala_invalid_shape_name_raises(name: str) -> None:
     """Values in Scala's ``record_shape_names`` must be PascalCase
@@ -244,7 +244,7 @@ def test_scala_duplicate_shape_names_raises() -> None:
     with pytest.raises(expected_exception=InvalidRecordNameError):
         Scala(
             record_shape_names={
-                frozenset({"id", "name"}): "Task",
-                frozenset({"id", "title"}): "Task",
+                frozenset({"id", "name"}): "Entry",
+                frozenset({"id", "title"}): "Entry",
             },
         )

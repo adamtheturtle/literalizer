@@ -2,8 +2,8 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"project": @"alpha",
-    @"lead_task": @{@"id": @100, @"description": @"first task", @"is_done": @NO, @"blocks": @[@102, @103]},
+    @"collection": @"alpha",
+    @"featured_entry": @{@"id": @100, @"label": @"first entry", @"enabled": @NO, @"related_ids": @[@102, @103]},
 };
     (void)my_data;
 }

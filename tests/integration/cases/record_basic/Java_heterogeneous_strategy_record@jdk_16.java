@@ -1,5 +1,5 @@
 import java.util.Map;
-record Record0(int id, String description, boolean is_done, int[] blocks) {}
+record Record0(int id, String label, boolean enabled, int[] related_ids) {}
 class Main {
     public static void main() {
 var my_data = new Record0(

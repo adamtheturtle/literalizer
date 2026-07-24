@@ -39,8 +39,8 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", 100}, {"description", "first task"}, {"is_done", false}, {"blocks", std::vector<int>{102, 103}}},
-    std::map<std::string, Value>{{"id", 101}, {"description", "second task"}, {"is_done", true}, {"blocks", std::vector<int>{100}}},
+    std::map<std::string, Value>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},
+    std::map<std::string, Value>{{"id", 101}, {"label", "second entry"}, {"enabled", true}, {"related_ids", std::vector<int>{100}}},
 };
     (void)my_data;
     return 0;

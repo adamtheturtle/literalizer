@@ -2,10 +2,10 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <utility>
 #include <cstddef>
 #include <memory>
-struct TaskValue {
+#include <utility>
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -24,9 +24,9 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
   // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -38,10 +38,9 @@ struct TaskValue {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, TaskValue>{
-    {"omap_value", std::vector<std::pair<std::string, int>>{{"first", 1}}},
-    {"sibling_lists", std::map<std::string, TaskValue>{{"numbers", std::vector<int>{1, 2}}, {"strings", std::vector<std::string>{"x", "y"}}}},
-    {"ref_marker_present", std::vector<std::string>{"$keep", "z"}},
+auto my_data = std::map<std::string, DynamicValue>{
+    {"name", "Alice"},
+    {"scores", std::vector<int>{10, 20, 30}},
 };
     (void)my_data;
     return 0;

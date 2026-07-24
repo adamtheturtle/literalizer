@@ -13,8 +13,8 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "id"; MOBILE LIT(lit.int; 100)), MOBILE LIT(lit.pair; MOBILE []BYTE "description"; MOBILE LIT(lit.str; MOBILE []BYTE "first task")), MOBILE LIT(lit.pair; MOBILE []BYTE "is_done"; MOBILE LIT(lit.bool; FALSE)), MOBILE LIT(lit.pair; MOBILE []BYTE "blocks"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 102), MOBILE LIT(lit.int; 103)]))]),
-        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "id"; MOBILE LIT(lit.int; 101)), MOBILE LIT(lit.pair; MOBILE []BYTE "description"; MOBILE LIT(lit.str; MOBILE []BYTE "second task")), MOBILE LIT(lit.pair; MOBILE []BYTE "is_done"; MOBILE LIT(lit.bool; TRUE)), MOBILE LIT(lit.pair; MOBILE []BYTE "blocks"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 100)]))])
+        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "id"; MOBILE LIT(lit.int; 100)), MOBILE LIT(lit.pair; MOBILE []BYTE "label"; MOBILE LIT(lit.str; MOBILE []BYTE "first entry")), MOBILE LIT(lit.pair; MOBILE []BYTE "enabled"; MOBILE LIT(lit.bool; FALSE)), MOBILE LIT(lit.pair; MOBILE []BYTE "related_ids"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 102), MOBILE LIT(lit.int; 103)]))]),
+        MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "id"; MOBILE LIT(lit.int; 101)), MOBILE LIT(lit.pair; MOBILE []BYTE "label"; MOBILE LIT(lit.str; MOBILE []BYTE "second entry")), MOBILE LIT(lit.pair; MOBILE []BYTE "enabled"; MOBILE LIT(lit.bool; TRUE)), MOBILE LIT(lit.pair; MOBILE []BYTE "related_ids"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 100)]))])
     ]):
     SEQ
         SKIP

@@ -1,12 +1,12 @@
 : my_data
 +obj
-    s\" project" +key s\" alpha" +str
-    s\" lead_task" +key +obj s\" id" +key 100 +int s\" description" +key s\" first task" +str s\" is_done" +key false +bool s\" blocks" +key +arr 102 +int 103 +int -arr -obj
+    s\" collection" +key s\" alpha" +str
+    s\" featured_entry" +key +obj s\" id" +key 100 +int s\" label" +key s\" first entry" +str s\" enabled" +key false +bool s\" related_ids" +key +arr 102 +int 103 +int -arr -obj
  -obj
 ;
 : my_data
 +obj
-    s\" project" +key s\" alpha" +str
-    s\" lead_task" +key +obj s\" id" +key 100 +int s\" description" +key s\" first task" +str s\" is_done" +key false +bool s\" blocks" +key +arr 102 +int 103 +int -arr -obj
+    s\" collection" +key s\" alpha" +str
+    s\" featured_entry" +key +obj s\" id" +key 100 +int s\" label" +key s\" first entry" +str s\" enabled" +key false +bool s\" related_ids" +key +arr 102 +int 103 +int -arr -obj
  -obj
 ;

@@ -1,10 +1,10 @@
 #include <initializer_list>
 #include <string>
-#include <vector>
+#include <map>
 #include <cstddef>
 #include <memory>
 #include <utility>
-struct TaskValue {
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -23,9 +23,9 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
   // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -37,9 +37,9 @@ struct TaskValue {
   } // get const
 };
 int main() {
-auto my_data = std::vector<std::vector<TaskValue>>{
-    std::vector<TaskValue>{1, "a"},
-    std::vector<TaskValue>{2, "b"},
+auto my_data = std::map<std::string, DynamicValue>{
+    {"a", 1},
+    {"b", "x"},
 };
     (void)my_data;
     return 0;

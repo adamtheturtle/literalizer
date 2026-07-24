@@ -39,13 +39,13 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, Value>{
-    {"project", "alpha"},
-    {"lead_task", std::map<std::string, Value>{{"id", 100}, {"description", "first task"}, {"is_done", false}, {"blocks", std::vector<int>{102, 103}}}},
+    {"collection", "alpha"},
+    {"featured_entry", std::map<std::string, Value>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
 };
 (void)my_data;
 my_data = std::map<std::string, Value>{
-    {"project", "alpha"},
-    {"lead_task", std::map<std::string, Value>{{"id", 100}, {"description", "first task"}, {"is_done", false}, {"blocks", std::vector<int>{102, 103}}}},
+    {"collection", "alpha"},
+    {"featured_entry", std::map<std::string, Value>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
 };
     (void)my_data;
     return 0;
