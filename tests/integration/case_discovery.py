@@ -82,6 +82,10 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
         "record_list_of_records",
+        # Null replacements must be applied before RECORD field inference.
+        # Its dedicated capability-selected axis supplies the substitutions;
+        # base and unrelated format variants do not.
+        "record_null_substitutions_records",
         "record_nonrecord_dict_field",
         "tuple_pair_record_field",
         "tuple_pair_top_level",

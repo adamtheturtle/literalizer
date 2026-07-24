@@ -376,6 +376,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="record_named_shape", suffix=""),
         _ci(case_dir_name="record_named_nested_record", suffix=""),
     ),
+    "record_null_substitutions_record": (
+        _ci(case_dir_name="record_null_substitutions_records", suffix=""),
+    ),
     "heterogeneous_value_union_name": HETEROGENEOUS_INPUTS,
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (

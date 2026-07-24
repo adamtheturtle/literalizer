@@ -924,6 +924,8 @@ class VariantMetadata:
     supports_ref_elements_in_tuple_strategy: bool
     heterogeneous_value_variant_name_strategy: str | None
     heterogeneous_value_variant_name_version: str | None
+    record_variant_version: str | None
+    external_record_shape_fixture_prefix: str | None
 
 
 @beartype
