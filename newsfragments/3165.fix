@@ -1,0 +1,3 @@
+C++14 sequences now use a matching external ``record_shape_names`` type under
+the ``ERROR`` heterogeneous strategy while retaining native ``std::map``
+element literals.

@@ -16,7 +16,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Cpp
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -934,6 +934,26 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
             )
         )
     return variants
+
+
+@beartype
+def build_cpp14_error_record_shape_names_variants() -> Iterable[Variant]:
+    """Build the C++14 ``ERROR`` external-map-alias regression variant."""
+    yield Variant(
+        name="Cpp_error_record_shape_names_Expense",
+        spec=Cpp(
+            language_version=Cpp.version_formats.CPP14,
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.ERROR,
+            module_name="main",
+            record_shape_names={
+                frozenset({"expense_id", "trip_id", "amount_usd"}): "Expense",
+            },
+        ),
+        lang_cls=Cpp,
+        fixture_prefix=('#include "../../cpp_support/include/expense.hpp"\n'),
+        record_null_substitutions=None,
+        collection_layout=literalizer.CollectionLayout.COMPACT,
+    )
 
 
 @beartype
@@ -2036,6 +2056,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "c_field_name": build_c_field_name_variants,
     "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
     "record_shape_names": build_record_shape_names_variants,
+    "cpp14_error_record_shape_names": (
+        build_cpp14_error_record_shape_names_variants
+    ),
     "record_null_substitutions_record": (
         build_record_null_substitutions_record_variants
     ),

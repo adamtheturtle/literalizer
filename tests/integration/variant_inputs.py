@@ -376,6 +376,17 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="record_named_shape", suffix=""),
         _ci(case_dir_name="record_named_nested_record", suffix=""),
     ),
+    "cpp14_error_record_shape_names": (
+        _ci(case_dir_name="cpp14_error_named_record_shape", suffix=""),
+        _ci(
+            case_dir_name="cpp14_error_unmatched_record_shape",
+            suffix="_unmatched",
+        ),
+        _ci(
+            case_dir_name="cpp14_error_inconsistent_record_shapes",
+            suffix="_inconsistent",
+        ),
+    ),
     "record_null_substitutions_record": (
         _ci(case_dir_name="record_null_substitutions_records", suffix=""),
     ),

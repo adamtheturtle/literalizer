@@ -82,6 +82,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
         "record_list_of_records",
+        # These C++14-only cases verify that an external record shape name
+        # can type a sequence under ``ERROR`` without switching the map
+        # elements to RECORD aggregate literals (issue #3165).
+        "cpp14_error_named_record_shape",
+        "cpp14_error_unmatched_record_shape",
+        "cpp14_error_inconsistent_record_shapes",
         # Null replacements must be applied before RECORD field inference.
         # Its dedicated capability-selected axis supplies the substitutions;
         # base and unrelated format variants do not.

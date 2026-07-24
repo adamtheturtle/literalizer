@@ -3217,37 +3217,45 @@ class Cpp(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
-        Under the ``RECORD`` strategy a list whose every element is a
+        In C++14 a list whose every element has the same record shape may
+        use an externally supplied ``record_shape_names`` type for its
+        outer ``std::vector`` even when record rendering is inactive.  The
+        elements themselves then retain their native map literals.
+
+        Under an active record strategy, a list whose every element is a
         record-shaped dict renders each element as an aggregate literal;
-        the variant opener would type such a list
+        the base opener would type such a list
         ``std::vector<std::map<...>>`` (the homogeneous-map element type)
         which the struct literals cannot initialize.  Such a list is
         instead opened with a bare ``std::vector{`` so class-template
         argument deduction infers ``std::vector<RecordN>`` (or an
         externally supplied record type) from the literals. Every other
-        list keeps the typed variant opener.
+        list keeps the base inferred opener.
         """
         base_open = self.sequence_format_config.sequence_open
-        if not (
+        record_rendering_active = (
             self._record_strategy_active
             or self._uses_cpp14_tuple_record_strategy
-        ):
+        )
+        if not (record_rendering_active or self.record_shape_names):
             return base_open
 
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
-            else the typed variant opener.
+            else the record or base inferred opener.
             """
+            base_items = items
             if _all_record_shaped(items):
                 if self.language_version is self.version_formats.CPP14:
                     first_item = items[0]
-                    name = self.record_shape_names.get(
-                        frozenset(first_item.keys()),
-                    )
-                    if name is not None:
-                        return f"std::vector<{name}>{{"
-                return "std::vector{"
-            return base_open(items)
+                    keys = frozenset(first_item.keys())
+                    if all(frozenset(item.keys()) == keys for item in items):
+                        name = self.record_shape_names.get(keys)
+                        if name is not None:
+                            return f"std::vector<{name}>{{"
+                if record_rendering_active:
+                    return "std::vector{"
+            return base_open(base_items)
 
         return _open
 
