@@ -376,6 +376,20 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="record_named_shape", suffix=""),
         _ci(case_dir_name="record_named_nested_record", suffix=""),
     ),
+    "error_record_shape_names": (
+        _ci(case_dir_name="uniform_string_dicts_in_seq", suffix=""),
+        _ci(
+            case_dir_name="yaml_sequence_between_comments",
+            suffix="_unmatched",
+        ),
+        _ci(
+            case_dir_name="inconsistent_string_dict_shapes_in_seq",
+            suffix="_inconsistent",
+        ),
+    ),
+    "json_type_record_shape_names_cross": (
+        _ci(case_dir_name="uniform_string_dicts_in_seq", suffix=""),
+    ),
     "record_null_substitutions_record": (
         _ci(case_dir_name="record_null_substitutions_records", suffix=""),
     ),
