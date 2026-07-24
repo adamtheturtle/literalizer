@@ -1714,6 +1714,9 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
+    strategy:
+      matrix:
+        shard: [0, 1, 2]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -1731,11 +1734,23 @@ jobs:
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
         run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
-      # The generated filename encodes the requested C++ standard:
-      # ``@cpp14.cpp``, ``@cpp17.cpp``, or the default C++20.
+      # Sorted round-robin sharding keeps the three runners balanced while
+      # preserving exhaustive coverage. The fixture script still selects
+      # C++14, C++17, or C++20 from each generated filename.
       - name: Run clang-tidy on C++ files in their target standard
+        env:
+          SHARD_COUNT: 3
+          SHARD_INDEX: ${{ matrix.shard }}
         run: |-
-          find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-cpp-tidy && test -s /tmp/files-cpp-tidy
+          file_index=0
+          while IFS= read -r -d '' fixture; do
+            if ((file_index % SHARD_COUNT == SHARD_INDEX)); then
+              printf '%s\0' "$fixture"
+            fi
+            ((file_index += 1))
+          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+            > /tmp/files-cpp-tidy
+          test -s /tmp/files-cpp-tidy
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
@@ -1810,22 +1825,36 @@ jobs:
         run: uv run python -m scripts.run_cobol_roundtrip
 
   lint-cpp:
+    strategy:
+      matrix:
+        shard: [0, 1, 2]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Find files to lint
+        env:
+          SHARD_COUNT: 3
+          SHARD_INDEX: ${{ matrix.shard }}
         shell: bash
-        run: find tests/integration/cases -name '*.cpp' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: |-
+          file_index=0
+          while IFS= read -r -d '' fixture; do
+            if ((file_index % SHARD_COUNT == SHARD_INDEX)); then
+              printf '%s\0' "$fixture"
+            fi
+            ((file_index += 1))
+          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+            > /tmp/files-to-lint
+          test -s /tmp/files-to-lint
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
       # need the single-header library; the Ubuntu package ships
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
         run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
-      # same standard headers 269 times. Build a precompiled header once
+      # same standard headers hundreds of times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
       # each compile invocation so the parsed AST is reused instead of
       # re-parsed per file.
@@ -1843,19 +1872,22 @@ jobs:
       - name: Run C++ files
         run: |-
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh run < /tmp/files-to-lint
-      # `uv` is needed by the `C++ roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
+      # The round-trip check below generates its own C++ fixture and does not
+      # consume this job's sharded fixture list. Assign it to shard 0 so the
+      # identical check runs once rather than once per shard. Only that shard
+      # needs `uv`; the helper runs in project mode so `import literalizer`
+      # resolves.
       - name: Install uv
+        if: matrix.shard == 0
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # Basic JSON -> C++ -> JSON round-trip (issue 1867). Runs here
-      # because this is the job with the C++ toolchain and the
-      # `nlohmann-json3-dev` package; `uv run` (project mode, not
-      # `--no-project`) is required so `import literalizer` resolves.
-      # See `scripts/run_cpp_roundtrip.py`.
+      # Basic JSON -> C++ -> JSON round-trip (issue 1867). Shard 0 is only
+      # the designated owner of this shard-independent check; it has no
+      # additional fixture coverage. See `scripts/run_cpp_roundtrip.py`.
       - name: C++ roundtrip
+        if: matrix.shard == 0
         run: uv run python -m scripts.run_cpp_roundtrip
 
   lint-kotlin:
