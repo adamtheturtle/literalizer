@@ -128,7 +128,7 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
    from literalizer.languages import Python
 
    source = (
-       '{"id": 100, "label": "first item", '
+       '{"id": 100, "label": "first entry", '
        '"enabled": false, "related_ids": [102, 103]}'
    )
 
@@ -144,7 +144,7 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
        text="""\
        Record0(
            id=100,
-           label="first item",
+           label="first entry",
            enabled=False,
            related_ids=(
                102,

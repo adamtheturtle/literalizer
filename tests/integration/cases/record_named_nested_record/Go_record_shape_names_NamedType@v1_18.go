@@ -6,16 +6,16 @@ type NamedType struct {
 	RelatedIds []int
 }
 type Record0 struct {
-	Project string
-	LeadItem NamedType
+	Collection string
+	FeaturedEntry NamedType
 }
 
 func main() {
 my_data := Record0{
-	Project: "alpha",
-	LeadItem: NamedType{
+	Collection: "alpha",
+	FeaturedEntry: NamedType{
 		Id: 100,
-		Label: "first item",
+		Label: "first entry",
 		Enabled: false,
 		RelatedIds: []int{
 			102,

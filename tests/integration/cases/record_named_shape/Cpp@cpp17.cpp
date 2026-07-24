@@ -5,8 +5,8 @@
 #include <variant>
 int main() {
 auto my_data = std::vector<std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>>{
-    std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first item"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},
-    std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 101}, {"label", "second item"}, {"enabled", true}, {"related_ids", std::vector<int>{100}}},
+    std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},
+    std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 101}, {"label", "second entry"}, {"enabled", true}, {"related_ids", std::vector<int>{100}}},
 };
     (void)my_data;
     return 0;

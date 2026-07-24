@@ -6,15 +6,15 @@ struct NamedType {
     related_ids: Vec<i32>,
 }
 struct Record0 {
-    project: &'static str,
-    lead_item: NamedType,
+    collection: &'static str,
+    featured_entry: NamedType,
 }
 fn main() {
     let my_data = Record0 {
-        project: "alpha",
-        lead_item: NamedType {
+        collection: "alpha",
+        featured_entry: NamedType {
             id: 100,
-            label: "first item",
+            label: "first entry",
             enabled: false,
             related_ids: vec![
                 102,

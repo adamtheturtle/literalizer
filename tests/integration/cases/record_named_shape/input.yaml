@@ -1,9 +1,9 @@
 ---
 - id: 100
-  label: first item
+  label: first entry
   enabled: false
   related_ids: [102, 103]
 - id: 101
-  label: second item
+  label: second entry
   enabled: true
   related_ids: [100]

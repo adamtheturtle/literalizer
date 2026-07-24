@@ -3,13 +3,13 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Record0 { std::string project; NamedType lead_item; };
+struct Record0 { std::string collection; NamedType featured_entry; };
 int main() {
 auto my_data = Record0{
     "alpha",
     NamedType{
         100,
-        "first item",
+        "first entry",
         false,
         std::vector<int>{
             102,

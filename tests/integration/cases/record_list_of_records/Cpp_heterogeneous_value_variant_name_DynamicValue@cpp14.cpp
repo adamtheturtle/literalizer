@@ -1,10 +1,11 @@
 #include <initializer_list>
 #include <string>
-#include <cstddef>
 #include <map>
+#include <vector>
+#include <cstddef>
 #include <memory>
 #include <utility>
-struct CustomValue {
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -23,8 +24,8 @@ struct CustomValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -36,15 +37,9 @@ struct CustomValue {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, CustomValue>{
-    {"s", CustomValue{"string"}},
-    {"i", CustomValue{1}},
-    {"f", CustomValue{1.5}},
-    {"b", CustomValue{true}},
-    {"n", CustomValue{nullptr}},
-    {"d", CustomValue{"2024-01-15"}},
-    {"dt", CustomValue{"2024-01-15T12:00:00"}},
-    {"by", CustomValue{"48656c6c6f"}},
+auto my_data = std::map<std::string, DynamicValue>{
+    {"name", DynamicValue{"box"}},
+    {"items", DynamicValue{std::vector<std::map<std::string, DynamicValue>>{std::map<std::string, DynamicValue>{{"id", DynamicValue{1}}, {"label", DynamicValue{"first"}}}, std::map<std::string, DynamicValue>{{"id", DynamicValue{2}}, {"label", DynamicValue{"second"}}}}}},
 };
     (void)my_data;
     return 0;

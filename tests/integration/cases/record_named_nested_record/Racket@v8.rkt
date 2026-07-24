@@ -1,5 +1,5 @@
 #lang racket
 (define my_data (hash
-    "project" "alpha"
-    "lead_item" (hash "id" 100 "label" "first item" "enabled" #f "related_ids" (list 102 103))
+    "collection" "alpha"
+    "featured_entry" (hash "id" 100 "label" "first entry" "enabled" #f "related_ids" (list 102 103))
 ))

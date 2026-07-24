@@ -12,6 +12,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "id" (PInt 100)), (Tuple "label" (PStr "first item")), (Tuple "enabled" (PBool false)), (Tuple "related_ids" (PList [PInt 102, PInt 103]))],
-    PDict [(Tuple "id" (PInt 101)), (Tuple "label" (PStr "second item")), (Tuple "enabled" (PBool true)), (Tuple "related_ids" (PList [PInt 100]))]
+    PDict [(Tuple "id" (PInt 100)), (Tuple "label" (PStr "first entry")), (Tuple "enabled" (PBool false)), (Tuple "related_ids" (PList [PInt 102, PInt 103]))],
+    PDict [(Tuple "id" (PInt 101)), (Tuple "label" (PStr "second entry")), (Tuple "enabled" (PBool true)), (Tuple "related_ids" (PList [PInt 100]))]
     ]

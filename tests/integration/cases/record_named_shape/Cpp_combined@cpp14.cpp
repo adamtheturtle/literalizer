@@ -38,13 +38,13 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first item"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
-    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second item"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
+    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
+    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second entry"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
 };
 (void)my_data;
 my_data = std::vector<std::map<std::string, Value>>{
-    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first item"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
-    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second item"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
+    std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}},
+    std::map<std::string, Value>{{"id", Value{101}}, {"label", Value{"second entry"}}, {"enabled", Value{true}}, {"related_ids", Value{std::vector<int>{100}}}},
 };
     (void)my_data;
     return 0;

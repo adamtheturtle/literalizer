@@ -11,6 +11,6 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("project", EStr "alpha"),
-    ("lead_item", EDict [("id", EInt 100), ("label", EStr "first item"), ("enabled", EBool False), ("related_ids", EList [EInt 102, EInt 103])])
+    ("collection", EStr "alpha"),
+    ("featured_entry", EDict [("id", EInt 100), ("label", EStr "first entry"), ("enabled", EBool False), ("related_ids", EList [EInt 102, EInt 103])])
     ]

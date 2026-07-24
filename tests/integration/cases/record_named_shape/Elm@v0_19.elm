@@ -11,6 +11,6 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EDict [("id", EInt 100), ("label", EStr "first item"), ("enabled", EBool False), ("related_ids", EList [EInt 102, EInt 103])],
-    EDict [("id", EInt 101), ("label", EStr "second item"), ("enabled", EBool True), ("related_ids", EList [EInt 100])]
+    EDict [("id", EInt 100), ("label", EStr "first entry"), ("enabled", EBool False), ("related_ids", EList [EInt 102, EInt 103])],
+    EDict [("id", EInt 101), ("label", EStr "second entry"), ("enabled", EBool True), ("related_ids", EList [EInt 100])]
     ]

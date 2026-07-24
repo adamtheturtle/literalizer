@@ -5,13 +5,13 @@
 #include <variant>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>>>{
-    {"project", "alpha"},
-    {"lead_item", std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first item"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
+    {"collection", "alpha"},
+    {"featured_entry", std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
 };
 (void)my_data;
 my_data = std::map<std::string, std::variant<std::string, std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>>>{
-    {"project", "alpha"},
-    {"lead_item", std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first item"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
+    {"collection", "alpha"},
+    {"featured_entry", std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}}},
 };
     (void)my_data;
     return 0;

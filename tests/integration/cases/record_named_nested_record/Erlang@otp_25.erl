@@ -2,7 +2,7 @@
 -export([x/0]).
 x() ->
     My_data = #{
-        "project" => "alpha",
-        "lead_item" => #{"id" => 100, "label" => "first item", "enabled" => false, "related_ids" => [102, 103]}
+        "collection" => "alpha",
+        "featured_entry" => #{"id" => 100, "label" => "first entry", "enabled" => false, "related_ids" => [102, 103]}
     },
     My_data.

@@ -8,8 +8,8 @@ type NamedType struct {
 
 func main() {
 my_data := []any{
-	NamedType{Id: 100, Label: "first item", Enabled: false, RelatedIds: []int{102, 103}},
-	NamedType{Id: 101, Label: "second item", Enabled: true, RelatedIds: []int{100}},
+	NamedType{Id: 100, Label: "first entry", Enabled: false, RelatedIds: []int{102, 103}},
+	NamedType{Id: 101, Label: "second entry", Enabled: true, RelatedIds: []int{100}},
 }
 _ = my_data
 }

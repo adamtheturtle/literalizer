@@ -1,10 +1,11 @@
 #include <initializer_list>
 #include <string>
 #include <map>
+#include <vector>
+#include <utility>
 #include <cstddef>
 #include <memory>
-#include <utility>
-struct CustomValue {
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -23,8 +24,8 @@ struct CustomValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -36,9 +37,10 @@ struct CustomValue {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, CustomValue>{
-    {"id", CustomValue{1}},
-    {"owner", CustomValue{std::map<std::string, CustomValue>{{"name", CustomValue{"Alice"}}, {"age", CustomValue{30}}}}},
+auto my_data = std::map<std::string, DynamicValue>{
+    {"omap_value", DynamicValue{std::vector<std::pair<std::string, int>>{{"first", 1}}}},
+    {"sibling_lists", DynamicValue{std::map<std::string, DynamicValue>{{"numbers", DynamicValue{std::vector<int>{1, 2}}}, {"strings", DynamicValue{std::vector<std::string>{"x", "y"}}}}}},
+    {"ref_marker_present", DynamicValue{std::vector<std::string>{"$keep", "z"}}},
 };
     (void)my_data;
     return 0;

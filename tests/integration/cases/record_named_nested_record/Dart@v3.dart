@@ -1,4 +1,4 @@
 final my_data = <String, dynamic>{
-    "project": "alpha",
-    "lead_item": <String, dynamic>{"id": 100, "label": "first item", "enabled": false, "related_ids": <int>[102, 103]},
+    "collection": "alpha",
+    "featured_entry": <String, dynamic>{"id": 100, "label": "first entry", "enabled": false, "related_ids": <int>[102, 103]},
 };

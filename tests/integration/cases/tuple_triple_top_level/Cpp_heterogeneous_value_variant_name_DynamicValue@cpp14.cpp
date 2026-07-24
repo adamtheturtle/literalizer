@@ -1,11 +1,10 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <vector>
 #include <cstddef>
 #include <memory>
 #include <utility>
-struct CustomValue {
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -24,8 +23,8 @@ struct CustomValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -37,9 +36,10 @@ struct CustomValue {
   } // get const
 };
 int main() {
-auto my_data = std::vector<std::map<std::string, CustomValue>>{
-    std::map<std::string, CustomValue>{{"type", CustomValue{"create"}}, {"pr_id", CustomValue{"pr_1"}}, {"draft", CustomValue{true}}},
-    std::map<std::string, CustomValue>{{"type", CustomValue{"create"}}, {"pr_id", CustomValue{"pr_2"}}},
+auto my_data = std::vector<DynamicValue>{
+    DynamicValue{1},
+    DynamicValue{"email"},
+    DynamicValue{true},
 };
     (void)my_data;
     return 0;

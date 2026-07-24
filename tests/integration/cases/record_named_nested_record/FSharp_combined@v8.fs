@@ -8,14 +8,14 @@ type Val =
     | FMap of (string * Val) list
 let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
-        ("project", FStr "alpha");
-        ("lead_item", FMap [("id", FInt 100L); ("label", FStr "first item"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
+        ("collection", FStr "alpha");
+        ("featured_entry", FMap [("id", FInt 100L); ("label", FStr "first entry"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FMap [
-        ("project", FStr "alpha");
-        ("lead_item", FMap [("id", FInt 100L); ("label", FStr "first item"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
+        ("collection", FStr "alpha");
+        ("featured_entry", FMap [("id", FInt 100L); ("label", FStr "first entry"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
     ]
     ignore my_data

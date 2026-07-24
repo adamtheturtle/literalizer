@@ -10,8 +10,8 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HList [
-    HMap [("id", 100), ("label", HStr "first item"), ("enabled", HBool False), ("related_ids", HList [102, 103])],
-    HMap [("id", 101), ("label", HStr "second item"), ("enabled", HBool True), ("related_ids", HList [100])]
+    HMap [("id", 100), ("label", HStr "first entry"), ("enabled", HBool False), ("related_ids", HList [102, 103])],
+    HMap [("id", 101), ("label", HStr "second entry"), ("enabled", HBool True), ("related_ids", HList [100])]
     ]
 main :: IO ()
 main = seq my_data (return ())

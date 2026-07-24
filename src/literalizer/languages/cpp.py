@@ -2078,7 +2078,7 @@ class Cpp(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     non_default_kwargs: ClassVar[dict[str, str]] = {
-        "heterogeneous_value_variant_name": "CustomValue",
+        "heterogeneous_value_variant_name": "DynamicValue",
     }
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None

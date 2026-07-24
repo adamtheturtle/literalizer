@@ -38,13 +38,13 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, Value>{
-    {"project", Value{"alpha"}},
-    {"lead_item", Value{std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first item"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}}}},
+    {"collection", Value{"alpha"}},
+    {"featured_entry", Value{std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}}}},
 };
 (void)my_data;
 my_data = std::map<std::string, Value>{
-    {"project", Value{"alpha"}},
-    {"lead_item", Value{std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first item"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}}}},
+    {"collection", Value{"alpha"}},
+    {"featured_entry", Value{std::map<std::string, Value>{{"id", Value{100}}, {"label", Value{"first entry"}}, {"enabled", Value{false}}, {"related_ids", Value{std::vector<int>{102, 103}}}}}},
 };
     (void)my_data;
     return 0;

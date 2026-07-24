@@ -8,7 +8,7 @@ from literalizer.languages import Cpp
 
 @pytest.mark.parametrize(
     argnames="name",
-    argvalues=["", "custom-value", "1Value", "class"],
+    argvalues=["", "value-name", "1Value", "class"],
 )
 def test_cpp14_rejects_invalid_value_carrier_name(name: str) -> None:
     """The generated carrier name must be a C++ identifier."""
@@ -30,8 +30,8 @@ def test_cpp14_rejects_value_carrier_record_name_collision() -> None:
     ):
         Cpp(
             language_version=Cpp.version_formats.CPP14,
-            heterogeneous_value_variant_name="CustomValue",
-            record_shape_names={frozenset({"id"}): "CustomValue"},
+            heterogeneous_value_variant_name="DynamicValue",
+            record_shape_names={frozenset({"id"}): "DynamicValue"},
         )
 
 

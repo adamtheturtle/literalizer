@@ -16,8 +16,8 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"project", ((CVal){.s = "alpha"})},
-    {"lead_item", ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 100})}, {"label", ((CVal){.s = "first item"})}, {"enabled", ((CVal){.b = false})}, {"related_ids", ((CVal){.a = (CVal[]){((CVal){.i = 102}), ((CVal){.i = 103})}})}}})},
+    {"collection", ((CVal){.s = "alpha"})},
+    {"featured_entry", ((CVal){.m = (CKV[]){{"id", ((CVal){.i = 100})}, {"label", ((CVal){.s = "first entry"})}, {"enabled", ((CVal){.b = false})}, {"related_ids", ((CVal){.a = (CVal[]){((CVal){.i = 102}), ((CVal){.i = 103})}})}}})},
 }});
     (void)my_data;
     return 0;

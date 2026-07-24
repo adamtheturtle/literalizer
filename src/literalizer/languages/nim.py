@@ -787,8 +787,8 @@ def _nim_record_field_identifier(key: str, /) -> str:
     Nim has style-insensitive identifiers that accept the original
     key, but the generated declaration and ``Record0(field: value,
     ...)`` literal read most naturally in the conventional Nim
-    ``camelCase`` (e.g. ``is_done`` -> ``isDone``); the same conversion
-    is applied to both so they always agree.
+    ``camelCase`` (e.g. ``display_name`` -> ``displayName``); the same
+    conversion is applied to both so they always agree.
     """
     return IdentifierCase.CAMEL.convert(name=key)
 

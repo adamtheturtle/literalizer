@@ -1,4 +1,4 @@
 my_data = struct(
-    'project', "alpha",
-    'lead_item', struct('id', 100, 'label', "first item", 'enabled', false, 'related_ids', {{102, 103}})
+    'collection', "alpha",
+    'featured_entry', struct('id', 100, 'label', "first entry", 'enabled', false, 'related_ids', {{102, 103}})
 );
