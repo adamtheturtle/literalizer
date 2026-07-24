@@ -112,46 +112,6 @@ _RECORD_NULL_SUBSTITUTIONS_CASE: Final = "record_null_substitutions"
 _RECORD_NULL_SUBSTITUTIONS: Final = {"replacement": -1}
 
 
-def _merge_fixture_prefix(*, fixture_prefix: str, generated_code: str) -> str:
-    """Place a fixture declaration after one de-duplicated include
-    block.
-    """
-    if not fixture_prefix:
-        return generated_code
-
-    prefix_lines = fixture_prefix.rstrip("\n").splitlines()
-    generated_lines = generated_code.splitlines()
-    prefix_include_count = next(
-        (
-            index
-            for index, line in enumerate(iterable=prefix_lines)
-            if not line.startswith("#include ")
-        ),
-        len(prefix_lines),
-    )
-    generated_include_count = next(
-        (
-            index
-            for index, line in enumerate(iterable=generated_lines)
-            if not line.startswith("#include ")
-        ),
-        len(generated_lines),
-    )
-    includes = dict.fromkeys(
-        (
-            *generated_lines[:generated_include_count],
-            *prefix_lines[:prefix_include_count],
-        )
-    )
-    return "\n".join(
-        (
-            *includes,
-            *prefix_lines[prefix_include_count:],
-            *generated_lines[generated_include_count:],
-        )
-    )
-
-
 def _skip_unrepresentable(
     *,
     exc: Exception,
@@ -549,13 +509,7 @@ def test_format_variant_golden_file(
                     prefix="Format",
                 )
             file_regression.check(
-                contents=(
-                    _merge_fixture_prefix(
-                        fixture_prefix=variant.fixture_prefix,
-                        generated_code=result.code,
-                    )
-                    + "\n"
-                ),
+                contents=variant.fixture_prefix + result.code + "\n",
                 encoding="utf-8",
                 extension=variant.spec.extension,
                 newline=None,

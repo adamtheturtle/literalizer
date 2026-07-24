@@ -1944,10 +1944,7 @@ class Cpp(metaclass=LanguageCls):
         heterogeneous_value_variant_name_version="CPP14",
         record_variant_version="CPP14",
         external_record_shape_fixture_prefix=(
-            "#include <string>\n"
-            "#include <vector>\n"
-            "struct NamedType { int id{}; std::string description; "
-            "bool is_done{}; std::vector<int> blocks; };\n"
+            '#include "../../cpp_support/named_type.hpp"\n'
         ),
         pre_indent_comment_scalar_variant=True,
         fixture_module_name_template=None,
