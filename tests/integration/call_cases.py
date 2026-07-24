@@ -524,11 +524,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
         variable_form=None,
-        zip_source="---\n- 1\n- 0\n",
+        zip_source="---\n- one\n- zero\n",
         zip_input_format=literalizer.InputFormat.YAML,
         comment_source=None,
         transform_stub_param_names=["_call", "_zip"],
-        # The integer ``$zipped`` value is not a map literal, so no
+        # The string ``$zipped`` value is not a map literal, so no
         # free-expression dict support is needed.  The two-parameter
         # wrapper stub is gated generically: languages without
         # ``supports_multi_param_call_wrapper_stub`` are skipped.
@@ -554,11 +554,11 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_standalone_wrapped_comments=False,
         self_contained_mirror_variable_form=None,
         variable_form=None,
-        zip_source="--- 1\n",
+        zip_source="--- one\n",
         zip_input_format=literalizer.InputFormat.YAML,
         comment_source=None,
         transform_stub_param_names=["_call", "_zip"],
-        # Integer ``$zipped`` value; same generic two-parameter wrapper
+        # String ``$zipped`` value; same generic two-parameter wrapper
         # gating as ``call_zip_values``.
         requires_dict_literal_as_free_expression=False,
     ),

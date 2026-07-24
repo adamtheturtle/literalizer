@@ -6,7 +6,7 @@ type val_t =
   | OList of val_t list
 let process _ = ()
 let emit _ = ()
-let _ = emit(process("hello"), 1)
-let _ = emit(process(42), 0)
+let _ = emit(process("hello"), "one")
+let _ = emit(process(42), "zero")
 
 end

@@ -6,5 +6,5 @@ type Val =
     | FList of Val list
 let process (_value: obj) : obj = null
 let emit (__call: obj, __zip: obj) : obj = null
-emit(process("hello"), 1)
-emit(process(42), 0)
+emit(process("hello"), "one")
+emit(process(42), "zero")

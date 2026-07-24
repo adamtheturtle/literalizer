@@ -4,5 +4,5 @@ datatype val_t =
   | SList of val_t list
 fun process _ = ()
 fun emit _ = ()
-val _ = emit(process("hello"), 1)
-val _ = emit(process(42), 0)
+val _ = emit(process("hello"), "one")
+val _ = emit(process(42), "zero")

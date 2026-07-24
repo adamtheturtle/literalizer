@@ -1,3 +1,3 @@
 sub process(*@a, *%kw) {}
 sub emit(*@a, *%kw) {}
-emit(process(42), 1);
+emit(process(42), 'one');

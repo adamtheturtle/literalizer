@@ -5,7 +5,7 @@
 auto process(auto...) { return 0; }
 auto emit(auto...) { return 0; }
 int main() {
-emit(process("hello"), 1);
-emit(process(42), 0);
+emit(process("hello"), "one");
+emit(process(42), "zero");
     return 0;
 }

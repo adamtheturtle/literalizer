@@ -4,5 +4,5 @@ process :: proc(args: ..any) -> any { return nil }
 emit :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
-emit(process(42), 1);
+emit(process(42), "one");
 }

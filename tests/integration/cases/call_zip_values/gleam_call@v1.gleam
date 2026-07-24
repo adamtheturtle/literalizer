@@ -7,6 +7,6 @@ pub fn process(_value: a) -> Nil { Nil }
 pub fn emit(__call: a, __zip: b) -> Nil { Nil }
 
 pub fn main() {
-  emit(process(GStr("hello")), GInt(1))
-  emit(process(GInt(42)), GInt(0))
+  emit(process(GStr("hello")), GStr("one"))
+  emit(process(GInt(42)), GStr("zero"))
 }

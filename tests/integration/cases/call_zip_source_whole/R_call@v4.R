@@ -1,3 +1,3 @@
 process <- function(...) NULL
 emit <- function(...) NULL
-emit(process(value = 42), 1)
+emit(process(value = 42), "one")

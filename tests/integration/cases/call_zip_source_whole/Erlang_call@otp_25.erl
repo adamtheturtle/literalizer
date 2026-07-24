@@ -3,4 +3,4 @@
 process(_) -> undefined.
 emit(_, _) -> ok.
 x() ->
-    emit(process(42), 1).
+    emit(process(42), "one").

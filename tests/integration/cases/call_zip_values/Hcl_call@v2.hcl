@@ -1,2 +1,2 @@
-_0 = emit(process("hello"), 1)
-_1 = emit(process(42), 0)
+_0 = emit(process("hello"), "one")
+_1 = emit(process(42), "zero")

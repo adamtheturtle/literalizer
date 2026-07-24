@@ -7,6 +7,6 @@ Module Check
         Return Nothing
     End Function
     Sub _calls()
-        emit(process(42), 1)
+        emit(process(42), "one")
     End Sub
 End Module
