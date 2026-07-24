@@ -136,6 +136,8 @@ def build_non_default_variants(
                     name=f"{lang_name}_{category}_{fmt.name.lower()}",
                     spec=make_variant_spec(lang_cls, fmt),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -154,6 +156,8 @@ def _build_default_type_variants(
             name=f"{lang_cls.__name__}_{variant_suffix}",
             spec=make_spec(lang_cls=lang_cls, **{field_name: type_name}),
             lang_cls=lang_cls,
+            fixture_prefix="",
+            record_null_substitutions=None,
             collection_layout=literalizer.CollectionLayout.COMPACT,
         )
         for lang_cls in sorted_languages()
@@ -244,6 +248,8 @@ def build_json_type_variants() -> Iterable[Variant]:
                     name=f"{lang_cls.__name__}_json_type_{suffix}",
                     spec=make_spec(lang_cls=lang_cls, json_type=json_type),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -320,6 +326,8 @@ def build_json_type_cross_variants(
                         **{kwarg: fmt},
                     ),
                     lang_cls=json_variant.lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -402,6 +410,8 @@ def build_empty_dict_key_variants() -> Iterable[Variant]:
                         empty_dict_key=fmt,
                     ),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -475,6 +485,8 @@ def build_statement_terminator_style_decl_variants() -> Iterable[Variant]:
                     declaration_style=declaration_style,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for statement_terminator_style in (
@@ -521,6 +533,8 @@ def build_sequence_decl_variants() -> Iterable[Variant]:
                     declaration_style=declaration_style,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for sequence_format in non_default_sequence_formats
@@ -588,6 +602,8 @@ def build_json_type_declaration_cross_variants() -> list[Variant]:
                     ),
                     spec=variant_spec,
                     lang_cls=json_variant.lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -616,6 +632,8 @@ def build_json_type_variable_form_cases() -> list[VariantCase]:
                         name=name,
                         spec=spec,
                         lang_cls=json_variant.lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     ),
                     case_dir_name="dict_with_list_value",
@@ -647,6 +665,8 @@ def build_json_type_variable_form_cases() -> list[VariantCase]:
                 name=name,
                 spec=make_spec(lang_cls=json_variant.lang_cls, **kwargs),
                 lang_cls=json_variant.lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             cases.append(
@@ -707,6 +727,8 @@ def build_set_decl_variants() -> Iterable[Variant]:
                         ),
                         spec=make_spec(lang_cls=lang_cls, **kwargs),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -757,6 +779,8 @@ def build_dict_decl_variants() -> Iterable[Variant]:
                         ),
                         spec=make_spec(lang_cls=lang_cls, **kwargs),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -776,6 +800,8 @@ def build_constructor_name_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_constructor_names_j",
                 spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -800,6 +826,8 @@ def build_type_name_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_type_name_{custom_name}",
                 spec=make_spec(lang_cls=lang_cls, type_name=custom_name),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -823,6 +851,8 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
                     lang_cls=lang_cls, constructor_prefix=custom_prefix
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -857,12 +887,10 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     custom_name = "NamedType"
     for lang_cls in sorted_languages():
         default_spec = make_spec(lang_cls=lang_cls)
-        if not isinstance(default_spec, _HasRecordShapeNames):
+        if not lang_cls.supports_record_shape_names:
             continue
-        if not lang_cls.record_shape_names_emit_declarations:
-            # A standalone golden fixture cannot declare a mapped type. A
-            # focused language test covers the rendered expression instead.
-            continue
+        metadata = lang_cls.variant_metadata
+        assert isinstance(default_spec, _HasRecordShapeNames)  # noqa: S101
         # A spec exposing ``record_shape_names`` always also exposes the
         # RECORD strategy the field configures, so ``next`` cannot miss.
         record_strategy = next(
@@ -874,6 +902,17 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
             "heterogeneous_strategy": record_strategy,
             "record_shape_names": {shape_keys: custom_name},
         }
+        if metadata.record_variant_version is not None:
+            spec_kwargs["language_version"] = enum_member_by_name(
+                enum_cls=lang_cls.VersionFormats,
+                name=metadata.record_variant_version,
+            )
+        fixture_prefix = metadata.external_record_shape_fixture_prefix
+        if lang_cls.record_shape_names_emit_declarations:
+            assert fixture_prefix is None  # noqa: S101
+            fixture_prefix = ""
+        else:
+            assert fixture_prefix is not None  # noqa: S101
         # Mirror :func:`make_spec`'s ``module_name`` default (this
         # builder bypasses it): a language whose ``wrap_in_file``
         # introduces a named scope (e.g. Java's ``class {module_name}``,
@@ -889,6 +928,53 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
                 name=(f"{lang_cls.__name__}_record_shape_names_{custom_name}"),
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix=fixture_prefix,
+                record_null_substitutions=None,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
+@beartype
+def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
+    """Build a ``RECORD`` variant for every language that names generated
+    record structs.
+
+    This cross-language golden verifies that null replacements participate
+    in record-field type inference instead of merely checking one rendered
+    C++ expression.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if not lang_cls.supports_record_struct_name_prefix:
+            continue
+        default_spec = make_spec(lang_cls=lang_cls)
+        metadata = lang_cls.variant_metadata
+        record_strategy = next(
+            strategy
+            for strategy in default_spec.heterogeneous_strategies
+            if strategy.name == "RECORD"
+        )
+        spec_kwargs: dict[str, object] = {
+            "heterogeneous_strategy": record_strategy,
+        }
+        if metadata.record_variant_version is not None:
+            spec_kwargs["language_version"] = enum_member_by_name(
+                enum_cls=lang_cls.VersionFormats,
+                name=metadata.record_variant_version,
+            )
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_record_null_substitutions_record",
+                spec=make_spec(lang_cls=lang_cls, **spec_kwargs),
+                lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions={
+                    "due_date": -1,
+                    "parent_id": -1,
+                    "assignee": "",
+                },
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -933,6 +1019,8 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
                             string_format=string_format,
                         ),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -951,6 +1039,8 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
                         json_type=json_type,
                     ),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -1022,6 +1112,8 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
                         ),
                         spec=spec,
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=layout,
                     )
                 )
@@ -1071,6 +1163,8 @@ def build_record_epoch_i32_overflow_variants() -> Iterable[Variant]:
                     datetime_format=epoch,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1150,6 +1244,8 @@ def build_record_numeric_cross_variants() -> Iterable[Variant]:
                             **{kwarg: fmt},
                         ),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -1189,6 +1285,8 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
                 ),
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1229,6 +1327,8 @@ def build_tagged_enum_empty_container_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_tagged_enum_empty_container",
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1248,6 +1348,8 @@ def build_empty_container_type_hint_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_empty_container_type_hint",
                 spec=lang_cls(**kwargs),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1267,6 +1369,8 @@ def build_c_field_name_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_field_names_custom",
                 spec=make_spec(lang_cls=lang_cls, **kwargs),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1297,6 +1401,8 @@ def build_language_version_variants() -> Iterable[Variant]:
                         lang_cls=lang_cls, language_version=version
                     ),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -1336,6 +1442,8 @@ def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
                 ),
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1386,6 +1494,8 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
                 ),
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1433,6 +1543,8 @@ def build_string_format_cross_variants(
                             **{other_kwarg: of},
                         ),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -1476,6 +1588,8 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
                             datetime_format=dt,
                         ),
                         lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
@@ -1511,6 +1625,8 @@ def build_object_variant_container_variants() -> list[Variant]:
                     heterogeneous_strategy=strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1543,6 +1659,8 @@ def build_nested_tuple_strategy_variants() -> list[Variant]:
                     language_version=version,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for version in lang_cls.VersionFormats
@@ -1631,6 +1749,8 @@ def build_type_hints_cross_variants() -> list[Variant]:
                                 **{kwarg: fmt},
                             ),
                             lang_cls=lang_cls,
+                            fixture_prefix="",
+                            record_null_substitutions=None,
                             collection_layout=literalizer.CollectionLayout.COMPACT,
                         ),
                     )
@@ -1856,6 +1976,8 @@ def build_bool_format_variants() -> Iterable[Variant]:
                     ),
                     spec=make_spec(lang_cls=lang_cls, bool_format=fmt),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
             )
@@ -1914,6 +2036,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "c_field_name": build_c_field_name_variants,
     "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
     "record_shape_names": build_record_shape_names_variants,
+    "record_null_substitutions_record": (
+        build_record_null_substitutions_record_variants
+    ),
     "heterogeneous_value_union_name": (
         build_heterogeneous_value_union_name_variants
     ),

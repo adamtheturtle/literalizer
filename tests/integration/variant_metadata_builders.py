@@ -38,6 +38,8 @@ def build_collection_layout_variants() -> Iterable[Variant]:
                 name=f"{name_prefix}_{layout.value}",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=layout,
             )
             for layout in literalizer.CollectionLayout
@@ -76,6 +78,8 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_record_unify_optional_fields",
                 spec=spec,
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -113,6 +117,8 @@ def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
                     heterogeneous_strategy=record_strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -155,6 +161,8 @@ def build_record_keyword_field_variants() -> Iterable[Variant]:
                     heterogeneous_strategy=record_strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -190,6 +198,8 @@ def build_record_quoted_field_variants() -> Iterable[Variant]:
                     heterogeneous_strategy=record_strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -234,6 +244,8 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
                     heterogeneous_strategy=record_strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -298,12 +310,16 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                 name=f"{lang_cls.__name__}_nested_map_widening",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             ),
             Variant(
                 name=f"{lang_cls.__name__}_nested_map_widening_multiline",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.MULTILINE,
             ),
         )
@@ -323,6 +339,8 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                     name=f"{lang_cls.__name__}_nested_map_widening",
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
@@ -331,6 +349,8 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                     ),
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=(literalizer.CollectionLayout.MULTILINE),
                 ),
             ]
@@ -367,6 +387,8 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
                     name=f"{lang_cls.__name__}_nested_map_widening",
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
@@ -375,6 +397,8 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
                     ),
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.MULTILINE,
                 ),
             )
@@ -409,12 +433,16 @@ def build_empty_map_narrowing_variants() -> Iterable[Variant]:
                     name=f"{lang_cls.__name__}_empty_map_narrowing",
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
                     name=f"{lang_cls.__name__}_empty_map_narrowing_multiline",
                     spec=spec,
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.MULTILINE,
                 ),
             )
@@ -457,6 +485,8 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
                     default_dict_value_type=dict_value_type,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -502,6 +532,8 @@ def build_modifier_variant_cases() -> list[VariantCase]:
                 name=f"{lang_cls.__name__}_modifiers_{mod_name}",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             cases.extend(
@@ -552,6 +584,8 @@ def build_modifier_variant_cases() -> list[VariantCase]:
                         sequence_format=sequence_format,
                     ),
                     lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
                     collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
                 cases.append(

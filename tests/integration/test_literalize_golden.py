@@ -475,6 +475,9 @@ def test_format_variant_golden_file(
                         variable_form=variant_case.variable_form,
                         wrap_in_file=True,
                         collection_layout=variant.collection_layout,
+                        record_null_substitutions=(
+                            variant.record_null_substitutions
+                        ),
                     )
                 except VariableNameNotSupportedError:
                     result = literalizer.literalize(
@@ -486,6 +489,9 @@ def test_format_variant_golden_file(
                         variable_form=None,
                         wrap_in_file=True,
                         collection_layout=variant.collection_layout,
+                        record_null_substitutions=(
+                            variant.record_null_substitutions
+                        ),
                     )
             except (
                 UnrepresentableIntegerError,
@@ -503,7 +509,7 @@ def test_format_variant_golden_file(
                     prefix="Format",
                 )
             file_regression.check(
-                contents=result.code + "\n",
+                contents=variant.fixture_prefix + result.code + "\n",
                 encoding="utf-8",
                 extension=variant.spec.extension,
                 newline=None,
