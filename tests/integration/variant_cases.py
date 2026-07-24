@@ -16,6 +16,9 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
+
+# Keep this import generic: discover variant languages through their explicit
+# capability metadata; do not import individual language classes here.
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_discovery import cases_with_special_floats
