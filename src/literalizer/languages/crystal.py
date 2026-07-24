@@ -506,6 +506,9 @@ class Crystal(metaclass=LanguageCls):
     supports_non_ascii_string_literals = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=True,
+        supports_ref_elements_in_tuple_strategy=False,
+        heterogeneous_value_variant_name_strategy=None,
+        heterogeneous_value_variant_name_version=None,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template="Fixture_{parent}_{stem}",
         fixture_module_name_lowercase=False,
@@ -1208,7 +1211,6 @@ class Crystal(metaclass=LanguageCls):
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CRYSTAL_RECORD_MAP_TYPE}{{",
-            record_shape_allowed=None,
         )
 
     @cached_property

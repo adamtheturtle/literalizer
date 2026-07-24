@@ -2,11 +2,11 @@
 #include <string>
 #include <map>
 #include <vector>
-struct Record0 { std::vector<std::nullptr_t> a; std::vector<std::nullptr_t> b; };
+#include <cstddef>
 int main() {
-auto my_data = Record0{
-    std::vector<std::nullptr_t>{},
-    std::vector<std::nullptr_t>{},
+auto my_data = std::map<std::string, std::vector<std::nullptr_t>>{
+    {"a", std::vector<std::nullptr_t>{}},
+    {"b", std::vector<std::nullptr_t>{}},
 };
     (void)my_data;
     return 0;
