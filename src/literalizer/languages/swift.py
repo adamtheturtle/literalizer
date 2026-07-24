@@ -1214,6 +1214,7 @@ class Swift(metaclass=LanguageCls):
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

@@ -13,7 +13,7 @@ from literalizer.exceptions import UnrepresentableStringError
 from literalizer.languages import Cobol, R
 
 
-def _render(*, language: Language, source: str = '{"x": "\\u0000"}') -> str:
+def _render(*, language: Language, source: str) -> str:
     """Literalize *source* under *language* and return the code text."""
     return literalize(
         source=source,
@@ -31,6 +31,6 @@ def test_string_literals_reject_unrepresentable_nul(
     with pytest.raises(
         expected_exception=UnrepresentableStringError,
     ) as caught:
-        _render(language=language)
+        _render(language=language, source='{"x": "\\u0000"}')
 
     assert caught.value.character_name == "NUL"
