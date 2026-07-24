@@ -21,7 +21,7 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('project', fstr('alpha')), &
-        fentry('lead_task', fmap([fval_t :: fentry('id', fint(100_int64)), fentry('description', fstr('first task')), fentry('is_done', fbool(.false.)), fentry('blocks', flist([fval_t :: fint(102_int64), fint(103_int64)]))])) &
+        fentry('collection', fstr('alpha')), &
+        fentry('featured_entry', fmap([fval_t :: fentry('id', fint(100_int64)), fentry('label', fstr('first entry')), fentry('enabled', fbool(.false.)), fentry('related_ids', flist([fval_t :: fint(102_int64), fint(103_int64)]))])) &
     ])
 end program main

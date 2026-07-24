@@ -1,4 +1,4 @@
 my_data = Dict(
-    "project" => "alpha",
-    "lead_task" => Dict("id" => 100, "description" => "first task", "is_done" => false, "blocks" => [102, 103]),
+    "collection" => "alpha",
+    "featured_entry" => Dict("id" => 100, "label" => "first entry", "enabled" => false, "related_ids" => [102, 103]),
 )

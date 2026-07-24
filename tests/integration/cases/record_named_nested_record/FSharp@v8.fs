@@ -7,6 +7,6 @@ type Val =
     | FList of Val list
     | FMap of (string * Val) list
 let my_data: Val = FMap [
-    ("project", FStr "alpha");
-    ("lead_task", FMap [("id", FInt 100L); ("description", FStr "first task"); ("is_done", FBool false); ("blocks", FList [FInt 102L; FInt 103L])])
+    ("collection", FStr "alpha");
+    ("featured_entry", FMap [("id", FInt 100L); ("label", FStr "first entry"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
 ]

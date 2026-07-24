@@ -1,6 +1,6 @@
 local my_data = {
     ["id"] = 1,
-    ["description"] = "She said \"hello\", then waved",
-    ["is_done"] = false,
-    ["blocks"] = {1, 2, 3},
+    ["label"] = "She said \"hello\", then waved",
+    ["enabled"] = false,
+    ["related_ids"] = {1, 2, 3},
 }

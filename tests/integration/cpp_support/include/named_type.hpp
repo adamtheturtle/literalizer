@@ -6,9 +6,9 @@
 
 struct NamedType {
     int id{};
-    std::string description;
-    bool is_done{};
-    std::vector<int> blocks;
+    std::string label;
+    bool enabled{};
+    std::vector<int> related_ids;
 };
 
 #endif

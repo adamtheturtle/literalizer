@@ -6,9 +6,9 @@
 int main() {
 auto my_data = std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{
     {"id", 1},
-    {"description", "She said \"hello\", then waved"},
-    {"is_done", false},
-    {"blocks", std::vector<int>{1, 2, 3}},
+    {"label", "She said \"hello\", then waved"},
+    {"enabled", false},
+    {"related_ids", std::vector<int>{1, 2, 3}},
 };
     (void)my_data;
     return 0;

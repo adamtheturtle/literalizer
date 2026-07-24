@@ -3,14 +3,14 @@ import dataclasses
 @dataclasses.dataclass(frozen=True)
 class Record0:
     id: int
-    description: str
-    is_done: bool
-    blocks: tuple[int, ...]
+    label: str
+    enabled: bool
+    related_ids: tuple[int, ...]
 my_data = Record0(
     id=1,
-    description="She said \"hello\", then waved",
-    is_done=False,
-    blocks=(
+    label="She said \"hello\", then waved",
+    enabled=False,
+    related_ids=(
         1,
         2,
         3,

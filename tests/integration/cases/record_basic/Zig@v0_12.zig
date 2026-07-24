@@ -13,9 +13,9 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
         .{ .key = "id", .val = .{ .int = 1 } },
-        .{ .key = "description", .val = .{ .str = "She said \"hello\", then waved" } },
-        .{ .key = "is_done", .val = .{ .bool = false } },
-        .{ .key = "blocks", .val = .{ .arr = &.{.{ .int = 1 }, .{ .int = 2 }, .{ .int = 3 }}} },
+        .{ .key = "label", .val = .{ .str = "She said \"hello\", then waved" } },
+        .{ .key = "enabled", .val = .{ .bool = false } },
+        .{ .key = "related_ids", .val = .{ .arr = &.{.{ .int = 1 }, .{ .int = 2 }, .{ .int = 3 }}} },
     }};
     _ = my_data;
 }

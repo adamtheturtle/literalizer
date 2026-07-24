@@ -1,10 +1,10 @@
-const Record0 = struct { id: i64, description: []const u8, is_done: bool, blocks: []const i64 };
+const Record0 = struct { id: i64, label: []const u8, enabled: bool, related_ids: []const i64 };
 pub fn main() void {
     const my_data = Record0{
         .id = 1,
-        .description = "She said \"hello\", then waved",
-        .is_done = false,
-        .blocks = &.{
+        .label = "She said \"hello\", then waved",
+        .enabled = false,
+        .related_ids = &.{
             1,
             2,
             3,

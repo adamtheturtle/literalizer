@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 #include <utility>
-struct TaskValue {
+struct DynamicValue {
  private:
   struct Holder {
     Holder() = default;
@@ -24,9 +24,9 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  DynamicValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
   // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> DynamicValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -38,10 +38,9 @@ struct TaskValue {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, TaskValue>{
-    {"title", "report"},
-    {"tags", std::vector<std::string>{"draft", "urgent", "review"}},
-    {"priority", 2},
+auto my_data = std::vector<std::map<std::string, DynamicValue>>{
+    std::map<std::string, DynamicValue>{{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}},
+    std::map<std::string, DynamicValue>{{"type", "create"}, {"pr_id", "pr_2"}},
 };
     (void)my_data;
     return 0;

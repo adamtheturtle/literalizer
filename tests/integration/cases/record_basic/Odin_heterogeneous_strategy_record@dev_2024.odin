@@ -1,13 +1,13 @@
 #+feature dynamic-literals
 package main
-Record0 :: struct { id: int, description: string, is_done: bool, blocks: [dynamic]any }
+Record0 :: struct { id: int, label: string, enabled: bool, related_ids: [dynamic]any }
 
 main :: proc() {
 my_data := Record0{
 	id = 1,
-	description = "She said \"hello\", then waved",
-	is_done = false,
-	blocks = [dynamic]any{
+	label = "She said \"hello\", then waved",
+	enabled = false,
+	related_ids = [dynamic]any{
 		1,
 		2,
 		3,

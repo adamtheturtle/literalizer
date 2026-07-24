@@ -3,9 +3,9 @@ interface IVal {}
 fn main() {
 	my_data := {
 		'id': IVal(1),
-		'description': IVal('She said "hello", then waved'),
-		'is_done': IVal(false),
-		'blocks': IVal([1, 2, 3]),
+		'label': IVal('She said "hello", then waved'),
+		'enabled': IVal(false),
+		'related_ids': IVal([1, 2, 3]),
 	}
 	_ = my_data
 }

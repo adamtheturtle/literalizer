@@ -40,16 +40,16 @@ struct Value {
 int main() {
 auto my_data = std::map<std::string, Value>{
     {"id", 1},
-    {"description", "She said \"hello\", then waved"},
-    {"is_done", false},
-    {"blocks", std::vector<int>{1, 2, 3}},
+    {"label", "She said \"hello\", then waved"},
+    {"enabled", false},
+    {"related_ids", std::vector<int>{1, 2, 3}},
 };
 (void)my_data;
 my_data = std::map<std::string, Value>{
     {"id", 1},
-    {"description", "She said \"hello\", then waved"},
-    {"is_done", false},
-    {"blocks", std::vector<int>{1, 2, 3}},
+    {"label", "She said \"hello\", then waved"},
+    {"enabled", false},
+    {"related_ids", std::vector<int>{1, 2, 3}},
 };
     (void)my_data;
     return 0;
