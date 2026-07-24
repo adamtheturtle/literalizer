@@ -984,6 +984,48 @@ def build_error_record_shape_names_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_json_type_record_shape_names_cross_variants() -> Iterable[Variant]:
+    """Cross JSON value types with shape names for supporting
+    languages.
+    """
+    shape_keys = frozenset({"first", "last"})
+    custom_name = "ExternalRecordShape"
+    for json_variant in build_json_type_variants():
+        lang_cls = json_variant.lang_cls
+        if not lang_cls.supports_record_shape_names:
+            continue
+        spec = json_variant.spec
+        metadata = lang_cls.variant_metadata
+        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        assert isinstance(spec, _HasRecordShapeNames)  # noqa: S101
+        spec_kwargs: dict[str, object] = {
+            "heterogeneous_strategy": enum_member_by_name(
+                enum_cls=lang_cls.HeterogeneousStrategies,
+                name="ERROR",
+            ),
+            "json_type": spec.json_type,
+            "record_shape_names": {shape_keys: custom_name},
+        }
+        if metadata.record_variant_version is not None:
+            spec_kwargs["language_version"] = enum_member_by_name(
+                enum_cls=lang_cls.VersionFormats,
+                name=metadata.record_variant_version,
+            )
+        if lang_cls.supports_module_name:
+            spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
+                name="main",
+            )
+        yield Variant(
+            name=f"{json_variant.name}_record_shape_names_{custom_name}",
+            spec=lang_cls(**spec_kwargs),
+            lang_cls=lang_cls,
+            fixture_prefix="",
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+
+
+@beartype
 def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
     """Build a ``RECORD`` variant for every language that names generated
     record structs.
@@ -2084,6 +2126,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "heterogeneous_value_enum_name": build_heterogeneous_value_name_variants,
     "record_shape_names": build_record_shape_names_variants,
     "error_record_shape_names": build_error_record_shape_names_variants,
+    "json_type_record_shape_names_cross": (
+        build_json_type_record_shape_names_cross_variants
+    ),
     "record_null_substitutions_record": (
         build_record_null_substitutions_record_variants
     ),

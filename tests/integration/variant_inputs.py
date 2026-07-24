@@ -387,6 +387,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             suffix="_inconsistent",
         ),
     ),
+    "json_type_record_shape_names_cross": (
+        _ci(case_dir_name="uniform_string_dicts_in_seq", suffix=""),
+    ),
     "record_null_substitutions_record": (
         _ci(case_dir_name="record_null_substitutions_records", suffix=""),
     ),

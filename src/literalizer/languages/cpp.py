@@ -3220,7 +3220,8 @@ class Cpp(metaclass=LanguageCls):
         In C++14 a list whose every element has the same record shape may
         use an externally supplied ``record_shape_names`` type for its
         outer ``std::vector`` even when record rendering is inactive.  The
-        elements themselves then retain their native map literals.
+        elements themselves then retain their native map literals. JSON
+        value rendering always keeps its JSON sequence opener.
 
         Under an active record strategy, a list whose every element is a
         record-shaped dict renders each element as an aggregate literal;
@@ -3237,7 +3238,9 @@ class Cpp(metaclass=LanguageCls):
             self._record_strategy_active
             or self._uses_cpp14_tuple_record_strategy
         )
-        if not (record_rendering_active or self.record_shape_names):
+        if self._json_type_active or not (
+            record_rendering_active or self.record_shape_names
+        ):
             return base_open
 
         def _open(items: list[Value]) -> str:
