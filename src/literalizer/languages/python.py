@@ -1582,6 +1582,7 @@ class Python(metaclass=LanguageCls):
             field_type=self._record_field_type,
             render_declaration=self._python_render_declaration,
             render_literal=_python_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

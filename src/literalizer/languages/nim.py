@@ -1903,6 +1903,7 @@ class Nim(metaclass=LanguageCls):
                 indent=self.indent,
             ),
             render_literal=_nim_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

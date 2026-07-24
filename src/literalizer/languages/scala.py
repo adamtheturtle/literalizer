@@ -1264,6 +1264,7 @@ class Scala(metaclass=LanguageCls):
             field_type=self._scala_record_field_type,
             render_declaration=_scala_render_declaration,
             render_literal=_scala_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     def _scala_tuple_field_type(self, elements: list[Value], /) -> str:

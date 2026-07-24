@@ -247,7 +247,7 @@ class RecordShape:
     """
 
     keys: tuple[str, ...]
-    optional_keys: frozenset[str] = frozenset()
+    optional_keys: frozenset[str]
 
 
 @beartype
@@ -274,7 +274,7 @@ def record_shape_for_dict(
         if not isinstance(key, str):
             return None
         str_keys.append(key)
-    return RecordShape(keys=tuple(str_keys))
+    return RecordShape(keys=tuple(str_keys), optional_keys=frozenset())
 
 
 @beartype
