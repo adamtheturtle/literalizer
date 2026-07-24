@@ -62,6 +62,8 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
                     statement_terminator_style=statement_terminator_style,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for statement_terminator_style in spec.statement_terminator_styles
@@ -101,6 +103,8 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
                     heterogeneous_strategy=strategy,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for strategy in spec.heterogeneous_strategies
@@ -152,6 +156,8 @@ def build_tagged_enum_call_variants() -> list[Variant]:
                     heterogeneous_strategy=tagged_enum,
                 ),
                 lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )

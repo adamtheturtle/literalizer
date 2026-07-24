@@ -2,10 +2,12 @@
 
 import dataclasses
 import enum
+from collections.abc import Mapping
 
 from beartype import beartype
 
 import literalizer
+from literalizer._types import ValueInput
 
 
 @beartype
@@ -42,6 +44,8 @@ class Variant:
     spec: literalizer.Language
     lang_cls: literalizer.LanguageCls
     collection_layout: literalizer.CollectionLayout
+    fixture_prefix: str
+    record_null_substitutions: Mapping[str, ValueInput] | None
 
 
 @dataclasses.dataclass(frozen=True)

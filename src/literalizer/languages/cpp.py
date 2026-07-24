@@ -1942,6 +1942,13 @@ class Cpp(metaclass=LanguageCls):
         supports_ref_elements_in_tuple_strategy=True,
         heterogeneous_value_variant_name_strategy="ERROR",
         heterogeneous_value_variant_name_version="CPP14",
+        record_variant_version="CPP14",
+        external_record_shape_fixture_prefix=(
+            "#include <string>\n"
+            "#include <vector>\n"
+            "struct NamedType { int id{}; std::string description; "
+            "bool is_done{}; std::vector<int> blocks; };\n"
+        ),
         pre_indent_comment_scalar_variant=True,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
