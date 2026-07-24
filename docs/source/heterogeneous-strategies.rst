@@ -17,7 +17,7 @@ Two shapes come up most often:
 
 * A **list** whose elements are not all the same scalar type, e.g. ``[1, "two", 3.0]``.
   In a dynamically typed language this is an ordinary list; in Rust it is not a valid ``Vec<T>``.
-* A **record-shaped dict**: a non-empty, string-keyed dict whose values mix scalars with at least one container, e.g. ``{"id": 100, "blocks": [102, 103]}``.
+* A **record-shaped dict**: a non-empty, string-keyed dict whose values mix scalars with at least one container, e.g. ``{"id": 100, "related_ids": [102, 103]}``.
   Conceptually this is a record (a struct), not a map, so a strict-map language has no ``HashMap`` that fits it.
 
 Languages whose native collections are already heterogeneous (most dynamically typed languages, plus formats such as JSON5, YAML, and TOML) never reach a strategy: the data is representable as-is, so they expose only ``ERROR`` and never raise for these inputs.
@@ -128,8 +128,8 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
    from literalizer.languages import Python
 
    source = (
-       '{"id": 100, "description": "first task", '
-       '"is_done": false, "blocks": [102, 103]}'
+       '{"id": 100, "label": "first item", '
+       '"enabled": false, "related_ids": [102, 103]}'
    )
 
    result = literalize(
@@ -144,9 +144,9 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
        text="""\
        Record0(
            id=100,
-           description="first task",
-           is_done=False,
-           blocks=(
+           label="first item",
+           enabled=False,
+           related_ids=(
                102,
                103,
            ),
@@ -160,9 +160,9 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
            @dataclasses.dataclass(frozen=True)
            class Record0:
                id: int
-               description: str
-               is_done: bool
-               blocks: tuple[int, ...]""",
+               label: str
+               enabled: bool
+               related_ids: tuple[int, ...]""",
        ),
    )
 

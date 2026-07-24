@@ -11,5 +11,5 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("project", RStr "alpha"),
-    ("lead_task", RDict [("id", RInt 100i128), ("description", RStr "first task"), ("is_done", RBool Bool.false), ("blocks", RList [RInt 102i128, RInt 103i128])]),
+    ("lead_item", RDict [("id", RInt 100i128), ("label", RStr "first item"), ("enabled", RBool Bool.false), ("related_ids", RList [RInt 102i128, RInt 103i128])]),
     ]

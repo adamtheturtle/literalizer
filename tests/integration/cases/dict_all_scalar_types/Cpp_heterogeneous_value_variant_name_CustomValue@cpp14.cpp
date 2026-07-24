@@ -1,10 +1,10 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <utility>
-struct TaskValue {
+struct CustomValue {
  private:
   struct Holder {
     Holder() = default;
@@ -23,9 +23,8 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -37,9 +36,15 @@ struct TaskValue {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, TaskValue>{
-    {"id", 1},
-    {"owner", std::map<std::string, TaskValue>{{"name", "Alice"}, {"age", 30}}},
+auto my_data = std::map<std::string, CustomValue>{
+    {"s", CustomValue{"string"}},
+    {"i", CustomValue{1}},
+    {"f", CustomValue{1.5}},
+    {"b", CustomValue{true}},
+    {"n", CustomValue{nullptr}},
+    {"d", CustomValue{"2024-01-15"}},
+    {"dt", CustomValue{"2024-01-15T12:00:00"}},
+    {"by", CustomValue{"48656c6c6f"}},
 };
     (void)my_data;
     return 0;

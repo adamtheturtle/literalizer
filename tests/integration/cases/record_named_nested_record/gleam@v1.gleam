@@ -9,7 +9,7 @@ pub type GVal {
 pub fn main() {
   let my_data = GDict([
     #("project", GStr("alpha")),
-    #("lead_task", GDict([#("id", GInt(100)), #("description", GStr("first task")), #("is_done", GBool(False)), #("blocks", GList([GInt(102), GInt(103)]))])),
+    #("lead_item", GDict([#("id", GInt(100)), #("label", GStr("first item")), #("enabled", GBool(False)), #("related_ids", GList([GInt(102), GInt(103)]))])),
   ])
   let _ = my_data
 }

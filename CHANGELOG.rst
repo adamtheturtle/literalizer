@@ -1088,7 +1088,7 @@ No significant changes.
 
 - :class:`~literalizer.Kotlin` now declares a ``data class`` field
   whose value is a custom-named nested record with that nested
-  record's ``record_shape_names`` name (e.g. ``Task``).  Previously
+  record's ``record_shape_names`` name (e.g. ``Widget``).  Previously
   such a field fell through to ``Double`` because the custom name does
   not match the auto-generated ``{prefix}{N}`` head, so the generated
   Kotlin did not compile.  See #2348.
@@ -1207,7 +1207,7 @@ No significant changes.
   parameter — a mapping from each record's key-set
   (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —
   so the ``RECORD`` heterogeneous strategy can emit
-  ``struct Task { ... }`` instead of the auto-generated ``Record0``,
+  ``struct Widget { ... }`` instead of the auto-generated ``Record0``,
   ``Record1``, ... names.  Shape names that are not PascalCase Rust
   identifiers, that collide with ``heterogeneous_value_enum_name``,
   that duplicate another mapped name, or that match a Rust reserved

@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 #include <utility>
-struct TaskValue {
+struct CustomValue {
  private:
   struct Holder {
     Holder() = default;
@@ -24,9 +24,8 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -37,11 +36,11 @@ struct TaskValue {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-struct mgrType_ { template <typename... Args> void run(Args...) const {} };
-struct appType_ { mgrType_ mgr; };
-const appType_ app;
 int main() {
-app.mgr.run(std::map<std::string, TaskValue>{{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}});
-app.mgr.run(std::map<std::string, TaskValue>{{"type", "create"}, {"pr_id", "pr_2"}});
+auto my_data = std::map<std::string, CustomValue>{
+    {"scores", CustomValue{std::vector<int>{10, 20, 30}}},
+    {"args", CustomValue{std::vector<CustomValue>{CustomValue{1}, CustomValue{"email"}, CustomValue{"a@gmail.com"}, CustomValue{100}}}},
+};
+    (void)my_data;
     return 0;
 }

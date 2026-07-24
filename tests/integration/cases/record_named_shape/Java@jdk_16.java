@@ -2,8 +2,8 @@ import java.util.Map;
 class Main {
     public static void main() {
 var my_data = new Object[]{
-    Map.ofEntries(Map.entry("id", 100), Map.entry("description", "first task"), Map.entry("is_done", false), Map.entry("blocks", new int[]{102, 103})),
-    Map.ofEntries(Map.entry("id", 101), Map.entry("description", "second task"), Map.entry("is_done", true), Map.entry("blocks", new int[]{100}))
+    Map.ofEntries(Map.entry("id", 100), Map.entry("label", "first item"), Map.entry("enabled", false), Map.entry("related_ids", new int[]{102, 103})),
+    Map.ofEntries(Map.entry("id", 101), Map.entry("label", "second item"), Map.entry("enabled", true), Map.entry("related_ids", new int[]{100}))
 };
     }
 }

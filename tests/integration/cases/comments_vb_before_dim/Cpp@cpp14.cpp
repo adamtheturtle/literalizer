@@ -24,8 +24,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,9 +38,9 @@ struct Value {
 int main() {
 auto my_data = std::map<std::string, Value>{
     // Configuration
-    {"name", "app"},
+    {"name", Value{"app"}},
     // Port setting
-    {"port", 3000},
+    {"port", Value{3000}},
 };
     (void)my_data;
     return 0;

@@ -8,5 +8,5 @@ type Val =
     | FMap of (string * Val) list
 let my_data: Val = FMap [
     ("project", FStr "alpha");
-    ("lead_task", FMap [("id", FInt 100L); ("description", FStr "first task"); ("is_done", FBool false); ("blocks", FList [FInt 102L; FInt 103L])])
+    ("lead_item", FMap [("id", FInt 100L); ("label", FStr "first item"); ("enabled", FBool false); ("related_ids", FList [FInt 102L; FInt 103L])])
 ]

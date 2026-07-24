@@ -11,9 +11,9 @@ instance Num Val where
 my_data :: Val
 my_data = HMap [
     ("id", 1),
-    ("description", HStr "She said \"hello\", then waved"),
-    ("is_done", HBool False),
-    ("blocks", HList [1, 2, 3])
+    ("label", HStr "She said \"hello\", then waved"),
+    ("enabled", HBool False),
+    ("related_ids", HList [1, 2, 3])
     ]
 main :: IO ()
 main = seq my_data (return ())

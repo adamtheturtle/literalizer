@@ -3,12 +3,12 @@ int main(void) {
 @autoreleasepool {
 id my_data = @{
     @"project": @"alpha",
-    @"lead_task": @{@"id": @100, @"description": @"first task", @"is_done": @NO, @"blocks": @[@102, @103]},
+    @"lead_item": @{@"id": @100, @"label": @"first item", @"enabled": @NO, @"related_ids": @[@102, @103]},
 };
 (void)my_data;
 my_data = @{
     @"project": @"alpha",
-    @"lead_task": @{@"id": @100, @"description": @"first task", @"is_done": @NO, @"blocks": @[@102, @103]},
+    @"lead_item": @{@"id": @100, @"label": @"first item", @"enabled": @NO, @"related_ids": @[@102, @103]},
 };
     (void)my_data;
 }

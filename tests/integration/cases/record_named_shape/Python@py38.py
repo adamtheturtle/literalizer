@@ -1,4 +1,4 @@
 my_data = (
-    {"id": 100, "description": "first task", "is_done": False, "blocks": (102, 103)},
-    {"id": 101, "description": "second task", "is_done": True, "blocks": (100,)},
+    {"id": 100, "label": "first item", "enabled": False, "related_ids": (102, 103)},
+    {"id": 101, "label": "second item", "enabled": True, "related_ids": (100,)},
 )

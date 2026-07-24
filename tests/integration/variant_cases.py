@@ -853,7 +853,7 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
     stored in the cache key's :class:`frozenset` of kwargs.
     """
     variants: list[Variant] = []
-    shape_keys = frozenset({"id", "description", "is_done", "blocks"})
+    shape_keys = frozenset({"id", "label", "enabled", "related_ids"})
     custom_name = "NamedType"
     for lang_cls in sorted_languages():
         default_spec = make_spec(lang_cls=lang_cls)

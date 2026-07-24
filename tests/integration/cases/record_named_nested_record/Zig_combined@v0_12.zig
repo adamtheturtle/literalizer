@@ -13,11 +13,11 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .map = &.{
         .{ .key = "project", .val = .{ .str = "alpha" } },
-        .{ .key = "lead_task", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 100 } }, .{ .key = "description", .val = .{ .str = "first task" } }, .{ .key = "is_done", .val = .{ .bool = false } }, .{ .key = "blocks", .val = .{ .arr = &.{.{ .int = 102 }, .{ .int = 103 }}} }}} },
+        .{ .key = "lead_item", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 100 } }, .{ .key = "label", .val = .{ .str = "first item" } }, .{ .key = "enabled", .val = .{ .bool = false } }, .{ .key = "related_ids", .val = .{ .arr = &.{.{ .int = 102 }, .{ .int = 103 }}} }}} },
     }};
     my_data = .{ .map = &.{
         .{ .key = "project", .val = .{ .str = "alpha" } },
-        .{ .key = "lead_task", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 100 } }, .{ .key = "description", .val = .{ .str = "first task" } }, .{ .key = "is_done", .val = .{ .bool = false } }, .{ .key = "blocks", .val = .{ .arr = &.{.{ .int = 102 }, .{ .int = 103 }}} }}} },
+        .{ .key = "lead_item", .val = .{ .map = &.{.{ .key = "id", .val = .{ .int = 100 } }, .{ .key = "label", .val = .{ .str = "first item" } }, .{ .key = "enabled", .val = .{ .bool = false } }, .{ .key = "related_ids", .val = .{ .arr = &.{.{ .int = 102 }, .{ .int = 103 }}} }}} },
     }};
     my_data = .nil;
 }

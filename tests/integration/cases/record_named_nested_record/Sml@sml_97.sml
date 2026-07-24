@@ -6,6 +6,6 @@ datatype val_t =
   | SMap of (string * val_t) list
 val my_data : val_t = SMap [
     ("project", SStr "alpha"),
-    ("lead_task", SMap [("id", SInt 100), ("description", SStr "first task"), ("is_done", SBool false), ("blocks", SList [SInt 102, SInt 103])])
+    ("lead_item", SMap [("id", SInt 100), ("label", SStr "first item"), ("enabled", SBool false), ("related_ids", SList [SInt 102, SInt 103])])
 ]
 val _ = my_data

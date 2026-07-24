@@ -1,11 +1,11 @@
 import std.json;
 void main() {
 auto my_data = JSONValue([
-    JSONValue(["id": JSONValue(100), "description": JSONValue("first task"), "is_done": JSONValue(false), "blocks": JSONValue([JSONValue(102), JSONValue(103)])]),
-    JSONValue(["id": JSONValue(101), "description": JSONValue("second task"), "is_done": JSONValue(true), "blocks": JSONValue([JSONValue(100)])]),
+    JSONValue(["id": JSONValue(100), "label": JSONValue("first item"), "enabled": JSONValue(false), "related_ids": JSONValue([JSONValue(102), JSONValue(103)])]),
+    JSONValue(["id": JSONValue(101), "label": JSONValue("second item"), "enabled": JSONValue(true), "related_ids": JSONValue([JSONValue(100)])]),
 ]);
 my_data = JSONValue([
-    JSONValue(["id": JSONValue(100), "description": JSONValue("first task"), "is_done": JSONValue(false), "blocks": JSONValue([JSONValue(102), JSONValue(103)])]),
-    JSONValue(["id": JSONValue(101), "description": JSONValue("second task"), "is_done": JSONValue(true), "blocks": JSONValue([JSONValue(100)])]),
+    JSONValue(["id": JSONValue(100), "label": JSONValue("first item"), "enabled": JSONValue(false), "related_ids": JSONValue([JSONValue(102), JSONValue(103)])]),
+    JSONValue(["id": JSONValue(101), "label": JSONValue("second item"), "enabled": JSONValue(true), "related_ids": JSONValue([JSONValue(100)])]),
 ]);
 }

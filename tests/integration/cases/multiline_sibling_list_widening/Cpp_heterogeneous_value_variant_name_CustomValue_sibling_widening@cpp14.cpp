@@ -1,10 +1,11 @@
 #include <initializer_list>
 #include <string>
-#include <utility>
+#include <map>
 #include <vector>
+#include <utility>
 #include <cstddef>
 #include <memory>
-struct TaskValue {
+struct CustomValue {
  private:
   struct Holder {
     Holder() = default;
@@ -23,9 +24,8 @@ struct TaskValue {
   }; // TypedHolder
   std::shared_ptr<Holder> value_;
  public:
-  TaskValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> TaskValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  CustomValue() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit CustomValue(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -37,10 +37,10 @@ struct TaskValue {
   } // get const
 };
 int main() {
-auto my_data = std::vector<std::pair<std::string, TaskValue>>{
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
+auto my_data = std::map<std::string, CustomValue>{
+    {"omap_value", CustomValue{std::vector<std::pair<std::string, int>>{{"first", 1}}}},
+    {"sibling_lists", CustomValue{std::map<std::string, CustomValue>{{"numbers", CustomValue{std::vector<int>{1, 2}}}, {"strings", CustomValue{std::vector<std::string>{"x", "y"}}}}}},
+    {"ref_marker_present", CustomValue{std::vector<std::string>{"$keep", "z"}}},
 };
     (void)my_data;
     return 0;

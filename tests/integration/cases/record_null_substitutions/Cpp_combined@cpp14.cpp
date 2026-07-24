@@ -25,8 +25,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,11 +38,11 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::pair<std::string, std::vector<std::map<std::string, Value>>>>{
-    {"rows", std::vector<std::map<std::string, Value>>{std::map<std::string, Value>{{"replacement", nullptr}, {"present", 1}}, std::map<std::string, Value>{{"replacement", 2}, {"present", 3}}}},
+    {"rows", std::vector<std::map<std::string, Value>>{std::map<std::string, Value>{{"replacement", Value{nullptr}}, {"present", Value{1}}}, std::map<std::string, Value>{{"replacement", Value{2}}, {"present", Value{3}}}}},
 };
 (void)my_data;
 my_data = std::vector<std::pair<std::string, std::vector<std::map<std::string, Value>>>>{
-    {"rows", std::vector<std::map<std::string, Value>>{std::map<std::string, Value>{{"replacement", nullptr}, {"present", 1}}, std::map<std::string, Value>{{"replacement", 2}, {"present", 3}}}},
+    {"rows", std::vector<std::map<std::string, Value>>{std::map<std::string, Value>{{"replacement", Value{nullptr}}, {"present", Value{1}}}, std::map<std::string, Value>{{"replacement", Value{2}}, {"present", Value{3}}}}},
 };
     (void)my_data;
     return 0;

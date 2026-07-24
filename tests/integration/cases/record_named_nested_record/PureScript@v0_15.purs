@@ -13,5 +13,5 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "project" (PStr "alpha")),
-    (Tuple "lead_task" (PDict [(Tuple "id" (PInt 100)), (Tuple "description" (PStr "first task")), (Tuple "is_done" (PBool false)), (Tuple "blocks" (PList [PInt 102, PInt 103]))]))
+    (Tuple "lead_item" (PDict [(Tuple "id" (PInt 100)), (Tuple "label" (PStr "first item")), (Tuple "enabled" (PBool false)), (Tuple "related_ids" (PList [PInt 102, PInt 103]))]))
     ]

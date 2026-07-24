@@ -1,4 +1,4 @@
 my $my_data = {
     "project" => "alpha",
-    "lead_task" => {"id" => 100, "description" => "first task", "is_done" => 0, "blocks" => [102, 103]},
+    "lead_item" => {"id" => 100, "label" => "first item", "enabled" => 0, "related_ids" => [102, 103]},
 };

@@ -11,16 +11,16 @@ def test_cpp14_external_record_shape_uses_typed_positional_aggregate() -> None:
     assert not Cpp.record_shape_names_emit_declarations
     result = literalize(
         source=(
-            '[{"id":100,"description":"first task","is_done":false,'
-            '"blocks":[102,103]},{"id":101,"description":"second task",'
-            '"is_done":true,"blocks":[100]}]'
+            '[{"id":100,"label":"first item","enabled":false,'
+            '"related_ids":[102,103]},{"id":101,"label":"second item",'
+            '"enabled":true,"related_ids":[100]}]'
         ),
         input_format=InputFormat.JSON,
         language=Cpp(
             heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
             language_version=Cpp.version_formats.CPP14,
             record_shape_names={
-                frozenset({"id", "description", "is_done", "blocks"}): (
+                frozenset({"id", "label", "enabled", "related_ids"}): (
                     "NamedType"
                 ),
             },
@@ -29,9 +29,9 @@ def test_cpp14_external_record_shape_uses_typed_positional_aggregate() -> None:
 
     assert result.code == (
         "std::vector<NamedType>{\n"
-        '    NamedType{100, "first task", false, '
+        '    NamedType{100, "first item", false, '
         "std::vector<int>{102, 103}},\n"
-        '    NamedType{101, "second task", true, '
+        '    NamedType{101, "second item", true, '
         "std::vector<int>{100}},\n"
         "}"
     )

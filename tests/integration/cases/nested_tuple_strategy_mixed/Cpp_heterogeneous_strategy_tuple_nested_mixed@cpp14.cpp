@@ -24,8 +24,7 @@ struct Value {
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -39,8 +38,8 @@ struct Value {
 #include <tuple>
 int main() {
 auto my_data = std::vector<Value>{
-    std::vector<std::tuple<int, std::string>>{std::make_tuple(1, "Mainframe1")},
-    std::vector<std::tuple<std::string, int>>{std::make_tuple("Mainframe2", 2)},
+    Value{std::vector<std::tuple<int, std::string>>{std::make_tuple(1, "Mainframe1")}},
+    Value{std::vector<std::tuple<std::string, int>>{std::make_tuple("Mainframe2", 2)}},
 };
     (void)my_data;
     return 0;

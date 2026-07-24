@@ -1,7 +1,7 @@
 ---
 project: alpha
-lead_task:
+lead_item:
   id: 100
-  description: first task
-  is_done: false
-  blocks: [102, 103]
+  label: first item
+  enabled: false
+  related_ids: [102, 103]
