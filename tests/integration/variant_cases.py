@@ -950,10 +950,9 @@ def build_error_record_shape_names_variants() -> Iterable[Variant]:
         default_spec = make_spec(lang_cls=lang_cls)
         metadata = lang_cls.variant_metadata
         assert isinstance(default_spec, _HasRecordShapeNames)  # noqa: S101
-        strategy = next(
-            candidate
-            for candidate in default_spec.heterogeneous_strategies
-            if candidate.name == "ERROR"
+        strategy = enum_member_by_name(
+            enum_cls=lang_cls.HeterogeneousStrategies,
+            name="ERROR",
         )
         spec_kwargs: dict[str, object] = {
             "heterogeneous_strategy": strategy,
