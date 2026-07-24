@@ -831,6 +831,7 @@ def _build_variant_preamble(
                     (
                         "#include <cstddef>",
                         "#include <memory>",
+                        "#include <string>",
                         "#include <utility>",
                         f"struct {name} {{",
                         " private:",
@@ -852,12 +853,22 @@ def _build_variant_preamble(
                         "   private:",
                         "    T value_;",
                         "  }; // TypedHolder",
+                        "  static std::shared_ptr<Holder> make_holder("
+                        "const char* value) {",
+                        "    return std::make_shared<TypedHolder<std::string>>"
+                        "(value);",
+                        "  } // make_holder string",
+                        "  template <typename T> static "
+                        "std::shared_ptr<Holder> make_holder(T value) {",
+                        "    return std::make_shared<TypedHolder<T>>"
+                        "(std::move(value));",
+                        "  } // make_holder generic",
                         "  std::shared_ptr<Holder> value_;",
                         " public:",
                         f"  {name}() : value_(new "
                         "TypedHolder<std::nullptr_t>(nullptr)) {}",
                         f"  template <typename T> explicit {name}(T value)"
-                        " : value_(new TypedHolder<T>(std::move(value))) {}",
+                        " : value_(make_holder(std::move(value))) {}",
                         "  template <typename T> bool is() const"
                         " { // NOLINT(modernize-use-nodiscard)",
                         "    return dynamic_cast<TypedHolder<T>*>"
