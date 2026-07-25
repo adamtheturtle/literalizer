@@ -9,11 +9,11 @@ type Scalar = (
     | int
     | float
     | bool
-    | None
     | datetime.date
     | datetime.datetime
     | datetime.time
     | bytes
+    | None
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 

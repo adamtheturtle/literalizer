@@ -16,7 +16,7 @@ from beartype import beartype
 from literalizer._types import OrderedMap, Scalar, Value
 
 type JsonValue = (
-    str | int | float | bool | None | list[JsonValue] | dict[Scalar, JsonValue]
+    str | int | float | bool | list[JsonValue] | dict[Scalar, JsonValue] | None
 )
 """A value reduced to JSON's own types (temporal / bytes folded into
 strings, sets / :class:`OrderedMap` into list / dict).
