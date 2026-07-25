@@ -268,9 +268,11 @@ def _make_zig_call_preamble_stub(
             ],
         )
         lines: list[str] = [
-            f"const {holder_type} = struct {{ "
-            f"fn {method}({method_param_list}) void "
-            f"{{ _ = self;{param_discards} }} }};",
+            (
+                f"const {holder_type} = struct {{ "
+                f"fn {method}({method_param_list}) void "
+                f"{{ _ = self;{param_discards} }} }};"
+            ),
         ]
         prev_type = holder_type
         for i in range(len(chain) - 2, 0, -1):

@@ -172,8 +172,10 @@ def _java_call_stub(
     if not fields:
         type_name = f"{root.title()}Type_"
         return (
-            f"static class {type_name} {{"
-            f" Object {method}(Object... args) {{ return null; }} }}",
+            (
+                f"static class {type_name} {{"
+                f" Object {method}(Object... args) {{ return null; }} }}"
+            ),
             f"static {type_name} {root} = new {type_name}();",
         )
     lines: list[str] = []

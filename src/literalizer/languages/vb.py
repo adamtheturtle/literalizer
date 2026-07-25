@@ -214,9 +214,11 @@ def _vb_call_stub(
     )
     if len(parts) == 1:
         return (
-            f"Function {parts[0]}({param_list}) As Object\n"
-            f"{indent}Return Nothing\n"
-            "End Function",
+            (
+                f"Function {parts[0]}({param_list}) As Object\n"
+                f"{indent}Return Nothing\n"
+                "End Function"
+            ),
         )
     root = parts[0]
     method = parts[-1]

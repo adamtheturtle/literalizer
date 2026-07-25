@@ -900,8 +900,10 @@ def _nim_call_stub(
             f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
         )
         return (
-            f"proc {method}{type_clause}"
-            f"({params_str}): int {{.discardable.}} = 0",
+            (
+                f"proc {method}{type_clause}"
+                f"({params_str}): int {{.discardable.}} = 0"
+            ),
         )
     chain = list(parts[:-1])
     holder = chain[-1]
