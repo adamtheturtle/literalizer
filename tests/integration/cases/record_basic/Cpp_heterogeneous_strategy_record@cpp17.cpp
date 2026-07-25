@@ -3,13 +3,13 @@
 #include <map>
 #include <vector>
 #include <variant>
-struct Record0 { int id{}; std::string description; bool is_done{}; std::vector<int> blocks; };
+struct Record0 { int id{}; std::string label; bool enabled{}; std::vector<int> related_ids; };
 int main() {
 auto my_data = Record0{
     .id = 1,
-    .description = "She said \"hello\", then waved",
-    .is_done = false,
-    .blocks = std::vector<int>{
+    .label = "She said \"hello\", then waved",
+    .enabled = false,
+    .related_ids = std::vector<int>{
         1,
         2,
         3,

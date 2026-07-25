@@ -1,0 +1,4 @@
+C++14 heterogeneous value carriers now store rendered string literals as
+owning ``std::string`` values, so ``is<std::string>()`` and
+``get<std::string>()`` match the source data model instead of exposing a
+decayed ``const char*``.

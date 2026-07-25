@@ -12,7 +12,7 @@ type Val
 my_data : Val
 my_data = EDict [
     ("id", EInt 1),
-    ("description", EStr "She said \"hello\", then waved"),
-    ("is_done", EBool False),
-    ("blocks", EList [EInt 1, EInt 2, EInt 3])
+    ("label", EStr "She said \"hello\", then waved"),
+    ("enabled", EBool False),
+    ("related_ids", EList [EInt 1, EInt 2, EInt 3])
     ]

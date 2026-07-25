@@ -16,7 +16,7 @@ PROC process (VAL MOBILE LIT data)
 :
 PROC main ()
     VAL MOBILE LIT my_var IS 42:
-    process(MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "key"; my_var), MOBILE LIT(lit.pair; MOBILE []BYTE "count"; MOBILE LIT(lit.int; 42))]))
+    process(MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "key"; my_var), MOBILE LIT(lit.pair; MOBILE []BYTE "count"; MOBILE LIT(lit.int; 42)), MOBILE LIT(lit.pair; MOBILE []BYTE "label"; MOBILE LIT(lit.str; MOBILE []BYTE "example"))]))
     SEQ
         SKIP
 :

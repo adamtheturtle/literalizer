@@ -17,6 +17,6 @@ my_var = PInt 42
 main :: Unit
 main =
     let
-        _ = process (PDict [(Tuple "key" (my_var)), (Tuple "count" (PInt 42))])
+        _ = process (PDict [(Tuple "key" (my_var)), (Tuple "count" (PInt 42)), (Tuple "label" (PStr "example"))])
     in
     unit

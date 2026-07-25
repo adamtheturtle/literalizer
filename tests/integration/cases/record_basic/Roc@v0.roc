@@ -11,7 +11,7 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("id", RInt 1i128),
-    ("description", RStr "She said \"hello\", then waved"),
-    ("is_done", RBool Bool.false),
-    ("blocks", RList [RInt 1i128, RInt 2i128, RInt 3i128]),
+    ("label", RStr "She said \"hello\", then waved"),
+    ("enabled", RBool Bool.false),
+    ("related_ids", RList [RInt 1i128, RInt 2i128, RInt 3i128]),
     ]

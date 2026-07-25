@@ -1,12 +1,12 @@
-data class NamedType(val id: Int, val description: String, val is_done: Boolean, val blocks: IntArray)
-data class Record0(val project: String, val lead_task: NamedType)
+data class NamedType(val id: Int, val label: String, val enabled: Boolean, val related_ids: IntArray)
+data class Record0(val collection: String, val featured_entry: NamedType)
 val my_data = Record0(
-    project = "alpha",
-    lead_task = NamedType(
+    collection = "alpha",
+    featured_entry = NamedType(
         id = 100,
-        description = "first task",
-        is_done = false,
-        blocks = intArrayOf(
+        label = "first entry",
+        enabled = false,
+        related_ids = intArrayOf(
             102,
             103,
         ),

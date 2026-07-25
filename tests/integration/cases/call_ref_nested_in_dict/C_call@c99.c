@@ -17,6 +17,6 @@ struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal my_var = ((CVal){.i = 42});
-process(((CVal){.m = (CKV[]){{"key", my_var}, {"count", ((CVal){.i = 42})}}}));
+process(((CVal){.m = (CKV[]){{"key", my_var}, {"count", ((CVal){.i = 42})}, {"label", ((CVal){.s = "example"})}}}));
     return 0;
 }

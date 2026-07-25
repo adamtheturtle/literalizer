@@ -1,16 +1,16 @@
 struct Record0 {
 	id int
-	description string
-	is_done bool
-	blocks []int
+	label string
+	enabled bool
+	related_ids []int
 }
 
 fn main() {
 	my_data := Record0{
 		id: 1,
-		description: 'She said "hello", then waved',
-		is_done: false,
-		blocks: [
+		label: 'She said "hello", then waved',
+		enabled: false,
+		related_ids: [
 			1,
 			2,
 			3,

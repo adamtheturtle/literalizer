@@ -21,11 +21,16 @@ struct Value {
    private:
     T value_;
   }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -38,15 +43,15 @@ struct Value {
 };
 int main() {
 auto my_data = std::vector<std::pair<std::string, Value>>{
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
+    {"name", Value{"Alice"}},
+    {"age", Value{30}},
+    {"active", Value{true}},
 };
 (void)my_data;
 my_data = std::vector<std::pair<std::string, Value>>{
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
+    {"name", Value{"Alice"}},
+    {"age", Value{30}},
+    {"active", Value{true}},
 };
     (void)my_data;
     return 0;

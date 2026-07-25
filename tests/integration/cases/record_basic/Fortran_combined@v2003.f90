@@ -22,9 +22,9 @@ subroutine main_declaration()
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('id', fint(1_int64)), &
-        fentry('description', fstr('She said "hello", then waved')), &
-        fentry('is_done', fbool(.false.)), &
-        fentry('blocks', flist([fval_t :: fint(1_int64), fint(2_int64), fint(3_int64)])) &
+        fentry('label', fstr('She said "hello", then waved')), &
+        fentry('enabled', fbool(.false.)), &
+        fentry('related_ids', flist([fval_t :: fint(1_int64), fint(2_int64), fint(3_int64)])) &
     ])
 end subroutine main_declaration
 
@@ -34,9 +34,9 @@ subroutine main_assignment()
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('id', fint(1_int64)), &
-        fentry('description', fstr('She said "hello", then waved')), &
-        fentry('is_done', fbool(.false.)), &
-        fentry('blocks', flist([fval_t :: fint(1_int64), fint(2_int64), fint(3_int64)])) &
+        fentry('label', fstr('She said "hello", then waved')), &
+        fentry('enabled', fbool(.false.)), &
+        fentry('related_ids', flist([fval_t :: fint(1_int64), fint(2_int64), fint(3_int64)])) &
     ])
 end subroutine main_assignment
 

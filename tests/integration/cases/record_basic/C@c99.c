@@ -17,9 +17,9 @@ struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"id", ((CVal){.i = 1})},
-    {"description", ((CVal){.s = "She said \"hello\", then waved"})},
-    {"is_done", ((CVal){.b = false})},
-    {"blocks", ((CVal){.a = (CVal[]){((CVal){.i = 1}), ((CVal){.i = 2}), ((CVal){.i = 3})}})},
+    {"label", ((CVal){.s = "She said \"hello\", then waved"})},
+    {"enabled", ((CVal){.b = false})},
+    {"related_ids", ((CVal){.a = (CVal[]){((CVal){.i = 1}), ((CVal){.i = 2}), ((CVal){.i = 3})}})},
 }});
     (void)my_data;
     return 0;

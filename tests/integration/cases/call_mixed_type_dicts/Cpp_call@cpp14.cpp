@@ -22,11 +22,16 @@ struct Value {
    private:
     T value_;
   }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -41,7 +46,7 @@ struct mgrType_ { template <typename... Args> void run(Args...) const {} };
 struct appType_ { mgrType_ mgr; };
 const appType_ app;
 int main() {
-app.mgr.run(std::map<std::string, Value>{{"type", "create"}, {"pr_id", "pr_1"}, {"draft", true}});
-app.mgr.run(std::map<std::string, Value>{{"type", "create"}, {"pr_id", "pr_2"}});
+app.mgr.run(std::map<std::string, Value>{{"type", Value{"create"}}, {"pr_id", Value{"pr_1"}}, {"draft", Value{true}}});
+app.mgr.run(std::map<std::string, Value>{{"type", Value{"create"}}, {"pr_id", Value{"pr_2"}}});
     return 0;
 }

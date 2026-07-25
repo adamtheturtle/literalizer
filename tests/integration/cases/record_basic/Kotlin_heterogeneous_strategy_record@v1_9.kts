@@ -1,9 +1,9 @@
-data class Record0(val id: Int, val description: String, val is_done: Boolean, val blocks: IntArray)
+data class Record0(val id: Int, val label: String, val enabled: Boolean, val related_ids: IntArray)
 val my_data = Record0(
     id = 1,
-    description = "She said \"hello\", then waved",
-    is_done = false,
-    blocks = intArrayOf(
+    label = "She said \"hello\", then waved",
+    enabled = false,
+    related_ids = intArrayOf(
         1,
         2,
         3,

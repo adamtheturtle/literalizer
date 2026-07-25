@@ -611,6 +611,8 @@ class Swift(metaclass=LanguageCls):
         supports_ref_elements_in_tuple_strategy=False,
         heterogeneous_value_variant_name_strategy=None,
         heterogeneous_value_variant_name_version=None,
+        record_variant_version=None,
+        external_record_shape_fixture_prefix=None,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -1212,6 +1214,7 @@ class Swift(metaclass=LanguageCls):
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

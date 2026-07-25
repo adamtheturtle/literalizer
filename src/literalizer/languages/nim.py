@@ -787,8 +787,8 @@ def _nim_record_field_identifier(key: str, /) -> str:
     Nim has style-insensitive identifiers that accept the original
     key, but the generated declaration and ``Record0(field: value,
     ...)`` literal read most naturally in the conventional Nim
-    ``camelCase`` (e.g. ``is_done`` -> ``isDone``); the same conversion
-    is applied to both so they always agree.
+    ``camelCase`` (e.g. ``display_name`` -> ``displayName``); the same
+    conversion is applied to both so they always agree.
     """
     return IdentifierCase.CAMEL.convert(name=key)
 
@@ -1079,6 +1079,8 @@ class Nim(metaclass=LanguageCls):
         supports_ref_elements_in_tuple_strategy=False,
         heterogeneous_value_variant_name_strategy="OBJECT_VARIANT",
         heterogeneous_value_variant_name_version=None,
+        record_variant_version=None,
+        external_record_shape_fixture_prefix=None,
         pre_indent_comment_scalar_variant=False,
         fixture_module_name_template=None,
         fixture_module_name_lowercase=False,
@@ -1903,6 +1905,7 @@ class Nim(metaclass=LanguageCls):
                 indent=self.indent,
             ),
             render_literal=_nim_record_literal,
+            suppress_custom_name_declarations=False,
         )
 
     @cached_property

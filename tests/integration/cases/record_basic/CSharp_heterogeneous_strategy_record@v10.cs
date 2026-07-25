@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-record Record0(int Id, string Description, bool IsDone, int[] Blocks);
+record Record0(int Id, string Label, bool Enabled, int[] RelatedIds);
 class Check {
     public static void Main() {
 var my_data = new Record0(

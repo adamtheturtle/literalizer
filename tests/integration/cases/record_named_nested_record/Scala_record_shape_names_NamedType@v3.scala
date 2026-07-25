@@ -1,13 +1,13 @@
 object Fixture_record_named_nested_record_Scala_record_shape_names_NamedType {
-case class NamedType(id: Int, description: String, is_done: Boolean, blocks: List[Int])
-case class Record0(project: String, lead_task: NamedType)
+case class NamedType(id: Int, label: String, enabled: Boolean, related_ids: List[Int])
+case class Record0(collection: String, featured_entry: NamedType)
 val my_data = Record0(
-    project = "alpha",
-    lead_task = NamedType(
+    collection = "alpha",
+    featured_entry = NamedType(
         id = 100,
-        description = "first task",
-        is_done = false,
-        blocks = List[Int](
+        label = "first entry",
+        enabled = false,
+        related_ids = List[Int](
             102,
             103,
         ),

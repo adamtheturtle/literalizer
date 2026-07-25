@@ -22,11 +22,16 @@ struct Value {
    private:
     T value_;
   }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
   std::shared_ptr<Holder> value_;
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
-  // NOLINTNEXTLINE(google-explicit-constructor,hicpp-explicit-conversions)
-  template <typename T> Value(T value) : value_(new TypedHolder<T>(std::move(value))) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
   template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
@@ -44,24 +49,24 @@ auto my_data = std::vector{
     Record0{
         "test_1",
         std::map<std::string, LiteralizerRecordValue>{
-            {"type", LiteralizerRecordValue{"create"}},
-            {"pr_id", LiteralizerRecordValue{"pr_1"}},
-            {"draft", LiteralizerRecordValue{true}},
-            {"missing", LiteralizerRecordValue{nullptr}},
+            {"type", Value{"create"}},
+            {"pr_id", Value{"pr_1"}},
+            {"draft", Value{true}},
+            {"missing", Value{nullptr}},
         },
         std::map<std::string, LiteralizerRecordValue>{
-            {"pr_id", LiteralizerRecordValue{"pr_1"}},
-            {"status", LiteralizerRecordValue{"draft"}},
+            {"pr_id", Value{"pr_1"}},
+            {"status", Value{"draft"}},
         },
     },
     Record0{
         "test_2",
         std::map<std::string, LiteralizerRecordValue>{
-            {"type", LiteralizerRecordValue{"publish"}},
-            {"pr_id", LiteralizerRecordValue{"pr_1"}},
+            {"type", Value{"publish"}},
+            {"pr_id", Value{"pr_1"}},
         },
         std::map<std::string, LiteralizerRecordValue>{
-            {"error", LiteralizerRecordValue{"invalid_operation"}},
+            {"error", Value{"invalid_operation"}},
         },
     },
 };

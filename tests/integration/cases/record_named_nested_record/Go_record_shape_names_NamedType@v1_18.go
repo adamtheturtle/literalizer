@@ -1,23 +1,23 @@
 package main
 type NamedType struct {
 	Id int
-	Description string
-	IsDone bool
-	Blocks []int
+	Label string
+	Enabled bool
+	RelatedIds []int
 }
 type Record0 struct {
-	Project string
-	LeadTask NamedType
+	Collection string
+	FeaturedEntry NamedType
 }
 
 func main() {
 my_data := Record0{
-	Project: "alpha",
-	LeadTask: NamedType{
+	Collection: "alpha",
+	FeaturedEntry: NamedType{
 		Id: 100,
-		Description: "first task",
-		IsDone: false,
-		Blocks: []int{
+		Label: "first entry",
+		Enabled: false,
+		RelatedIds: []int{
 			102,
 			103,
 		},
