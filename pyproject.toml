@@ -153,7 +153,6 @@ lint.ignore = [
     "FBT003",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
-    "ISC004",
     "N801",
     "N816",
     # literalize has 8 keyword-only arguments, which is justified by the

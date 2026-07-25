@@ -283,8 +283,10 @@ def _objc_call_stub(
     if len(parts) == 1:
         return (
             *nolint,
-            f"static {return_keyword} {parts[0]}({stub_signature}) "
-            f"{stub_body}",
+            (
+                f"static {return_keyword} {parts[0]}({stub_signature}) "
+                f"{stub_body}"
+            ),
         )
     root = _objc_global_root(parts[0])
     method = parts[-1]
@@ -295,10 +297,14 @@ def _objc_call_stub(
         return (
             *nolint,
             f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
-            f"struct {type_name} "
-            f"{{ {return_keyword} (*{method})({proto}); }};",
-            f"static const struct {type_name} {root} = "
-            f"{{ .{method} = {stub_fn} }};",
+            (
+                f"struct {type_name} "
+                f"{{ {return_keyword} (*{method})({proto}); }};"
+            ),
+            (
+                f"static const struct {type_name} {root} = "
+                f"{{ .{method} = {stub_fn} }};"
+            ),
         )
     lines: list[str] = [
         *nolint,
