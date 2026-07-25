@@ -306,7 +306,10 @@ def _element_union(
     *, types: list[str], join_union: Callable[[list[str]], str]
 ) -> str:
     """Remove duplicate *types* and join them into a union."""
-    unique: list[str] = list(dict.fromkeys(types))
+    unique: list[str] = sorted(
+        dict.fromkeys(types),
+        key=lambda type_name: type_name == "None",
+    )
     match unique:
         case [only]:
             return only
