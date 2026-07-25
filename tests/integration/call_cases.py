@@ -52,11 +52,11 @@ type _Scalar = (
     | int
     | float
     | bool
-    | None
     | datetime.date
     | datetime.datetime
     | datetime.time
     | bytes
+    | None
 )
 type _Value = _Scalar | list[_Value] | dict[_Scalar, _Value] | set[_Scalar]
 

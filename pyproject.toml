@@ -159,7 +159,6 @@ lint.ignore = [
     # literalize has 8 keyword-only arguments, which is justified by the
     # public API design.
     "PLR0913",
-    "RUF036",
     "UP006",
     "UP007",
     "UP017",
