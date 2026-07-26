@@ -580,23 +580,23 @@ def _build_python_call_stub(
         method = parts[-1]
         fields = parts[1:-1]
         if not fields:
-            cls = f"_{root.capitalize()}Type"
+            cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
             return (
                 f"class {cls}:",
                 f"{indent}def {method}(self, {variadic}) -> object: ...",
                 f"{root} = {cls}()",
             )
         lines: list[str] = []
-        inner_cls = f"_{fields[-1].capitalize()}Type"
+        inner_cls = f"_{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
         lines.append(f"class {inner_cls}:")
         lines.append(f"{indent}def {method}(self, {variadic}) -> object: ...")
         prev_cls = inner_cls
         for i in range(len(fields) - 2, -1, -1):
-            cls = f"_{fields[i].capitalize()}Type"
+            cls = f"_{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
             lines.append(f"class {cls}:")
             lines.append(f"{indent}{fields[i + 1]} = {prev_cls}()")
             prev_cls = cls
-        root_cls = f"_{root.capitalize()}Type"
+        root_cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
         lines.append(f"class {root_cls}:")
         lines.append(f"{indent}{fields[0]} = {prev_cls}()")
         lines.append(f"{root} = {root_cls}()")
