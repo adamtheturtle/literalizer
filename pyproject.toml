@@ -183,6 +183,10 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "PLR",
     "Q",
 ]
+lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/Python_ref@py*.py" = [
+    # The camel-case reference name is the behavior under test.
+    "N816",
+]
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
