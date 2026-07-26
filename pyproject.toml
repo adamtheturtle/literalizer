@@ -150,7 +150,6 @@ lint.ignore = [
     # but doesn't enforce D205 (blank line after summary) or D212 (summary on first line).
     "D205",
     "D212",
-    "FBT003",
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
     "N801",
@@ -188,6 +187,10 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "INP",
     "PLR",
     "Q",
+]
+lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
+    # These generated call fixtures intentionally contain positional booleans.
+    "FBT003",
 ]
 lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/Python_ref@py*.py" = [
     # The camel-case reference name is the behavior under test.
