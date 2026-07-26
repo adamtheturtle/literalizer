@@ -154,7 +154,6 @@ lint.ignore = [
     # Ruff warns that this conflicts with the formatter.
     "ISC001",
     "N801",
-    "N816",
     # literalize has 8 keyword-only arguments, which is justified by the
     # public API design.
     "PLR0913",
@@ -189,6 +188,10 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "INP",
     "PLR",
     "Q",
+]
+lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/Python_ref@py*.py" = [
+    # The camel-case reference name is the behavior under test.
+    "N816",
 ]
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
