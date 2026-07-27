@@ -16,10 +16,8 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-
-# Keep this import generic: discover variant languages through their explicit
-# capability metadata; do not import individual language classes here.
 from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages.python import Python
 
 from .case_discovery import cases_with_special_floats
 from .language_specs import (
@@ -1501,27 +1499,21 @@ def build_language_version_variants() -> Iterable[Variant]:
 @beartype
 def build_annotation_evaluation_variants() -> Iterable[Variant]:
     """Build eager-annotation variants for Python language versions."""
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        evaluations = getattr(lang_cls, "annotation_evaluations", None)
-        if evaluations is None:
-            continue
-        variants.extend(
-            Variant(
-                name=f"{lang_cls.__name__}_annotation_evaluation_eager",
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    annotation_evaluation=evaluations.EAGER,
-                    language_version=version,
-                ),
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
-            for version in lang_cls.VersionFormats
+    return (
+        Variant(
+            name="Python_annotation_evaluation_eager",
+            spec=make_spec(
+                lang_cls=Python,
+                annotation_evaluation=Python.annotation_evaluations.EAGER,
+                language_version=version,
+            ),
+            lang_cls=Python,
+            fixture_prefix="",
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
         )
-    return variants
+        for version in Python.VersionFormats
+    )
 
 
 @beartype
