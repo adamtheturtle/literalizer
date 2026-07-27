@@ -97,7 +97,10 @@ def test_python_eager_annotations_omit_future_import() -> None:
     assert "x: Dict[str, Tuple[Any, ...]]" in result.code
     generated = types.ModuleType(name="generated")
     # pylint: disable-next=exec-used
-    exec(result.code, generated.__dict__)  # type: ignore[call-arg]  # noqa: S102
+    exec(  # type: ignore[call-arg,unused-ignore]  # noqa: S102
+        result.code,
+        generated.__dict__,
+    )
     resolved = typing.get_type_hints(obj=generated)["x"]
     key_type, value_type = typing.get_args(tp=resolved)
     assert typing.get_origin(tp=resolved) is dict
