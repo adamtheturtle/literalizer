@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections import OrderedDict
-from typing import Any, Tuple, Union
-my_data: Tuple[Union[Tuple[Any, ...], OrderedDict[str, int]], ...] = (
+from typing import Any, Union
+my_data: tuple[Union[tuple[Any, ...], OrderedDict[str, int]], ...] = (
     OrderedDict([("a", 1)]),
     (),
 )

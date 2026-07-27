@@ -608,8 +608,6 @@ def _build_python_call_stub(
 @beartype
 def _build_type_hint_preamble_py38(
     *,
-    sequence_typing_name: str,
-    set_typing_name: str,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -617,8 +615,8 @@ def _build_type_hint_preamble_py38(
 ) -> Callable[[frozenset[type]], tuple[str, ...]]:
     """Build the ``type_hint_collection_preamble_lines`` callable for PY38.
 
-    PY38 requires ``from typing import List`` etc. instead of relying on
-    built-in generic aliases (PEP 585, available from Python 3.9).
+    PY38 uses future annotations so built-in generic aliases are safe;
+    only ``Any`` and ``Union`` still need imports from ``typing``.
     """
     _any_types: frozenset[type] = frozenset(
         t
@@ -645,12 +643,6 @@ def _build_type_hint_preamble_py38(
     ) -> tuple[str, ...]:
         """Return ``from typing import ...`` for PY38."""
         imports: set[str] = set()
-        if list in annotated_collection_types:
-            imports.add(sequence_typing_name)
-        if set in annotated_collection_types:
-            imports.add(set_typing_name)
-        if dict in annotated_collection_types:
-            imports.add("Dict")
         if HeterogeneousElements in annotated_collection_types:
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
@@ -761,10 +753,10 @@ class Python(metaclass=LanguageCls):
 
         language_version: The minimum Python version to target.
 
-            * ``VersionFormats.PY38`` — use ``typing.List``, ``typing.Dict``,
-              etc. for generic collection type hints (PEP 484 style).
-            * ``VersionFormats.PY39`` — use built-in ``list``, ``dict``, etc.
-              directly as generic aliases (PEP 585, default).
+            Both compatibility variants use built-in ``list``, ``dict``,
+            etc. directly as generic aliases. ``VersionFormats.PY38`` uses
+            future annotations so these aliases remain executable on
+            Python 3.8.
 
         heterogeneous_strategy: How to render a record-shaped dict
             (non-empty, string-keyed).
@@ -1336,8 +1328,8 @@ class Python(metaclass=LanguageCls):
         exercised in CI is governed by ``requires-python`` in
         ``pyproject.toml`` (``>=3.12``), not by this enum.
 
-        * ``VersionFormats.PY38`` — target Python 3.8; uses ``typing.List``,
-          ``typing.Dict``, etc. for generic type hints, and emits
+        * ``VersionFormats.PY38`` — target Python 3.8; uses future
+          annotations with built-in collection generics, and emits
           ``datetime.timezone.utc`` for UTC.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
           ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
@@ -1521,22 +1513,12 @@ class Python(metaclass=LanguageCls):
         sequence/set/dict/date/datetime formats and the targeted
         Python version.
         """
+        sequence_hint = self.sequence_format.type_hint
+        set_hint = self.set_format.type_hint
+        dict_hint = "dict"
         if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
-            sequence_hint = mapping.get(
-                self.sequence_format.type_hint,
-                self.sequence_format.type_hint,
-            )
-            set_hint = mapping.get(
-                self.set_format.type_hint,
-                self.set_format.type_hint,
-            )
-            dict_hint = mapping["dict"]
             join_union: Callable[[list[str]], str] = _join_union_typing
         else:
-            sequence_hint = self.sequence_format.type_hint
-            set_hint = self.set_format.type_hint
-            dict_hint = "dict"
             join_union = _join_union_pipe
 
         def _field_type(request: RecordFieldType, /) -> str:
@@ -1855,19 +1837,6 @@ class Python(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
-    def _py38_names(self) -> dict[str, str]:
-        """Map from PEP 585 built-in generic names to typing-module
-        names.
-        """
-        return {
-            "list": "List",
-            "tuple": "Tuple",
-            "set": "Set",
-            "frozenset": "FrozenSet",
-            "dict": "Dict",
-        }
-
-    @cached_property
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
         """Predicate marking a value as a ``RECORD``-strategy
         record-shaped dict.
@@ -1900,22 +1869,12 @@ class Python(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        sequence_hint = self.sequence_format.type_hint
+        set_hint = self.set_format.type_hint
+        dict_hint = "dict"
         if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
-            sequence_hint = mapping.get(
-                self.sequence_format.type_hint,
-                self.sequence_format.type_hint,
-            )
-            set_hint = mapping.get(
-                self.set_format.type_hint,
-                self.set_format.type_hint,
-            )
-            dict_hint = mapping["dict"]
             join_union: Callable[[list[str]], str] = _join_union_typing
         else:
-            sequence_hint = self.sequence_format.type_hint
-            set_hint = self.set_format.type_hint
-            dict_hint = "dict"
             join_union = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
@@ -1967,16 +1926,7 @@ class Python(metaclass=LanguageCls):
         types.
         """
         if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
             return _build_type_hint_preamble_py38(
-                sequence_typing_name=mapping.get(
-                    self.sequence_format.type_hint,
-                    self.sequence_format.type_hint,
-                ),
-                set_typing_name=mapping.get(
-                    self.set_format.type_hint,
-                    self.set_format.type_hint,
-                ),
                 default_set_element_type=self.default_set_element_type,
                 default_sequence_element_type=self.default_sequence_element_type,
                 default_dict_value_type=self.default_dict_value_type,

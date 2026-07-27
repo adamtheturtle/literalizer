@@ -1,4 +1,4 @@
 from __future__ import annotations
-from typing import Any, Set
-my_data: Set[Any] = set()
+from typing import Any
+my_data: set[Any] = set()
 my_data = set()
