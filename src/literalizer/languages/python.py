@@ -104,7 +104,6 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -301,12 +300,6 @@ def _format_inline_type_hint_declaration(
 def _join_union_pipe(types: list[str]) -> str:
     """Join *types* with ``|`` (Python 3.10+ union syntax)."""
     return " | ".join(types)
-
-
-@beartype
-def _join_union_typing(types: list[str]) -> str:
-    """Join *types* as ``Union[...]`` (Python 3.8-compatible)."""
-    return f"Union[{', '.join(types)}]"
 
 
 @beartype
@@ -651,8 +644,6 @@ def _build_type_hint_preamble_py38(
             imports.add(set_typing_name)
         if dict in annotated_collection_types:
             imports.add("Dict")
-        if HeterogeneousElements in annotated_collection_types:
-            imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
         if not imports:
@@ -1336,8 +1327,9 @@ class Python(metaclass=LanguageCls):
         exercised in CI is governed by ``requires-python`` in
         ``pyproject.toml`` (``>=3.12``), not by this enum.
 
-        * ``VersionFormats.PY38`` — target Python 3.8; uses ``typing.List``,
-          ``typing.Dict``, etc. for generic type hints, and emits
+        * ``VersionFormats.PY38`` — target Python 3.8; uses
+          ``typing.List``, ``typing.Dict``, etc. for generic type hints,
+          future annotations with ``|`` unions, and emits
           ``datetime.timezone.utc`` for UTC.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
           ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
@@ -1532,12 +1524,11 @@ class Python(metaclass=LanguageCls):
                 self.set_format.type_hint,
             )
             dict_hint = mapping["dict"]
-            join_union: Callable[[list[str]], str] = _join_union_typing
         else:
             sequence_hint = self.sequence_format.type_hint
             set_hint = self.set_format.type_hint
             dict_hint = "dict"
-            join_union = _join_union_pipe
+        join_union: Callable[[list[str]], str] = _join_union_pipe
 
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
@@ -1911,12 +1902,11 @@ class Python(metaclass=LanguageCls):
                 self.set_format.type_hint,
             )
             dict_hint = mapping["dict"]
-            join_union: Callable[[list[str]], str] = _join_union_typing
         else:
             sequence_hint = self.sequence_format.type_hint
             set_hint = self.set_format.type_hint
             dict_hint = "dict"
-            join_union = _join_union_pipe
+        join_union: Callable[[list[str]], str] = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,

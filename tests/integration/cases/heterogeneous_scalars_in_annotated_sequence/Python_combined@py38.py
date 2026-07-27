@@ -1,7 +1,7 @@
 from __future__ import annotations
 import datetime
-from typing import Any, Tuple, Union
-my_data: Tuple[Union[bool, float, datetime.date, datetime.datetime, Tuple[Any, ...], None], ...] = (
+from typing import Any, Tuple
+my_data: Tuple[bool | float | datetime.date | datetime.datetime | Tuple[Any, ...] | None, ...] = (
     True,
     1.5,
     None,
