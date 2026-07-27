@@ -96,10 +96,14 @@ def test_python_eager_annotations_omit_future_import() -> None:
     assert "from typing import Any, Dict, Tuple" in result.code
     assert "x: Dict[str, Tuple[Any, ...]]" in result.code
     generated = types.ModuleType(name="generated")
+    # pylint: disable-next=exec-used
     exec(result.code, generated.__dict__)  # type: ignore[call-arg]  # noqa: S102
-    assert typing.get_type_hints(obj=generated) == {
-        "x": typing.Dict[str, typing.Tuple[typing.Any, ...]]
-    }
+    resolved = typing.get_type_hints(obj=generated)["x"]
+    key_type, value_type = typing.get_args(tp=resolved)
+    assert typing.get_origin(tp=resolved) is dict
+    assert key_type is str
+    assert typing.get_origin(tp=value_type) is tuple
+    assert typing.get_args(tp=value_type) == (typing.Any, Ellipsis)
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
