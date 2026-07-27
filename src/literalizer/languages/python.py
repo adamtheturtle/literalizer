@@ -759,6 +759,14 @@ class Python(metaclass=LanguageCls):
               a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
 
+        annotation_evaluation: When generated annotations are evaluated.
+
+            * ``AnnotationEvaluations.POSTPONED`` — include
+              ``from __future__ import annotations`` when annotations
+              are emitted (default).
+            * ``AnnotationEvaluations.EAGER`` — omit the future import
+              and use ordinary runtime annotation evaluation.
+
         language_version: The minimum Python version to target.
 
             * ``VersionFormats.PY38`` — use ``typing.List``, ``typing.Dict``,
@@ -1263,6 +1271,14 @@ class Python(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     variable_type_hints_formats = VariableTypeHints
+
+    class AnnotationEvaluations(enum.Enum):
+        """Runtime evaluation behavior for generated annotations."""
+
+        EAGER = enum.auto()
+        POSTPONED = enum.auto()
+
+    annotation_evaluations = AnnotationEvaluations
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1414,6 +1430,9 @@ class Python(metaclass=LanguageCls):
     default_dict_key_type: str = "str"
     default_dict_value_type: str = "Any"
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
+    annotation_evaluation: AnnotationEvaluations = (
+        AnnotationEvaluations.POSTPONED
+    )
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1817,6 +1836,20 @@ class Python(metaclass=LanguageCls):
         emitted via :attr:`Language.leading_preamble` rather than the
         data-dependent preamble (which follows other imports).
         """
+        if (
+            self.annotation_evaluation
+            is type(self.annotation_evaluation).EAGER
+        ):
+
+            def _no_future_import(
+                _data: Value, /, *, has_variable_declaration: bool
+            ) -> tuple[str, ...]:
+                """Omit the future import for eager annotations."""
+                _ = has_variable_declaration
+                return ()
+
+            return _no_future_import
+
         record_preamble = self._record_strategy.preamble
         record_eligible = self._record_eligible_for_annotation
         always = (
