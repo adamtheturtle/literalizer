@@ -1336,13 +1336,12 @@ class Python(metaclass=LanguageCls):
         exercised in CI is governed by ``requires-python`` in
         ``pyproject.toml`` (``>=3.12``), not by this enum.
 
-        * ``VersionFormats.PY38`` — target Python 3.8; uses ``typing.List``,
-          ``typing.Dict``, etc. for generic type hints, and emits
-          ``datetime.timezone.utc`` for UTC.
+        * ``VersionFormats.PY38`` — uses ``typing.List``, ``typing.Dict``,
+          etc. for generic type hints.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
-          ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
-          variant also emits ``datetime.UTC``, which requires Python
-          3.11+, so its true minimum interpreter is 3.11, not 3.9.
+          ``list``, ``dict``, etc. (PEP 585, valid 3.9+).
+
+        Both variants emit ``datetime.UTC``, which requires Python 3.11+.
         """
 
         PY38 = enum.auto()
@@ -1755,14 +1754,6 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        if (
-            self.datetime_format is self.datetime_formats.PYTHON
-            and self.language_version is self.version_formats.PY38
-        ):
-            return functools.partial(
-                _format_datetime_python,
-                utc_tzinfo_expr="datetime.timezone.utc",
-            )
         return self.datetime_format
 
     @cached_property

@@ -157,7 +157,6 @@ lint.ignore = [
     "PLR0913",
     "UP006",
     "UP007",
-    "UP017",
     "UP035",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
