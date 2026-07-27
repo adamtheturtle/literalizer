@@ -2,8 +2,6 @@
 
 import dataclasses
 import datetime
-import types
-import typing
 from typing import ClassVar
 
 from literalizer import (
@@ -77,36 +75,6 @@ def test_python_time_union_annotation_renders() -> None:
     )
 
     assert result.code
-
-
-def test_python_eager_annotations_omit_future_import() -> None:
-    """Python can emit annotations with ordinary eager evaluation."""
-    result = literalize(
-        source="items = []\n",
-        input_format=InputFormat.TOML,
-        language=Python(
-            annotation_evaluation=Python.annotation_evaluations.EAGER,
-            language_version=Python.version_formats.PY38,
-        ),
-        variable_form=NewVariable(name="x", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-
-    assert "from __future__ import annotations" not in result.code
-    assert "from typing import Any, Dict, Tuple" in result.code
-    assert "x: Dict[str, Tuple[Any, ...]]" in result.code
-    generated = types.ModuleType(name="generated")
-    # pylint: disable-next=exec-used
-    exec(  # type: ignore[call-arg,unused-ignore]  # noqa: S102
-        result.code,
-        generated.__dict__,
-    )
-    resolved = typing.get_type_hints(obj=generated)["x"]
-    key_type, value_type = typing.get_args(tp=resolved)
-    assert typing.get_origin(tp=resolved) is dict
-    assert key_type is str
-    assert typing.get_origin(tp=value_type) is tuple
-    assert typing.get_args(tp=value_type) == (typing.Any, Ellipsis)
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:

@@ -1499,6 +1499,32 @@ def build_language_version_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_annotation_evaluation_variants() -> Iterable[Variant]:
+    """Build eager-annotation variants for Python language versions."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        evaluations = getattr(lang_cls, "annotation_evaluations", None)
+        if evaluations is None:
+            continue
+        variants.extend(
+            Variant(
+                name=f"{lang_cls.__name__}_annotation_evaluation_eager",
+                spec=make_spec(
+                    lang_cls=lang_cls,
+                    annotation_evaluation=evaluations.EAGER,
+                    language_version=version,
+                ),
+                lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+            for version in lang_cls.VersionFormats
+        )
+    return variants
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -2160,6 +2186,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
     ),
+    "annotation_evaluation": build_annotation_evaluation_variants,
     "bool_format": build_bool_format_variants,
 }
 
