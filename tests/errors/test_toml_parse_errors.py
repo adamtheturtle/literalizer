@@ -1,4 +1,4 @@
-"""Tests for literalizer TOML conversion."""
+"""TOML parsing error behavior."""
 
 import pytest
 
