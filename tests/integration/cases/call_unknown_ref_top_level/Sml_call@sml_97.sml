@@ -1,5 +1,8 @@
 datatype val_t =
-    SList of val_t list
+    SInt of LargeInt.int
+  | SList of val_t list
 fun process _ = ()
-val unknown_value : val_t = SList []
+val unknown_value : val_t = SList [
+    SInt 1
+]
 val _ = process(unknown_value)

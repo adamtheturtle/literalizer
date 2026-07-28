@@ -1032,7 +1032,8 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # self-contained, but omitted from ``ref_values`` so the call
         # receives ``None`` for that mapping.  Haskell must strip the
         # top-level marker before preamble inference; retaining it would
-        # visibly add HStr/HMap to the generated Val declaration.
+        # visibly add HStr/HMap to the generated Val declaration.  Gleam
+        # must still add GInt for the declaration-only integer below.
         case_dir_name="call_unknown_ref_top_level",
         target_function="process",
         parameter_names=["data"],
@@ -1041,7 +1042,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         per_element=False,
         call_style_type=None,
         ref_declarations={
-            "unknown_value": "[]",
+            "unknown_value": "[1]",
         },
         wrap_in_file=False,
         ref_case_per_language=False,

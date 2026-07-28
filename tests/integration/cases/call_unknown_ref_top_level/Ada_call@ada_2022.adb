@@ -1,7 +1,9 @@
 with A_Stub; use A_Stub;
 procedure Main is
     procedure Process (Data : A_Val) is begin null; end Process;
-    unknown_value : A_Val := AList'[];
+    unknown_value : A_Val := AList'[
+        AInt (1)
+    ];
 begin
     Process(data => unknown_value);
 end Main;
