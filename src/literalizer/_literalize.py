@@ -409,6 +409,9 @@ class _RenderContext:
     ref_key: str
     collection_layout: CollectionLayout
     multiline_prefix: str
+    consumable_ref_names: frozenset[str]
+    single_use_ref_names: frozenset[str]
+    consume_inhibited_ref_names: frozenset[str]
 
     def compact(self) -> "_RenderContext":
         """Return this context with compact collection rendering."""
@@ -426,6 +429,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=CollectionLayout.COMPACT,
             multiline_prefix=self.multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
     def with_multiline(
@@ -451,6 +457,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=CollectionLayout.MULTILINE,
             multiline_prefix=multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
     def with_prefix(self, *, multiline_prefix: str) -> "_RenderContext":
@@ -469,6 +478,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=self.collection_layout,
             multiline_prefix=multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
 
@@ -1610,7 +1622,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-many-branches
+def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     value: Value,
     dict_open_override: str | None,
@@ -1642,8 +1654,8 @@ def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-man
     as bare identifiers.  ``literalize`` uses
     :attr:`~literalizer._language.Language.format_call_ref_identifier`;
     ``literalize_call`` sets the context's ``expand_refs`` so nested
-    argument refs use
-    :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`.
+    argument refs use the regular or consumable call-argument ref
+    formatter according to the call's ownership policy.
     When the context's ``ref_case`` is set, the identifier name is
     converted to that case first.
     """
@@ -1663,10 +1675,16 @@ def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-man
                 if ctx.ref_values is not None
                 else None
             )
-            return (
-                spec.format_call_arg_ref_identifier(ref_name, ref_value)
-                if ctx.expand_refs
-                else spec.format_call_ref_identifier(ref_name, ref_value)
+            if not ctx.expand_refs:
+                return spec.format_call_ref_identifier(ref_name, ref_value)
+            return _format_call_arg_ref_identifier(
+                raw_ref_name=raw_ref_name,
+                ref_name=ref_name,
+                ref_value=ref_value,
+                language=spec,
+                consumable_ref_names=ctx.consumable_ref_names,
+                single_use_ref_names=ctx.single_use_ref_names,
+                consume_inhibited_ref_names=(ctx.consume_inhibited_ref_names),
             )
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
@@ -2152,6 +2170,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         ref_key=ref_key,
         collection_layout=collection_layout,
         multiline_prefix=line_prefix,
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -3302,19 +3323,20 @@ def _compute_call_arg_ref_single_use_names(
     :func:`~literalizer.literalize_call` without further conversion.
 
     Refs not in this set are unsafe to consume: they appear in more than
-    one per-element call (or more than once inside a single call's
-    argument list), so a language that moves consumable refs (notably
-    C++ ``std::move``) would render a use-after-move on the second
-    occurrence.
+    one per-element call (or more than once anywhere inside a single
+    call's argument tree), so a language that moves consumable refs
+    (notably C++ ``std::move``) would render a use-after-move on the
+    second occurrence.
     """
     counts: dict[str, int] = {}
     for element in elements:
         arg_values = element if isinstance(element, list) else [element]
         for value in arg_values:
-            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-            if ref_name is None:
-                continue
-            counts[ref_name] = counts.get(ref_name, 0) + 1
+            for ref_name in _call_arg_ref_names_in_value(
+                value=value,
+                ref_key=ref_key,
+            ):
+                counts[ref_name] = counts.get(ref_name, 0) + 1
     return frozenset(name for name, count in counts.items() if count == 1)
 
 
@@ -3348,15 +3370,72 @@ def _compute_call_arg_ref_consume_inhibited_names(
     for element in elements:
         arg_values = element if isinstance(element, list) else [element]
         for value in arg_values:
-            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-            if ref_name is None:
-                continue
-            referenced.add(ref_name)
+            referenced.update(
+                _call_arg_ref_names_in_value(
+                    value=value,
+                    ref_key=ref_key,
+                )
+            )
     return frozenset(
         name
         for name in referenced
         if name in ref_values and inhibits(ref_values[name])
     )
+
+
+@beartype
+def _call_arg_ref_names_in_value(
+    *,
+    value: Value,
+    ref_key: str,
+) -> list[str]:
+    """Return ref names found recursively in one call argument."""
+    ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    if ref_name is not None:
+        return [ref_name]
+    if isinstance(value, list):
+        return [
+            nested_name
+            for item in value
+            for nested_name in _call_arg_ref_names_in_value(
+                value=item,
+                ref_key=ref_key,
+            )
+        ]
+    if isinstance(value, dict):
+        return [
+            nested_name
+            for item in value.values()
+            for nested_name in _call_arg_ref_names_in_value(
+                value=item,
+                ref_key=ref_key,
+            )
+        ]
+    return []
+
+
+@beartype
+def _format_call_arg_ref_identifier(
+    *,
+    raw_ref_name: str,
+    ref_name: str,
+    ref_value: Value | None,
+    language: Language,
+    consumable_ref_names: frozenset[str],
+    single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
+) -> str:
+    """Render a call ref through its safe regular or consuming form."""
+    is_consumable = (
+        raw_ref_name in consumable_ref_names
+        and raw_ref_name in single_use_ref_names
+        and raw_ref_name not in consume_inhibited_ref_names
+    )
+    if is_consumable:
+        return language.format_call_arg_ref_identifier_consumable(
+            ref_name, ref_value
+        )
+    return language.format_call_arg_ref_identifier(ref_name, ref_value)
 
 
 @beartype
@@ -3471,19 +3550,18 @@ def _format_single_call_arg(
             if ref_case is not None
             else raw_ref_name
         )
-        is_consumable = (
-            raw_ref_name in consumable_ref_names
-            and raw_ref_name in single_use_ref_names
-            and raw_ref_name not in consume_inhibited_ref_names
-        )
         ref_value = (
             ref_values.get(raw_ref_name) if ref_values is not None else None
         )
-        if is_consumable:
-            return language.format_call_arg_ref_identifier_consumable(
-                ref_name, ref_value
-            )
-        return language.format_call_arg_ref_identifier(ref_name, ref_value)
+        return _format_call_arg_ref_identifier(
+            raw_ref_name=raw_ref_name,
+            ref_name=ref_name,
+            ref_value=ref_value,
+            language=language,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
+        )
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
@@ -3502,6 +3580,9 @@ def _format_single_call_arg(
         ref_key=ref_key,
         collection_layout=collection_layout,
         multiline_prefix="",
+        consumable_ref_names=consumable_ref_names,
+        single_use_ref_names=single_use_ref_names,
+        consume_inhibited_ref_names=consume_inhibited_ref_names,
     )
     formatted = wrap_arg(
         value,
@@ -4756,6 +4837,9 @@ def _render_zip_literal(
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         multiline_prefix="",
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
     return _format_value(
         value=value,

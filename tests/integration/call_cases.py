@@ -1064,6 +1064,44 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         input_root_key=None,
     ),
     CallCaseConfig(
+        # ``my_list`` is declared so every emitted fixture is
+        # self-contained, but omitted from ``ref_values``.  Its stand-in
+        # value matches the string-map type inferred for the unresolved
+        # marker so statically typed fixtures compile.  The marker sits
+        # below another dict, pinning the recursive resolution shape
+        # and Haskell's resulting HStr/HList/HMap ``Val`` declaration.
+        # The unrelated ``other`` entry keeps ``ref_values`` non-empty,
+        # exercising the branch used by callers that know some refs but
+        # not this one.
+        case_dir_name="call_unknown_ref_nested_dict",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={
+            "my_list": '{"unused": "value"}',
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset({"my_list"}),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset({"my_list"}),
+        extra_ref_value_sources={"other": "true"},
+        input_root_key=None,
+    ),
+    CallCaseConfig(
         # ``unknown_value`` is declared so every emitted fixture is
         # self-contained, but omitted from ``ref_values`` so the call
         # receives ``None`` for that mapping.  Haskell must strip the
