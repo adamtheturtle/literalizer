@@ -13,28 +13,20 @@ gate with
 rather than silently emitting mismatched field types.  A field whose
 sibling values are nested *maps* of divergent or disjoint shape is the
 exception: the widening pass renders it as a plain map instead of
-rejecting the list (issue #2910), verified here to no longer raise.
-The integration framework only exercises golden output that compiles,
-so these contracts need unit coverage.
+rejecting the list (issue #2910), covered across the default and
+optional-field-unifying variants by the integration golden-file suite.
+The rejection contracts remain unit-tested here.
 """
 
 import pytest
 
-from literalizer import InputFormat, Language, literalize
+from literalizer import InputFormat, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
     UnrepresentableInputError,
 )
 from literalizer.languages import Rust
-
-_NESTED_SHAPE_CONFLICT_YAML = """
-- outer:
-    kind: add
-    urgent: true
-- outer:
-    error: not_found
-"""
 
 _SCALAR_TYPE_CONFLICT_YAML = """
 - a: 1
@@ -73,42 +65,6 @@ def test_sibling_records_with_conflicting_scalar_field_types_raise() -> None:
             input_format=InputFormat.YAML,
             language=language,
         )
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        Rust(heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD),
-        Rust(
-            heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
-            record_unify_optional_fields=True,
-        ),
-    ],
-    ids=["no_unify", "unify"],
-)
-def test_divergent_nested_sibling_maps_widen_instead_of_raising(
-    language: Language,
-) -> None:
-    """Sibling records whose nested map under one key has divergent or
-    disjoint shape widen to a plain map (issue #2910): the field wraps
-    its scalar leaves in the value enum, so the sibling list renders
-    instead of being rejected.  Unification only merges nested shapes
-    that share a key, so the disjoint nested maps here still widen under
-    ``record_unify_optional_fields`` too.
-    """
-    result = literalize(
-        source=_NESTED_SHAPE_CONFLICT_YAML,
-        input_format=InputFormat.YAML,
-        language=language,
-    )
-    widened_struct = (
-        "struct Record0 {\n    outer: HashMap<&'static str, Value>,\n}"
-    )
-    assert result.preamble == (
-        "use std::collections::HashMap;",
-        "enum Value {\n    Str(&'static str),\n    Bool(bool),\n}",
-        widened_struct,
-    )
 
 
 def test_tuple_field_versus_homogeneous_list_field_raises() -> None:

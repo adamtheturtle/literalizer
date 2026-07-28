@@ -11,7 +11,8 @@ strategy now splits such dicts into distinct record shapes (issue
 with :class:`~literalizer.exceptions.HeterogeneousSiblingListsError`
 rather than silently emitting mismatched field types.  Nested sibling
 maps with divergent or disjoint shapes are widened to ``map[string]any``
-instead (issue #2911), preserving the uniform outer record.
+instead (issue #2911), preserving the uniform outer record; that positive
+rendering path is covered by the integration golden-file suite.
 """
 
 import pytest
@@ -22,14 +23,6 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 from literalizer.languages import Go
-
-_NESTED_SHAPE_CONFLICT_YAML = """
-- outer:
-    kind: add
-    priority: high
-- outer:
-    error: not_found
-"""
 
 _SCALAR_TYPE_CONFLICT_YAML = """
 - a: 1
@@ -56,33 +49,6 @@ def test_sibling_records_with_conflicting_scalar_field_types_raise() -> None:
             input_format=InputFormat.YAML,
             language=language,
         )
-
-
-def test_divergent_nested_sibling_maps_widen_instead_of_raising() -> None:
-    """Divergent nested sibling maps fall back to ``map[string]any``
-    while their enclosing sibling records keep one generated struct,
-    even though every raw map value is a string and would otherwise
-    infer the narrower ``map[string]string`` literal type.
-    """
-    language = Go(heterogeneous_strategy=_GO_RECORD_STRATEGY)
-
-    result = literalize(
-        source=_NESTED_SHAPE_CONFLICT_YAML,
-        input_format=InputFormat.YAML,
-        language=language,
-    )
-
-    assert result.preamble == (
-        "package main",
-        "type Record0 struct {\n\tOuter map[string]any\n}",
-    )
-    assert result.code == (
-        "[]any{\n"
-        '\tRecord0{Outer: map[string]any{"kind": "add", '
-        '"priority": "high"}},\n'
-        '\tRecord0{Outer: map[string]any{"error": "not_found"}},\n'
-        "}"
-    )
 
 
 def test_custom_name_for_split_key_set_raises() -> None:
