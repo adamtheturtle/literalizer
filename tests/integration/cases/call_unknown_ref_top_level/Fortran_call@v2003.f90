@@ -20,7 +20,9 @@ program main
     use fval_m
     implicit none
     type(fval_t) :: unknown_value
-    unknown_value = flist([fval_t :: ])
+    unknown_value = flist([fval_t :: &
+        fint(1_int64) &
+    ])
     call process(unknown_value)
 contains
     subroutine process(data)

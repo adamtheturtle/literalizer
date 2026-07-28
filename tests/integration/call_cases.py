@@ -1032,13 +1032,48 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # self-contained, but omitted from ``ref_values`` so the call
         # receives ``None`` for that mapping.  Haskell must strip the
         # top-level marker before preamble inference; retaining it would
-        # visibly add HStr/HMap to the generated Val declaration.
+        # visibly add HStr/HMap to the generated Val declaration.  Gleam
+        # must still add GInt for the declaration-only integer below.
         case_dir_name="call_unknown_ref_top_level",
         target_function="process",
         parameter_names=["data"],
         call_transform=None,
         transform_stub_names=[],
         per_element=False,
+        call_style_type=None,
+        ref_declarations={
+            "unknown_value": "[1]",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset({"unknown_value"}),
+        input_root_key=None,
+    ),
+    CallCaseConfig(
+        # ``unknown_value`` is declared so every emitted fixture is
+        # self-contained, but omitted from ``ref_values`` so the call
+        # receives ``None`` for that mapping.  With ``per_element=True``,
+        # Haskell must strip the marker before preamble inference;
+        # retaining it would visibly add HStr/HMap to the generated Val
+        # declaration.
+        case_dir_name="call_unknown_ref_per_element",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
         call_style_type=None,
         ref_declarations={
             "unknown_value": "[]",

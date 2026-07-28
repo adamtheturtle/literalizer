@@ -228,6 +228,16 @@ class LiteralizeResult:
     :attr:`code` then.
     """
 
+    data_dependent_preamble: tuple[str, ...] = ()
+    """The entries within :attr:`preamble` that were inferred from the
+    rendered data itself.
+
+    Composition helpers use this metadata to replace independently
+    inferred declaration and call blocks with one block covering every
+    value emitted into the composed file.  Empty when the preamble has
+    already been folded into a complete file.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -2523,12 +2533,15 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
+    data_dependent_preamble = language.data_dependent_preamble(
+        pre_form.data_for_preamble
+    )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(pre_form.data_for_preamble)
+            + data_dependent_preamble
         )
     )
 
@@ -2565,6 +2578,7 @@ def _literalize_apply_form(
         source_data=pre_form.data_for_preamble,
         sections=decode_file_sections(result),
         contains_standalone_comments=False,
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -2757,12 +2771,13 @@ def _literalize_value_binding(
         language=language,
         has_variable_declaration=True,
     )
+    data_dependent_preamble = language.data_dependent_preamble(value)
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(value)
+            + data_dependent_preamble
         )
     )
     return LiteralizeResult(
@@ -2774,6 +2789,7 @@ def _literalize_value_binding(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -4447,6 +4463,7 @@ def _compose_call_with_bound_ref_declarations(
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
+    data_dependent_preamble: tuple[str, ...],
     body_preamble: tuple[str, ...],
     types_present: frozenset[type],
     contains_standalone_comments: bool,
@@ -4483,6 +4500,7 @@ def _compose_call_with_bound_ref_declarations(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
     stub_arg_values: Sequence[Value] = (
         data_for_preamble
@@ -4530,6 +4548,7 @@ def _wrap_call_result_in_file(
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
+    data_dependent_preamble: tuple[str, ...],
     computed_body: tuple[str, ...],
     types_present: frozenset[type],
     contains_standalone_comments: bool,
@@ -4579,6 +4598,7 @@ def _wrap_call_result_in_file(
             ref_case=ref_case,
             result=result,
             preamble=preamble,
+            data_dependent_preamble=data_dependent_preamble,
             body_preamble=computed_body,
             types_present=types_present,
             contains_standalone_comments=contains_standalone_comments,
@@ -5273,12 +5293,15 @@ def _literalize_call_parsed(
         # call binding never uses, leaving a stale import.
         has_variable_declaration=False,
     )
+    data_dependent_preamble = language.call_data_dependent_preamble(
+        preamble_data
+    )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.call_data_dependent_preamble(preamble_data)
+            + data_dependent_preamble
         )
     )
 
@@ -5289,6 +5312,7 @@ def _literalize_call_parsed(
             ref_case=ref_case,
             result=result,
             preamble=preamble,
+            data_dependent_preamble=data_dependent_preamble,
             computed_body=computed.body,
             types_present=computed.types_present,
             contains_standalone_comments=contains_standalone_comments,
@@ -5310,6 +5334,7 @@ def _literalize_call_parsed(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -5344,8 +5369,8 @@ def _literalize_call_with_declarations(
     check sees actual values).  The data-dependent header block (e.g.
     Gleam's ``pub type GVal {...}``) is likewise recomputed once over
     the combined source data of every declaration and the call, so a
-    single block covers every type in the file; each declaration's own
-    narrower block is dropped.
+    single block covers every type in the file; each independently
+    computed declaration and call block is dropped.
 
     Args:
         language: The :class:`Language` to render with.  Must be the
@@ -5353,10 +5378,10 @@ def _literalize_call_with_declarations(
         declarations: The per-ref :func:`literalize` results, in the
             order they should appear, ahead of their first use in the
             call.
-        call: The :func:`literalize_call` result.  It should have been
-            rendered with every ref in *declarations* supplied via
-            ``ref_values`` so its own preamble already covers the
-            ref-reachable types.
+        call: The :func:`literalize_call` result.  Refs represented by
+            *declarations* may be omitted from its ``ref_values``;
+            declaration-only types are included when the composed
+            preamble is recomputed.
         extra_body_preamble: Additional body-preamble lines to append
             after the unified body preamble (e.g. a caller-supplied
             no-op stub for the called function).  Defaults to ``()``.
@@ -5416,15 +5441,14 @@ def _literalize_call_with_declarations(
     # data-dependent construct:
     #
     # * When ``call_data_dependent_preamble`` and
-    #   ``data_dependent_preamble`` agree (Gleam, C++, ...), the call
-    #   was rendered with every ref folded into ``ref_values`` so
-    #   ``call.preamble`` already carries one block computed over the
-    #   ref-substituted union (declarations *and* call).  That is the
-    #   single canonical copy; drop the narrower per-declaration
-    #   copies.  ``data_dependent_preamble`` is a pure function of the
-    #   value, so the exact strings a declaration appended to its
-    #   ``preamble`` are reproducible by re-invoking it on that
-    #   declaration's ``source_data``.
+    #   ``data_dependent_preamble`` agree (Gleam, C++, ...), compute one
+    #   canonical block over the declarations and call together when a
+    #   declaration requires lines absent from the call's block.  This
+    #   includes types used only by a declaration whose ref was omitted
+    #   from the call's ``ref_values``.  Otherwise retain the call block
+    #   verbatim, avoiding structural re-inference for languages whose
+    #   preambles depend on collection shape.  Drop the exact
+    #   independently inferred declaration entries in either case.
     # * When they diverge (Nim drops ``import json`` for call
     #   arguments), ``call.preamble`` cannot carry the
     #   declaration-side construct, so keep each declaration's own
@@ -5436,10 +5460,34 @@ def _literalize_call_with_declarations(
         combined_source_data
     ) == language.call_data_dependent_preamble(combined_source_data)
     dropped_declaration_blocks: set[str] = set()
+    call_preamble = call.preamble
+    unified_data_dependent_preamble: tuple[str, ...] = ()
     if call_form_matches_declaration_form:
         for d in declarations:
-            dropped_declaration_blocks.update(
-                language.data_dependent_preamble(d.source_data)
+            dropped_declaration_blocks.update(d.data_dependent_preamble)
+        declaration_data_lines = {
+            line
+            for d in declarations
+            for entry in d.data_dependent_preamble
+            for line in entry.splitlines()
+        }
+        call_data_lines = {
+            line
+            for entry in call.data_dependent_preamble
+            for line in entry.splitlines()
+        }
+        declaration_requires_unified_block = bool(
+            declaration_data_lines - call_data_lines
+        )
+        if declaration_requires_unified_block:
+            call_data_dependent_entries = set(call.data_dependent_preamble)
+            call_preamble = tuple(
+                entry
+                for entry in call.preamble
+                if entry not in call_data_dependent_entries
+            )
+            unified_data_dependent_preamble = (
+                language.call_data_dependent_preamble(combined_source_data)
             )
     declaration_preamble = tuple(
         entry
@@ -5448,7 +5496,12 @@ def _literalize_call_with_declarations(
         if entry not in dropped_declaration_blocks
     )
     all_preamble = deduplicate_preamble_entries(
-        entries=(declaration_preamble + call.preamble + extra_preamble)
+        entries=(
+            declaration_preamble
+            + call_preamble
+            + unified_data_dependent_preamble
+            + extra_preamble
+        )
     )
     if all_preamble:
         wrapped = "\n".join(all_preamble) + "\n" + wrapped

@@ -3,11 +3,14 @@ module Check where
 
 import Prelude
 data Val
-    = PList (Array Val)
+    = PInt Int
+    | PList (Array Val)
 process :: Val -> Unit
 process _ = unit
 unknown_value :: Val
-unknown_value = PList []
+unknown_value = PList [
+    PInt 1
+    ]
 
 
 main :: Unit
