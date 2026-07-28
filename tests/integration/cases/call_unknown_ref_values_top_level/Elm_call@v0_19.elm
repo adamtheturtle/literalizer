@@ -2,8 +2,7 @@ module Check exposing (..)
 
 
 type Val
-    = EInt Int
-    | EList (List Val)
+    = EList (List Val)
 process : a -> ()
 process _ = ()
 
@@ -11,8 +10,6 @@ process _ = ()
 main : Program () () Never
 main =
     let
-        known_value : Val
-        known_value = EInt 1
         unknown_value : Val
         unknown_value = EList []
         _ = process unknown_value

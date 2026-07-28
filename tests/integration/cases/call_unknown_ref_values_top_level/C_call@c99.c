@@ -16,7 +16,6 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
 int main(void) {
-CVal known_value = ((CVal){.i = 1});
 CVal unknown_value = ((CVal){.a = (CVal[]){}});
 process(unknown_value);
     return 0;

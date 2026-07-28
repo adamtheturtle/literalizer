@@ -18,9 +18,7 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: known_value
     type(fval_t) :: unknown_value
-    known_value = fint(1_int64)
     unknown_value = flist([fval_t :: ])
     call process(unknown_value)
 contains

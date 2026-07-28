@@ -12,7 +12,6 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn process(data: ZVal) void { _ = data; }
 pub fn main() void {
-    const known_value: ZVal = .{ .int = 1 };
     const unknown_value: ZVal = .{ .arr = &.{}};
     process(unknown_value);
 }
