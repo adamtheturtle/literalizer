@@ -406,6 +406,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (
         _ci(case_dir_name="record_optional_unify", suffix=""),
+        _ci(
+            case_dir_name="record_nested_map_fallback",
+            suffix="_nested_map_fallback",
+        ),
     ),
     "record_nonrecord_dict_field": (
         _ci(case_dir_name="record_nonrecord_dict_field", suffix=""),
@@ -461,7 +465,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_dict", suffix=""),
         _ci(case_dir_name="empty_ordered_map", suffix=""),
     ),
-    "annotation_evaluation": (_ci(case_dir_name="empty_dict", suffix=""),),
+    "annotation_evaluation": (
+        _ci(case_dir_name="empty_dict", suffix=""),
+        _ci(case_dir_name="empty_sequence", suffix=""),
+        _ci(case_dir_name="empty_set", suffix=""),
+    ),
     "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),
         _ci(case_dir_name="bool_list", suffix=""),
