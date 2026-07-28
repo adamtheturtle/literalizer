@@ -18,6 +18,6 @@ static void process(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
 int main(void) {
 CVal known_value = ((CVal){.b = true});
 CVal unknown_value = ((CVal){.b = true});
-process(known_value, ((CVal){.a = (CVal[]){unknown_value}}));
+process(known_value, unknown_value);
     return 0;
 }

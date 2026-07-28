@@ -14,5 +14,5 @@ fn process(known_value: ZVal, nested_missing: ZVal) void { _ = known_value; _ = 
 pub fn main() void {
     const known_value: ZVal = .{ .bool = true };
     const unknown_value: ZVal = .{ .bool = true };
-    process(known_value, .{ .arr = &.{unknown_value}});
+    process(known_value, unknown_value);
 }

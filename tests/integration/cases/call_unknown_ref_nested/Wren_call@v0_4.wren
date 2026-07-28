@@ -5,4 +5,4 @@ class Process_ {
 var process = Process_.new()
 var known_value = true
 var unknown_value = true
-process.call(known_value, [unknown_value])
+process.call(known_value, unknown_value)

@@ -4,7 +4,7 @@ int main(void) {
 @autoreleasepool {
 id known_value = @YES;
 id unknown_value = @YES;
-process(known_value, @[unknown_value]);
+process(known_value, unknown_value);
 }
     return 0;
 }

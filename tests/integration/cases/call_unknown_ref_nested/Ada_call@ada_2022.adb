@@ -4,5 +4,5 @@ procedure Main is
     known_value : A_Val := ABool (True);
     unknown_value : A_Val := ABool (True);
 begin
-    Process(known_value => known_value, nested_missing => AList'[unknown_value]);
+    Process(known_value => known_value, nested_missing => unknown_value);
 end Main;

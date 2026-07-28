@@ -22,7 +22,7 @@ program main
     type(fval_t) :: unknown_value
     known_value = fbool(.true.)
     unknown_value = fbool(.true.)
-    call process(known_value, flist([fval_t :: unknown_value]))
+    call process(known_value, unknown_value)
 contains
     subroutine process(known_value, nested_missing)
         implicit none

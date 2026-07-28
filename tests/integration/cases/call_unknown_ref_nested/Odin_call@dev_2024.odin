@@ -5,5 +5,5 @@ process :: proc(args: ..any) -> any { return nil }
 main :: proc() {
 known_value := true
 unknown_value := true
-process(known_value, [dynamic]any{unknown_value});
+process(known_value, unknown_value);
 }

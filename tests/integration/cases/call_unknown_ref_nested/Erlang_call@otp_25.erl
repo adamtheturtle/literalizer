@@ -4,4 +4,4 @@ process(_, _) -> ok.
 x() ->
     Known_value = true,
     Unknown_value = true,
-    process(Known_value, [Unknown_value]).
+    process(Known_value, Unknown_value).

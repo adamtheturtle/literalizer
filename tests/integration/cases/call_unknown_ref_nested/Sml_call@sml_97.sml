@@ -4,4 +4,4 @@ datatype val_t =
 fun process _ = ()
 val known_value : val_t = SBool true
 val unknown_value : val_t = SBool true
-val _ = process(known_value, SList [unknown_value])
+val _ = process(known_value, unknown_value)

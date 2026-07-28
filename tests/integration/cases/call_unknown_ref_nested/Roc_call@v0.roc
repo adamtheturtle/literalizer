@@ -12,5 +12,5 @@ known_value = RBool Bool.true
 unknown_value : Val
 unknown_value = RBool Bool.true
 main =
-    dbg (process known_value (RList [unknown_value]))
+    dbg (process known_value unknown_value)
     {}

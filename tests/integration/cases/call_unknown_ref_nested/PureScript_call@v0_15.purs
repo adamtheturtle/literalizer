@@ -16,6 +16,6 @@ unknown_value = PBool true
 main :: Unit
 main =
     let
-        _ = process known_value (PList [unknown_value])
+        _ = process known_value unknown_value
     in
     unit

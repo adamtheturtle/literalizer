@@ -1,2 +1,2 @@
 - - { $ref: known_value }
-  - - { $ref: unknown_value }
+  - { $ref: unknown_value }

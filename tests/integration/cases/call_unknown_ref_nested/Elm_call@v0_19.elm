@@ -15,7 +15,7 @@ main =
         known_value = EBool True
         unknown_value : Val
         unknown_value = EBool True
-        _ = process known_value (EList [unknown_value])
+        _ = process known_value unknown_value
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

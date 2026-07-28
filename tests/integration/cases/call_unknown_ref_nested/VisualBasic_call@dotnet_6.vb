@@ -6,6 +6,6 @@ Module Check
     Sub _calls()
         Dim known_value = True
         Dim unknown_value = True
-        process(known_value, New Object() {unknown_value})
+        process(known_value, unknown_value)
     End Sub
 End Module

@@ -8,5 +8,5 @@ unknown_value :: Val
 unknown_value = HBool True
 main :: IO ()
 main = do
-    _ <- process known_value (HList [unknown_value])
+    _ <- process known_value unknown_value
     pure ()

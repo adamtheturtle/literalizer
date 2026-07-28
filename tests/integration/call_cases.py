@@ -969,7 +969,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # self-contained, but omitted from ``ref_values`` so call
         # preamble inference must strip its marker recursively.  In
         # Haskell, retaining the marker would visibly add HStr/HMap to
-        # the golden's Val declaration.
+        # the generated Val declaration.
         case_dir_name="call_unknown_ref_nested",
         target_function="process",
         parameter_names=["known_value", "nested_missing"],
