@@ -21,7 +21,10 @@ from literalizer.exceptions import IncompatibleFormatsError
 # capability metadata; do not import individual language classes here.
 from literalizer.languages import ALL_LANGUAGES
 
-from .case_discovery import cases_with_special_floats
+from .case_discovery import (
+    EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
+    cases_with_special_floats,
+)
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -2200,6 +2203,13 @@ def build_variant_cases() -> list[VariantCase]:
                 if not (
                     ci.case_dir_name in special_float_cases
                     and not variant.lang_cls.supports_special_floats
+                )
+                and not (
+                    ci.case_dir_name
+                    == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
+                    and not (
+                        variant.lang_cls.supports_empty_sibling_sequence_type_hints
+                    )
                 )
             )
     cases.extend(build_modifier_variant_cases())
