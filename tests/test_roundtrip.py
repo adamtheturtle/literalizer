@@ -1,24 +1,14 @@
 """Hypothesis roundtrip tests for literalizer converter."""
 
 import ast
-import base64
 import json
 import re
 
-import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from literalizer import InputFormat, Language, literalize
-from literalizer.languages import (
-    Cpp,
-    Erlang,
-    Go,
-    Java,
-    Python,
-    Rust,
-    Swift,
-)
+from literalizer import InputFormat, literalize
+from literalizer.languages import Erlang, Python
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
 # matching the JSON input directly without any conversion step.
@@ -145,30 +135,9 @@ def test_roundtrip_bytes_hex(data: bytes) -> None:
     assert bytes.fromhex(result[1:-1]) == data
 
 
-@given(data=st.binary())
-def test_roundtrip_yaml_binary_python(data: bytes) -> None:
-    """YAML !!binary -> literalize_yaml (Python) -> ast.literal_eval round-
-    trips.
-    """
-    encoded = base64.b64encode(s=data).decode()
-    yaml_string = f"- !!binary |\n  {encoded}\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    code = result.code.rstrip(",")
-    assert ast.literal_eval(node_or_string=code) == data.hex()
-
-
-RUST_LANG = Rust()
-GO_LANG = Go()
-JAVA_LANG = Java()
-SWIFT_LANG = Swift()
-CPP_LANG = Cpp()
+# YAML ``!!binary`` parsing and per-language bytes-format wiring are covered
+# across the language/version matrix by ``tests/integration/cases/binary``.
+# Keep only unique formatter semantics in this property-test module.
 ERLANG_LANG = Erlang()
 
 
@@ -180,79 +149,6 @@ def test_roundtrip_bytes_erlang_binary(data: bytes) -> None:
         assert result == "<<>>"
         return
     match = re.fullmatch(pattern=r"<<(.+)>>", string=result)
-    assert match is not None
-    byte_values = [int(x.strip()) for x in match.group(1).split(sep=",")]
-    assert bytes(byte_values) == data
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        pytest.param(RUST_LANG, id="Rust"),
-        pytest.param(GO_LANG, id="Go"),
-        pytest.param(JAVA_LANG, id="Java"),
-        pytest.param(SWIFT_LANG, id="Swift"),
-        pytest.param(CPP_LANG, id="Cpp"),
-    ],
-)
-@given(data=st.binary())
-def test_roundtrip_bytes_hex_languages(
-    language: Language,
-    data: bytes,
-) -> None:
-    """Format_bytes_hex round-trips for non-Python languages."""
-    result = language.format_bytes(data)
-    assert bytes.fromhex(result.strip('"')) == data
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        pytest.param(RUST_LANG, id="Rust"),
-        pytest.param(GO_LANG, id="Go"),
-        pytest.param(JAVA_LANG, id="Java"),
-        pytest.param(SWIFT_LANG, id="Swift"),
-        pytest.param(CPP_LANG, id="Cpp"),
-    ],
-)
-@given(data=st.binary())
-def test_roundtrip_yaml_binary_hex_languages(
-    language: Language,
-    data: bytes,
-) -> None:
-    """YAML !!binary -> literalize (hex-format languages) round-trips."""
-    encoded = base64.b64encode(s=data).decode()
-    yaml_string = f"- !!binary |\n  {encoded}\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=language,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    code = result.code.rstrip(",")
-    assert bytes.fromhex(code.strip('"')) == data
-
-
-@given(data=st.binary())
-def test_roundtrip_yaml_binary_erlang(data: bytes) -> None:
-    """YAML !!binary -> literalize (Erlang binary format) round-trips."""
-    encoded = base64.b64encode(s=data).decode()
-    yaml_string = f"- !!binary |\n  {encoded}\n"
-    result = literalize(
-        source=yaml_string,
-        input_format=InputFormat.YAML,
-        language=ERLANG_LANG,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    code = result.code.rstrip(",")
-    if not data:
-        assert code == "<<>>"
-        return
-    match = re.fullmatch(pattern=r"<<(.+)>>", string=code)
     assert match is not None
     byte_values = [int(x.strip()) for x in match.group(1).split(sep=",")]
     assert bytes(byte_values) == data
