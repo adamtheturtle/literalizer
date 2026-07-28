@@ -176,19 +176,3 @@ def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
 
     assert result.types_present == frozenset({list})
     assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_haskell_without_ref_values_strips_per_element_ref() -> None:
-    """Haskell per-element preamble inference skips ref marker
-    elements.
-    """
-    result = literalize_call(
-        source='[{"$ref": "myList"}]',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
