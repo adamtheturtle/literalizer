@@ -12,6 +12,7 @@ from typing import NoReturn
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from literalizer import InputFormat
 from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Python
 
@@ -19,11 +20,54 @@ from .call_cases import (
     CALL_CASE_CONFIGS,
     CallCase,
     _run_wrap_in_file_case,  # pyright: ignore[reportPrivateUsage]
+    _select_call_input_root,  # pyright: ignore[reportPrivateUsage]
     discover_call_cases,
     run_call_golden_case,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
+from .case_inputs import CaseInput
 from .language_specs import make_spec
+
+
+def test_select_call_input_root_rejects_non_table_root(
+    tmp_path: Path,
+) -> None:
+    """A configured root key requires a parsed table."""
+    input_info = CaseInput(
+        path=tmp_path / "input.json",
+        input_format=InputFormat.JSON,
+    )
+
+    with pytest.raises(
+        expected_exception=TypeError,
+        match=(
+            r"input\.json config selects 'calls', "
+            r"but its parsed root is list"
+        ),
+    ):
+        _select_call_input_root(
+            source="[]",
+            input_info=input_info,
+            input_root_key="calls",
+        )
+
+
+def test_select_call_input_root_rejects_missing_key(tmp_path: Path) -> None:
+    """A configured root key must exist in the parsed table."""
+    input_info = CaseInput(
+        path=tmp_path / "input.toml",
+        input_format=InputFormat.TOML,
+    )
+
+    with pytest.raises(
+        expected_exception=KeyError,
+        match=r"input\.toml has no configured call root 'calls'",
+    ):
+        _select_call_input_root(
+            source="other = []",
+            input_info=input_info,
+            input_root_key="calls",
+        )
 
 
 def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
@@ -56,7 +100,11 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
         _run_wrap_in_file_case(
             config=config,
             spec=make_spec(lang_cls=Python),
-            yaml_string="[]\n",
+            source="[]\n",
+            input_info=CaseInput(
+                path=tmp_path / "input.yaml",
+                input_format=InputFormat.YAML,
+            ),
             effective_ref_case=None,
             lang_name="Python",
             lang_extension=Python.extension,

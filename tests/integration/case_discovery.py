@@ -24,6 +24,7 @@ from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
 from .call_cases import CALL_CASE_CONFIGS, CALL_VARIANT_CASE_CONFIGS
+from .case_inputs import CaseInput, case_input
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -395,50 +396,6 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
 ]
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _CaseInput:
-    """The input file backing a golden-file case."""
-
-    path: Path
-    input_format: literalizer.InputFormat
-
-
-@beartype
-def case_input(*, case_dir: Path) -> _CaseInput:
-    """Return the input file path and its :class:`InputFormat` for a case.
-
-    Cases use ``input.yaml`` by default.  Cases whose behavior depends on
-    format-specific parsing (e.g. JSON unicode escapes) or whose input
-    contains a value the YAML 1.2 spec cannot natively express (currently
-    ``datetime.time``) use ``input.json``, ``input.json5``, or
-    ``input.toml`` instead.  A case must carry exactly one input file:
-    ``test_no_dead_golden_files`` flags a case that carries more than one
-    because the unused file becomes orphaned.
-    """
-    json_path = case_dir / "input.json"
-    if json_path.exists():
-        return _CaseInput(
-            path=json_path,
-            input_format=literalizer.InputFormat.JSON,
-        )
-    json5_path = case_dir / "input.json5"
-    if json5_path.exists():
-        return _CaseInput(
-            path=json5_path,
-            input_format=literalizer.InputFormat.JSON5,
-        )
-    toml_path = case_dir / "input.toml"
-    if toml_path.exists():
-        return _CaseInput(
-            path=toml_path,
-            input_format=literalizer.InputFormat.TOML,
-        )
-    return _CaseInput(
-        path=case_dir / "input.yaml",
-        input_format=literalizer.InputFormat.YAML,
-    )
-
-
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
@@ -492,7 +449,7 @@ type CaseData = (
 
 
 @beartype
-def load_case_data(*, input_info: _CaseInput) -> CaseData:
+def load_case_data(*, input_info: CaseInput) -> CaseData:
     """Parse a case input file according to its declared format.
 
     Dispatches on :attr:`_CaseInput.input_format` so discovery code can

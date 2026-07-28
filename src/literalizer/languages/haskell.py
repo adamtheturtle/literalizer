@@ -700,6 +700,7 @@ def _haskell_needs_str_constructor(
     """Return True if an ``HStr String`` constructor must be present."""
     return (
         bool(types & {str, bytes})
+        or datetime.time in types
         or (cfg.date_needs_is_string and datetime.date in types)
         or (cfg.datetime_needs_is_string and datetime.datetime in types)
         or (cfg.date_needs_str_explicit and datetime.date in types)
@@ -771,6 +772,7 @@ def _haskell_compute_preamble(
 
     needs_is_string = cfg.emit_is_string and (
         bool(types & {str, bytes})
+        or datetime.time in types
         or (cfg.date_needs_is_string and datetime.date in types)
         or (cfg.datetime_needs_is_string and datetime.datetime in types)
     )

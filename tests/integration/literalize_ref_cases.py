@@ -36,8 +36,8 @@ from .case_discovery import (
     LITERALIZE_DEFAULT_REF_CASE_CONFIGS,
     LITERALIZE_REF_CASE_CONFIGS,
     LiteralizeRefCaseConfig,
-    case_input,
 )
+from .case_inputs import case_input
 from .language_specs import (
     make_golden_path,
     sorted_languages,
