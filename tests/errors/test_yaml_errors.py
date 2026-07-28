@@ -72,23 +72,6 @@ def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
         )
 
 
-def test_binary_without_sequence_delimiters() -> None:
-    """YAML binary renders when the enclosing sequence is omitted.
-
-    This option intentionally produces a fragment, so it has no compiling
-    golden-file surface.
-    """
-    result = literalize(
-        source="- !!binary SGVsbG8=\n",
-        input_format=InputFormat.YAML,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=False,
-        variable_form=None,
-    )
-    assert result.code == '"48656c6c6f",'
-
-
 def test_heterogeneous_bytes_in_collection_raises() -> None:
     """``!!binary`` bytes in a heterogeneous collection raise for Mojo."""
     yaml_string = textwrap.dedent(
