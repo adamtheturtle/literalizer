@@ -12,6 +12,7 @@ from typing import NoReturn
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from literalizer import InputFormat
 from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Python
 
@@ -23,6 +24,7 @@ from .call_cases import (
     run_call_golden_case,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
+from .case_inputs import CaseInput
 from .language_specs import make_spec
 
 
@@ -56,7 +58,11 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
         _run_wrap_in_file_case(
             config=config,
             spec=make_spec(lang_cls=Python),
-            yaml_string="[]\n",
+            source="[]\n",
+            input_info=CaseInput(
+                path=tmp_path / "input.yaml",
+                input_format=InputFormat.YAML,
+            ),
             effective_ref_case=None,
             lang_name="Python",
             lang_extension=Python.extension,

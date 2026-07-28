@@ -11,7 +11,7 @@ import datetime
 import enum
 import functools
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import pytest
@@ -27,7 +27,12 @@ from literalizer import StubReturn
 # golden-file harness must interpose its own transform-wrapper stubs
 # between rendering and composition, so it uses the internal core
 # directly.  See issue #1946.
-from literalizer._literalize import _literalize_call_with_declarations
+from literalizer._literalize import (
+    _literalize_call_parsed,
+    _literalize_call_with_declarations,
+)
+from literalizer._parsing import ParsedInput, parse_input
+from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -37,6 +42,7 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 
+from .case_inputs import CaseInput, case_input
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -66,11 +72,11 @@ class CallCaseConfig:
     """Configuration for a ``literalize_call`` golden-file test case.
 
     When *ref_declarations* is non-empty, each entry maps a
-    ``{"$ref": "name"}`` marker in ``input.yaml`` to a JSON source
+    ``{"$ref": "name"}`` marker in the case input to a JSON source
     string that is rendered as a variable declaration via
     :func:`literalizer.literalize`.  The declarations are emitted
     before the call so the resulting file is self-contained.  Only
-    meaningful when at least one call argument in ``input.yaml`` uses
+    meaningful when at least one call argument in the case input uses
     the ``{"$ref": "name"}`` marker.
 
     When *ref_case_per_language* is ``True``, the harness picks each
@@ -117,12 +123,16 @@ class CallCaseConfig:
     # the lint-CI compile of every fixture); they diverge from the
     # ``NewVariable`` form and are skipped (no golden) instead.  ``None``
     # disables the gate (every supporting language gets a golden).
-    self_contained_mirror_variable_form: literalizer.VariableForm | None
+    self_contained_mirror_variable_form: (
+        literalizer.NewVariable | literalizer.ExistingVariable | None
+    )
     # When set, drive ``literalize_call(..., variable_form=...)`` to
     # exercise the call-binding output mode.  Only meaningful with
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
-    variable_form: literalizer.VariableForm | None
+    variable_form: (
+        literalizer.NewVariable | literalizer.ExistingVariable | None
+    )
     # Companion source whose parsed top-level elements pair
     # positionally with the generated calls and are exposed on
     # ``CallContext.zipped``.  Requires ``call_transform``.  Parsed
@@ -149,6 +159,10 @@ class CallCaseConfig:
     # When ``True``, only languages whose default configuration can
     # represent heterogeneous dict values participate in the case.
     requires_heterogeneous_dict_values: bool
+    # TOML documents necessarily parse to a top-level table.  When set,
+    # select this table entry as the call renderer's root value after
+    # parsing.  Other formats normally leave this as ``None``.
+    input_root_key: str | None = None
 
 
 CALL_STYLE_VARIANTS: list[tuple[str, type[literalizer.CallStyle]]] = [
@@ -207,6 +221,36 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+    ),
+    CallCaseConfig(
+        # TOML is the only supported input format that can represent a
+        # time scalar.  Select its ``calls`` array after parsing so it
+        # can drive the same per-element renderer as root-list formats.
+        # The single slot varies across time, datetime, and int values,
+        # exercising temporal carrier wrapping in C++14.
+        case_dir_name="call_temporal_scalar_slot",
+        target_function="process",
+        parameter_names=["value"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={},
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        requires_heterogeneous_dict_values=False,
+        input_root_key="calls",
     ),
     CallCaseConfig(
         case_dir_name="call_line_comments",
@@ -1814,11 +1858,100 @@ def discover_call_cases() -> list[CallCase]:
 
 
 @beartype
+def _select_call_input_root(
+    *,
+    source: str,
+    input_info: CaseInput,
+    input_root_key: str,
+) -> ParsedInput:
+    """Parse a case and select a table entry as the call-row root."""
+    parsed = parse_input(
+        source=source,
+        input_format=input_info.input_format,
+    )
+    if not isinstance(parsed.data, dict):
+        message = (
+            f"{input_info.path} config selects {input_root_key!r}, "
+            f"but its parsed root is {type(parsed.data).__name__}"
+        )
+        raise TypeError(message)
+    try:
+        selected = parsed.data[input_root_key]
+    except KeyError as exc:
+        message = (
+            f"{input_info.path} has no configured call root {input_root_key!r}"
+        )
+        raise KeyError(message) from exc
+    return dataclasses.replace(parsed, data=selected)
+
+
+@beartype
+def _literalize_call_case(
+    *,
+    config: CallCaseConfig,
+    spec: literalizer.Language,
+    source: str,
+    input_info: CaseInput,
+    effective_ref_case: literalizer.IdentifierCase | None,
+    variable_form: literalizer.NewVariable
+    | literalizer.ExistingVariable
+    | None,
+    wrap_in_file: bool,
+    ref_values: Mapping[str, ValueInput] | None = None,
+    bound_refs: Mapping[str, ValueInput] | None = None,
+) -> literalizer.LiteralizeResult:
+    """Run a configured call through the public or parsed-input path."""
+    if config.input_root_key is None:
+        return literalizer.literalize_call(
+            source=source,
+            input_format=input_info.input_format,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=config.call_transform,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
+            per_element=config.per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
+            ref_values=ref_values,
+            bound_refs=bound_refs,
+            variable_form=variable_form,
+        )
+    return _literalize_call_parsed(
+        parsed=_select_call_input_root(
+            source=source,
+            input_info=input_info,
+            input_root_key=config.input_root_key,
+        ),
+        language=spec,
+        target_function=config.target_function,
+        parameter_names=config.parameter_names,
+        call_transform=config.call_transform,
+        zip_source=config.zip_source,
+        zip_input_format=config.zip_input_format,
+        comment_source=config.comment_source,
+        per_element=config.per_element,
+        wrap_in_file=wrap_in_file,
+        ref_case=effective_ref_case,
+        consumable_refs=config.consumable_refs,
+        ref_values=ref_values,
+        bound_refs=bound_refs,
+        ref_key="$ref",
+        collection_layout=literalizer.CollectionLayout.COMPACT,
+        variable_form=variable_form,
+    )
+
+
+@beartype
 def _run_wrap_in_file_case(
     *,
     config: CallCaseConfig,
     spec: literalizer.Language,
-    yaml_string: str,
+    source: str,
+    input_info: CaseInput,
     effective_ref_case: literalizer.IdentifierCase | None,
     lang_name: str,
     lang_extension: str,
@@ -1829,40 +1962,28 @@ def _run_wrap_in_file_case(
     golden.
     """
     try:
-        wrap_result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            zip_source=config.zip_source,
-            zip_input_format=config.zip_input_format,
-            comment_source=config.comment_source,
-            per_element=config.per_element,
-            wrap_in_file=True,
-            ref_case=effective_ref_case,
+        wrap_result = _literalize_call_case(
+            config=config,
+            spec=spec,
+            source=source,
+            input_info=input_info,
+            effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
+            wrap_in_file=True,
         )
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
         pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
     mirror_form = config.self_contained_mirror_variable_form
     if mirror_form is not None:
-        mirror_result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            zip_source=config.zip_source,
-            zip_input_format=config.zip_input_format,
-            comment_source=config.comment_source,
-            per_element=config.per_element,
-            wrap_in_file=True,
-            ref_case=effective_ref_case,
+        mirror_result = _literalize_call_case(
+            config=config,
+            spec=spec,
+            source=source,
+            input_info=input_info,
+            effective_ref_case=effective_ref_case,
             variable_form=mirror_form,
+            wrap_in_file=True,
         )
         if wrap_result.code != mirror_result.code:
             golden_path.unlink(missing_ok=True)
@@ -1894,7 +2015,8 @@ def _run_call_with_declarations(
     *,
     config: CallCaseConfig,
     spec: literalizer.Language,
-    yaml_string: str,
+    source: str,
+    input_info: CaseInput,
     declaration_names: dict[str, str],
     effective_ref_case: literalizer.IdentifierCase | None,
     lang_name: str,
@@ -1921,19 +2043,14 @@ def _run_call_with_declarations(
             ref_name: declaration.source_data
             for ref_name, declaration in decl_results_by_ref_name.items()
         }
-        result = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            zip_source=config.zip_source,
-            zip_input_format=config.zip_input_format,
-            comment_source=config.comment_source,
-            per_element=config.per_element,
-            ref_case=effective_ref_case,
-            consumable_refs=config.consumable_refs,
+        result = _literalize_call_case(
+            config=config,
+            spec=spec,
+            source=source,
+            input_info=input_info,
+            effective_ref_case=effective_ref_case,
+            variable_form=config.variable_form,
+            wrap_in_file=False,
             ref_values=ref_values or None,
         )
     except VariableNameNotSupportedError:
@@ -1992,10 +2109,10 @@ def run_call_golden_case(
     variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
     ``ERROR`` strategy rejects).
     """
-    input_path = cases_dir / config.case_dir_name / "input.yaml"
-    yaml_string = input_path.read_text()
+    input_info = case_input(case_dir=cases_dir / config.case_dir_name)
+    source = input_info.path.read_text()
     golden_path = make_golden_path(
-        parent=input_path.parent,
+        parent=input_info.path.parent,
         name=golden_name,
         extension=lang_cls.extension,
         lang_cls=lang_cls,
@@ -2025,7 +2142,8 @@ def run_call_golden_case(
         _run_wrap_in_file_case(
             config=config,
             spec=spec,
-            yaml_string=yaml_string,
+            source=source,
+            input_info=input_info,
             effective_ref_case=effective_ref_case,
             lang_name=lang_cls.__name__,
             lang_extension=lang_cls.extension,
@@ -2036,7 +2154,8 @@ def run_call_golden_case(
     call_outcome = _run_call_with_declarations(
         config=config,
         spec=spec,
-        yaml_string=yaml_string,
+        source=source,
+        input_info=input_info,
         declaration_names=declaration_names,
         effective_ref_case=effective_ref_case,
         lang_name=lang_cls.__name__,
@@ -2131,19 +2250,14 @@ def run_call_golden_case(
         and not config.transform_stub_names
         and config.variable_form is None
     ):
-        bound = literalizer.literalize_call(
-            source=yaml_string,
-            input_format=literalizer.InputFormat.YAML,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            zip_source=config.zip_source,
-            zip_input_format=config.zip_input_format,
-            comment_source=config.comment_source,
-            per_element=config.per_element,
+        bound = _literalize_call_case(
+            config=config,
+            spec=spec,
+            source=source,
+            input_info=input_info,
+            effective_ref_case=effective_ref_case,
+            variable_form=config.variable_form,
             wrap_in_file=True,
-            ref_case=effective_ref_case,
-            consumable_refs=config.consumable_refs,
             bound_refs={
                 ref_name: json.loads(s=ref_source)
                 for ref_name, ref_source in config.ref_declarations.items()

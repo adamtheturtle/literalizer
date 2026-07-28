@@ -44,12 +44,12 @@ from .case_discovery import (
     build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
-    case_input,
     group_cases_by_language,
     group_combined_cases_by_language,
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
+from .case_inputs import case_input
 from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
