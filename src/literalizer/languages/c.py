@@ -1642,7 +1642,22 @@ class C(metaclass=LanguageCls):
                 )
 
             return _format_cjson_call_arg
-        return self._format_entry
+        format_entry = self._format_entry
+        string_field = self.string_field
+
+        @beartype
+        def _format_c_call_arg(
+            raw_value: Value,
+            formatted: str,
+        ) -> str:
+            """Wrap time arguments omitted by the shared entry
+            formatter.
+            """
+            if isinstance(raw_value, datetime.time):
+                return f"((CVal){{.{string_field} = {formatted}}})"
+            return format_entry(raw_value, formatted)
+
+        return _format_c_call_arg
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

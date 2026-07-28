@@ -17,12 +17,12 @@ from .case_discovery import (
     build_no_variable_form_cases,
     build_pre_indent_cases,
     build_statement_terminator_combined_cases,
-    case_input,
     discover_cases,
     discover_combined_cases,
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
+from .case_inputs import case_input
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,

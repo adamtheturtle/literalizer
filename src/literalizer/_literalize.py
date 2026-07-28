@@ -5069,7 +5069,56 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
-    parsed = parse_input(source=source, input_format=input_format)
+    return _literalize_call_parsed(
+        parsed=parse_input(source=source, input_format=input_format),
+        language=language,
+        target_function=target_function,
+        parameter_names=parameter_names,
+        call_transform=call_transform,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        comment_source=comment_source,
+        per_element=per_element,
+        wrap_in_file=wrap_in_file,
+        ref_case=ref_case,
+        consumable_refs=consumable_refs,
+        ref_values=ref_values,
+        bound_refs=bound_refs,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        variable_form=variable_form,
+    )
+
+
+@beartype
+def _literalize_call_parsed(
+    *,
+    parsed: ParsedInput,
+    language: Language,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[CallContext], str] | None,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    comment_source: Sequence[str] | None,
+    per_element: bool,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+    consumable_refs: frozenset[str],
+    ref_values: Mapping[str, ValueInput] | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    variable_form: NewVariable | ExistingVariable | None,
+) -> LiteralizeResult:
+    """Render a call from input parsed by :func:`parse_input`.
+
+    This is the shared rendering core behind :func:`literalize_call`.
+    Keeping parsing outside the core lets the golden-file harness select
+    the call-row array from a TOML document, whose root is necessarily a
+    table, while exercising the same production renderer as the public
+    entry point.
+    """
     data = parsed.data
     contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
     match language.call_style_config:
