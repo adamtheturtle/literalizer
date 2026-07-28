@@ -1,5 +1,7 @@
 module Check = struct
 
-let my_data : Yojson.Safe.t = `String "a\"b\tcé"
+let my_data : Yojson.Safe.t = `Assoc [
+    ("$key", `String "a\"b\tcé #{world} $ident")
+]
 
 end

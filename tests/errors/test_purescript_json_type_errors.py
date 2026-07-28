@@ -56,25 +56,3 @@ def test_purescript_json_type_rejects_special_float_infinity() -> None:
             ),
             variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
-
-
-def test_purescript_json_type_escapes_quotes_in_string_values() -> None:
-    r"""Pin that JSON-text-embedding correctly escapes quotes inside
-    string values so the rendered PureScript literal stays well-formed.
-
-    The original ``"`` is JSON-encoded to ``\"`` (one backslash, one
-    quote), then the whole JSON document is embedded in a PureScript
-    string literal which escapes both characters again: backslash to
-    ``\\`` and quote to ``\"``.  The end result in source is three
-    backslashes followed by a quote.
-    """
-    result = literalize(
-        source='{"note": "she said \\"hi\\""}',
-        input_format=InputFormat.JSON,
-        language=PureScript(
-            json_type=PureScript.json_types.ARGONAUT_JSON,
-        ),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-    )
-    assert "she said " in result.code
-    assert r"\\\"hi\\\"" in result.code

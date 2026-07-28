@@ -50,24 +50,3 @@ def test_haskell_json_type_rejects_special_floats() -> None:
             language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
             variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )
-
-
-def test_haskell_json_type_accepts_aeson_qq_interpolation_metasyntax() -> None:
-    """Pin that ``#{...}`` and ``$ident`` text inside JSON string values
-    does *not* trigger ``aesonQQ`` interpolation.
-
-    ``aesonQQ`` only recognizes ``#{...}`` value splices and ``$ident``
-    key splices in unquoted positions; inside a JSON string literal both
-    are plain text, and :func:`json.dumps` always emits strings and dict
-    keys inside ``"..."``.  Rejecting this text would refuse valid user
-    data, so this test locks the invariant in.
-    """
-    result = literalize(
-        source='{"note": "hello #{world} and $ident here", "$key": "x"}',
-        input_format=InputFormat.JSON,
-        language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-    )
-    assert "#{world}" in result.code
-    assert "$ident" in result.code
-    assert "$key" in result.code
