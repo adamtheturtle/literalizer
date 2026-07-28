@@ -409,9 +409,9 @@ class _RenderContext:
     ref_key: str
     collection_layout: CollectionLayout
     multiline_prefix: str
-    consumable_ref_names: frozenset[str] = frozenset()
-    single_use_ref_names: frozenset[str] = frozenset()
-    consume_inhibited_ref_names: frozenset[str] = frozenset()
+    consumable_ref_names: frozenset[str]
+    single_use_ref_names: frozenset[str]
+    consume_inhibited_ref_names: frozenset[str]
 
     def compact(self) -> "_RenderContext":
         """Return this context with compact collection rendering."""
@@ -2170,6 +2170,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         ref_key=ref_key,
         collection_layout=collection_layout,
         multiline_prefix=line_prefix,
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -4834,6 +4837,9 @@ def _render_zip_literal(
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         multiline_prefix="",
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
     return _format_value(
         value=value,
