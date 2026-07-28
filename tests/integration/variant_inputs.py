@@ -406,6 +406,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "heterogeneous_value_variant_name": HETEROGENEOUS_INPUTS,
     "record_unify_optional_fields": (
         _ci(case_dir_name="record_optional_unify", suffix=""),
+        _ci(
+            case_dir_name="record_nested_map_fallback",
+            suffix="_nested_map_fallback",
+        ),
     ),
     "record_nonrecord_dict_field": (
         _ci(case_dir_name="record_nonrecord_dict_field", suffix=""),
