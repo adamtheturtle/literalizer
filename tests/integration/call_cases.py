@@ -1067,8 +1067,8 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # ``my_list`` is declared so every emitted fixture is
         # self-contained, but omitted from ``ref_values``.  Its stand-in
         # value matches the string-map type inferred for the unresolved
-        # marker, keeping statically typed fixtures compilable.  The marker
-        # sits below another dict, pinning the recursive resolution shape
+        # marker so statically typed fixtures compile.  The marker sits
+        # below another dict, pinning the recursive resolution shape
         # and Haskell's resulting HStr/HList/HMap ``Val`` declaration.
         # The unrelated ``other`` entry keeps ``ref_values`` non-empty,
         # exercising the branch used by callers that know some refs but
