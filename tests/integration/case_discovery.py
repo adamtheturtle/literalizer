@@ -198,7 +198,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "dhall_nested_map_widening",
         # A JSON object mixing a dollar-prefixed key with an embedded quote,
         # control character, multi-byte character, and quasi-quote-like
-        # metasyntax exercises string escaping for every JSON value back end.
+        # meta-syntax exercises string escaping for every JSON value back end.
         # It stays variant-only because the ``json_type`` axis is its sole
         # consumer.
         "json_string_escaping",
