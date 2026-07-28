@@ -3098,10 +3098,11 @@ class Cpp(metaclass=LanguageCls):
         A field whose value is itself a nested record-shaped dict uses
         that record's generated name.  A field whose value is a list of
         record-shaped dicts (one shared shape) is typed
-        ``std::vector<RecordN>`` to match the ``std::vector{`` opener's
-        class-template argument deduction from the ``RecordN`` element
-        literals (the same name the shared strategy resolves, the one
-        piece unrecoverable from the raw value).  Every other value is
+        ``std::vector<RecordN>`` to match the sequence opener's explicit
+        element type in C++14 (and its class-template argument deduction
+        from the ``RecordN`` literals in later standards).  This is the
+        same name the shared strategy resolves, the one piece
+        unrecoverable from the raw value.  Every other value is
         typed by the same :func:`_compute_cpp_type` the collection
         openers in the value formatter use, with the integer width
         narrowed to the field's own value so the declared type matches
@@ -3258,11 +3259,11 @@ class Cpp(metaclass=LanguageCls):
         record-shaped dict renders each element as an aggregate literal;
         the base opener would type such a list
         ``std::vector<std::map<...>>`` (the homogeneous-map element type)
-        which the struct literals cannot initialize.  Such a list is
-        instead opened with a bare ``std::vector{`` so class-template
-        argument deduction infers ``std::vector<RecordN>`` (or an
-        externally supplied record type) from the literals. Every other
-        list keeps the base inferred opener.
+        which the struct literals cannot initialize.  C++14 spells the
+        assigned record element type explicitly; later standards use a
+        bare ``std::vector{`` so class-template argument deduction infers
+        it from the literals. Every other list keeps the base inferred
+        opener.
         """
         base_open = self.sequence_format_config.sequence_open
         record_rendering_active = (
@@ -3273,6 +3274,11 @@ class Cpp(metaclass=LanguageCls):
             record_rendering_active or self.record_shape_names
         ):
             return base_open
+        record_strategy = (
+            self._record_strategy
+            if self._record_strategy_active
+            else self._tuple_record_strategy
+        )
 
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
@@ -3287,6 +3293,16 @@ class Cpp(metaclass=LanguageCls):
                         name = self.record_shape_names.get(keys)
                         if name is not None:
                             return f"std::vector<{name}>{{"
+                    if (
+                        record_rendering_active
+                        and record_strategy.record_name_for_value is not None
+                    ):
+                        name = record_strategy.record_name_for_value(
+                            first_item,
+                        )
+                        if name is not None:
+                            return f"std::vector<{name}>{{"
+                    return base_open(base_items)
                 if record_rendering_active:
                     return "std::vector{"
             return base_open(base_items)
