@@ -1707,6 +1707,47 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
 
 
 @beartype
+def build_numeric_style_datetime_cross_variants() -> list[Variant]:
+    """Build cross-product variants of numeric style and datetime format.
+
+    For every language, pair every non-default numeric style with every
+    non-default datetime format.  This covers formatters whose datetime
+    representation depends on the selected numeric style, such as Haskell's
+    explicit ``HInt`` constructor around epoch seconds.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        default_numeric_style = spec.numeric_style
+        default_datetime_format = spec.datetime_format
+        for numeric_style in spec.numeric_styles:
+            if numeric_style is default_numeric_style:
+                continue
+            for datetime_format in spec.datetime_formats:
+                if datetime_format is default_datetime_format:
+                    continue
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_cls.__name__}"
+                            f"_numeric_style_{numeric_style.name.lower()}"
+                            f"_datetime_{datetime_format.name.lower()}"
+                        ),
+                        spec=make_spec(
+                            lang_cls=lang_cls,
+                            numeric_style=numeric_style,
+                            datetime_format=datetime_format,
+                        ),
+                        lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
+                        collection_layout=literalizer.CollectionLayout.COMPACT,
+                    )
+                )
+    return variants
+
+
+@beartype
 def build_object_variant_container_variants() -> list[Variant]:
     """Build focused variants for languages with ``OBJECT_VARIANT``.
 
@@ -2137,6 +2178,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "heterogeneous_strategy_datetime_cross": (
         build_heterogeneous_strategy_datetime_cross_variants
+    ),
+    "numeric_style_datetime_cross": (
+        build_numeric_style_datetime_cross_variants
     ),
     "object_variant_containers": (build_object_variant_container_variants),
     "nested_tuple_strategy": build_nested_tuple_strategy_variants,

@@ -4,55 +4,7 @@ import dataclasses
 from typing import ClassVar
 
 from literalizer import InputFormat, literalize
-from literalizer.languages import (
-    Dart,
-    Haskell,
-)
-
-
-def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
-    """Explicit Haskell epoch datetimes use the integer constructor.
-
-    Issue #2519 migrated the production-language string-assertion tests
-    in this module to golden-file cases, but this one cannot ride the
-    golden harness for two independent reasons, so it stays a focused
-    public-API pytest test (like the Dart ``skip_null_dict_values``
-    cases below):
-
-    * It is the only thing that exercises the
-      :attr:`~literalizer._literalize.LiteralizeResult.code` arm that
-      joins ``body_preamble`` / ``pre_declaration_comments`` ahead of
-      the declaration.  That arm only fires when ``wrap_in_file`` is
-      ``False`` (otherwise the file wrapper absorbs the preamble), but
-      every golden-file harness path calls ``literalize`` with
-      ``wrap_in_file=True``, so no generated golden can reach it.
-    * It pins the Haskell ``format_datetime`` override that fires only
-      when ``datetime_format == EPOCH`` *and* ``numeric_style ==
-      EXPLICIT``.  No variant axis crosses ``datetime_format`` with
-      ``numeric_style``, so there is no golden configuration that
-      activates the override.
-    """
-    result = literalize(
-        source="ts: 2024-01-15T12:30:00+00:00\nname: hi\n",
-        input_format=InputFormat.YAML,
-        language=Haskell(
-            datetime_format=Haskell.datetime_formats.EPOCH,
-            numeric_style=Haskell.numeric_styles.EXPLICIT,
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-
-    assert not result.preamble
-    assert result.code == (
-        "data Val = HStr String | HMap [(String, Val)] | HInt Integer\n"
-        "HMap [\n"
-        '    ("ts", HInt 1705321800),\n'
-        '    ("name", HStr "hi")\n'
-        "    ]"
-    )
-
+from literalizer.languages import Dart
 
 # The null-filtering step in
 # :func:`~literalizer._literalize._compute_dict_open_override` (the

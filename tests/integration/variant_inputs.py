@@ -314,6 +314,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "string_format_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),
     ),
+    "numeric_style_datetime_cross": (
+        _ci(case_dir_name="scalar_datetime", suffix=""),
+    ),
     "bytes_format": (_ci(case_dir_name="binary", suffix=""),),
     "trailing_comma": BASIC_COLLECTIONS,
     "statement_terminator_style": BASIC_COLLECTIONS,
