@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Any, Dict, Tuple
-my_data: Tuple[Tuple[Any, ...] | Dict[str, int], ...] = (
+from typing import Any
+my_data: tuple[tuple[Any, ...] | dict[str, int], ...] = (
     {"a": 1},
     (),
 )

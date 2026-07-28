@@ -16,12 +16,13 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-
-# Keep this import generic: discover variant languages through their explicit
-# capability metadata; do not import individual language classes here.
 from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages.python import Python
 
-from .case_discovery import cases_with_special_floats
+from .case_discovery import (
+    EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
+    cases_with_special_floats,
+)
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -185,6 +186,32 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
         field_name="default_sequence_element_type",
         variant_suffix="default_sequence_element_type_string",
     )
+
+
+@beartype
+def build_typed_dict_null_filtering_variants() -> Iterable[Variant]:
+    """Build null-filtering variants for typed-dict languages."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if not lang_cls.supports_typed_dict_open:
+            continue
+        variant_cls = type(
+            f"_{lang_cls.__name__}SkipNullDictValues",
+            (lang_cls,),
+            {"skip_null_dict_values": True},
+        )
+        assert isinstance(variant_cls, literalizer.LanguageCls)  # noqa: S101
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_skip_null_dict_values",
+                spec=make_spec(lang_cls=variant_cls),
+                lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
 
 
 @runtime_checkable
@@ -1499,6 +1526,26 @@ def build_language_version_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_annotation_evaluation_variants() -> Iterable[Variant]:
+    """Build eager-annotation variants for Python language versions."""
+    return (
+        Variant(
+            name="Python_annotation_evaluation_eager",
+            spec=make_spec(
+                lang_cls=Python,
+                annotation_evaluation=Python.annotation_evaluations.EAGER,
+                language_version=version,
+            ),
+            lang_cls=Python,
+            fixture_prefix="",
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for version in Python.VersionFormats
+    )
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -1675,6 +1722,47 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
                             lang_cls=lang_cls,
                             heterogeneous_strategy=strategy,
                             datetime_format=dt,
+                        ),
+                        lang_cls=lang_cls,
+                        fixture_prefix="",
+                        record_null_substitutions=None,
+                        collection_layout=literalizer.CollectionLayout.COMPACT,
+                    )
+                )
+    return variants
+
+
+@beartype
+def build_numeric_style_datetime_cross_variants() -> list[Variant]:
+    """Build cross-product variants of numeric style and datetime format.
+
+    For every language, pair every non-default numeric style with every
+    non-default datetime format.  This covers formatters whose datetime
+    representation depends on the selected numeric style, such as Haskell's
+    explicit ``HInt`` constructor around epoch seconds.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        spec = make_spec(lang_cls=lang_cls)
+        default_numeric_style = spec.numeric_style
+        default_datetime_format = spec.datetime_format
+        for numeric_style in spec.numeric_styles:
+            if numeric_style is default_numeric_style:
+                continue
+            for datetime_format in spec.datetime_formats:
+                if datetime_format is default_datetime_format:
+                    continue
+                variants.append(
+                    Variant(
+                        name=(
+                            f"{lang_cls.__name__}"
+                            f"_numeric_style_{numeric_style.name.lower()}"
+                            f"_datetime_{datetime_format.name.lower()}"
+                        ),
+                        spec=make_spec(
+                            lang_cls=lang_cls,
+                            numeric_style=numeric_style,
+                            datetime_format=datetime_format,
                         ),
                         lang_cls=lang_cls,
                         fixture_prefix="",
@@ -2080,6 +2168,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_sequence_element_type": (
         build_default_sequence_element_type_variants
     ),
+    "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
     "json_type": build_json_type_variants,
     "json_type_bytes_cross": build_json_type_bytes_cross_variants,
     "json_type_language_version_cross": (
@@ -2116,6 +2205,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "heterogeneous_strategy_datetime_cross": (
         build_heterogeneous_strategy_datetime_cross_variants
+    ),
+    "numeric_style_datetime_cross": (
+        build_numeric_style_datetime_cross_variants
     ),
     "object_variant_containers": (build_object_variant_container_variants),
     "nested_tuple_strategy": build_nested_tuple_strategy_variants,
@@ -2160,6 +2252,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
     ),
+    "annotation_evaluation": build_annotation_evaluation_variants,
     "bool_format": build_bool_format_variants,
 }
 
@@ -2200,6 +2293,13 @@ def build_variant_cases() -> list[VariantCase]:
                 if not (
                     ci.case_dir_name in special_float_cases
                     and not variant.lang_cls.supports_special_floats
+                )
+                and not (
+                    ci.case_dir_name
+                    == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
+                    and not (
+                        variant.lang_cls.supports_empty_sibling_sequence_type_hints
+                    )
                 )
             )
     cases.extend(build_modifier_variant_cases())

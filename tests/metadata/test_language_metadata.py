@@ -33,7 +33,9 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "json_type_variant_name_suffix",
         "record_shape_names_emit_declarations",
         "non_default_kwargs",
+        "supports_empty_sibling_sequence_type_hints",
         "supports_non_ascii_string_literals",
+        "supports_typed_dict_open",
         "reserved_variable_identifiers",
         "reserved_variable_identifiers_case_sensitive",
         "variant_metadata",
@@ -127,6 +129,8 @@ def test_protocol_properties_accessible(
     assert callable(spec.format_variable_assignment)
     assert callable(spec.type_hint_collection_preamble_lines)
     assert isinstance(spec.scalar_body_preamble, dict)
+    assert isinstance(spec.supports_empty_sibling_sequence_type_hints, bool)
+    assert isinstance(spec.supports_typed_dict_open, bool)
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
     assert isinstance(spec.supports_multi_param_call_wrapper_stub, bool)
     assert isinstance(spec.supports_dict_literal_as_free_expression, bool)

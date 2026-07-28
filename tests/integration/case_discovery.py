@@ -24,6 +24,7 @@ from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
 from .call_cases import CALL_CASE_CONFIGS, CALL_VARIANT_CASE_CONFIGS
+from .case_inputs import CaseInput, case_input
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -78,6 +79,10 @@ from .language_specs import (
 # drives the ``Math::BigInt`` wrapper, so the ``use Math::BigInt;``
 # preamble must follow.  Other languages cannot represent the key in a
 # base golden, so it stays out of the all-languages base discovery.
+#
+# ``time_union_type_hint`` carries a non-empty time sequence beside an
+# empty sequence. Its dedicated type-hint axis selects languages whose
+# explicit annotations can represent that nested shape.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
@@ -97,7 +102,12 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``TUPLE`` heterogeneous strategy.
         "nested_tuple_strategy",
         "nested_tuple_strategy_mixed",
+        # ``typed_dict_skip_null_values`` exercises typed dict inference
+        # after null-valued entries are filtered.  Its dedicated axis
+        # discovers every language that opts into that capability.
+        "typed_dict_skip_null_values",
         "heterogeneous_time_string",
+        "time_union_type_hint",
         "dict_wide_int_key",
         "object_variant_mixed_scalar_empty_list",
         "object_variant_integer_widening_tiers",
@@ -208,6 +218,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "json_native_only_nested_dict",
     }
 )
+
+EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR = "time_union_type_hint"
+"""Golden case for explicit hints over empty/non-empty sibling
+sequences.
+"""
 
 
 KEBAB_NEW_VARIABLE_CASE_DIR = "new_variable_kebab_name"
@@ -385,50 +400,6 @@ LITERALIZE_DEFAULT_REF_CASE_CONFIGS: list[LiteralizeRefCaseConfig] = [
 ]
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _CaseInput:
-    """The input file backing a golden-file case."""
-
-    path: Path
-    input_format: literalizer.InputFormat
-
-
-@beartype
-def case_input(*, case_dir: Path) -> _CaseInput:
-    """Return the input file path and its :class:`InputFormat` for a case.
-
-    Cases use ``input.yaml`` by default.  Cases whose behavior depends on
-    format-specific parsing (e.g. JSON unicode escapes) or whose input
-    contains a value the YAML 1.2 spec cannot natively express (currently
-    ``datetime.time``) use ``input.json``, ``input.json5``, or
-    ``input.toml`` instead.  A case must carry exactly one input file:
-    ``test_no_dead_golden_files`` flags a case that carries more than one
-    because the unused file becomes orphaned.
-    """
-    json_path = case_dir / "input.json"
-    if json_path.exists():
-        return _CaseInput(
-            path=json_path,
-            input_format=literalizer.InputFormat.JSON,
-        )
-    json5_path = case_dir / "input.json5"
-    if json5_path.exists():
-        return _CaseInput(
-            path=json5_path,
-            input_format=literalizer.InputFormat.JSON5,
-        )
-    toml_path = case_dir / "input.toml"
-    if toml_path.exists():
-        return _CaseInput(
-            path=toml_path,
-            input_format=literalizer.InputFormat.TOML,
-        )
-    return _CaseInput(
-        path=case_dir / "input.yaml",
-        input_format=literalizer.InputFormat.YAML,
-    )
-
-
 @functools.cache
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
@@ -482,7 +453,7 @@ type CaseData = (
 
 
 @beartype
-def load_case_data(*, input_info: _CaseInput) -> CaseData:
+def load_case_data(*, input_info: CaseInput) -> CaseData:
     """Parse a case input file according to its declared format.
 
     Dispatches on :attr:`_CaseInput.input_format` so discovery code can

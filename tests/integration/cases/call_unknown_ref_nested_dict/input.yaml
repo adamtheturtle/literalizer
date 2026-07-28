@@ -1,0 +1,2 @@
+---
+-   - inner: {$ref: my_list}

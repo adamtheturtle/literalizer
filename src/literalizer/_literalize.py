@@ -228,6 +228,16 @@ class LiteralizeResult:
     :attr:`code` then.
     """
 
+    data_dependent_preamble: tuple[str, ...]
+    """The entries within :attr:`preamble` that were inferred from the
+    rendered data itself.
+
+    Composition helpers use this metadata to replace independently
+    inferred declaration and call blocks with one block covering every
+    value emitted into the composed file.  Empty when the preamble has
+    already been folded into a complete file.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -399,6 +409,9 @@ class _RenderContext:
     ref_key: str
     collection_layout: CollectionLayout
     multiline_prefix: str
+    consumable_ref_names: frozenset[str]
+    single_use_ref_names: frozenset[str]
+    consume_inhibited_ref_names: frozenset[str]
 
     def compact(self) -> "_RenderContext":
         """Return this context with compact collection rendering."""
@@ -416,6 +429,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=CollectionLayout.COMPACT,
             multiline_prefix=self.multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
     def with_multiline(
@@ -441,6 +457,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=CollectionLayout.MULTILINE,
             multiline_prefix=multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
     def with_prefix(self, *, multiline_prefix: str) -> "_RenderContext":
@@ -459,6 +478,9 @@ class _RenderContext:
             ref_key=self.ref_key,
             collection_layout=self.collection_layout,
             multiline_prefix=multiline_prefix,
+            consumable_ref_names=self.consumable_ref_names,
+            single_use_ref_names=self.single_use_ref_names,
+            consume_inhibited_ref_names=self.consume_inhibited_ref_names,
         )
 
 
@@ -1600,7 +1622,7 @@ def _format_list_value(
 
 
 @beartype
-def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-many-branches
+def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     value: Value,
     dict_open_override: str | None,
@@ -1632,8 +1654,8 @@ def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-man
     as bare identifiers.  ``literalize`` uses
     :attr:`~literalizer._language.Language.format_call_ref_identifier`;
     ``literalize_call`` sets the context's ``expand_refs`` so nested
-    argument refs use
-    :attr:`~literalizer._language.Language.format_call_arg_ref_identifier`.
+    argument refs use the regular or consumable call-argument ref
+    formatter according to the call's ownership policy.
     When the context's ``ref_case`` is set, the identifier name is
     converted to that case first.
     """
@@ -1653,10 +1675,16 @@ def _format_value(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-man
                 if ctx.ref_values is not None
                 else None
             )
-            return (
-                spec.format_call_arg_ref_identifier(ref_name, ref_value)
-                if ctx.expand_refs
-                else spec.format_call_ref_identifier(ref_name, ref_value)
+            if not ctx.expand_refs:
+                return spec.format_call_ref_identifier(ref_name, ref_value)
+            return _format_call_arg_ref_identifier(
+                raw_ref_name=raw_ref_name,
+                ref_name=ref_name,
+                ref_value=ref_value,
+                language=spec,
+                consumable_ref_names=ctx.consumable_ref_names,
+                single_use_ref_names=ctx.single_use_ref_names,
+                consume_inhibited_ref_names=(ctx.consume_inhibited_ref_names),
             )
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
@@ -2142,6 +2170,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         ref_key=ref_key,
         collection_layout=collection_layout,
         multiline_prefix=line_prefix,
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -2523,12 +2554,15 @@ def _literalize_apply_form(
         language=language,
         has_variable_declaration=variable_name is not None and is_declaration,
     )
+    data_dependent_preamble = language.data_dependent_preamble(
+        pre_form.data_for_preamble
+    )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(pre_form.data_for_preamble)
+            + data_dependent_preamble
         )
     )
 
@@ -2554,6 +2588,7 @@ def _literalize_apply_form(
             pre_declaration_comments=(),
             contains_standalone_comments=False,
             sections=(),
+            data_dependent_preamble=(),
         )
 
     return LiteralizeResult(
@@ -2565,6 +2600,7 @@ def _literalize_apply_form(
         source_data=pre_form.data_for_preamble,
         sections=decode_file_sections(result),
         contains_standalone_comments=False,
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -2632,6 +2668,7 @@ def _literalize_both_forms(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -2757,12 +2794,13 @@ def _literalize_value_binding(
         language=language,
         has_variable_declaration=True,
     )
+    data_dependent_preamble = language.data_dependent_preamble(value)
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.data_dependent_preamble(value)
+            + data_dependent_preamble
         )
     )
     return LiteralizeResult(
@@ -2774,6 +2812,7 @@ def _literalize_value_binding(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -2870,6 +2909,7 @@ def _compose_bound_refs(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -3283,19 +3323,20 @@ def _compute_call_arg_ref_single_use_names(
     :func:`~literalizer.literalize_call` without further conversion.
 
     Refs not in this set are unsafe to consume: they appear in more than
-    one per-element call (or more than once inside a single call's
-    argument list), so a language that moves consumable refs (notably
-    C++ ``std::move``) would render a use-after-move on the second
-    occurrence.
+    one per-element call (or more than once anywhere inside a single
+    call's argument tree), so a language that moves consumable refs
+    (notably C++ ``std::move``) would render a use-after-move on the
+    second occurrence.
     """
     counts: dict[str, int] = {}
     for element in elements:
         arg_values = element if isinstance(element, list) else [element]
         for value in arg_values:
-            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-            if ref_name is None:
-                continue
-            counts[ref_name] = counts.get(ref_name, 0) + 1
+            for ref_name in _call_arg_ref_names_in_value(
+                value=value,
+                ref_key=ref_key,
+            ):
+                counts[ref_name] = counts.get(ref_name, 0) + 1
     return frozenset(name for name, count in counts.items() if count == 1)
 
 
@@ -3329,15 +3370,72 @@ def _compute_call_arg_ref_consume_inhibited_names(
     for element in elements:
         arg_values = element if isinstance(element, list) else [element]
         for value in arg_values:
-            ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
-            if ref_name is None:
-                continue
-            referenced.add(ref_name)
+            referenced.update(
+                _call_arg_ref_names_in_value(
+                    value=value,
+                    ref_key=ref_key,
+                )
+            )
     return frozenset(
         name
         for name in referenced
         if name in ref_values and inhibits(ref_values[name])
     )
+
+
+@beartype
+def _call_arg_ref_names_in_value(
+    *,
+    value: Value,
+    ref_key: str,
+) -> list[str]:
+    """Return ref names found recursively in one call argument."""
+    ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    if ref_name is not None:
+        return [ref_name]
+    if isinstance(value, list):
+        return [
+            nested_name
+            for item in value
+            for nested_name in _call_arg_ref_names_in_value(
+                value=item,
+                ref_key=ref_key,
+            )
+        ]
+    if isinstance(value, dict):
+        return [
+            nested_name
+            for item in value.values()
+            for nested_name in _call_arg_ref_names_in_value(
+                value=item,
+                ref_key=ref_key,
+            )
+        ]
+    return []
+
+
+@beartype
+def _format_call_arg_ref_identifier(
+    *,
+    raw_ref_name: str,
+    ref_name: str,
+    ref_value: Value | None,
+    language: Language,
+    consumable_ref_names: frozenset[str],
+    single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
+) -> str:
+    """Render a call ref through its safe regular or consuming form."""
+    is_consumable = (
+        raw_ref_name in consumable_ref_names
+        and raw_ref_name in single_use_ref_names
+        and raw_ref_name not in consume_inhibited_ref_names
+    )
+    if is_consumable:
+        return language.format_call_arg_ref_identifier_consumable(
+            ref_name, ref_value
+        )
+    return language.format_call_arg_ref_identifier(ref_name, ref_value)
 
 
 @beartype
@@ -3452,19 +3550,18 @@ def _format_single_call_arg(
             if ref_case is not None
             else raw_ref_name
         )
-        is_consumable = (
-            raw_ref_name in consumable_ref_names
-            and raw_ref_name in single_use_ref_names
-            and raw_ref_name not in consume_inhibited_ref_names
-        )
         ref_value = (
             ref_values.get(raw_ref_name) if ref_values is not None else None
         )
-        if is_consumable:
-            return language.format_call_arg_ref_identifier_consumable(
-                ref_name, ref_value
-            )
-        return language.format_call_arg_ref_identifier(ref_name, ref_value)
+        return _format_call_arg_ref_identifier(
+            raw_ref_name=raw_ref_name,
+            ref_name=ref_name,
+            ref_value=ref_value,
+            language=language,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
+        )
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
@@ -3483,6 +3580,9 @@ def _format_single_call_arg(
         ref_key=ref_key,
         collection_layout=collection_layout,
         multiline_prefix="",
+        consumable_ref_names=consumable_ref_names,
+        single_use_ref_names=single_use_ref_names,
+        consume_inhibited_ref_names=consume_inhibited_ref_names,
     )
     formatted = wrap_arg(
         value,
@@ -4447,6 +4547,7 @@ def _compose_call_with_bound_ref_declarations(
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
+    data_dependent_preamble: tuple[str, ...],
     body_preamble: tuple[str, ...],
     types_present: frozenset[type],
     contains_standalone_comments: bool,
@@ -4483,6 +4584,7 @@ def _compose_call_with_bound_ref_declarations(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
     stub_arg_values: Sequence[Value] = (
         data_for_preamble
@@ -4530,6 +4632,7 @@ def _wrap_call_result_in_file(
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
+    data_dependent_preamble: tuple[str, ...],
     computed_body: tuple[str, ...],
     types_present: frozenset[type],
     contains_standalone_comments: bool,
@@ -4579,6 +4682,7 @@ def _wrap_call_result_in_file(
             ref_case=ref_case,
             result=result,
             preamble=preamble,
+            data_dependent_preamble=data_dependent_preamble,
             body_preamble=computed_body,
             types_present=types_present,
             contains_standalone_comments=contains_standalone_comments,
@@ -4608,6 +4712,7 @@ def _wrap_call_result_in_file(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -4732,6 +4837,9 @@ def _render_zip_literal(
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         multiline_prefix="",
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
     )
     return _format_value(
         value=value,
@@ -5069,7 +5177,56 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
-    parsed = parse_input(source=source, input_format=input_format)
+    return _literalize_call_parsed(
+        parsed=parse_input(source=source, input_format=input_format),
+        language=language,
+        target_function=target_function,
+        parameter_names=parameter_names,
+        call_transform=call_transform,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        comment_source=comment_source,
+        per_element=per_element,
+        wrap_in_file=wrap_in_file,
+        ref_case=ref_case,
+        consumable_refs=consumable_refs,
+        ref_values=ref_values,
+        bound_refs=bound_refs,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        variable_form=variable_form,
+    )
+
+
+@beartype
+def _literalize_call_parsed(
+    *,
+    parsed: ParsedInput,
+    language: Language,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[CallContext], str] | None,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    comment_source: Sequence[str] | None,
+    per_element: bool,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+    consumable_refs: frozenset[str],
+    ref_values: Mapping[str, ValueInput] | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    variable_form: NewVariable | ExistingVariable | None,
+) -> LiteralizeResult:
+    """Render a call from input parsed by :func:`parse_input`.
+
+    This is the shared rendering core behind :func:`literalize_call`.
+    Keeping parsing outside the core lets the golden-file harness select
+    the call-row array from a TOML document, whose root is necessarily a
+    table, while exercising the same production renderer as the public
+    entry point.
+    """
     data = parsed.data
     contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
     match language.call_style_config:
@@ -5224,12 +5381,15 @@ def literalize_call(
         # call binding never uses, leaving a stale import.
         has_variable_declaration=False,
     )
+    data_dependent_preamble = language.call_data_dependent_preamble(
+        preamble_data
+    )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
-            + language.call_data_dependent_preamble(preamble_data)
+            + data_dependent_preamble
         )
     )
 
@@ -5240,6 +5400,7 @@ def literalize_call(
             ref_case=ref_case,
             result=result,
             preamble=preamble,
+            data_dependent_preamble=data_dependent_preamble,
             computed_body=computed.body,
             types_present=computed.types_present,
             contains_standalone_comments=contains_standalone_comments,
@@ -5261,6 +5422,7 @@ def literalize_call(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=data_dependent_preamble,
     )
 
 
@@ -5295,8 +5457,8 @@ def _literalize_call_with_declarations(
     check sees actual values).  The data-dependent header block (e.g.
     Gleam's ``pub type GVal {...}``) is likewise recomputed once over
     the combined source data of every declaration and the call, so a
-    single block covers every type in the file; each declaration's own
-    narrower block is dropped.
+    single block covers every type in the file; each independently
+    computed declaration and call block is dropped.
 
     Args:
         language: The :class:`Language` to render with.  Must be the
@@ -5304,10 +5466,10 @@ def _literalize_call_with_declarations(
         declarations: The per-ref :func:`literalize` results, in the
             order they should appear, ahead of their first use in the
             call.
-        call: The :func:`literalize_call` result.  It should have been
-            rendered with every ref in *declarations* supplied via
-            ``ref_values`` so its own preamble already covers the
-            ref-reachable types.
+        call: The :func:`literalize_call` result.  Refs represented by
+            *declarations* may be omitted from its ``ref_values``;
+            declaration-only types are included when the composed
+            preamble is recomputed.
         extra_body_preamble: Additional body-preamble lines to append
             after the unified body preamble (e.g. a caller-supplied
             no-op stub for the called function).  Defaults to ``()``.
@@ -5367,15 +5529,14 @@ def _literalize_call_with_declarations(
     # data-dependent construct:
     #
     # * When ``call_data_dependent_preamble`` and
-    #   ``data_dependent_preamble`` agree (Gleam, C++, ...), the call
-    #   was rendered with every ref folded into ``ref_values`` so
-    #   ``call.preamble`` already carries one block computed over the
-    #   ref-substituted union (declarations *and* call).  That is the
-    #   single canonical copy; drop the narrower per-declaration
-    #   copies.  ``data_dependent_preamble`` is a pure function of the
-    #   value, so the exact strings a declaration appended to its
-    #   ``preamble`` are reproducible by re-invoking it on that
-    #   declaration's ``source_data``.
+    #   ``data_dependent_preamble`` agree (Gleam, C++, ...), compute one
+    #   canonical block over the declarations and call together when a
+    #   declaration requires lines absent from the call's block.  This
+    #   includes types used only by a declaration whose ref was omitted
+    #   from the call's ``ref_values``.  Otherwise retain the call block
+    #   verbatim, avoiding structural re-inference for languages whose
+    #   preambles depend on collection shape.  Drop the exact
+    #   independently inferred declaration entries in either case.
     # * When they diverge (Nim drops ``import json`` for call
     #   arguments), ``call.preamble`` cannot carry the
     #   declaration-side construct, so keep each declaration's own
@@ -5387,10 +5548,34 @@ def _literalize_call_with_declarations(
         combined_source_data
     ) == language.call_data_dependent_preamble(combined_source_data)
     dropped_declaration_blocks: set[str] = set()
+    call_preamble = call.preamble
+    unified_data_dependent_preamble: tuple[str, ...] = ()
     if call_form_matches_declaration_form:
         for d in declarations:
-            dropped_declaration_blocks.update(
-                language.data_dependent_preamble(d.source_data)
+            dropped_declaration_blocks.update(d.data_dependent_preamble)
+        declaration_data_lines = {
+            line
+            for d in declarations
+            for entry in d.data_dependent_preamble
+            for line in entry.splitlines()
+        }
+        call_data_lines = {
+            line
+            for entry in call.data_dependent_preamble
+            for line in entry.splitlines()
+        }
+        declaration_requires_unified_block = bool(
+            declaration_data_lines - call_data_lines
+        )
+        if declaration_requires_unified_block:
+            call_data_dependent_entries = set(call.data_dependent_preamble)
+            call_preamble = tuple(
+                entry
+                for entry in call.preamble
+                if entry not in call_data_dependent_entries
+            )
+            unified_data_dependent_preamble = (
+                language.call_data_dependent_preamble(combined_source_data)
             )
     declaration_preamble = tuple(
         entry
@@ -5399,7 +5584,12 @@ def _literalize_call_with_declarations(
         if entry not in dropped_declaration_blocks
     )
     all_preamble = deduplicate_preamble_entries(
-        entries=(declaration_preamble + call.preamble + extra_preamble)
+        entries=(
+            declaration_preamble
+            + call_preamble
+            + unified_data_dependent_preamble
+            + extra_preamble
+        )
     )
     if all_preamble:
         wrapped = "\n".join(all_preamble) + "\n" + wrapped
@@ -5412,4 +5602,5 @@ def _literalize_call_with_declarations(
         source_data=call.source_data,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=(),
     )

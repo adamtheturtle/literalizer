@@ -4,7 +4,10 @@ from pathlib import Path
 
 from beartype import beartype
 
-from .case_discovery import discover_cases
+from .case_discovery import (
+    EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
+    discover_cases,
+)
 from .variant_types import CaseInput
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -176,6 +179,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="simple_sequence", suffix=""),
     ),
+    "typed_dict_null_filtering": (
+        _ci(case_dir_name="typed_dict_skip_null_values", suffix=""),
+    ),
     "json_type": (
         _ci(case_dir_name="dict_with_list_value", suffix=""),
         _ci(case_dir_name="nested_mixed_inner", suffix="_nested_mixed"),
@@ -227,10 +233,10 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
             # ``variable_type_hints``, replacing the
             # ``test_datetime_time_always_type_hint_renders`` shim
             # (issue #2518).  The Python-only ``_structural_type_id``
-            # time arm cannot ride this all-languages axis (it would
-            # force non-compiling Kotlin nested-time-list output); it
-            # keeps a focused pytest test instead.
+            # time arm is covered by the capability-selected
+            # ``time_union_type_hint`` case below.
             "scalar_time",
+            EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
             "binary",
             "mixed_type_dicts_in_sequence",
             "empty_dicts_in_sequence",
@@ -310,6 +316,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "string_format_date_cross": (_ci(case_dir_name="scalar_date", suffix=""),),
     "string_format_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),
+    ),
+    "numeric_style_datetime_cross": (
+        _ci(case_dir_name="scalar_datetime", suffix=""),
     ),
     "bytes_format": (_ci(case_dir_name="binary", suffix=""),),
     "trailing_comma": BASIC_COLLECTIONS,
@@ -451,6 +460,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
     "language_version_cross_dict_type": (
         _ci(case_dir_name="empty_dict", suffix=""),
         _ci(case_dir_name="empty_ordered_map", suffix=""),
+    ),
+    "annotation_evaluation": (
+        _ci(case_dir_name="empty_dict", suffix=""),
+        _ci(case_dir_name="empty_sequence", suffix=""),
+        _ci(case_dir_name="empty_set", suffix=""),
     ),
     "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),

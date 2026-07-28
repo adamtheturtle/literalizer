@@ -104,6 +104,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -300,6 +301,12 @@ def _format_inline_type_hint_declaration(
 def _join_union_pipe(types: list[str]) -> str:
     """Join *types* with ``|`` (Python 3.10+ union syntax)."""
     return " | ".join(types)
+
+
+@beartype
+def _join_union_typing(types: list[str]) -> str:
+    """Join *types* as ``Union[...]`` (Python 3.8-compatible)."""
+    return f"Union[{', '.join(types)}]"
 
 
 @beartype
@@ -505,6 +512,7 @@ def _python_type_hint(
 @beartype
 def _build_type_hint_preamble(
     *,
+    use_typing_union: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -541,9 +549,17 @@ def _build_type_hint_preamble(
         /,
     ) -> tuple[str, ...]:
         """Return ``from typing import Any`` if needed."""
+        imports: set[str] = set()
+        if (
+            use_typing_union
+            and HeterogeneousElements in annotated_collection_types
+        ):
+            imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
-            return ("from typing import Any",)
-        return ()
+            imports.add("Any")
+        if not imports:
+            return ()
+        return (f"from typing import {', '.join(sorted(imports))}",)
 
     return _preamble
 
@@ -603,6 +619,7 @@ def _build_type_hint_preamble_py38(
     *,
     sequence_typing_name: str,
     set_typing_name: str,
+    use_typing_collection_aliases: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -610,8 +627,8 @@ def _build_type_hint_preamble_py38(
 ) -> Callable[[frozenset[type]], tuple[str, ...]]:
     """Build the ``type_hint_collection_preamble_lines`` callable for PY38.
 
-    PY38 requires ``from typing import List`` etc. instead of relying on
-    built-in generic aliases (PEP 585, available from Python 3.9).
+    Postponed PY38 annotations can use built-in generic aliases. Eager
+    annotations require collection aliases from ``typing``.
     """
     _any_types: frozenset[type] = frozenset(
         t
@@ -638,12 +655,18 @@ def _build_type_hint_preamble_py38(
     ) -> tuple[str, ...]:
         """Return ``from typing import ...`` for PY38."""
         imports: set[str] = set()
-        if list in annotated_collection_types:
-            imports.add(sequence_typing_name)
-        if set in annotated_collection_types:
-            imports.add(set_typing_name)
-        if dict in annotated_collection_types:
-            imports.add("Dict")
+        if use_typing_collection_aliases:
+            if list in annotated_collection_types:
+                imports.add(sequence_typing_name)
+            if set in annotated_collection_types:
+                imports.add(set_typing_name)
+            if dict in annotated_collection_types:
+                imports.add("Dict")
+        if (
+            use_typing_collection_aliases
+            and HeterogeneousElements in annotated_collection_types
+        ):
+            imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
         if not imports:
@@ -750,12 +773,20 @@ class Python(metaclass=LanguageCls):
               a type annotation,
               e.g. ``my_var: dict[str, Any] = {...}``.
 
+        annotation_evaluation: When generated annotations are evaluated.
+
+            * ``AnnotationEvaluations.POSTPONED`` — include
+              ``from __future__ import annotations`` when annotations
+              are emitted (default).
+            * ``AnnotationEvaluations.EAGER`` — omit the future import
+              and use ordinary runtime annotation evaluation.
+
         language_version: The minimum Python version to target.
 
-            * ``VersionFormats.PY38`` — use ``typing.List``, ``typing.Dict``,
-              etc. for generic collection type hints (PEP 484 style).
-            * ``VersionFormats.PY39`` — use built-in ``list``, ``dict``, etc.
-              directly as generic aliases (PEP 585, default).
+            Both compatibility variants use built-in ``list``, ``dict``,
+            etc. directly as generic aliases when annotations are
+            postponed. Eager Python 3.8 annotations use aliases from
+            ``typing`` instead.
 
         heterogeneous_strategy: How to render a record-shaped dict
             (non-empty, string-keyed).
@@ -865,6 +896,8 @@ class Python(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_empty_sibling_sequence_type_hints = True
+    supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
@@ -1254,6 +1287,14 @@ class Python(metaclass=LanguageCls):
     set_formats = SetFormats
     comment_formats = CommentFormats
     variable_type_hints_formats = VariableTypeHints
+
+    class AnnotationEvaluations(enum.Enum):
+        """Runtime evaluation behavior for generated annotations."""
+
+        EAGER = enum.auto()
+        POSTPONED = enum.auto()
+
+    annotation_evaluations = AnnotationEvaluations
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1327,10 +1368,10 @@ class Python(metaclass=LanguageCls):
         exercised in CI is governed by ``requires-python`` in
         ``pyproject.toml`` (``>=3.12``), not by this enum.
 
-        * ``VersionFormats.PY38`` — target Python 3.8; uses
-          ``typing.List``, ``typing.Dict``, etc. for generic type hints,
-          future annotations with ``|`` unions, and emits
-          ``datetime.timezone.utc`` for UTC.
+        * ``VersionFormats.PY38`` — target Python 3.8; uses built-in
+          collection generics with postponed annotations and ``typing``
+          aliases with eager annotations, and emits ``datetime.timezone.utc``
+          for UTC.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
           ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
           variant also emits ``datetime.UTC``, which requires Python
@@ -1406,6 +1447,9 @@ class Python(metaclass=LanguageCls):
     default_dict_key_type: str = "str"
     default_dict_value_type: str = "Any"
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
+    annotation_evaluation: AnnotationEvaluations = (
+        AnnotationEvaluations.POSTPONED
+    )
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1513,22 +1557,11 @@ class Python(metaclass=LanguageCls):
         sequence/set/dict/date/datetime formats and the targeted
         Python version.
         """
-        if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
-            sequence_hint = mapping.get(
-                self.sequence_format.type_hint,
-                self.sequence_format.type_hint,
-            )
-            set_hint = mapping.get(
-                self.set_format.type_hint,
-                self.set_format.type_hint,
-            )
-            dict_hint = mapping["dict"]
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
+        if self.annotation_evaluation is self.annotation_evaluations.EAGER:
+            join_union: Callable[[list[str]], str] = _join_union_typing
         else:
-            sequence_hint = self.sequence_format.type_hint
-            set_hint = self.set_format.type_hint
-            dict_hint = "dict"
-        join_union: Callable[[list[str]], str] = _join_union_pipe
+            join_union = _join_union_pipe
 
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
@@ -1808,6 +1841,20 @@ class Python(metaclass=LanguageCls):
         emitted via :attr:`Language.leading_preamble` rather than the
         data-dependent preamble (which follows other imports).
         """
+        if (
+            self.annotation_evaluation
+            is type(self.annotation_evaluation).EAGER
+        ):
+
+            def _no_future_import(
+                _data: Value, /, *, has_variable_declaration: bool
+            ) -> tuple[str, ...]:
+                """Omit the future import for eager annotations."""
+                _ = has_variable_declaration
+                return ()
+
+            return _no_future_import
+
         record_preamble = self._record_strategy.preamble
         record_eligible = self._record_eligible_for_annotation
         always = (
@@ -1846,17 +1893,32 @@ class Python(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
-    def _py38_names(self) -> dict[str, str]:
-        """Map from PEP 585 built-in generic names to typing-module
-        names.
-        """
-        return {
+    def _collection_type_hint_names(self) -> tuple[str, str, str]:
+        """Return sequence, set, and dict type-hint names."""
+        sequence_hint = self.sequence_format.type_hint
+        set_hint = self.set_format.type_hint
+        if not self._uses_typing_collection_aliases:
+            return sequence_hint, set_hint, "dict"
+        mapping = {
             "list": "List",
             "tuple": "Tuple",
             "set": "Set",
             "frozenset": "FrozenSet",
             "dict": "Dict",
         }
+        return (
+            mapping.get(sequence_hint, sequence_hint),
+            mapping.get(set_hint, set_hint),
+            mapping["dict"],
+        )
+
+    @property
+    def _uses_typing_collection_aliases(self) -> bool:
+        """Whether eager annotations need Python 3.8 typing aliases."""
+        return (
+            self.language_version is self.version_formats.PY38
+            and self.annotation_evaluation is self.annotation_evaluations.EAGER
+        )
 
     @cached_property
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
@@ -1891,22 +1953,11 @@ class Python(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
-            sequence_hint = mapping.get(
-                self.sequence_format.type_hint,
-                self.sequence_format.type_hint,
-            )
-            set_hint = mapping.get(
-                self.set_format.type_hint,
-                self.set_format.type_hint,
-            )
-            dict_hint = mapping["dict"]
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
+        if self.annotation_evaluation is self.annotation_evaluations.EAGER:
+            join_union: Callable[[list[str]], str] = _join_union_typing
         else:
-            sequence_hint = self.sequence_format.type_hint
-            set_hint = self.set_format.type_hint
-            dict_hint = "dict"
-        join_union: Callable[[list[str]], str] = _join_union_pipe
+            join_union = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
@@ -1957,15 +2008,12 @@ class Python(metaclass=LanguageCls):
         types.
         """
         if self.language_version is self.version_formats.PY38:
-            mapping = self._py38_names
+            sequence_hint, set_hint, _ = self._collection_type_hint_names
             return _build_type_hint_preamble_py38(
-                sequence_typing_name=mapping.get(
-                    self.sequence_format.type_hint,
-                    self.sequence_format.type_hint,
-                ),
-                set_typing_name=mapping.get(
-                    self.set_format.type_hint,
-                    self.set_format.type_hint,
+                sequence_typing_name=sequence_hint,
+                set_typing_name=set_hint,
+                use_typing_collection_aliases=(
+                    self._uses_typing_collection_aliases
                 ),
                 default_set_element_type=self.default_set_element_type,
                 default_sequence_element_type=self.default_sequence_element_type,
@@ -1973,6 +2021,9 @@ class Python(metaclass=LanguageCls):
                 default_dict_key_type=self.default_dict_key_type,
             )
         return _build_type_hint_preamble(
+            use_typing_union=(
+                self.annotation_evaluation is self.annotation_evaluations.EAGER
+            ),
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,

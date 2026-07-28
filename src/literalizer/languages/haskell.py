@@ -700,6 +700,7 @@ def _haskell_needs_str_constructor(
     """Return True if an ``HStr String`` constructor must be present."""
     return (
         bool(types & {str, bytes})
+        or datetime.time in types
         or (cfg.date_needs_is_string and datetime.date in types)
         or (cfg.datetime_needs_is_string and datetime.datetime in types)
         or (cfg.date_needs_str_explicit and datetime.date in types)
@@ -771,6 +772,7 @@ def _haskell_compute_preamble(
 
     needs_is_string = cfg.emit_is_string and (
         bool(types & {str, bytes})
+        or datetime.time in types
         or (cfg.date_needs_is_string and datetime.date in types)
         or (cfg.datetime_needs_is_string and datetime.datetime in types)
     )
@@ -1383,6 +1385,8 @@ class Haskell(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_empty_sibling_sequence_type_hints = True
+    supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=False,

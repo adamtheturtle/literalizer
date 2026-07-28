@@ -62,7 +62,7 @@ optional-dependencies.dev = [
     "pygments==2.20.0",
     "pylint[spelling]==4.0.6",
     "pylint-per-file-ignores==3.2.1",
-    "pyproject-fmt==2.25.3",
+    "pyproject-fmt==2.26.0",
     "pyrefly==1.1.1",
     "pyright==1.1.411",
     "pyroma==5.0.1",
@@ -104,7 +104,7 @@ optional-dependencies.dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.63",
+    "ty==0.0.64",
     "types-pygments==2.20.0.20260518",
     "vulture==2.16",
     "yamlfix==1.19.1",
@@ -155,8 +155,6 @@ lint.ignore = [
     # literalize has 8 keyword-only arguments, which is justified by the
     # public API design.
     "PLR0913",
-    "UP006",
-    "UP035",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles
@@ -184,6 +182,18 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "INP",
     "PLR",
     "Q",
+]
+lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py38.py" = [
+    # Eager Python 3.8 annotations require collection aliases from typing
+    # and must not import postponed annotations.
+    "FA100",
+    "UP006",
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py39.py" = [
+    # Eager Python 3.9 annotations require typing.Union because PEP 604
+    # unions are not available until Python 3.10.
+    "UP007",
 ]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
     # These generated call fixtures intentionally contain positional booleans.

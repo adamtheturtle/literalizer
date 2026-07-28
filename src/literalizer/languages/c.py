@@ -959,6 +959,8 @@ class C(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_empty_sibling_sequence_type_hints = True
+    supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=False,
@@ -1642,7 +1644,22 @@ class C(metaclass=LanguageCls):
                 )
 
             return _format_cjson_call_arg
-        return self._format_entry
+        format_entry = self._format_entry
+        string_field = self.string_field
+
+        @beartype
+        def _format_c_call_arg(
+            raw_value: Value,
+            formatted: str,
+        ) -> str:
+            """Wrap time arguments omitted by the shared entry
+            formatter.
+            """
+            if isinstance(raw_value, datetime.time):
+                return f"((CVal){{.{string_field} = {formatted}}})"
+            return format_entry(raw_value, formatted)
+
+        return _format_c_call_arg
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

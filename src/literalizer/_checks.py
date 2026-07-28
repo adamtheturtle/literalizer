@@ -327,6 +327,29 @@ def _has_heterogeneous_sibling_lists(
 
 
 @beartype
+def _has_empty_sibling_sequence(*, data: Value) -> bool:
+    """Return whether sibling sequences mix empty and non-empty values."""
+    match data:
+        case dict():
+            children: list[Value] = list(data.values())
+        case list():
+            children = data
+        case _:
+            return False
+
+    sibling_sequences = [
+        value for value in children if isinstance(value, list)
+    ]
+    if (
+        len(sibling_sequences) == len(children)
+        and any(sibling_sequences)
+        and any(not value for value in sibling_sequences)
+    ):
+        return True
+    return any(_has_empty_sibling_sequence(data=value) for value in children)
+
+
+@beartype
 def _has_mixed_dict_shapes(*, data: Value) -> bool:
     """Recursively check whether data contains any list of dicts
     with different key sets.
@@ -887,6 +910,25 @@ def _check_unrepresentable_sibling_maps(
             "represent"
         )
         raise HeterogeneousSiblingMapsError(msg)
+
+
+@beartype
+def check_empty_sibling_sequence_type_hint_data(
+    *,
+    data: Value,
+    language_name: str,
+    supports_empty_sibling_sequence_type_hints: bool,
+) -> None:
+    """Raise when an explicit hint cannot represent sibling sequences."""
+    if (
+        not supports_empty_sibling_sequence_type_hints
+        and _has_empty_sibling_sequence(data=data)
+    ):
+        msg = (
+            f"{language_name} cannot represent explicit type hints "
+            "for sibling sequences that mix empty and non-empty values"
+        )
+        raise UnrepresentableInputError(msg)
 
 
 @beartype
