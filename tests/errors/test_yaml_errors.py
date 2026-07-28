@@ -1,4 +1,4 @@
-"""YAML-format-specific behavior.
+"""YAML-specific error behavior.
 
 YAML carries native tagged types (``!!binary``, ``!!omap``, ``!!set``)
 and native ``date``/``datetime`` scalars that other input formats

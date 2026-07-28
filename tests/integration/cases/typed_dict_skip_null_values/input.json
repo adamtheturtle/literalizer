@@ -1,0 +1,10 @@
+{
+  "divergent": [
+    {"a": null, "b": 1},
+    {"a": "hello", "b": null}
+  ],
+  "matching": [
+    {"a": null, "n": 1},
+    {"b": null, "n": 2}
+  ]
+}

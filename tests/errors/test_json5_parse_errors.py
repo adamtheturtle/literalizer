@@ -1,4 +1,4 @@
-"""Tests for literalizer JSON5 conversion."""
+"""JSON5 parsing error behavior."""
 
 import pytest
 

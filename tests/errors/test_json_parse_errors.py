@@ -1,8 +1,8 @@
-"""JSON-format-specific behavior.
+"""JSON parsing error behavior.
 
 Cross-format checks (mixed dict values, heterogeneous collections,
-invalid dict keys) live in :mod:`tests.errors`; this module is for
-behaviors that only manifest when reading JSON.
+invalid dict keys) live elsewhere in :mod:`tests.errors`; this module
+is for errors that only manifest when reading JSON.
 """
 
 import pytest

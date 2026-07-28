@@ -1,8 +1,7 @@
 """Negative-path checks for ``literalize_call``.
 
-Positive-path checks for individual language behaviors (Haskell ref
-inference, Python kebab-non-support, Raku kebab support, etc.) live
-in :mod:`tests.test_languages`.
+Positive-path checks for individual language behaviors live in the
+integration golden-file suite.
 """
 
 import re

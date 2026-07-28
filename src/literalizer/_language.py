@@ -1002,6 +1002,7 @@ class LanguageCls(type):
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
     supports_empty_sibling_sequence_type_hints: bool
+    supports_typed_dict_open: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
@@ -1415,6 +1416,9 @@ class Language(Protocol):
     rendered nested-sequence value reject that shape when explicit type
     hints are enabled.
     """
+
+    supports_typed_dict_open: bool
+    """Whether dict openers infer their key and value types."""
 
     supports_no_variable_wrap_in_file: bool
     """Whether the language can represent a bare value (no variable
