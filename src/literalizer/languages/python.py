@@ -608,6 +608,9 @@ def _build_python_call_stub(
 @beartype
 def _build_type_hint_preamble_py38(
     *,
+    sequence_typing_name: str,
+    set_typing_name: str,
+    use_typing_collection_aliases: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -615,8 +618,8 @@ def _build_type_hint_preamble_py38(
 ) -> Callable[[frozenset[type]], tuple[str, ...]]:
     """Build the ``type_hint_collection_preamble_lines`` callable for PY38.
 
-    PY38 uses future annotations so built-in generic aliases are safe;
-    only ``Any`` and ``Union`` still need imports from ``typing``.
+    Postponed PY38 annotations can use built-in generic aliases. Eager
+    annotations require collection aliases from ``typing``.
     """
     _any_types: frozenset[type] = frozenset(
         t
@@ -643,6 +646,13 @@ def _build_type_hint_preamble_py38(
     ) -> tuple[str, ...]:
         """Return ``from typing import ...`` for PY38."""
         imports: set[str] = set()
+        if use_typing_collection_aliases:
+            if list in annotated_collection_types:
+                imports.add(sequence_typing_name)
+            if set in annotated_collection_types:
+                imports.add(set_typing_name)
+            if dict in annotated_collection_types:
+                imports.add("Dict")
         if HeterogeneousElements in annotated_collection_types:
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
@@ -762,9 +772,9 @@ class Python(metaclass=LanguageCls):
         language_version: The minimum Python version to target.
 
             Both compatibility variants use built-in ``list``, ``dict``,
-            etc. directly as generic aliases. ``VersionFormats.PY38`` uses
-            future annotations so these aliases remain executable on
-            Python 3.8.
+            etc. directly as generic aliases when annotations are
+            postponed. Eager Python 3.8 annotations use aliases from
+            ``typing`` instead.
 
         heterogeneous_strategy: How to render a record-shaped dict
             (non-empty, string-keyed).
@@ -1345,9 +1355,10 @@ class Python(metaclass=LanguageCls):
         exercised in CI is governed by ``requires-python`` in
         ``pyproject.toml`` (``>=3.12``), not by this enum.
 
-        * ``VersionFormats.PY38`` — target Python 3.8; uses future
-          annotations with built-in collection generics, and emits
-          ``datetime.timezone.utc`` for UTC.
+        * ``VersionFormats.PY38`` — target Python 3.8; uses built-in
+          collection generics with postponed annotations and ``typing``
+          aliases with eager annotations, and emits ``datetime.timezone.utc``
+          for UTC.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
           ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
           variant also emits ``datetime.UTC``, which requires Python
@@ -1533,9 +1544,7 @@ class Python(metaclass=LanguageCls):
         sequence/set/dict/date/datetime formats and the targeted
         Python version.
         """
-        sequence_hint = self.sequence_format.type_hint
-        set_hint = self.set_format.type_hint
-        dict_hint = "dict"
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
         if self.language_version is self.version_formats.PY38:
             join_union: Callable[[list[str]], str] = _join_union_typing
         else:
@@ -1871,6 +1880,34 @@ class Python(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    def _collection_type_hint_names(self) -> tuple[str, str, str]:
+        """Return sequence, set, and dict type-hint names."""
+        sequence_hint = self.sequence_format.type_hint
+        set_hint = self.set_format.type_hint
+        if not self._uses_typing_collection_aliases:
+            return sequence_hint, set_hint, "dict"
+        mapping = {
+            "list": "List",
+            "tuple": "Tuple",
+            "set": "Set",
+            "frozenset": "FrozenSet",
+            "dict": "Dict",
+        }
+        return (
+            mapping.get(sequence_hint, sequence_hint),
+            mapping.get(set_hint, set_hint),
+            mapping["dict"],
+        )
+
+    @property
+    def _uses_typing_collection_aliases(self) -> bool:
+        """Whether eager annotations need Python 3.8 typing aliases."""
+        return (
+            self.language_version is self.version_formats.PY38
+            and self.annotation_evaluation is self.annotation_evaluations.EAGER
+        )
+
+    @cached_property
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
         """Predicate marking a value as a ``RECORD``-strategy
         record-shaped dict.
@@ -1903,9 +1940,7 @@ class Python(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        sequence_hint = self.sequence_format.type_hint
-        set_hint = self.set_format.type_hint
-        dict_hint = "dict"
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
         if self.language_version is self.version_formats.PY38:
             join_union: Callable[[list[str]], str] = _join_union_typing
         else:
@@ -1960,7 +1995,13 @@ class Python(metaclass=LanguageCls):
         types.
         """
         if self.language_version is self.version_formats.PY38:
+            sequence_hint, set_hint, _ = self._collection_type_hint_names
             return _build_type_hint_preamble_py38(
+                sequence_typing_name=sequence_hint,
+                set_typing_name=set_hint,
+                use_typing_collection_aliases=(
+                    self._uses_typing_collection_aliases
+                ),
                 default_set_element_type=self.default_set_element_type,
                 default_sequence_element_type=self.default_sequence_element_type,
                 default_dict_value_type=self.default_dict_value_type,

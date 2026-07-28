@@ -184,6 +184,12 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "PLR",
     "Q",
 ]
+lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py38.py" = [
+    # Eager Python 3.8 annotations require collection aliases from typing
+    # and must not import postponed annotations.
+    "FA100",
+    "UP006",
+]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
     # These generated call fixtures intentionally contain positional booleans.
     "FBT003",
