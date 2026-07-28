@@ -455,7 +455,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_dict", suffix=""),
         _ci(case_dir_name="empty_ordered_map", suffix=""),
     ),
-    "annotation_evaluation": (_ci(case_dir_name="empty_dict", suffix=""),),
+    "annotation_evaluation": (
+        _ci(case_dir_name="empty_dict", suffix=""),
+        _ci(case_dir_name="empty_sequence", suffix=""),
+        _ci(case_dir_name="empty_set", suffix=""),
+    ),
     "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),
         _ci(case_dir_name="bool_list", suffix=""),
