@@ -16,10 +16,8 @@ from beartype import beartype
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
-
-# Keep this import generic: discover variant languages through their explicit
-# capability metadata; do not import individual language classes here.
 from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages.python import Python
 
 from .case_discovery import (
     EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
@@ -1502,6 +1500,26 @@ def build_language_version_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_annotation_evaluation_variants() -> Iterable[Variant]:
+    """Build eager-annotation variants for Python language versions."""
+    return (
+        Variant(
+            name="Python_annotation_evaluation_eager",
+            spec=make_spec(
+                lang_cls=Python,
+                annotation_evaluation=Python.annotation_evaluations.EAGER,
+                language_version=version,
+            ),
+            lang_cls=Python,
+            fixture_prefix="",
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for version in Python.VersionFormats
+    )
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -2163,6 +2181,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "language_version_cross_dict_type": (
         build_language_version_cross_dict_type_variants
     ),
+    "annotation_evaluation": build_annotation_evaluation_variants,
     "bool_format": build_bool_format_variants,
 }
 
