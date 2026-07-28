@@ -3,5 +3,7 @@ class Process_ {
     call(data) {}
 }
 var process = Process_.new()
-var my_list = []
+var my_list = {
+    "unused": "value",
+}
 process.call([[{"inner": my_list}]])

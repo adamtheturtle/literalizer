@@ -16,7 +16,9 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
 int main(void) {
-CVal my_list = ((CVal){.a = (CVal[]){}});
+CVal my_list = ((CVal){.m = (CKV[]){
+    {"unused", ((CVal){.s = "value"})},
+}});
 process(((CVal){.a = (CVal[]){((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"inner", my_list}}})}})}}));
     return 0;
 }

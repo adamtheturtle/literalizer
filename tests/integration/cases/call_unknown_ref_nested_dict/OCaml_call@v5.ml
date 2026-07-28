@@ -5,7 +5,9 @@ type val_t =
   | OList of val_t list
   | OMap of (string * val_t) list
 let process _ = ()
-let my_list : val_t = OList []
+let my_list : val_t = OMap [
+    ("unused", OStr "value")
+]
 let _ = process(OList [OList [OMap [("inner", my_list)]]])
 
 end

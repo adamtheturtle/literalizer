@@ -12,6 +12,8 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn process(data: ZVal) void { _ = data; }
 pub fn main() void {
-    const my_list: ZVal = .{ .arr = &.{}};
+    const my_list: ZVal = .{ .map = &.{
+        .{ .key = "unused", .val = .{ .str = "value" } },
+    }};
     process(.{ .arr = &.{.{ .arr = &.{.{ .map = &.{.{ .key = "inner", .val = my_list }}}}}}});
 }

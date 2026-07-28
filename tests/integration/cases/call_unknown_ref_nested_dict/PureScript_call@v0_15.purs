@@ -10,7 +10,9 @@ data Val
 process :: Val -> Unit
 process _ = unit
 my_list :: Val
-my_list = PList []
+my_list = PDict [
+    (Tuple "unused" (PStr "value"))
+    ]
 
 
 main :: Unit

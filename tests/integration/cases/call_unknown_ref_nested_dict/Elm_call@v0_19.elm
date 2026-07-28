@@ -13,7 +13,9 @@ main : Program () () Never
 main =
     let
         my_list : Val
-        my_list = EList []
+        my_list = EDict [
+            ("unused", EStr "value")
+            ]
         _ = process (EList [EList [EDict [("inner", my_list)]]])
     in
     Platform.worker

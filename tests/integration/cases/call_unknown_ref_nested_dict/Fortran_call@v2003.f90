@@ -20,7 +20,9 @@ program main
     use fval_m
     implicit none
     type(fval_t) :: my_list
-    my_list = flist([fval_t :: ])
+    my_list = fmap([fval_t :: &
+        fentry('unused', fstr('value')) &
+    ])
     call process(flist([fval_t :: flist([fval_t :: fmap([fval_t :: fentry('inner', my_list)])])]))
 contains
     subroutine process(data)

@@ -2,5 +2,7 @@
 -export([x/0]).
 process(_) -> ok.
 x() ->
-    My_list = [],
+    My_list = #{
+        "unused" => "value"
+    },
     process([[#{"inner" => My_list}]]).
