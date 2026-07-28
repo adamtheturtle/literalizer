@@ -1646,7 +1646,16 @@ class Python(metaclass=LanguageCls):
             blocks = record_preamble(data)
             if not blocks:
                 return ()
-            return ("import dataclasses", *blocks)
+            union_import = (
+                ("from typing import Union",)
+                if (
+                    self.annotation_evaluation
+                    is self.annotation_evaluations.EAGER
+                    and any("Union[" in block for block in blocks)
+                )
+                else ()
+            )
+            return (*union_import, "import dataclasses", *blocks)
 
         return _preamble
 
