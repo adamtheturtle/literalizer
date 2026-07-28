@@ -160,8 +160,8 @@ class CallCaseConfig:
     # represent heterogeneous dict values participate in the case.
     requires_heterogeneous_dict_values: bool
     # TOML documents necessarily parse to a top-level table.  When set,
-    # select this table entry as the call renderer's root value after
-    # parsing.  Other formats normally leave this as ``None``.
+    # select this table entry as the root value used for call rendering
+    # after parsing.  Other formats normally leave this as ``None``.
     input_root_key: str | None = None
 
 
@@ -2110,7 +2110,7 @@ def run_call_golden_case(
     ``ERROR`` strategy rejects).
     """
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
-    source = input_info.path.read_text()
+    source = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_info.path.parent,
         name=golden_name,

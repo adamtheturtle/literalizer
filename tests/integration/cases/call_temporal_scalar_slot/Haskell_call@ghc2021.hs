@@ -1,6 +1,6 @@
 module Fixture_call_temporal_scalar_slot_Haskell_call where
 import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime)
-data Val = HInt Integer | HList [Val] | HDatetime UTCTime
+data Val = HInt Integer | HList [Val] | HDatetime UTCTime | HStr String
 instance Num Val where
     fromInteger = HInt
     _ + _ = error "not implemented"

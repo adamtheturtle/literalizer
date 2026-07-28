@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static void process(CVal _a0) { (void)_a0; }
 int main(void) {
-process("09:30:00");
+process(((CVal){.s = "09:30:00"}));
 process(((CVal){.s = "2024-01-15T00:00:00+00:00"}));
 process(((CVal){.i = 1}));
     return 0;
