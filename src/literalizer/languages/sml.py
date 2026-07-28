@@ -471,6 +471,7 @@ class Sml(metaclass=LanguageCls):
     # A portable Standard ML ``string`` is an 8-bit type.  Raw UTF-8 and
     # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.
     supports_non_ascii_string_literals = False
+    supports_empty_sibling_sequence_type_hints = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=False,
