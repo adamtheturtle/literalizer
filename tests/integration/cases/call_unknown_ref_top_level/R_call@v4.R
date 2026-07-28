@@ -1,5 +1,3 @@
 process <- function(...) NULL
-unknown_value <- list(
-    1
-)
+unknown_value <- list()
 process(data = unknown_value)

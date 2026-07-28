@@ -1,7 +1,5 @@
 fn main() {
     fn process<A>(_data: A) {}
-    let unknown_value = vec![
-        1,
-    ];
+    let unknown_value = Vec::<String>::new();
     process(unknown_value);
 }

@@ -1,8 +1,6 @@
 import std.json;
 void main() {
 int process(T...)(T args) { return 0; }
-auto unknown_value = JSONValue([
-    JSONValue(1),
-]);
+auto unknown_value = parseJSON("[]");
 process(unknown_value);
 }

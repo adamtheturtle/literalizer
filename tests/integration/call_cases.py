@@ -1041,7 +1041,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         per_element=False,
         call_style_type=None,
         ref_declarations={
-            "unknown_value": "[1]",
+            "unknown_value": "[]",
         },
         wrap_in_file=False,
         ref_case_per_language=False,

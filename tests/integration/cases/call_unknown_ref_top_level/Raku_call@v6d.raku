@@ -1,5 +1,3 @@
 sub process(*@a, *%kw) {}
-my $unknown_value = [
-    1,
-];
+my $unknown_value = [];
 process($unknown_value);

@@ -1,6 +1,4 @@
 const process: any = () => {};
-const unknown_value = [
-  1,
-];
+const unknown_value: unknown[] = [];
 process({ data: unknown_value });
 export {};

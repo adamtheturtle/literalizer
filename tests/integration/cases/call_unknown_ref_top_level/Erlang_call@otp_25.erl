@@ -2,7 +2,5 @@
 -export([x/0]).
 process(_) -> ok.
 x() ->
-    Unknown_value = [
-        1
-    ],
+    Unknown_value = [],
     process(Unknown_value).

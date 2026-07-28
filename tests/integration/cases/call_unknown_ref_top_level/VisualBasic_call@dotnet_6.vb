@@ -4,9 +4,7 @@ Module Check
         Return Nothing
     End Function
     Sub _calls()
-        Dim unknown_value = New Integer() {
-            1
-        }
+        Dim unknown_value = New Object() {}
         process(unknown_value)
     End Sub
 End Module

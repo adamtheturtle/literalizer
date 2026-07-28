@@ -1,5 +1,4 @@
+import json
 template process(args: varargs[untyped]) = discard
-var unknown_value = @[
-    1
-]
+var unknown_value = %* []
 process(unknown_value)

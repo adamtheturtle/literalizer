@@ -1,5 +1,3 @@
 def process(*a); end
-unknown_value = [
-  1,
-]
+unknown_value = []
 process(data: unknown_value)
