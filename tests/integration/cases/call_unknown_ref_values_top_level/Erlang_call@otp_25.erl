@@ -1,0 +1,7 @@
+-module(fixture_call_unknown_ref_values_top_level_erlang_call).
+-export([x/0]).
+process(_) -> ok.
+x() ->
+    Known_value = 1,
+    Unknown_value = [],
+    process(Unknown_value).

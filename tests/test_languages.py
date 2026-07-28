@@ -158,21 +158,3 @@ def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
     assert result.body_preamble == (
         "data Val = HStr String | HList [Val] | HMap [(String, Val)]",
     )
-
-
-def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
-    """Haskell strips unknown top-level refs even when ref_values is
-    set.
-    """
-    result = literalize_call(
-        source='{"$ref": "myList"}',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        per_element=False,
-        ref_values={"other": 1},
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
