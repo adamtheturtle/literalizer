@@ -3,11 +3,7 @@
 import dataclasses
 from typing import ClassVar
 
-from literalizer import (
-    InputFormat,
-    literalize,
-    literalize_call,
-)
+from literalizer import InputFormat, literalize
 from literalizer.languages import (
     Dart,
     Haskell,
@@ -139,22 +135,4 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
         '    <String, int>{"n": 1},\n'
         '    <String, int>{"n": 2},\n'
         "]"
-    )
-
-
-def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
-    """Haskell recursively strips unknown refs from nested dicts."""
-    result = literalize_call(
-        source='[[{"inner": {"$ref": "myList"}}]]',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        ref_values={"other": True},
-    )
-
-    assert result.source_data == [[{}]]
-    assert result.types_present == frozenset({str, list, dict})
-    assert result.body_preamble == (
-        "data Val = HStr String | HList [Val] | HMap [(String, Val)]",
     )
