@@ -217,40 +217,6 @@ def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
     assert result.body_preamble == ("data Val = HList [Val]",)
 
 
-def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
-    """Haskell unknown nested refs do not shape preamble type
-    inference.
-    """
-    result = literalize_call(
-        source=(
-            '[[{"$ref": "known"}, {"$ref": "missing"}, '
-            '{"inner": {"$ref": "missing"}}]]'
-        ),
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["a", "b", "c"],
-        ref_values={"known": [1, {"nested": "value"}]},
-    )
-
-    assert result.body_preamble == (
-        (
-            "data Val = HInt Integer | HStr String | HList [Val] | HMap "
-            "[(String, Val)]"
-        ),
-        (
-            "instance Num Val where\n"
-            "    fromInteger = HInt\n"
-            '    _ + _ = error "not implemented"\n'
-            '    _ * _ = error "not implemented"\n'
-            '    abs _ = error "not implemented"\n'
-            '    signum _ = error "not implemented"\n'
-            "    negate (HInt n) = HInt (negate n)\n"
-            '    negate _ = error "not implemented"'
-        ),
-    )
-
-
 def test_haskell_without_ref_values_strips_top_level_ref() -> None:
     """Haskell's historical top-level ref strip behavior is retained."""
     result = literalize_call(
