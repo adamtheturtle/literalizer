@@ -78,6 +78,10 @@ from .language_specs import (
 # drives the ``Math::BigInt`` wrapper, so the ``use Math::BigInt;``
 # preamble must follow.  Other languages cannot represent the key in a
 # base golden, so it stays out of the all-languages base discovery.
+#
+# ``time_union_type_hint`` carries a non-empty time sequence beside an
+# empty sequence. Its dedicated type-hint axis selects languages whose
+# explicit annotations can represent that nested shape.
 VARIANT_ONLY_CASE_DIRS = frozenset(
     {
         "record_wide_int",
@@ -98,6 +102,7 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "nested_tuple_strategy",
         "nested_tuple_strategy_mixed",
         "heterogeneous_time_string",
+        "time_union_type_hint",
         "dict_wide_int_key",
         "object_variant_mixed_scalar_empty_list",
         "object_variant_integer_widening_tiers",
@@ -208,6 +213,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         "json_native_only_nested_dict",
     }
 )
+
+EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR = "time_union_type_hint"
+"""Golden case for explicit hints over empty/non-empty sibling
+sequences.
+"""
 
 
 KEBAB_NEW_VARIABLE_CASE_DIR = "new_variable_kebab_name"

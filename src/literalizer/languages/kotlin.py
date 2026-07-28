@@ -13,6 +13,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._checks import check_empty_sibling_sequence_type_hint_data
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_open,
@@ -928,6 +929,7 @@ class Kotlin(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_empty_sibling_sequence_type_hints = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=False,
@@ -2163,7 +2165,7 @@ class Kotlin(metaclass=LanguageCls):
             return _make_format_kotlin_json_declaration(
                 keyword=self.declaration_style.name.lower(),
             )
-        return self.variable_type_hints.formatter(
+        formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
             date_hint=(
@@ -2191,6 +2193,31 @@ class Kotlin(metaclass=LanguageCls):
             ),
             sequence_format_name=self.sequence_format.name,
         )
+        if (
+            self.supports_empty_sibling_sequence_type_hints
+            or self.variable_type_hints.name != "ALWAYS"
+        ):
+            return formatter
+
+        def checked_formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Reject data whose explicit type hint Kotlin cannot
+            represent.
+            """
+            check_empty_sibling_sequence_type_hint_data(
+                data=data,
+                language_name=type(self).__name__,
+                supports_empty_sibling_sequence_type_hints=(
+                    self.supports_empty_sibling_sequence_type_hints
+                ),
+            )
+            return formatter(name, value, data, modifiers)
+
+        return checked_formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
