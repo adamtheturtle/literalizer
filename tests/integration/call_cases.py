@@ -164,6 +164,11 @@ class CallCaseConfig:
     # the historical unknown-ref preamble behavior without leaving the
     # rendered call's identifier undefined for fixture compilation.
     unknown_ref_names: frozenset[str]
+    # Additional JSON sources used to seed ``ref_values`` without
+    # emitting declarations.  This covers mappings whose names are not
+    # referenced by the input while keeping generated fixtures free of
+    # unused declarations.
+    extra_ref_value_sources: dict[str, str]
     # TOML documents necessarily parse to a top-level table.  When set,
     # select this table entry as the root value used for call rendering
     # after parsing.  Other formats normally leave this as ``None``.
@@ -203,6 +208,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -229,6 +235,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -260,6 +267,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key="calls",
     ),
     CallCaseConfig(
@@ -290,6 +298,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -316,6 +325,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -342,6 +352,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -368,6 +379,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -394,6 +406,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -421,6 +434,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -447,6 +461,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -473,6 +488,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -499,6 +515,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -525,6 +542,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -551,6 +569,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -577,6 +596,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -603,6 +623,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -633,6 +654,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -664,6 +686,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -703,6 +726,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=True,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -729,6 +753,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -755,6 +780,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -781,6 +807,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -807,6 +834,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -833,6 +861,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -859,6 +888,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -885,6 +915,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -913,6 +944,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -939,6 +971,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -965,6 +998,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -991,6 +1025,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1025,6 +1060,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset({"unknown_value"}),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1059,6 +1095,41 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset({"unknown_value"}),
+        extra_ref_value_sources={},
+        input_root_key=None,
+    ),
+    CallCaseConfig(
+        # ``known_value`` makes ``ref_values`` non-empty while the
+        # top-level ``unknown_value`` marker remains absent from it.
+        # Haskell must still strip that unknown marker before preamble
+        # inference; retaining it would visibly add HStr/HMap to the
+        # generated Val declaration.
+        case_dir_name="call_unknown_ref_values_top_level",
+        target_function="process",
+        parameter_names=["data"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=False,
+        call_style_type=None,
+        ref_declarations={
+            "unknown_value": "[]",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset({"unknown_value"}),
+        extra_ref_value_sources={"known_value": "1"},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1093,6 +1164,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset({"unknown_value"}),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1122,6 +1194,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1161,6 +1234,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1202,6 +1276,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1231,6 +1306,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1259,6 +1335,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1288,6 +1365,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1323,6 +1401,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1349,6 +1428,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1378,6 +1458,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1406,6 +1487,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=True,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1434,6 +1516,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1460,6 +1543,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1488,6 +1572,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1521,6 +1606,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1549,6 +1635,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1586,6 +1673,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1622,6 +1710,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1655,6 +1744,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1685,6 +1775,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1711,6 +1802,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1737,6 +1829,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1763,6 +1856,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     *[
@@ -1805,6 +1899,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             requires_dict_literal_as_free_expression=False,
             requires_heterogeneous_dict_values=False,
             unknown_ref_names=frozenset[str](),
+            extra_ref_value_sources={},
             input_root_key=None,
         )
         for name, cls in CALL_STYLE_VARIANTS
@@ -1839,6 +1934,7 @@ CALL_VARIANT_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1867,6 +1963,7 @@ CALL_VARIANT_CASE_CONFIGS: list[CallCaseConfig] = [
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
         unknown_ref_names=frozenset[str](),
+        extra_ref_value_sources={},
         input_root_key=None,
     ),
 ]
@@ -2260,6 +2357,14 @@ def _run_call_with_declarations(
             for ref_name, declaration in decl_results_by_ref_name.items()
             if ref_name not in config.unknown_ref_names
         }
+        ref_values.update(
+            {
+                ref_name: json.loads(s=ref_source)
+                for ref_name, ref_source in (
+                    config.extra_ref_value_sources.items()
+                )
+            }
+        )
         result = _literalize_call_case(
             config=config,
             spec=spec,
