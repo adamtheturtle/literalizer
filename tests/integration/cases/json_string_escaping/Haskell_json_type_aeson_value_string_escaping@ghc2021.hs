@@ -3,6 +3,6 @@ module Fixture_json_string_escaping_Haskell_json_type_aeson_value_string_escapin
 import Data.Aeson (Value)
 import Data.Aeson.QQ (aesonQQ)
 my_data :: Value
-my_data = [aesonQQ| "a\"b\tcé" |]
+my_data = [aesonQQ| {"$key": "a\"b\tcé #{world} $ident"} |]
 main :: IO ()
 main = seq my_data (return ())

@@ -2,6 +2,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 class Main {
     public static void main() throws Exception {
-JsonNode my_data = new ObjectMapper().readTree("\"a\\\"b\\tcé\"");
+JsonNode my_data = new ObjectMapper().readTree("{\"$key\": \"a\\\"b\\tcé #{world} $ident\"}");
     }
 }

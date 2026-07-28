@@ -7,6 +7,6 @@ _json_parse :: proc(s: string) -> json.Value {
 }
 
 main :: proc() {
-my_data := _json_parse(`"a\"b\tcé"`)
+my_data := _json_parse(`{"$key": "a\"b\tcé #{world} $ident"}`)
 _ = my_data
 }

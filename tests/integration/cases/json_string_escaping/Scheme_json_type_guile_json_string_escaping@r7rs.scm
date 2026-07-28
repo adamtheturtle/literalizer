@@ -1,2 +1,4 @@
 (use-modules (json))
-(define my_data "a\"b\tcé")
+(define my_data (list
+    (cons "$key" "a\"b\tcé #{world} $ident")
+))

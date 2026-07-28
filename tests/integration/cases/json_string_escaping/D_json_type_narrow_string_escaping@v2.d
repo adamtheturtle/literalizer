@@ -1,3 +1,5 @@
 void main() {
-auto my_data = "a\"b\tcé";
+auto my_data = [
+    "$key": "a\"b\tcé #{world} $ident",
+];
 }

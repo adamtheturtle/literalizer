@@ -7,4 +7,4 @@ import Data.Either (fromRight)
 
 
 my_data :: Json
-my_data = fromRight jsonNull (jsonParser "\"a\\\"b\\tcé\"")
+my_data = fromRight jsonNull (jsonParser "{\"$key\": \"a\\\"b\\tcé #{world} $ident\"}")
