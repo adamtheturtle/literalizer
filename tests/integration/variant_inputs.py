@@ -179,6 +179,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="simple_sequence", suffix=""),
     ),
+    "typed_dict_null_filtering": (
+        _ci(case_dir_name="typed_dict_skip_null_values", suffix=""),
+    ),
     "json_type": (
         _ci(case_dir_name="dict_with_list_value", suffix=""),
         _ci(case_dir_name="nested_mixed_inner", suffix="_nested_mixed"),

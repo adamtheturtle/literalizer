@@ -188,6 +188,32 @@ def build_default_sequence_element_type_variants() -> Iterable[Variant]:
     )
 
 
+@beartype
+def build_typed_dict_null_filtering_variants() -> Iterable[Variant]:
+    """Build null-filtering variants for typed-dict languages."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if not lang_cls.supports_typed_dict_open:
+            continue
+        variant_cls = type(
+            f"_{lang_cls.__name__}SkipNullDictValues",
+            (lang_cls,),
+            {"skip_null_dict_values": True},
+        )
+        assert isinstance(variant_cls, literalizer.LanguageCls)  # noqa: S101
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_skip_null_dict_values",
+                spec=make_spec(lang_cls=variant_cls),
+                lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
+    return variants
+
+
 @runtime_checkable
 class _HasJsonType(Protocol):
     """Structural type for languages whose spec exposes a ``json_type``
@@ -2142,6 +2168,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_sequence_element_type": (
         build_default_sequence_element_type_variants
     ),
+    "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
     "json_type": build_json_type_variants,
     "json_type_bytes_cross": build_json_type_bytes_cross_variants,
     "json_type_language_version_cross": (

@@ -472,6 +472,7 @@ class Sml(metaclass=LanguageCls):
     # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.
     supports_non_ascii_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
+    supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=False,

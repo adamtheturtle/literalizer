@@ -102,6 +102,10 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # ``TUPLE`` heterogeneous strategy.
         "nested_tuple_strategy",
         "nested_tuple_strategy_mixed",
+        # ``typed_dict_skip_null_values`` exercises typed dict inference
+        # after null-valued entries are filtered.  Its dedicated axis
+        # discovers every language that opts into that capability.
+        "typed_dict_skip_null_values",
         "heterogeneous_time_string",
         "time_union_type_hint",
         "dict_wide_int_key",
