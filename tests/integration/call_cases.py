@@ -159,6 +159,11 @@ class CallCaseConfig:
     # When ``True``, only languages whose default configuration can
     # represent heterogeneous dict values participate in the case.
     requires_heterogeneous_dict_values: bool
+    # Refs that receive declarations in the self-contained golden file
+    # but are intentionally omitted from ``ref_values``.  This exercises
+    # the historical unknown-ref preamble behavior without leaving the
+    # rendered call's identifier undefined for fixture compilation.
+    unknown_ref_names: frozenset[str]
     # TOML documents necessarily parse to a top-level table.  When set,
     # select this table entry as the root value used for call rendering
     # after parsing.  Other formats normally leave this as ``None``.
@@ -197,6 +202,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -222,6 +228,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -252,6 +259,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key="calls",
     ),
     CallCaseConfig(
@@ -281,6 +289,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -306,6 +315,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -331,6 +341,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -356,6 +367,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -381,6 +393,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -407,6 +420,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -432,6 +446,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -457,6 +472,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -482,6 +498,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -507,6 +524,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -532,6 +550,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -557,6 +576,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -582,6 +602,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -611,6 +632,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # ``supports_multi_param_call_wrapper_stub`` are skipped.
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -641,6 +663,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # gating as ``call_zip_values``.
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -679,6 +702,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         # via ``supports_multi_param_call_wrapper_stub``.
         requires_dict_literal_as_free_expression=True,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -704,6 +728,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -729,6 +754,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -754,6 +780,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -779,6 +806,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -804,6 +832,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -829,6 +858,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -854,6 +884,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -881,6 +912,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -906,6 +938,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -931,6 +964,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -956,6 +990,41 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
+        input_root_key=None,
+    ),
+    CallCaseConfig(
+        # ``unknown_value`` is declared so every emitted fixture is
+        # self-contained, but omitted from ``ref_values`` so call
+        # preamble inference must strip its marker recursively.  In
+        # Haskell, retaining the marker would visibly add HStr/HMap to
+        # the generated Val declaration.
+        case_dir_name="call_unknown_ref_nested",
+        target_function="process",
+        parameter_names=["known_value", "nested_missing"],
+        call_transform=None,
+        transform_stub_names=[],
+        per_element=True,
+        call_style_type=None,
+        ref_declarations={
+            "known_value": "true",
+            "unknown_value": "true",
+        },
+        wrap_in_file=False,
+        ref_case_per_language=False,
+        consumable_refs=frozenset[str](),
+        requires_call_returns_expression=False,
+        requires_inline_multiline_dict_args=False,
+        requires_standalone_wrapped_comments=False,
+        self_contained_mirror_variable_form=None,
+        variable_form=None,
+        zip_source=None,
+        zip_input_format=None,
+        comment_source=None,
+        transform_stub_param_names=["_arg"],
+        requires_dict_literal_as_free_expression=False,
+        requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset({"unknown_value"}),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -984,6 +1053,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1022,6 +1092,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1062,6 +1133,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1090,6 +1162,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1117,6 +1190,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1145,6 +1219,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1179,6 +1254,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1204,6 +1280,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1232,6 +1309,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1259,6 +1337,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=True,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1286,6 +1365,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1311,6 +1391,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1338,6 +1419,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1370,6 +1452,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1397,6 +1480,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1433,6 +1517,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1468,6 +1553,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1500,6 +1586,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1529,6 +1616,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1554,6 +1642,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1579,6 +1668,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1604,6 +1694,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     *[
@@ -1645,6 +1736,7 @@ CALL_CASE_CONFIGS: list[CallCaseConfig] = [
             transform_stub_param_names=["_arg"],
             requires_dict_literal_as_free_expression=False,
             requires_heterogeneous_dict_values=False,
+            unknown_ref_names=frozenset[str](),
             input_root_key=None,
         )
         for name, cls in CALL_STYLE_VARIANTS
@@ -1678,6 +1770,7 @@ CALL_VARIANT_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
     CallCaseConfig(
@@ -1705,6 +1798,7 @@ CALL_VARIANT_CASE_CONFIGS: list[CallCaseConfig] = [
         transform_stub_param_names=["_arg"],
         requires_dict_literal_as_free_expression=False,
         requires_heterogeneous_dict_values=False,
+        unknown_ref_names=frozenset[str](),
         input_root_key=None,
     ),
 ]
@@ -2096,6 +2190,7 @@ def _run_call_with_declarations(
         ref_values = {
             ref_name: declaration.source_data
             for ref_name, declaration in decl_results_by_ref_name.items()
+            if ref_name not in config.unknown_ref_names
         }
         result = _literalize_call_case(
             config=config,
@@ -2300,6 +2395,7 @@ def run_call_golden_case(
     # directly above.
     if (
         config.ref_declarations
+        and not config.unknown_ref_names
         and config.call_transform is None
         and not config.transform_stub_names
         and config.variable_form is None
