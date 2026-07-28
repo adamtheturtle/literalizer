@@ -3,5 +3,7 @@ class Process_ {
     call(data) {}
 }
 var process = Process_.new()
-var unknown_value = []
+var unknown_value = [
+    1,
+]
 process.call(unknown_value)
