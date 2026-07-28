@@ -228,7 +228,7 @@ class LiteralizeResult:
     :attr:`code` then.
     """
 
-    data_dependent_preamble: tuple[str, ...] = ()
+    data_dependent_preamble: tuple[str, ...]
     """The entries within :attr:`preamble` that were inferred from the
     rendered data itself.
 
@@ -2567,6 +2567,7 @@ def _literalize_apply_form(
             pre_declaration_comments=(),
             contains_standalone_comments=False,
             sections=(),
+            data_dependent_preamble=(),
         )
 
     return LiteralizeResult(
@@ -2646,6 +2647,7 @@ def _literalize_both_forms(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -2886,6 +2888,7 @@ def _compose_bound_refs(
         pre_declaration_comments=(),
         contains_standalone_comments=False,
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -4628,6 +4631,7 @@ def _wrap_call_result_in_file(
         source_data=data_for_preamble,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=(),
     )
 
 
@@ -5514,4 +5518,5 @@ def _literalize_call_with_declarations(
         source_data=call.source_data,
         pre_declaration_comments=(),
         sections=(),
+        data_dependent_preamble=(),
     )
