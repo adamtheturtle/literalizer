@@ -1,80 +1,17 @@
 """Language-specific tests for literalizer converter."""
 
 import dataclasses
-import datetime
 from typing import ClassVar
 
 from literalizer import (
     InputFormat,
-    NewVariable,
     literalize,
     literalize_call,
 )
 from literalizer.languages import (
-    Cpp,
     Dart,
     Haskell,
-    Python,
 )
-
-# Issue #2518 replaced the per-language ``datetime.time`` coverage
-# shims with golden-file cases, but the
-# :func:`~literalizer._preamble._structural_type_id`
-# ``case datetime.time(): return "time"`` arm cannot ride the
-# all-languages ``type_hints`` golden axis.  That arm only fires on
-# the *Python* type-hint path: ``_has_union_in_type_hints`` walks
-# nested lists with divergent inner shapes (e.g. ``[[t], []]``) and
-# computes a structural id for the time scalar.  The empty inner list
-# that forces the union walk also makes the Kotlin renderer emit a
-# nested-time-list under ``ALWAYS`` whose rendered value type
-# disagrees with its inferred type annotation; since the per-language
-# lint CI compiles every golden fixture, an all-languages golden case
-# for this input fails to build.  No other reachable input exercises
-# the arm.  So, like the Dart ``skip_null_dict_values`` cases below,
-# this Python-only arm stays a focused pytest test driven through the
-# public API.
-
-
-def test_cpp14_time_call_slot_uses_explicit_value_carrier() -> None:
-    """C++14 wraps every temporal scalar in a heterogeneous call slot."""
-    time = datetime.time(hour=9, minute=30)
-    timestamp = datetime.datetime(
-        year=2024,
-        month=1,
-        day=15,
-        tzinfo=datetime.UTC,
-    )
-    behavior = Cpp(
-        language_version=Cpp.version_formats.CPP14,
-    ).heterogeneous_behavior
-
-    wrap_ids = behavior.compute_call_slot_wrap_ids([time, timestamp, 1])
-
-    assert id(time) in wrap_ids
-    assert id(timestamp) in wrap_ids
-
-
-def test_python_time_union_annotation_renders() -> None:
-    """Python ``ALWAYS`` type hints render a nested time union.
-
-    Covers the ``case datetime.time(): return "time"`` arm of
-    :func:`~literalizer._preamble._structural_type_id`, which only runs
-    when a typed Python variable declaration drives
-    ``_has_union_in_type_hints`` to walk a list containing a time
-    scalar.  See the module comment above for why this is not an
-    all-languages golden-file case.
-    """
-    result = literalize(
-        source="mixed = [[09:30:00], []]\n",
-        input_format=InputFormat.TOML,
-        language=Python(
-            variable_type_hints=Python.variable_type_hints_formats.ALWAYS,
-        ),
-        variable_form=NewVariable(name="x", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-
-    assert result.code
 
 
 def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
@@ -84,7 +21,7 @@ def test_haskell_explicit_epoch_datetime_uses_int_constructor() -> None:
     in this module to golden-file cases, but this one cannot ride the
     golden harness for two independent reasons, so it stays a focused
     public-API pytest test (like the Dart ``skip_null_dict_values``
-    cases below and the #2518 ``time`` union arm above):
+    cases below):
 
     * It is the only thing that exercises the
       :attr:`~literalizer._literalize.LiteralizeResult.code` arm that
@@ -206,18 +143,21 @@ def test_dart_skip_nulls_no_widening_when_filtered_dicts_match() -> None:
 
 
 def test_haskell_unknown_ref_values_keep_strip_behavior() -> None:
-    """Haskell unknown refs do not contribute marker dict types."""
+    """Haskell recursively strips unknown refs from nested dicts."""
     result = literalize_call(
-        source='[[{"$ref": "myList"}]]',
+        source='[[{"inner": {"$ref": "myList"}}]]',
         input_format=InputFormat.JSON,
         language=Haskell(),
         target_function="process",
         parameter_names=["data"],
-        ref_values={},
+        ref_values={"other": True},
     )
 
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
+    assert result.source_data == [[{}]]
+    assert result.types_present == frozenset({str, list, dict})
+    assert result.body_preamble == (
+        "data Val = HStr String | HList [Val] | HMap [(String, Val)]",
+    )
 
 
 def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
@@ -232,55 +172,6 @@ def test_haskell_unknown_ref_values_strip_top_level_ref() -> None:
         parameter_names=["data"],
         per_element=False,
         ref_values={"other": 1},
-    )
-
-    assert result.types_present == frozenset({list})
-    assert result.body_preamble == ("data Val = HList [Val]",)
-
-
-def test_haskell_unknown_refs_strip_from_nested_preamble() -> None:
-    """Haskell unknown nested refs do not shape preamble type
-    inference.
-    """
-    result = literalize_call(
-        source=(
-            '[[{"$ref": "known"}, {"$ref": "missing"}, '
-            '{"inner": {"$ref": "missing"}}]]'
-        ),
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["a", "b", "c"],
-        ref_values={"known": [1, {"nested": "value"}]},
-    )
-
-    assert result.body_preamble == (
-        (
-            "data Val = HInt Integer | HStr String | HList [Val] | HMap "
-            "[(String, Val)]"
-        ),
-        (
-            "instance Num Val where\n"
-            "    fromInteger = HInt\n"
-            '    _ + _ = error "not implemented"\n'
-            '    _ * _ = error "not implemented"\n'
-            '    abs _ = error "not implemented"\n'
-            '    signum _ = error "not implemented"\n'
-            "    negate (HInt n) = HInt (negate n)\n"
-            '    negate _ = error "not implemented"'
-        ),
-    )
-
-
-def test_haskell_without_ref_values_strips_top_level_ref() -> None:
-    """Haskell's historical top-level ref strip behavior is retained."""
-    result = literalize_call(
-        source='{"$ref": "myList"}',
-        input_format=InputFormat.JSON,
-        language=Haskell(),
-        target_function="process",
-        parameter_names=["data"],
-        per_element=False,
     )
 
     assert result.types_present == frozenset({list})

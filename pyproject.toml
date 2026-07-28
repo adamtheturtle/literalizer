@@ -62,7 +62,7 @@ optional-dependencies.dev = [
     "pygments==2.20.0",
     "pylint[spelling]==4.0.6",
     "pylint-per-file-ignores==3.2.1",
-    "pyproject-fmt==2.25.3",
+    "pyproject-fmt==2.26.0",
     "pyrefly==1.1.1",
     "pyright==1.1.411",
     "pyroma==5.0.1",
@@ -104,7 +104,7 @@ optional-dependencies.dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.63",
+    "ty==0.0.64",
     "types-pygments==2.20.0.20260518",
     "vulture==2.16",
     "yamlfix==1.19.1",
@@ -156,7 +156,6 @@ lint.ignore = [
     # public API design.
     "PLR0913",
     "UP007",
-    "UP035",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles

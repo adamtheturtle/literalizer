@@ -80,6 +80,30 @@ Access a language's enum members through the class itself, e.g. ``Go.sequence_fo
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
+Python annotation evaluation
+----------------------------
+
+Python output postpones annotation evaluation by default, adding
+``from __future__ import annotations`` whenever generated code contains an
+annotation. Select eager runtime evaluation independently of the target Python
+syntax:
+
+.. code-block:: python
+
+   """Generate Python with eagerly evaluated annotations."""
+
+   from literalizer.languages import Python
+
+   Python(
+       annotation_evaluation=Python.annotation_evaluations.EAGER,
+       language_version=Python.version_formats.PY38,
+   )
+
+The Python 3.8 variant uses ``typing.List``, ``typing.Dict``, and related
+aliases in both modes, so its annotations remain resolvable with
+``typing.get_type_hints()`` on Python 3.8. Omitting ``annotation_evaluation``
+preserves the default postponed behavior.
+
 Float emission scope
 --------------------
 

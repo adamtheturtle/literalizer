@@ -1001,6 +1001,7 @@ class LanguageCls(type):
     VersionFormats: type[enum.Enum]
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
+    supports_empty_sibling_sequence_type_hints: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_dotted_calls: bool
@@ -1404,6 +1405,15 @@ class Language(Protocol):
     :class:`~literalizer.ExistingVariable`,
     or :class:`~literalizer.BothVariableForms` is rejected with
     :class:`~literalizer.exceptions.VariableNameNotSupportedError`.
+    """
+
+    supports_empty_sibling_sequence_type_hints: bool
+    """Whether explicit type hints can represent sibling sequences when
+    some are empty and others are non-empty.
+
+    Languages that cannot keep the inferred annotation aligned with the
+    rendered nested-sequence value reject that shape when explicit type
+    hints are enabled.
     """
 
     supports_no_variable_wrap_in_file: bool
