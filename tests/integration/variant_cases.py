@@ -1555,6 +1555,9 @@ def build_union_format_variants() -> Iterable[Variant]:
                 lang_cls=Python,
                 union_format=union_format,
                 language_version=version,
+                heterogeneous_strategy=(
+                    Python.heterogeneous_strategies.RECORD
+                ),
             ),
             lang_cls=Python,
             fixture_prefix="",
