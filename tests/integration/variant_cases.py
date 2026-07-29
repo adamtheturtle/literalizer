@@ -17,7 +17,6 @@ from beartype import beartype
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
 from literalizer.languages import ALL_LANGUAGES
-from literalizer.languages.python import Python
 
 from .case_discovery import (
     EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
@@ -1107,9 +1106,8 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
     (issue #3006).  Participation is driven by
     ``variant_metadata.string_literals_escape_null_byte``: languages that
     reject the value (R, COBOL) or still emit a raw null byte are
-    excluded.  A language with more than one string format (Python, whose
-    raw and single-quoted formats carry their own null-byte handling)
-    contributes one variant per format. JSON type variants that can
+    excluded.  A language with more than one string format contributes
+    one variant per format. JSON type variants that can
     represent null bytes opt in through their
     ``string_literals_escape_null_byte`` property.
     """
@@ -1525,51 +1523,95 @@ def build_language_version_variants() -> Iterable[Variant]:
     return variants
 
 
+@runtime_checkable
+class _HasAnnotationEvaluation(Protocol):
+    """A language with configurable annotation evaluation."""
+
+    annotation_evaluation: enum.Enum
+    annotation_evaluations: type[enum.Enum]
+    language_version: enum.Enum
+    version_formats: type[enum.Enum]
+
+
 @beartype
 def build_annotation_evaluation_variants() -> Iterable[Variant]:
-    """Build eager-annotation variants for Python language versions."""
-    return (
-        Variant(
-            name="Python_annotation_evaluation_eager",
-            spec=make_spec(
-                lang_cls=Python,
-                annotation_evaluation=Python.annotation_evaluations.EAGER,
-                language_version=version,
-            ),
-            lang_cls=Python,
-            fixture_prefix="",
-            record_null_substitutions=None,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
-        )
-        for version in Python.VersionFormats
-    )
+    """Build annotation-evaluation variants for supporting languages."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasAnnotationEvaluation):
+            continue
+        for evaluation in default_spec.annotation_evaluations:
+            if evaluation is default_spec.annotation_evaluation:
+                continue
+            variants.extend(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_annotation_evaluation_"
+                        f"{evaluation.name.casefold()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        annotation_evaluation=evaluation,
+                        language_version=version,
+                    ),
+                    lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+                for version in default_spec.version_formats
+            )
+    return variants
+
+
+@runtime_checkable
+class _HasUnionFormat(Protocol):
+    """A language with configurable union annotation syntax."""
+
+    heterogeneous_strategy: enum.Enum
+    heterogeneous_strategies: type[enum.Enum]
+    language_version: enum.Enum
+    union_format: enum.Enum
+    union_formats: type[enum.Enum]
+    version_formats: type[enum.Enum]
 
 
 @beartype
 def build_union_format_variants() -> Iterable[Variant]:
-    """Build explicit union-syntax variants for Python versions."""
-    return (
-        Variant(
-            name=f"Python_union_format_{union_format.name.casefold()}",
-            spec=make_spec(
-                lang_cls=Python,
-                union_format=union_format,
-                language_version=version,
-                heterogeneous_strategy=(
-                    Python.heterogeneous_strategies.RECORD
-                ),
-            ),
-            lang_cls=Python,
-            fixture_prefix="",
-            record_null_substitutions=None,
-            collection_layout=literalizer.CollectionLayout.COMPACT,
+    """Build union-format variants for supporting languages."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasUnionFormat):
+            continue
+        record_strategy = enum_member_by_name(
+            enum_cls=default_spec.heterogeneous_strategies,
+            name="RECORD",
         )
-        for version in Python.VersionFormats
-        for union_format in (
-            Python.union_formats.PIPE,
-            Python.union_formats.TYPING,
-        )
-    )
+        for union_format in default_spec.union_formats:
+            if union_format is default_spec.union_format:
+                continue
+            variants.extend(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_union_format_"
+                        f"{union_format.name.casefold()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        union_format=union_format,
+                        language_version=version,
+                        heterogeneous_strategy=record_strategy,
+                    ),
+                    lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+                for version in default_spec.version_formats
+            )
+    return variants
 
 
 @beartype
@@ -1722,7 +1764,7 @@ def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
     For every language, pair every non-default heterogeneous strategy
     with every non-default datetime format.  Covers code paths where the
     chosen heterogeneous strategy selects a variant based on the rendered
-    Python type of a datetime value (e.g. Rust's ``TAGGED_ENUM`` routing
+    runtime type of a datetime value (e.g. Rust's ``TAGGED_ENUM`` routing
     an ``EPOCH`` datetime through the ``i64`` variant rather than a
     ``DateTime`` variant).
     """
