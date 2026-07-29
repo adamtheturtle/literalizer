@@ -474,6 +474,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="heterogeneous_time_string", suffix=""),
     ),
+    "union_format_type_hints": (
+        _ci(case_dir_name="heterogeneous_list_with_string", suffix=""),
+    ),
     "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),
         _ci(case_dir_name="bool_list", suffix=""),

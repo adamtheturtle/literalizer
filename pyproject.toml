@@ -199,6 +199,10 @@ lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing@py*
     # These fixtures exercise the explicitly selected typing.Union format.
     "UP007",
 ]
+lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing_type_hints_always@py*.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
+]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
     # These generated call fixtures intentionally contain positional booleans.
     "FBT003",

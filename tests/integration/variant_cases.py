@@ -1574,6 +1574,8 @@ class _HasUnionFormat(Protocol):
     language_version: enum.Enum
     union_format: enum.Enum
     union_formats: type[enum.Enum]
+    variable_type_hints: enum.Enum
+    variable_type_hints_formats: type[enum.Enum]
     version_formats: type[enum.Enum]
 
 
@@ -1603,6 +1605,43 @@ def build_union_format_variants() -> Iterable[Variant]:
                         union_format=union_format,
                         language_version=version,
                         heterogeneous_strategy=record_strategy,
+                    ),
+                    lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+                for version in default_spec.version_formats
+            )
+    return variants
+
+
+@beartype
+def build_union_format_type_hint_variants() -> Iterable[Variant]:
+    """Cross union formats with unconditional variable type hints."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        if not isinstance(default_spec, _HasUnionFormat):
+            continue
+        always_type_hints = enum_member_by_name(
+            enum_cls=default_spec.variable_type_hints_formats,
+            name="ALWAYS",
+        )
+        for union_format in default_spec.union_formats:
+            if union_format is default_spec.union_format:
+                continue
+            variants.extend(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_union_format_"
+                        f"{union_format.name.casefold()}_type_hints_always"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        union_format=union_format,
+                        variable_type_hints=always_type_hints,
+                        language_version=version,
                     ),
                     lang_cls=lang_cls,
                     fixture_prefix="",
@@ -2323,6 +2362,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "annotation_evaluation": build_annotation_evaluation_variants,
     "union_format": build_union_format_variants,
+    "union_format_type_hints": build_union_format_type_hint_variants,
     "bool_format": build_bool_format_variants,
 }
 
