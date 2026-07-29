@@ -155,7 +155,6 @@ lint.ignore = [
     # literalize has 8 keyword-only arguments, which is justified by the
     # public API design.
     "PLR0913",
-    "UP007",
 ]
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles
@@ -189,6 +188,16 @@ lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_e
     # and must not import postponed annotations.
     "FA100",
     "UP006",
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py39.py" = [
+    # Eager Python 3.9 annotations require typing.Union because PEP 604
+    # unions are not available until Python 3.10.
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing@py*.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
 ]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
     # These generated call fixtures intentionally contain positional booleans.
