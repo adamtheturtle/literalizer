@@ -1614,6 +1614,7 @@ class Python(metaclass=LanguageCls):
         return RecordStrategy(
             behavior=NO_HETEROGENEOUS_BEHAVIOR,
             preamble=no_data_preamble,
+            record_name_for_value=None,
         )
 
     @cached_property

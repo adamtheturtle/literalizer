@@ -218,4 +218,8 @@ def build_tuple_strategy(
         render_tuple_literal=tuple_renderer.render_literal,
         compute_tuple_list_ids=_compute_tuple_list_ids,
     )
-    return RecordStrategy(behavior=behavior, preamble=record_strategy.preamble)
+    return RecordStrategy(
+        behavior=behavior,
+        preamble=record_strategy.preamble,
+        record_name_for_value=record_strategy.record_name_for_value,
+    )
