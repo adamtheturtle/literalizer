@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Any, Union
-my_data: tuple[Union[tuple[Any, ...], dict[str, Any]], ...] = (
+from typing import Any
+my_data: tuple[tuple[Any, ...] | dict[str, Any], ...] = (
     (),
     {},
 )

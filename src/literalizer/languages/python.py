@@ -106,6 +106,7 @@ from literalizer._language import (
 )
 from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import IncompatibleFormatsError
 
 
 @beartype
@@ -512,6 +513,7 @@ def _python_type_hint(
 @beartype
 def _build_type_hint_preamble(
     *,
+    use_typing_union: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -547,10 +549,18 @@ def _build_type_hint_preamble(
         annotated_collection_types: frozenset[type],
         /,
     ) -> tuple[str, ...]:
-        """Return ``from typing import Any`` if needed."""
+        """Return the required ``typing`` imports."""
+        imports: set[str] = set()
+        if (
+            use_typing_union
+            and HeterogeneousElements in annotated_collection_types
+        ):
+            imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
-            return ("from typing import Any",)
-        return ()
+            imports.add("Any")
+        if not imports:
+            return ()
+        return (f"from typing import {', '.join(sorted(imports))}",)
 
     return _preamble
 
@@ -611,6 +621,7 @@ def _build_type_hint_preamble_py38(
     sequence_typing_name: str,
     set_typing_name: str,
     use_typing_collection_aliases: bool,
+    use_typing_union: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
     default_dict_value_type: str,
@@ -653,7 +664,10 @@ def _build_type_hint_preamble_py38(
                 imports.add(set_typing_name)
             if dict in annotated_collection_types:
                 imports.add("Dict")
-        if HeterogeneousElements in annotated_collection_types:
+        if (
+            use_typing_union
+            and HeterogeneousElements in annotated_collection_types
+        ):
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
             imports.add("Any")
@@ -768,6 +782,17 @@ class Python(metaclass=LanguageCls):
               are emitted (default).
             * ``AnnotationEvaluations.EAGER`` — omit the future import
               and use ordinary runtime annotation evaluation.
+
+        union_format: How to spell union type annotations.
+
+            * ``UnionFormats.AUTO`` — use ``A | B`` with postponed
+              annotations and ``typing.Union[A, B]`` with eager
+              annotations (default).
+            * ``UnionFormats.PIPE`` — always use ``A | B``. This is
+              incompatible with eager annotations for the currently
+              supported Python 3.8 and 3.9 targets.
+            * ``UnionFormats.TYPING`` — always use
+              ``typing.Union[A, B]``.
 
         language_version: The minimum Python version to target.
 
@@ -1283,6 +1308,15 @@ class Python(metaclass=LanguageCls):
         POSTPONED = enum.auto()
 
     annotation_evaluations = AnnotationEvaluations
+
+    class UnionFormats(enum.Enum):
+        """Syntax choices for generated union annotations."""
+
+        AUTO = enum.auto()
+        PIPE = enum.auto()
+        TYPING = enum.auto()
+
+    union_formats = UnionFormats
     declaration_styles = DeclarationStyles
     dict_entry_styles = DictEntryStyles
     dict_formats = DictFormats
@@ -1438,6 +1472,7 @@ class Python(metaclass=LanguageCls):
     annotation_evaluation: AnnotationEvaluations = (
         AnnotationEvaluations.POSTPONED
     )
+    union_format: UnionFormats = UnionFormats.AUTO
     comment_format: CommentFormats = CommentFormats.HASH
     declaration_style: DeclarationStyles = DeclarationStyles.ASSIGN
     dict_entry_style: DictEntryStyles = DictEntryStyles.DEFAULT
@@ -1464,6 +1499,19 @@ class Python(metaclass=LanguageCls):
     record_struct_name_prefix: str = "Record"
     language_version: VersionFormats = VersionFormats.PY39
     indent: str = "    "
+
+    def __post_init__(self) -> None:
+        """Reject union syntax that the target runtime cannot evaluate."""
+        if (
+            self.union_format is self.union_formats.PIPE
+            and self.annotation_evaluation is self.annotation_evaluations.EAGER
+        ):
+            msg = (
+                "union_format=PIPE is incompatible with eager annotations "
+                f"when targeting {self.language_version.name}; use "
+                "union_format=AUTO or TYPING, or postponed annotations"
+            )
+            raise IncompatibleFormatsError(msg)
 
     null_literal: ClassVar[str] = "None"
     true_literal: ClassVar[str] = "True"
@@ -1546,10 +1594,7 @@ class Python(metaclass=LanguageCls):
         Python version.
         """
         sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
-        if self.language_version is self.version_formats.PY38:
-            join_union: Callable[[list[str]], str] = _join_union_typing
-        else:
-            join_union = _join_union_pipe
+        join_union = self._join_union
 
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
@@ -1635,7 +1680,12 @@ class Python(metaclass=LanguageCls):
             blocks = record_preamble(data)
             if not blocks:
                 return ()
-            return ("import dataclasses", *blocks)
+            typing_import = (
+                ("from typing import Union",)
+                if any("Union[" in block for block in blocks)
+                else ()
+            )
+            return ("import dataclasses", *typing_import, *blocks)
 
         return _preamble
 
@@ -1909,6 +1959,21 @@ class Python(metaclass=LanguageCls):
             and self.annotation_evaluation is self.annotation_evaluations.EAGER
         )
 
+    @property
+    def _uses_typing_union(self) -> bool:
+        """Whether generated unions use ``typing.Union``."""
+        return self.union_format is self.union_formats.TYPING or (
+            self.union_format is self.union_formats.AUTO
+            and self.annotation_evaluation is self.annotation_evaluations.EAGER
+        )
+
+    @cached_property
+    def _join_union(self) -> Callable[[list[str]], str]:
+        """Return the configured union-annotation formatter."""
+        return (
+            _join_union_typing if self._uses_typing_union else _join_union_pipe
+        )
+
     @cached_property
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
         """Predicate marking a value as a ``RECORD``-strategy
@@ -1943,10 +2008,6 @@ class Python(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
-        if self.language_version is self.version_formats.PY38:
-            join_union: Callable[[list[str]], str] = _join_union_typing
-        else:
-            join_union = _join_union_pipe
         return self.variable_type_hints.formatter(
             bytes_hint=self.bytes_format.type_hint,
             date_hint=self.date_format.type_hint,
@@ -1959,7 +2020,7 @@ class Python(metaclass=LanguageCls):
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
             default_dict_key_type=self.default_dict_key_type,
-            join_union=join_union,
+            join_union=self._join_union,
             record_eligible=self._record_eligible_for_annotation,
         )
 
@@ -2004,12 +2065,14 @@ class Python(metaclass=LanguageCls):
                 use_typing_collection_aliases=(
                     self._uses_typing_collection_aliases
                 ),
+                use_typing_union=self._uses_typing_union,
                 default_set_element_type=self.default_set_element_type,
                 default_sequence_element_type=self.default_sequence_element_type,
                 default_dict_value_type=self.default_dict_value_type,
                 default_dict_key_type=self.default_dict_key_type,
             )
         return _build_type_hint_preamble(
+            use_typing_union=self._uses_typing_union,
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
