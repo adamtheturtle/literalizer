@@ -557,7 +557,8 @@ def _build_type_hint_preamble(
             and HeterogeneousElements in annotated_collection_types
             and (
                 always_type_hints
-                or annotated_collection_types != {HeterogeneousElements}
+                or annotated_collection_types
+                != frozenset({HeterogeneousElements})
             )
         ):
             imports.add("Union")
@@ -675,7 +676,8 @@ def _build_type_hint_preamble_py38(
             and HeterogeneousElements in annotated_collection_types
             and (
                 always_type_hints
-                or annotated_collection_types != {HeterogeneousElements}
+                or annotated_collection_types
+                != frozenset({HeterogeneousElements})
             )
         ):
             imports.add("Union")
