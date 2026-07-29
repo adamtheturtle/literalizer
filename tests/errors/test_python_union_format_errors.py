@@ -32,7 +32,7 @@ from literalizer.languages import Python
 def test_pipe_union_rejects_eager_pre_python_310(
     language_factory: Callable[[], Python],
 ) -> None:
-    """Pipe unions cannot be evaluated by supported target runtimes."""
+    """Pipe unions cannot be evaluated by supported target versions."""
     with pytest.raises(
         expected_exception=IncompatibleFormatsError,
         match="union_format=PIPE is incompatible with eager annotations",
