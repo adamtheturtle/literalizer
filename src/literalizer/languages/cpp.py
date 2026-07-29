@@ -3270,8 +3270,11 @@ class Cpp(metaclass=LanguageCls):
             self._record_strategy_active
             or self._uses_cpp14_tuple_record_strategy
         )
-        if self._json_type_active or not (
-            record_rendering_active or self.record_shape_names
+        if self._json_type_active:
+            return base_open
+        if not record_rendering_active and (
+            self.language_version is not self.version_formats.CPP14
+            or not self.record_shape_names
         ):
             return base_open
         record_strategy = (
@@ -3279,6 +3282,8 @@ class Cpp(metaclass=LanguageCls):
             if self._record_strategy_active
             else self._tuple_record_strategy
         )
+        record_name_for_value = record_strategy.record_name_for_value
+        assert record_name_for_value is not None  # noqa: S101
 
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
@@ -3293,18 +3298,11 @@ class Cpp(metaclass=LanguageCls):
                         name = self.record_shape_names.get(keys)
                         if name is not None:
                             return f"std::vector<{name}>{{"
-                    if (
-                        record_rendering_active
-                        and record_strategy.record_name_for_value is not None
-                    ):
-                        name = record_strategy.record_name_for_value(
-                            first_item,
-                        )
-                        if name is not None:
-                            return f"std::vector<{name}>{{"
+                    if record_rendering_active:
+                        name = record_name_for_value(first_item)
+                        return f"std::vector<{name}>{{"
                     return base_open(base_items)
-                if record_rendering_active:
-                    return "std::vector{"
+                return "std::vector{"
             return base_open(base_items)
 
         return _open
