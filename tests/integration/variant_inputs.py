@@ -470,6 +470,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="empty_sequence", suffix=""),
         _ci(case_dir_name="empty_set", suffix=""),
     ),
+    "union_format": (_ci(case_dir_name="empty_sequence", suffix=""),),
     "bool_format": (
         _ci(case_dir_name="scalar_bool", suffix=""),
         _ci(case_dir_name="bool_list", suffix=""),

@@ -1546,6 +1546,30 @@ def build_annotation_evaluation_variants() -> Iterable[Variant]:
 
 
 @beartype
+def build_union_format_variants() -> Iterable[Variant]:
+    """Build explicit union-syntax variants for Python versions."""
+    return (
+        Variant(
+            name=f"Python_union_format_{union_format.name.casefold()}",
+            spec=make_spec(
+                lang_cls=Python,
+                union_format=union_format,
+                language_version=version,
+            ),
+            lang_cls=Python,
+            fixture_prefix="",
+            record_null_substitutions=None,
+            collection_layout=literalizer.CollectionLayout.COMPACT,
+        )
+        for version in Python.VersionFormats
+        for union_format in (
+            Python.union_formats.PIPE,
+            Python.union_formats.TYPING,
+        )
+    )
+
+
+@beartype
 def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """Build heterogeneous-value-union-name variants for languages that
     generate a named union type for their heterogeneous strategy (e.g.
@@ -2253,6 +2277,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_language_version_cross_dict_type_variants
     ),
     "annotation_evaluation": build_annotation_evaluation_variants,
+    "union_format": build_union_format_variants,
     "bool_format": build_bool_format_variants,
 }
 
