@@ -45,7 +45,7 @@ struct Value {
 using LiteralizerRecordValue = Value;
 struct Record0 { std::string name; std::map<std::string, LiteralizerRecordValue> input; std::map<std::string, LiteralizerRecordValue> expected; };
 int main() {
-auto my_data = std::vector{
+auto my_data = std::vector<Record0>{
     Record0{
         "test_1",
         std::map<std::string, LiteralizerRecordValue>{

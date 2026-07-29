@@ -163,12 +163,18 @@ class RecordRenderer:
 
 @dataclasses.dataclass(frozen=True)
 class RecordStrategy:
-    """The two pieces a language wires into its strategy config: the
-    :class:`HeterogeneousBehavior` and the data-dependent preamble.
+    """Configuration a language wires into its record strategy.
+
+    ``record_name_for_value`` exposes the name assigned to a rendered
+    record dict after :attr:`HeterogeneousBehavior.compute_record_shapes`
+    has run.  A language whose collection literal must spell its element
+    type (for example C++14, which has no class-template argument
+    deduction) can use it to type a surrounding record sequence.
     """
 
     behavior: HeterogeneousBehavior
     preamble: Callable[[Value], tuple[str, ...]]
+    record_name_for_value: Callable[[object], str | None] | None
 
 
 @beartype
@@ -827,6 +833,16 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         ]
         return renderer.render_literal(name_by_shape[shape], literal_fields)
 
+    def _record_name_for_value(
+        value: object,
+        /,
+    ) -> str | None:
+        """Return *value*'s assigned record name, if it is rendered as
+        a record.
+        """
+        shape = id_to_shape.get(id(value))
+        return name_by_shape.get(shape) if shape is not None else None
+
     def _compute_wrap_ids(data: Value) -> frozenset[int]:
         """Return ids of maps widened out of the record-shape mapping."""
         raw_shapes_by_id = collect_record_shapes(data=data)
@@ -908,4 +924,8 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             )
         return tuple(blocks)
 
-    return RecordStrategy(behavior=behavior, preamble=_preamble)
+    return RecordStrategy(
+        behavior=behavior,
+        preamble=_preamble,
+        record_name_for_value=_record_name_for_value,
+    )

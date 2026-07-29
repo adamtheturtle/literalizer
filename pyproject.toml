@@ -105,7 +105,7 @@ optional-dependencies.dev = [
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
     "ty==0.0.64",
-    "types-pygments==2.20.0.20260518",
+    "types-pygments==2.20.0.20260728",
     "vulture==2.16",
     "yamlfix==1.19.1",
     "zizmor==1.28.0",
@@ -193,6 +193,10 @@ lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_e
 lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py39.py" = [
     # Eager Python 3.9 annotations require typing.Union because PEP 604
     # unions are not available until Python 3.10.
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing@py*.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
     "UP007",
 ]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
