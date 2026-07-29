@@ -513,6 +513,7 @@ def _python_type_hint(
 @beartype
 def _build_type_hint_preamble(
     *,
+    always_type_hints: bool,
     use_typing_union: bool,
     default_set_element_type: str,
     default_sequence_element_type: str,
@@ -554,6 +555,11 @@ def _build_type_hint_preamble(
         if (
             use_typing_union
             and HeterogeneousElements in annotated_collection_types
+            and (
+                always_type_hints
+                or annotated_collection_types
+                != frozenset({HeterogeneousElements})
+            )
         ):
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
@@ -618,6 +624,7 @@ def _build_python_call_stub(
 @beartype
 def _build_type_hint_preamble_py38(
     *,
+    always_type_hints: bool,
     sequence_typing_name: str,
     set_typing_name: str,
     use_typing_collection_aliases: bool,
@@ -667,6 +674,11 @@ def _build_type_hint_preamble_py38(
         if (
             use_typing_union
             and HeterogeneousElements in annotated_collection_types
+            and (
+                always_type_hints
+                or annotated_collection_types
+                != frozenset({HeterogeneousElements})
+            )
         ):
             imports.add("Union")
         if _any_types.intersection(annotated_collection_types):
@@ -2060,6 +2072,10 @@ class Python(metaclass=LanguageCls):
         if self.language_version is self.version_formats.PY38:
             sequence_hint, set_hint, _ = self._collection_type_hint_names
             return _build_type_hint_preamble_py38(
+                always_type_hints=(
+                    self.variable_type_hints
+                    is self.variable_type_hints_formats.ALWAYS
+                ),
                 sequence_typing_name=sequence_hint,
                 set_typing_name=set_hint,
                 use_typing_collection_aliases=(
@@ -2072,6 +2088,10 @@ class Python(metaclass=LanguageCls):
                 default_dict_key_type=self.default_dict_key_type,
             )
         return _build_type_hint_preamble(
+            always_type_hints=(
+                self.variable_type_hints
+                is self.variable_type_hints_formats.ALWAYS
+            ),
             use_typing_union=self._uses_typing_union,
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,

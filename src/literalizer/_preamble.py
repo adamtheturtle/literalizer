@@ -366,7 +366,7 @@ def compute_preamble(
         if has_variable_declaration and types & {dict, list, set, OrderedMap}
         else frozenset()
     )
-    if annotated_collection_types and _has_union_in_type_hints(data=data):
+    if has_variable_declaration and _has_union_in_type_hints(data=data):
         annotated_collection_types = annotated_collection_types | frozenset(
             {HeterogeneousElements}
         )
