@@ -15,6 +15,7 @@ from literalizer._comments import (
     CollectionComments,
     apply_collection_comments_to_elements,
     extract_yaml_comments,
+    neutralize_comment_terminator,
     prepend_collection_comments,
 )
 from literalizer._comments_resolve import (
@@ -3838,8 +3839,12 @@ def _append_trailing_comment(
     if not comment:
         return rendered
     cfg = language.comment_config
+    escaped_comment = neutralize_comment_terminator(
+        text=comment,
+        comment_suffix=cfg.suffix,
+    )
     lines = rendered.split(sep="\n")
-    lines[-1] = f"{lines[-1]}  {cfg.prefix} {comment}{cfg.suffix}"
+    lines[-1] = f"{lines[-1]}  {cfg.prefix} {escaped_comment}{cfg.suffix}"
     return "\n".join(lines)
 
 

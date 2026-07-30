@@ -404,8 +404,38 @@ def _format_comment(
 ) -> str:
     """Format a single comment line."""
     if text:
-        return f"{line_prefix}{comment_prefix} {text}{comment_suffix}"
+        escaped = neutralize_comment_terminator(
+            text=text,
+            comment_suffix=comment_suffix,
+        )
+        return f"{line_prefix}{comment_prefix} {escaped}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
+
+
+@beartype
+def neutralize_comment_terminator(
+    *,
+    text: str,
+    comment_suffix: str,
+) -> str:
+    """Prevent *text* from closing a suffix-delimited target comment.
+
+    Multi-character terminators remain readable with a space inserted
+    between their characters (``*/`` becomes ``* /``). A one-character
+    terminator cannot appear at all inside its comment form, so represent
+    it with an ASCII Unicode-code-point marker (``)`` becomes
+    ``<U+0029>``). Line-comment formats have an empty suffix and leave
+    the source text unchanged.
+    """
+    terminator = comment_suffix.strip()
+    if not terminator or terminator not in text:
+        return text
+    replacement = (
+        " ".join(terminator)
+        if len(terminator) > 1
+        else f"<U+{ord(terminator):04X}>"
+    )
+    return text.replace(terminator, replacement)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -531,9 +561,12 @@ def literalize_yaml_scalar(
 
     match bool(scalar_comments.inline), supports_scalar_inline_comments:
         case True, True:
+            escaped_inline = neutralize_comment_terminator(
+                text=scalar_comments.inline,
+                comment_suffix=comment_suffix,
+            )
             inline_value = (
-                f"{base}  {comment_prefix} {scalar_comments.inline}"
-                f"{comment_suffix}"
+                f"{base}  {comment_prefix} {escaped_inline}{comment_suffix}"
             )
         case True, False:
             inline_value = base
@@ -595,7 +628,10 @@ def literalize_yaml_collection(
             for comment_text in element_comment.before
         )
         if element_comment.inline:
-            inline_text = element_comment.inline
+            inline_text = neutralize_comment_terminator(
+                text=element_comment.inline,
+                comment_suffix=ctx.comment_suffix,
+            )
             output_line = (
                 f"{body_line}  {ctx.comment_prefix} {inline_text}"
                 f"{ctx.comment_suffix}"
@@ -729,9 +765,13 @@ def apply_collection_comments_to_elements(
             for comment_text in ec.before
         )
         if ec.inline:
+            escaped_inline = neutralize_comment_terminator(
+                text=ec.inline,
+                comment_suffix=comment_suffix,
+            )
             element_lines = element_str.split(sep="\n")
             element_lines[-1] = (
-                f"{element_lines[-1]}  {comment_prefix} {ec.inline}"
+                f"{element_lines[-1]}  {comment_prefix} {escaped_inline}"
                 f"{comment_suffix}"
             )
             result.append("\n".join(element_lines))

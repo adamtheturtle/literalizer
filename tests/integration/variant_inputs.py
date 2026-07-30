@@ -222,6 +222,16 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="ordered_map", suffix=""),
     ),
     "comment": (_ci(case_dir_name="comments", suffix=""),),
+    "comment_terminator": (
+        _ci(
+            case_dir_name="comment_terminators_collection",
+            suffix="_collection",
+        ),
+        _ci(
+            case_dir_name="comment_terminators_scalar",
+            suffix="_scalar",
+        ),
+    ),
     "type_hints": tuple(
         _ci(case_dir_name=d, suffix="")
         for d in (

@@ -95,6 +95,7 @@ class _HclScanState:
 
     depth: int
     in_string: bool
+    in_comment: bool
     escaped: bool
 
 
@@ -113,8 +114,36 @@ def _advance_outside_string(*, char: str, state: _HclScanState) -> None:
 
 
 @beartype
+def _advance_comment(
+    *,
+    line: str,
+    index: int,
+    state: _HclScanState,
+) -> int | None:
+    """Return the next index after handling a comment boundary.
+
+    ``None`` means the remainder of the line is a comment. Returning
+    *index* unchanged means that no comment boundary occurs there.
+    """
+    if state.in_comment:
+        comment_end = line.find("*/", index)
+        if comment_end < 0:
+            return None
+        state.in_comment = False
+        return comment_end + 2
+    if state.in_string:
+        return index
+    if line.startswith("#", index):
+        return None
+    if line.startswith("/*", index):
+        state.in_comment = True
+        return index + 2
+    return index
+
+
+@beartype
 def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
-    r"""Update *state* by scanning brackets and strings in *line*.
+    r"""Update *state* by scanning brackets, strings, and comments.
 
     Tracks ``\`` escapes inside strings so a backslash-escaped quote
     (``"a\"b"``) does not flip ``in_string`` at the wrong character.
@@ -122,7 +151,16 @@ def _advance_scan_state(*, line: str, state: _HclScanState) -> None:
     scanner stuck inside a phantom string and merge later statements
     into it.
     """
-    for char in line:
+    index = 0
+    while index < len(line):
+        next_index = _advance_comment(line=line, index=index, state=state)
+        if next_index is None:
+            return
+        if next_index != index:
+            index = next_index
+            continue
+        char = line[index]
+        index += 1
         if state.escaped:
             state.escaped = False
             continue
@@ -149,11 +187,16 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     """
     statements: list[str] = []
     current: list[str] = []
-    state = _HclScanState(depth=0, in_string=False, escaped=False)
+    state = _HclScanState(
+        depth=0,
+        in_string=False,
+        in_comment=False,
+        escaped=False,
+    )
     for line in content.split(sep="\n"):
         current.append(line)
         _advance_scan_state(line=line, state=state)
-        if state.depth == 0 and not state.in_string:
+        if state.depth == 0 and not state.in_string and not state.in_comment:
             statements.append("\n".join(current))
             current = []
     return statements

@@ -148,6 +148,43 @@ def build_non_default_variants(
 
 
 @beartype
+def build_comment_terminator_variants() -> list[Variant]:
+    """Build every suffix-delimited comment-format variant.
+
+    Unlike the ordinary ``comment`` axis, this includes a language's
+    default format when that format has a suffix. The explicit
+    ``CommentFormats`` enum on each language class is the capability
+    source; line-comment members have an empty suffix and do not
+    participate.
+    """
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        default_spec = make_spec(lang_cls=lang_cls)
+        for comment_format in default_spec.comment_formats:
+            config = comment_format.value
+            assert isinstance(config, literalizer.CommentConfig)  # noqa: S101
+            if not config.suffix:
+                continue
+            variants.append(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_comment_terminator"
+                        f"_{comment_format.name.lower()}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        comment_format=comment_format,
+                    ),
+                    lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
+
+
+@beartype
 def _build_default_type_variants(
     *,
     field_name: str,
@@ -2292,6 +2329,7 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "default_ordered_map_value_type": (
         build_default_ordered_map_value_type_variants
     ),
+    "comment_terminator": build_comment_terminator_variants,
     "statement_terminator_style_decl": (
         build_statement_terminator_style_decl_variants
     ),
