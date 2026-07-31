@@ -14,6 +14,7 @@ pub fn main() void {
     const my_data: ZVal = .{ .arr = &.{
         .{ .str = "café" },
         .{ .str = "中文" },
+        .{ .str = "😀" },
     }};
     _ = my_data;
 }

@@ -9,4 +9,5 @@ my_data : Val
 my_data = RList [
     RStr "café",
     RStr "中文",
+    RStr "😀",
     ]

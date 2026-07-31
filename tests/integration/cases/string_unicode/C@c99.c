@@ -18,6 +18,7 @@ int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.s = "café"}),
     ((CVal){.s = "中文"}),
+    ((CVal){.s = "😀"}),
 }});
     (void)my_data;
     return 0;

@@ -13,7 +13,8 @@ module main;
 initial begin
 static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "café"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "中文"}
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "中文"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "😀"}
 };
 end
 endmodule
