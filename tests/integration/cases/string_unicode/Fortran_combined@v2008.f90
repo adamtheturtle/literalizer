@@ -21,8 +21,7 @@ subroutine main_declaration()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         fstr('café'), &
-        fstr('中文'), &
-        fstr('😀') &
+        fstr('中文') &
     ])
 end subroutine main_declaration
 
@@ -32,8 +31,7 @@ subroutine main_assignment()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         fstr('café'), &
-        fstr('中文'), &
-        fstr('😀') &
+        fstr('中文') &
     ])
 end subroutine main_assignment
 

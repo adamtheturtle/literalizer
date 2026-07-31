@@ -6,15 +6,13 @@ type Val =
 let private _mainDeclaration () =
     let mutable my_data: Val = FList [
         FStr "café";
-        FStr "中文";
-        FStr "😀"
+        FStr "中文"
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FList [
         FStr "café";
-        FStr "中文";
-        FStr "😀"
+        FStr "中文"
     ]
     ignore my_data

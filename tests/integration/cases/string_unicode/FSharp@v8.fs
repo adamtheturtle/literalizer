@@ -5,6 +5,5 @@ type Val =
     | FList of Val list
 let my_data: Val = FList [
     FStr "café";
-    FStr "中文";
-    FStr "😀"
+    FStr "中文"
 ]

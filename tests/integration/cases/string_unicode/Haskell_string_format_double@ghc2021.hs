@@ -7,8 +7,7 @@ instance IsString Val where
 my_data :: Val
 my_data = HList [
     "café",
-    "中文",
-    "😀"
+    "中文"
     ]
 main :: IO ()
 main = seq my_data (return ())

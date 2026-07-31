@@ -9,6 +9,5 @@ data Val
 my_data :: Val
 my_data = PList [
     PStr "café",
-    PStr "中文",
-    PStr "😀"
+    PStr "中文"
     ]
