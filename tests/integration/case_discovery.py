@@ -212,6 +212,15 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # do not participate, so only the ``string_embedded_nul`` axis
         # consumes it and it stays out of the all-languages base discovery.
         "string_embedded_nul",
+        # ``comment_terminators_collection`` and
+        # ``comment_terminators_scalar`` contain every suffix delimiter
+        # exposed by a production ``CommentConfig``. Their dedicated
+        # capability-driven axis selects each suffix-delimited comment
+        # format, including formats that are already the language default,
+        # so unrelated line-comment formats do not produce redundant
+        # fixtures (issue #3212).
+        "comment_terminators_collection",
+        "comment_terminators_scalar",
         # ``json_native_only_nested_dict`` is exercised only through the
         # ``json_type`` axis. C++14's native-only renderer rejects the
         # nested heterogeneous map without JSON mode, while JSON-capable

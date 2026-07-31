@@ -21,6 +21,7 @@ from .call_cases import (
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
+    build_comment_terminator_variants,
     build_empty_container_type_hint_variants,
     build_heterogeneous_value_name_variants,
     build_heterogeneous_value_variant_name_variants,
@@ -164,7 +165,23 @@ def build_tagged_enum_call_variants() -> list[Variant]:
     return variants
 
 
+@functools.cache
+@beartype
+def build_comment_terminator_call_variants() -> list[Variant]:
+    """Return suffix-comment variants that can emit standalone calls."""
+    return [
+        variant
+        for variant in build_comment_terminator_variants()
+        if len(variant.lang_cls.CallStyles) > 0
+        and variant.lang_cls.supports_standalone_comments_in_wrapped_calls
+    ]
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
+    (
+        "call_comment_terminators",
+        build_comment_terminator_call_variants,
+    ),
     (
         "call_empty_container_type_hint",
         build_empty_container_type_hint_variants,
