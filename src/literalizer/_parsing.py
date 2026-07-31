@@ -23,6 +23,7 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     JSON5ParseError,
     JSONParseError,
+    ParseError,
     TOMLParseError,
     YAMLParseError,
 )
@@ -34,6 +35,9 @@ type YamlCoercible = (
     | CommentedOrderedMap
     | CommentedSet
 )
+
+_HIGH_SURROGATE_START = 0xD800
+_LOW_SURROGATE_END = 0xDFFF
 
 
 class InputFormat(enum.Enum):
@@ -76,6 +80,66 @@ class ParsedToml:
 
 
 ParsedInput = ParsedPlain | ParsedYaml | ParsedToml
+
+
+@beartype
+def _find_surrogate(*, data: Value) -> str | None:
+    """Return the first UTF-16 surrogate code point in *data*, if any.
+
+    Python strings can contain surrogate code points even though they
+    are not Unicode scalar values and cannot be encoded as strict
+    UTF-8.  Some of the input parsers accept them in values or mapping
+    keys, so inspect the complete parsed tree before any target-language
+    formatter sees it.
+    """
+    match data:
+        case str():
+            return next(
+                (
+                    character
+                    for character in data
+                    if (
+                        _HIGH_SURROGATE_START
+                        <= ord(character)
+                        <= _LOW_SURROGATE_END
+                    )
+                ),
+                None,
+            )
+        case dict():
+            for key, value in data.items():
+                for child in (key, value):
+                    if (surrogate := _find_surrogate(data=child)) is not None:
+                        return surrogate
+            return None
+        case list() | set():
+            for item in data:
+                if (surrogate := _find_surrogate(data=item)) is not None:
+                    return surrogate
+            return None
+        case _:
+            return None
+
+
+@beartype
+def _surrogate_parse_error(
+    *,
+    input_format: InputFormat,
+    surrogate: str,
+) -> ParseError:
+    """Build the format-specific error for an invalid surrogate."""
+    detail = f"input contains unpaired UTF-16 surrogate U+{ord(surrogate):04X}"
+    match input_format:
+        case InputFormat.JSON:
+            return JSONParseError(f"Invalid JSON: {detail}")
+        case InputFormat.JSON5:
+            return JSON5ParseError(f"Invalid JSON5: {detail}")
+        case InputFormat.YAML:
+            return YAMLParseError(f"Invalid YAML: {detail}")
+        case InputFormat.TOML:
+            return TOMLParseError(f"Invalid TOML: {detail}")
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -343,8 +407,12 @@ def _parse_toml(*, source: str) -> ParsedInput:
 
 
 @beartype
-def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
-    """Parse and coerce an input string according to its format."""
+def _parse_by_format(
+    *,
+    source: str,
+    input_format: InputFormat,
+) -> ParsedInput:
+    """Dispatch to the parser selected by *input_format*."""
     match input_format:
         case InputFormat.JSON:
             return _parse_json(source=source)
@@ -356,3 +424,22 @@ def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
             return _parse_toml(source=source)
         case _ as unreachable:
             assert_never(unreachable)
+
+
+@beartype
+def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
+    """Parse and coerce an input string according to its format."""
+    if (source_surrogate := _find_surrogate(data=source)) is not None:
+        raise _surrogate_parse_error(
+            input_format=input_format,
+            surrogate=source_surrogate,
+        )
+
+    parsed = _parse_by_format(source=source, input_format=input_format)
+    surrogate = _find_surrogate(data=parsed.data)
+    if surrogate is not None:
+        raise _surrogate_parse_error(
+            input_format=input_format,
+            surrogate=surrogate,
+        )
+    return parsed

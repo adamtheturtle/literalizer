@@ -9,5 +9,6 @@ type Val
 my_data : Val
 my_data = EList [
     EStr "café",
-    EStr "中文"
+    EStr "中文",
+    EStr "😀"
     ]

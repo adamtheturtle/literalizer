@@ -14,10 +14,12 @@ pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{
         .{ .str = "café" },
         .{ .str = "中文" },
+        .{ .str = "😀" },
     }};
     my_data = .{ .arr = &.{
         .{ .str = "café" },
         .{ .str = "中文" },
+        .{ .str = "😀" },
     }};
     my_data = .nil;
 }
