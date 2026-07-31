@@ -21,6 +21,7 @@ program main
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         fstr('café'), &
-        fstr('中文') &
+        fstr('中文'), &
+        fstr('😀') &
     ])
 end program main

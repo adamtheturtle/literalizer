@@ -14,7 +14,8 @@ MOBILE DATA TYPE LIT IS
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.str; MOBILE []BYTE "café"),
-        MOBILE LIT(lit.str; MOBILE []BYTE "中文")
+        MOBILE LIT(lit.str; MOBILE []BYTE "中文"),
+        MOBILE LIT(lit.str; MOBILE []BYTE "😀")
     ]):
     SEQ
         SKIP

@@ -4,11 +4,13 @@ int main(void) {
 id my_data = @[
     @"café",
     @"中文",
+    @"😀",
 ];
 (void)my_data;
 my_data = @[
     @"café",
     @"中文",
+    @"😀",
 ];
     (void)my_data;
 }
