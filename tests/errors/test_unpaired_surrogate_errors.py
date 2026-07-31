@@ -1,10 +1,8 @@
 """Unpaired UTF-16 surrogate input is rejected before rendering."""
 
-import importlib
 from collections.abc import Callable
 
 import pytest
-from ruamel.yaml.comments import CommentedOrderedMap, CommentedSet
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import (
@@ -17,7 +15,6 @@ from literalizer.exceptions import (
 from literalizer.languages import Ada, Cobol, Python
 
 type ParseErrorType = type[ParseError]
-type DataFactory = Callable[..., object]
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
@@ -59,6 +56,18 @@ def _yaml_key(*, surrogate: str) -> str:
     return f'outer:\n  - "{surrogate}": value\n'
 
 
+def _yaml_set(*, surrogate: str) -> str:
+    """Return YAML with a surrogate escape in a nested set item."""
+    return f'outer:\n  - inner: !!set\n      ? "\\u{ord(surrogate):04x}"\n'
+
+
+def _yaml_ordered_map(*, surrogate: str) -> str:
+    """Return YAML with a surrogate escape in an ordered-map value."""
+    return (
+        f'outer:\n  - inner: !!omap\n      - key: "\\u{ord(surrogate):04x}"\n'
+    )
+
+
 def _toml_value(*, surrogate: str) -> str:
     """Return TOML containing a raw surrogate value."""
     return f'outer = [{{ value = "{surrogate}" }}]'
@@ -67,36 +76,6 @@ def _toml_value(*, surrogate: str) -> str:
 def _toml_key(*, surrogate: str) -> str:
     """Return TOML containing a raw surrogate mapping key."""
     return f'outer = [{{ "{surrogate}" = "value" }}]'
-
-
-def _nested_set(*, surrogate: str) -> object:
-    """Return a nested parsed YAML tree containing a surrogate set
-    item.
-    """
-    commented_set = CommentedSet(values=[surrogate])
-    return {"outer": [{"inner": commented_set}]}
-
-
-def _nested_ordered_map(*, surrogate: str) -> object:
-    """Return a nested parsed YAML tree containing a surrogate omap
-    value.
-    """
-    ordered_map = CommentedOrderedMap()
-    ordered_map["key"] = surrogate
-    return {"outer": [{"inner": ordered_map}]}
-
-
-class _StubYaml:
-    """Return a prepared parsed YAML tree."""
-
-    def __init__(self, *, data: object) -> None:
-        """Store the value returned by :meth:`load`."""
-        self._data = data
-
-    def load(self, *, stream: str) -> object:
-        """Return the prepared tree."""
-        del stream
-        return self._data
 
 
 @pytest.mark.parametrize(
@@ -108,6 +87,8 @@ class _StubYaml:
         (InputFormat.JSON5, JSON5ParseError, _json5_key),
         (InputFormat.YAML, YAMLParseError, _yaml_value),
         (InputFormat.YAML, YAMLParseError, _yaml_key),
+        (InputFormat.YAML, YAMLParseError, _yaml_set),
+        (InputFormat.YAML, YAMLParseError, _yaml_ordered_map),
         (InputFormat.TOML, TOMLParseError, _toml_value),
         (InputFormat.TOML, TOMLParseError, _toml_key),
     ],
@@ -132,41 +113,6 @@ def test_unpaired_surrogates_raise_parse_error(
         literalize(
             source=source_factory(surrogate=surrogate),
             input_format=input_format,
-            language=PYTHON,
-        )
-
-
-@pytest.mark.parametrize(
-    argnames="data_factory",
-    argvalues=[_nested_set, _nested_ordered_map],
-)
-def test_unpaired_surrogate_in_yaml_container_raises_parse_error(
-    *,
-    monkeypatch: pytest.MonkeyPatch,
-    data_factory: DataFactory,
-) -> None:
-    """Nested YAML sets and ordered maps are validated recursively."""
-    surrogate = chr(0xD800)
-    stub_yaml = _StubYaml(data=data_factory(surrogate=surrogate))
-
-    def get_stub_yaml() -> _StubYaml:
-        """Return the test parser."""
-        return stub_yaml
-
-    parsing = importlib.import_module(name="literalizer._parsing")
-    monkeypatch.setattr(
-        target=parsing,
-        name="get_yaml",
-        value=get_stub_yaml,
-    )
-
-    with pytest.raises(
-        expected_exception=YAMLParseError,
-        match=r"unpaired UTF-16 surrogate U\+D800",
-    ):
-        literalize(
-            source="!!stub",
-            input_format=InputFormat.YAML,
             language=PYTHON,
         )
 
