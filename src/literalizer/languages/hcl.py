@@ -95,7 +95,6 @@ class _HclScanState:
 
     depth: int
     in_string: bool
-    in_comment: bool
     escaped: bool
 
 
@@ -125,19 +124,12 @@ def _advance_comment(
     ``None`` means the remainder of the line is a comment. Returning
     *index* unchanged means that no comment boundary occurs there.
     """
-    if state.in_comment:
-        comment_end = line.find("*/", index)
-        if comment_end < 0:
-            return None
-        state.in_comment = False
-        return comment_end + 2
     if state.in_string:
         return index
     if line.startswith("#", index):
         return None
     if line.startswith("/*", index):
-        state.in_comment = True
-        return index + 2
+        return line.index("*/", index + 2) + 2
     return index
 
 
@@ -190,13 +182,12 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     state = _HclScanState(
         depth=0,
         in_string=False,
-        in_comment=False,
         escaped=False,
     )
     for line in content.split(sep="\n"):
         current.append(line)
         _advance_scan_state(line=line, state=state)
-        if state.depth == 0 and not state.in_string and not state.in_comment:
+        if state.depth == 0 and not state.in_string:
             statements.append("\n".join(current))
             current = []
     return statements
