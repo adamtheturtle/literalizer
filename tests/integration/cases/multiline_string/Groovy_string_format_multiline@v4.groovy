@@ -1,0 +1,31 @@
+def my_data = [
+    '''first line
+  indented
+
+last line''',
+    '''
+leading newline''',
+    ''' \t
+leading whitespace''',
+    '''trailing newline
+''',
+    '''
+leading and trailing
+''',
+    '''quotes: """ \'\'\' ` and backslash: \\''',
+    '''interpolation: ${value} #{value} #@value #$value $value''',
+    '''backslash before newline: \\
+next line''',
+    '''trailing spaces\u0020\u0020
+next''',
+    '''C++ delimiter collision: )LITERALIZER"
+value''',
+    '''Rust delimiter collision: "#
+value''',
+    '''Lua delimiter collision: ]]
+value''',
+    '''Ruby fallback interpolation\u0020\u0020
+#{expression} #@instance #$global''',
+    '''NUL followed by a digit: \u00007''',
+    '''carriage\rreturn''',
+]
