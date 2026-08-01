@@ -22,6 +22,8 @@ next line`,
 value`,
 	`Rust delimiter collision: "#
 value`,
+	`Lua delimiter collision: ]]
+value`,
 	"Ruby fallback interpolation  \n#{expression} #@instance #$global",
 	"NUL followed by a digit: \x007",
 	"carriage\rreturn",

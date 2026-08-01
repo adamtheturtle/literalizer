@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar, assert_never
@@ -108,6 +109,29 @@ _format_string_single = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$")],
 )
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as an exact Dart triple-quoted string."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace("\0", "\\x00")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+        .replace("'", "\\'")
+        .replace("$", "\\$")
+    )
+    escaped = _TRAILING_LINE_WHITESPACE.sub(
+        repl=lambda match: r"\x20" * len(match[0]),
+        string=escaped,
+    )
+    # Dart discards a physical newline immediately after the opening
+    # triple quote, so spell only that first newline as an escape.
+    if escaped.startswith("\n"):
+        escaped = r"\n" + escaped[1:]
+    return f"'''{escaped}'''"
 
 
 @beartype
@@ -470,7 +494,7 @@ class Dart(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -721,6 +745,7 @@ class Dart(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash_dollar)
         SINGLE = enum.member(value=_format_string_single)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

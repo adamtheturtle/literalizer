@@ -33,6 +33,9 @@ value""",
 Rust delimiter collision: \"#
 value""",
     """
+Lua delimiter collision: ]]
+value""",
+    """
 Ruby fallback interpolation\s\s
 #{expression} #@instance #$global""",
     """
