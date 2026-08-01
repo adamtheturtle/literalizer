@@ -1109,7 +1109,10 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     def _crystal_type_for_value(self, value: Value, /) -> str:
         """Return the Crystal type the rendered literal for *value*

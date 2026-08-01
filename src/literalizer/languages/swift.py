@@ -914,7 +914,7 @@ class Swift(metaclass=LanguageCls):
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self.name in {"NEVER", "SAFE"}:
+            if self in {type(self).NEVER, type(self).SAFE}:
                 return _optional_nil_declaration(
                     base_formatter=auto_formatter,
                     keyword=keyword,
@@ -1203,7 +1203,9 @@ class Swift(metaclass=LanguageCls):
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
-            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
+            sequence_is_tuple=(
+                self.sequence_format is type(self.sequence_format).TUPLE
+            ),
         )
 
     @cached_property
@@ -1446,7 +1448,9 @@ class Swift(metaclass=LanguageCls):
             default_set_element_type=self.default_set_element_type,
             default_sequence_element_type=self.default_sequence_element_type,
             default_dict_value_type=self.default_dict_value_type,
-            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
+            sequence_is_tuple=(
+                self.sequence_format is type(self.sequence_format).TUPLE
+            ),
         )
 
     @cached_property

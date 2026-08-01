@@ -1070,19 +1070,23 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
-        if self.date_format.name == "SML":
+        base_formatter: Callable[[datetime.date], str] = self.date_format
+        if self.date_format is type(self.date_format).SML:
             return date_ymd_formatter(
                 template=(
                     f"{self.constructor_prefix}Date "
                     f"({{year}}, {{month}}, {{day}})"
                 ),
             )
-        return self.date_format
+        return base_formatter
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        if self.datetime_format.name == "SML":
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
+        if self.datetime_format is type(self.datetime_format).SML:
             return datetime_ymdhms_formatter(
                 template=(
                     f"{self.constructor_prefix}Datetime "
@@ -1090,7 +1094,7 @@ class Sml(metaclass=LanguageCls):
                     f"({{hour}}, {{minute}}, {{second}}))"
                 ),
             )
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:

@@ -556,7 +556,7 @@ class Haxe(metaclass=LanguageCls):
             ``NEVER`` and ``SAFE`` need no annotation; ``ALWAYS`` adds a
             redundant-but-valid annotation.
             """
-            if self.name in {"NEVER", "SAFE"}:
+            if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
             def _typed_formatter(

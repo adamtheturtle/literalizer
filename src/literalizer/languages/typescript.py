@@ -1310,10 +1310,12 @@ class TypeScript(metaclass=LanguageCls):
             ),
             dict_hint_template=(
                 "Map<string, {val}>"
-                if self.dict_format.name == "MAP"
+                if self.dict_format is type(self.dict_format).MAP
                 else "Record<string, {val}>"
             ),
-            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
+            sequence_is_tuple=(
+                self.sequence_format is type(self.sequence_format).TUPLE
+            ),
         )
         return self.statement_terminator_style.wrap_formatter(
             formatter=base_decl

@@ -1203,7 +1203,10 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     @cached_property
     def _json_type_active(self) -> bool:

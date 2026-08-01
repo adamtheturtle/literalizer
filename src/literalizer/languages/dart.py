@@ -754,7 +754,7 @@ class Dart(metaclass=LanguageCls):
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self.name in {"NEVER", "SAFE"}:
+            if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
             def _typed_formatter(
@@ -1293,7 +1293,9 @@ class Dart(metaclass=LanguageCls):
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,
             default_dict_value_type=self.default_dict_value_type,
-            sequence_is_tuple=(self.sequence_format.name == "TUPLE"),
+            sequence_is_tuple=(
+                self.sequence_format is type(self.sequence_format).TUPLE
+            ),
         )
 
     @cached_property

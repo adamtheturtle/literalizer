@@ -1452,7 +1452,10 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     @cached_property
     def _csharp_record_scalar_resolver(
@@ -1783,7 +1786,7 @@ class CSharp(metaclass=LanguageCls):
         base = self.sequence_format(default_type=element_type)
         empty = (
             f"new {element_type}[] {{}}"
-            if self.sequence_format.name == "ARRAY"
+            if self.sequence_format is type(self.sequence_format).ARRAY
             else "ValueTuple.Create()"
         )
 

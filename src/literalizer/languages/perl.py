@@ -838,12 +838,13 @@ class Perl(metaclass=LanguageCls):
         contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
             *(
                 (_perl_math_bigint_preamble,)
-                if self.integer_width_strategy.name == "MATH_BIG_INT"
+                if self.integer_width_strategy
+                is type(self.integer_width_strategy).MATH_BIG_INT
                 else ()
             ),
             *(
                 (_perl_use_utf8_preamble,)
-                if self.string_format.name == "DOUBLE_UTF8"
+                if self.string_format is type(self.string_format).DOUBLE_UTF8
                 else ()
             ),
         )

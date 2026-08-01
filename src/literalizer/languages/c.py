@@ -1253,8 +1253,10 @@ class C(metaclass=LanguageCls):
         ``RECORD`` heterogeneous strategy (it generates ``struct``
         declarations that the cJSON renderer would silently drop).
         """
-        if self._json_type_active and self.heterogeneous_strategy.name == (
-            "RECORD"
+        if (
+            self._json_type_active
+            and self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
         ):
             raise IncompatibleFormatsError(_CJSON_RECORD_REJECTED_MSG)
 
@@ -1406,7 +1408,10 @@ class C(metaclass=LanguageCls):
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     def _c_record_field_type(  # noqa: C901, PLR0911
         self,
@@ -1878,7 +1883,10 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        suffix_is_auto = (
+            self.numeric_literal_suffix
+            is type(self.numeric_literal_suffix).AUTO
+        )
         base: Callable[[int], str] = (
             make_long_suffix_formatter(base=self.integer_format)
             if suffix_is_auto

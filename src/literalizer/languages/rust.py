@@ -617,7 +617,10 @@ def _format_rust_json_assignment(name: str, value: str, _data: Value) -> str:
 @beartype
 def _rust_json_declaration_formatter(
     *,
-    declaration_style: enum.Enum,
+    declaration_style_config: DeclarationStyleConfig,
+    declaration_is_lazy_static: bool,
+    declaration_is_local: bool,
+    declaration_is_mutable: bool,
     json_type: str,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Return a declaration formatter for ``serde_json::Value`` output."""
@@ -630,23 +633,19 @@ def _rust_json_declaration_formatter(
     ) -> str:
         """Format a JSON-backed declaration."""
         expr = _rust_json_value_expression(value)
-        if declaration_style.name == "LAZY_STATIC":
+        if declaration_is_lazy_static:
             return (
                 f"static {name}: LazyLock<{json_type}> = "
                 f"LazyLock::new(|| {expr});"
             )
-        if declaration_style.name in {"LET", "LET_MUT"}:
+        if declaration_is_local:
             keyword = (
                 "let mut"
-                if declaration_style.name == "LET_MUT"
-                or _RustModifiers.MUT in modifiers
+                if declaration_is_mutable or _RustModifiers.MUT in modifiers
                 else "let"
             )
             return f"{keyword} {name}: {json_type} = {expr};"
-        config: DeclarationStyleConfig = (  # pragma: no cover
-            declaration_style.value
-        )
-        return config.formatter(  # pragma: no cover
+        return declaration_style_config.formatter(  # pragma: no cover
             name,
             expr,
             _data,
@@ -3884,8 +3883,19 @@ class Rust(metaclass=LanguageCls):
         """Callable that formats a new variable declaration."""
         if self._json_type_active:
             assert self.json_type is not None  # noqa: S101
+            declaration_cls = type(self.declaration_style)
             return _rust_json_declaration_formatter(
-                declaration_style=self.declaration_style,
+                declaration_style_config=self.declaration_style.value,
+                declaration_is_lazy_static=(
+                    self.declaration_style is declaration_cls.LAZY_STATIC
+                ),
+                declaration_is_local=(
+                    self.declaration_style
+                    in {declaration_cls.LET, declaration_cls.LET_MUT}
+                ),
+                declaration_is_mutable=(
+                    self.declaration_style is declaration_cls.LET_MUT
+                ),
                 json_type=self.json_type.value,
             )
         return self.declaration_style.build_formatter(

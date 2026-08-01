@@ -1260,7 +1260,7 @@ class Kotlin(metaclass=LanguageCls):
             sequence_format_name: str,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
-            if self.name in {"NEVER", "SAFE"}:
+            if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
             def _typed_formatter(
@@ -2188,16 +2188,21 @@ class Kotlin(metaclass=LanguageCls):
             default_dict_key_type=self.default_dict_key_type,
             default_dict_value_type=self.default_dict_value_type,
             dict_outer=(
-                "HashMap" if self.dict_format.name == "HASH_MAP" else "Map"
+                "HashMap"
+                if self.dict_format is type(self.dict_format).HASH_MAP
+                else "Map"
             ),
             set_outer=(
-                "MutableSet" if self.set_format.name == "SORTED_SET" else "Set"
+                "MutableSet"
+                if self.set_format is type(self.set_format).SORTED_SET
+                else "Set"
             ),
             sequence_format_name=self.sequence_format.name,
         )
         if (
             self.supports_empty_sibling_sequence_type_hints
-            or self.variable_type_hints.name != "ALWAYS"
+            or self.variable_type_hints
+            is not type(self.variable_type_hints).ALWAYS
         ):
             return formatter
 

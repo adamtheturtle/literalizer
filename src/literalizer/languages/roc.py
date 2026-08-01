@@ -1286,10 +1286,13 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        if self.datetime_format.name == "EPOCH":
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_roc_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "R":
-            return self.datetime_format
+            return base_formatter
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
