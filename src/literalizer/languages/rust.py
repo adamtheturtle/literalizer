@@ -632,47 +632,6 @@ def _format_rust_json_assignment(name: str, value: str, _data: Value) -> str:
 
 
 @beartype
-def _rust_json_declaration_formatter(
-    *,
-    declaration_style_config: DeclarationStyleConfig,
-    declaration_is_lazy_static: bool,
-    declaration_is_local: bool,
-    declaration_is_mutable: bool,
-    json_type: str,
-) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-    """Return a declaration formatter for ``serde_json::Value`` output."""
-
-    def _formatter(
-        name: str,
-        value: str,
-        _data: Value,
-        modifiers: frozenset[enum.Enum],
-    ) -> str:
-        """Format a JSON-backed declaration."""
-        expr = _rust_json_value_expression(value)
-        if declaration_is_lazy_static:
-            return (
-                f"static {name}: LazyLock<{json_type}> = "
-                f"LazyLock::new(|| {expr});"
-            )
-        if declaration_is_local:
-            keyword = (
-                "let mut"
-                if declaration_is_mutable or _RustModifiers.MUT in modifiers
-                else "let"
-            )
-            return f"{keyword} {name}: {json_type} = {expr};"
-        return declaration_style_config.formatter(  # pragma: no cover
-            name,
-            expr,
-            _data,
-            modifiers,
-        )
-
-    return _formatter
-
-
-@beartype
 def _format_date_rust(value: datetime.date) -> str:
     """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
     return (
@@ -2788,6 +2747,50 @@ class Rust(metaclass=LanguageCls):
             supports_redefinition=False,
         )
 
+        def build_json_formatter(
+            self,
+            *,
+            json_type: str,
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+            """Return a formatter for ``serde_json::Value`` output."""
+            cls = type(self)
+            if self is cls.LAZY_STATIC:
+
+                def _lazy_formatter(
+                    name: str,
+                    value: str,
+                    _data: Value,
+                    _modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Format a lazy static JSON-backed declaration."""
+                    expr = _rust_json_value_expression(value)
+                    return (
+                        f"static {name}: LazyLock<{json_type}> = "
+                        f"LazyLock::new(|| {expr});"
+                    )
+
+                return _lazy_formatter
+
+            keyword = {
+                cls.LET: "let",
+                cls.LET_MUT: "let mut",
+            }[self]
+
+            def _local_formatter(
+                name: str,
+                value: str,
+                _data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format a local JSON-backed declaration."""
+                expr = _rust_json_value_expression(value)
+                effective_keyword = (
+                    "let mut" if _RustModifiers.MUT in modifiers else keyword
+                )
+                return f"{effective_keyword} {name}: {json_type} = {expr};"
+
+            return _local_formatter
+
         def build_formatter(
             self,
             *,
@@ -3900,19 +3903,7 @@ class Rust(metaclass=LanguageCls):
         """Callable that formats a new variable declaration."""
         if self._json_type_active:
             assert self.json_type is not None  # noqa: S101
-            declaration_cls = type(self.declaration_style)
-            return _rust_json_declaration_formatter(
-                declaration_style_config=self.declaration_style.value,
-                declaration_is_lazy_static=(
-                    self.declaration_style is declaration_cls.LAZY_STATIC
-                ),
-                declaration_is_local=(
-                    self.declaration_style
-                    in {declaration_cls.LET, declaration_cls.LET_MUT}
-                ),
-                declaration_is_mutable=(
-                    self.declaration_style is declaration_cls.LET_MUT
-                ),
+            return self.declaration_style.build_json_formatter(
                 json_type=self.json_type.value,
             )
         return self.declaration_style.build_formatter(

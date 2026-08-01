@@ -878,31 +878,6 @@ class _SequenceSetup:
     sequence_open: Callable[[list[Value]], str]
 
 
-@beartype
-def _build_sequence_setup(
-    *,
-    sequence_format_config: SequenceFormatConfig,
-    sequence_format_is_list: bool,
-    constructor_prefix: str,
-) -> _SequenceSetup:
-    """Build sequence format config, customizing the opener for LIST."""
-    if sequence_format_is_list:
-        seq_open = fixed_open(
-            open_str=f"{constructor_prefix}List [",
-        )
-        return _SequenceSetup(
-            format_config=dataclasses.replace(
-                sequence_format_config,
-                sequence_open=seq_open,
-            ),
-            sequence_open=seq_open,
-        )
-    return _SequenceSetup(
-        format_config=sequence_format_config,
-        sequence_open=sequence_format_config.sequence_open,
-    )
-
-
 @dataclasses.dataclass(frozen=True)
 class _DeclarationFormatters:
     """Variable declaration and assignment formatters."""
@@ -993,7 +968,6 @@ def _build_preamble_setup(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    integer_format_is_binary: bool,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -1016,20 +990,6 @@ def _build_preamble_setup(
             datetime_format=datetime_format,
             extra=str_extra,
         )
-    # Binary integer literals (``0b...``) are not part of Haskell 2010
-    # and need the ``BinaryLiterals`` extension. ``GHC2021`` bundles
-    # it already, so the pragma is redundant under that base, but
-    # emitting it unconditionally lets the generated code build under
-    # either base without ceremony. Hex (``0x``) and octal (``0o``)
-    # are standard either way.
-    if integer_format_is_binary:
-        scalar_preamble = {
-            **scalar_preamble,
-            int: (
-                *scalar_preamble.get(int, ()),
-                "{-# LANGUAGE BinaryLiterals #-}",
-            ),
-        }
     return _PreambleSetup(
         scalar_preamble=scalar_preamble,
         compute_body_preamble=_build_scalar_body_preamble(
@@ -1499,6 +1459,25 @@ class Haskell(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
+        def build_setup(self, *, constructor_prefix: str) -> _SequenceSetup:
+            """Build sequence configuration and its customized opener."""
+            config: SequenceFormatConfig = self.value
+            if self is type(self).LIST:
+                seq_open = fixed_open(
+                    open_str=f"{constructor_prefix}List [",
+                )
+                return _SequenceSetup(
+                    format_config=dataclasses.replace(
+                        config,
+                        sequence_open=seq_open,
+                    ),
+                    sequence_open=seq_open,
+                )
+            return _SequenceSetup(
+                format_config=config,
+                sequence_open=config.sequence_open,
+            )
+
     class SetFormats(enum.Enum):
         """Set type options for Haskell."""
 
@@ -1924,11 +1903,7 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def _seq_setup(self) -> _SequenceSetup:
         """Shared sequence format setup."""
-        return _build_sequence_setup(
-            sequence_format_config=self.sequence_format.value,
-            sequence_format_is_list=(
-                self.sequence_format is type(self.sequence_format).LIST
-            ),
+        return self.sequence_format.build_setup(
             constructor_prefix=self.constructor_prefix,
         )
 
@@ -2156,18 +2131,34 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def _preamble(self) -> _PreambleSetup:
         """Shared preamble setup bundle."""
-        return _build_preamble_setup(
+        setup = _build_preamble_setup(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            integer_format_is_binary=(
-                self.integer_format is type(self.integer_format).BINARY
-            ),
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             emit_num=self.numeric_style
             is not type(self.numeric_style).EXPLICIT,
             indent=self.indent,
+        )
+        if self.integer_format is not type(self.integer_format).BINARY:
+            return setup
+        # Binary integer literals (``0b...``) are not part of Haskell 2010
+        # and need the ``BinaryLiterals`` extension. ``GHC2021`` bundles
+        # it already, so the pragma is redundant under that base, but
+        # emitting it unconditionally lets the generated code build under
+        # either base without ceremony. Hex (``0x``) and octal (``0o``)
+        # are standard either way.
+        scalar_preamble = setup.scalar_preamble
+        return dataclasses.replace(
+            setup,
+            scalar_preamble={
+                **scalar_preamble,
+                int: (
+                    *scalar_preamble.get(int, ()),
+                    "{-# LANGUAGE BinaryLiterals #-}",
+                ),
+            },
         )
 
     @cached_property
