@@ -212,6 +212,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # do not participate, so only the ``string_embedded_nul`` axis
         # consumes it and it stays out of the all-languages base discovery.
         "string_embedded_nul",
+        # Native multiline string syntax is exposed only by languages whose
+        # explicit ``supports_multiline_string_literals`` capability is true.
+        # Its dedicated axis selects those languages and their consistently
+        # named ``StringFormats.MULTILINE`` member.
+        "multiline_string",
         # ``comment_terminators_collection`` and
         # ``comment_terminators_scalar`` contain every suffix delimiter
         # exposed by a production ``CommentConfig``. Their dedicated

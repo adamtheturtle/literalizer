@@ -1,0 +1,30 @@
+package main
+
+func main() {
+my_data := []string{
+	`first line
+  indented
+
+last line`,
+	`
+leading newline`,
+	`trailing newline
+`,
+	`
+leading and trailing
+`,
+	"quotes: \"\"\" ''' ` and backslash: \\",
+	`interpolation: ${value} #{value} #@value #$value $value`,
+	`backslash before newline: \
+next line`,
+	"trailing spaces  \nnext",
+	`C++ delimiter collision: )LITERALIZER"
+value`,
+	`Rust delimiter collision: "#
+value`,
+	"Ruby fallback interpolation  \n#{expression} #@instance #$global",
+	"NUL followed by a digit: \x007",
+	"carriage\rreturn",
+}
+_ = my_data
+}

@@ -1001,6 +1001,7 @@ class LanguageCls(type):
     VersionFormats: type[enum.Enum]
     supports_special_floats: bool
     supports_non_ascii_string_literals: bool
+    supports_multiline_string_literals: bool
     supports_empty_sibling_sequence_type_hints: bool
     supports_typed_dict_open: bool
     supports_variable_names: bool

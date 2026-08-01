@@ -52,7 +52,9 @@ from literalizer._formatters.format_integers import (
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_json_value import format_json_value_text
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -123,6 +125,24 @@ from literalizer.exceptions import (
 )
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as an exact Java text block."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace("\0", "\\000")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+        .replace('"', '\\"')
+    )
+    escaped = re.sub(
+        pattern=r" +(?=\n)",
+        repl=lambda match: r"\s" * len(match[0]),
+        string=escaped,
+    )
+    return f'"""\n{escaped}"""'
 
 
 class _JavaModifiers(enum.Enum):
@@ -882,6 +902,7 @@ class Java(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -1198,7 +1219,12 @@ class Java(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1254,6 +1280,8 @@ class Java(metaclass=LanguageCls):
         The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
         declarations, which require Java 16 or newer, so a
         ``RECORD`` spec pins ``language_version`` to ``JDK_16``.
+        The ``MULTILINE`` string format likewise pins ``JDK_16`` because it
+        emits text blocks, which are unavailable under ``JDK_11``.
         """
 
         JDK_11 = enum.auto()
@@ -1287,21 +1315,20 @@ class Java(metaclass=LanguageCls):
     )
 
     def __post_init__(self) -> None:
-        """Pin ``language_version`` to ``JDK_16`` for the ``RECORD``
-        strategy.
+        """Pin ``language_version`` to ``JDK_16`` when syntax requires it.
 
-        The ``RECORD`` ``heterogeneous_strategy`` emits ``record``
-        declarations, which require Java 16; ``JDK_11`` output would
-        fail to compile.  Coercing here (rather than rejecting a
-        ``JDK_11`` + ``RECORD`` spec) keeps the golden harness simple:
-        every ``RECORD`` spec, however constructed, renders and is
-        tagged ``@jdk_16``.
+        ``RECORD`` declarations and ``MULTILINE`` text blocks require Java
+        16; ``JDK_11`` output would fail to compile. Coercing here keeps the
+        version behavior consistent for either format and lets fixtures use
+        the effective ``@jdk_16`` tag.
         """
-        jdk_16 = self.version_formats.JDK_16
-        if (
-            self.heterogeneous_strategy is self.heterogeneous_strategies.RECORD
-            and self.language_version is not jdk_16
-        ):
+        jdk_16 = type(self.language_version).JDK_16
+        requires_jdk_16 = (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+            or self.string_format is type(self.string_format).MULTILINE
+        )
+        if requires_jdk_16 and self.language_version is not jdk_16:
             object.__setattr__(self, "language_version", jdk_16)
         self._validate_record_naming()
         self._validate_json_type_spec()
@@ -1713,7 +1740,7 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

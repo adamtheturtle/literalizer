@@ -129,6 +129,39 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_cpp_escaped(value: str) -> str:
+    r"""Format *value* without embedding a null byte in a C++ literal."""
+    segments = value.split(sep="\0")
+    if len(segments) == 1:
+        return format_string_backslash(value=value)
+    formatted_segments = [
+        format_string_backslash(value=segment) for segment in segments
+    ]
+    return " + '\\0' + ".join(
+        [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
+    )
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a C++ raw string with a safe delimiter."""
+    if (
+        "\0" in value
+        or "\r" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_cpp_escaped(value=value)
+    for index in range(-1, 100_000):
+        delimiter = "LITERALIZER" if index < 0 else f"LITERALIZER{index}"
+        if f'){delimiter}"' not in value:
+            return f'R"{delimiter}({value}){delimiter}"'
+    # Reaching this requires a value containing all 100,001 candidate closers.
+    return _format_string_cpp_escaped(value=value)  # pragma: no cover
+
 
 class _CppModifiers(enum.Enum):
     """Declaration modifiers supported by C++.
@@ -2134,6 +2167,7 @@ class Cpp(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -2435,7 +2469,12 @@ class Cpp(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -2857,7 +2896,7 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

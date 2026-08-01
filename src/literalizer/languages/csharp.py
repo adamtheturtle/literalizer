@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -59,6 +60,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -127,6 +129,12 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_backslash_nul = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", r"\0")],
+)
+
 
 @beartype
 def _format_string_verbatim(value: str) -> str:
@@ -137,6 +145,18 @@ def _format_string_verbatim(value: str) -> str:
     """
     escaped = value.replace('"', '""')
     return f'@"{escaped}"'
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolated C# verbatim string."""
+    if (
+        "\0" in value
+        or "\r" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_backslash_nul(value=value)
+    return _format_string_verbatim(value=value)
 
 
 class _CSharpModifiers(enum.Enum):
@@ -761,6 +781,7 @@ class CSharp(metaclass=LanguageCls):
     json_type_variant_name_suffix = "json_node"
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -1031,6 +1052,7 @@ class CSharp(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         VERBATIM = enum.member(value=_format_string_verbatim)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

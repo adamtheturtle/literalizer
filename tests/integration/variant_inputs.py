@@ -323,6 +323,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         # alternate quoting style is exercised against the same input.
         _ci(case_dir_name="string_unicode", suffix=""),
     ),
+    "multiline_string": (_ci(case_dir_name="multiline_string", suffix=""),),
     "string_format_date_cross": (_ci(case_dir_name="scalar_date", suffix=""),),
     "string_format_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),

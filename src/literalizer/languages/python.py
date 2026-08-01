@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -108,6 +109,8 @@ from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
 # Python source cannot contain a literal zero byte.
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
@@ -139,6 +142,23 @@ def _format_string_raw(value: str) -> str:
     if "'''" not in value:
         return f"r'''{value}'''"
     return format_string_backslash(value)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as an exact Python triple-quoted string."""
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace("\0", "\\x00")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+        .replace('"', '\\"')
+    )
+    escaped = _TRAILING_LINE_WHITESPACE.sub(
+        repl=lambda match: r"\x20" * len(match[0]),
+        string=escaped,
+    )
+    return f'"""{escaped}"""'
 
 
 @beartype
@@ -953,6 +973,7 @@ class Python(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -1326,6 +1347,7 @@ class Python(metaclass=LanguageCls):
         DOUBLE = enum.member(value=format_string_backslash_nul_hex)
         SINGLE = enum.member(value=_format_string_single)
         RAW = enum.member(value=_format_string_raw)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
