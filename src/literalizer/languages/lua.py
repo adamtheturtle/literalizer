@@ -100,8 +100,8 @@ _format_string_lua_escaped = make_backslash_string_formatter(
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a collision-free Lua long string."""
     # Lua discards an initial newline in a long string and normalizes
-    # carriage returns. NUL is safer in an escaped short string because
-    # source readers may treat it as an end-of-file marker.
+    # carriage returns. A null byte is safer in an escaped short string
+    # because source readers may treat it as an end-of-file marker.
     if (
         value.startswith("\n")
         or "\r" in value
