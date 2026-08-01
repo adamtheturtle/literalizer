@@ -42,7 +42,9 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash_hash
+from literalizer._formatters.format_strings import (
+    make_backslash_string_formatter,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -93,6 +95,12 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+
+# Prevent Elixir from interpreting ``#{…}`` as string interpolation.
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("#{", "\\#{")],
+)
 
 
 @beartype
@@ -783,7 +791,7 @@ class Elixir(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_hash
+        return _format_string
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

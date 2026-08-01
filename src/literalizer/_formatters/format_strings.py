@@ -63,7 +63,7 @@ def _apply_backslash_formatter(
 
 
 @beartype
-def _build_backslash_formatter(
+def make_backslash_string_formatter(
     *,
     quote_char: str,
     extra_replacements: Sequence[tuple[str, str]],
@@ -89,7 +89,7 @@ def _build_backslash_formatter(
     return _format
 
 
-format_string_backslash = _build_backslash_formatter(
+format_string_backslash = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=(),
 )
@@ -101,7 +101,7 @@ prefix, then wraps the result in double quotes.
 Example: ``hello "world"`` -> ``"hello \"world\""``.
 """
 
-format_string_backslash_nul_hex = _build_backslash_formatter(
+format_string_backslash_nul_hex = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00")],
 )
@@ -111,7 +111,7 @@ Fixed-width hex avoids digit-greedy octal/decimal escapes such as
 ``\0`` followed by ``0``-``7`` (or Nim's decimal ``\0``).
 """
 
-format_string_backslash_single = _build_backslash_formatter(
+format_string_backslash_single = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=(),
 )
@@ -123,13 +123,7 @@ prefix, then wraps the result in single quotes.
 Example: ``hello 'world'`` -> ``'hello \'world\''``.
 """
 
-format_string_backslash_single_nul_hex = _build_backslash_formatter(
-    quote_char="'",
-    extra_replacements=[("\0", "\\x00")],
-)
-r"""Format a single-quoted string and escape the null byte as ``\x00``."""
-
-format_string_backslash_dollar = _build_backslash_formatter(
+format_string_backslash_dollar = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("$", "\\$")],
 )
@@ -140,107 +134,6 @@ with a backslash prefix, then wraps the result in double quotes.
 
 Example: ``price $10`` -> ``"price \$10"``.
 """
-
-format_string_backslash_raku = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[
-        ("$", "\\$"),
-        ("@", "\\@"),
-        ("%", "\\%"),
-        ("{", "\\{"),
-        ("}", "\\}"),
-    ],
-)
-r"""Format a string for Raku double-quoted strings.
-
-Escapes backslashes, double quotes, newlines, tabs, dollar signs,
-at signs, percent signs, and curly braces with a backslash prefix,
-then wraps the result in double quotes.  This prevents Raku from
-interpreting sigil characters (``$``, ``@``, ``%``) or closure blocks
-(``{…}``) as interpolation.
-
-Example: ``prefix ${HOME}`` -> ``"prefix \$\{HOME\}"``.
-"""
-
-format_string_backslash_hcl = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[("${", "$${"), ("%{", "%%{")],
-)
-r"""Format a string with HCL interpolation escaping.
-
-Escapes backslashes, double quotes, newlines, and tabs with a backslash
-prefix.  Additionally doubles ``$`` before ``{`` and ``%`` before ``{``
-to prevent HCL template interpolation / directive syntax.
-
-Example: ``prefix ${HOME}`` -> ``"prefix $${HOME}"``.
-"""
-
-format_string_backslash_percent = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[("%", "\\%")],
-)
-r"""Format a string using backslash escaping, including ``%``.
-
-Escapes backslashes, double quotes, newlines, tabs, and percent signs
-with a backslash prefix, then wraps the result in double quotes.
-This prevents Wren from interpreting ``%(…)`` as string interpolation.
-
-Example: ``100% done %(x)`` -> ``"100\% done \%(x)"``.
-"""
-
-format_string_backslash_hash = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[("#{", "\\#{")],
-)
-r"""Format a string using backslash escaping, including ``#{``.
-
-Escapes backslashes, double quotes, newlines, tabs, and the
-interpolation sequence ``#{`` with a backslash prefix, then wraps the
-result in double quotes.
-
-Example: ``Issue #{42}`` -> ``"Issue \#{42}"``.
-"""
-
-format_string_backslash_hash_nul_hex = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],
-)
-r"""Format a Crystal-style string, escaping ``#{`` interpolation and the
-null byte."""
-
-format_string_backslash_tcl = _build_backslash_formatter(
-    quote_char='"',
-    extra_replacements=[("$", "\\$"), ("[", "\\["), ("]", "\\]")],
-)
-r"""Format a string for Tcl double-quoted strings.
-
-Escapes backslashes, double quotes, newlines, tabs, dollar signs,
-and square brackets with a backslash prefix, then wraps the result
-in double quotes.  This prevents Tcl from interpreting ``$`` as
-variable substitution or ``[…]`` as command substitution.
-
-Example: ``price $10`` -> ``"price \$10"``.
-"""
-
-format_string_backslash_dollar_single = _build_backslash_formatter(
-    quote_char="'",
-    extra_replacements=[("$", "\\$")],
-)
-r"""Format a string using backslash escaping with single quotes,
-including ``$``.
-
-Escapes backslashes, single quotes, newlines, tabs, and dollar signs
-with a backslash prefix, then wraps the result in single quotes.
-
-Example: ``price $10`` -> ``'price \$10'``.
-"""
-
-format_string_backslash_dollar_single_nul_hex = _build_backslash_formatter(
-    quote_char="'",
-    extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
-)
-r"""Format a single-quoted ``$``-interpolated string and escape the null
-byte."""
 
 
 @beartype
@@ -384,20 +277,6 @@ def format_string_backslash_control(
 
 
 @beartype
-def format_string_double_minimal(value: str) -> str:
-    r"""Format a string with double quotes, escaping only ``\\`` and ``\"``.
-
-    For languages like Common Lisp where double-quoted strings only
-    recognize ``\\`` and ``\"`` as escape sequences.  Actual newline,
-    carriage-return, tab, and other characters are embedded literally.
-
-    Example: ``hello "world"`` -> ``"hello \"world\""``.
-    """
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
-
-
-@beartype
 def format_string_backslash_single_minimal(value: str) -> str:
     r"""Format a string with single quotes, escaping only ``\\`` and ``\'``.
 
@@ -409,88 +288,3 @@ def format_string_backslash_single_minimal(value: str) -> str:
     """
     escaped = value.replace("\\", "\\\\").replace("'", "\\'")
     return f"'{escaped}'"
-
-
-@beartype
-def format_string_bash_single(value: str) -> str:
-    r"""Format a string for Bash single-quoted context.
-
-    Bash single-quoted strings are completely literal — no escape
-    sequences are recognized.  The only way to embed a single quote is
-    to end the quoted region, insert an escaped single quote, and open
-    a new quoted region: ``'\''``.
-
-    Backslashes, newlines, tabs, and all other characters are kept
-    verbatim.
-
-    Example: ``hello 'world'`` -> ``'hello'\''world'``.
-    """
-    escaped = value.replace("'", r"'\''")
-    return f"'{escaped}'"
-
-
-@beartype
-def format_string_raw_python(value: str) -> str:
-    r"""Format a string as a Python raw string literal.
-
-    Backslashes are kept verbatim.  When the value contains no double
-    quotes, ``r"…"`` is used.  When it contains double quotes,
-    ``r'''…'''`` (triple-single-quoted) is used so that the quotes
-    need no escaping.
-
-    Falls back to a regular backslash-escaped string when the value
-    cannot be represented as a raw literal (contains a null byte, ends
-    with an odd number of backslashes, or contains both ``"`` and
-    ``'''``).  An embedded null byte falls back to ``\x00`` escaping,
-    since a raw literal cannot encode that code point safely.
-
-    Example: ``C:\path\to\file`` -> ``r"C:\path\to\file"``.
-    """
-    # Raw strings cannot embed a null byte or end with an odd number of
-    # backslashes.
-    if "\0" in value:
-        return format_string_backslash_nul_hex(value)
-    stripped = value.rstrip("\\")
-    trailing_backslashes = len(value) - len(stripped)
-    if trailing_backslashes % 2 == 1:
-        return format_string_backslash(value)
-    has_newline = "\n" in value or "\r" in value
-    if '"' not in value and not has_newline:
-        return f'r"{value}"'
-    if "'''" not in value:
-        return f"r'''{value}'''"
-    return format_string_backslash(value)
-
-
-@beartype
-def format_string_raw_rust(value: str) -> str:
-    r"""Format a string as a Rust raw string literal.
-
-    Uses the ``r#"…"#`` syntax.  If the value contains the closing
-    sequence ``"#``, extra ``#`` characters are added to disambiguate.
-
-    Falls back to a regular backslash-escaped string when the value
-    contains newlines, since indentation applied by wrapping code would
-    corrupt multiline raw string content.
-
-    Example: ``hello\nworld`` -> ``r#"hello\nworld"#``.
-    """
-    if "\n" in value or "\r" in value:
-        return format_string_backslash(value)
-    hashes = "#"
-    while f'"{hashes}' in value:
-        hashes += "#"
-    return f'r{hashes}"{value}"{hashes}'
-
-
-@beartype
-def format_string_verbatim_csharp(value: str) -> str:
-    r"""Format a string as a C# verbatim string literal.
-
-    Backslashes are kept verbatim.  Double quotes are doubled per
-    C# verbatim-string rules.
-
-    Example: ``C:\path\to\file`` -> ``@"C:\path\to\file"``.
-    """
-    escaped = value.replace('"', '""')
-    return f'@"{escaped}"'

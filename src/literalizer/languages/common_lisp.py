@@ -31,7 +31,6 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_double_minimal
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -83,6 +82,18 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
+
+
+@beartype
+def _format_string(value: str) -> str:
+    r"""Format a Common Lisp string literal.
+
+    Common Lisp strings only recognize ``\\`` and ``\"`` escapes, so
+    actual newlines, carriage returns, tabs, and other control characters
+    are embedded literally.
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
 
 
 @beartype
@@ -551,7 +562,7 @@ class CommonLisp(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_double_minimal
+        return _format_string
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

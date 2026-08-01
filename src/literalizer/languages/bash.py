@@ -32,7 +32,6 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
-    format_string_bash_single,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -84,6 +83,22 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     InvalidDictKeyError,
 )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    r"""Format a string for Bash single-quoted context.
+
+    Bash single-quoted strings are completely literal — no escape
+    sequences are recognized. The only way to embed a single quote is
+    to end the quoted region, insert an escaped single quote, and open
+    a new quoted region: ``'\''``.
+
+    Backslashes, newlines, tabs, and all other characters are kept
+    verbatim.
+    """
+    escaped = value.replace("'", r"'\''")
+    return f"'{escaped}'"
 
 
 @beartype
@@ -456,7 +471,7 @@ class Bash(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_bash_single)
+        SINGLE = enum.member(value=_format_string_single)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

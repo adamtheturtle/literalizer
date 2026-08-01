@@ -48,7 +48,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
-    format_string_backslash_dollar_single,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -101,6 +101,12 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     WrapCombinedInFileNotSupportedError,
+)
+
+# Dart interpolates ``$`` in both single- and double-quoted strings.
+_format_string_single = make_backslash_string_formatter(
+    quote_char="'",
+    extra_replacements=[("$", "\\$")],
 )
 
 
@@ -713,7 +719,7 @@ class Dart(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash_dollar)
-        SINGLE = enum.member(value=format_string_backslash_dollar_single)
+        SINGLE = enum.member(value=_format_string_single)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

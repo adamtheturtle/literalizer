@@ -50,7 +50,6 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
-    format_string_raw_rust,
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._formatters.type_inference import (
@@ -121,6 +120,24 @@ from literalizer.exceptions import (
     InvalidRecordNameError,
     UnrepresentableInputError,
 )
+
+
+@beartype
+def _format_string_raw(value: str) -> str:
+    r"""Format a string as a Rust raw string literal.
+
+    Uses the ``r#"…"#`` syntax. If the value contains the closing
+    sequence ``"#``, extra ``#`` characters are added to disambiguate.
+
+    Falls back to an escaped string for multiline content, since
+    indentation applied by wrapping code would corrupt the value.
+    """
+    if "\n" in value or "\r" in value:
+        return format_string_backslash(value)
+    hashes = "#"
+    while f'"{hashes}' in value:
+        hashes += "#"
+    return f'r{hashes}"{value}"{hashes}'
 
 
 class _RustModifiers(enum.Enum):
@@ -3004,7 +3021,7 @@ class Rust(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash)
-        RAW = enum.member(value=format_string_raw_rust)
+        RAW = enum.member(value=_format_string_raw)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

@@ -33,7 +33,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash_hcl
+from literalizer._formatters.format_strings import (
+    make_backslash_string_formatter,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -87,6 +89,11 @@ from literalizer._types import Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
+# Prevent HCL template interpolation and directive syntax.
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("${", "$${"), ("%{", "%%{")],
+)
 
 
 @dataclasses.dataclass
@@ -625,7 +632,7 @@ class Hcl(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_hcl
+        return _format_string
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

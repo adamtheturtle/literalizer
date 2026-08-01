@@ -59,7 +59,6 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
-    format_string_verbatim_csharp,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -127,6 +126,17 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
 )
+
+
+@beartype
+def _format_string_verbatim(value: str) -> str:
+    r"""Format a string as a C# verbatim string literal.
+
+    Backslashes are kept verbatim. Double quotes are doubled per C#
+    verbatim-string rules.
+    """
+    escaped = value.replace('"', '""')
+    return f'@"{escaped}"'
 
 
 class _CSharpModifiers(enum.Enum):
@@ -1020,7 +1030,7 @@ class CSharp(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash)
-        VERBATIM = enum.member(value=format_string_verbatim_csharp)
+        VERBATIM = enum.member(value=_format_string_verbatim)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

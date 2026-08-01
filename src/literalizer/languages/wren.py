@@ -33,7 +33,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import (
-    format_string_backslash_percent,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -82,6 +82,12 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+# Prevent Wren from interpreting ``%(…)`` as string interpolation.
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("%", "\\%")],
+)
 
 
 @beartype
@@ -434,7 +440,7 @@ class Wren(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_percent)
+        DOUBLE = enum.member(value=_format_string)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

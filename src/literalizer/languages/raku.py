@@ -41,8 +41,8 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_raku,
     format_string_backslash_single_minimal,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     ALL_REF_CASES,
@@ -95,6 +95,18 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+# Escape Raku variable markers and closure blocks in double-quoted strings.
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("$", "\\$"),
+        ("@", "\\@"),
+        ("%", "\\%"),
+        ("{", "\\{"),
+        ("}", "\\}"),
+    ],
+)
 
 
 @beartype
@@ -514,7 +526,7 @@ class Raku(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_raku)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
