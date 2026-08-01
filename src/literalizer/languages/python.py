@@ -146,7 +146,11 @@ def _format_string_raw(value: str) -> str:
 
 @beartype
 def _format_string_multiline(value: str) -> str:
-    r"""Format *value* as an exact Python triple-quoted string."""
+    r"""Format *value* as an exact Python triple-quoted string.
+
+    The opening line continuation puts the contents on a new source line
+    without adding that newline to the runtime value.
+    """
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -158,7 +162,7 @@ def _format_string_multiline(value: str) -> str:
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
     )
-    return f'"""{escaped}"""'
+    return f'"""\\\n{escaped}"""'
 
 
 @beartype

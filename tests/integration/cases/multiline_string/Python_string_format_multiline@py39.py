@@ -1,27 +1,40 @@
 my_data = (
-    """first line
+    """\
+first line
   indented
 
 last line""",
-    """
+    """\
+
 leading newline""",
-    """trailing newline
+    """\
+trailing newline
 """,
-    """
+    """\
+
 leading and trailing
 """,
-    """quotes: \"\"\" ''' ` and backslash: \\""",
-    """interpolation: ${value} #{value} #@value #$value $value""",
-    """backslash before newline: \\
+    """\
+quotes: \"\"\" ''' ` and backslash: \\""",
+    """\
+interpolation: ${value} #{value} #@value #$value $value""",
+    """\
+backslash before newline: \\
 next line""",
-    """trailing spaces\x20\x20
+    """\
+trailing spaces\x20\x20
 next""",
-    """C++ delimiter collision: )LITERALIZER\"
+    """\
+C++ delimiter collision: )LITERALIZER\"
 value""",
-    """Rust delimiter collision: \"#
+    """\
+Rust delimiter collision: \"#
 value""",
-    """Ruby fallback interpolation\x20\x20
+    """\
+Ruby fallback interpolation\x20\x20
 #{expression} #@instance #$global""",
-    """NUL followed by a digit: \x007""",
-    """carriage\rreturn""",
+    """\
+NUL followed by a digit: \x007""",
+    """\
+carriage\rreturn""",
 )
