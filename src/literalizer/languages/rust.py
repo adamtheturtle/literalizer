@@ -2737,38 +2737,42 @@ class Rust(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return a formatter for ``serde_json::Value`` output."""
             cls = type(self)
-            local_keywords = {
-                cls.LET: "let",
-                cls.LET_MUT: "let mut",
-            }
+            if self is cls.LAZY_STATIC:
 
-            def _formatter(
-                name: str,
-                value: str,
-                data: Value,
-                modifiers: frozenset[enum.Enum],
-            ) -> str:
-                """Format a JSON-backed declaration."""
-                expr = _rust_json_value_expression(value)
-                if self is cls.LAZY_STATIC:
+                def _lazy_formatter(
+                    name: str,
+                    value: str,
+                    _data: Value,
+                    _modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Format a lazy static JSON-backed declaration."""
+                    expr = _rust_json_value_expression(value)
                     return (
                         f"static {name}: LazyLock<{json_type}> = "
                         f"LazyLock::new(|| {expr});"
                     )
-                if self in local_keywords:
-                    keyword = local_keywords[self]
-                    if _RustModifiers.MUT in modifiers:
-                        keyword = "let mut"
-                    return f"{keyword} {name}: {json_type} = {expr};"
-                config: DeclarationStyleConfig = self.value
-                return config.formatter(  # pragma: no cover
-                    name,
-                    expr,
-                    data,
-                    modifiers,
-                )
 
-            return _formatter
+                return _lazy_formatter
+
+            keyword = {
+                cls.LET: "let",
+                cls.LET_MUT: "let mut",
+            }[self]
+
+            def _local_formatter(
+                name: str,
+                value: str,
+                _data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format a local JSON-backed declaration."""
+                expr = _rust_json_value_expression(value)
+                effective_keyword = (
+                    "let mut" if _RustModifiers.MUT in modifiers else keyword
+                )
+                return f"{effective_keyword} {name}: {json_type} = {expr};"
+
+            return _local_formatter
 
         def build_formatter(
             self,
