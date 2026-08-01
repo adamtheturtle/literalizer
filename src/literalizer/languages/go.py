@@ -116,6 +116,20 @@ from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidRecordNameError
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a Go raw string, with a safe fallback."""
+    if (
+        "`" in value
+        or "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return format_string_backslash_nul_hex(value=value)
+    return f"`{value}`"
 
 
 @beartype
@@ -405,6 +419,7 @@ class Go(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -637,7 +652,12 @@ class Go(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -887,7 +907,7 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_nul_hex
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

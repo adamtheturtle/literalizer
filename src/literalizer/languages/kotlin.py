@@ -58,6 +58,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -135,6 +136,27 @@ from literalizer.exceptions import (
 )
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_backslash_dollar_nul = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("$", r"\$"), ("\0", r"\u0000")],
+)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating Kotlin raw string."""
+    if (
+        "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_backslash_dollar_nul(value=value)
+    escaped = "".join(
+        "${'$'}" if char == "$" else "${'\"'}" if char == '"' else char
+        for char in value
+    )
+    return f'"""{escaped}"""'
 
 
 @beartype
@@ -929,6 +951,7 @@ class Kotlin(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = False
     supports_typed_dict_open = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -1221,7 +1244,12 @@ class Kotlin(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1603,7 +1631,7 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_dollar
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

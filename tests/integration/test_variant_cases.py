@@ -5,6 +5,7 @@ from collections import Counter
 
 import pytest
 
+import literalizer.languages
 from literalizer.languages import Kotlin, Python
 
 from .case_discovery import EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
@@ -95,4 +96,28 @@ def test_typed_dict_null_filtering_follows_capability() -> None:
     assert variants
     assert all(
         variant.lang_cls.supports_typed_dict_open for variant in variants
+    )
+
+
+def test_multiline_string_variants_follow_capability() -> None:
+    """Only explicit multiline-capability languages join the axis."""
+    actual = {
+        case.variant.lang_cls
+        for case in build_variant_cases()
+        if case.case_dir_name == "multiline_string"
+    }
+    expected = {
+        lang_cls
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if lang_cls.supports_multiline_string_literals
+    }
+
+    assert actual == expected
+    assert all(
+        _enum_member_by_name(
+            enum_cls=lang_cls.StringFormats,
+            name="MULTILINE",
+        ).name
+        == "MULTILINE"
+        for lang_cls in expected
     )

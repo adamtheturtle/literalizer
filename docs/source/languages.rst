@@ -62,7 +62,7 @@ The available enums vary by language, but the most common ones are:
    * - ``DictFormats``
      - Map type (e.g. ``DEFAULT``, ``ORDERED``, ``HASHMAP``).
    * - ``StringFormats``
-     - Quote style (``SINGLE``, ``DOUBLE``, ``BACKTICK``, ``RAW``).
+     - Quote style (``SINGLE``, ``DOUBLE``, ``BACKTICK``, ``RAW``, ``MULTILINE``).
    * - ``IntegerFormats``
      - Numeric base (``DECIMAL``, ``HEX``, ``OCTAL``, ``BINARY``).
    * - ``FloatFormats``
@@ -79,6 +79,68 @@ The available enums vary by language, but the most common ones are:
 Access a language's enum members through the class itself, e.g. ``Go.sequence_formats.SLICE`` for Go slices or ``Go.date_formats.GO`` for the ``time.Date(...)`` constructor.
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
+
+Native multiline strings
+------------------------
+
+Python, Java, C++, C#, Go, JavaScript, Kotlin, Ruby, Scala, and Rust expose a consistently named ``StringFormats.MULTILINE`` option.
+It keeps physical line breaks in the generated source when the native syntax can represent the value safely, without adding a leading or trailing newline or enabling interpolation from the input:
+
+.. code-block:: python
+
+   """Render line breaks with native Python triple quotes."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Python
+
+   result = literalize(
+       source='"first line\\n  second line"',
+       input_format=InputFormat.JSON,
+       language=Python(string_format=Python.string_formats.MULTILINE),
+       variable_form=NewVariable(name="message", modifiers=frozenset()),
+   )
+
+The generated value is semantically identical to the input, including blank lines, embedded indentation, and leading or trailing line breaks.
+Literalizer chooses collision-free raw delimiters for C++ and Rust, neutralizes JavaScript and Kotlin interpolation markers, and uses a non-interpolating form in the other targets.
+When source-language rules cannot preserve a particular value in the multiline form (for example, a backtick inside a Go raw string, a triple-quote collision in Scala, a carriage return, or trailing source-line whitespace in a raw syntax), the formatter falls back to an escaped string literal.
+
+.. list-table:: Multiline string syntax
+   :header-rows: 1
+   :widths: 18 42 40
+
+   * - Language
+     - Native form
+     - Constraint
+   * - Python
+     - Triple-quoted string
+     - Backslashes and delimiter quotes are escaped.
+   * - Java
+     - Text block
+     - Selecting ``MULTILINE`` automatically targets ``JDK_16``; Java 11 has no text blocks.
+   * - C++
+     - Raw string literal
+     - Uses a collision-free delimiter of at most 16 characters.
+   * - C#
+     - Verbatim string literal
+     - Uses the non-interpolating ``@"..."`` form supported by C# 10.
+   * - Go
+     - Raw string literal
+     - Falls back when the value contains a backtick, carriage return, NUL, or source-line trailing whitespace.
+   * - JavaScript
+     - Template literal
+     - Escapes backticks, backslashes, and ``${...}`` interpolation openers.
+   * - Kotlin
+     - Triple-quoted string
+     - Represents dollar signs and delimiter quotes with generated character expressions.
+   * - Ruby
+     - Multiline single-quoted string
+     - Single quotes and backslashes are escaped; interpolation stays disabled.
+   * - Scala
+     - Triple-quoted string
+     - Falls back when the value contains the triple-quote delimiter.
+   * - Rust
+     - Raw string literal
+     - Chooses a collision-free hash delimiter and preserves raw-string contents while indenting a wrapped file.
 
 Python annotation evaluation
 ----------------------------

@@ -1,0 +1,14 @@
+[
+  "first line\n  indented\n\nlast line",
+  "\nleading newline",
+  "trailing newline\n",
+  "\nleading and trailing\n",
+  "quotes: \"\"\" ''' ` and backslash: \\",
+  "interpolation: ${value} #{value} #@value #$value $value",
+  "trailing spaces  \nnext",
+  "C++ delimiter collision: )LITERALIZER\"\nvalue",
+  "Rust delimiter collision: \"#\nvalue",
+  "Ruby fallback interpolation  \n#{expression} #@instance #$global",
+  "NUL followed by a digit: \u00007",
+  "carriage\rreturn"
+]

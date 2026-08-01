@@ -34,6 +34,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "record_shape_names_emit_declarations",
         "non_default_kwargs",
         "supports_empty_sibling_sequence_type_hints",
+        "supports_multiline_string_literals",
         "supports_non_ascii_string_literals",
         "supports_typed_dict_open",
         "reserved_variable_identifiers",

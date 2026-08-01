@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import enum
 import re
-import textwrap
 from collections import Counter
 from collections.abc import Callable, Hashable, Mapping, Sequence
 from functools import cached_property
@@ -50,6 +49,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._formatters.type_inference import (
@@ -121,6 +121,43 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
+_RUST_RAW_STRING_OPEN = re.compile(pattern=r'(?<![A-Za-z0-9_])r(#{1,255})"')
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_backslash_nul = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", r"\0")],
+)
+
+
+def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
+    """Indent Rust code lines without changing multiline raw contents."""
+    raw_hashes: str | None = None
+    result: list[str] = []
+    split_lines = text.split(sep="\n")
+    for index, line_without_lf in enumerate(iterable=split_lines):
+        line = line_without_lf + ("\n" if index < len(split_lines) - 1 else "")
+        should_indent = raw_hashes is None and bool(line.strip())
+        result.append(prefix + line if should_indent else line)
+        position = 0
+        while position < len(line):
+            if raw_hashes is None:
+                match = _RUST_RAW_STRING_OPEN.search(
+                    string=line,
+                    pos=position,
+                )
+                if match is None:
+                    break
+                raw_hashes = match[1]
+                position = match.end()
+            else:
+                closer = f'"{raw_hashes}'
+                close_position = line.find(closer, position)
+                if close_position < 0:
+                    break
+                position = close_position + len(closer)
+                raw_hashes = None
+    return "".join(result)
+
 
 @beartype
 def _format_string_raw(value: str) -> str:
@@ -138,6 +175,22 @@ def _format_string_raw(value: str) -> str:
     while f'"{hashes}' in value:
         hashes += "#"
     return f'r{hashes}"{value}"{hashes}'
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a collision-free multiline Rust raw string."""
+    if (
+        "\0" in value
+        or "\r" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_backslash_nul(value=value)
+    for hash_count in range(1, 256):
+        hashes = "#" * hash_count
+        if f'"{hashes}' not in value:
+            return f'r{hashes}"{value}"{hashes}'
+    return format_string_backslash(value=value)
 
 
 class _RustModifiers(enum.Enum):
@@ -2558,6 +2611,7 @@ class Rust(metaclass=LanguageCls):
     }
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -3022,6 +3076,7 @@ class Rust(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         RAW = enum.member(value=_format_string_raw)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
@@ -3207,7 +3262,10 @@ class Rust(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        indented = textwrap.indent(text=content, prefix=self.indent)
+        indented = _indent_code_preserving_raw_strings(
+            text=content,
+            prefix=self.indent,
+        )
         use_line = (
             f"\n{self.indent}let _ = {variable_name};" if variable_name else ""
         )

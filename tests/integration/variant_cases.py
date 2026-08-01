@@ -118,6 +118,7 @@ def build_non_default_variants(
         [literalizer.LanguageCls, enum.Enum],
         literalizer.Language,
     ],
+    excluded_format_names: frozenset[str] = frozenset(),
 ) -> list[Variant]:
     """Build variants for every non-default value of a format enum.
 
@@ -132,7 +133,7 @@ def build_non_default_variants(
         spec = make_spec(lang_cls=lang_cls)
         default_format = get_default(spec)
         for fmt in get_formats(spec):
-            if fmt is default_format:
+            if fmt is default_format or fmt.name in excluded_format_names:
                 continue
             variants.append(
                 Variant(
@@ -1151,9 +1152,13 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         if lang_cls.variant_metadata.string_literals_escape_null_byte:
-            string_formats = list(
-                make_spec(lang_cls=lang_cls).string_formats,
-            )
+            string_formats = [
+                string_format
+                for string_format in make_spec(
+                    lang_cls=lang_cls
+                ).string_formats
+                if string_format.name != "MULTILINE"
+            ]
             for string_format in string_formats:
                 suffix = (
                     ""
@@ -1806,7 +1811,7 @@ def build_string_format_cross_variants(
         default_other = get_other_default(spec)
         lang_name = lang_cls.__name__
         for sf in spec.string_formats:
-            if sf is default_string:
+            if sf is default_string or sf.name == "MULTILINE":
                 continue
             for of in get_other_formats(spec):
                 if of is default_other:
@@ -1829,6 +1834,30 @@ def build_string_format_cross_variants(
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     )
                 )
+    return variants
+
+
+@beartype
+def build_multiline_string_variants() -> list[Variant]:
+    """Build the shared multiline option for capability participants."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        if not lang_cls.supports_multiline_string_literals:
+            continue
+        multiline = _enum_member_by_name(
+            enum_cls=lang_cls.StringFormats,
+            name="MULTILINE",
+        )
+        variants.append(
+            Variant(
+                name=f"{lang_cls.__name__}_string_format_multiline",
+                spec=make_spec(lang_cls=lang_cls, string_format=multiline),
+                lang_cls=lang_cls,
+                fixture_prefix="",
+                record_null_substitutions=None,
+                collection_layout=literalizer.CollectionLayout.COMPACT,
+            )
+        )
     return variants
 
 
@@ -2181,12 +2210,6 @@ _SIMPLE_AXES: dict[str, _SimpleAxis] = {
         get_default=lambda s: s.numeric_style,
         get_formats=lambda s: s.numeric_styles,
     ),
-    "string_format": _SimpleAxis(
-        category="string_format",
-        kwarg="string_format",
-        get_default=lambda s: s.string_format,
-        get_formats=lambda s: s.string_formats,
-    ),
     "bytes_format": _SimpleAxis(
         category="bytes_format",
         kwarg="bytes_format",
@@ -2402,6 +2425,17 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "union_format": build_union_format_variants,
     "union_format_type_hints": build_union_format_type_hint_variants,
     "bool_format": build_bool_format_variants,
+    "multiline_string": build_multiline_string_variants,
+    "string_format": lambda: build_non_default_variants(
+        category="string_format",
+        get_default=lambda spec: spec.string_format,
+        get_formats=lambda spec: spec.string_formats,
+        make_variant_spec=lambda cls, fmt: make_spec(
+            lang_cls=cls,
+            string_format=fmt,
+        ),
+        excluded_format_names=frozenset({"MULTILINE"}),
+    ),
 }
 
 

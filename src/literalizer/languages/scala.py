@@ -51,7 +51,10 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_overflow_suffix_formatter,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash,
+    make_backslash_string_formatter,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -132,6 +135,24 @@ _CIRCE_JSON_TYPE = "io.circe.Json"
 _CIRCE_NULL = "Json.Null"
 _CIRCE_TRUE = "Json.True"
 _CIRCE_FALSE = "Json.False"
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_backslash_nul = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", r"\u0000")],
+)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating Scala triple-quoted string."""
+    if (
+        '"""' in value
+        or "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_backslash_nul(value=value)
+    return f'"""{value}"""'
 
 
 @beartype
@@ -554,6 +575,7 @@ class Scala(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = True
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -835,7 +857,12 @@ class Scala(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1119,7 +1146,7 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
