@@ -83,7 +83,7 @@ Each ``__init__`` parameter has a sensible default, so you only need to specify 
 Native multiline strings
 ------------------------
 
-Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, and Lua expose a consistently named ``StringFormats.MULTILINE`` option.
+Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, Lua, and Groovy expose a consistently named ``StringFormats.MULTILINE`` option.
 It keeps physical line breaks in the generated source when the native syntax can represent the value safely, without adding a leading or trailing newline or enabling interpolation from the input:
 
 .. code-block:: python
@@ -150,6 +150,9 @@ When source-language rules cannot preserve a particular value in the multiline f
    * - Lua
      - Long-bracket string
      - Chooses a collision-free delimiter; falls back for a leading newline, carriage return, NUL, or source-line trailing whitespace.
+   * - Groovy
+     - Triple-single-quoted string
+     - Escapes backslashes, delimiter quotes, controls, and source-line trailing whitespace without enabling interpolation.
 
 Python annotation evaluation
 ----------------------------
