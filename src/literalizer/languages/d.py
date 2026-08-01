@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -107,6 +108,21 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
 )
+
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a D WYSIWYG string when source-safe."""
+    if (
+        "`" in value
+        or "\0" in value
+        or "\r" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value)
+    ):
+        return format_string_backslash_nul_hex(value=value)
+    return f"`{value}`"
 
 
 @beartype
@@ -631,7 +647,7 @@ class D(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -833,7 +849,12 @@ class D(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1063,7 +1084,7 @@ class D(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_nul_hex
+        return self.string_format
 
     @cached_property
     def _record_strategy_active(self) -> bool:
