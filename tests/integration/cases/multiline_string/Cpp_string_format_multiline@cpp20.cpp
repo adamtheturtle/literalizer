@@ -16,6 +16,8 @@ leading and trailing
 )LITERALIZER",
     R"LITERALIZER(quotes: """ ''' ` and backslash: \)LITERALIZER",
     R"LITERALIZER(interpolation: ${value} #{value} #@value #$value $value)LITERALIZER",
+    R"LITERALIZER(backslash before newline: \
+next line)LITERALIZER",
     "trailing spaces  \nnext",
     R"LITERALIZER0(C++ delimiter collision: )LITERALIZER"
 value)LITERALIZER0",

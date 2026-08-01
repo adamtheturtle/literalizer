@@ -5,6 +5,7 @@
   "\nleading and trailing\n",
   "quotes: \"\"\" ''' ` and backslash: \\",
   "interpolation: ${value} #{value} #@value #$value $value",
+  "backslash before newline: \\\nnext line",
   "trailing spaces  \nnext",
   "C++ delimiter collision: )LITERALIZER\"\nvalue",
   "Rust delimiter collision: \"#\nvalue",

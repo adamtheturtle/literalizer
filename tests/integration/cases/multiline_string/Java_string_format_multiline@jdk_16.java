@@ -21,6 +21,9 @@ quotes: \"\"\" ''' ` and backslash: \\""",
     """
 interpolation: ${value} #{value} #@value #$value $value""",
     """
+backslash before newline: \\
+next line""",
+    """
 trailing spaces\s\s
 next""",
     """

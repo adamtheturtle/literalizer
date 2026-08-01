@@ -12,6 +12,8 @@ leading and trailing
 """,
     """quotes: ${'"'}${'"'}${'"'} ''' ` and backslash: \""",
     """interpolation: ${'$'}{value} #{value} #@value #${'$'}value ${'$'}value""",
+    """backslash before newline: \
+next line""",
     "trailing spaces  \nnext",
     """C++ delimiter collision: )LITERALIZER${'"'}
 value""",

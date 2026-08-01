@@ -13,6 +13,8 @@ leading and trailing
 "#,
         r#"quotes: """ ''' ` and backslash: \"#,
         r#"interpolation: ${value} #{value} #@value #$value $value"#,
+        r#"backslash before newline: \
+next line"#,
         "trailing spaces  \nnext",
         r#"C++ delimiter collision: )LITERALIZER"
 value"#,
