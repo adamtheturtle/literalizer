@@ -96,7 +96,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-# Raku interpolates sigils and closure blocks in double-quoted strings.
+# Escape Raku variable markers and closure blocks in double-quoted strings.
 _format_string_double = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[

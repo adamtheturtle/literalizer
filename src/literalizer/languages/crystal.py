@@ -115,7 +115,7 @@ from literalizer.exceptions import (
     UnrepresentableSpecialFloatError,
 )
 
-# Prevent Crystal from interpreting ``#{…}`` while representing NUL safely.
+# Prevent Crystal from interpreting ``#{…}`` while safely encoding a zero byte.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],

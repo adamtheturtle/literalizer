@@ -116,7 +116,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import NullInCollectionError
 
-# V interpolates ``$`` in single-quoted strings and requires escaped NUL.
+# V interpolates ``$`` and requires an escaped zero byte.
 _format_string = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$"), ("\0", "\\x00")],

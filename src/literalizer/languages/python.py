@@ -108,7 +108,7 @@ from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
 
-# Python source cannot contain a literal NUL byte.
+# Python source cannot contain a literal zero byte.
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("\0", "\\x00")],
