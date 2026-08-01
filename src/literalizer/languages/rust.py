@@ -139,7 +139,7 @@ def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
         should_indent = raw_hashes is None and bool(line.strip())
         result.append(prefix + line if should_indent else line)
         position = 0
-        while position < len(line):
+        while True:
             if raw_hashes is None:
                 match = _RUST_RAW_STRING_OPEN.search(
                     string=line,
@@ -190,7 +190,9 @@ def _format_string_multiline(value: str) -> str:
         hashes = "#" * hash_count
         if f'"{hashes}' not in value:
             return f'r{hashes}"{value}"{hashes}'
-    return format_string_backslash(value=value)
+    # Rust reserves raw strings with more than 255 hashes. Reaching this
+    # requires a value containing every legal raw-string closing delimiter.
+    return format_string_backslash(value=value)  # pragma: no cover
 
 
 class _RustModifiers(enum.Enum):

@@ -48,10 +48,7 @@ from literalizer._formatters.format_integers import (
     make_ull_fallback,
 )
 from literalizer._formatters.format_json_value import format_json_value_text
-from literalizer._formatters.format_strings import (
-    format_string_backslash,
-    make_backslash_string_formatter,
-)
+from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -132,12 +129,21 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
-_CPP_RAW_DELIMITER_MAX_LENGTH = 16
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
-_format_string_backslash_nul_octal = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("\0", "\\000")],
-)
+
+
+@beartype
+def _format_string_cpp_escaped(value: str) -> str:
+    r"""Format *value* without embedding a null byte in a C++ literal."""
+    segments = value.split(sep="\0")
+    if len(segments) == 1:
+        return format_string_backslash(value=value)
+    formatted_segments = [
+        format_string_backslash(value=segment) for segment in segments
+    ]
+    return " + '\\0' + ".join(
+        [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
+    )
 
 
 @beartype
@@ -148,14 +154,13 @@ def _format_string_multiline(value: str) -> str:
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
-        return _format_string_backslash_nul_octal(value=value)
+        return _format_string_cpp_escaped(value=value)
     for index in range(-1, 100_000):
         delimiter = "LITERALIZER" if index < 0 else f"LITERALIZER{index}"
-        if len(delimiter) > _CPP_RAW_DELIMITER_MAX_LENGTH:
-            break
         if f'){delimiter}"' not in value:
             return f'R"{delimiter}({value}){delimiter}"'
-    return _format_string_backslash_nul_octal(value=value)
+    # Reaching this requires a value containing all 100,001 candidate closers.
+    return _format_string_cpp_escaped(value=value)  # pragma: no cover
 
 
 class _CppModifiers(enum.Enum):

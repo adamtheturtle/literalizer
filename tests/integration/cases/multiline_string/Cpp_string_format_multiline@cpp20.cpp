@@ -22,7 +22,7 @@ value)LITERALIZER0",
     R"LITERALIZER(Rust delimiter collision: "#
 value)LITERALIZER",
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
-    "NUL followed by a digit: \0007",
+    std::string{"NUL followed by a digit: "} + '\0' + "7",
     "carriage\rreturn",
 };
     (void)my_data;
