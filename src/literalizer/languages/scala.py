@@ -172,29 +172,6 @@ def _scala_circe_wrap_value(raw_value: Value, formatted: str) -> str:
 
 
 @beartype
-def _scala_circe_declaration_formatter(
-    *,
-    declaration_is_mutable: bool,
-    json_type_name: str,
-) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-    """Return a declaration formatter for Circe ``Json`` output."""
-
-    def _formatter(
-        name: str,
-        value: str,
-        data: Value,
-        modifiers: frozenset[enum.Enum],
-    ) -> str:
-        """Format a Circe-backed declaration."""
-        del modifiers
-        wrapped = _scala_circe_wrap_value(raw_value=data, formatted=value)
-        keyword = "var" if declaration_is_mutable else "val"
-        return f"{keyword} {name}: {json_type_name} = {wrapped}"
-
-    return _formatter
-
-
-@beartype
 def _scala_circe_assignment_formatter(
     name: str,
     value: str,
@@ -752,6 +729,34 @@ class Scala(metaclass=LanguageCls):
             ),
             supports_redefinition=True,
         )
+
+        def build_circe_formatter(
+            self,
+            *,
+            json_type_name: str,
+        ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+            """Return a declaration formatter for Circe JSON output."""
+            cls = type(self)
+            keyword = {
+                cls.VAL: "val",
+                cls.VAR: "var",
+            }[self]
+
+            def _formatter(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Format a Circe-backed declaration."""
+                del modifiers
+                wrapped = _scala_circe_wrap_value(
+                    raw_value=data,
+                    formatted=value,
+                )
+                return f"{keyword} {name}: {json_type_name} = {wrapped}"
+
+            return _formatter
 
     class DictEntryStyles(enum.Enum):
         """Dict entry style options."""
@@ -1720,10 +1725,7 @@ class Scala(metaclass=LanguageCls):
         """Callable that formats a new variable declaration."""
         if self._json_type_active:
             assert self.json_type is not None  # noqa: S101
-            return _scala_circe_declaration_formatter(
-                declaration_is_mutable=(
-                    self.declaration_style is type(self.declaration_style).VAR
-                ),
+            return self.declaration_style.build_circe_formatter(
                 json_type_name="Json",
             )
         return self.declaration_style.value.formatter
