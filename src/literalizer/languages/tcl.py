@@ -30,7 +30,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_tcl,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -80,6 +80,12 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+# Prevent Tcl variable and command substitution inside string literals.
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("$", "\\$"), ("[", "\\["), ("]", "\\]")],
+)
 
 
 @beartype
@@ -388,7 +394,7 @@ class Tcl(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_tcl)
+        DOUBLE = enum.member(value=_format_string)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

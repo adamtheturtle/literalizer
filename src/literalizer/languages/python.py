@@ -41,9 +41,9 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
+    format_string_backslash,
     format_string_backslash_nul_hex,
-    format_string_backslash_single_nul_hex,
-    format_string_raw_python,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -107,6 +107,38 @@ from literalizer._language import (
 from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import IncompatibleFormatsError
+
+# Python source cannot contain a literal NUL byte.
+_format_string_single = make_backslash_string_formatter(
+    quote_char="'",
+    extra_replacements=[("\0", "\\x00")],
+)
+
+
+@beartype
+def _format_string_raw(value: str) -> str:
+    r"""Format a string as a Python raw string literal.
+
+    Backslashes are kept verbatim. When the value contains no double
+    quotes, ``r"…"`` is used. When it contains double quotes,
+    ``r'''…'''`` is used so that the quotes need no escaping.
+
+    Falls back to a regular escaped literal when the value contains a
+    null byte, ends with an odd number of backslashes, or contains both
+    ``"`` and ``'''``.
+    """
+    if "\0" in value:
+        return format_string_backslash_nul_hex(value)
+    stripped = value.rstrip("\\")
+    trailing_backslashes = len(value) - len(stripped)
+    if trailing_backslashes % 2 == 1:
+        return format_string_backslash(value)
+    has_newline = "\n" in value or "\r" in value
+    if '"' not in value and not has_newline:
+        return f'r"{value}"'
+    if "'''" not in value:
+        return f"r'''{value}'''"
+    return format_string_backslash(value)
 
 
 @beartype
@@ -1292,8 +1324,8 @@ class Python(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=format_string_backslash_nul_hex)
-        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
-        RAW = enum.member(value=format_string_raw_python)
+        SINGLE = enum.member(value=_format_string_single)
+        RAW = enum.member(value=_format_string_raw)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

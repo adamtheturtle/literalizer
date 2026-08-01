@@ -49,7 +49,7 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar_single_nul_hex,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -115,6 +115,12 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import NullInCollectionError
+
+# V interpolates ``$`` in single-quoted strings and requires escaped NUL.
+_format_string = make_backslash_string_formatter(
+    quote_char="'",
+    extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
+)
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -1139,7 +1145,7 @@ class V(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_dollar_single_nul_hex
+        return _format_string
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

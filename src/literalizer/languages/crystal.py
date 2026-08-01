@@ -48,7 +48,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_hash_nul_hex,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -113,6 +113,12 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
+)
+
+# Prevent Crystal from interpreting ``#{…}`` while representing NUL safely.
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],
 )
 
 _CRYSTAL_JSON_ANY = "JSON::Any"
@@ -1050,7 +1056,7 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_hash_nul_hex
+        return _format_string
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
