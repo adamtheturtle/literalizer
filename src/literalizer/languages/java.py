@@ -1492,12 +1492,13 @@ class Java(metaclass=LanguageCls):
                     set_outer=set_outer,
                 )
 
-            if self is type(self).NEVER:
+            cls = type(self)
+            if self is cls.NEVER:
                 return _object_nil_declaration(
                     base_formatter=auto_formatter,
                     typed_formatter=typed,
                 )
-            if self.name == "SAFE":
+            if self is cls.SAFE:
                 auto_with_nil = _object_nil_declaration(
                     base_formatter=auto_formatter,
                     typed_formatter=typed,
@@ -1759,7 +1760,7 @@ class Java(metaclass=LanguageCls):
             int_type = self._java_record_int_type
             in_i32 = _JAVA_I32_MIN <= epoch <= _JAVA_I32_MAX
             return "long" if int_type == "int" and not in_i32 else int_type
-        if self.datetime_format.name == "ZONED":
+        if self.datetime_format is type(self.datetime_format).ZONED:
             return "ZonedDateTime"
         return "Instant"
 
@@ -1995,7 +1996,10 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def _suffix_is_auto(self) -> bool:
         """Whether the numeric-literal suffix is AUTO (long suffix)."""
-        return self.numeric_literal_suffix.name == "AUTO"
+        return (
+            self.numeric_literal_suffix
+            is type(self.numeric_literal_suffix).AUTO
+        )
 
     @cached_property
     def _java_dict_entry(self) -> Callable[[str, Value, str], str]:
@@ -2086,9 +2090,12 @@ class Java(metaclass=LanguageCls):
         plain integer, so every checked-in golden file stays
         byte-identical.
         """
-        if self.datetime_format.name == "EPOCH":
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(format_integer=self.format_integer)
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
@@ -2183,7 +2190,7 @@ class Java(metaclass=LanguageCls):
                 datetime_hint = "String"
             case _ if datetime_produced is int:
                 datetime_hint = "long"
-            case _ if self.datetime_format.name == "ZONED":
+            case _ if self.datetime_format is type(self.datetime_format).ZONED:
                 datetime_hint = "ZonedDateTime"
             case _:
                 datetime_hint = "Instant"
@@ -2196,12 +2203,18 @@ class Java(metaclass=LanguageCls):
                 else "LocalDate"
             ),
             datetime_hint=datetime_hint,
-            seq_is_array=(self.sequence_format.name == "ARRAY"),
+            seq_is_array=(
+                self.sequence_format is type(self.sequence_format).ARRAY
+            ),
             dict_outer=(
-                "HashMap" if self.dict_format.name == "HASH_MAP" else "Map"
+                "HashMap"
+                if self.dict_format is type(self.dict_format).HASH_MAP
+                else "Map"
             ),
             set_outer=(
-                "TreeSet" if self.set_format.name == "TREE_SET" else "Set"
+                "TreeSet"
+                if self.set_format is type(self.set_format).TREE_SET
+                else "Set"
             ),
         )
 

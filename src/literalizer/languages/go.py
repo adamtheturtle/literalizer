@@ -1108,7 +1108,10 @@ class Go(metaclass=LanguageCls):
             datetime.datetime: "time.Time",
             str: "string",
         }
-        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        suffix_is_auto = (
+            self.numeric_literal_suffix
+            is type(self.numeric_literal_suffix).AUTO
+        )
         go_int_type = "int64" if suffix_is_auto else "int"
         _type_names[int] = go_int_type
         date_type = _type_names.get(self.date_format.value.type_produced)
@@ -1243,7 +1246,10 @@ class Go(metaclass=LanguageCls):
         base_int_formatter = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        suffix_is_auto = self.numeric_literal_suffix.name == "AUTO"
+        suffix_is_auto = (
+            self.numeric_literal_suffix
+            is type(self.numeric_literal_suffix).AUTO
+        )
         base: Callable[[int], str] = (
             make_int64_cast_formatter(base=base_int_formatter)
             if suffix_is_auto

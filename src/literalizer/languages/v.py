@@ -1024,7 +1024,10 @@ class V(metaclass=LanguageCls):
         ``IVal(...)`` and the ``RECORD`` strategy fields them, so those
         strategies keep rendering.
         """
-        if self.heterogeneous_strategy.name != "ERROR":
+        if (
+            self.heterogeneous_strategy
+            is not type(self.heterogeneous_strategy).ERROR
+        ):
             return
         if _has_null_only_container(item=data):
             msg = (
@@ -1501,11 +1504,14 @@ class V(metaclass=LanguageCls):
         for it.  In-range epoch seconds format identically to the plain
         integer, so every checked-in golden file stays byte-identical.
         """
-        if self.datetime_format.name == "EPOCH":
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(
                 format_integer=self.format_integer,
             )
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:

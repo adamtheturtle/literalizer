@@ -881,22 +881,25 @@ class _SequenceSetup:
 @beartype
 def _build_sequence_setup(
     *,
-    sequence_format: enum.Enum,
+    sequence_format_config: SequenceFormatConfig,
+    sequence_format_is_list: bool,
     constructor_prefix: str,
 ) -> _SequenceSetup:
     """Build sequence format config, customizing the opener for LIST."""
-    fmt: SequenceFormatConfig = sequence_format.value
-    if sequence_format.name == "LIST":
+    if sequence_format_is_list:
         seq_open = fixed_open(
             open_str=f"{constructor_prefix}List [",
         )
         return _SequenceSetup(
-            format_config=dataclasses.replace(fmt, sequence_open=seq_open),
+            format_config=dataclasses.replace(
+                sequence_format_config,
+                sequence_open=seq_open,
+            ),
             sequence_open=seq_open,
         )
     return _SequenceSetup(
-        format_config=fmt,
-        sequence_open=fmt.sequence_open,
+        format_config=sequence_format_config,
+        sequence_open=sequence_format_config.sequence_open,
     )
 
 
@@ -990,7 +993,7 @@ def _build_preamble_setup(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    integer_format: enum.Enum,
+    integer_format_is_binary: bool,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -1019,7 +1022,7 @@ def _build_preamble_setup(
     # emitting it unconditionally lets the generated code build under
     # either base without ceremony. Hex (``0x``) and octal (``0o``)
     # are standard either way.
-    if integer_format.name == "BINARY":
+    if integer_format_is_binary:
         scalar_preamble = {
             **scalar_preamble,
             int: (
@@ -1922,7 +1925,10 @@ class Haskell(metaclass=LanguageCls):
     def _seq_setup(self) -> _SequenceSetup:
         """Shared sequence format setup."""
         return _build_sequence_setup(
-            sequence_format=self.sequence_format,
+            sequence_format_config=self.sequence_format.value,
+            sequence_format_is_list=(
+                self.sequence_format is type(self.sequence_format).LIST
+            ),
             constructor_prefix=self.constructor_prefix,
         )
 
@@ -2031,8 +2037,8 @@ class Haskell(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
-            self.datetime_format.name == "EPOCH"
-            and self.numeric_style.name == "EXPLICIT"
+            self.datetime_format is type(self.datetime_format).EPOCH
+            and self.numeric_style is type(self.numeric_style).EXPLICIT
         ):
             return datetime_epoch_formatter(format_integer=self.format_integer)
         return self._date_fmts.format_datetime
@@ -2055,7 +2061,7 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        if self.numeric_style.name == "EXPLICIT":
+        if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _float_prefix = f"{self.constructor_prefix}Float "
             _base_format_float: Callable[[float], str] = self.float_format
 
@@ -2073,7 +2079,7 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        if self.numeric_style.name == "EXPLICIT":
+        if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _int_prefix = f"{self.constructor_prefix}Int "
             _base_format_integer: Callable[[int], str] = self.integer_format
 
@@ -2153,11 +2159,14 @@ class Haskell(metaclass=LanguageCls):
         return _build_preamble_setup(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            integer_format=self.integer_format,
+            integer_format_is_binary=(
+                self.integer_format is type(self.integer_format).BINARY
+            ),
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
-            emit_num=self.numeric_style.name != "EXPLICIT",
+            emit_num=self.numeric_style
+            is not type(self.numeric_style).EXPLICIT,
             indent=self.indent,
         )
 

@@ -174,7 +174,7 @@ def _scala_circe_wrap_value(raw_value: Value, formatted: str) -> str:
 @beartype
 def _scala_circe_declaration_formatter(
     *,
-    declaration_style: enum.Enum,
+    declaration_is_mutable: bool,
     json_type_name: str,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Return a declaration formatter for Circe ``Json`` output."""
@@ -188,7 +188,7 @@ def _scala_circe_declaration_formatter(
         """Format a Circe-backed declaration."""
         del modifiers
         wrapped = _scala_circe_wrap_value(raw_value=data, formatted=value)
-        keyword = "var" if declaration_style.name == "VAR" else "val"
+        keyword = "var" if declaration_is_mutable else "val"
         return f"{keyword} {name}: {json_type_name} = {wrapped}"
 
     return _formatter
@@ -1633,11 +1633,14 @@ class Scala(metaclass=LanguageCls):
         identically to the plain integer, so every checked-in golden
         file stays byte-identical.
         """
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
         if self._json_type_active:
             return format_datetime_iso
-        if self.datetime_format.name == "EPOCH":
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(format_integer=self.format_integer)
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
@@ -1718,7 +1721,9 @@ class Scala(metaclass=LanguageCls):
         if self._json_type_active:
             assert self.json_type is not None  # noqa: S101
             return _scala_circe_declaration_formatter(
-                declaration_style=self.declaration_style,
+                declaration_is_mutable=(
+                    self.declaration_style is type(self.declaration_style).VAR
+                ),
                 json_type_name="Json",
             )
         return self.declaration_style.value.formatter

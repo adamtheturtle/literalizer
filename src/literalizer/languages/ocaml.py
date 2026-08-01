@@ -1026,7 +1026,7 @@ class OCaml(metaclass=LanguageCls):
         if self._json_type_active:
             _yojson_open = fixed_open(open_str="`List [")
             return dataclasses.replace(fmt, sequence_open=_yojson_open)
-        if self.sequence_format.name == "LIST":
+        if self.sequence_format is type(self.sequence_format).LIST:
             _seq_open = fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
             )
@@ -1039,7 +1039,7 @@ class OCaml(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if self._json_type_active:
             return fixed_open(open_str="`List [")
-        if self.sequence_format.name == "LIST":
+        if self.sequence_format is type(self.sequence_format).LIST:
             return fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
             )
@@ -1094,23 +1094,27 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        base_formatter: Callable[[datetime.date], str] = self.date_format
         if self._json_type_active:
             return format_date_iso
-        if self.date_format.name == "OCAML":
+        if self.date_format is type(self.date_format).OCAML:
             return date_ymd_formatter(
                 template=(
                     f"{self.constructor_prefix}Date "
                     "({year}, {month}, {day})"
                 ),
             )
-        return self.date_format
+        return base_formatter
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
         if self._json_type_active:
             return format_datetime_iso
-        if self.datetime_format.name == "OCAML":
+        if self.datetime_format is type(self.datetime_format).OCAML:
             return datetime_ymdhms_formatter(
                 template=(
                     f"{self.constructor_prefix}Datetime "
@@ -1118,7 +1122,7 @@ class OCaml(metaclass=LanguageCls):
                     f"({{hour}}, {{minute}}, {{second}}))"
                 ),
             )
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:

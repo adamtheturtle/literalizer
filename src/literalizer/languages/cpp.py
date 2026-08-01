@@ -3074,12 +3074,18 @@ class Cpp(metaclass=LanguageCls):
 
         C++14 and later standards support the opt-in ``TUPLE`` mode.
         """
-        return self.heterogeneous_strategy.name == "TUPLE"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).TUPLE
+        )
 
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     @cached_property
     def _uses_cpp14_tuple_record_strategy(self) -> bool:

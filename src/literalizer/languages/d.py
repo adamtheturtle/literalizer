@@ -1067,7 +1067,10 @@ class D(metaclass=LanguageCls):
     @cached_property
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
-        return self.heterogeneous_strategy.name == "RECORD"
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
 
     @cached_property
     def _narrow_typed_active(self) -> bool:
@@ -1090,7 +1093,8 @@ class D(metaclass=LanguageCls):
         """
         if (
             self._narrow_typed_active
-            and self.heterogeneous_strategy.name == "RECORD"
+            and self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
         ):
             msg = (
                 "D json_type=None (narrow typed) is mutually exclusive "

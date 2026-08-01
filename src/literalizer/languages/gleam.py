@@ -1419,7 +1419,7 @@ class Gleam(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         fmt = self.sequence_format.value
-        if self.sequence_format.name == "LIST":
+        if self.sequence_format is type(self.sequence_format).LIST:
             return dataclasses.replace(
                 fmt,
                 sequence_open=fixed_open(
@@ -1522,14 +1522,17 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
         if self._json_type_active:
-            if self.datetime_format.name == "EPOCH":
+            if self.datetime_format is type(self.datetime_format).EPOCH:
                 return _format_gleam_json_datetime_epoch
             return _format_gleam_json_datetime_iso
-        if self.datetime_format.name == "EPOCH":
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_gleam_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "G":
-            return self.datetime_format
+            return base_formatter
         return _build_gleam_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property

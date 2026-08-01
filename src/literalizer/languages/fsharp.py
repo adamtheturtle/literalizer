@@ -1202,7 +1202,7 @@ class FSharp(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         fmt = self.sequence_format.value
-        if self.sequence_format.name == "ARRAY":
+        if self.sequence_format is type(self.sequence_format).ARRAY:
             return fmt
         return dataclasses.replace(
             fmt,
@@ -1295,6 +1295,9 @@ class FSharp(metaclass=LanguageCls):
         entry / top-level formatter is responsible for wrapping the
         literal with ``JsonValue.Create`` so it becomes a ``JsonNode``.
         """
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
         if self._json_type_active:
             if self.datetime_format.value.type_produced is int:
                 format_integer = self.format_integer
@@ -1306,11 +1309,11 @@ class FSharp(metaclass=LanguageCls):
 
                 return _format_json_epoch
             return format_datetime_iso
-        if self.datetime_format.name == "EPOCH":
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_fsharp_datetime_epoch(
                 prefix=self.constructor_prefix,
             )
-        return self.datetime_format
+        return base_formatter
 
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:

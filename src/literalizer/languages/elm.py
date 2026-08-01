@@ -1486,16 +1486,19 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        base_formatter: Callable[[datetime.datetime], str] = (
+            self.datetime_format
+        )
         if self._json_active:
-            if self.datetime_format.name == "EPOCH":
+            if self.datetime_format is type(self.datetime_format).EPOCH:
                 return datetime_epoch_formatter(
                     format_integer=_build_elm_json_int_formatter(base=str),
                 )
             return _format_elm_json_datetime_iso
-        if self.datetime_format.name == "EPOCH":
+        if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_elm_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "E":
-            return self.datetime_format
+            return base_formatter
         return _build_elm_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
