@@ -6,6 +6,7 @@ fn main() {
 last line"#,
         r#"
 leading newline"#,
+        " \t\nleading whitespace",
         r#"trailing newline
 "#,
         r#"
@@ -20,6 +21,8 @@ next line"#,
 value"#,
         r##"Rust delimiter collision: "#
 value"##,
+        r#"Lua delimiter collision: ]]
+value"#,
         "Ruby fallback interpolation  \n#{expression} #@instance #$global",
         "NUL followed by a digit: \07",
         "carriage\rreturn",

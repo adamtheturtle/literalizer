@@ -9,6 +9,7 @@ auto my_data = std::vector<std::string>{
 last line)LITERALIZER",
     R"LITERALIZER(
 leading newline)LITERALIZER",
+    " \t\nleading whitespace",
     R"LITERALIZER(trailing newline
 )LITERALIZER",
     R"LITERALIZER(
@@ -22,6 +23,8 @@ next line)LITERALIZER",
     R"LITERALIZER0(C++ delimiter collision: )LITERALIZER"
 value)LITERALIZER0",
     R"LITERALIZER(Rust delimiter collision: "#
+value)LITERALIZER",
+    R"LITERALIZER(Lua delimiter collision: ]]
 value)LITERALIZER",
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
     std::string{"NUL followed by a digit: "} + '\0' + "7",

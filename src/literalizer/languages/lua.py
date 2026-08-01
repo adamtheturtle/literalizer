@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -35,6 +36,7 @@ from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_backslash_single,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -86,6 +88,33 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_lua_escaped = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x00")],
+)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a collision-free Lua long string."""
+    # Lua discards an initial newline in a long string and normalizes
+    # carriage returns. A null byte is safer in an escaped short string
+    # because source readers may treat it as an end-of-file marker.
+    if (
+        value.startswith("\n")
+        or "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_lua_escaped(value=value)
+    for level in range(100_000):
+        equals = "=" * level
+        if f"]{equals}]" not in value:
+            return f"[{equals}[{value}]{equals}]"
+    # Reaching this requires every one of 100,000 candidate closers.
+    return _format_string_lua_escaped(value=value)  # pragma: no cover
 
 
 @beartype
@@ -220,7 +249,7 @@ class Lua(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -414,6 +443,7 @@ class Lua(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         SINGLE = enum.member(value=format_string_backslash_single)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

@@ -5,6 +5,7 @@ val my_data = arrayOf(
 last line""",
     """
 leading newline""",
+    " \t\nleading whitespace",
     """trailing newline
 """,
     """
@@ -18,6 +19,8 @@ next line""",
     """C++ delimiter collision: )LITERALIZER${'"'}
 value""",
     """Rust delimiter collision: ${'"'}#
+value""",
+    """Lua delimiter collision: ]]
 value""",
     "Ruby fallback interpolation  \n#{expression} #@instance #\$global",
     "NUL followed by a digit: \u00007",

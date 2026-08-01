@@ -8,6 +8,9 @@ last line""",
 
 leading newline""",
     """\
+ \t
+leading whitespace""",
+    """\
 trailing newline
 """,
     """\
@@ -29,6 +32,9 @@ C++ delimiter collision: )LITERALIZER\"
 value""",
     """\
 Rust delimiter collision: \"#
+value""",
+    """\
+Lua delimiter collision: ]]
 value""",
     """\
 Ruby fallback interpolation\x20\x20

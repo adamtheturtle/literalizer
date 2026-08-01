@@ -1,1 +1,1 @@
-Add a shared ``StringFormats.MULTILINE`` option for Python, Java, C++, C#, Go, JavaScript, Kotlin, Ruby, Scala, and Rust, preserving exact string values with native multiline syntax and safe escaped fallbacks.
+Add a shared ``StringFormats.MULTILINE`` option for Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, and Lua, preserving exact string values with native multiline syntax and safe escaped fallbacks.
