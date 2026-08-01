@@ -4,6 +4,7 @@ final my_data = <String>[
 
 last line''',
     '''\nleading newline''',
+    ''' \t\nleading whitespace''',
     '''trailing newline
 ''',
     '''\nleading and trailing

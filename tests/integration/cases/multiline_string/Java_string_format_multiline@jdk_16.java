@@ -10,6 +10,9 @@ last line""",
 
 leading newline""",
     """
+ \t
+leading whitespace""",
+    """
 trailing newline
 """,
     """

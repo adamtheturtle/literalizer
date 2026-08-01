@@ -115,6 +115,8 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 @beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Dart triple-quoted string."""
+    first_line, first_newline, _ = value.partition("\n")
+    escape_first_newline = bool(first_newline) and not first_line.strip(" \t")
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -127,10 +129,11 @@ def _format_string_multiline(value: str) -> str:
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
     )
-    # Dart discards a physical newline immediately after the opening
-    # triple quote, so spell only that first newline as an escape.
-    if escaped.startswith("\n"):
-        escaped = r"\n" + escaped[1:]
+    # Dart discards a whitespace-only physical line immediately after
+    # the opening triple quote, so spell its newline as an escape.
+    if escape_first_newline:
+        escaped_first_line, _, escaped_rest = escaped.partition("\n")
+        escaped = escaped_first_line + r"\n" + escaped_rest
     return f"'''{escaped}'''"
 
 

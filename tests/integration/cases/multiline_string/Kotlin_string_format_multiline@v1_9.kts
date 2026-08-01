@@ -5,6 +5,7 @@ val my_data = arrayOf(
 last line""",
     """
 leading newline""",
+    " \t\nleading whitespace",
     """trailing newline
 """,
     """

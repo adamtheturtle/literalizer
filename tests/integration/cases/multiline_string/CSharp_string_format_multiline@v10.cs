@@ -6,6 +6,7 @@ var my_data = (
 last line",
     @"
 leading newline",
+    " \t\nleading whitespace",
     @"trailing newline
 ",
     @"

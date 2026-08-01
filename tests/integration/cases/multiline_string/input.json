@@ -1,6 +1,7 @@
 [
   "first line\n  indented\n\nlast line",
   "\nleading newline",
+  " \t\nleading whitespace",
   "trailing newline\n",
   "\nleading and trailing\n",
   "quotes: \"\"\" ''' ` and backslash: \\",

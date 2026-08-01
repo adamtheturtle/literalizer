@@ -4,6 +4,7 @@ local my_data = {
 
 last line]],
     "\nleading newline",
+    " \t\nleading whitespace",
     [[trailing newline
 ]],
     "\nleading and trailing\n",

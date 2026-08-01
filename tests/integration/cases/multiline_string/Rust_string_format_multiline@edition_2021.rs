@@ -6,6 +6,7 @@ fn main() {
 last line"#,
         r#"
 leading newline"#,
+        " \t\nleading whitespace",
         r#"trailing newline
 "#,
         r#"

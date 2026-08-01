@@ -9,6 +9,7 @@ auto my_data = std::vector<std::string>{
 last line)LITERALIZER",
     R"LITERALIZER(
 leading newline)LITERALIZER",
+    " \t\nleading whitespace",
     R"LITERALIZER(trailing newline
 )LITERALIZER",
     R"LITERALIZER(

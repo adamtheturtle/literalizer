@@ -6,6 +6,7 @@ val my_data = List[String](
 last line""",
     """
 leading newline""",
+    " \t\nleading whitespace",
     """trailing newline
 """,
     """

@@ -8,6 +8,7 @@ my_data := []string{
 last line`,
 	`
 leading newline`,
+	" \t\nleading whitespace",
 	`trailing newline
 `,
 	`
