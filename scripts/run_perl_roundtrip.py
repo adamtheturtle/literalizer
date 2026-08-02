@@ -59,6 +59,7 @@ def _build_program(json_text: str) -> str:
     language = Perl(
         bool_format=Perl.bool_formats.JSON_PP_REF,
         integer_width_strategy=Perl.integer_width_strategies.MATH_BIG_INT,
+        string_format=Perl.string_formats.MULTILINE,
     )
     result = roundtrip_common.literalize_new_variable(
         language=language,

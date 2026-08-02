@@ -23,7 +23,7 @@ _LABEL = "Ruby"
 def _build_program(json_text: str) -> str:
     """Return a runnable Ruby program literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Ruby(),
+        language=Ruby(string_format=Ruby.string_formats.MULTILINE),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,

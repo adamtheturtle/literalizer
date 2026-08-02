@@ -26,7 +26,7 @@ _LABEL = "Java"
 def _build_main(json_text: str) -> str:
     """Return a runnable ``Main`` program literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Java(),
+        language=Java(string_format=Java.string_formats.MULTILINE),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
