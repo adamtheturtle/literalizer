@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -44,6 +45,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
+    format_string_backslash_control,
     format_string_backslash_single_minimal,
 )
 from literalizer._language import (
@@ -95,6 +97,30 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_UNSAFE_MULTILINE_CONTROL = re.compile(pattern=r"[\x00-\x08\x0b-\x1f]")
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_multiline_fallback(value: str) -> str:
+    r"""Format *value* as an interpolation-safe escaped PHP string."""
+    escaped = format_string_backslash_control(
+        value=value,
+        control_char_fmt=r"\x{:02x}",
+    )
+    return escaped.replace("$", r"\$")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating multiline PHP string."""
+    if (
+        _UNSAFE_MULTILINE_CONTROL.search(string=value) is not None
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_multiline_fallback(value=value)
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -280,7 +306,7 @@ class Php(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -510,6 +536,7 @@ class Php(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

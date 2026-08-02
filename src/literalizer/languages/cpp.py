@@ -126,11 +126,19 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidCppRawStringDelimiterError,
     InvalidRecordNameError,
     UnrepresentableInputError,
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_CPP_RAW_STRING_DELIMITER_MAX_LENGTH = 16
+_CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789"
+    "_{}[]#<>%:;.?*+-/^&|~!=,\"'",
+)
 
 
 @beartype
@@ -148,7 +156,25 @@ def _format_string_cpp_escaped(value: str) -> str:
 
 
 @beartype
-def _format_string_multiline(value: str) -> str:
+def _raw_string_delimiters(*, base: str) -> itertools.chain[str]:
+    """Return C++ raw-string delimiter candidates for *base*.
+
+    The empty delimiter is always first. Numeric suffixes start at zero and
+    stop before the complete delimiter would exceed C++'s 16-character
+    limit.
+    """
+    suffix_width = _CPP_RAW_STRING_DELIMITER_MAX_LENGTH - len(base)
+    suffix_indexes = range(10**suffix_width) if suffix_width else range(0)
+    suffixed = (f"{base}{index}" for index in suffix_indexes)
+    return itertools.chain(("", base), suffixed)
+
+
+@beartype
+def _format_string_multiline_with_delimiter_base(
+    value: str,
+    *,
+    delimiter_base: str,
+) -> str:
     r"""Format *value* as a C++ raw string with a safe delimiter."""
     if (
         "\0" in value
@@ -156,15 +182,19 @@ def _format_string_multiline(value: str) -> str:
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_cpp_escaped(value=value)
-    delimiters = itertools.chain(
-        ("", "x"),
-        (f"x{index}" for index in range(100_000)),
-    )
-    for delimiter in delimiters:
+    for delimiter in _raw_string_delimiters(base=delimiter_base):
         if f'){delimiter}"' not in value:
             return f'R"{delimiter}({value}){delimiter}"'
-    # Reaching this requires a value containing all 100,002 candidate closers.
-    return _format_string_cpp_escaped(value=value)  # pragma: no cover
+    return _format_string_cpp_escaped(value=value)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    """Format *value* with the default multiline delimiter base."""
+    return _format_string_multiline_with_delimiter_base(
+        value=value,
+        delimiter_base="x",
+    )
 
 
 class _CppModifiers(enum.Enum):
@@ -2020,6 +2050,12 @@ class Cpp(metaclass=LanguageCls):
             ``std::unordered_map`` collection types.  Dict keys must be
             strings so they remain valid JSON object keys.
 
+        multiline_raw_string_delimiter_base: Non-empty fallback delimiter
+            base for ``string_formats.MULTILINE`` raw strings. The empty
+            delimiter is still tried first. On a collision, Literalizer
+            tries this base and then appends ``0``, ``1``, and so on while
+            keeping the complete delimiter within C++'s 16-character limit.
+
         heterogeneous_value_variant_name: Name for C++14's generated
             heterogeneous-value carrier. The default is ``Value``. The
             carrier provides ``is<T>()`` and ``get<T>()`` for inspecting and
@@ -2167,6 +2203,7 @@ class Cpp(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     non_default_kwargs: ClassVar[dict[str, str]] = {
         "heterogeneous_value_variant_name": "DynamicValue",
+        "multiline_raw_string_delimiter_base": "x0",
     }
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
@@ -2586,8 +2623,32 @@ class Cpp(metaclass=LanguageCls):
 
     def __post_init__(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit."""
+        self._validate_multiline_raw_string_delimiter_base()
         self._validate_json_type_spec()
         self._validate_record_naming()
+
+    def _validate_multiline_raw_string_delimiter_base(self) -> None:
+        """Reject a delimiter base outside C++'s ``d-char`` grammar."""
+        delimiter = self.multiline_raw_string_delimiter_base
+        if not delimiter:
+            raise InvalidCppRawStringDelimiterError(
+                delimiter=delimiter,
+                reason="the fallback base must be non-empty",
+            )
+        if len(delimiter) > _CPP_RAW_STRING_DELIMITER_MAX_LENGTH:
+            raise InvalidCppRawStringDelimiterError(
+                delimiter=delimiter,
+                reason="raw-string delimiters contain at most 16 characters",
+            )
+        invalid = sorted(set(delimiter) - _CPP_RAW_STRING_DELIMITER_CHARACTERS)
+        if invalid:
+            raise InvalidCppRawStringDelimiterError(
+                delimiter=delimiter,
+                reason=(
+                    "these characters are not permitted by C++'s raw-string "
+                    f"delimiter grammar: {invalid!r}"
+                ),
+            )
 
     def _validate_record_naming(self) -> None:
         """Validate externally declared C++ record type names.
@@ -2852,6 +2913,7 @@ class Cpp(metaclass=LanguageCls):
         default_factory=lambda: MappingProxyType(mapping={}),
         hash=False,
     )
+    multiline_raw_string_delimiter_base: str = "x"
     # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
     # Earlier standards remain available through ``VersionFormats``.
     language_version: VersionFormats = VersionFormats.CPP20
@@ -2900,7 +2962,24 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return self.string_format
+        if self.string_format is self.string_formats.MULTILINE:
+            if self.multiline_raw_string_delimiter_base == "x":
+                return _format_string_multiline
+
+            def _formatter(value: str) -> str:
+                """Render with this C++ spec's delimiter base."""
+                return _format_string_multiline_with_delimiter_base(
+                    value=value,
+                    delimiter_base=self.multiline_raw_string_delimiter_base,
+                )
+
+            return _formatter
+
+        def _non_multiline_formatter(value: str) -> str:
+            """Render with the selected non-multiline string format."""
+            return self.string_format(value)
+
+        return _non_multiline_formatter
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

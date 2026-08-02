@@ -1862,6 +1862,45 @@ def build_multiline_string_variants() -> list[Variant]:
 
 
 @beartype
+def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
+    """Build custom, punctuation, and exhausted raw-delimiter variants."""
+    variants: list[Variant] = []
+    for lang_cls in sorted_languages():
+        custom_base = lang_cls.non_default_kwargs.get(
+            "multiline_raw_string_delimiter_base"
+        )
+        if custom_base is None:
+            continue
+        multiline = _enum_member_by_name(
+            enum_cls=lang_cls.StringFormats,
+            name="MULTILINE",
+        )
+        for name, delimiter_base in (
+            ("custom", custom_base),
+            ("punctuation", "_{}[]#<>%:;.?*"),
+            ("exhausted", "abcdefghijklmnop"),
+        ):
+            variants.append(
+                Variant(
+                    name=(
+                        f"{lang_cls.__name__}_multiline_raw_string_delimiter"
+                        f"_{name}"
+                    ),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        string_format=multiline,
+                        multiline_raw_string_delimiter_base=delimiter_base,
+                    ),
+                    lang_cls=lang_cls,
+                    fixture_prefix="",
+                    record_null_substitutions=None,
+                    collection_layout=literalizer.CollectionLayout.COMPACT,
+                )
+            )
+    return variants
+
+
+@beartype
 def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
     """Build cross-product variants of ``heterogeneous_strategy`` and
     ``datetime_format``.
@@ -2426,6 +2465,9 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "union_format_type_hints": build_union_format_type_hint_variants,
     "bool_format": build_bool_format_variants,
     "multiline_string": build_multiline_string_variants,
+    "multiline_raw_string_delimiter": (
+        build_multiline_raw_string_delimiter_variants
+    ),
     "string_format": lambda: build_non_default_variants(
         category="string_format",
         get_default=lambda spec: spec.string_format,

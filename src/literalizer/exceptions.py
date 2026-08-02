@@ -323,6 +323,26 @@ class InvalidRecordNameError(Exception):
     """
 
 
+class InvalidCppRawStringDelimiterError(ValueError):
+    """Raised when C++'s multiline raw-string delimiter base is invalid.
+
+    C++ raw-string delimiters are limited to 16 characters from the basic
+    source character set and exclude whitespace, parentheses, and
+    backslashes.  Literalizer also requires a non-empty configured base so
+    the empty delimiter can remain its first automatically selected
+    candidate.
+    """
+
+    def __init__(self, *, delimiter: str, reason: str) -> None:
+        """Create an ``InvalidCppRawStringDelimiterError``."""
+        super().__init__(
+            "Cpp multiline_raw_string_delimiter_base "
+            f"{delimiter!r} is invalid: {reason}"
+        )
+        self.delimiter = delimiter
+        self.reason = reason
+
+
 class ReservedVariableNameError(Exception):
     """Raised when a ``NewVariable`` name is reserved by the target
     language.

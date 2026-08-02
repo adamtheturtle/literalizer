@@ -106,6 +106,9 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # after null-valued entries are filtered.  Its dedicated axis
         # discovers every language that opts into that capability.
         "typed_dict_skip_null_values",
+        # Custom raw-string delimiter selection and exhaustion are exercised
+        # only by languages declaring the corresponding non-default option.
+        "multiline_raw_string_delimiter",
         "heterogeneous_time_string",
         "time_union_type_hint",
         "dict_wide_int_key",
