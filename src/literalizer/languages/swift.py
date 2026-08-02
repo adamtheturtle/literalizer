@@ -113,6 +113,42 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Scalar, Value
 
+_CONTROL_CHAR_THRESHOLD = 32
+
+
+@beartype
+def _format_string_escaped(value: str) -> str:
+    r"""Format *value* as an escaped Swift string literal."""
+    return format_string_backslash_control(
+        value=value,
+        control_char_fmt="\\u{{{:x}}}",
+    )
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as an exact Swift raw multiline string.
+
+    Swift removes the source line breaks immediately after the opening
+    delimiter and before the closing delimiter. Keeping the closer at column
+    zero also makes its indentation-removal rule a no-op, so nested rendering
+    cannot add indentation to the value.
+    """
+    has_unsafe_control = any(
+        ord(char) < _CONTROL_CHAR_THRESHOLD and char not in "\n\t"
+        for char in value
+    )
+    has_trailing_line_whitespace = any(
+        line and line[-1].isspace() for line in value.split(sep="\n")
+    )
+    if has_unsafe_control or has_trailing_line_whitespace:
+        return _format_string_escaped(value=value)
+
+    hashes = "#"
+    while f'"""{hashes}' in value or f"\\{hashes}" in value:
+        hashes += "#"
+    return f'{hashes}"""\n{value}\n"""{hashes}'
+
 
 @beartype
 def _format_date_swift(value: datetime.date) -> str:
@@ -606,7 +642,7 @@ class Swift(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -878,7 +914,12 @@ class Swift(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=_format_string_escaped)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1127,15 +1168,7 @@ class Swift(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-
-        def _format(value: str) -> str:
-            """Format a string as a Swift quoted literal."""
-            return format_string_backslash_control(
-                value=value,
-                control_char_fmt="\\u{{{:x}}}",
-            )
-
-        return _format
+        return self.string_format
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:

@@ -45,6 +45,12 @@ value""",
 Lua delimiter collision: ]]
 value""",
     """
+Swift delimiter collision: \"\"\"#
+value""",
+    """
+Swift interpolation collision: \\#(value)
+value""",
+    """
 Ruby fallback interpolation\s\s
 #{expression} #@instance #$global""",
     """

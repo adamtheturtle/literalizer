@@ -13,6 +13,8 @@
   "C++ second fallback collision: )\" and )x\" and )x0\"\nvalue",
   "Rust delimiter collision: \"#\nvalue",
   "Lua delimiter collision: ]]\nvalue",
+  "Swift delimiter collision: \"\"\"#\nvalue",
+  "Swift interpolation collision: \\#(value)\nvalue",
   "Ruby fallback interpolation  \n#{expression} #@instance #$global",
   "NUL followed by a digit: \u00007",
   "carriage\rreturn"

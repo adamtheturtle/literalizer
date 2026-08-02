@@ -28,6 +28,10 @@ value`),
 value`),
     JSONValue(`Lua delimiter collision: ]]
 value`),
+    JSONValue(`Swift delimiter collision: """#
+value`),
+    JSONValue(`Swift interpolation collision: \#(value)
+value`),
     JSONValue("Ruby fallback interpolation  \n#{expression} #@instance #$global"),
     JSONValue("NUL followed by a digit: \x007"),
     JSONValue("carriage\rreturn"),

@@ -30,6 +30,10 @@ value)x1",
 value)",
     R"(Lua delimiter collision: ]]
 value)",
+    R"(Swift delimiter collision: """#
+value)",
+    R"(Swift interpolation collision: \#(value)
+value)",
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
     std::string{"NUL followed by a digit: "} + '\0' + "7",
     "carriage\rreturn",

@@ -28,6 +28,10 @@ value|,
 value|,
     %q|Lua delimiter collision: ]]
 value|,
+    %q|Swift delimiter collision: """#
+value|,
+    %q|Swift interpolation collision: \#(value)
+value|,
     "Ruby fallback interpolation  \n\#{expression} #@instance #$global",
     "NUL followed by a digit: \x007",
     "carriage\rreturn",
