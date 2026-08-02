@@ -30,7 +30,13 @@ next line""",
 trailing spaces\s\s
 next""",
     """
-C++ delimiter collision: )LITERALIZER\"
+C++ empty delimiter collision: )\"
+value""",
+    """
+C++ first fallback collision: )\" and )x\"
+value""",
+    """
+C++ second fallback collision: )\" and )x\" and )x0\"
 value""",
     """
 Rust delimiter collision: \"#

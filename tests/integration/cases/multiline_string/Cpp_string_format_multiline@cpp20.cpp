@@ -3,33 +3,37 @@
 #include <vector>
 int main() {
 auto my_data = std::vector<std::string>{
-    R"LITERALIZER(first line
+    R"(first line
   indented
 
-last line)LITERALIZER",
-    R"LITERALIZER(
-leading newline)LITERALIZER",
+last line)",
+    R"(
+leading newline)",
     " \t\nleading whitespace",
-    R"LITERALIZER(trailing newline
-)LITERALIZER",
-    R"LITERALIZER(
+    R"(trailing newline
+)",
+    R"(
 leading and trailing
-)LITERALIZER",
-    R"LITERALIZER(quotes: """ ''' ` and backslash: \)LITERALIZER",
-    R"LITERALIZER(interpolation: ${value} #{value} #@value #$value $value)LITERALIZER",
-    R"LITERALIZER(backslash before newline: \
-next line)LITERALIZER",
+)",
+    R"(quotes: """ ''' ` and backslash: \)",
+    R"(interpolation: ${value} #{value} #@value #$value $value)",
+    R"(backslash before newline: \
+next line)",
     "trailing spaces  \nnext",
-    R"LITERALIZER0(C++ delimiter collision: )LITERALIZER"
-value)LITERALIZER0",
-    R"LITERALIZER(Rust delimiter collision: "#
-value)LITERALIZER",
-    R"LITERALIZER(Lua delimiter collision: ]]
-value)LITERALIZER",
-    R"LITERALIZER(Swift delimiter collision: """#
-value)LITERALIZER",
-    R"LITERALIZER(Swift interpolation collision: \#(value)
-value)LITERALIZER",
+    R"x(C++ empty delimiter collision: )"
+value)x",
+    R"x0(C++ first fallback collision: )" and )x"
+value)x0",
+    R"x1(C++ second fallback collision: )" and )x" and )x0"
+value)x1",
+    R"(Rust delimiter collision: "#
+value)",
+    R"(Lua delimiter collision: ]]
+value)",
+    R"(Swift delimiter collision: """#
+value)",
+    R"(Swift interpolation collision: \#(value)
+value)",
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
     std::string{"NUL followed by a digit: "} + '\0' + "7",
     "carriage\rreturn",
