@@ -13,7 +13,11 @@ last line""",
     """backslash before newline: \
 next line""",
     "trailing spaces  \nnext",
-    """C++ delimiter collision: )LITERALIZER"
+    """C++ empty delimiter collision: )"
+value""",
+    """C++ first fallback collision: )" and )x"
+value""",
+    """C++ second fallback collision: )" and )x" and )x0"
 value""",
     """Rust delimiter collision: "#
 value""",

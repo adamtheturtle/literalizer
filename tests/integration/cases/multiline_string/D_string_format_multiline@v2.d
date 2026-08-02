@@ -18,7 +18,11 @@ leading and trailing
     JSONValue(`backslash before newline: \
 next line`),
     JSONValue("trailing spaces  \nnext"),
-    JSONValue(`C++ delimiter collision: )LITERALIZER"
+    JSONValue(`C++ empty delimiter collision: )"
+value`),
+    JSONValue(`C++ first fallback collision: )" and )x"
+value`),
+    JSONValue(`C++ second fallback collision: )" and )x" and )x0"
 value`),
     JSONValue(`Rust delimiter collision: "#
 value`),

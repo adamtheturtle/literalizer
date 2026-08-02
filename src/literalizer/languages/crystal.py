@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
@@ -120,6 +121,21 @@ _format_string = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],
 )
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating Crystal percent string."""
+    if (
+        "|" in value
+        or "\0" in value
+        or "\r" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value)
+    ):
+        return _format_string(value=value)
+    return f"%q|{value}|"
+
 
 _CRYSTAL_JSON_ANY = "JSON::Any"
 _CRYSTAL_RECORD_MAP_VALUE = "LiteralizerRecordValue"
@@ -510,7 +526,7 @@ class Crystal(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -734,7 +750,12 @@ class Crystal(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.auto()
+        DOUBLE = enum.member(value=_format_string)
+        MULTILINE = enum.member(value=_format_string_multiline)
+
+        def __call__(self, value: str, /) -> str:
+            """Format a string."""
+            return self.value(value=value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1057,7 +1078,9 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return _format_string
+        if self._uses_json_any:
+            return _format_string
+        return self.string_format
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
