@@ -132,10 +132,10 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 @beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a raw Nim triple-quoted string when safe."""
+    if value.startswith(("\n", '"')) or value.endswith('"'):
+        return format_string_backslash_nul_hex(value=value)
     if (
-        value.startswith(("\n", '"'))
-        or value.endswith('"')
-        or '"""' in value
+        '"""' in value
         or "\0" in value
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value)
