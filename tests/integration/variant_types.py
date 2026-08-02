@@ -56,6 +56,7 @@ class VariantCase:
     variant: Variant
     case_dir_name: str
     variable_form: literalizer.VariableForm
+    pre_indent_level: int = 0
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

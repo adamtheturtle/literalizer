@@ -7,7 +7,12 @@ import re
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from literalizer import InputFormat, literalize
+from literalizer import (
+    BothVariableForms,
+    InputFormat,
+    NewVariable,
+    literalize,
+)
 from literalizer.languages import Erlang, Python
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
@@ -33,6 +38,7 @@ PYTHON_MULTILINE = Python(
     string_format=Python.string_formats.MULTILINE,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
+_MULTILINE_VALUE = "\nfirst line\n  indented\n\nlast line\n"
 
 type _JSONScalar = str | int | float | bool | None
 
@@ -138,6 +144,70 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
+
+
+def test_multiline_string_root_and_nested_round_trip() -> None:
+    """Multiline syntax preserves scalar and nested collection values."""
+    for value in (_MULTILINE_VALUE, [[_MULTILINE_VALUE]]):
+        result = literalize(
+            source=json.dumps(obj=value),
+            input_format=InputFormat.JSON,
+            language=PYTHON_MULTILINE,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
+
+        assert ast.literal_eval(node_or_string=result.code) == value
+
+
+def test_multiline_string_new_and_existing_variable_round_trip() -> None:
+    """Declaration and assignment forms preserve multiline values."""
+    for variable_form, expected_assignment_count in (
+        (NewVariable(name="my_data", modifiers=frozenset()), 1),
+        (BothVariableForms(name="my_data", modifiers=frozenset()), 2),
+    ):
+        result = literalize(
+            source=json.dumps(obj=_MULTILINE_VALUE),
+            input_format=InputFormat.JSON,
+            language=PYTHON_MULTILINE,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=variable_form,
+            wrap_in_file=True,
+        )
+        assignments = [
+            node
+            for node in ast.parse(source=result.code).body
+            if isinstance(node, ast.Assign)
+        ]
+
+        assert len(assignments) == expected_assignment_count
+        assert all(
+            ast.literal_eval(node_or_string=node.value) == _MULTILINE_VALUE
+            for node in assignments
+        )
+
+
+def test_multiline_string_pre_indent_round_trip() -> None:
+    """Generated code indentation does not become string indentation."""
+    result = literalize(
+        source=json.dumps(obj=_MULTILINE_VALUE),
+        input_format=InputFormat.JSON,
+        language=PYTHON_MULTILINE,
+        pre_indent_level=1,
+        include_delimiters=True,
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+    )
+    tree = ast.parse(source=f"if True:\n{result.code}")
+    if_statement = tree.body[0]
+
+    assert isinstance(if_statement, ast.If)
+    assignment = if_statement.body[0]
+    assert isinstance(assignment, ast.Assign)
+    assert (
+        ast.literal_eval(node_or_string=assignment.value) == _MULTILINE_VALUE
+    )
 
 
 @given(data=st.binary())

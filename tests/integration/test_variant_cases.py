@@ -12,7 +12,7 @@ from .case_discovery import EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
 from .language_specs import sorted_languages
 from .variant_cases import (
     _enum_member_by_name,  # pyright: ignore[reportPrivateUsage]
-    build_multiline_string_combined_cases,
+    build_multiline_string_context_cases,
     build_typed_dict_null_filtering_variants,
     build_variant_cases,
     group_variant_cases_by_language,
@@ -132,17 +132,39 @@ def test_multiline_string_variants_follow_capability() -> None:
         for lang_cls in expected
     )
 
+    context_cases = [
+        case
+        for case in build_variant_cases()
+        if case.case_dir_name
+        in {
+            "multiline_string",
+            "multiline_string_scalar",
+            "multiline_string_nested",
+        }
+    ]
+    assert {case.variant.lang_cls for case in context_cases} == expected
+    assert all(
+        case.variant.lang_cls.supports_multiline_string_literals
+        for case in context_cases
+    )
 
-def test_multiline_combined_cases_follow_redefinition() -> None:
-    """Existing-variable coverage is limited to re-definable styles."""
-    cases = build_multiline_string_combined_cases()
 
-    assert cases
+def test_multiline_context_cases_follow_capabilities() -> None:
+    """Assignment and indentation contexts follow language metadata."""
+    cases = build_multiline_string_context_cases()
+    combined_cases = [
+        case
+        for case in cases
+        if isinstance(case.variable_form, literalizer.BothVariableForms)
+    ]
+    indented_cases = [case for case in cases if case.pre_indent_level]
+
+    assert combined_cases
     assert all(
         isinstance(case.variable_form, literalizer.BothVariableForms)
-        for case in cases
+        for case in combined_cases
     )
-    assert {case.variant.lang_cls for case in cases} == {
+    assert {case.variant.lang_cls for case in combined_cases} == {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
         if lang_cls.supports_multiline_string_literals
@@ -151,3 +173,9 @@ def test_multiline_combined_cases_follow_redefinition() -> None:
             for style in lang_cls.DeclarationStyles
         )
     }
+    assert indented_cases
+    assert all(case.pre_indent_level == 1 for case in indented_cases)
+    assert all(
+        case.variant.lang_cls.supports_multiline_string_literals
+        for case in indented_cases
+    )

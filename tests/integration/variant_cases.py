@@ -1862,48 +1862,61 @@ def build_multiline_string_variants() -> list[Variant]:
 
 
 @beartype
-def build_multiline_string_combined_cases() -> list[VariantCase]:
-    """Build declaration-plus-assignment multiline scalar cases.
+def build_multiline_string_context_cases() -> list[VariantCase]:
+    """Build assignment and nonzero-indentation multiline contexts.
 
-    The ordinary multiline axis uses :class:`NewVariable` for every
-    capability participant.  For each language with a declaration style that
-    explicitly supports redefinition, this companion case uses
-    :class:`BothVariableForms` so the same root scalar is rendered once as a
-    declaration and once as an existing-variable assignment in a valid file.
+    The ordinary multiline axis already renders every input with a
+    :class:`~literalizer.NewVariable`.  Add a combined declaration and
+    assignment for each language whose declaration metadata says that
+    redefinition is supported.  Languages with class-field modifier
+    combinations also exercise the public ``pre_indent_level`` path in the
+    same valid class-scope context used by the dedicated pre-indent suite.
     """
     cases: list[VariantCase] = []
-    for variant in build_multiline_string_variants():
-        redef_styles = find_redefinition_styles(spec=variant.spec)
-        if not redef_styles:
-            continue
-        declaration_style = redef_styles[0]
-        name = f"{variant.name}_combined"
-        multiline = _enum_member_by_name(
-            enum_cls=variant.lang_cls.StringFormats,
-            name="MULTILINE",
-        )
-        cases.append(
-            VariantCase(
-                variant_name=name,
-                variant=Variant(
-                    name=name,
-                    spec=make_spec(
-                        lang_cls=variant.lang_cls,
-                        string_format=multiline,
-                        declaration_style=declaration_style,
-                    ),
-                    lang_cls=variant.lang_cls,
-                    fixture_prefix="",
-                    record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
-                ),
-                case_dir_name="multiline_string_scalar",
-                variable_form=literalizer.BothVariableForms(
-                    name="my_data",
-                    modifiers=frozenset(),
-                ),
+    for base_variant in build_multiline_string_variants():
+        spec = base_variant.spec
+        redefinition_styles = find_redefinition_styles(spec=spec)
+        if redefinition_styles:
+            declaration_style = (
+                spec.declaration_style
+                if spec.declaration_style in redefinition_styles
+                else redefinition_styles[0]
             )
-        )
+            name = f"{base_variant.name}_combined"
+            cases.append(
+                VariantCase(
+                    variant_name=name,
+                    variant=dataclasses.replace(
+                        base_variant,
+                        name=name,
+                        spec=make_spec(
+                            lang_cls=base_variant.lang_cls,
+                            string_format=spec.string_format,
+                            declaration_style=declaration_style,
+                        ),
+                    ),
+                    case_dir_name="multiline_string_scalar",
+                    variable_form=literalizer.BothVariableForms(
+                        name="my_data",
+                        modifiers=frozenset(),
+                    ),
+                )
+            )
+
+        for combination in base_variant.lang_cls.modifier_combinations:
+            name = f"{base_variant.name}_pre_indent_1_{combination.name}"
+            cases.append(
+                VariantCase(
+                    variant_name=name,
+                    variant=dataclasses.replace(base_variant, name=name),
+                    case_dir_name="multiline_string_scalar",
+                    variable_form=literalizer.NewVariable(
+                        name="my_data",
+                        modifiers=combination.modifiers,
+                    ),
+                    pre_indent_level=1,
+                )
+            )
     return cases
 
 
@@ -2574,7 +2587,7 @@ def build_variant_cases() -> list[VariantCase]:
             )
     cases.extend(build_modifier_variant_cases())
     cases.extend(build_json_type_variable_form_cases())
-    cases.extend(build_multiline_string_combined_cases())
+    cases.extend(build_multiline_string_context_cases())
     return cases
 
 
