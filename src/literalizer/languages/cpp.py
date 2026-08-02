@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import itertools
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -155,11 +156,14 @@ def _format_string_multiline(value: str) -> str:
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_cpp_escaped(value=value)
-    for index in range(-1, 100_000):
-        delimiter = "LITERALIZER" if index < 0 else f"LITERALIZER{index}"
+    delimiters = itertools.chain(
+        ("", "x"),
+        (f"x{index}" for index in range(100_000)),
+    )
+    for delimiter in delimiters:
         if f'){delimiter}"' not in value:
             return f'R"{delimiter}({value}){delimiter}"'
-    # Reaching this requires a value containing all 100,001 candidate closers.
+    # Reaching this requires a value containing all 100,002 candidate closers.
     return _format_string_cpp_escaped(value=value)  # pragma: no cover
 
 
