@@ -121,3 +121,19 @@ def test_multiline_string_variants_follow_capability() -> None:
         == "MULTILINE"
         for lang_cls in expected
     )
+
+    context_cases = [
+        case
+        for case in build_variant_cases()
+        if case.case_dir_name
+        in {
+            "multiline_string",
+            "multiline_string_scalar",
+            "multiline_string_nested",
+        }
+    ]
+    assert {case.variant.lang_cls for case in context_cases} == expected
+    assert all(
+        case.variant.lang_cls.supports_multiline_string_literals
+        for case in context_cases
+    )

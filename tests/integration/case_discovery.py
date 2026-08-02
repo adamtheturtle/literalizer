@@ -218,8 +218,11 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # Native multiline string syntax is exposed only by languages whose
         # explicit ``supports_multiline_string_literals`` capability is true.
         # Its dedicated axis selects those languages and their consistently
-        # named ``StringFormats.MULTILINE`` member.
+        # named ``StringFormats.MULTILINE`` member.  The scalar and nested
+        # companions exercise the same format outside a flat collection.
         "multiline_string",
+        "multiline_string_scalar",
+        "multiline_string_nested",
         # ``comment_terminators_collection`` and
         # ``comment_terminators_scalar`` contain every suffix delimiter
         # exposed by a production ``CommentConfig``. Their dedicated
