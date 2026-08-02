@@ -17,7 +17,11 @@ leading and trailing
         r#"backslash before newline: \
 next line"#,
         "trailing spaces  \nnext",
-        r#"C++ delimiter collision: )LITERALIZER"
+        r#"C++ empty delimiter collision: )"
+value"#,
+        r#"C++ first fallback collision: )" and )x"
+value"#,
+        r#"C++ second fallback collision: )" and )x" and )x0"
 value"#,
         r##"Rust delimiter collision: "#
 value"##,
