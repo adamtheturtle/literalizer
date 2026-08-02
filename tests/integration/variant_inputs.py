@@ -324,6 +324,9 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="string_unicode", suffix=""),
     ),
     "multiline_string": (_ci(case_dir_name="multiline_string", suffix=""),),
+    "multiline_raw_string_delimiter": (
+        _ci(case_dir_name="cpp_multiline_raw_string_delimiter", suffix=""),
+    ),
     "string_format_date_cross": (_ci(case_dir_name="scalar_date", suffix=""),),
     "string_format_datetime_cross": (
         _ci(case_dir_name="scalar_datetime", suffix="_dt"),

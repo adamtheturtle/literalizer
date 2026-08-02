@@ -104,6 +104,17 @@ The generated value is semantically identical to the input, including blank line
 Literalizer chooses collision-free raw delimiters for C++ and Rust, neutralizes JavaScript and Kotlin interpolation markers, and uses a non-interpolating form in the other targets.
 When source-language rules cannot preserve a particular value in the multiline form (for example, a backtick inside a Go raw string, a triple-quote collision in Scala, a carriage return, or trailing source-line whitespace in a raw syntax), the formatter falls back to an escaped string literal.
 
+C++ callers can replace the non-empty delimiter base with
+``Cpp(multiline_raw_string_delimiter_base="generated")``. Literalizer still
+tries the empty delimiter first; if it collides, candidates are
+``generated``, ``generated0``, ``generated1``, and so on. A base must be
+non-empty, contain at most 16 characters, and use only C++ basic source-set
+letters, digits, or graphical punctuation other than parentheses and
+backslash. Suffixed candidates are only used while the full delimiter remains
+within the 16-character limit. If every valid candidate collides, Literalizer
+uses an escaped string literal instead. This option has no effect unless
+``string_format=Cpp.string_formats.MULTILINE`` is selected.
+
 .. list-table:: Multiline string syntax
    :header-rows: 1
    :widths: 18 42 40
