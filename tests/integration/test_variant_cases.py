@@ -134,7 +134,7 @@ def test_multiline_string_variants_follow_capability() -> None:
 
 
 def test_multiline_combined_cases_follow_redefinition() -> None:
-    """Existing-variable coverage is limited to redefinable styles."""
+    """Existing-variable coverage is limited to re-definable styles."""
     cases = build_multiline_string_combined_cases()
 
     assert cases

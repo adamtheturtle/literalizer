@@ -1869,8 +1869,7 @@ def build_multiline_string_combined_cases() -> list[VariantCase]:
     capability participant.  For each language with a declaration style that
     explicitly supports redefinition, this companion case uses
     :class:`BothVariableForms` so the same root scalar is rendered once as a
-    declaration and once as an existing-variable assignment in a compilable
-    file.
+    declaration and once as an existing-variable assignment in a valid file.
     """
     cases: list[VariantCase] = []
     for variant in build_multiline_string_variants():

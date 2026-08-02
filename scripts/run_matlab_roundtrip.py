@@ -13,14 +13,17 @@ CI substitute for MATLAB; ``jsonencode`` is the built-in serializer
 shared by both.  This script shares the same input and comparison logic
 as the other per-language round-trip helpers.
 
-One field is excluded from the comparison because MATLAB's number type
-cannot represent it losslessly:
+Two fields are excluded from the comparison because the MATLAB or Octave
+runtime cannot represent them losslessly:
 
 * ``biginteger`` -- MATLAB has only the IEEE-754 ``double`` numeric
   type, so the 26-digit literal is stored as a double and
   ``jsonencode`` re-emits it as ``1e26``.  The field is trimmed from the
   input *before* literalization so the generated program does not carry
   a value the round-trip would reject.
+* ``string_multiline`` -- Literalizer emits MATLAB string concatenation
+  with ``+``, but the Octave substitute used by CI treats double-quoted
+  values as character arrays and performs numeric array addition.
 """
 
 import shutil
@@ -30,7 +33,7 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "MATLAB"
-_EXCLUDED_KEYS = ("biginteger",)
+_EXCLUDED_KEYS = ("biginteger", "string_multiline")
 
 
 def _build_program(json_text: str) -> str:
