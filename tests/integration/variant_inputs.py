@@ -323,7 +323,11 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         # alternate quoting style is exercised against the same input.
         _ci(case_dir_name="string_unicode", suffix=""),
     ),
-    "multiline_string": (_ci(case_dir_name="multiline_string", suffix=""),),
+    "multiline_string": (
+        _ci(case_dir_name="multiline_string", suffix=""),
+        _ci(case_dir_name="multiline_string_scalar", suffix="_scalar"),
+        _ci(case_dir_name="multiline_string_nested", suffix="_nested"),
+    ),
     "multiline_raw_string_delimiter": (
         _ci(case_dir_name="multiline_raw_string_delimiter", suffix=""),
     ),
