@@ -30,10 +30,3 @@ def test_invalid_cpp_raw_string_delimiter_raises(delimiter: str) -> None:
         match="multiline_raw_string_delimiter_base",
     ):
         Cpp(multiline_raw_string_delimiter_base=delimiter)
-
-
-def test_valid_cpp_raw_string_delimiter_punctuation() -> None:
-    """Every permitted C++14 graphical punctuation category is
-    accepted.
-    """
-    Cpp(multiline_raw_string_delimiter_base="_{}[]#<>%:;.?*")

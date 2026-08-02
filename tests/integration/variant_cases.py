@@ -1863,7 +1863,7 @@ def build_multiline_string_variants() -> list[Variant]:
 
 @beartype
 def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
-    """Build custom and exhausted C++ raw-delimiter-base variants."""
+    """Build custom, punctuation, and exhausted raw-delimiter variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         custom_base = lang_cls.non_default_kwargs.get(
@@ -1877,6 +1877,7 @@ def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
         )
         for name, delimiter_base in (
             ("custom", custom_base),
+            ("punctuation", "_{}[]#<>%:;.?*"),
             ("exhausted", "abcdefghijklmnop"),
         ):
             variants.append(
