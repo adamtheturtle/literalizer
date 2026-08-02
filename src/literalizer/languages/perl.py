@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -95,6 +96,25 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_perl_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating multiline Perl literal."""
+    if (
+        "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        escaped = _format_perl_string_double(value=value)
+        return (
+            escaped.replace("$", r"\$")
+            .replace("@", r"\@")
+            .replace("\0", r"\x{0}")
+        )
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -300,6 +320,10 @@ class Perl(metaclass=LanguageCls):
               characters are emitted as their raw UTF-8 bytes; the
               caller is responsible for placing the snippet in a
               source file whose encoding declaration matches.
+            * ``string_formats.MULTILINE`` -- non-interpolating
+              single-quoted strings with physical line breaks.  Falls
+              back to an escaped double-quoted string for carriage
+              returns, null bytes, and source-line trailing whitespace.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -380,7 +404,7 @@ class Perl(metaclass=LanguageCls):
     declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = False
+    supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -637,6 +661,7 @@ class Perl(metaclass=LanguageCls):
         DOUBLE = enum.member(value=_format_perl_string_double)
         DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        MULTILINE = enum.member(value=_format_perl_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

@@ -83,7 +83,7 @@ Each ``__init__`` parameter has a sensible default, so you only need to specify 
 Native multiline strings
 ------------------------
 
-Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, Lua, Groovy, Crystal, D, Nim, Swift, and PHP expose a consistently named ``StringFormats.MULTILINE`` option.
+Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, Lua, Groovy, Crystal, D, Nim, Swift, PHP, and Perl expose a consistently named ``StringFormats.MULTILINE`` option.
 It keeps physical line breaks in the generated source when the native syntax can represent the value safely, without adding a leading or trailing newline or enabling interpolation from the input:
 
 .. code-block:: python
@@ -179,6 +179,9 @@ uses an escaped string literal instead. This option has no effect unless
    * - PHP
      - Multiline single-quoted string
      - Single quotes and backslashes are escaped; interpolation stays disabled, with an escaped fallback for unsafe controls or source-line trailing whitespace.
+   * - Perl
+     - Multiline single-quoted string
+     - Escapes single quotes and backslashes; falls back for carriage returns, NUL, or source-line trailing whitespace without enabling interpolation.
 
 Python annotation evaluation
 ----------------------------
