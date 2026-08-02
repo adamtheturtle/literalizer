@@ -83,7 +83,7 @@ Each ``__init__`` parameter has a sensible default, so you only need to specify 
 Native multiline strings
 ------------------------
 
-Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, Lua, Groovy, Crystal, D, Nim, and Swift expose a consistently named ``StringFormats.MULTILINE`` option.
+Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, Lua, Groovy, Crystal, D, Nim, Swift, and Perl expose a consistently named ``StringFormats.MULTILINE`` option.
 It keeps physical line breaks in the generated source when the native syntax can represent the value safely, without adding a leading or trailing newline or enabling interpolation from the input:
 
 .. code-block:: python
@@ -165,6 +165,9 @@ When source-language rules cannot preserve a particular value in the multiline f
    * - Swift
      - Extended-delimiter multiline string
      - Chooses a collision-free raw delimiter; falls back for carriage returns, unsafe controls, or source-line trailing whitespace.
+   * - Perl
+     - Multiline single-quoted string
+     - Escapes single quotes and backslashes; falls back for carriage returns, NUL, or source-line trailing whitespace without enabling interpolation.
 
 Python annotation evaluation
 ----------------------------
