@@ -1,6 +1,7 @@
-final my_data = <List<String>>[
-    <String>['''first line
+final my_data = <String, List<List<String>>>{
+    '''outer''': <List<String>>[<String>['''nested first line
   indented
 
-last line'''],
-];
+nested last line
+''']],
+};

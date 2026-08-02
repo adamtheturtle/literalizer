@@ -1,11 +1,15 @@
 fn main() {
-    let mut my_data = r#"first line
+    let mut my_data = r#"
+root first line
   indented
 
-last line"#;
-    my_data = r#"first line
+root last line
+"#;
+    my_data = r#"
+root first line
   indented
 
-last line"#;
+root last line
+"#;
     let _ = my_data;
 }

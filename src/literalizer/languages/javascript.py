@@ -845,7 +845,19 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return self.dict_format.value
+        config = self.dict_format.value
+        if (
+            self.string_format.name == "MULTILINE"
+            and self.dict_format.name == "OBJECT"
+        ):
+            return dataclasses.replace(
+                config,
+                format_entry=dict_entry_with_template(
+                    template="[{key}]: {value}",
+                    format_value=passthrough_sequence_entry,
+                ),
+            )
+        return config
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:

@@ -1,6 +1,7 @@
-const my_data = [
-  [`first line
+const my_data = {
+  [`outer`]: [[`nested first line
   indented
 
-last line`],
-];
+nested last line
+`]],
+};

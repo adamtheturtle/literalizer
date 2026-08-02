@@ -38,8 +38,7 @@ PYTHON_MULTILINE = Python(
     string_format=Python.string_formats.MULTILINE,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
-
-_MULTILINE_VALUE = "first line\n  indented\n\nlast line"
+_MULTILINE_VALUE = "\nfirst line\n  indented\n\nlast line\n"
 
 type _JSONScalar = str | int | float | bool | None
 
@@ -109,6 +108,22 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
+
+
+def test_roundtrip_multiline_string_contexts() -> None:
+    """Multiline root and nested values preserve their exact contents."""
+    value = "\nfirst line\n  indented\n\nlast line\n"
+    for data in (value, [[[value]]]):
+        result = literalize(
+            source=json.dumps(obj=data),
+            input_format=InputFormat.JSON,
+            language=PYTHON_MULTILINE,
+            pre_indent_level=0,
+            include_delimiters=True,
+            variable_form=None,
+        )
+
+        assert ast.literal_eval(node_or_string=result.code) == data
 
 
 # ``st.dictionaries`` internally filters draws to ensure unique keys, which

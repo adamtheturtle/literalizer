@@ -1,11 +1,12 @@
 package main
 
 func main() {
-my_data := [][]string{
-	[]string{`first line
+my_data := map[string][][]string{
+	`outer`: [][]string{[]string{`nested first line
   indented
 
-last line`},
+nested last line
+`}},
 }
 _ = my_data
 }

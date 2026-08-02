@@ -1,7 +1,9 @@
 class Check {
-    public static readonly string my_data = @"first line
+    public static readonly string my_data = @"
+root first line
   indented
 
-last line";
+root last line
+";
     public static void Main() {}
 }

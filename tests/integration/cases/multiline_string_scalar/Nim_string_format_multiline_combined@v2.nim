@@ -1,9 +1,3 @@
 import json
-var my_data = %* """first line
-  indented
-
-last line"""
-my_data = %* """first line
-  indented
-
-last line"""
+var my_data = %* "\nroot first line\n  indented\n\nroot last line\n"
+my_data = %* "\nroot first line\n  indented\n\nroot last line\n"

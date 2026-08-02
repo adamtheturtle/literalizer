@@ -158,7 +158,7 @@ def _next_var(*, counter: list[int]) -> str:
 def _build_program(json_text: str) -> str:
     """Return a runnable Bash script literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Bash(),
+        language=Bash(string_format=Bash.string_formats.SINGLE),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,

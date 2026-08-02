@@ -218,8 +218,9 @@ VARIANT_ONLY_CASE_DIRS = frozenset(
         # Native multiline string syntax is exposed only by languages whose
         # explicit ``supports_multiline_string_literals`` capability is true.
         # Its dedicated axis selects those languages and their consistently
-        # named ``StringFormats.MULTILINE`` member.  The scalar and nested
-        # companions exercise the same format outside a flat collection.
+        # named ``StringFormats.MULTILINE`` member.  The three shared inputs
+        # separately pin collection elements, a root scalar, and nested
+        # collection placement.
         "multiline_string",
         "multiline_string_scalar",
         "multiline_string_nested",

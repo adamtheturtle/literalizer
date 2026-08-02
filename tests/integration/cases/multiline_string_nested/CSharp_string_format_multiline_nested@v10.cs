@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System;
-var my_data = (
-    (@"first line
+var my_data = new Dictionary<string, object> {
+    [@"outer"] = ((@"nested first line
   indented
 
-last line")
-);
+nested last line
+"))
+};

@@ -26,7 +26,7 @@ _LABEL = "Groovy"
 def _build_script(json_text: str) -> str:
     """Return a runnable Groovy script literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Groovy(),
+        language=Groovy(string_format=Groovy.string_formats.MULTILINE),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,

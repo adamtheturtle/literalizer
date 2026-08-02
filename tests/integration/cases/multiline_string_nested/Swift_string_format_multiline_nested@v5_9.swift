@@ -1,8 +1,11 @@
 let my_data: Any = [
-    [#"""
-first line
+    #"""
+outer
+"""#: [[#"""
+nested first line
   indented
 
-last line
-"""#],
+nested last line
+
+"""#]],
 ]

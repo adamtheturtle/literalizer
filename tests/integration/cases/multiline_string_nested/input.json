@@ -1,1 +1,7 @@
-[["first line\n  indented\n\nlast line"]]
+{
+  "outer": [
+    [
+      "nested first line\n  indented\n\nnested last line\n"
+    ]
+  ]
+}

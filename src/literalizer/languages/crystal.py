@@ -137,6 +137,12 @@ def _format_string_multiline(value: str) -> str:
     return f"%q|{value}|"
 
 
+@beartype
+def _format_json_string(value: str) -> str:
+    r"""Format JSON text without percent-literal escape consumption."""
+    return _format_string(value=value).replace("\\", "\\\\")
+
+
 _CRYSTAL_JSON_ANY = "JSON::Any"
 _CRYSTAL_RECORD_MAP_VALUE = "LiteralizerRecordValue"
 _CRYSTAL_RECORD_MAP_TYPE = f"Hash(String, {_CRYSTAL_RECORD_MAP_VALUE})"
@@ -1079,7 +1085,7 @@ class Crystal(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         if self._uses_json_any:
-            return _format_string
+            return _format_json_string
         return self.string_format
 
     @cached_property

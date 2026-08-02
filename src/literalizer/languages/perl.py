@@ -858,8 +858,8 @@ class Perl(metaclass=LanguageCls):
         """Return data-dependent preamble lines.
 
         Composes the ``MATH_BIG_INT`` integer-width contribution with
-        the ``DOUBLE_UTF8`` string-format contribution so a value
-        triggering both gets both preamble lines in a stable order.
+        the literal-Unicode string-format contribution so a value triggering
+        both gets both preamble lines in a stable order.
         """
         contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
             *(
@@ -870,7 +870,11 @@ class Perl(metaclass=LanguageCls):
             ),
             *(
                 (_perl_use_utf8_preamble,)
-                if self.string_format is type(self.string_format).DOUBLE_UTF8
+                if self.string_format
+                in {
+                    type(self.string_format).DOUBLE_UTF8,
+                    type(self.string_format).MULTILINE,
+                }
                 else ()
             ),
         )

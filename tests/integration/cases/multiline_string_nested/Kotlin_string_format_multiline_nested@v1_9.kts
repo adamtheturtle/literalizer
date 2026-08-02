@@ -1,6 +1,7 @@
-val my_data = arrayOf(
-    arrayOf("""first line
+val my_data = mapOf<String, Array<Array<String>>>(
+    """outer""" to arrayOf(arrayOf("""nested first line
   indented
 
-last line"""),
+nested last line
+""")),
 )

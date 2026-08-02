@@ -1,7 +1,8 @@
 <?php
 $my_data = [
-    ['first line
+    'outer' => [['nested first line
   indented
 
-last line'],
+nested last line
+']],
 ];

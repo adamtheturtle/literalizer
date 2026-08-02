@@ -1,5 +1,7 @@
 my_data = """\
-first line
+
+root first line
   indented
 
-last line"""
+root last line
+"""

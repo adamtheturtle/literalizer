@@ -1,9 +1,10 @@
 import std.json;
 void main() {
 auto my_data = JSONValue([
-    JSONValue([JSONValue(`first line
+    `outer`: JSONValue([JSONValue([JSONValue(`nested first line
   indented
 
-last line`)]),
+nested last line
+`)])]),
 ]);
 }

@@ -1,13 +1,17 @@
 package main
 
 func main() {
-my_data := `first line
+my_data := `
+root first line
   indented
 
-last line`
-my_data = `first line
+root last line
+`
+my_data = `
+root first line
   indented
 
-last line`
+root last line
+`
 _ = my_data
 }

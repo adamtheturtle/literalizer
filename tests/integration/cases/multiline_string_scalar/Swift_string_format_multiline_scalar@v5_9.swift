@@ -1,6 +1,8 @@
 let my_data: Any = #"""
-first line
+
+root first line
   indented
 
-last line
+root last line
+
 """#

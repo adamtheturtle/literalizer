@@ -1,7 +1,9 @@
 fn main() {
-    let my_data = r#"first line
+    let my_data = r#"
+root first line
   indented
 
-last line"#;
+root last line
+"#;
     let _ = my_data;
 }

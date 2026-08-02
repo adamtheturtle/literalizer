@@ -1,12 +1,14 @@
 #include <initializer_list>
 #include <string>
+#include <map>
 #include <vector>
 int main() {
-auto my_data = std::vector<std::vector<std::string>>{
-    std::vector<std::string>{R"(first line
+auto my_data = std::map<std::string, std::vector<std::vector<std::string>>>{
+    {R"(outer)", std::vector<std::vector<std::string>>{std::vector<std::string>{R"(nested first line
   indented
 
-last line)"},
+nested last line
+)"}}},
 };
     (void)my_data;
     return 0;

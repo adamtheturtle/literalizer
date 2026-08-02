@@ -1,6 +1,7 @@
-my $my_data = [
-    ['first line
+my $my_data = {
+    'outer' => [['nested first line
   indented
 
-last line'],
-];
+nested last line
+']],
+};

@@ -1,9 +1,13 @@
-let my_data = `first line
+let my_data = `
+root first line
   indented
 
-last line`;
-my_data = `first line
+root last line
+`;
+my_data = `
+root first line
   indented
 
-last line`;
+root last line
+`;
 export {};

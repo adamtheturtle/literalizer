@@ -54,7 +54,10 @@ def _build_program(json_text: str) -> str:
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=CSharp(sequence_format=CSharp.sequence_formats.ARRAY),
+        language=CSharp(
+            sequence_format=CSharp.sequence_formats.ARRAY,
+            string_format=CSharp.string_formats.MULTILINE,
+        ),
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=2,

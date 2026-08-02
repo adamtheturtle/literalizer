@@ -1,4 +1,5 @@
-final my_data = '''first line
+final my_data = '''\nroot first line
   indented
 
-last line''';
+root last line
+''';

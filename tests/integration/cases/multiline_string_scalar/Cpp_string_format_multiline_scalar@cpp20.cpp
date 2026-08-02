@@ -1,10 +1,12 @@
 #include <initializer_list>
 #include <string>
 int main() {
-const auto* my_data = R"(first line
+const auto* my_data = R"(
+root first line
   indented
 
-last line)";
+root last line
+)";
     (void)my_data;
     return 0;
 }

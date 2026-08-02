@@ -38,7 +38,10 @@ def _build_program(json_text: str) -> str:
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
+        language=Cpp(
+            json_type=Cpp.json_types.NLOHMANN_JSON,
+            string_format=Cpp.string_formats.MULTILINE,
+        ),
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=1,

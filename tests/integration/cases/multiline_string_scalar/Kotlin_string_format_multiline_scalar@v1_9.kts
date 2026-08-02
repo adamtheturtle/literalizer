@@ -1,4 +1,6 @@
-val my_data = """first line
+val my_data = """
+root first line
   indented
 
-last line"""
+root last line
+"""

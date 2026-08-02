@@ -757,8 +757,13 @@ class Lua(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
+        template = "[{key}] = {value}"
+        if self.string_format.name == "MULTILINE":
+            # A level-zero long string starts with ``[[``.  Spaces keep its
+            # brackets distinct from the surrounding computed-key brackets.
+            template = "[ {key} ] = {value}"
         return dict_entry_with_template(
-            template="[{key}] = {value}",
+            template=template,
             format_value=passthrough_sequence_entry,
         )
 

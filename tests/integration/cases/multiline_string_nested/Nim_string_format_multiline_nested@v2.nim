@@ -1,7 +1,8 @@
 import json
-var my_data = %* [
-    ["""first line
+var my_data = %* {
+    """outer""": [["""nested first line
   indented
 
-last line"""]
-]
+nested last line
+"""]]
+}
