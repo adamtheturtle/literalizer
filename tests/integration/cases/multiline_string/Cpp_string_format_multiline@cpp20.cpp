@@ -26,6 +26,10 @@ value)LITERALIZER0",
 value)LITERALIZER",
     R"LITERALIZER(Lua delimiter collision: ]]
 value)LITERALIZER",
+    R"LITERALIZER(Swift delimiter collision: """#
+value)LITERALIZER",
+    R"LITERALIZER(Swift interpolation collision: \#(value)
+value)LITERALIZER",
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
     std::string{"NUL followed by a digit: "} + '\0' + "7",
     "carriage\rreturn",
