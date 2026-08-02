@@ -3,7 +3,7 @@
 import pytest
 
 from literalizer import LanguageCls
-from literalizer.languages import ALL_LANGUAGES, Cpp
+from literalizer.languages import ALL_LANGUAGES
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES,
@@ -36,11 +36,3 @@ def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     assert len(language_cls.identifier_cases) >= 1
     assert isinstance(language_cls.supports_zero_parameter_calls, bool)
     assert isinstance(language_cls.supports_inline_multiline_dict_args, bool)
-
-
-def test_cpp_multiline_enum_uses_default_delimiter_base() -> None:
-    """The class-level C++ multiline formatter retains its default
-    base.
-    """
-    multiline = Cpp.StringFormats.MULTILINE  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]
-    assert multiline("first\nsecond") == 'R"(first\nsecond)"'

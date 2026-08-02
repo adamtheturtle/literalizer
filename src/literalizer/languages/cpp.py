@@ -2963,6 +2963,8 @@ class Cpp(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         if self.string_format is self.string_formats.MULTILINE:
+            if self.multiline_raw_string_delimiter_base == "x":
+                return _format_string_multiline
 
             def _formatter(value: str) -> str:
                 """Render with this C++ spec's delimiter base."""
