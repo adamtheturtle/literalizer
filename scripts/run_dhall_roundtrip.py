@@ -23,10 +23,12 @@ where some keys hold scalars and others hold containers (lists, dicts)
 wraps scalar values into a single ``Value`` union, but the strategy
 has no ``wrap_non_scalar`` so a dict mixing scalar and container
 values still raises ``MixedDictValuesError``.  The trimmed subset
-below keeps every scalar-valued top-level key (twelve of them: full
-Integer / Double / Bool / Text coverage) and drops every
-container-valued one so the root becomes a uniform-family record of
-``Value``-wrapped scalars.  The dropped keys still ride through
+below keeps every JSON-safe scalar-valued top-level key (twelve of
+them: full Integer / Double / Bool / Text coverage), drops every
+container-valued one, and omits the multiline string because the small
+JSON walker does not escape control characters.  The root therefore
+becomes a uniform-family record of ``Value``-wrapped scalars.  The
+dropped keys still ride through
 ``exclude_keys`` so :func:`roundtrip_common.verify` ignores them on
 both sides, matching the per-language exclusion pattern used by the
 Lua, Elm, Go, etc. scripts for fields their backends cannot represent
@@ -54,9 +56,10 @@ _LABEL = "Dhall"
 
 # Top-level container-valued keys.  Dhall's ``UNION_TYPE`` strategy
 # wraps scalars only (no ``wrap_non_scalar``), so a root dict that mixes
-# scalar and container values raises ``MixedDictValuesError``.  Trimming
-# every container-valued key keeps the root a uniform-family record of
-# ``Value``-wrapped scalars.
+# scalar and container values raises ``MixedDictValuesError``.  The
+# hand-rolled JSON walker also cannot escape control characters in Text,
+# so the multiline scalar is omitted.  Trimming these keys keeps the root
+# a uniform-family record of JSON-safe ``Value``-wrapped scalars.
 _EXCLUDED_KEYS: tuple[str, ...] = (
     "empty_array",
     "int_array",
@@ -67,6 +70,7 @@ _EXCLUDED_KEYS: tuple[str, ...] = (
     "empty_object",
     "flat_object",
     "nested_object",
+    "string_multiline",
 )
 
 # Tail that the ``Dhall`` ``NewVariable`` form appends to the literalize
