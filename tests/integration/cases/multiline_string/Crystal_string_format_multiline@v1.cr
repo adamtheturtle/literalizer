@@ -18,7 +18,11 @@ leading and trailing
     %q|backslash before newline: \
 next line|,
     "trailing spaces  \nnext",
-    %q|C++ delimiter collision: )LITERALIZER"
+    %q|C++ empty delimiter collision: )"
+value|,
+    %q|C++ first fallback collision: )" and )x"
+value|,
+    %q|C++ second fallback collision: )" and )x" and )x0"
 value|,
     %q|Rust delimiter collision: "#
 value|,
