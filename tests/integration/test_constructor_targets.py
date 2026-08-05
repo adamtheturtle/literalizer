@@ -30,8 +30,8 @@ class _ConstructorBindingCase:
 
     name: str
     lang_cls: literalizer.LanguageCls
-    spec_kwargs: dict[str, object] = field(default_factory=_empty_spec_kwargs)
-    variable_form: literalizer.VariableForm = field(
+    spec_kwargs: dict[str, object] = field(default_factory=_empty_spec_kwargs)  # noqa: NOD001
+    variable_form: literalizer.VariableForm = field(  # noqa: NOD001
         default_factory=lambda: NewVariable(name="p", modifiers=frozenset()),
     )
 

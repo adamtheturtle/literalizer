@@ -866,7 +866,7 @@ class Go(metaclass=LanguageCls):
         auto_name_pattern = re.compile(
             pattern=rf"^{re.escape(pattern=prefix)}\d+$",
         )
-        seen_names: set[str] = set()
+        seen_names: set[str] = set()  # noqa: NOD001
         for keys, name in self.record_shape_names.items():
             if not _PASCAL_CASE_IDENTIFIER.match(string=name):
                 msg = (
@@ -1109,7 +1109,7 @@ class Go(metaclass=LanguageCls):
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Element-to-type resolver for the configured Go types."""
-        _type_names: dict[type, str] = {
+        _type_names: dict[type, str] = {  # noqa: NOD001
             datetime.date: "time.Time",
             datetime.datetime: "time.Time",
             str: "string",

@@ -1381,7 +1381,7 @@ class Java(metaclass=LanguageCls):
         auto_name_pattern = re.compile(
             pattern=rf"^{re.escape(pattern=prefix)}\d+$",
         )
-        seen_names: set[str] = set()
+        seen_names: set[str] = set()  # noqa: NOD001
         for keys, name in self.record_shape_names.items():
             if not _PASCAL_CASE_IDENTIFIER.match(string=name):
                 msg = (

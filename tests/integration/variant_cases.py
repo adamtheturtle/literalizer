@@ -125,7 +125,7 @@ def build_non_default_variants(
         [literalizer.LanguageCls, enum.Enum],
         literalizer.Language,
     ],
-    excluded_format_names: frozenset[str] = frozenset(),
+    excluded_format_names: frozenset[str] = frozenset(),  # noqa: NOD001
 ) -> list[Variant]:
     """Build variants for every non-default value of a format enum.
 

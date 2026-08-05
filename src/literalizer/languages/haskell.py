@@ -2027,7 +2027,7 @@ class Haskell(metaclass=LanguageCls):
         """Callable that formats a float value as a literal."""
         if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _float_prefix = f"{self.constructor_prefix}Float "
-            _base_format_float: Callable[[float], str] = self.float_format
+            _base_format_float: Callable[[float], str] = self.float_format  # noqa: NOD001
 
             def _wrap_float(value: float) -> str:
                 """Delegate to module-level implementation."""
@@ -2045,7 +2045,7 @@ class Haskell(metaclass=LanguageCls):
         """Callable that formats an int value as a literal."""
         if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _int_prefix = f"{self.constructor_prefix}Int "
-            _base_format_integer: Callable[[int], str] = self.integer_format
+            _base_format_integer: Callable[[int], str] = self.integer_format  # noqa: NOD001
 
             def _wrap_integer(value: int) -> str:
                 """Delegate to module-level implementation."""
