@@ -349,8 +349,8 @@ class OCaml(metaclass=LanguageCls):
               ``yojson`` tag set (``Bool``, ``Int``, ``Float``,
               ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``).  Dates,
               datetimes, times, and bytes reformat to JSON-friendly
-              strings; integers outside OCaml's native ``int`` range route
-              through the ``Intlit`` escape hatch; the ``type val_t``
+              strings; integers outside the native OCaml ``int`` range
+              route through the ``Intlit`` escape hatch; the ``type val_t``
               preamble is dropped.
     """
 
