@@ -105,6 +105,22 @@ class _SupportsCallVariableWrapInFile(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _SupportsFastDocumentFormatting(Protocol):
+    """A language with an optimized whole-document formatter."""
+
+    def format_document_fast(
+        self,
+        data: Value,
+        *,
+        line_prefix: str,
+        include_delimiters: bool,
+        collection_layout: CollectionLayout,
+    ) -> str | None:
+        """Render *data*, or return ``None`` for the shared formatter."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 _DISABLED_REF_KEY = ""
 
 
@@ -2152,6 +2168,16 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
             return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
+
+    if not ref_key and isinstance(language, _SupportsFastDocumentFormatting):
+        fast_result = language.format_document_fast(
+            data=data,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+            collection_layout=collection_layout,
+        )
+        if fast_result is not None:
+            return fast_result
 
     wrap_ids = _compute_wrap_ids(data=data, spec=language)
     tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)

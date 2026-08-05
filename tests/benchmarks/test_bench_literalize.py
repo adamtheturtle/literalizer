@@ -23,7 +23,7 @@ import json
 from pytest_codspeed import BenchmarkFixture
 
 from literalizer import InputFormat, literalize
-from literalizer.languages import Python
+from literalizer.languages import Python, Rust
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
@@ -33,6 +33,7 @@ PYTHON = Python(
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
+RUST_JSON_VALUE = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
 
 
 def _build_yaml_source(*, n_records: int, with_comments: bool) -> str:
@@ -111,6 +112,15 @@ def _run(*, source: str, input_format: InputFormat) -> str:
     ).code
 
 
+def _run_rust_json_value(*, source: str) -> str:
+    """Literalize JSON to a Rust ``serde_json::Value`` expression."""
+    return literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=RUST_JSON_VALUE,
+    ).code
+
+
 def test_yaml_fast_path(benchmark: BenchmarkFixture) -> None:
     """Comment-free YAML through the C-backed safe loader."""
     benchmark(_run, source=_YAML_FAST, input_format=InputFormat.YAML)
@@ -137,6 +147,13 @@ def test_json_large_flat_records(benchmark: BenchmarkFixture) -> None:
         source=_JSON_LARGE_FLAT_RECORDS,
         input_format=InputFormat.JSON,
     )
+
+
+def test_json_large_flat_records_rust(
+    benchmark: BenchmarkFixture,
+) -> None:
+    """Large JSON record array rendered as Rust ``serde_json::Value``."""
+    benchmark(_run_rust_json_value, source=_JSON_LARGE_FLAT_RECORDS)
 
 
 def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:

@@ -183,6 +183,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="typed_dict_skip_null_values", suffix=""),
     ),
     "json_type": (
+        _ci(case_dir_name="empty_dict", suffix="_empty"),
         _ci(case_dir_name="dict_with_list_value", suffix=""),
         _ci(case_dir_name="nested_mixed_inner", suffix="_nested_mixed"),
         _ci(case_dir_name="dates", suffix="_dates"),
@@ -195,6 +196,7 @@ AXIS_INPUTS: dict[str, tuple[CaseInput, ...]] = {
         _ci(case_dir_name="scalar_time", suffix="_time"),
         _ci(case_dir_name="scalar_int_large", suffix="_long"),
         _ci(case_dir_name="scalar_int_very_large", suffix="_bigint"),
+        _ci(case_dir_name="list_beyond_i64", suffix="_list_beyond_i64"),
         _ci(case_dir_name="bool_list", suffix="_bool_list"),
         _ci(case_dir_name="scalar_null", suffix="_null"),
         _ci(case_dir_name="json_string_escaping", suffix="_string_escaping"),
