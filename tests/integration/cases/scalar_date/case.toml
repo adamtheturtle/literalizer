@@ -1,0 +1,31 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "date"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "string_format_date_cross"
+
+[[variants]]
+axis = "type_name"
+suffix = "_date"
+
+[[variants]]
+axis = "constructor_prefix"
+suffix = "_date"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifiers"

@@ -1,0 +1,24 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+suffix = "_sibling_widening"
+
+[[variants]]
+axis = "heterogeneous_value_enum_name"
+suffix = "_sibling_widening"
+
+[[variants]]
+axis = "heterogeneous_value_union_name"
+suffix = "_sibling_widening"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"
+suffix = "_sibling_widening"
+
+[[variants]]
+axis = "language_version"

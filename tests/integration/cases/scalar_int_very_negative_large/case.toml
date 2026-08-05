@@ -1,0 +1,5 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "language_version"

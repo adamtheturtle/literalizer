@@ -1,0 +1,12 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_null"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "language_version"

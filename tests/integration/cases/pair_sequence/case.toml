@@ -1,0 +1,12 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "sequence"
+suffix = "_pair"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "language_version"

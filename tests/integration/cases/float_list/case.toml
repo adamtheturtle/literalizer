@@ -1,0 +1,37 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "sequence"
+suffix = "_float"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"
+suffix = "_float"
+
+[[variants]]
+axis = "numeric_separator"
+suffix = "_float"
+
+[[variants]]
+axis = "type_name"
+suffix = "_float"
+
+[[variants]]
+axis = "constructor_prefix"
+suffix = "_float"
+
+[[variants]]
+axis = "numeric_style"
+
+[[variants]]
+axis = "language_version"

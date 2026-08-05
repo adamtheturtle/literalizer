@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "record_unify_optional_fields"
+suffix = "_nested_map_fallback"
+
+[[variants]]
+axis = "record_nested_map_fallback"

@@ -57,11 +57,3 @@ class VariantCase:
     case_dir_name: str
     variable_form: literalizer.VariableForm
     pre_indent_level: int = 0
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class CaseInput:
-    """An input case directory plus a variant-name suffix."""
-
-    case_dir_name: str
-    suffix: str

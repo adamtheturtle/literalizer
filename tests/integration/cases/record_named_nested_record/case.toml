@@ -1,0 +1,8 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "record_shape_names"
+
+[[variants]]
+axis = "language_version"

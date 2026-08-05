@@ -1,0 +1,32 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "integer_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"
+
+[[variants]]
+axis = "numeric_separator"
+
+[[variants]]
+axis = "sequence_decl"
+
+[[variants]]
+axis = "numeric_style"
+
+[[variants]]
+axis = "integer_width_strategy"
+
+[[variants]]
+axis = "language_version"

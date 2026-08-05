@@ -8,7 +8,7 @@ individual language classes.
 from __future__ import annotations
 
 import enum  # noqa: TC003  # Runtime-resolved by beartype.
-from collections.abc import Iterable  # noqa: TC003  # Runtime beartype hint.
+from collections.abc import Iterable, Mapping  # noqa: TC003
 
 from beartype import beartype
 
@@ -494,7 +494,11 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_modifier_variant_cases() -> list[VariantCase]:
+def build_modifier_variant_cases(
+    *,
+    case_dir_names: tuple[str, ...],
+    sequence_case_dirs: Mapping[str, str],
+) -> list[VariantCase]:
     """Build variants exercising per-language modifier rendering.
 
     For every language with a non-empty ``modifiers`` enum, emit one
@@ -506,15 +510,6 @@ def build_modifier_variant_cases() -> list[VariantCase]:
     by the test itself.
     """
     cases: list[VariantCase] = []
-    case_dirs = (
-        "scalar_int",
-        "simple_dict",
-        "set",
-        "empty_set",
-        "scalar_date",
-        "scalar_datetime",
-        "scalar_time",
-    )
     for lang_cls in sorted_languages():
         spec = make_spec(lang_cls=lang_cls)
         if len(spec.modifiers) == 0:
@@ -546,16 +541,12 @@ def build_modifier_variant_cases() -> list[VariantCase]:
                         modifiers=modifiers,
                     ),
                 )
-                for case_dir_name in case_dirs
+                for case_dir_name in case_dir_names
             )
 
     # Some modifiers require a non-default sequence representation for typed
     # declarations.  The compatibility mapping belongs to the language; this
     # matrix supplies the sequence inputs that exercise it.
-    sequence_cases = (
-        ("mixed_numbers", "mixed_number_list"),
-        ("array", "simple_sequence"),
-    )
     for lang_cls in sorted_languages():
         default_spec = make_spec(lang_cls=lang_cls)
         overrides = (
@@ -573,7 +564,7 @@ def build_modifier_variant_cases() -> list[VariantCase]:
                 enum_cls=default_spec.sequence_formats,
                 name=sequence_format_name,
             )
-            for suffix, case_dir_name in sequence_cases:
+            for suffix, case_dir_name in sequence_case_dirs.items():
                 variant = Variant(
                     name=(
                         f"{lang_cls.__name__}_modifiers_"

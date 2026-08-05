@@ -1,0 +1,8 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "sequence_decl"
+
+[[variants]]
+axis = "language_version"

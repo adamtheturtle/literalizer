@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "heterogeneous_value_enum_name"
+
+[[variants]]
+axis = "heterogeneous_value_union_name"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"

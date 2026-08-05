@@ -151,7 +151,19 @@ def test_multiline_string_variants_follow_capability() -> None:
 
 def test_multiline_context_cases_follow_capabilities() -> None:
     """Assignment and indentation contexts follow language metadata."""
-    cases = build_multiline_string_context_cases()
+    combined_suffix = "_combined"
+    combined_case_dir_name = "multiline_string_scalar"
+    pre_indent_case_dir_name = "multiline_string_scalar"
+    cases = build_multiline_string_context_cases(
+        combined_case_dir_name=combined_case_dir_name,
+        combined_suffix=combined_suffix,
+        combined_variable_form=literalizer.BothVariableForms(
+            name="my_data",
+            modifiers=frozenset(),
+        ),
+        pre_indent_case_dir_name=pre_indent_case_dir_name,
+        pre_indent_level=1,
+    )
     combined_cases = [
         case
         for case in cases
@@ -164,6 +176,11 @@ def test_multiline_context_cases_follow_capabilities() -> None:
         isinstance(case.variable_form, literalizer.BothVariableForms)
         for case in combined_cases
     )
+    assert all(
+        case.case_dir_name == combined_case_dir_name
+        and case.variant_name.endswith(combined_suffix)
+        for case in combined_cases
+    )
     assert {case.variant.lang_cls for case in combined_cases} == {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
@@ -174,6 +191,11 @@ def test_multiline_context_cases_follow_capabilities() -> None:
         )
     }
     assert indented_cases
+    assert all(
+        case.case_dir_name == pre_indent_case_dir_name
+        and "_pre_indent_1_" in case.variant_name
+        for case in indented_cases
+    )
     assert all(case.pre_indent_level == 1 for case in indented_cases)
     assert all(
         case.variant.lang_cls.supports_multiline_string_literals

@@ -1,0 +1,17 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "set"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "set_decl"
+
+[[variants]]
+axis = "language_version"

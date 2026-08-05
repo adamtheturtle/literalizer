@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "string_format"
+
+[[variants]]
+axis = "language_version"

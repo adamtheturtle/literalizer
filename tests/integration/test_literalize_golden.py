@@ -13,7 +13,7 @@ member so the loop runs once per language and case.
 """
 
 from pathlib import Path
-from typing import Final, NoReturn
+from typing import NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -50,6 +50,10 @@ from .case_discovery import (
     primed_new_variable_languages,
 )
 from .case_inputs import case_input
+from .case_manifests import (
+    case_manifests_by_name,
+    variable_form_for_context,
+)
 from .language_specs import (
     find_redefinition_styles,
     lang_cls_name,
@@ -61,7 +65,6 @@ from .language_specs import (
 from .variant_cases import (
     group_variant_cases_by_language,
     variant_languages,
-    wrap_variable_form,
 )
 
 _SkipReasons = tuple[tuple[type[Exception], str, bool], ...]
@@ -108,9 +111,6 @@ _VARIANT_SKIP_REASONS: _SkipReasons = (
     (UnrepresentableInputError, "cannot represent this input", True),
 )
 
-_RECORD_NULL_SUBSTITUTIONS_CASE: Final = "record_null_substitutions"
-_RECORD_NULL_SUBSTITUTIONS: Final = {"replacement": -1}
-
 
 def _skip_unrepresentable(
     *,
@@ -150,6 +150,7 @@ def test_golden_file(
     """Test that literalize_yaml output matches expected golden file."""
     lang_name = lang_cls.__name__
     grouped = group_cases_by_language(cases_dir=cases_dir)
+    manifests = case_manifests_by_name(cases_dir=cases_dir)
     for case_name in grouped.get(lang_cls, []):
         for version_format in lang_cls.VersionFormats:
             with subtests.test(
@@ -158,6 +159,10 @@ def test_golden_file(
             ):
                 input_info = case_input(case_dir=cases_dir / case_name)
                 source_text = input_info.path.read_text(encoding="utf-8")
+                context = manifests[case_name].base_context
+                collection_layout = literalizer.CollectionLayout(
+                    value=context.collection_layout or "compact"
+                )
                 golden_path = make_golden_path(
                     parent=input_info.path.parent,
                     name=lang_name,
@@ -178,14 +183,15 @@ def test_golden_file(
                             source=source_text,
                             input_format=input_info.input_format,
                             language=spec,
-                            pre_indent_level=0,
+                            pre_indent_level=context.pre_indent_level,
                             include_delimiters=True,
-                            variable_form=wrap_variable_form(),
+                            variable_form=variable_form_for_context(
+                                context=context
+                            ),
                             wrap_in_file=True,
+                            collection_layout=collection_layout,
                             record_null_substitutions=(
-                                _RECORD_NULL_SUBSTITUTIONS
-                                if case_name == _RECORD_NULL_SUBSTITUTIONS_CASE
-                                else None
+                                context.record_null_substitutions
                             ),
                         )
                     except VariableNameNotSupportedError:
@@ -193,14 +199,13 @@ def test_golden_file(
                             source=source_text,
                             input_format=input_info.input_format,
                             language=spec,
-                            pre_indent_level=0,
+                            pre_indent_level=context.pre_indent_level,
                             include_delimiters=True,
                             variable_form=None,
                             wrap_in_file=True,
+                            collection_layout=collection_layout,
                             record_null_substitutions=(
-                                _RECORD_NULL_SUBSTITUTIONS
-                                if case_name == _RECORD_NULL_SUBSTITUTIONS_CASE
-                                else None
+                                context.record_null_substitutions
                             ),
                         )
                 except (

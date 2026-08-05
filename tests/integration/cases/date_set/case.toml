@@ -1,0 +1,12 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "date"
+
+[[variants]]
+axis = "json_type"
+suffix = "_date_set"
+
+[[variants]]
+axis = "language_version"

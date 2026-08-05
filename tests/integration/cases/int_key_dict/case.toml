@@ -1,0 +1,14 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "dict_decl"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "language_version"

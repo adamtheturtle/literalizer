@@ -22,7 +22,7 @@ from .case_discovery import (
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
-from .case_inputs import case_input
+from .case_manifests import load_case_manifests
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
@@ -156,8 +156,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """
     expected: set[Path] = set()
 
-    for case_dir in sorted(cases_dir.iterdir()):
-        expected.add(case_input(case_dir=case_dir).path)
+    for manifest in load_case_manifests(cases_dir=cases_dir):
+        expected.add(manifest.path)
+        expected.add(manifest.input.path)
 
     for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         expected.update(

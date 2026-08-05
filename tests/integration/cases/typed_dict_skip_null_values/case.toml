@@ -1,0 +1,6 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+
+[[variants]]
+axis = "typed_dict_null_filtering"

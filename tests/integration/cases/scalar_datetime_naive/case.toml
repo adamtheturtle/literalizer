@@ -1,0 +1,17 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "datetime"
+suffix = "_naive"
+
+[[variants]]
+axis = "json_type"
+suffix = "_datetime_naive"
+
+[[variants]]
+axis = "json_type_datetime_cross"
+suffix = "_naive"
+
+[[variants]]
+axis = "language_version"

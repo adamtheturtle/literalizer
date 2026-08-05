@@ -23,222 +23,12 @@ import literalizer
 from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
-from .call_cases import CALL_CASE_CONFIGS, CALL_VARIANT_CASE_CONFIGS
 from .case_inputs import CaseInput, case_input
+from .case_manifests import load_case_manifests
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
-)
-
-# Case directories consumed only by a dedicated variant axis, never by
-# the all-languages base / combined / language-version discovery.  Like
-# the call and ``$ref`` case directories, a specialized test owns these.
-#
-# ``record_wide_int`` carries an integer beyond the signed 64-bit range
-# to exercise Go's and Rust's value-derived ``RECORD`` field typing
-# (issue #2306) via the ``record_numeric_cross`` axis.  Other languages'
-# default heterogeneous representations cannot hold a >2^63 integer in a
-# container -- a separate latent issue, not #2306 -- so base-discovering
-# it for every language would emit golden files that fail to compile.
-#
-# The ``tuple_pair_*`` / ``tuple_triple_*`` directories carry
-# two-element and three-element mixed scalar arrays solely to exercise
-# the ``TUPLE`` heterogeneous strategy (issue #2331; Kotlin
-# ``Pair``/``Triple``).  Only the ``heterogeneous_strategy`` axis is
-# meaningful for them, so they stay out of the all-languages base
-# discovery.
-#
-# ``record_list_of_records`` carries a record field whose value is a
-# list of record-shaped dicts, exercising the ``RECORD`` strategy's
-# ``element_record_name`` field typing (issue #2420; C++
-# ``std::vector<RecordN>``).  Only the ``heterogeneous_strategy`` axis
-# is meaningful for it -- under the default strategy it is just another
-# heterogeneous dict already covered elsewhere -- so it stays out of
-# the all-languages base discovery.
-# ``record_nonrecord_dict_field`` carries a record-shaped dict whose
-# ``meta`` field is an empty (non-record) dict.  Its dedicated variant
-# builder exercises the widened C# ``object`` field and the documented
-# Nim rejection path (the cross-language decision in #2317).  The case
-# stays out of all-languages base discovery because only ``RECORD``
-# behavior is relevant; other ports do not yet all emit valid code for it.
-#
-# ``heterogeneous_time_string`` carries ``[09:30:00, "hello"]`` solely
-# to drive the ``case datetime.time():`` arm of each language's
-# heterogeneous-variant signature builder under the
-# ``heterogeneous_strategy`` axis (replacing the
-# ``test_datetime_time_heterogeneous_variant_renders`` shim, issue
-# #2518).  Under the default per-language strategy it is just another
-# heterogeneous list already covered elsewhere, so it stays out of the
-# all-languages base discovery; only the ``heterogeneous_strategy``
-# axis consumes it.
-#
-# ``dict_wide_int_key`` carries a single ``{>2^53: "tag"}`` entry to
-# pin the dict-key arm of the Perl ``MATH_BIG_INT`` preamble check
-# (#2588 follow-up): a wide integer that appears only as a key still
-# drives the ``Math::BigInt`` wrapper, so the ``use Math::BigInt;``
-# preamble must follow.  Other languages cannot represent the key in a
-# base golden, so it stays out of the all-languages base discovery.
-#
-# ``time_union_type_hint`` carries a non-empty time sequence beside an
-# empty sequence. Its dedicated type-hint axis selects languages whose
-# explicit annotations can represent that nested shape.
-VARIANT_ONLY_CASE_DIRS = frozenset(
-    {
-        "record_wide_int",
-        "record_list_of_records",
-        # Null replacements must be applied before RECORD field inference.
-        # Its dedicated capability-selected axis supplies the substitutions;
-        # base and unrelated format variants do not.
-        "record_null_substitutions_records",
-        "record_nonrecord_dict_field",
-        "tuple_pair_record_field",
-        "tuple_pair_top_level",
-        "tuple_triple_record_field",
-        "tuple_triple_top_level",
-        # ``nested_tuple_strategy`` verifies recursive composition of a
-        # tuple-eligible list through homogeneous outer lists (issue
-        # #3140). Its dedicated axis discovers every language exposing a
-        # ``TUPLE`` heterogeneous strategy.
-        "nested_tuple_strategy",
-        "nested_tuple_strategy_mixed",
-        # ``typed_dict_skip_null_values`` exercises typed dict inference
-        # after null-valued entries are filtered.  Its dedicated axis
-        # discovers every language that opts into that capability.
-        "typed_dict_skip_null_values",
-        # Custom raw-string delimiter selection and exhaustion are exercised
-        # only by languages declaring the corresponding non-default option.
-        "multiline_raw_string_delimiter",
-        "heterogeneous_time_string",
-        "time_union_type_hint",
-        "dict_wide_int_key",
-        "object_variant_mixed_scalar_empty_list",
-        "object_variant_integer_widening_tiers",
-        "object_variant_null_only_map",
-        "object_variant_nested_tables_mixed_int_widths",
-        "object_variant_empty_and_nonempty_maps",
-        "object_variant_null_only_list",
-        "object_variant_scalar_empty_map",
-        "object_variant_nested_empty_list_table",
-        "object_variant_all_wrapped_children",
-        # ``record_keyword_field`` carries dict keys that collide with
-        # Rust keywords (``type``, ``match``) and Zig keywords
-        # (``error``, ``switch``) to exercise the field-name escaping in
-        # each RECORD language: Rust raw identifiers (``r#type``, issue
-        # #2880) and Zig quoted identifiers (``@"error"``, issue #2963).
-        # Every key that is not one language's keyword renders verbatim
-        # there, so both golden files compile.  Only languages that
-        # escape keyword field names opt in, so base-discovering it for
-        # every language would emit golden files that may fail to compile.
-        "record_keyword_field",
-        # ``record_quoted_field`` covers quoted identifiers in Zig for keys
-        # such as ``a-b``.  Only Zig opts into this capability, so the case
-        # remains outside all-languages base discovery.
-        "record_quoted_field",
-        # ``record_field_type_split`` carries same-key-set dicts whose
-        # field types conflict (a nested record with different fields,
-        # differing scalar types) in positions that never share a
-        # sibling list, so a field-type-splitting RECORD strategy
-        # resolves each group to its own struct (Rust issue #2881, Go
-        # issue #2888, the remaining RECORD languages issue #2961).  Only
-        # the RECORD strategies that split shapes by field type consume
-        # the ``record_field_type_split`` variant; the non-RECORD
-        # languages would key nothing by field type, so base-discovering
-        # it for every language would emit golden files that fail to
-        # compile.
-        "record_field_type_split",
-        # ``record_nested_map_fallback`` carries a list of records whose
-        # uniform top-level keys hold nested sibling maps of divergent /
-        # disjoint shape, which the ``RECORD`` strategy cannot render as
-        # a record (issue #2910).  The shared widening pass drops those
-        # maps from the shape mapping so the outer record survives.  Rust,
-        # Go, Java, C#, Kotlin, Scala, and Swift are top-type consumers;
-        # Rust, Crystal, Nim, V, D, Odin, Zig, C, and C++ use
-        # language-specific value carriers (issues #2910 through #2917
-        # and #2919 through #2924). Remaining RECORD languages widen in
-        # later sub-issues of #2909, so this case stays out of
-        # all-languages base discovery.
-        "record_nested_map_fallback",
-        # ``nested_map_widening`` carries sibling dict values that are
-        # maps whose value types diverge (issue #2878).  Each inner map
-        # otherwise renders at its own narrower value type while the
-        # enclosing container declares the widened type, so only
-        # languages that can widen render it as code that compiles: Go
-        # and Kotlin widen the opener (issues #2878/#2890) while Rust,
-        # Nim, Mojo, V, and C++ wrap the scalar leaves in their
-        # ``TAGGED_ENUM`` / ``OBJECT_VARIANT`` / ``VARIANT`` /
-        # ``INTERFACE`` / RECORD-map value carriers (issues
-        # #2879/#2898/#2895/#2896/#2917).  The Go, Kotlin, Rust, Nim,
-        # Mojo, V, and C++ ``nested_map_widening`` variants are the sole
-        # consumers, so it stays out of the all-languages base discovery.
-        "nested_map_widening",
-        # ``empty_map_narrowing`` carries an empty map beside a non-empty
-        # map sibling (``[{}, {"x": 1}]``).  Only languages whose
-        # ``dict_format_config`` declares a ``narrowed_empty_form`` type
-        # the empty literal from the sibling's key/value types so the list
-        # compiles (V issue #3015, Rust issue #3013); other statically
-        # typed languages still render this shape in different ways, so it
-        # stays out of the all-languages base discovery.
-        "empty_map_narrowing",
-        # ``tagged_enum_empty_list`` / ``tagged_enum_empty_map`` carry a
-        # scalar beside an empty list / map (``[1, []]`` / ``[1, {}]``),
-        # which has no single element type.  Only a ``TAGGED_ENUM``
-        # strategy renders this shape as code that compiles, wrapping the
-        # scalar in its value enum and the empty container in a ``List`` /
-        # ``Map`` variant (issue #3028); other statically typed languages
-        # reject or diverge on it, so both directories stay out of the
-        # all-languages base discovery.
-        "tagged_enum_empty_list",
-        "tagged_enum_empty_map",
-        # ``dhall_nested_map_widening`` is the Dhall counterpart of
-        # ``nested_map_widening`` (issue #2897).  Dhall renders dicts as
-        # records typed by their field set, so it needs a dedicated input
-        # whose sibling inner maps share one key set while diverging their
-        # scalar value types; the ``UNION_TYPE`` strategy then wraps every
-        # sibling map's leaves in ``Value`` so the list type-checks.  The
-        # Dhall ``dhall_nested_map_widening`` variants are the sole
-        # consumers, so it stays out of the all-languages base discovery.
-        "dhall_nested_map_widening",
-        # A JSON object mixing a dollar-prefixed key with an embedded quote,
-        # control character, multi-byte character, and quasi-quote-like
-        # meta-syntax exercises string escaping for every JSON value back end.
-        # It stays variant-only because the ``json_type`` axis is its sole
-        # consumer.
-        "json_string_escaping",
-        # ``string_embedded_nul`` carries a bare embedded null byte and a
-        # null byte immediately followed by a digit, to pin the escape
-        # each language emits (and its distinctness before a following
-        # digit) for the languages whose ``variant_metadata`` sets
-        # ``string_literals_escape_null_byte`` (issue #3006), plus COBOL's
-        # ``json_type=CJSON`` byte-splicing build.  Languages that reject
-        # the value, emit a raw null byte, or emit a digit-greedy escape
-        # do not participate, so only the ``string_embedded_nul`` axis
-        # consumes it and it stays out of the all-languages base discovery.
-        "string_embedded_nul",
-        # Native multiline string syntax is exposed only by languages whose
-        # explicit ``supports_multiline_string_literals`` capability is true.
-        # Its dedicated axis selects those languages and their consistently
-        # named ``StringFormats.MULTILINE`` member.  The three shared inputs
-        # separately pin collection elements, a root scalar, and nested
-        # collection placement.
-        "multiline_string",
-        "multiline_string_scalar",
-        "multiline_string_nested",
-        # ``comment_terminators_collection`` and
-        # ``comment_terminators_scalar`` contain every suffix delimiter
-        # exposed by a production ``CommentConfig``. Their dedicated
-        # capability-driven axis selects each suffix-delimited comment
-        # format, including formats that are already the language default,
-        # so unrelated line-comment formats do not produce redundant
-        # fixtures (issue #3212).
-        "comment_terminators_collection",
-        "comment_terminators_scalar",
-        # ``json_native_only_nested_dict`` is exercised only through the
-        # ``json_type`` axis. C++14's native-only renderer rejects the
-        # nested heterogeneous map without JSON mode, while JSON-capable
-        # variants render it through their respective JSON back ends.
-        "json_native_only_nested_dict",
-    }
 )
 
 EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR = "time_union_type_hint"
@@ -273,30 +63,6 @@ def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
         for lang_cls in sorted_languages()
         if lang_cls.new_variable_name_syntax
         is NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
-    )
-
-
-@functools.cache
-@beartype
-def _specialized_case_dirs() -> frozenset[str]:
-    """Case directories a specialized test owns, so they are excluded
-    from the all-languages base / combined / language-version
-    discovery: the call, ``$ref`` and default-``$ref`` case
-    directories plus :data:`VARIANT_ONLY_CASE_DIRS`.
-    """
-    return (
-        frozenset(
-            cfg.case_dir_name
-            for cfg in CALL_CASE_CONFIGS + CALL_VARIANT_CASE_CONFIGS
-        )
-        | frozenset(cfg.case_dir_name for cfg in LITERALIZE_REF_CASE_CONFIGS)
-        | frozenset(
-            cfg.case_dir_name for cfg in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
-        )
-        | frozenset(
-            (KEBAB_NEW_VARIABLE_CASE_DIR, PRIMED_NEW_VARIABLE_CASE_DIR),
-        )
-        | VARIANT_ONLY_CASE_DIRS
     )
 
 
@@ -634,16 +400,16 @@ def discover_cases(
     cases_dir: Path,
 ) -> list[tuple[str, literalizer.LanguageCls]]:
     """Return ``(case_name, lang_cls)`` tuples."""
-    specialized_case_dirs = _specialized_case_dirs()
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     cases: list[tuple[str, literalizer.LanguageCls]] = []
-    for case_dir in sorted(cases_dir.iterdir()):
-        if case_dir.name in specialized_case_dirs:
+    for manifest in load_case_manifests(cases_dir=cases_dir):
+        if "base" not in manifest.suites:
             continue
+        case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
         non_ascii_string = case_dir.name in non_ascii_string_cases
@@ -705,16 +471,16 @@ def discover_combined_cases(
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    specialized_case_dirs = _specialized_case_dirs()
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     cases: list[CombinedCase] = []
-    for case_dir in sorted(cases_dir.iterdir()):
-        if case_dir.name in specialized_case_dirs:
+    for manifest in load_case_manifests(cases_dir=cases_dir):
+        if "combined" not in manifest.suites:
             continue
+        case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
         non_ascii_string = case_dir.name in non_ascii_string_cases

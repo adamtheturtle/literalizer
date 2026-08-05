@@ -1,0 +1,9 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "datetime"
+suffix = "_non_utc"
+
+[[variants]]
+axis = "language_version"

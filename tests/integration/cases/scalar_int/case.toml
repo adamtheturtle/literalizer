@@ -1,0 +1,20 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "integer_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"
+
+[[variants]]
+axis = "numeric_separator"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifiers"

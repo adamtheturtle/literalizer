@@ -1,0 +1,8 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[base_context.record_null_substitutions]
+replacement = -1
+
+[[variants]]
+axis = "language_version"

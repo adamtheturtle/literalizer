@@ -1,0 +1,44 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "json_type_declaration_cross"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "dict_format"
+suffix = "_list_val"
+
+[[variants]]
+axis = "dict_entry_style"
+suffix = "_list_val"
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+suffix = "_list_val"
+
+[[variants]]
+axis = "heterogeneous_value_enum_name"
+suffix = "_list_val"
+
+[[variants]]
+axis = "heterogeneous_value_union_name"
+suffix = "_list_val"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"
+suffix = "_list_val"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "json_type_variable_form"

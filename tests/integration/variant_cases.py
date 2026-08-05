@@ -22,12 +22,18 @@ from .case_discovery import (
     EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
     cases_with_special_floats,
 )
+from .case_manifests import (
+    CaseManifestError,
+    ManifestVariant,
+    load_case_manifests,
+    variable_form_for_context,
+)
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
 )
-from .variant_inputs import AXIS_INPUTS
+from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
 from .variant_metadata_builders import (
     build_collection_layout_variants,
     build_dhall_nested_map_widening_variants,
@@ -678,7 +684,9 @@ def build_json_type_declaration_cross_variants() -> list[Variant]:
 
 
 @beartype
-def build_json_type_variable_form_cases() -> list[VariantCase]:
+def build_json_type_variable_form_cases(
+    *, case_dir_name: str
+) -> list[VariantCase]:
     """Build JSON-type cases selected by redefinition capability.
 
     Redefinition-supporting declaration styles exercise a declaration and
@@ -703,7 +711,7 @@ def build_json_type_variable_form_cases() -> list[VariantCase]:
                         record_null_substitutions=None,
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     ),
-                    case_dir_name="dict_with_list_value",
+                    case_dir_name=case_dir_name,
                     variable_form=literalizer.ExistingVariable(name="my_data"),
                 )
             )
@@ -740,7 +748,7 @@ def build_json_type_variable_form_cases() -> list[VariantCase]:
                 VariantCase(
                     variant_name=name,
                     variant=variant,
-                    case_dir_name="dict_with_list_value",
+                    case_dir_name=case_dir_name,
                     variable_form=literalizer.BothVariableForms(
                         name="my_data",
                         modifiers=frozenset(),
@@ -1123,11 +1131,7 @@ def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
                 spec=make_spec(lang_cls=lang_cls, **spec_kwargs),
                 lang_cls=lang_cls,
                 fixture_prefix="",
-                record_null_substitutions={
-                    "due_date": -1,
-                    "parent_id": -1,
-                    "assignee": "",
-                },
+                record_null_substitutions=None,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
@@ -1862,7 +1866,14 @@ def build_multiline_string_variants() -> list[Variant]:
 
 
 @beartype
-def build_multiline_string_context_cases() -> list[VariantCase]:
+def build_multiline_string_context_cases(
+    *,
+    combined_case_dir_name: str,
+    combined_suffix: str,
+    combined_variable_form: literalizer.VariableForm,
+    pre_indent_case_dir_name: str,
+    pre_indent_level: int,
+) -> list[VariantCase]:
     """Build assignment and nonzero-indentation multiline contexts.
 
     The ordinary multiline axis already renders every input with a
@@ -1882,7 +1893,7 @@ def build_multiline_string_context_cases() -> list[VariantCase]:
                 if spec.declaration_style in redefinition_styles
                 else redefinition_styles[0]
             )
-            name = f"{base_variant.name}_combined"
+            name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(
                     variant_name=name,
@@ -1895,26 +1906,26 @@ def build_multiline_string_context_cases() -> list[VariantCase]:
                             declaration_style=declaration_style,
                         ),
                     ),
-                    case_dir_name="multiline_string_scalar",
-                    variable_form=literalizer.BothVariableForms(
-                        name="my_data",
-                        modifiers=frozenset(),
-                    ),
+                    case_dir_name=combined_case_dir_name,
+                    variable_form=combined_variable_form,
                 )
             )
 
         for combination in base_variant.lang_cls.modifier_combinations:
-            name = f"{base_variant.name}_pre_indent_1_{combination.name}"
+            name = (
+                f"{base_variant.name}_pre_indent_{pre_indent_level}_"
+                f"{combination.name}"
+            )
             cases.append(
                 VariantCase(
                     variant_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
-                    case_dir_name="multiline_string_scalar",
+                    case_dir_name=pre_indent_case_dir_name,
                     variable_form=literalizer.NewVariable(
                         name="my_data",
                         modifiers=combination.modifiers,
                     ),
-                    pre_indent_level=1,
+                    pre_indent_level=pre_indent_level,
                 )
             )
     return cases
@@ -2539,6 +2550,10 @@ _COMPLEX_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
 }
 
+assert (set(_SIMPLE_AXES) | set(_COMPLEX_BUILDERS)) == (  # noqa: S101
+    KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
+)
+
 
 @beartype
 def _variants_for_axis(axis_key: str) -> list[Variant]:
@@ -2550,44 +2565,155 @@ def _variants_for_axis(axis_key: str) -> list[Variant]:
     return list(_COMPLEX_BUILDERS[axis_key]())
 
 
+@beartype
+def _case_for_manifest_variant(
+    *,
+    case_dir_name: str,
+    manifest_variant: ManifestVariant,
+    variant: Variant,
+) -> VariantCase:
+    """Combine typed language expansion with case-local render context."""
+    context = manifest_variant.context
+    if context.collection_layout is not None:
+        variant = dataclasses.replace(
+            variant,
+            collection_layout=literalizer.CollectionLayout(
+                value=context.collection_layout
+            ),
+        )
+    if context.record_null_substitutions is not None:
+        variant = dataclasses.replace(
+            variant,
+            record_null_substitutions=context.record_null_substitutions,
+        )
+    return VariantCase(
+        variant_name=f"{variant.name}{manifest_variant.suffix}",
+        variant=variant,
+        case_dir_name=case_dir_name,
+        variable_form=variable_form_for_context(context=context),
+        pre_indent_level=context.pre_indent_level,
+    )
+
+
+def _one_special_input(
+    *, entries: list[tuple[str, ManifestVariant]], axis: str
+) -> tuple[str, ManifestVariant]:
+    """Return the sole manifest entry registered for a special axis."""
+    matches = [entry for entry in entries if entry[1].axis == axis]
+    if len(matches) != 1:
+        msg = f"variant axis {axis!r} requires exactly one manifest input"
+        raise CaseManifestError(msg)
+    return matches[0]
+
+
+@beartype
+def validate_unique_variant_targets(cases: list[VariantCase]) -> None:
+    """Fail when two inventory entries resolve to one golden path."""
+    targets: dict[tuple[str, str, str, object], VariantCase] = {}
+    for case in cases:
+        target = (
+            case.case_dir_name,
+            case.variant_name,
+            case.variant.spec.extension,
+            case.variant.spec.language_version,
+        )
+        previous = targets.get(target)
+        if previous is not None:
+            msg = (
+                "duplicate golden target from manifest inventory: "
+                f"{case.case_dir_name}/{case.variant_name}"
+                f"@{case.variant.spec.language_version.name}"
+                f".{case.variant.spec.extension}"
+            )
+            raise CaseManifestError(msg)
+        targets[target] = case
+
+
 @functools.cache
 @beartype
 def build_variant_cases() -> list[VariantCase]:
     """Collect all format-variant golden-file test cases.
 
-    The full set is the cross product of every axis's variants with its
-    declared inputs in :data:`AXIS_INPUTS`, plus capability-generated
-    capability-generated JSON variable forms and the focused modifier
-    regressions.
+    The full set is the cross product of typed language variants with the
+    case-local manifest entries, plus the manifest-selected contextual
+    expansions for variable forms, modifiers, and pre-indent coverage.
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
+    entries = [
+        (manifest.case_dir.name, manifest_variant)
+        for manifest in load_case_manifests(cases_dir=_CASES_DIR)
+        for manifest_variant in manifest.variants
+    ]
     cases: list[VariantCase] = []
-    for axis_key, inputs in AXIS_INPUTS.items():
-        variants = _variants_for_axis(axis_key=axis_key)
-        for variant in variants:
-            cases.extend(
-                VariantCase(
-                    variant_name=f"{variant.name}{ci.suffix}",
-                    variant=variant,
-                    case_dir_name=ci.case_dir_name,
-                    variable_form=wrap_variable_form(),
-                )
-                for ci in inputs
-                if not (
-                    ci.case_dir_name in special_float_cases
-                    and not variant.lang_cls.supports_special_floats
-                )
+    for case_dir_name, manifest_variant in entries:
+        if manifest_variant.axis in SPECIAL_VARIANT_AXES:
+            continue
+        variants = _variants_for_axis(axis_key=manifest_variant.axis)
+        cases.extend(
+            _case_for_manifest_variant(
+                case_dir_name=case_dir_name,
+                manifest_variant=manifest_variant,
+                variant=variant,
+            )
+            for variant in variants
+            if not (
+                case_dir_name in special_float_cases
+                and not variant.lang_cls.supports_special_floats
+            )
+            and not (
+                case_dir_name == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
                 and not (
-                    ci.case_dir_name
-                    == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
-                    and not (
-                        variant.lang_cls.supports_empty_sibling_sequence_type_hints
-                    )
+                    variant.lang_cls.supports_empty_sibling_sequence_type_hints
                 )
             )
-    cases.extend(build_modifier_variant_cases())
-    cases.extend(build_json_type_variable_form_cases())
-    cases.extend(build_multiline_string_context_cases())
+        )
+
+    modifier_inputs = tuple(
+        case_dir_name
+        for case_dir_name, entry in entries
+        if entry.axis == "modifiers"
+    )
+    modifier_sequence_inputs = {
+        entry.suffix.removeprefix("_"): case_dir_name
+        for case_dir_name, entry in entries
+        if entry.axis == "modifier_sequence_format"
+    }
+    cases.extend(
+        build_modifier_variant_cases(
+            case_dir_names=modifier_inputs,
+            sequence_case_dirs=modifier_sequence_inputs,
+        )
+    )
+
+    json_case_dir_name, _ = _one_special_input(
+        entries=entries,
+        axis="json_type_variable_form",
+    )
+    cases.extend(
+        build_json_type_variable_form_cases(case_dir_name=json_case_dir_name)
+    )
+
+    combined_case_dir_name, combined_entry = _one_special_input(
+        entries=entries,
+        axis="multiline_string_combined",
+    )
+    pre_indent_case_dir_name, pre_indent_entry = _one_special_input(
+        entries=entries,
+        axis="multiline_string_pre_indent",
+    )
+    cases.extend(
+        build_multiline_string_context_cases(
+            combined_case_dir_name=combined_case_dir_name,
+            combined_suffix=combined_entry.suffix,
+            combined_variable_form=variable_form_for_context(
+                context=combined_entry.context
+            ),
+            pre_indent_case_dir_name=pre_indent_case_dir_name,
+            pre_indent_level=pre_indent_entry.context.pre_indent_level,
+        )
+    )
+
+    validate_unique_variant_targets(cases=cases)
     return cases
 
 

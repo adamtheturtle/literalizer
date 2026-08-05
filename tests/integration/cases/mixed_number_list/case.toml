@@ -1,0 +1,15 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "numeric_style"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifier_sequence_format"
+suffix = "_mixed_numbers"

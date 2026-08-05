@@ -1,0 +1,23 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_float"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"
+suffix = "_float_scalar"
+
+[[variants]]
+axis = "numeric_separator"
+suffix = "_float_scalar"
+
+[[variants]]
+axis = "language_version"
