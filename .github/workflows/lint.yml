@@ -57,13 +57,14 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint
-        shell: bash
-        run: uv run --extra=dev prek run --all-files --group ${{ matrix.group }} --verbose
+        uses: j178/prek-action@v3.0.0
+        with:
+          prek-version: 0.4.11
+          extra-args: >-
+            --all-files --group ${{ matrix.group }} --verbose
         env:
+          UV_NO_CACHE: '1'
           UV_PYTHON: ${{ matrix.python-version }}
-
-      - uses: pre-commit-ci/lite-action@v1.1.0
-        if: always()
 
   # Fixture languages whose lint is a handful of seconds — either the
   # toolchain is preinstalled on ubuntu-latest, or the install is quick
@@ -343,6 +344,7 @@ jobs:
 
       - name: Lint Java
         env:
+          UV_NO_CACHE: '1'
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: |-
           find tests/integration/cases -name '*@jdk_11.java' -print0 > /tmp/files-java-11 && test -s /tmp/files-java-11
@@ -359,6 +361,7 @@ jobs:
       # See `scripts/run_java_roundtrip.py`.
       - name: Java roundtrip
         env:
+          UV_NO_CACHE: '1'
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: uv run python -m scripts.run_java_roundtrip
 

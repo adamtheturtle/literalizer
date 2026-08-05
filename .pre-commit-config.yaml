@@ -1,45 +1,6 @@
 ---
 fail_fast: true
 
-ci:
-  skip:
-    - actionlint
-    - check-manifest
-    - deptry
-    - doc8
-    - docs
-    - interrogate
-    - interrogate-docs
-    - linkcheck
-    - mypy
-    - mypy-docs
-    - pydocstringformatter
-    - pylint
-    - pyproject-fmt-fix
-    - pyrefly
-    - pyrefly-docs
-    - pyright
-    - pyright-docs
-    - pyright-verifytypes
-    - pyroma
-    - ruff-check-fix
-    - ruff-check-fix-docs
-    - ruff-format-fix
-    - ruff-format-fix-docs
-    - shellcheck
-    - shellcheck-docs
-    - shfmt
-    - shfmt-docs
-    - spelling
-    - sphinx-lint
-    - strict-kwargs-fix
-    - ty
-    - ty-docs
-    - vulture
-    - vulture-docs
-    - yamlfix
-    - zizmor
-
 default_install_hook_types: [pre-commit, pre-push]
 
 repos:
