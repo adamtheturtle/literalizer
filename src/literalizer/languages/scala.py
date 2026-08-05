@@ -1111,7 +1111,7 @@ class Scala(metaclass=LanguageCls):
         auto_name_pattern = re.compile(
             pattern=rf"^{re.escape(pattern=prefix)}\d+$",
         )
-        seen_names: set[str] = set()  # noqa: NOD001
+        seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
             if not _PASCAL_CASE_IDENTIFIER.match(string=name):
                 msg = (
@@ -1205,7 +1205,7 @@ class Scala(metaclass=LanguageCls):
         value-driven, not a pure ``cached_property``.
         """
         element_type: type = (
-            int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt  # noqa: NOD001
+            int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt
         )
         return self._scalar_field_type_resolver(element_type) or "Any"
 

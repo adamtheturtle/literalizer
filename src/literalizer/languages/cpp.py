@@ -2666,7 +2666,7 @@ class Cpp(metaclass=LanguageCls):
                 f"{self.record_struct_name_prefix!r}-prefixed struct names."
             )
             raise InvalidRecordNameError(msg)
-        seen_names: set[str] = set()  # noqa: NOD001
+        seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
             if not _PASCAL_CASE_IDENTIFIER.match(string=name):
                 msg = (
