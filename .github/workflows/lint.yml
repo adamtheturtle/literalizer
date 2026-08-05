@@ -2140,7 +2140,7 @@ jobs:
       - name: Cache Coursier artifacts
         uses: coursier/cache-action@v8
       - name: Install scala-cli
-        uses: VirtusLab/scala-cli-setup@v1
+        uses: VirtusLab/scala-cli-setup@v1.15.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
       # per fixture. Each fixture already carries a unique object name
