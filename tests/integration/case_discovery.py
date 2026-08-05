@@ -25,6 +25,7 @@ from literalizer.exceptions import InvalidDictKeyError
 
 from .case_inputs import CaseInput
 from .case_manifests import case_input, load_case_manifests
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -755,7 +756,7 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     ``simple_dict`` exercises a multi-line container value at indent
     across every language with class-field modifiers.  Languages may
     additionally opt into a focused ``comment_scalar_before_and_inline``
-    case through their variant metadata.  It exercises a scalar whose
+    case through their test metadata.  It exercises a scalar whose
     formatted value is preceded by comment lines carrying the same
     ``line_prefix`` indent.
     """
@@ -772,7 +773,8 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
             for combo in lang_cls.modifier_combinations
         )
     for lang_cls in sorted_languages():
-        if not lang_cls.variant_metadata.pre_indent_comment_scalar_variant:
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if not metadata.variants.pre_indent_comment_scalar:
             continue
         cases.extend(
             PreIndentCase(

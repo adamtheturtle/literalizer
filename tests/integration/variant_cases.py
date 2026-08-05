@@ -28,6 +28,7 @@ from .case_manifests import (
     load_case_manifests,
     variable_form_for_context,
 )
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -964,7 +965,7 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
         default_spec = make_spec(lang_cls=lang_cls)
         if not lang_cls.supports_record_shape_names:
             continue
-        metadata = lang_cls.variant_metadata
+        metadata = language_metadata(language_id=lang_cls.language_id)
         assert isinstance(default_spec, _HasRecordShapeNames)  # noqa: S101
         # A spec exposing ``record_shape_names`` always also exposes the
         # RECORD strategy the field configures, so ``next`` cannot miss.
@@ -977,12 +978,13 @@ def build_record_shape_names_variants() -> Iterable[Variant]:
             "heterogeneous_strategy": record_strategy,
             "record_shape_names": {shape_keys: custom_name},
         }
-        if metadata.record_variant_version is not None:
+        record_language_version = metadata.variants.record_language_version
+        if record_language_version is not None:
             spec_kwargs["language_version"] = enum_member_by_name(
                 enum_cls=lang_cls.VersionFormats,
-                name=metadata.record_variant_version,
+                name=record_language_version,
             )
-        fixture_prefix = metadata.external_record_shape_fixture_prefix
+        fixture_prefix = metadata.variants.external_record_shape_fixture_prefix
         if lang_cls.record_shape_names_emit_declarations:
             assert fixture_prefix is None  # noqa: S101
             fixture_prefix = ""
@@ -1020,7 +1022,7 @@ def build_error_record_shape_names_variants() -> Iterable[Variant]:
         if not lang_cls.supports_record_shape_names:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
-        metadata = lang_cls.variant_metadata
+        metadata = language_metadata(language_id=lang_cls.language_id)
         assert isinstance(default_spec, _HasRecordShapeNames)  # noqa: S101
         strategy = enum_member_by_name(
             enum_cls=lang_cls.HeterogeneousStrategies,
@@ -1030,16 +1032,17 @@ def build_error_record_shape_names_variants() -> Iterable[Variant]:
             "heterogeneous_strategy": strategy,
             "record_shape_names": {shape_keys: custom_name},
         }
-        if metadata.record_variant_version is not None:
+        record_language_version = metadata.variants.record_language_version
+        if record_language_version is not None:
             spec_kwargs["language_version"] = enum_member_by_name(
                 enum_cls=lang_cls.VersionFormats,
-                name=metadata.record_variant_version,
+                name=record_language_version,
             )
         if lang_cls.supports_module_name:
             spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
                 name="main",
             )
-        fixture_prefix = metadata.external_record_shape_fixture_prefix
+        fixture_prefix = metadata.variants.external_record_shape_fixture_prefix
         if lang_cls.record_shape_names_emit_declarations:
             assert fixture_prefix is None  # noqa: S101
             fixture_prefix = ""
@@ -1067,7 +1070,7 @@ def build_json_type_record_shape_names_cross_variants() -> Iterable[Variant]:
         if not lang_cls.supports_record_shape_names:
             continue
         spec = json_variant.spec
-        metadata = lang_cls.variant_metadata
+        metadata = language_metadata(language_id=lang_cls.language_id)
         assert isinstance(spec, _HasJsonType)  # noqa: S101
         assert isinstance(spec, _HasRecordShapeNames)  # noqa: S101
         spec_kwargs: dict[str, object] = {
@@ -1078,10 +1081,11 @@ def build_json_type_record_shape_names_cross_variants() -> Iterable[Variant]:
             "json_type": spec.json_type,
             "record_shape_names": {shape_keys: custom_name},
         }
-        if metadata.record_variant_version is not None:
+        record_language_version = metadata.variants.record_language_version
+        if record_language_version is not None:
             spec_kwargs["language_version"] = enum_member_by_name(
                 enum_cls=lang_cls.VersionFormats,
-                name=metadata.record_variant_version,
+                name=record_language_version,
             )
         if lang_cls.supports_module_name:
             spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
@@ -1111,7 +1115,7 @@ def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
         if not lang_cls.supports_record_struct_name_prefix:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
-        metadata = lang_cls.variant_metadata
+        metadata = language_metadata(language_id=lang_cls.language_id)
         record_strategy = next(
             strategy
             for strategy in default_spec.heterogeneous_strategies
@@ -1120,10 +1124,11 @@ def build_record_null_substitutions_record_variants() -> Iterable[Variant]:
         spec_kwargs: dict[str, object] = {
             "heterogeneous_strategy": record_strategy,
         }
-        if metadata.record_variant_version is not None:
+        record_language_version = metadata.variants.record_language_version
+        if record_language_version is not None:
             spec_kwargs["language_version"] = enum_member_by_name(
                 enum_cls=lang_cls.VersionFormats,
-                name=metadata.record_variant_version,
+                name=record_language_version,
             )
         variants.append(
             Variant(
@@ -1500,9 +1505,19 @@ def build_empty_container_type_hint_variants() -> Iterable[Variant]:
     """Build variants for languages declaring empty-container hint support."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = lang_cls.empty_container_type_hint_variant_kwargs
-        if kwargs is None:
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        settings = metadata.variants.empty_container_type_hint
+        if settings is None:
             continue
+        kwargs: dict[str, object] = {
+            "heterogeneous_strategy": enum_member_by_name(
+                enum_cls=lang_cls.HeterogeneousStrategies,
+                name=settings.heterogeneous_strategy,
+            ),
+            "empty_container_type_hints": {
+                tuple(entry.path): entry.hint for entry in settings.type_hints
+            },
+        }
         variants.append(
             Variant(
                 name=f"{lang_cls.__name__}_empty_container_type_hint",
@@ -1753,9 +1768,13 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
         custom_name = lang_cls.non_default_kwargs.get(
             "heterogeneous_value_variant_name"
         )
-        metadata = lang_cls.variant_metadata
-        strategy_name = metadata.heterogeneous_value_variant_name_strategy
-        version_name = metadata.heterogeneous_value_variant_name_version
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        strategy_name = (
+            metadata.variants.heterogeneous_value_variant_name_strategy
+        )
+        version_name = (
+            metadata.variants.heterogeneous_value_variant_name_language_version
+        )
         if custom_name is None:
             assert strategy_name is None  # noqa: S101
             assert version_name is None  # noqa: S101

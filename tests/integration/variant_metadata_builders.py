@@ -1,8 +1,9 @@
-"""Builders driven by language-owned integration-variant metadata.
+"""Builders driven by declared metadata rather than by concrete languages.
 
-The language classes describe supported behaviors and compatibility rules;
-these builders translate that metadata into variants without depending on
-individual language classes.
+The language classes describe supported behaviors and compatibility
+rules, and the test-owned language metadata files describe which focused
+golden variants a language opts into; these builders translate both into
+variants without depending on individual language classes.
 """
 
 from __future__ import annotations
@@ -13,11 +14,8 @@ from collections.abc import Iterable, Mapping  # noqa: TC003
 from beartype import beartype
 
 import literalizer
-from literalizer._language import (
-    NestedMapWideningVariant,
-    RecordVariant,
-)
 
+from .language_metadata import language_metadata
 from .language_specs import make_spec, sorted_languages
 from .variant_types import Variant, VariantCase, enum_member_by_name
 
@@ -29,9 +27,9 @@ def build_collection_layout_variants() -> Iterable[Variant]:
     """Build variants for every collection-layout option."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
+        golden = language_metadata(language_id=lang_cls.language_id).golden
         name_prefix = (
-            f"{lang_cls.__name__}_"
-            f"{lang_cls.variant_metadata.collection_layout_category}"
+            f"{lang_cls.__name__}_{golden.collection_layout_category}"
         )
         variants.extend(
             Variant(
@@ -57,10 +55,8 @@ def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            RecordVariant.UNIFY_OPTIONAL_FIELDS
-            not in lang_cls.variant_metadata.record_variants
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if "unify_optional_fields" not in metadata.record_variants:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
@@ -98,10 +94,8 @@ def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            RecordVariant.NONRECORD_DICT_FIELD
-            not in lang_cls.variant_metadata.record_variants
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if "nonrecord_dict_field" not in metadata.record_variants:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
@@ -137,15 +131,14 @@ def build_record_keyword_field_variants() -> Iterable[Variant]:
     identifiers (``@"error"``, issue #2963).  The shared case input
     carries every participating language's keywords; a key that is not
     one language's keyword renders verbatim there.  Only languages that
-    escape keyword field names opt in via ``RecordVariant.KEYWORD_FIELD``,
-    so the case directory stays out of the all-languages base discovery.
+    escape keyword field names opt into the ``keyword_field`` record
+    variant in their test metadata, so the case directory stays out of
+    the all-languages base discovery.
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            RecordVariant.KEYWORD_FIELD
-            not in lang_cls.variant_metadata.record_variants
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if "keyword_field" not in metadata.record_variants:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
@@ -179,10 +172,8 @@ def build_record_quoted_field_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            RecordVariant.QUOTED_FIELD
-            not in lang_cls.variant_metadata.record_variants
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if "quoted_field" not in metadata.record_variants:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
@@ -225,10 +216,8 @@ def build_record_field_type_split_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            RecordVariant.FIELD_TYPE_SPLIT
-            not in lang_cls.variant_metadata.record_variants
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if "field_type_split" not in metadata.record_variants:
             continue
         default_spec = make_spec(lang_cls=lang_cls)
         record_strategy = next(
@@ -303,8 +292,10 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
     variants: list[Variant] = [
         variant
         for lang_cls in sorted_languages()
-        if lang_cls.variant_metadata.nested_map_widening
-        is NestedMapWideningVariant.DEFAULT
+        if language_metadata(
+            language_id=lang_cls.language_id
+        ).variants.nested_map_widening
+        == "default"
         for variant in (
             Variant(
                 name=f"{lang_cls.__name__}_nested_map_widening",
@@ -325,10 +316,8 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
         )
     ]
     for lang_cls in sorted_languages():
-        if (
-            lang_cls.variant_metadata.nested_map_widening
-            is NestedMapWideningVariant.UNIFORM_KEYS
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if metadata.variants.nested_map_widening == "uniform_keys":
             continue
         spec = _nested_map_scalar_wrapping_spec(lang_cls=lang_cls)
         if spec is None:
@@ -374,10 +363,8 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        if (
-            lang_cls.variant_metadata.nested_map_widening
-            is not NestedMapWideningVariant.UNIFORM_KEYS
-        ):
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        if metadata.variants.nested_map_widening != "uniform_keys":
             continue
         spec = _nested_map_scalar_wrapping_spec(lang_cls=lang_cls)
         assert spec is not None  # noqa: S101

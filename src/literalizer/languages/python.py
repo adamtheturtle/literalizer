@@ -74,7 +74,6 @@ from literalizer._language import (
     LanguageCls,
     LeadingPreamble,
     ModifierCombination,
-    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -980,21 +979,11 @@ class Python(metaclass=LanguageCls):
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
+    language_id: ClassVar[str] = "python"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
-        heterogeneous_value_variant_name_strategy=None,
-        heterogeneous_value_variant_name_version=None,
-        record_variant_version=None,
-        external_record_shape_fixture_prefix=None,
-        pre_indent_comment_scalar_variant=False,
-        fixture_module_name_template=None,
-        fixture_module_name_lowercase=False,
-        golden_filename_lowercase=False,
-        collection_layout_category="collection_layout",
-        record_variants=frozenset(),
-        nested_map_widening=NestedMapWideningVariant.NONE,
-        modifier_sequence_format_overrides={},
     )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = False
@@ -1474,8 +1463,6 @@ class Python(metaclass=LanguageCls):
         PY39 = enum.auto()
 
     version_formats = VersionFormats
-
-    empty_container_type_hint_variant_kwargs = None
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = ()
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (

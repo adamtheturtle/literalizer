@@ -1,0 +1,4 @@
+schema_version = 1
+
+[variants]
+nested_map_widening = "uniform_keys"

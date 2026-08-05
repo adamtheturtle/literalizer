@@ -1,0 +1,11 @@
+schema_version = 1
+
+[variants]
+record = ["field_type_split", "keyword_field", "unify_optional_fields"]
+
+[variants.empty_container_type_hint]
+heterogeneous_strategy = "TAGGED_ENUM"
+
+[[variants.empty_container_type_hint.type_hints]]
+path = [1]
+hint = "HashMap<String, String>"

@@ -87,10 +87,8 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
-    NestedMapWideningVariant,
     OrderedMapFormatConfig,
     PositionalCallStyle,
-    RecordVariant,
     RenderedRecordLiteral,
     RenderedTupleLiteral,
     SequenceFormatConfig,
@@ -2211,23 +2209,11 @@ class Cpp(metaclass=LanguageCls):
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
+    language_id: ClassVar[str] = "cpp"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=False,
         supports_ref_elements_in_tuple_strategy=True,
-        heterogeneous_value_variant_name_strategy="ERROR",
-        heterogeneous_value_variant_name_version="CPP14",
-        record_variant_version="CPP14",
-        external_record_shape_fixture_prefix=(
-            '#include "../../cpp_support/include/named_type.hpp"\n'
-        ),
-        pre_indent_comment_scalar_variant=True,
-        fixture_module_name_template=None,
-        fixture_module_name_lowercase=False,
-        golden_filename_lowercase=False,
-        collection_layout_category="collection_layout",
-        record_variants=frozenset({RecordVariant.FIELD_TYPE_SPLIT}),
-        nested_map_widening=NestedMapWideningVariant.NONE,
-        modifier_sequence_format_overrides={},
     )
     supports_record_struct_name_prefix = True
     supports_record_shape_names = True
@@ -2609,8 +2595,6 @@ class Cpp(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
-
-    empty_container_type_hint_variant_kwargs = None
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(

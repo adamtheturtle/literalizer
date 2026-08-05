@@ -1,0 +1,5 @@
+schema_version = 1
+
+[variants]
+record = ["field_type_split"]
+nested_map_widening = "default"
