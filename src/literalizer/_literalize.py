@@ -23,6 +23,7 @@ from literalizer._comments_resolve import (
     resolve_toml_comments,
     resolve_yaml_comments,
 )
+from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -102,22 +103,6 @@ class _SupportsCallVariableWrapInFile(Protocol):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a call-result variable binding in a complete file."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-
-@runtime_checkable
-class _SupportsFastDocumentFormatting(Protocol):
-    """A language with an optimized whole-document formatter."""
-
-    def _format_document_fast(
-        self,
-        data: Value,
-        *,
-        line_prefix: str,
-        include_delimiters: bool,
-        collection_layout: CollectionLayout,
-    ) -> str | None:
-        """Render *data*, or return ``None`` for the shared formatter."""
         ...  # pylint: disable=unnecessary-ellipsis
 
 
@@ -2169,9 +2154,9 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
 
     check_data(data=data, spec=language)
 
-    if not ref_key and isinstance(language, _SupportsFastDocumentFormatting):
-        # pylint: disable-next=protected-access
-        fast_result = language._format_document_fast(  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    if not ref_key:
+        fast_result = format_document_fast(
+            language,
             data=data,
             line_prefix=line_prefix,
             include_delimiters=include_delimiters,
