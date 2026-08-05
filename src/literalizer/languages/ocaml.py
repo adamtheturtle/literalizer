@@ -36,8 +36,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
-    I64_MAX,
-    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
@@ -142,6 +140,12 @@ _format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
 _YOJSON_SAFE_T = "Yojson.Safe.t"
+
+# OCaml integers use one bit for runtime tagging, so a 64-bit target has
+# 63-bit signed ``int`` values.  Literalizer's supported OCaml toolchain and
+# lint job target 64-bit OCaml 5.
+_OCAML_INT_MIN = -(2**62)
+_OCAML_INT_MAX = 2**62 - 1
 
 
 @beartype
@@ -345,9 +349,9 @@ class OCaml(metaclass=LanguageCls):
               ``yojson`` tag set (``Bool``, ``Int``, ``Float``,
               ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``).  Dates,
               datetimes, times, and bytes reformat to JSON-friendly
-              strings; arbitrary-precision integers route through the
-              ``Intlit`` escape hatch; the ``type val_t`` preamble is
-              dropped.
+              strings; integers outside OCaml's native ``int`` range route
+              through the ``Intlit`` escape hatch; the ``type val_t``
+              preamble is dropped.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -1148,8 +1152,8 @@ class OCaml(metaclass=LanguageCls):
                 numeric_separator=self.numeric_separator,
             ),
             fallback=fallback,
-            min_value=I64_MIN,
-            max_value=I64_MAX,
+            min_value=_OCAML_INT_MIN,
+            max_value=_OCAML_INT_MAX,
         )
 
     @cached_property

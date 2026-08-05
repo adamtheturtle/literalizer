@@ -14,12 +14,23 @@ import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableIntegerError
-from literalizer.languages import Cpp, D, Go, Nim, Rust, TypeScript, V, Zig
+from literalizer.languages import (
+    Cpp,
+    D,
+    Go,
+    Nim,
+    OCaml,
+    Rust,
+    TypeScript,
+    V,
+    Zig,
+)
 
 _BEYOND_U64 = 2**64
 _BEYOND_NEG_I64 = -(2**63) - 1
 _BEYOND_SAFE_INT = 2**53
 _BEYOND_I128 = 2**127
+_BEYOND_OCAML_INT = 2**62
 
 _NO_BIGINT_MSG = r" without external arbitrary-precision integer support\.$"
 _UNSIGNED_FALLBACK_MSG = (
@@ -207,6 +218,15 @@ def test_typescript_raises_below_negative_safe_integer() -> None:
         match=r"^TypeScript cannot represent integer -\d+" + _NO_BIGINT_MSG,
     ):
         _literalize_scalar(language=TypeScript(), value=-_BEYOND_SAFE_INT)
+
+
+def test_ocaml_raises_above_native_int_range() -> None:
+    """OCaml reserves one bit of its 64-bit word for runtime tagging."""
+    with pytest.raises(
+        expected_exception=UnrepresentableIntegerError,
+        match=r"^OCaml cannot represent integer \d+" + _NO_BIGINT_MSG,
+    ):
+        _literalize_scalar(language=OCaml(), value=_BEYOND_OCAML_INT)
 
 
 def test_rust_raises_above_i128_range() -> None:
