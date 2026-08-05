@@ -53,13 +53,3 @@ def infer_case_input(
         msg = f"expected exactly one inferable input file, found {names}"
         raise ValueError(msg)
     return candidates[0]
-
-
-@beartype
-def case_input(*, case_dir: Path) -> CaseInput:
-    """Return the input declared by the case-local manifest."""
-    # Local import avoids a module cycle: manifests use ``CaseInput`` while
-    # every harness continues to use this small compatibility entry point.
-    from .case_manifests import load_case_manifest  # noqa: PLC0415
-
-    return load_case_manifest(case_dir=case_dir).input

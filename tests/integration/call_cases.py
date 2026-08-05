@@ -42,7 +42,8 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 
-from .case_inputs import CaseInput, case_input
+from .case_inputs import CaseInput
+from .case_manifests import case_input
 from .language_specs import (
     make_golden_path,
     sorted_languages,

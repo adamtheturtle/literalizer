@@ -34,7 +34,7 @@ type OwnerName = Literal[
 
 
 def _empty_suites() -> list[SuiteName]:
-    """Return a typed empty suite list for Pydantic's factory."""
+    """Return a typed empty suite list for the validation model."""
     return []
 
 
@@ -84,7 +84,7 @@ class ManifestVariant(
 
 
 def _empty_variants() -> list[ManifestVariant]:
-    """Return a typed empty variant list for Pydantic's factory."""
+    """Return a typed empty variant list for the validation model."""
     return []
 
 
@@ -202,6 +202,12 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         base_context=data.base_context,
         variants=tuple(data.variants),
     )
+
+
+@beartype
+def case_input(*, case_dir: Path) -> CaseInput:
+    """Return the input declared by the case-local manifest."""
+    return load_case_manifest(case_dir=case_dir).input
 
 
 @functools.cache

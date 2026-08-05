@@ -10,6 +10,7 @@ from .case_manifests import (
     CaseManifestError,
     RenderContext,
     VariableFormName,
+    case_input,
     case_manifests_by_name,
     load_case_manifest,
     variable_form_for_context,
@@ -145,8 +146,67 @@ def test_declared_input_must_exist(tmp_path: Path) -> None:
         load_case_manifest(case_dir=case_dir)
 
 
+def test_declared_input_name_must_be_supported(tmp_path: Path) -> None:
+    """An explicit input must use one of the supported file names."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            'schema_version = 1\ninput = "data.yaml"\nsuites = ["base"]\n'
+        ),
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="input must name one of",
+    ):
+        load_case_manifest(case_dir=case_dir)
+
+
+def test_input_inference_requires_a_candidate(tmp_path: Path) -> None:
+    """Input inference fails when the case contains no supported input."""
+    case_dir = tmp_path / "example"
+    case_dir.mkdir()
+    (case_dir / "case.toml").write_text(
+        data='schema_version = 1\nsuites = ["base"]\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="expected exactly one inferable input file",
+    ):
+        load_case_manifest(case_dir=case_dir)
+
+
+def test_input_inference_rejects_multiple_candidates(tmp_path: Path) -> None:
+    """Input inference fails when more than one supported input exists."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest='schema_version = 1\nsuites = ["base"]\n',
+    )
+    (case_dir / "input.json").write_text(data="{}\n", encoding="utf-8")
+
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="expected exactly one inferable input file",
+    ):
+        load_case_manifest(case_dir=case_dir)
+
+
+def test_case_input_returns_manifest_input(tmp_path: Path) -> None:
+    """The harness helper returns the input validated by the manifest."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest='schema_version = 1\nsuites = ["base"]\n',
+    )
+
+    assert (
+        case_input(case_dir=case_dir)
+        == load_case_manifest(case_dir=case_dir).input
+    )
+
+
 def test_render_context_is_loaded(tmp_path: Path) -> None:
-    """Simple rendering arguments deserialize into the typed context."""
+    """Simple rendering arguments load into the typed context."""
     expected_pre_indent_level = 2
     case_dir = _write_case(
         tmp_path=tmp_path,

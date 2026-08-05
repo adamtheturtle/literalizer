@@ -23,8 +23,8 @@ import literalizer
 from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
-from .case_inputs import CaseInput, case_input
-from .case_manifests import load_case_manifests
+from .case_inputs import CaseInput
+from .case_manifests import case_input, load_case_manifests
 from .language_specs import (
     find_redefinition_styles,
     make_spec,

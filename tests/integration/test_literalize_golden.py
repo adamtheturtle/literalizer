@@ -49,8 +49,8 @@ from .case_discovery import (
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
-from .case_inputs import case_input
 from .case_manifests import (
+    case_input,
     case_manifests_by_name,
     variable_form_for_context,
 )
