@@ -12,6 +12,9 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._document_formatting import (
+    format_document_fast as _format_document_fast_dispatch,
+)
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -69,6 +72,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallStyle,
+    CollectionLayout,
     CommentConfig,
     DateFormatConfig,
     DatetimeFormatConfig,
@@ -4012,3 +4016,124 @@ class Rust(metaclass=LanguageCls):
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
+
+
+@beartype
+def _format_rust_document_fast(  # noqa: C901, PLR0915  # pylint: disable=too-complex
+    language: Rust,
+    data: Value,
+    *,
+    line_prefix: str,
+    include_delimiters: bool,
+    collection_layout: CollectionLayout,
+) -> str | None:
+    """Render a JSON-native tree without generic language dispatch.
+
+    Rust's ``serde_json::Value`` mode uses fixed collection delimiters
+    and accepts heterogeneous JSON values, so it does not need the
+    sibling type inference or widening machinery in the shared renderer.
+    Scalar format callbacks still pass through the configured,
+    runtime-checked Rust formatters.  Values introduced through substitutions
+    that need generic handling fall back to the shared renderer.
+    """
+    if (
+        language.json_type is None
+        or not include_delimiters
+        or collection_layout is not CollectionLayout.COMPACT
+        or not isinstance(data, (dict, list))
+        or isinstance(data, OrderedMap)
+    ):
+        return None
+
+    format_string = language.format_string
+    format_integer = language.format_integer
+    format_float = language.format_float
+    indent = language.indent
+    trailing_comma = language.trailing_comma_config.multiline_trailing_comma
+
+    class _SharedRendererRequiredError(Exception):
+        """Signal a value outside the JSON-native fast path."""
+
+    def format_scalar(value: Value) -> str:
+        """Format one JSON-native scalar."""
+        match value:
+            case None:
+                return language.null_literal
+            case bool():
+                return (
+                    language.true_literal if value else language.false_literal
+                )
+            case int():
+                if not -(2**63) <= value <= 2**63 - 1:
+                    raise _SharedRendererRequiredError
+                return format_integer(value)
+            case float():
+                return format_float(value)
+            case str():
+                return format_string(value)
+            case _:
+                raise _SharedRendererRequiredError
+
+    def compact(value: Value) -> str:
+        """Format one value with compact nested collections."""
+        match value:
+            case OrderedMap():
+                # Substitutions can introduce an ordered map below a plain
+                # JSON root.  Preserve its dedicated formatter.
+                raise _SharedRendererRequiredError  # pragma: no cover
+            case dict():
+                entries: list[str] = []
+                for key, child in value.items():
+                    # ``validate_spec_for_data`` recursively rejects
+                    # non-string JSON object keys before this hook runs.
+                    assert isinstance(key, str)  # noqa: S101
+                    entries.append(
+                        f"{format_string(key)}: {compact(value=child)}"
+                    )
+                return f"{_SERDE_JSON_MACRO}({{{', '.join(entries)}}})"
+            case list():
+                items = ", ".join(compact(value=child) for child in value)
+                return f"{_SERDE_JSON_MACRO}([{items}])"
+            case _:
+                return format_scalar(value=value)
+
+    def root(value: Value) -> str:
+        """Format the root collection over multiple lines."""
+        body_prefix = line_prefix + indent
+        if isinstance(value, dict):
+            opener = f"{_SERDE_JSON_MACRO}({{"
+            closer = "})"
+            raw_entries: list[str] = []
+            for key, child in value.items():
+                assert isinstance(key, str)  # noqa: S101
+                raw_entries.append(
+                    f"{format_string(key)}: {compact(value=child)}"
+                )
+        else:
+            assert isinstance(value, list)  # noqa: S101
+            opener = f"{_SERDE_JSON_MACRO}(["
+            closer = "])"
+            raw_entries = [compact(value=child) for child in value]
+
+        last_index = len(raw_entries) - 1
+        lines = [
+            f"{body_prefix}{entry}"
+            f"{',' if index < last_index or trailing_comma else ''}"
+            for index, entry in enumerate(iterable=raw_entries)
+        ]
+        return f"{opener}\n{'\n'.join(lines)}\n{line_prefix}{closer}"
+
+    try:
+        # The shared renderer always lays out the root collection over
+        # multiple lines; ``collection_layout`` controls nested values.
+        if not data:
+            return line_prefix + compact(value=data)
+        return line_prefix + root(value=data)
+    except _SharedRendererRequiredError:
+        return None
+
+
+_format_document_fast_dispatch.register(
+    cls=Rust,
+    func=_format_rust_document_fast,
+)

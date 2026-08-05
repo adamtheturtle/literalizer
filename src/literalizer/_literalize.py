@@ -23,6 +23,7 @@ from literalizer._comments_resolve import (
     resolve_toml_comments,
     resolve_yaml_comments,
 )
+from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -2152,6 +2153,17 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
             return f"{line_prefix}{identifier}"
 
     check_data(data=data, spec=language)
+
+    if not ref_key:
+        fast_result = format_document_fast(
+            language,
+            data=data,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+            collection_layout=collection_layout,
+        )
+        if fast_result is not None:
+            return fast_result
 
     wrap_ids = _compute_wrap_ids(data=data, spec=language)
     tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
