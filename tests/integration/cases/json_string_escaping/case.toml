@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "json_type"
+suffix = "_string_escaping"

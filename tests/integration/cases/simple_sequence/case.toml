@@ -1,0 +1,33 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+# The former sequence _varname entry duplicated the
+# suffix-free target byte-for-byte and was removed in #3307.
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "default_sequence_element_type"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "trailing_comma"
+
+[[variants]]
+axis = "statement_terminator_style"
+
+[[variants]]
+axis = "statement_terminator_style_decl"
+
+[[variants]]
+axis = "c_field_name"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifier_sequence_format"
+suffix = "_array"

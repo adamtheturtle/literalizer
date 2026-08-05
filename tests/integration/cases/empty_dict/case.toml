@@ -1,0 +1,27 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_empty"
+
+[[variants]]
+axis = "default_dict_value_type"
+
+[[variants]]
+axis = "default_dict_key_type"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "language_version_cross_dict_type"
+
+[[variants]]
+axis = "annotation_evaluation"

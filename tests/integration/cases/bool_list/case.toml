@@ -1,0 +1,15 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_bool_list"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "bool_format"

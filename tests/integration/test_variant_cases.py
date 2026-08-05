@@ -9,9 +9,12 @@ import literalizer.languages
 from literalizer.languages import Kotlin, Python
 
 from .case_discovery import EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
+from .case_manifests import CaseManifestError, ManifestVariant, RenderContext
 from .language_specs import sorted_languages
 from .variant_cases import (
+    _case_for_manifest_variant,  # pyright: ignore[reportPrivateUsage]
     _enum_member_by_name,  # pyright: ignore[reportPrivateUsage]
+    _one_special_input,  # pyright: ignore[reportPrivateUsage]
     build_multiline_string_context_cases,
     build_typed_dict_null_filtering_variants,
     build_variant_cases,
@@ -29,6 +32,33 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
         match=r"^_SampleEnum has no member named 'SECOND'$",
     ):
         _enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
+
+
+def test_manifest_variant_context_overrides_collection_layout() -> None:
+    """A manifest variant can select multiline collection rendering."""
+    source_case = build_variant_cases()[0]
+    case = _case_for_manifest_variant(
+        case_dir_name="example",
+        manifest_variant=ManifestVariant(
+            axis="date",
+            context=RenderContext(collection_layout="multiline"),
+        ),
+        variant=source_case.variant,
+    )
+
+    assert (
+        case.variant.collection_layout
+        is literalizer.CollectionLayout.MULTILINE
+    )
+
+
+def test_special_axis_requires_one_manifest_input() -> None:
+    """A special axis fails clearly when its manifest entry is missing."""
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="requires exactly one manifest input",
+    ):
+        _one_special_input(entries=[], axis="modifiers")
 
 
 def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
@@ -151,7 +181,19 @@ def test_multiline_string_variants_follow_capability() -> None:
 
 def test_multiline_context_cases_follow_capabilities() -> None:
     """Assignment and indentation contexts follow language metadata."""
-    cases = build_multiline_string_context_cases()
+    combined_suffix = "_combined"
+    combined_case_dir_name = "multiline_string_scalar"
+    pre_indent_case_dir_name = "multiline_string_scalar"
+    cases = build_multiline_string_context_cases(
+        combined_case_dir_name=combined_case_dir_name,
+        combined_suffix=combined_suffix,
+        combined_variable_form=literalizer.BothVariableForms(
+            name="my_data",
+            modifiers=frozenset(),
+        ),
+        pre_indent_case_dir_name=pre_indent_case_dir_name,
+        pre_indent_level=1,
+    )
     combined_cases = [
         case
         for case in cases
@@ -164,6 +206,11 @@ def test_multiline_context_cases_follow_capabilities() -> None:
         isinstance(case.variable_form, literalizer.BothVariableForms)
         for case in combined_cases
     )
+    assert all(
+        case.case_dir_name == combined_case_dir_name
+        and case.variant_name.endswith(combined_suffix)
+        for case in combined_cases
+    )
     assert {case.variant.lang_cls for case in combined_cases} == {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
@@ -174,6 +221,11 @@ def test_multiline_context_cases_follow_capabilities() -> None:
         )
     }
     assert indented_cases
+    assert all(
+        case.case_dir_name == pre_indent_case_dir_name
+        and "_pre_indent_1_" in case.variant_name
+        for case in indented_cases
+    )
     assert all(case.pre_indent_level == 1 for case in indented_cases)
     assert all(
         case.variant.lang_cls.supports_multiline_string_literals

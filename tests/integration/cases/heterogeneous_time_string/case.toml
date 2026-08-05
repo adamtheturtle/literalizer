@@ -1,0 +1,9 @@
+schema_version = 1
+input = "input.toml"
+owner = "variant"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "union_format"

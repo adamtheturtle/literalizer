@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "record_null_substitutions_record"
+
+[variants.context.record_null_substitutions]
+due_date = -1
+parent_id = -1
+assignee = ""

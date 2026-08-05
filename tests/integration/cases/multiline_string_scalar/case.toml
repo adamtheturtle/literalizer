@@ -1,0 +1,20 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_scalar"
+
+[[variants]]
+axis = "multiline_string_combined"
+suffix = "_combined"
+
+[variants.context]
+variable_form = "both"
+
+[[variants]]
+axis = "multiline_string_pre_indent"
+
+[variants.context]
+pre_indent_level = 1

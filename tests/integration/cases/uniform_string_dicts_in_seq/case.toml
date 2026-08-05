@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "error_record_shape_names"
+
+[[variants]]
+axis = "json_type_record_shape_names_cross"
+
+[[variants]]
+axis = "language_version"

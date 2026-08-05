@@ -1,0 +1,21 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "integer_format"
+suffix = "_zero"
+
+[[variants]]
+axis = "numeric_literal_suffix"
+suffix = "_zero"
+
+[[variants]]
+axis = "numeric_separator"
+suffix = "_zero"
+
+[[variants]]
+axis = "numeric_style"
+suffix = "_zero"
+
+[[variants]]
+axis = "language_version"

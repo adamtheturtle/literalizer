@@ -1,0 +1,25 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_nested_mixed"
+
+[[variants]]
+axis = "heterogeneous_strategy"
+suffix = "_inner"
+
+[[variants]]
+axis = "heterogeneous_value_enum_name"
+suffix = "_inner"
+
+[[variants]]
+axis = "heterogeneous_value_union_name"
+suffix = "_inner"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"
+suffix = "_inner"
+
+[[variants]]
+axis = "language_version"

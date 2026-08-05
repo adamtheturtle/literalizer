@@ -1,0 +1,6 @@
+schema_version = 1
+input = "input.toml"
+owner = "variant"
+
+[[variants]]
+axis = "type_hints"

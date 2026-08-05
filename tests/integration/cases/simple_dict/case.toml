@@ -1,0 +1,53 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "default_dict_value_type"
+
+[[variants]]
+axis = "default_dict_key_type"
+
+[[variants]]
+axis = "empty_dict_key"
+
+[[variants]]
+axis = "type_hints_cross"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "dict_entry_style"
+
+[[variants]]
+axis = "string_format"
+suffix = "_dict"
+
+[[variants]]
+axis = "trailing_comma"
+suffix = "_dict"
+
+[[variants]]
+axis = "statement_terminator_style"
+suffix = "_dict"
+
+[[variants]]
+axis = "type_name"
+
+[[variants]]
+axis = "constructor_prefix"
+
+[[variants]]
+axis = "c_field_name"
+
+[[variants]]
+axis = "constructor_name"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifiers"

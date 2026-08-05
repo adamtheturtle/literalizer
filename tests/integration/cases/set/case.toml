@@ -1,0 +1,22 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "set"
+
+[[variants]]
+axis = "default_set_element_type"
+
+[[variants]]
+axis = "trailing_comma"
+suffix = "_set"
+
+[[variants]]
+axis = "statement_terminator_style"
+suffix = "_set"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "modifiers"

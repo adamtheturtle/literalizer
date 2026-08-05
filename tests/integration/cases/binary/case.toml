@@ -1,0 +1,33 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_binary"
+
+[[variants]]
+axis = "json_type_bytes_cross"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "declaration_style"
+
+[[variants]]
+axis = "string_format"
+suffix = "_binary"
+
+[[variants]]
+axis = "bytes_format"
+
+[[variants]]
+axis = "type_name"
+suffix = "_binary"
+
+[[variants]]
+axis = "constructor_prefix"
+suffix = "_binary"
+
+[[variants]]
+axis = "language_version"

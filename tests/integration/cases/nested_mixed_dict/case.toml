@@ -1,0 +1,17 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "heterogeneous_value_enum_name"
+
+[[variants]]
+axis = "heterogeneous_value_union_name"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"
+
+[[variants]]
+axis = "language_version"

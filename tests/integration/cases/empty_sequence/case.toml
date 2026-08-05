@@ -1,0 +1,14 @@
+schema_version = 1
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "default_sequence_element_type"
+
+[[variants]]
+axis = "language_version"
+
+[[variants]]
+axis = "annotation_evaluation"
+
+[[variants]]
+axis = "union_format"
