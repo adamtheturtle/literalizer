@@ -3693,7 +3693,7 @@ class Rust(metaclass=LanguageCls):
         if self._json_type_active:
             self._validate_json_value_keys(data)
 
-    def format_document_fast(  # noqa: C901, PLR0915  # pylint: disable=too-complex
+    def _format_document_fast(  # noqa: C901, PLR0915  # pylint: disable=too-complex
         self,
         data: Value,
         *,

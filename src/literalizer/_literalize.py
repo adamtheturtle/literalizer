@@ -109,7 +109,7 @@ class _SupportsCallVariableWrapInFile(Protocol):
 class _SupportsFastDocumentFormatting(Protocol):
     """A language with an optimized whole-document formatter."""
 
-    def format_document_fast(
+    def _format_document_fast(
         self,
         data: Value,
         *,
@@ -2170,7 +2170,8 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     check_data(data=data, spec=language)
 
     if not ref_key and isinstance(language, _SupportsFastDocumentFormatting):
-        fast_result = language.format_document_fast(
+        # pylint: disable-next=protected-access
+        fast_result = language._format_document_fast(  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
             data=data,
             line_prefix=line_prefix,
             include_delimiters=include_delimiters,
