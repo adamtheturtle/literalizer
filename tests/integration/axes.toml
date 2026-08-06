@@ -258,6 +258,21 @@ plan = "every_non_default_member"
 name_template = "{lang}_version_{format}"
 option = "language_version"
 
+# Exercises the False branch of the ``_any_types`` intersection check in
+# the PY38 type-hint preamble builder: the dict value type is not
+# ``Any``, so ``from typing import Any`` is not emitted.
+[axes.language_version_cross_dict_type]
+plan = "fixed_overrides"
+name_template = "{lang}_version_py38_default_dict_value_type_{value}"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+  { kind = "non_default_kwarg", kwarg = "default_dict_value_type" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+  { kind = "non_default_kwarg", kwarg = "default_dict_value_type", name_value = true },
+]
+
 [axes.multiline_string]
 plan = "fixed_overrides"
 name_template = "{lang}_string_format_multiline"

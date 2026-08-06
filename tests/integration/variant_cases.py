@@ -44,7 +44,6 @@ from .variant_metadata_builders import (
     build_collection_layout_variants,
     build_dhall_nested_map_widening_variants,
     build_empty_map_narrowing_variants,
-    build_language_version_cross_dict_type_variants,
     build_modifier_variant_cases,
     build_nested_map_widening_variants,
 )
@@ -1263,9 +1262,6 @@ _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     ),
     "json_type_record_shape_names_cross": (
         build_json_type_record_shape_names_cross_variants
-    ),
-    "language_version_cross_dict_type": (
-        build_language_version_cross_dict_type_variants
     ),
     "multiline_raw_string_delimiter": (
         build_multiline_raw_string_delimiter_variants

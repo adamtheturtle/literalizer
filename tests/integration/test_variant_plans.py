@@ -37,7 +37,6 @@ _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
         "json_type_declaration_cross",
         "json_type_language_version_cross",
         "json_type_record_shape_names_cross",
-        "language_version_cross_dict_type",
         "multiline_raw_string_delimiter",
         "nested_map_widening",
         "numeric_style_datetime_cross",
