@@ -196,7 +196,7 @@ def _json_types(spec: literalizer.Language) -> type[enum.Enum]:
 
 
 @beartype
-def _configured_bytes_format(spec: literalizer.Language) -> object:
+def _bytes_format(spec: literalizer.Language) -> object:
     """Return the configured bytes format, despite JSON overrides."""
     assert isinstance(spec, _HasBytesFormat)  # noqa: S101
     return spec.bytes_format
@@ -215,8 +215,7 @@ class _Option:
 
     ``kwarg`` is the language-class constructor parameter name; each
     accessor reads the configured value or the member enum from a built
-    spec.  Those sometimes diverge from the constructor name:
-    ``bytes_format`` reads its configured value from ``format_bytes``.
+    spec.
     """
 
     kwarg: str
@@ -235,50 +234,30 @@ _OPTIONS: Mapping[str, _Option] = {
         get_default=_bool_format,
         get_members=_bool_formats,
     ),
+    # Each option reads the value the constructor took, not the derived
+    # formatter the language built from it: a JSON value type overrides
+    # ``format_bytes``, and Haskell, OCaml and SML build a closure from
+    # their date and datetime members rather than returning the member,
+    # so a derived accessor never compares equal to the default and
+    # expands the language default under a non-default name.
     "bytes_format": _Option(
         kwarg="bytes_format",
-        get_default=lambda spec: spec.format_bytes,
-        get_members=lambda spec: spec.bytes_formats,
+        get_default=_bytes_format,
+        get_members=_bytes_formats,
     ),
     "comment_format": _Option(
         kwarg="comment_format",
         get_default=lambda spec: spec.comment_format,
         get_members=lambda spec: spec.comment_formats,
     ),
-    # ``bytes_format`` reads the derived ``format_bytes``, which a JSON
-    # value type overrides; ``configured_bytes_format`` reads the field
-    # the constructor set, so an axis crossing the two still expands
-    # every non-default bytes format.
-    "configured_bytes_format": _Option(
-        kwarg="bytes_format",
-        get_default=_configured_bytes_format,
-        get_members=_bytes_formats,
-    ),
-    # ``date_format`` and ``datetime_format`` read the derived
-    # ``format_date``/``format_datetime`` callable, which Haskell, OCaml
-    # and SML build rather than return the configured enum member.  For
-    # those languages the default never compares equal, so an axis using
-    # these entries expands the default member as well.  The
-    # ``configured_*`` entries read the enum field and expand strictly
-    # non-default members; issue #3342 tracks reconciling the two.
-    "configured_date_format": _Option(
+    "date_format": _Option(
         kwarg="date_format",
         get_default=lambda spec: spec.date_format,
         get_members=lambda spec: spec.date_formats,
     ),
-    "configured_datetime_format": _Option(
-        kwarg="datetime_format",
-        get_default=lambda spec: spec.datetime_format,
-        get_members=lambda spec: spec.datetime_formats,
-    ),
-    "date_format": _Option(
-        kwarg="date_format",
-        get_default=lambda spec: spec.format_date,
-        get_members=lambda spec: spec.date_formats,
-    ),
     "datetime_format": _Option(
         kwarg="datetime_format",
-        get_default=lambda spec: spec.format_datetime,
+        get_default=lambda spec: spec.datetime_format,
         get_members=lambda spec: spec.datetime_formats,
     ),
     "declaration_style": _Option(
