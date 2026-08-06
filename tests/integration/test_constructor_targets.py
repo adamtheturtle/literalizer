@@ -1,7 +1,7 @@
 """Golden-file coverage for constructor call targets."""
 
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -19,21 +19,14 @@ _GOLDEN_DIR = Path(__file__).parent / "constructor_targets"
 _MIN_VARIANT_CALL_STYLES = 2
 
 
-def _empty_spec_kwargs() -> dict[str, object]:
-    """Return empty language constructor kwargs."""
-    return {}
-
-
 @dataclass(frozen=True)
 class _ConstructorBindingCase:
     """A constructor call-binding golden-file variant."""
 
     name: str
     lang_cls: literalizer.LanguageCls
-    spec_kwargs: dict[str, object] = field(default_factory=_empty_spec_kwargs)  # noqa: NOD001
-    variable_form: literalizer.VariableForm = field(  # noqa: NOD001
-        default_factory=lambda: NewVariable(name="p", modifiers=frozenset()),
-    )
+    spec_kwargs: dict[str, object]
+    variable_form: literalizer.VariableForm
 
 
 @beartype
@@ -137,6 +130,7 @@ def _call_style_binding_cases() -> list[_ConstructorBindingCase]:
                 ),
                 lang_cls=lang_cls,
                 spec_kwargs={"call_style": call_style},
+                variable_form=NewVariable(name="p", modifiers=frozenset()),
             )
             for call_style in call_styles
             if call_style.value != default_call_style_config
@@ -166,6 +160,7 @@ def _modifier_binding_cases() -> list[_ConstructorBindingCase]:
             _ConstructorBindingCase(
                 name=f"{lang_cls.__name__}_constructor_call_{modifier_name}",
                 lang_cls=lang_cls,
+                spec_kwargs={},
                 variable_form=NewVariable(name="p", modifiers=modifiers),
             )
             for modifier_name, modifiers in entries

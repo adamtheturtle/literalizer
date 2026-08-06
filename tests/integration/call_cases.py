@@ -29,8 +29,8 @@ from literalizer import StubReturn
 # between rendering and composition, so it uses the internal core
 # directly.  See issue #1946.
 from literalizer._literalize import (
-    _literalize_call_parsed,
     _literalize_call_with_declarations,
+    literalize_call_parsed,
 )
 from literalizer._parsing import ParsedInput, parse_input
 from literalizer._types import ValueInput
@@ -325,8 +325,8 @@ def _literalize_call_case(
     | literalizer.ExistingVariable
     | None,
     wrap_in_file: bool,
-    ref_values: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
-    bound_refs: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    ref_values: Mapping[str, ValueInput] | None,
+    bound_refs: Mapping[str, ValueInput] | None,
 ) -> literalizer.LiteralizeResult:
     """Run a configured call through the public or parsed-input path."""
     if config.input_root_key is None:
@@ -348,7 +348,7 @@ def _literalize_call_case(
             bound_refs=bound_refs,
             variable_form=variable_form,
         )
-    return _literalize_call_parsed(
+    return literalize_call_parsed(
         parsed=_select_call_input_root(
             source=source,
             input_info=input_info,
@@ -398,6 +398,8 @@ def _run_wrap_in_file_case(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=True,
+            ref_values=None,
+            bound_refs=None,
         )
     except CallArgNotSupportedError as exc:
         golden_path.unlink(missing_ok=True)
@@ -412,6 +414,8 @@ def _run_wrap_in_file_case(
             effective_ref_case=effective_ref_case,
             variable_form=mirror_form,
             wrap_in_file=True,
+            ref_values=None,
+            bound_refs=None,
         )
         if wrap_result.code != mirror_result.code:
             golden_path.unlink(missing_ok=True)
@@ -489,6 +493,7 @@ def _run_call_with_declarations(
             variable_form=config.variable_form,
             wrap_in_file=False,
             ref_values=ref_values or None,
+            bound_refs=None,
         )
     except VariableNameNotSupportedError:
         golden_path.unlink(missing_ok=True)
@@ -696,6 +701,7 @@ def run_call_golden_case(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=True,
+            ref_values=None,
             bound_refs={
                 ref_name: json.loads(s=ref_source)
                 for ref_name, ref_source in config.ref_declarations.items()

@@ -53,7 +53,7 @@ class ValueItemsMap[K, V](Protocol):
     ``Mapping[Scalar, ValueInput]`` even though every concrete scalar
     key type *is* a ``Scalar``.  The only operation literalizer
     performs on this arm is iterating ``items()`` (see
-    ``_materialize_value_input``), so representing it as a read-only
+    ``materialize_value_input``), so representing it as a read-only
     ``items()`` view places ``K``/``V`` solely in an output position;
     PEP 695 then infers them covariant, and any scalar-keyed mapping
     literal is accepted without an explicit annotation.

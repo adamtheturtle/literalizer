@@ -36,10 +36,9 @@ from literalizer._literalize import (
     LiteralizeResult,
     NewVariable,
     VariableForm,
-    literalize,
-    literalize_call,
 )
 from literalizer._parsing import InputFormat
+from literalizer.api import literalize, literalize_call
 
 __all__ = [
     "ALL_REF_CASES",

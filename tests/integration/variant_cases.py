@@ -125,7 +125,7 @@ def build_non_default_variants(
         [literalizer.LanguageCls, enum.Enum],
         literalizer.Language,
     ],
-    excluded_format_names: frozenset[str] = frozenset(),  # noqa: NOD001
+    excluded_format_names: frozenset[str],
 ) -> list[Variant]:
     """Build variants for every non-default value of a format enum.
 
@@ -713,6 +713,7 @@ def build_json_type_variable_form_cases(
                         collection_layout=literalizer.CollectionLayout.COMPACT,
                     ),
                     case_dir_name=case_dir_name,
+                    pre_indent_level=0,
                     variable_form=literalizer.ExistingVariable(name="my_data"),
                 )
             )
@@ -754,6 +755,7 @@ def build_json_type_variable_form_cases(
                         name="my_data",
                         modifiers=frozenset(),
                     ),
+                    pre_indent_level=0,
                 )
             )
     return cases
@@ -1927,6 +1929,7 @@ def build_multiline_string_context_cases(
                     ),
                     case_dir_name=combined_case_dir_name,
                     variable_form=combined_variable_form,
+                    pre_indent_level=0,
                 )
             )
 
@@ -2375,6 +2378,7 @@ def _build_simple_axis(*, axis: _SimpleAxis) -> list[Variant]:
         make_variant_spec=lambda cls, fmt: make_spec(
             lang_cls=cls, **{axis.kwarg: fmt}
         ),
+        excluded_format_names=frozenset(),
     )
 
 
@@ -2410,6 +2414,7 @@ def _build_declaration_style_variants() -> list[Variant]:
         get_default=lambda s: s.declaration_style,
         get_formats=lambda s: s.declaration_styles,
         make_variant_spec=make_spec_for,
+        excluded_format_names=frozenset(),
     )
 
 

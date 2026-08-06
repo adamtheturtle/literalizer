@@ -56,4 +56,4 @@ class VariantCase:
     variant: Variant
     case_dir_name: str
     variable_form: literalizer.VariableForm
-    pre_indent_level: int = 0  # noqa: NOD001
+    pre_indent_level: int
