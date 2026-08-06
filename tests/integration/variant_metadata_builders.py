@@ -527,6 +527,7 @@ def build_modifier_variant_cases(
                         name="my_data",
                         modifiers=modifiers,
                     ),
+                    pre_indent_level=0,
                 )
                 for case_dir_name in case_dir_names
             )
@@ -575,6 +576,7 @@ def build_modifier_variant_cases(
                             name="my_data",
                             modifiers=frozenset({modifier}),
                         ),
+                        pre_indent_level=0,
                     )
                 )
 
