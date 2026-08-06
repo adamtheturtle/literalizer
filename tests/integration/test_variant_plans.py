@@ -4,13 +4,19 @@ from pathlib import Path
 
 import pytest
 
+from .case_manifests import CaseManifestError
 from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
-from .variant_cases import ESCAPE_HATCH_VARIANT_AXES, variants_for_axis
+from .variant_cases import (
+    ESCAPE_HATCH_VARIANT_AXES,
+    check_axis_coverage,
+    variants_for_axis,
+)
 from .variant_plans import (
     AxisPlanError,
     declared_axis_names,
     load_axis_registry,
     variants_for_declared_axis,
+    variants_for_registry_axis,
 )
 
 # The axes that resolve to a typed Python builder instead of a declared
@@ -208,3 +214,87 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
         match="invalid TOML",
     ):
         load_axis_registry(path=path)
+
+
+@pytest.mark.parametrize(
+    argnames=("declared", "escape_hatch", "message"),
+    argvalues=[
+        (
+            frozenset({"date", "json_type"}),
+            frozenset({"json_type"}),
+            "both declared in axes.toml and registered",
+        ),
+        (
+            frozenset({"date"}),
+            frozenset[str](),
+            r"\['json_type'\] have no expansion",
+        ),
+        (
+            frozenset({"date", "vibes"}),
+            frozenset({"json_type"}),
+            r"\['vibes'\] expand but are not in KNOWN_VARIANT_AXES",
+        ),
+    ],
+)
+def test_axis_coverage_gaps_are_actionable(
+    declared: frozenset[str],
+    escape_hatch: frozenset[str],
+    message: str,
+) -> None:
+    """An axis with no expansion, or two, names what to do about it."""
+    with pytest.raises(expected_exception=CaseManifestError, match=message):
+        check_axis_coverage(
+            expandable=frozenset({"date", "json_type"}),
+            declared=declared,
+            escape_hatch=escape_hatch,
+        )
+
+
+_UNDECLARED_SAMPLE_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides = [{ kind = "non_default_kwarg", kwarg = "type_name" }]
+"""
+
+_UNDECLARED_METADATA_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "heterogeneous_value_variant_name_strategy"
+"""
+
+
+@pytest.mark.parametrize(
+    argnames=("contents", "message"),
+    argvalues=[
+        (_UNDECLARED_SAMPLE_AXIS, "declares no sample value for 'type_name'"),
+        (
+            _UNDECLARED_METADATA_AXIS,
+            "declares no 'heterogeneous_value_variant_name_strategy'",
+        ),
+    ],
+)
+def test_missing_language_metadata_is_actionable(
+    tmp_path: Path,
+    contents: str,
+    message: str,
+) -> None:
+    """A plan reading absent metadata names the file that lacks it.
+
+    Language metadata and the axis registry are separate files, so an
+    override with no matching gate can outlive the value it reads.
+    Expansion says which language file is missing what, rather than
+    building a spec from a silently dropped setting.
+    """
+    path = _write_registry(tmp_path=tmp_path, contents=contents)
+    with pytest.raises(expected_exception=AxisPlanError, match=message):
+        variants_for_registry_axis(path=path, axis_key="example")

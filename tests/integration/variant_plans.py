@@ -23,7 +23,13 @@ import string
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Annotated, Literal, Protocol, runtime_checkable
+from typing import (
+    Annotated,
+    Literal,
+    Protocol,
+    assert_never,
+    runtime_checkable,
+)
 
 from beartype import beartype
 from pydantic import BaseModel, Field, ValidationError
@@ -452,7 +458,6 @@ class _RecordShapeNamesOverride(
     kind: Literal["record_shape_names"]
     keys: list[Annotated[str, Field(min_length=1)]]
     name: Annotated[str, Field(min_length=1)]
-    name_value: bool = False
 
 
 type _Override = Annotated[
@@ -600,12 +605,12 @@ def _validate_template(*, axis_key: str, axis: _Axis) -> None:
     """Check a name template against the placeholders its plan
     offers.
     """
-    allowed = {_LANG_PLACEHOLDER}
-    match axis:
-        case _EveryNonDefaultMemberPlan():
-            allowed.add(_FORMAT_PLACEHOLDER)
-        case _FixedOverridesPlan():
-            allowed.add(_VALUE_PLACEHOLDER)
+    plan_placeholder = (
+        _FORMAT_PLACEHOLDER
+        if isinstance(axis, _EveryNonDefaultMemberPlan)
+        else _VALUE_PLACEHOLDER
+    )
+    allowed = {_LANG_PLACEHOLDER, plan_placeholder}
     used = _placeholders(template=axis.name_template)
     unknown = sorted(used - allowed)
     if unknown:
@@ -617,11 +622,11 @@ def _validate_template(*, axis_key: str, axis: _Axis) -> None:
     naming = [
         override
         for override in axis.overrides
-        if isinstance(
-            override,
-            _NonDefaultKwargOverride | _RecordShapeNamesOverride,
+        if isinstance(override, _RecordShapeNamesOverride)
+        or (
+            isinstance(override, _NonDefaultKwargOverride)
+            and override.name_value
         )
-        and override.name_value
     ]
     wants_value = _VALUE_PLACEHOLDER in used
     if wants_value != (len(naming) == 1):
@@ -700,6 +705,8 @@ def _gate_admits(
                 name=gate.member,
             )
             return member is not None
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -790,8 +797,9 @@ def _resolve_overrides(
                 kwargs["record_shape_names"] = {
                     frozenset(override.keys): override.name
                 }
-                if override.name_value:
-                    name_value = override.name
+                name_value = override.name
+            case _ as unreachable:
+                assert_never(unreachable)
     return _ResolvedOverrides(kwargs=kwargs, name_value=name_value)
 
 
@@ -902,6 +910,8 @@ def _selections(
                     _Selection(kwargs=kwargs, format_name=member.name.lower())
                 )
             return selections
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -942,20 +952,17 @@ def _axis_variants(*, axis_key: str, axis: _Axis) -> list[Variant]:
         )
         fixture_prefix = ""
         record_version: Mapping[str, object] = {}
-        match axis:
-            case _FixedOverridesPlan():
-                if axis.external_record_shape_fixture:
-                    fixture_prefix = _external_record_shape_prefix(
-                        lang_cls=lang_cls,
-                        metadata=metadata,
-                    )
-                if axis.record_language_version:
-                    record_version = _record_language_version(
-                        metadata=metadata,
-                        default_spec=default_spec,
-                    )
-            case _EveryNonDefaultMemberPlan():
-                pass
+        if isinstance(axis, _FixedOverridesPlan):
+            if axis.external_record_shape_fixture:
+                fixture_prefix = _external_record_shape_prefix(
+                    lang_cls=lang_cls,
+                    metadata=metadata,
+                )
+            if axis.record_language_version:
+                record_version = _record_language_version(
+                    metadata=metadata,
+                    default_spec=default_spec,
+                )
         for selection in _selections(
             axis=axis,
             metadata=metadata,
@@ -991,17 +998,29 @@ def _axis_variants(*, axis_key: str, axis: _Axis) -> list[Variant]:
     return variants
 
 
-@functools.cache
 @beartype
 def variants_for_declared_axis(*, axis_key: str) -> list[Variant]:
     """Return the variants the declared plan for *axis_key* expands
     to.
     """
-    registry = load_axis_registry(path=AXES_PATH)
+    return variants_for_registry_axis(path=AXES_PATH, axis_key=axis_key)
+
+
+@functools.cache
+@beartype
+def variants_for_registry_axis(
+    *,
+    path: Path,
+    axis_key: str,
+) -> list[Variant]:
+    """Return the variants one axis of the registry at *path* expands
+    to.
+    """
+    registry = load_axis_registry(path=path)
     axis = registry.get(axis_key)
     if axis is None:
         msg = (
-            f"{AXES_PATH}: no plan declared for variant axis {axis_key!r}; "
+            f"{path}: no plan declared for variant axis {axis_key!r}; "
             "add one here or register an escape-hatch builder"
         )
         raise AxisPlanError(msg)

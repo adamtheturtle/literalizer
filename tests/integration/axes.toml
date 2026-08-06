@@ -158,7 +158,7 @@ overrides = [
   { kind = "record_shape_names", keys = [
     "first",
     "last",
-  ], name = "ExternalRecordShape", name_value = true },
+  ], name = "ExternalRecordShape" },
 ]
 
 [axes.float_format]
@@ -336,7 +336,7 @@ overrides = [
     "label",
     "enabled",
     "related_ids",
-  ], name = "NamedType", name_value = true },
+  ], name = "NamedType" },
 ]
 
 [axes.record_unify_optional_fields]

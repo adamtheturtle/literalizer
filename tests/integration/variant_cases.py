@@ -1301,29 +1301,32 @@ ESCAPE_HATCH_VARIANT_AXES = frozenset(_ESCAPE_HATCH_BUILDERS)
 
 
 @beartype
-def _check_axis_coverage() -> None:
-    """Fail at import time when an axis resolves to no expansion.
+def check_axis_coverage(
+    *,
+    expandable: frozenset[str],
+    declared: frozenset[str],
+    escape_hatch: frozenset[str],
+) -> None:
+    """Fail when an axis resolves to other than one expansion.
 
     Every axis the case manifests may name has to reach exactly one
     declared plan or one registered escape-hatch builder.
     """
-    expandable = KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
-    declared = declared_axis_names()
-    both = sorted(declared & ESCAPE_HATCH_VARIANT_AXES)
+    both = sorted(declared & escape_hatch)
     if both:
         msg = (
             "variant axes are both declared in axes.toml and registered as "
             f"escape-hatch builders: {both}"
         )
         raise CaseManifestError(msg)
-    unexpanded = sorted(expandable - declared - ESCAPE_HATCH_VARIANT_AXES)
+    unexpanded = sorted(expandable - declared - escape_hatch)
     if unexpanded:
         msg = (
             f"variant axes {unexpanded} have no expansion; declare a plan "
             "in axes.toml or register an escape-hatch builder"
         )
         raise CaseManifestError(msg)
-    unknown = sorted((declared | ESCAPE_HATCH_VARIANT_AXES) - expandable)
+    unknown = sorted((declared | escape_hatch) - expandable)
     if unknown:
         msg = (
             f"variant axes {unknown} expand but are not in KNOWN_VARIANT_AXES"
@@ -1331,7 +1334,11 @@ def _check_axis_coverage() -> None:
         raise CaseManifestError(msg)
 
 
-_check_axis_coverage()
+check_axis_coverage(
+    expandable=KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES,
+    declared=declared_axis_names(),
+    escape_hatch=ESCAPE_HATCH_VARIANT_AXES,
+)
 
 
 @beartype
