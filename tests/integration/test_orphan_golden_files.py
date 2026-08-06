@@ -10,8 +10,6 @@ import literalizer
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
-    KEBAB_NEW_VARIABLE_CASE_DIR,
-    PRIMED_NEW_VARIABLE_CASE_DIR,
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
     build_no_variable_form_cases,
@@ -22,7 +20,12 @@ from .case_discovery import (
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
-from .case_manifests import load_case_manifests
+from .case_manifests import (
+    KEBAB_NEW_VARIABLE_OWNER,
+    PRIMED_NEW_VARIABLE_OWNER,
+    case_dir_name_for_owner,
+    load_case_manifests,
+)
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
@@ -133,10 +136,14 @@ def _expected_specialized_new_variable_golden_files(
 ) -> set[Path]:
     """Return expected paths for specialized NewVariable fixtures."""
     expected: set[Path] = set()
-    for case_dir_name, languages in (
-        (KEBAB_NEW_VARIABLE_CASE_DIR, kebab_new_variable_languages()),
-        (PRIMED_NEW_VARIABLE_CASE_DIR, primed_new_variable_languages()),
+    for owner, languages in (
+        (KEBAB_NEW_VARIABLE_OWNER, kebab_new_variable_languages()),
+        (PRIMED_NEW_VARIABLE_OWNER, primed_new_variable_languages()),
     ):
+        case_dir_name = case_dir_name_for_owner(
+            cases_dir=cases_dir,
+            owner=owner,
+        )
         for lang_cls in languages:
             expected.update(
                 _paths_for_versions(

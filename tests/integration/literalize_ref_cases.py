@@ -1,9 +1,9 @@
 """``literalize`` golden-file case configuration and runner for ``$ref``
 support.
 
-The configurations describe how each ``cases/literalize_ref_*`` directory is
-driven through :func:`literalizer.literalize` with a ``ref_case`` set to the
-language's default identifier case.  The runner
+Each ``cases/literalize_ref_*`` directory declares in its own ``case.toml``
+how it is driven through :func:`literalizer.literalize` with a ``ref_case``
+set to the language's default identifier case.  The runner
 (``run_literalize_ref_golden_case``) is shared by
 ``test_literalize_ref_golden_file``.
 """
@@ -32,18 +32,21 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 
-from .case_discovery import (
-    LITERALIZE_DEFAULT_REF_CASE_CONFIGS,
-    LITERALIZE_REF_CASE_CONFIGS,
-    LiteralizeRefCaseConfig,
+from .case_manifests import (
+    REF_DEFAULT_OWNER,
+    REF_OWNER,
+    RefCaseSpec,
+    case_input,
+    ref_case_specs,
 )
-from .case_manifests import case_input
 from .language_specs import (
     make_golden_path,
     sorted_languages,
     with_per_fixture_module_name,
 )
 from .variant_cases import wrap_variable_form
+
+CASES_DIR = Path(__file__).parent / "cases"
 
 type _Scalar = (
     str
@@ -68,7 +71,7 @@ type _ValueInput = (
 class LiteralizeRefCase:
     """A parameterized literalize-ref golden-file test case."""
 
-    config: LiteralizeRefCaseConfig
+    config: RefCaseSpec
     lang_cls: literalizer.LanguageCls
 
 
@@ -85,7 +88,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     """
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
-        for config in LITERALIZE_REF_CASE_CONFIGS
+        for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
         for lang_cls in sorted_languages()
         if config.ref_case_override is None
         or config.ref_case_override in lang_cls.supported_ref_cases
@@ -98,7 +101,10 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
     """Return default literalize-ref test cases for all languages."""
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
-        for config in LITERALIZE_DEFAULT_REF_CASE_CONFIGS
+        for config in ref_case_specs(
+            cases_dir=CASES_DIR,
+            owner=REF_DEFAULT_OWNER,
+        )
         for lang_cls in sorted_languages()
     ]
 
@@ -169,7 +175,7 @@ def _parse_ref_input(
 @beartype
 def run_literalize_ref_golden_case(
     *,
-    config: LiteralizeRefCaseConfig,
+    config: RefCaseSpec,
     lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
     golden_name: str,
@@ -209,14 +215,13 @@ def run_literalize_ref_golden_case(
         )
     except VariableNameNotSupportedError:
         variable_form_obj = None
-    explicit_sources = dict(config.ref_value_sources)
     raw_data = _parse_ref_input(
         input_format=input_info.input_format,
         input_source=input_source,
     )
     bound_refs_input: dict[str, _ValueInput] = {
         raw_name: json.loads(
-            s=explicit_sources.get(raw_name, '{"_": "_"}'),
+            s=config.value_sources.get(raw_name, '{"_": "_"}'),
         )
         for raw_name in _collect_ref_names(
             data=raw_data,

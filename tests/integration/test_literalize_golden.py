@@ -32,8 +32,6 @@ from literalizer.exceptions import (
 from literalizer.languages.rust import Rust
 
 from .case_discovery import (
-    KEBAB_NEW_VARIABLE_CASE_DIR,
-    PRIMED_NEW_VARIABLE_CASE_DIR,
     HeterogeneousStrategyCombinedCase,
     IndentCase,
     NoVariableFormCase,
@@ -50,6 +48,9 @@ from .case_discovery import (
     primed_new_variable_languages,
 )
 from .case_manifests import (
+    KEBAB_NEW_VARIABLE_OWNER,
+    PRIMED_NEW_VARIABLE_OWNER,
+    case_dir_name_for_owner,
     case_input,
     case_manifests_by_name,
     variable_form_for_context,
@@ -248,7 +249,11 @@ def test_kebab_new_variable_golden_file(
     """Hyphen-friendly languages preserve a hyphenated declaration
     name.
     """
-    input_info = case_input(case_dir=cases_dir / KEBAB_NEW_VARIABLE_CASE_DIR)
+    case_dir_name = case_dir_name_for_owner(
+        cases_dir=cases_dir,
+        owner=KEBAB_NEW_VARIABLE_OWNER,
+    )
+    input_info = case_input(case_dir=cases_dir / case_dir_name)
     source_text = input_info.path.read_text(encoding="utf-8")
     for version_format in lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
@@ -299,7 +304,11 @@ def test_primed_new_variable_golden_file(
     subtests: pytest.Subtests,
 ) -> None:
     """Prime-friendly languages preserve a primed declaration name."""
-    input_info = case_input(case_dir=cases_dir / PRIMED_NEW_VARIABLE_CASE_DIR)
+    case_dir_name = case_dir_name_for_owner(
+        cases_dir=cases_dir,
+        owner=PRIMED_NEW_VARIABLE_OWNER,
+    )
+    input_info = case_input(case_dir=cases_dir / case_dir_name)
     source_text = input_info.path.read_text(encoding="utf-8")
     for version_format in lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):

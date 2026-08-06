@@ -7,9 +7,11 @@ import pytest
 import literalizer
 
 from .case_manifests import (
+    KEBAB_NEW_VARIABLE_OWNER,
     CaseManifestError,
     RenderContext,
     VariableFormName,
+    case_dir_name_for_owner,
     case_input,
     case_manifests_by_name,
     load_case_manifest,
@@ -161,6 +163,52 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'self_contained_mirror_variable_form = "mystery"\n'
             ),
             "Input should be 'existing', 'new'",
+        ),
+        (
+            'schema_version = 1\nowner = "literalize-ref"\n',
+            r"requires a \[ref\] table",
+        ),
+        (
+            'schema_version = 1\nowner = "literalize-ref-default"\n',
+            r"requires a \[ref\] table",
+        ),
+        (
+            'schema_version = 1\nsuites = ["base"]\n[ref]\n',
+            (
+                r"a \[ref\] table requires owner = 'literalize-ref' or "
+                "'literalize-ref-default'"
+            ),
+        ),
+        (
+            'schema_version = 1\nowner = "variant"\n[ref]\n',
+            r"a \[ref\] table requires owner",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref"\n'
+                "[ref]\n"
+                'ref_case_override = "mystery"\n'
+            ),
+            (
+                "Input should be 'camel', 'kebab', 'pascal', 'snake', "
+                "'upper_snake'"
+            ),
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref"\n'
+                "[ref]\n"
+                "ref_case_override = 1\n"
+            ),
+            "ref_case_override",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref"\n'
+                "[ref]\n"
+                "extra = true\n"
+            ),
+            "Extra inputs are not permitted",
         ),
     ],
 )
@@ -323,6 +371,45 @@ def test_render_context_is_loaded(tmp_path: Path) -> None:
     assert context.collection_layout == "multiline"
     assert context.pre_indent_level == expected_pre_indent_level
     assert context.record_null_substitutions == {"missing": -1}
+
+
+def test_ref_table_is_loaded(tmp_path: Path) -> None:
+    """A ``[ref]`` table resolves its case name and defaults its key."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'owner = "literalize-ref"\n'
+            "[ref]\n"
+            'ref_case_override = "camel"\n'
+            "[ref.value_sources]\n"
+            'my_int = "42"\n'
+        ),
+        input_name="input.yaml",
+    )
+    ref = load_case_manifest(case_dir=case_dir).ref
+    assert ref is not None
+    assert ref.case_dir_name == "example"
+    assert ref.ref_key == "$ref"
+    assert ref.ref_case_override == literalizer.IdentifierCase.CAMEL
+    assert ref.value_sources == {"my_int": "42"}
+
+
+def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
+    """An owner naming a single fixture cannot match zero directories."""
+    _write_case(
+        tmp_path=tmp_path,
+        manifest='schema_version = 1\nsuites = ["base"]\n',
+        input_name="input.yaml",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="expected exactly one case with owner 'new-variable-kebab'",
+    ):
+        case_dir_name_for_owner(
+            cases_dir=tmp_path,
+            owner=KEBAB_NEW_VARIABLE_OWNER,
+        )
 
 
 @pytest.mark.parametrize(
