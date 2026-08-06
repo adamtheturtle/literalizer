@@ -16,6 +16,8 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import ALL_LANGUAGES
 
+from .language_metadata import language_metadata
+
 
 @beartype
 def _logical_stem(*, path: Path) -> str:
@@ -37,16 +39,16 @@ def with_per_fixture_module_name(
     spec: literalizer.Language,
     golden_path: Path,
 ) -> literalizer.Language:
-    """Apply the language-owned per-fixture module naming policy."""
-    metadata = spec.variant_metadata
-    template = metadata.fixture_module_name_template
+    """Apply the test-owned per-fixture module naming policy."""
+    golden = language_metadata(language_id=spec.language_id).golden
+    template = golden.fixture_module_name_template
     if template is None:
         return spec
     module_name = template.format(
         parent=golden_path.parent.name,
         stem=_logical_stem(path=golden_path),
     )
-    if metadata.fixture_module_name_lowercase:
+    if golden.fixture_module_name_lowercase:
         module_name = module_name.lower()
     return dataclasses.replace(spec, module_name=module_name)
 
@@ -86,13 +88,15 @@ def make_golden_path(
     files.  The tag uses the member's lower-cased ``name`` (e.g.
     ``PY39`` -> ``py39``).
 
-    Languages declare whether the entire filename must be lower-cased
-    (for example, so it is also a valid module identifier).  The logical
-    name retains its original casing in pytest IDs and error messages.
+    A language's test metadata declares whether the entire filename must
+    be lower-cased (for example, so it is also a valid module
+    identifier).  The logical name retains its original casing in pytest
+    IDs and error messages.
     """
     version_tag = version.name.lower()
     filename = f"{name}@{version_tag}{extension}"
-    if lang_cls.variant_metadata.golden_filename_lowercase:
+    golden = language_metadata(language_id=lang_cls.language_id).golden
+    if golden.filename_lowercase:
         filename = filename.lower()
     return parent / filename
 

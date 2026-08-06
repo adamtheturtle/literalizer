@@ -29,6 +29,7 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
 
 _LANGUAGE_OWNED_METADATA = frozenset(
     {
+        "language_id",
         "declaration_style_sequence_format_overrides",
         "json_type_variant_name_suffix",
         "record_shape_names_emit_declarations",
@@ -62,6 +63,16 @@ def test_language_metadata_has_no_metaclass_defaults() -> None:
     """The meta-class contract must not conceal missing declarations."""
     inherited_defaults = _LANGUAGE_OWNED_METADATA & vars(LanguageCls).keys()
     assert not inherited_defaults
+
+
+def test_language_ids_are_unique_lower_snake_identifiers() -> None:
+    """Every language owns a distinct, stable, neutral identifier."""
+    language_ids = [cls.language_id for cls in _SORTED_LANGUAGES]
+    assert len(set(language_ids)) == len(language_ids)
+    assert all(
+        language_id.isidentifier() and language_id.islower()
+        for language_id in language_ids
+    )
 
 
 def test_variant_metadata_fields_have_no_defaults() -> None:

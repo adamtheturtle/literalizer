@@ -1,0 +1,9 @@
+schema_version = 1
+
+[variants]
+pre_indent_comment_scalar = true
+record = ["field_type_split"]
+record_language_version = "CPP14"
+external_record_shape_fixture_prefix = "#include \"../../cpp_support/include/named_type.hpp\"\n"
+heterogeneous_value_variant_name_strategy = "ERROR"
+heterogeneous_value_variant_name_language_version = "CPP14"

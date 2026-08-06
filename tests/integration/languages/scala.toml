@@ -1,0 +1,7 @@
+schema_version = 1
+
+[golden]
+fixture_module_name_template = "Fixture_{parent}_{stem}"
+
+[variants]
+record = ["field_type_split"]

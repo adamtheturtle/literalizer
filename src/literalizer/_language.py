@@ -864,24 +864,6 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
-class RecordVariant(enum.Enum):
-    """Focused record behaviors that need integration variants."""
-
-    UNIFY_OPTIONAL_FIELDS = enum.auto()
-    NONRECORD_DICT_FIELD = enum.auto()
-    KEYWORD_FIELD = enum.auto()
-    QUOTED_FIELD = enum.auto()
-    FIELD_TYPE_SPLIT = enum.auto()
-
-
-class NestedMapWideningVariant(enum.Enum):
-    """Input shape used to exercise a language's nested-map widening."""
-
-    NONE = enum.auto()
-    DEFAULT = enum.auto()
-    UNIFORM_KEYS = enum.auto()
-
-
 class JsonType(enum.Enum):
     """Base class for JSON value-type options.
 
@@ -897,10 +879,12 @@ class JsonType(enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class VariantMetadata:
-    r"""Language-owned metadata for constructing integration variants.
+    r"""Language-owned renderer capabilities and option compatibility.
 
-    These values describe supported behaviors and compatibility constraints;
-    the integration suite remains responsible for choosing input fixtures.
+    Every field here is a fact about what a language's renderer can
+    represent or which option values remain compatible with each other.
+    Policy that only exists to construct, name, or host golden fixtures
+    belongs to the integration suite's own language metadata instead.
 
     ``string_literals_escape_null_byte`` is ``True`` only for languages
     whose default string formatter faithfully escapes an embedded null
@@ -910,22 +894,18 @@ class VariantMetadata:
     digit-greedy escape (for example Haskell's variable-length ``\x``,
     where ``"\x001"`` denotes U+0001 rather than a null byte followed by
     ``1``) stays ``False`` until its own escaping is corrected.
+
+    ``supports_ref_elements_in_tuple_strategy`` is ``True`` for
+    languages whose tuple heterogeneous strategy can hold reference
+    placeholders.
+
+    ``modifier_sequence_format_overrides`` names, per modifier, the
+    sequence format that stays compatible with it.
     """
 
-    pre_indent_comment_scalar_variant: bool
-    fixture_module_name_template: str | None
-    fixture_module_name_lowercase: bool
-    golden_filename_lowercase: bool
-    collection_layout_category: str
-    record_variants: frozenset[RecordVariant]
-    nested_map_widening: NestedMapWideningVariant
     modifier_sequence_format_overrides: dict[str, str]
     string_literals_escape_null_byte: bool
     supports_ref_elements_in_tuple_strategy: bool
-    heterogeneous_value_variant_name_strategy: str | None
-    heterogeneous_value_variant_name_version: str | None
-    record_variant_version: str | None
-    external_record_shape_fixture_prefix: str | None
 
 
 @beartype
@@ -963,8 +943,13 @@ class LanguageCls(type):
     or ``type: ignore``.
     """
 
-    empty_container_type_hint_variant_kwargs: Mapping[str, object] | None
-    """Golden-test settings for languages with empty-container hints."""
+    language_id: str
+    """Stable, implementation-neutral identifier for this language.
+
+    Consumers that need to name a language without depending on the
+    Python class (for example the integration suite's own language
+    metadata files) key off this identifier.
+    """
 
     DateFormats: type[enum.Enum]
     DatetimeFormats: type[enum.Enum]
@@ -1078,6 +1063,7 @@ class Language(Protocol):
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
     variant_metadata: ClassVar[VariantMetadata]
+    language_id: ClassVar[str]
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
