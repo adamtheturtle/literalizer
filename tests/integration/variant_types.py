@@ -23,20 +23,33 @@ def wrap_variable_form() -> literalizer.NewVariable:
 
 
 @beartype
+def find_enum_member(
+    *,
+    enum_cls: type[enum.Enum],
+    name: str,
+) -> enum.Enum | None:
+    """Return the member of *enum_cls* named *name*, or ``None``."""
+    for member in enum_cls:
+        if member.name == name:
+            return member
+    return None
+
+
+@beartype
 def enum_member_by_name(
     *,
     enum_cls: type[enum.Enum],
     name: str,
 ) -> enum.Enum:
     """Return the enum member in *enum_cls* whose ``.name`` matches."""
-    for member in enum_cls:
-        if member.name == name:
-            return member
-    msg = f"{enum_cls.__name__} has no member named {name!r}"
-    raise ValueError(msg)
+    member = find_enum_member(enum_cls=enum_cls, name=name)
+    if member is None:
+        msg = f"{enum_cls.__name__} has no member named {name!r}"
+        raise ValueError(msg)
+    return member
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Variant:
     """A formatting variant for a language (date, sequence, set, etc.)."""
 
@@ -46,6 +59,30 @@ class Variant:
     collection_layout: literalizer.CollectionLayout
     fixture_prefix: str
     record_null_substitutions: Mapping[str, ValueInput] | None
+
+
+@beartype
+def compact_variant(
+    *,
+    name: str,
+    spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
+) -> Variant:
+    """Return a variant carrying the shared default render context.
+
+    Nearly every axis renders compactly, without a fixture preamble and
+    without record null substitutions; the handful that vary one of
+    those build a :class:`Variant` naming all three instead of
+    restating the defaults at every construction site.
+    """
+    return Variant(
+        name=name,
+        spec=spec,
+        lang_cls=lang_cls,
+        collection_layout=literalizer.CollectionLayout.COMPACT,
+        fixture_prefix="",
+        record_null_substitutions=None,
+    )
 
 
 @dataclasses.dataclass(frozen=True)

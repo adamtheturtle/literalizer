@@ -11,8 +11,6 @@ from collections.abc import Callable, Iterable
 
 from beartype import beartype
 
-import literalizer
-
 from .call_cases import CASES_DIR
 from .case_manifests import CallCaseSpec, call_case_specs
 from .language_specs import make_spec, sorted_languages
@@ -20,10 +18,10 @@ from .variant_cases import (
     Variant,
     build_comment_terminator_variants,
     build_empty_container_type_hint_variants,
-    build_heterogeneous_value_name_variants,
-    build_heterogeneous_value_variant_name_variants,
     build_json_type_variants,
+    variants_for_axis,
 )
+from .variant_types import compact_variant, find_enum_member
 
 
 @dataclasses.dataclass(frozen=True)
@@ -50,7 +48,7 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
         spec = make_spec(lang_cls=lang_cls)
         default_statement_terminator_style = spec.statement_terminator_style
         variants.extend(
-            Variant(
+            compact_variant(
                 name=(
                     f"{lang_cls.__name__}_statement_terminator_style"
                     f"_{statement_terminator_style.name.lower()}"
@@ -60,9 +58,6 @@ def build_statement_terminator_style_call_variants() -> list[Variant]:
                     statement_terminator_style=statement_terminator_style,
                 ),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for statement_terminator_style in spec.statement_terminator_styles
             if statement_terminator_style
@@ -91,7 +86,7 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
         spec = make_spec(lang_cls=lang_cls)
         default_strategy = spec.heterogeneous_strategy
         variants.extend(
-            Variant(
+            compact_variant(
                 name=(
                     f"{lang_cls.__name__}_heterogeneous_strategy"
                     f"_{strategy.name.lower()}"
@@ -101,9 +96,6 @@ def build_heterogeneous_strategy_call_variants() -> list[Variant]:
                     heterogeneous_strategy=strategy,
                 ),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             for strategy in spec.heterogeneous_strategies
             if strategy is not default_strategy
@@ -134,18 +126,14 @@ def build_tagged_enum_call_variants() -> list[Variant]:
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
         spec = make_spec(lang_cls=lang_cls)
-        tagged_enum = next(
-            (
-                strategy
-                for strategy in spec.heterogeneous_strategies
-                if strategy.name == "TAGGED_ENUM"
-            ),
-            None,
+        tagged_enum = find_enum_member(
+            enum_cls=spec.heterogeneous_strategies,
+            name="TAGGED_ENUM",
         )
         if tagged_enum is None:
             continue
         variants.append(
-            Variant(
+            compact_variant(
                 name=(
                     f"{lang_cls.__name__}_heterogeneous_strategy_tagged_enum"
                 ),
@@ -154,9 +142,6 @@ def build_tagged_enum_call_variants() -> list[Variant]:
                     heterogeneous_strategy=tagged_enum,
                 ),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
     return variants
@@ -174,6 +159,20 @@ def build_comment_terminator_call_variants() -> list[Variant]:
     ]
 
 
+@functools.cache
+@beartype
+def build_heterogeneous_value_enum_name_variants() -> list[Variant]:
+    """Return the declared value-enum-name variants."""
+    return variants_for_axis(axis_key="heterogeneous_value_enum_name")
+
+
+@functools.cache
+@beartype
+def build_heterogeneous_value_variant_name_variants() -> list[Variant]:
+    """Return the declared value-variant-name variants."""
+    return variants_for_axis(axis_key="heterogeneous_value_variant_name")
+
+
 CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     (
         "call_comment_terminators",
@@ -188,7 +187,10 @@ CALL_VARIANT_SOURCES: list[tuple[str, Callable[[], Iterable[Variant]]]] = [
     # Bind a call result under each non-default ``json_type`` whose language
     # preserves call expressions while JSON rendering is active.
     ("call_variable_form_new", build_call_result_json_type_variants),
-    ("call_mixed_type_dicts", build_heterogeneous_value_name_variants),
+    (
+        "call_mixed_type_dicts",
+        build_heterogeneous_value_enum_name_variants,
+    ),
     (
         "call_mixed_type_dicts",
         build_heterogeneous_value_variant_name_variants,

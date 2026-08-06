@@ -200,6 +200,28 @@ def test_default_type_kwargs_match_capability_flags() -> None:
         )
 
 
+def test_value_variant_name_settings_travel_together() -> None:
+    """The value-variant-name settings stay consistent.
+
+    The declared ``heterogeneous_value_variant_name`` plan reads the
+    strategy (and, where declared, the language version) that its
+    sample name is exercised with.  A language that names one without
+    the other would leave a dead setting, or a variant that cannot be
+    built.
+    """
+    for lang_cls in sorted_languages():
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        variants = metadata.variants
+        names_variant = (
+            "heterogeneous_value_variant_name" in metadata.non_default_kwargs
+        )
+        strategy = variants.heterogeneous_value_variant_name_strategy
+        version = variants.heterogeneous_value_variant_name_language_version
+
+        assert names_variant == (strategy is not None), metadata.path
+        assert names_variant or version is None, metadata.path
+
+
 def test_declaration_style_overrides_name_real_formats() -> None:
     """Substituted formats must resolve against the language's enums."""
     for lang_cls in sorted_languages():

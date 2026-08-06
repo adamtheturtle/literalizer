@@ -1,0 +1,418 @@
+schema_version = 1
+
+# Declared variant axes.  Each entry names one typed expansion plan
+# from ``variant_plans.py`` and supplies that plan's parameters.  This
+# file selects and parameterizes plans; it never expresses a condition.
+# Axes whose expansion is genuinely irregular stay as registered
+# escape-hatch builders in ``variant_cases.py``.
+
+[axes.annotation_evaluation]
+plan = "every_non_default_member"
+name_template = "{lang}_annotation_evaluation_{format}"
+option = "annotation_evaluation"
+per_version = true
+gates = [{ kind = "spec_field_present", field = "annotation_evaluation" }]
+
+[axes.bool_format]
+plan = "every_non_default_member"
+name_template = "{lang}_bool_format_{format}"
+option = "bool_format"
+gates = [{ kind = "spec_field_present", field = "bool_format" }]
+
+[axes.bytes_format]
+plan = "every_non_default_member"
+name_template = "{lang}_bytes_format_{format}"
+option = "bytes_format"
+
+[axes.c_field_name]
+plan = "fixed_overrides"
+name_template = "{lang}_field_names_custom"
+gates = [{ kind = "non_default_kwarg", kwarg = "bool_field" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "bool_field" },
+  { kind = "non_default_kwarg", kwarg = "int_field" },
+  { kind = "non_default_kwarg", kwarg = "uint_field" },
+  { kind = "non_default_kwarg", kwarg = "float_field" },
+  { kind = "non_default_kwarg", kwarg = "string_field" },
+  { kind = "non_default_kwarg", kwarg = "array_field" },
+  { kind = "non_default_kwarg", kwarg = "map_field" },
+  { kind = "non_default_kwarg", kwarg = "key_field" },
+  { kind = "non_default_kwarg", kwarg = "value_field" },
+]
+
+[axes.comment]
+plan = "every_non_default_member"
+name_template = "{lang}_comment_{format}"
+option = "comment_format"
+
+[axes.constructor_name]
+plan = "fixed_overrides"
+name_template = "{lang}_constructor_names_j"
+gates = [{ kind = "non_default_kwarg", kwarg = "null_name" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "null_name" },
+  { kind = "non_default_kwarg", kwarg = "bool_name" },
+  { kind = "non_default_kwarg", kwarg = "int_name" },
+  { kind = "non_default_kwarg", kwarg = "real_name" },
+  { kind = "non_default_kwarg", kwarg = "str_name" },
+  { kind = "non_default_kwarg", kwarg = "list_name" },
+  { kind = "non_default_kwarg", kwarg = "map_name" },
+  { kind = "non_default_kwarg", kwarg = "set_name" },
+  { kind = "non_default_kwarg", kwarg = "entry_name" },
+]
+
+[axes.constructor_prefix]
+plan = "fixed_overrides"
+name_template = "{lang}_prefix_{value}"
+gates = [{ kind = "non_default_kwarg", kwarg = "constructor_prefix" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "constructor_prefix", name_value = true },
+]
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
+
+[axes.datetime]
+plan = "every_non_default_member"
+name_template = "{lang}_datetime_{format}"
+option = "datetime_format"
+
+[axes.declaration_style]
+plan = "every_non_default_member"
+name_template = "{lang}_declaration_style_{format}"
+option = "declaration_style"
+declaration_style_sequence_override = true
+
+[axes.default_dict_key_type]
+plan = "fixed_overrides"
+name_template = "{lang}_default_dict_key_type"
+gates = [{ kind = "non_default_kwarg", kwarg = "default_dict_key_type" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "default_dict_key_type" },
+]
+
+[axes.default_dict_value_type]
+plan = "fixed_overrides"
+name_template = "{lang}_default_dict_value_type_string"
+gates = [{ kind = "non_default_kwarg", kwarg = "default_dict_value_type" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "default_dict_value_type" },
+]
+
+[axes.default_ordered_map_value_type]
+plan = "fixed_overrides"
+name_template = "{lang}_default_ordered_map_value_type"
+gates = [
+  { kind = "non_default_kwarg", kwarg = "default_ordered_map_value_type" },
+]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "default_ordered_map_value_type" },
+]
+
+[axes.default_sequence_element_type]
+plan = "fixed_overrides"
+name_template = "{lang}_default_sequence_element_type_string"
+gates = [
+  { kind = "non_default_kwarg", kwarg = "default_sequence_element_type" },
+]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "default_sequence_element_type" },
+]
+
+[axes.default_set_element_type]
+plan = "fixed_overrides"
+name_template = "{lang}_default_set_element_type_string"
+gates = [{ kind = "non_default_kwarg", kwarg = "default_set_element_type" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "default_set_element_type" },
+]
+
+[axes.dict_entry_style]
+plan = "every_non_default_member"
+name_template = "{lang}_dict_entry_style_{format}"
+option = "dict_entry_style"
+
+[axes.dict_format]
+plan = "every_non_default_member"
+name_template = "{lang}_dict_format_{format}"
+option = "dict_format"
+
+[axes.empty_dict_key]
+plan = "every_non_default_member"
+name_template = "{lang}_empty_dict_key_{format}"
+option = "empty_dict_key"
+gates = [{ kind = "spec_field_present", field = "empty_dict_key" }]
+
+[axes.error_record_shape_names]
+plan = "fixed_overrides"
+name_template = "{lang}_error_record_shape_names_{value}"
+record_language_version = true
+external_record_shape_fixture = true
+gates = [
+  { kind = "capability_flag", flag = "supports_record_shape_names" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "ERROR" },
+  { kind = "record_shape_names", keys = [
+    "first",
+    "last",
+  ], name = "ExternalRecordShape", name_value = true },
+]
+
+[axes.float_format]
+plan = "every_non_default_member"
+name_template = "{lang}_float_format_{format}"
+option = "float_format"
+
+[axes.heterogeneous_strategy]
+plan = "every_non_default_member"
+name_template = "{lang}_heterogeneous_strategy_{format}"
+option = "heterogeneous_strategy"
+
+[axes.heterogeneous_value_enum_name]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_value_enum_name_{value}"
+gates = [
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_enum_name" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_enum_name", name_value = true },
+]
+
+[axes.heterogeneous_value_union_name]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_value_union_name_{value}"
+gates = [
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_union_name" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "UNION_TYPE" },
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_union_name", name_value = true },
+]
+
+[axes.heterogeneous_value_variant_name]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_value_variant_name_{value}"
+gates = [
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name" },
+]
+overrides = [
+  { kind = "metadata_enum_member", option = "heterogeneous_strategy", field = "heterogeneous_value_variant_name_strategy" },
+  { kind = "metadata_enum_member", option = "language_version", field = "heterogeneous_value_variant_name_language_version", optional = true },
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name", name_value = true },
+]
+
+[axes.integer_format]
+plan = "every_non_default_member"
+name_template = "{lang}_integer_format_{format}"
+option = "integer_format"
+
+[axes.integer_width_strategy]
+plan = "every_non_default_member"
+name_template = "{lang}_integer_width_strategy_{format}"
+option = "integer_width_strategy"
+
+[axes.language_version]
+plan = "every_non_default_member"
+name_template = "{lang}_version_{format}"
+option = "language_version"
+
+[axes.multiline_string]
+plan = "fixed_overrides"
+name_template = "{lang}_string_format_multiline"
+gates = [
+  { kind = "capability_flag", flag = "supports_multiline_string_literals" },
+]
+overrides = [
+  { kind = "enum_member", option = "string_format", member = "MULTILINE" },
+]
+
+[axes.nested_tuple_strategy]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_strategy_tuple_nested"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
+[axes.numeric_literal_suffix]
+plan = "every_non_default_member"
+name_template = "{lang}_numeric_literal_suffix_{format}"
+option = "numeric_literal_suffix"
+
+[axes.numeric_separator]
+plan = "every_non_default_member"
+name_template = "{lang}_numeric_separator_{format}"
+option = "numeric_separator"
+
+[axes.numeric_style]
+plan = "every_non_default_member"
+name_template = "{lang}_numeric_style_{format}"
+option = "numeric_style"
+
+[axes.object_variant_containers]
+plan = "fixed_overrides"
+name_template = "{lang}_object_variant_containers"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+]
+
+[axes.record_epoch_i32_overflow]
+plan = "fixed_overrides"
+name_template = "{lang}_record_epoch_i32_overflow"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
+
+[axes.record_field_type_split]
+plan = "fixed_overrides"
+name_template = "{lang}_record_field_type_split"
+gates = [{ kind = "record_variant", variant = "field_type_split" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_keyword_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_keyword_field"
+gates = [{ kind = "record_variant", variant = "keyword_field" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_nonrecord_dict_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_nonrecord_dict_field"
+gates = [{ kind = "record_variant", variant = "nonrecord_dict_field" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_null_substitutions_record]
+plan = "fixed_overrides"
+name_template = "{lang}_record_null_substitutions_record"
+record_language_version = true
+gates = [
+  { kind = "capability_flag", flag = "supports_record_struct_name_prefix" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_quoted_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_quoted_field"
+gates = [{ kind = "record_variant", variant = "quoted_field" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_shape_names]
+plan = "fixed_overrides"
+name_template = "{lang}_record_shape_names_{value}"
+record_language_version = true
+external_record_shape_fixture = true
+gates = [
+  { kind = "capability_flag", flag = "supports_record_shape_names" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "record_shape_names", keys = [
+    "id",
+    "label",
+    "enabled",
+    "related_ids",
+  ], name = "NamedType", name_value = true },
+]
+
+[axes.record_unify_optional_fields]
+plan = "fixed_overrides"
+name_template = "{lang}_record_unify_optional_fields"
+gates = [{ kind = "record_variant", variant = "unify_optional_fields" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "true_flag", kwarg = "record_unify_optional_fields" },
+]
+
+[axes.sequence]
+plan = "every_non_default_member"
+name_template = "{lang}_sequence_{format}"
+option = "sequence_format"
+
+[axes.set]
+plan = "every_non_default_member"
+name_template = "{lang}_set_{format}"
+option = "set_format"
+
+[axes.statement_terminator_style]
+plan = "every_non_default_member"
+name_template = "{lang}_statement_terminator_style_{format}"
+option = "statement_terminator_style"
+
+[axes.string_format]
+plan = "every_non_default_member"
+name_template = "{lang}_string_format_{format}"
+option = "string_format"
+excluded_members = ["MULTILINE"]
+
+[axes.tagged_enum_empty_container]
+plan = "fixed_overrides"
+name_template = "{lang}_tagged_enum_empty_container"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+]
+
+[axes.trailing_comma]
+plan = "every_non_default_member"
+name_template = "{lang}_trailing_comma_{format}"
+option = "trailing_comma"
+
+[axes.type_hints]
+plan = "every_non_default_member"
+name_template = "{lang}_type_hints_{format}"
+option = "variable_type_hints"
+
+[axes.type_name]
+plan = "fixed_overrides"
+name_template = "{lang}_type_name_{value}"
+gates = [{ kind = "non_default_kwarg", kwarg = "type_name" }]
+overrides = [
+  { kind = "non_default_kwarg", kwarg = "type_name", name_value = true },
+]
+
+[axes.union_format]
+plan = "every_non_default_member"
+name_template = "{lang}_union_format_{format}"
+option = "union_format"
+per_version = true
+gates = [{ kind = "spec_field_present", field = "union_format" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.union_format_type_hints]
+plan = "every_non_default_member"
+name_template = "{lang}_union_format_{format}_type_hints_always"
+option = "union_format"
+per_version = true
+gates = [{ kind = "spec_field_present", field = "union_format" }]
+overrides = [
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]

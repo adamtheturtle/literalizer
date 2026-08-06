@@ -17,7 +17,13 @@ import literalizer
 
 from .language_metadata import language_metadata
 from .language_specs import make_spec, sorted_languages
-from .variant_types import Variant, VariantCase, enum_member_by_name
+from .variant_types import (
+    Variant,
+    VariantCase,
+    compact_variant,
+    enum_member_by_name,
+    find_enum_member,
+)
 
 _enum_member_by_name = enum_member_by_name
 
@@ -36,207 +42,11 @@ def build_collection_layout_variants() -> Iterable[Variant]:
                 name=f"{name_prefix}_{layout.value}",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                collection_layout=layout,
                 fixture_prefix="",
                 record_null_substitutions=None,
-                collection_layout=layout,
             )
             for layout in literalizer.CollectionLayout
-        )
-    return variants
-
-
-@beartype
-def build_record_unify_optional_fields_variants() -> Iterable[Variant]:
-    """Build every supported ``record_unify_optional_fields`` variant.
-
-    Combines :attr:`Rust.record_unify_optional_fields` with the
-    ``RECORD`` heterogeneous strategy so the golden case exercises the
-    Option/Some/None rendering.  Only Rust currently has this knob.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        if "unify_optional_fields" not in metadata.record_variants:
-            continue
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
-        )
-        spec = make_spec(
-            lang_cls=lang_cls,
-            heterogeneous_strategy=record_strategy,
-            record_unify_optional_fields=True,
-        )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_record_unify_optional_fields",
-                spec=spec,
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
-        )
-    return variants
-
-
-@beartype
-def build_record_nonrecord_dict_field_variants() -> Iterable[Variant]:
-    """Build the C# and Nim non-record-dict field variants.
-
-    The input has an empty dict field inside a record-shaped dict.  The
-    C# variant renders its documented ``object`` fallback, while the
-    integration runner skips Nim after its documented rejection.  This
-    covers both outcomes of the cross-language decision in #2317 through
-    the public API.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        if "nonrecord_dict_field" not in metadata.record_variants:
-            continue
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
-        )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_record_nonrecord_dict_field",
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    heterogeneous_strategy=record_strategy,
-                ),
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
-        )
-    return variants
-
-
-@beartype
-def build_record_keyword_field_variants() -> Iterable[Variant]:
-    """Build keyword-field variants for languages that escape them.
-
-    Dict keys that collide with a target-language keyword must render
-    as escaped field names in both the generated struct declaration and
-    its literals, or the output fails to compile.  Rust escapes its
-    keywords (``type``, ``match``) as raw identifiers (``r#type``, issue
-    #2880); Zig escapes its keywords (``error``, ``switch``) as quoted
-    identifiers (``@"error"``, issue #2963).  The shared case input
-    carries every participating language's keywords; a key that is not
-    one language's keyword renders verbatim there.  Only languages that
-    escape keyword field names opt into the ``keyword_field`` record
-    variant in their test metadata, so the case directory stays out of
-    the all-languages base discovery.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        if "keyword_field" not in metadata.record_variants:
-            continue
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
-        )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_record_keyword_field",
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    heterogeneous_strategy=record_strategy,
-                ),
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
-        )
-    return variants
-
-
-@beartype
-def build_record_quoted_field_variants() -> Iterable[Variant]:
-    """Build record-field variants for languages with quoted identifiers.
-
-    Zig quoted identifiers can represent field keys that are not plain
-    identifiers, such as ``a-b``.  The dedicated golden case verifies the
-    escaped spelling in both its generated declaration and literal.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        if "quoted_field" not in metadata.record_variants:
-            continue
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
-        )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_record_quoted_field",
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    heterogeneous_strategy=record_strategy,
-                ),
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
-        )
-    return variants
-
-
-@beartype
-def build_record_field_type_split_variants() -> Iterable[Variant]:
-    """Build the ``record_field_type_split`` variants.
-
-    Same-key-set dicts whose field types conflict (a nested record
-    with different fields, differing scalar types) must resolve to
-    distinct generated struct declarations, or the struct declared
-    from the field types of the first dict fails to compile against
-    the literal for the other dict (issue #2881 for Rust, #2888 for
-    the shared non-Rust ports).  The case input keeps every
-    conflicting pair out of sibling lists so each group renders as its
-    own compiling struct.  Rust splits via its own
-    ``_refine_record_shapes`` while Go splits through the shared
-    record strategy's field-type refinement, so the two are the only
-    consumers and the case directory stays out of the all-languages
-    base discovery.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        if "field_type_split" not in metadata.record_variants:
-            continue
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = next(
-            strategy
-            for strategy in default_spec.heterogeneous_strategies
-            if strategy.name == "RECORD"
-        )
-        variants.append(
-            Variant(
-                name=f"{lang_cls.__name__}_record_field_type_split",
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    heterogeneous_strategy=record_strategy,
-                ),
-                lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
-            )
         )
     return variants
 
@@ -297,21 +107,18 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
         ).variants.nested_map_widening
         == "default"
         for variant in (
-            Variant(
+            compact_variant(
                 name=f"{lang_cls.__name__}_nested_map_widening",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             ),
             Variant(
                 name=f"{lang_cls.__name__}_nested_map_widening_multiline",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
+                collection_layout=literalizer.CollectionLayout.MULTILINE,
                 fixture_prefix="",
                 record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.MULTILINE,
             ),
         )
     ]
@@ -324,13 +131,10 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
             continue
         variants.extend(
             [
-                Variant(
+                compact_variant(
                     name=f"{lang_cls.__name__}_nested_map_widening",
                     spec=spec,
                     lang_cls=lang_cls,
-                    fixture_prefix="",
-                    record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
                     name=(
@@ -338,9 +142,9 @@ def build_nested_map_widening_variants() -> Iterable[Variant]:
                     ),
                     spec=spec,
                     lang_cls=lang_cls,
+                    collection_layout=(literalizer.CollectionLayout.MULTILINE),
                     fixture_prefix="",
                     record_null_substitutions=None,
-                    collection_layout=(literalizer.CollectionLayout.MULTILINE),
                 ),
             ]
         )
@@ -370,13 +174,10 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
         assert spec is not None  # noqa: S101
         variants.extend(
             (
-                Variant(
+                compact_variant(
                     name=f"{lang_cls.__name__}_nested_map_widening",
                     spec=spec,
                     lang_cls=lang_cls,
-                    fixture_prefix="",
-                    record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
                     name=(
@@ -384,9 +185,9 @@ def build_dhall_nested_map_widening_variants() -> Iterable[Variant]:
                     ),
                     spec=spec,
                     lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.MULTILINE,
                     fixture_prefix="",
                     record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.MULTILINE,
                 ),
             )
         )
@@ -416,21 +217,18 @@ def build_empty_map_narrowing_variants() -> Iterable[Variant]:
             continue
         variants.extend(
             (
-                Variant(
+                compact_variant(
                     name=f"{lang_cls.__name__}_empty_map_narrowing",
                     spec=spec,
                     lang_cls=lang_cls,
-                    fixture_prefix="",
-                    record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
                 ),
                 Variant(
                     name=f"{lang_cls.__name__}_empty_map_narrowing_multiline",
                     spec=spec,
                     lang_cls=lang_cls,
+                    collection_layout=literalizer.CollectionLayout.MULTILINE,
                     fixture_prefix="",
                     record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.MULTILINE,
                 ),
             )
         )
@@ -447,13 +245,9 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        old_version = next(
-            (
-                version
-                for version in lang_cls.VersionFormats
-                if version.name == "PY38"
-            ),
-            None,
+        old_version = find_enum_member(
+            enum_cls=lang_cls.VersionFormats,
+            name="PY38",
         )
         metadata = language_metadata(language_id=lang_cls.language_id)
         dict_value_type = metadata.non_default_kwargs.get(
@@ -462,7 +256,7 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
         if old_version is None or dict_value_type is None:
             continue
         variants.append(
-            Variant(
+            compact_variant(
                 name=(
                     f"{lang_cls.__name__}_version_{old_version.name.lower()}"
                     f"_default_dict_value_type_{dict_value_type}"
@@ -473,9 +267,6 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
                     default_dict_value_type=dict_value_type,
                 ),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
         )
     return variants
@@ -511,13 +302,10 @@ def build_modifier_variant_cases(
             for combo in lang_cls.modifier_combinations
         )
         for mod_name, modifiers in entries:
-            variant = Variant(
+            variant = compact_variant(
                 name=f"{lang_cls.__name__}_modifiers_{mod_name}",
                 spec=make_spec(lang_cls=lang_cls),
                 lang_cls=lang_cls,
-                fixture_prefix="",
-                record_null_substitutions=None,
-                collection_layout=literalizer.CollectionLayout.COMPACT,
             )
             cases.extend(
                 VariantCase(
@@ -554,7 +342,7 @@ def build_modifier_variant_cases(
                 name=sequence_format_name,
             )
             for suffix, case_dir_name in sequence_case_dirs.items():
-                variant = Variant(
+                variant = compact_variant(
                     name=(
                         f"{lang_cls.__name__}_modifiers_"
                         f"{modifier_name.lower()}_{suffix}"
@@ -564,9 +352,6 @@ def build_modifier_variant_cases(
                         sequence_format=sequence_format,
                     ),
                     lang_cls=lang_cls,
-                    fixture_prefix="",
-                    record_null_substitutions=None,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
                 )
                 cases.append(
                     VariantCase(
