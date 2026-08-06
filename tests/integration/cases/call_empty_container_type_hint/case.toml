@@ -6,3 +6,6 @@ target_function = "process"
 parameter_names = ["values", "count"]
 per_element = true
 variant_only = true
+
+[[call.variants]]
+axis = "empty_container_type_hint"

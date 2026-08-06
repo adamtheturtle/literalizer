@@ -5,3 +5,12 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
+
+[[call.variants]]
+axis = "statement_terminator_style"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

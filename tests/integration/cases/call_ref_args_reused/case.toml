@@ -16,3 +16,6 @@ parameter_names = ["data", "count"]
 per_element = true
 ref_declarations = { single_var = "[4, 5, 6]", repeated_var = "1" }
 consumable_refs = ["repeated_var", "single_var"]
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

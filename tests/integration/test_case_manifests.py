@@ -165,6 +165,40 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "Input should be 'existing', 'new'",
         ),
         (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                '[[call.variants]]\naxis = "made_up"\n'
+            ),
+            "unknown variant axis 'made_up'",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                '[[call.variants]]\naxis = "json_type"\n'
+                '[[call.variants]]\naxis = "json_type"\n'
+            ),
+            "duplicate call variant axis",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                "variant_only = true\n"
+            ),
+            "variant_only requires at least one call variant axis",
+        ),
+        (
             'schema_version = 1\nowner = "literalize-ref"\n',
             r"requires a \[ref\] table",
         ),

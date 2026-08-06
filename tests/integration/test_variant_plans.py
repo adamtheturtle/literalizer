@@ -71,6 +71,14 @@ plan = "fixed_overrides"
 name_template = "{lang}_example"
 """
 
+_VALID_FILTERED_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "filtered"
+base = "date"
+"""
+
 
 def _write_registry(*, tmp_path: Path, contents: str) -> Path:
     """Write one temporary axis registry and return its path."""
@@ -97,7 +105,10 @@ def test_every_axis_resolves_to_exactly_one_expansion() -> None:
 def test_every_declared_axis_expands() -> None:
     """No declared plan silently expands to nothing."""
     for axis_key in sorted(declared_axis_names()):
-        assert variants_for_declared_axis(axis_key=axis_key), axis_key
+        assert variants_for_declared_axis(
+            axis_key=axis_key,
+            resolve_axis=variants_for_axis,
+        ), axis_key
 
 
 def test_declared_axis_names_are_unique_per_language() -> None:
@@ -105,13 +116,29 @@ def test_declared_axis_names_are_unique_per_language() -> None:
     variants.
     """
     for axis_key in sorted(declared_axis_names()):
-        variants = variants_for_declared_axis(axis_key=axis_key)
+        variants = variants_for_declared_axis(
+            axis_key=axis_key,
+            resolve_axis=variants_for_axis,
+        )
         keyed = {
             (variant.name, variant.spec.language_version)
             for variant in variants
         }
 
         assert len(keyed) == len(variants), axis_key
+
+
+def test_filtered_axis_narrows_its_base() -> None:
+    """A filtered plan keeps its base axis's variants for the languages
+    its gates admit, and nothing else.
+    """
+    base = variants_for_axis(axis_key="json_type")
+
+    assert variants_for_axis(axis_key="json_type_call_result") == [
+        variant
+        for variant in base
+        if variant.lang_cls.supports_json_call_result_binding
+    ]
 
 
 def test_unknown_axis_is_actionable() -> None:
@@ -190,6 +217,22 @@ def test_unknown_axis_is_actionable() -> None:
                 'kwarg = "type_name", name_value = true }]\n'
             ),
             "needs exactly one override marked 'name_value'",
+        ),
+        (
+            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "vibes"'),
+            "unknown base axis 'vibes'",
+        ),
+        (
+            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "example"'),
+            "base axis is itself",
+        ),
+        (
+            _VALID_FILTERED_AXIS
+            + (
+                'gates = [{ kind = "capability_flag", '
+                'flag = "supports_vibes" }]\n'
+            ),
+            "unknown capability flag 'supports_vibes'",
         ),
     ],
 )
@@ -297,4 +340,8 @@ def test_missing_language_metadata_is_actionable(
     """
     path = _write_registry(tmp_path=tmp_path, contents=contents)
     with pytest.raises(expected_exception=AxisPlanError, match=message):
-        variants_for_registry_axis(path=path, axis_key="example")
+        variants_for_registry_axis(
+            path=path,
+            axis_key="example",
+            resolve_axis=variants_for_axis,
+        )

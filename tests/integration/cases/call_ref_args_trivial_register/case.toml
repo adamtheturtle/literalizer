@@ -15,3 +15,6 @@ parameter_names = ["value", "count"]
 per_element = true
 ref_declarations = { my_int = "1", my_bool = "true", my_float = "3.14", my_list = "[1, 2, 3]" }
 consumable_refs = ["my_bool", "my_float", "my_int", "my_list"]
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
