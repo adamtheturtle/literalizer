@@ -43,6 +43,14 @@ type OwnerName = Literal[
 
 CALL_OWNER: OwnerName = "literalize-call"
 
+REF_OWNER: OwnerName = "literalize-ref"
+REF_DEFAULT_OWNER: OwnerName = "literalize-ref-default"
+
+_REF_OWNERS: frozenset[OwnerName] = frozenset({REF_OWNER, REF_DEFAULT_OWNER})
+
+KEBAB_NEW_VARIABLE_OWNER: OwnerName = "new-variable-kebab"
+PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
+
 CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
 """Every name a ``call_transform`` template may substitute."""
 
@@ -76,6 +84,10 @@ _CALL_STYLE_TYPES_BY_NAME: Mapping[str, type[literalizer.CallStyle]] = {
     "positional": literalizer.PositionalCallStyle,
     "object": literalizer.ObjectCallStyle,
     "command": literalizer.CommandCallStyle,
+}
+
+_IDENTIFIER_CASES_BY_NAME: Mapping[str, literalizer.IdentifierCase] = {
+    member.value: member for member in literalizer.IdentifierCase
 }
 
 _INPUT_FORMATS_BY_NAME: Mapping[str, literalizer.InputFormat] = {
@@ -173,6 +185,10 @@ type CallVariableForm = Annotated[
         _name_resolver(values_by_name=_CALL_VARIABLE_FORMS_BY_NAME)
     ),
 ]
+type RefIdentifierCase = Annotated[
+    literalizer.IdentifierCase,
+    BeforeValidator(_name_resolver(values_by_name=_IDENTIFIER_CASES_BY_NAME)),
+]
 
 
 class RenderContext(
@@ -229,13 +245,60 @@ def _empty_sources() -> dict[str, str]:
     return {}
 
 
-class CallCaseSpec(
+class _OwnedCaseSpec(
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
     frozen=True,
     strict=True,
 ):
+    """Base for an owner-scoped manifest table that knows its case.
+
+    The directory name identifies the case on disk rather than being
+    manifest data, so :func:`load_case_manifest` supplies it through the
+    validation context instead of a second construction step.
+    """
+
+    # Supplied by the loader through the validation context rather than
+    # by the manifest, so a case's directory name stays a single source
+    # of truth on disk.
+    case_dir_name: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def _add_case_dir_name(
+        cls,
+        data: Mapping[str, object],
+        info: ValidationInfo,
+    ) -> Mapping[str, object]:
+        """Add the owning case directory name from the load context."""
+        context: Mapping[str, str] = info.context or {}
+        return {**data, "case_dir_name": context["case_dir_name"]}
+
+
+class RefCaseSpec(_OwnedCaseSpec, frozen=True):
+    """Everything a case declares about driving a ``$ref`` golden.
+
+    When *value_sources* is supplied, each entry maps a
+    ``{ref_key: name}`` marker in the case input to a JSON source whose
+    value seeds ``bound_refs`` on the :func:`literalizer.literalize`
+    call and the matching ref stub.  Without it the harness keeps its
+    historical behavior: refs render with no value-type knowledge and
+    stubs are dict shaped.
+
+    When *ref_case_override* is set, the case forces that identifier
+    case for the ``ref_case`` argument of :func:`literalizer.literalize`
+    instead of using the language's default (``identifier_cases[0]``).
+    Discovery skips any language whose ``supported_ref_cases`` does not
+    include the override.
+    """
+
+    ref_key: str = "$ref"
+    ref_case_override: RefIdentifierCase | None = None
+    value_sources: dict[str, str] = Field(default_factory=_empty_sources)
+
+
+class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     """Everything a case declares about driving ``literalize_call``.
 
     A manifest spells enum- and type-valued arguments as strings, which
@@ -255,10 +318,6 @@ class CallCaseSpec(
     call site agree on identifier spelling.
     """
 
-    # Supplied by the loader through the validation context rather than
-    # by the manifest, so a case's directory name stays a single source
-    # of truth on disk.
-    case_dir_name: str
     target_function: str
     parameter_names: StringTuple
     per_element: bool
@@ -358,22 +417,6 @@ class CallCaseSpec(
     # case-specific opt-out.
     variant_only: bool = False
 
-    @model_validator(mode="before")
-    @classmethod
-    def _add_case_dir_name(
-        cls,
-        data: Mapping[str, object],
-        info: ValidationInfo,
-    ) -> Mapping[str, object]:
-        """Add the owning case directory name from the load context.
-
-        The name identifies the case on disk rather than being manifest
-        data, so :func:`load_case_manifest` supplies it through the
-        validation context instead of a second construction step.
-        """
-        context: Mapping[str, str] = info.context or {}
-        return {**data, "case_dir_name": context["case_dir_name"]}
-
 
 class _CaseManifestData(
     BaseModel,
@@ -391,21 +434,41 @@ class _CaseManifestData(
     base_context: RenderContext = Field(default_factory=RenderContext)
     variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
     call: CallCaseSpec | None = None
+    ref: RefCaseSpec | None = None
 
-    def _validate_call(self) -> None:
-        """Validate the ``[call]`` table against its declared owner."""
-        if self.owner == CALL_OWNER and self.call is None:
-            msg = f"owner {CALL_OWNER!r} requires a [call] table"
+    def _validate_owned_table(
+        self,
+        *,
+        table_name: str,
+        table: object,
+        owners: frozenset[OwnerName],
+    ) -> None:
+        """Validate one owner-scoped table against the declared owner.
+
+        A table and its owners require each other, so a case cannot
+        declare configuration that nothing reads, nor claim an owner
+        whose runner has nothing to read.
+        """
+        if self.owner in owners and table is None:
+            msg = f"owner {self.owner!r} requires a [{table_name}] table"
             raise ValueError(msg)
-        if self.call is None:
-            return
-        if self.owner != CALL_OWNER:
-            msg = f"a [call] table requires owner = {CALL_OWNER!r}"
+        if table is not None and self.owner not in owners:
+            accepted = " or ".join(repr(owner) for owner in sorted(owners))
+            msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
     def validate_consistency(self) -> None:
         """Validate relationships that span manifest fields."""
-        self._validate_call()
+        self._validate_owned_table(
+            table_name="call",
+            table=self.call,
+            owners=frozenset({CALL_OWNER}),
+        )
+        self._validate_owned_table(
+            table_name="ref",
+            table=self.ref,
+            owners=_REF_OWNERS,
+        )
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)
@@ -445,6 +508,7 @@ class CaseManifest:
     base_context: RenderContext
     variants: tuple[ManifestVariant, ...]
     call: CallCaseSpec | None
+    ref: RefCaseSpec | None
 
 
 @beartype
@@ -506,6 +570,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         base_context=data.base_context,
         variants=tuple(data.variants),
         call=data.call,
+        ref=data.ref,
     )
 
 
@@ -534,6 +599,46 @@ def call_case_specs(cases_dir: Path) -> tuple[CallCaseSpec, ...]:
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.call is not None
     )
+
+
+@functools.cache
+@beartype
+def ref_case_specs(
+    *,
+    cases_dir: Path,
+    owner: OwnerName,
+) -> tuple[RefCaseSpec, ...]:
+    """Return every ``$ref`` case configuration declared by *owner*."""
+    return tuple(
+        manifest.ref
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if manifest.ref is not None and manifest.owner == owner
+    )
+
+
+@functools.cache
+@beartype
+def case_dir_name_for_owner(*, cases_dir: Path, owner: OwnerName) -> str:
+    """Return the name of the sole case directory declaring *owner*.
+
+    Owners naming a single specialized fixture are looked up through
+    their manifests, so the fixture's directory name is declared once,
+    on disk, rather than restated by the harness.
+    """
+    names = [
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if manifest.owner == owner
+    ]
+    match names:
+        case [name]:
+            return name
+        case _:
+            msg = (
+                f"expected exactly one case with owner {owner!r}, "
+                f"found {sorted(names)}"
+            )
+            raise CaseManifestError(msg)
 
 
 @functools.cache

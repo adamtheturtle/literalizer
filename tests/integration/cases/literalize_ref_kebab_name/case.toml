@@ -1,2 +1,5 @@
 schema_version = 1
 owner = "literalize-ref"
+
+[ref]
+ref_case_override = "kebab"

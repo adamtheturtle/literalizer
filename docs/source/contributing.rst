@@ -102,6 +102,29 @@ type-valued fields are named by string and resolved by the loader:
 ``existing``).  ``variant_only = true`` keeps a case out of the default
 per-language call matrix, leaving it to the call-variant suite.
 
+A ``$ref`` case declares one of the two ref owners and describes itself in a
+``[ref]`` table:
+
+.. code-block:: toml
+
+   schema_version = 1
+   owner = "literalize-ref"
+
+   [ref]
+   ref_case_override = "camel"
+
+   [ref.value_sources]
+   my_int = "42"
+
+``owner = "literalize-ref"`` (the case renders with an explicit ``ref_case``)
+or ``owner = "literalize-ref-default"`` (the case renders without one) and a
+``[ref]`` table require each other, so the table is spelled even when it is
+empty.  ``ref_key`` defaults to ``"$ref"``.  ``ref_case_override`` names an
+identifier case (``snake``, ``camel``, ``pascal``, ``upper_snake``, or
+``kebab``) that replaces the language's default and skips any language whose
+``supported_ref_cases`` excludes it.  Each ``[ref.value_sources]`` entry maps
+a ref name to a JSON source that seeds the bound value for that ref.
+
 Non-default inputs can be explicit with ``input = "input.toml"``.  Supported
 variant context fields are ``variable_form`` (``new``, ``existing``, or
 ``both``), ``collection_layout``, ``pre_indent_level``, and
