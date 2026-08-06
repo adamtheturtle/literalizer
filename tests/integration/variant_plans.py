@@ -11,12 +11,12 @@ through a closed registry declared here, so an unknown name, an unknown
 plan, an unknown gate kind, or an unknown name-template placeholder
 fails when the registry loads rather than when a golden file is built.
 
-Axes whose expansion is genuinely irregular (the ``*_cross`` products,
-the ``json_type`` family, the layout-pair widening cases) stay as
-registered escape-hatch builders in :mod:`variant_cases`.  A
-``filtered`` plan narrows any axis, declared or irregular, to the
-languages its gates admit, so a suite needing a smaller slice of an
-existing expansion names one rather than writing its own builder.
+Axes whose expansion is genuinely irregular (the ``json_type`` family,
+the layout-pair widening cases) stay as registered escape-hatch
+builders in :mod:`variant_cases`.  A ``filtered`` plan narrows any
+axis, declared or irregular, to the languages its gates admit, so a
+suite needing a smaller slice of an existing expansion names one rather
+than writing its own builder.
 """
 
 import dataclasses
@@ -193,6 +193,23 @@ _OPTIONS: Mapping[str, _Option] = {
         get_default=lambda spec: spec.comment_format,
         get_members=lambda spec: spec.comment_formats,
     ),
+    # ``date_format`` and ``datetime_format`` read the derived
+    # ``format_date``/``format_datetime`` callable, which Haskell, OCaml
+    # and SML build rather than return the configured enum member.  For
+    # those languages the default never compares equal, so an axis using
+    # these entries expands the default member as well.  The
+    # ``configured_*`` entries read the enum field and expand strictly
+    # non-default members; issue #3342 tracks reconciling the two.
+    "configured_date_format": _Option(
+        kwarg="date_format",
+        get_default=lambda spec: spec.date_format,
+        get_members=lambda spec: spec.date_formats,
+    ),
+    "configured_datetime_format": _Option(
+        kwarg="datetime_format",
+        get_default=lambda spec: spec.datetime_format,
+        get_members=lambda spec: spec.datetime_formats,
+    ),
     "date_format": _Option(
         kwarg="date_format",
         get_default=lambda spec: spec.format_date,
@@ -352,6 +369,8 @@ _SPEC_FIELDS = frozenset(
 _LANG_PLACEHOLDER = "lang"
 _FORMAT_PLACEHOLDER = "format"
 _VALUE_PLACEHOLDER = "value"
+_TAG_PLACEHOLDER = "tag"
+_SECONDARY_PLACEHOLDER = "secondary"
 
 
 class _CapabilityFlagGate(
@@ -550,6 +569,48 @@ class _FixedOverridesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+class _CrossSecondary(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One option a cross product pairs with its primary.
+
+    ``tag`` names the pairing in the variant name, so a plan crossing
+    several secondary options keeps their variants apart.
+    """
+
+    tag: Annotated[str, Field(min_length=1)]
+    option: Annotated[str, Field(min_length=1)]
+    declaration_style_sequence_override: bool = False
+
+
+class _CrossProductPlan(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One variant per pairing of two options' non-default members.
+
+    ``primary`` expands over its own non-default members.  Omitting it
+    pins the first half of the product to whatever the overrides select,
+    as the ``RECORD`` numeric crosses do.
+    """
+
+    plan: Literal["cross_product"]
+    name_template: Annotated[str, Field(min_length=1)]
+    secondaries: Annotated[list[_CrossSecondary], Field(min_length=1)]
+    primary: Annotated[str, Field(min_length=1)] | None = None
+    excluded_primary_members: list[str] = Field(
+        default_factory=_no_excluded_members
+    )
+    per_version: bool = False
+    gates: list[_Gate] = Field(default_factory=_no_gates)
+    overrides: list[_Override] = Field(default_factory=_no_overrides)
+
+
 class _FilteredPlan(
     BaseModel,
     extra="forbid",
@@ -569,10 +630,15 @@ class _FilteredPlan(
     gates: list[_Gate] = Field(default_factory=_no_gates)
 
 
-type _ExpandedAxis = _EveryNonDefaultMemberPlan | _FixedOverridesPlan
+type _ExpandedAxis = (
+    _EveryNonDefaultMemberPlan | _FixedOverridesPlan | _CrossProductPlan
+)
 
 type _Axis = Annotated[
-    _EveryNonDefaultMemberPlan | _FixedOverridesPlan | _FilteredPlan,
+    _EveryNonDefaultMemberPlan
+    | _FixedOverridesPlan
+    | _CrossProductPlan
+    | _FilteredPlan,
     Field(discriminator="plan"),
 ]
 
@@ -618,6 +684,15 @@ def _validate_options(
     if isinstance(axis, _EveryNonDefaultMemberPlan):
         options.append(axis.option)
         if axis.declaration_style_sequence_override:
+            options.append("sequence_format")
+    if isinstance(axis, _CrossProductPlan):
+        if axis.primary is not None:
+            options.append(axis.primary)
+        options.extend(secondary.option for secondary in axis.secondaries)
+        if any(
+            secondary.declaration_style_sequence_override
+            for secondary in axis.secondaries
+        ):
             options.append("sequence_format")
     unknown = sorted({option for option in options if option not in _OPTIONS})
     if unknown:
@@ -669,16 +744,34 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
 
 
 @beartype
+def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
+    """Return the name-template placeholders a plan fills in."""
+    match axis:
+        case _EveryNonDefaultMemberPlan():
+            return frozenset({_LANG_PLACEHOLDER, _FORMAT_PLACEHOLDER})
+        case _FixedOverridesPlan():
+            return frozenset({_LANG_PLACEHOLDER, _VALUE_PLACEHOLDER})
+        case _CrossProductPlan():
+            primary = (
+                frozenset[str]()
+                if axis.primary is None
+                else frozenset({_FORMAT_PLACEHOLDER})
+            )
+            return primary | {
+                _LANG_PLACEHOLDER,
+                _TAG_PLACEHOLDER,
+                _SECONDARY_PLACEHOLDER,
+            }
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
 def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
     """Check a name template against the placeholders its plan
     offers.
     """
-    plan_placeholder = (
-        _FORMAT_PLACEHOLDER
-        if isinstance(axis, _EveryNonDefaultMemberPlan)
-        else _VALUE_PLACEHOLDER
-    )
-    allowed = {_LANG_PLACEHOLDER, plan_placeholder}
+    allowed = _offered_placeholders(axis=axis)
     used = _placeholders(template=axis.name_template)
     unknown = sorted(used - allowed)
     if unknown:
@@ -687,6 +780,16 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
             f"{unknown}"
         )
         raise AxisPlanError(msg)
+    if isinstance(axis, _CrossProductPlan):
+        # Every half of a pairing has to reach the name, or two
+        # combinations would claim one golden file.
+        missing = sorted(allowed - used - {_LANG_PLACEHOLDER})
+        if missing:
+            msg = (
+                f"axis {axis_key!r}: name template omits placeholder(s) "
+                f"{missing}"
+            )
+            raise AxisPlanError(msg)
     naming = [
         override
         for override in axis.overrides
@@ -717,7 +820,11 @@ def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
             if axis.base not in KNOWN_VARIANT_AXES:
                 msg = f"axis {axis_key!r}: unknown base axis {axis.base!r}"
                 raise AxisPlanError(msg)
-        case _EveryNonDefaultMemberPlan() | _FixedOverridesPlan():
+        case (
+            _EveryNonDefaultMemberPlan()
+            | _FixedOverridesPlan()
+            | _CrossProductPlan()
+        ):
             _validate_names(axis_key=axis_key, axis=axis)
             _validate_template(axis_key=axis_key, axis=axis)
         case _ as unreachable:
@@ -759,7 +866,17 @@ class _ResolvedOverrides:
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _Selection:
-    """One option value an axis selects for a single language."""
+    """One option combination an axis selects for a single language."""
+
+    kwargs: Mapping[str, object]
+    format_name: str | None
+    tag: str | None
+    secondary_name: str | None
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _PrimaryChoice:
+    """One value of a cross product's first half."""
 
     kwargs: Mapping[str, object]
     format_name: str | None
@@ -965,6 +1082,67 @@ def _sequence_format_override(
 
 
 @beartype
+def _primary_choices(
+    *,
+    axis: _CrossProductPlan,
+    default_spec: literalizer.Language,
+) -> list[_PrimaryChoice]:
+    """Return the values a cross product's first half takes."""
+    if axis.primary is None:
+        return [_PrimaryChoice(kwargs={}, format_name=None)]
+    option = _OPTIONS[axis.primary]
+    default = option.get_default(default_spec)
+    excluded = frozenset(axis.excluded_primary_members)
+    return [
+        _PrimaryChoice(
+            kwargs={option.kwarg: member},
+            format_name=member.name.lower(),
+        )
+        for member in option.get_members(default_spec)
+        if member is not default and member.name not in excluded
+    ]
+
+
+@beartype
+def _cross_selections(
+    *,
+    axis: _CrossProductPlan,
+    metadata: LanguageMetadata,
+    default_spec: literalizer.Language,
+) -> list[_Selection]:
+    """Return every pairing a cross product selects for one language."""
+    selections: list[_Selection] = []
+    for primary in _primary_choices(axis=axis, default_spec=default_spec):
+        for secondary in axis.secondaries:
+            option = _OPTIONS[secondary.option]
+            default = option.get_default(default_spec)
+            for member in option.get_members(default_spec):
+                if member is default:
+                    continue
+                kwargs: dict[str, object] = {
+                    **primary.kwargs,
+                    option.kwarg: member,
+                }
+                if secondary.declaration_style_sequence_override:
+                    kwargs.update(
+                        _sequence_format_override(
+                            metadata=metadata,
+                            default_spec=default_spec,
+                            declaration_style=member,
+                        )
+                    )
+                selections.append(
+                    _Selection(
+                        kwargs=kwargs,
+                        format_name=primary.format_name,
+                        tag=secondary.tag,
+                        secondary_name=member.name.lower(),
+                    )
+                )
+    return selections
+
+
+@beartype
 def _selections(
     *,
     axis: _ExpandedAxis,
@@ -974,7 +1152,20 @@ def _selections(
     """Return the option values an axis selects for one language."""
     match axis:
         case _FixedOverridesPlan():
-            return [_Selection(kwargs={}, format_name=None)]
+            return [
+                _Selection(
+                    kwargs={},
+                    format_name=None,
+                    tag=None,
+                    secondary_name=None,
+                )
+            ]
+        case _CrossProductPlan():
+            return _cross_selections(
+                axis=axis,
+                metadata=metadata,
+                default_spec=default_spec,
+            )
         case _EveryNonDefaultMemberPlan():
             option = _OPTIONS[axis.option]
             default = option.get_default(default_spec)
@@ -993,7 +1184,12 @@ def _selections(
                         )
                     )
                 selections.append(
-                    _Selection(kwargs=kwargs, format_name=member.name.lower())
+                    _Selection(
+                        kwargs=kwargs,
+                        format_name=member.name.lower(),
+                        tag=None,
+                        secondary_name=None,
+                    )
                 )
             return selections
         case _ as unreachable:
@@ -1058,6 +1254,8 @@ def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
                 lang=lang_cls.__name__,
                 format=selection.format_name,
                 value=resolved.name_value,
+                tag=selection.tag,
+                secondary=selection.secondary_name,
             )
             variants.extend(
                 Variant(

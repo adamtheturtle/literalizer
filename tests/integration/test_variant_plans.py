@@ -27,10 +27,8 @@ _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
         "collection_layout",
         "comment_terminator",
         "dhall_nested_map_widening",
-        "dict_decl",
         "empty_container_type_hint",
         "empty_map_narrowing",
-        "heterogeneous_strategy_datetime_cross",
         "json_type",
         "json_type_bytes_cross",
         "json_type_datetime_cross",
@@ -39,16 +37,8 @@ _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
         "json_type_record_shape_names_cross",
         "multiline_raw_string_delimiter",
         "nested_map_widening",
-        "numeric_style_datetime_cross",
         "record_nested_map_fallback",
-        "record_numeric_cross",
-        "sequence_decl",
-        "set_decl",
-        "statement_terminator_style_decl",
         "string_embedded_nul",
-        "string_format_date_cross",
-        "string_format_datetime_cross",
-        "type_hints_cross",
         "typed_dict_null_filtering",
     }
 )
@@ -76,6 +66,16 @@ schema_version = 1
 [axes.example]
 plan = "filtered"
 base = "date"
+"""
+
+_VALID_CROSS_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}_{tag}_{secondary}"
+primary = "date_format"
+secondaries = [{ tag = "dt", option = "datetime_format" }]
 """
 
 
@@ -216,6 +216,21 @@ def test_unknown_axis_is_actionable() -> None:
                 'kwarg = "type_name", name_value = true }]\n'
             ),
             "needs exactly one override marked 'name_value'",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace("_{tag}_{secondary}", ""),
+            r"name template omits placeholder\(s\) \['secondary', 'tag'\]",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace('primary = "date_format"\n', ""),
+            r"unknown name-template placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace(
+                'option = "datetime_format"',
+                'option = "vibe"',
+            ),
+            "unknown option 'vibe'",
         ),
         (
             _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "vibes"'),

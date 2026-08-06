@@ -300,96 +300,6 @@ def build_json_type_language_version_cross_variants() -> list[Variant]:
 
 
 @beartype
-def build_statement_terminator_style_decl_variants() -> Iterable[Variant]:
-    """Build statement-terminator + declaration-style cross-option
-    variants.
-
-    For each language with multiple statement terminators *and* multiple
-    declaration styles, create a variant for every non-default
-    statement terminator paired with every non-default declaration style.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        lang_name = lang_cls.__name__
-        spec = make_spec(lang_cls=lang_cls)
-        default_statement_terminator_style = spec.statement_terminator_style
-        default_declaration_style = spec.declaration_style
-        non_default_statement_terminator_styles = [
-            statement_terminator_style
-            for statement_terminator_style in spec.statement_terminator_styles
-            if statement_terminator_style
-            is not default_statement_terminator_style
-        ]
-        non_default_declaration_styles = [
-            declaration_style
-            for declaration_style in spec.declaration_styles
-            if declaration_style is not default_declaration_style
-        ]
-        variants.extend(
-            compact_variant(
-                name=(
-                    f"{lang_name}_statement_terminator_style_{statement_terminator_style.name.lower()}"
-                    f"_decl_{declaration_style.name.lower()}"
-                ),
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    statement_terminator_style=statement_terminator_style,
-                    declaration_style=declaration_style,
-                ),
-                lang_cls=lang_cls,
-            )
-            for statement_terminator_style in (
-                non_default_statement_terminator_styles
-            )
-            for declaration_style in non_default_declaration_styles
-        )
-    return variants
-
-
-@beartype
-def build_sequence_decl_variants() -> Iterable[Variant]:
-    """Build sequence format + declaration style cross-option variants.
-
-    For each language with multiple sequence formats *and* multiple
-    declaration styles, create a variant for every non-default
-    sequence format paired with every non-default declaration style.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        lang_name = lang_cls.__name__
-        spec = make_spec(lang_cls=lang_cls)
-        default_sequence_format = spec.sequence_format
-        default_declaration_style = spec.declaration_style
-        non_default_sequence_formats = [
-            sequence_format
-            for sequence_format in spec.sequence_formats
-            if sequence_format is not default_sequence_format
-        ]
-        non_default_declaration_styles = [
-            declaration_style
-            for declaration_style in spec.declaration_styles
-            if declaration_style is not default_declaration_style
-        ]
-        variants.extend(
-            compact_variant(
-                name=(
-                    f"{lang_name}_sequence_{sequence_format.name.lower()}"
-                    f"_decl_{declaration_style.name.lower()}"
-                ),
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    sequence_format=sequence_format,
-                    declaration_style=declaration_style,
-                ),
-                lang_cls=lang_cls,
-            )
-            for sequence_format in non_default_sequence_formats
-            for declaration_style in non_default_declaration_styles
-        )
-    return variants
-
-
-@beartype
 def _resolve_sequence_format_override(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -525,104 +435,6 @@ def build_json_type_variable_form_cases(
                 )
             )
     return cases
-
-
-@beartype
-def build_set_decl_variants() -> Iterable[Variant]:
-    """Build set format + declaration style cross-option variants.
-
-    For each language with multiple set formats *and* multiple
-    declaration styles, create a variant for every non-default
-    set format paired with every non-default declaration style.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        lang_name = lang_cls.__name__
-        spec = make_spec(lang_cls=lang_cls)
-        default_set_format = spec.set_format
-        default_declaration_style = spec.declaration_style
-        non_default_set_formats = [
-            set_format
-            for set_format in spec.set_formats
-            if set_format is not default_set_format
-        ]
-        non_default_declaration_styles = [
-            declaration_style
-            for declaration_style in spec.declaration_styles
-            if declaration_style is not default_declaration_style
-        ]
-        for set_format in non_default_set_formats:
-            for declaration_style in non_default_declaration_styles:
-                seq_override = _resolve_sequence_format_override(
-                    lang_cls=lang_cls,
-                    declaration_style=declaration_style,
-                )
-                kwargs: dict[str, object] = {
-                    "set_format": set_format,
-                    "declaration_style": declaration_style,
-                }
-                if seq_override is not None:
-                    kwargs["sequence_format"] = seq_override
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_name}_set_{set_format.name.lower()}"
-                            f"_decl_{declaration_style.name.lower()}"
-                        ),
-                        spec=make_spec(lang_cls=lang_cls, **kwargs),
-                        lang_cls=lang_cls,
-                    )
-                )
-    return variants
-
-
-@beartype
-def build_dict_decl_variants() -> Iterable[Variant]:
-    """Build dict format + declaration style cross-option variants.
-
-    For each language with multiple dict formats *and* multiple
-    declaration styles, create a variant for every non-default
-    dict format paired with every non-default declaration style.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        lang_name = lang_cls.__name__
-        spec = make_spec(lang_cls=lang_cls)
-        default_dict_format = spec.dict_format
-        default_declaration_style = spec.declaration_style
-        non_default_dict_formats = [
-            dict_format
-            for dict_format in spec.dict_formats
-            if dict_format is not default_dict_format
-        ]
-        non_default_declaration_styles = [
-            declaration_style
-            for declaration_style in spec.declaration_styles
-            if declaration_style is not default_declaration_style
-        ]
-        for dict_format in non_default_dict_formats:
-            for declaration_style in non_default_declaration_styles:
-                seq_override = _resolve_sequence_format_override(
-                    lang_cls=lang_cls,
-                    declaration_style=declaration_style,
-                )
-                kwargs: dict[str, object] = {
-                    "dict_format": dict_format,
-                    "declaration_style": declaration_style,
-                }
-                if seq_override is not None:
-                    kwargs["sequence_format"] = seq_override
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_name}_dict_{dict_format.name.lower()}"
-                            f"_decl_{declaration_style.name.lower()}"
-                        ),
-                        spec=make_spec(lang_cls=lang_cls, **kwargs),
-                        lang_cls=lang_cls,
-                    )
-                )
-    return variants
 
 
 @runtime_checkable
@@ -811,80 +623,6 @@ def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_record_numeric_cross_variants() -> Iterable[Variant]:
-    """Build ``RECORD`` x non-default numeric-formatter variants.
-
-    For every language exposing a ``RECORD`` heterogeneous strategy,
-    cross ``RECORD`` with every non-default ``integer_format``,
-    ``numeric_separator`` and ``numeric_literal_suffix``.  Run against
-    the ``record_wide_int`` input these lock in that the declared field
-    type follows the value, not the formatted literal (issue #2306,
-    follow-up to #2297; extended to Kotlin/Java/Scala by #2376): an
-    integer field keeps its value-derived type however the literal is
-    written, and an integer beyond the signed 64-bit range is typed to
-    match its wide-integer overflow-fallback literal instead of the
-    type a formatted-string inspection would infer.
-    """
-    axes: list[
-        tuple[
-            str,
-            str,
-            Callable[[literalizer.Language], object],
-            Callable[[literalizer.Language], type[enum.Enum]],
-        ]
-    ] = [
-        (
-            "integer",
-            "integer_format",
-            lambda s: s.integer_format,
-            lambda s: s.integer_formats,
-        ),
-        (
-            "separator",
-            "numeric_separator",
-            lambda s: s.numeric_separator,
-            lambda s: s.numeric_separators,
-        ),
-        (
-            "suffix",
-            "numeric_literal_suffix",
-            lambda s: s.numeric_literal_suffix,
-            lambda s: s.numeric_literal_suffixes,
-        ),
-    ]
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
-        record_strategy = find_enum_member(
-            enum_cls=spec.heterogeneous_strategies,
-            name="RECORD",
-        )
-        if record_strategy is None:
-            continue
-        lang_name = lang_cls.__name__
-        for tag, kwarg, get_default, get_formats in axes:
-            default = get_default(spec)
-            for fmt in get_formats(spec):
-                if fmt is default:
-                    continue
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_name}_heterogeneous_strategy_record"
-                            f"_{tag}_{fmt.name.lower()}"
-                        ),
-                        spec=make_spec(
-                            lang_cls=lang_cls,
-                            heterogeneous_strategy=record_strategy,
-                            **{kwarg: fmt},
-                        ),
-                        lang_cls=lang_cls,
-                    )
-                )
-    return variants
-
-
-@beartype
 def build_empty_container_type_hint_variants() -> Iterable[Variant]:
     """Build variants for languages declaring empty-container hint support."""
     variants: list[Variant] = []
@@ -909,52 +647,6 @@ def build_empty_container_type_hint_variants() -> Iterable[Variant]:
                 lang_cls=lang_cls,
             )
         )
-    return variants
-
-
-@beartype
-def build_string_format_cross_variants(
-    *,
-    other_kwarg: str,
-    other_tag: str,
-    get_other_default: Callable[[literalizer.Language], object],
-    get_other_formats: Callable[[literalizer.Language], type[enum.Enum]],
-) -> list[Variant]:
-    """Build cross-product variants of ``string_format`` and another axis.
-
-    For every language, pair every non-default ``string_format`` with
-    every non-default value of the other axis.  Covers code paths where
-    the chosen ``string_format`` interacts with another formatter axis
-    (e.g. the plain-ISO date/datetime fallback that only fires when both
-    ``string_format`` and the date/datetime format are non-default).
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
-        default_string = spec.string_format
-        default_other = get_other_default(spec)
-        lang_name = lang_cls.__name__
-        for sf in spec.string_formats:
-            if sf is default_string or sf.name == "MULTILINE":
-                continue
-            for of in get_other_formats(spec):
-                if of is default_other:
-                    continue
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_name}"
-                            f"_string_{sf.name.lower()}"
-                            f"_{other_tag}_{of.name.lower()}"
-                        ),
-                        spec=make_spec(
-                            lang_cls=lang_cls,
-                            string_format=sf,
-                            **{other_kwarg: of},
-                        ),
-                        lang_cls=lang_cls,
-                    )
-                )
     return variants
 
 
@@ -1065,192 +757,21 @@ def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
     return variants
 
 
-@beartype
-def build_heterogeneous_strategy_datetime_cross_variants() -> list[Variant]:
-    """Build cross-product variants of ``heterogeneous_strategy`` and
-    ``datetime_format``.
-
-    For every language, pair every non-default heterogeneous strategy
-    with every non-default datetime format.  Covers code paths where the
-    chosen heterogeneous strategy selects a variant based on the rendered
-    runtime type of a datetime value (e.g. Rust's ``TAGGED_ENUM`` routing
-    an ``EPOCH`` datetime through the ``i64`` variant rather than a
-    ``DateTime`` variant).
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
-        default_strategy = spec.heterogeneous_strategy
-        default_dt = spec.datetime_format
-        lang_name = lang_cls.__name__
-        for strategy in spec.heterogeneous_strategies:
-            if strategy is default_strategy:
-                continue
-            for dt in spec.datetime_formats:
-                if dt is default_dt:
-                    continue
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_name}"
-                            f"_heterogeneous_strategy_{strategy.name.lower()}"
-                            f"_datetime_{dt.name.lower()}"
-                        ),
-                        spec=make_spec(
-                            lang_cls=lang_cls,
-                            heterogeneous_strategy=strategy,
-                            datetime_format=dt,
-                        ),
-                        lang_cls=lang_cls,
-                    )
-                )
-    return variants
-
-
-@beartype
-def build_numeric_style_datetime_cross_variants() -> list[Variant]:
-    """Build cross-product variants of numeric style and datetime format.
-
-    For every language, pair every non-default numeric style with every
-    non-default datetime format.  This covers formatters whose datetime
-    representation depends on the selected numeric style, such as Haskell's
-    explicit ``HInt`` constructor around epoch seconds.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
-        default_numeric_style = spec.numeric_style
-        default_datetime_format = spec.datetime_format
-        for numeric_style in spec.numeric_styles:
-            if numeric_style is default_numeric_style:
-                continue
-            for datetime_format in spec.datetime_formats:
-                if datetime_format is default_datetime_format:
-                    continue
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_cls.__name__}"
-                            f"_numeric_style_{numeric_style.name.lower()}"
-                            f"_datetime_{datetime_format.name.lower()}"
-                        ),
-                        spec=make_spec(
-                            lang_cls=lang_cls,
-                            numeric_style=numeric_style,
-                            datetime_format=datetime_format,
-                        ),
-                        lang_cls=lang_cls,
-                    )
-                )
-    return variants
-
-
-@beartype
-def build_type_hints_cross_variants() -> list[Variant]:
-    """Build cross-product variants: each non-default type-hint format
-    combined with each non-default value of another format axis.
-
-    These cover code paths where the type annotation depends on the
-    chosen sequence / date / datetime / dict / set format.
-    """
-    axes: list[
-        tuple[
-            str,
-            Callable[[literalizer.Language], object],
-            Callable[[literalizer.Language], type[enum.Enum]],
-            str,
-        ]
-    ] = [
-        (
-            "seq",
-            lambda s: s.sequence_format,
-            lambda s: s.sequence_formats,
-            "sequence_format",
-        ),
-        (
-            "date",
-            lambda s: s.format_date,
-            lambda s: s.date_formats,
-            "date_format",
-        ),
-        (
-            "dt",
-            lambda s: s.format_datetime,
-            lambda s: s.datetime_formats,
-            "datetime_format",
-        ),
-        (
-            "dict",
-            lambda s: s.dict_format,
-            lambda s: s.dict_formats,
-            "dict_format",
-        ),
-        (
-            "set",
-            lambda s: s.set_format,
-            lambda s: s.set_formats,
-            "set_format",
-        ),
-        (
-            "nls",
-            lambda s: s.numeric_literal_suffix,
-            lambda s: s.numeric_literal_suffixes,
-            "numeric_literal_suffix",
-        ),
-    ]
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
-        default_th = spec.variable_type_hints
-        lang_name = lang_cls.__name__
-        for th_fmt in spec.variable_type_hints_formats:
-            if th_fmt is default_th:
-                continue
-            th_tag = th_fmt.name.lower()
-            for axis_name, get_default, get_formats, kwarg in axes:
-                default = get_default(spec)
-                for fmt in get_formats(spec):
-                    if fmt is default:
-                        continue
-                    variants.append(
-                        compact_variant(
-                            name=(
-                                f"{lang_name}"
-                                f"_type_hints_{th_tag}"
-                                f"_{axis_name}"
-                                f"_{fmt.name.lower()}"
-                            ),
-                            spec=make_spec(
-                                lang_cls=lang_cls,
-                                variable_type_hints=th_fmt,
-                                **{kwarg: fmt},
-                            ),
-                            lang_cls=lang_cls,
-                        ),
-                    )
-    return variants
-
-
 # Axes whose expansion is genuinely irregular, and so is written as a
 # typed Python builder instead of a declared plan in ``axes.toml``:
-# the ``*_cross`` products (which filter on
-# :exc:`~literalizer.exceptions.IncompatibleFormatsError`), the
-# ``json_type`` family (which starts from another axis's variants
-# rather than from a language), the widening and narrowing cases
-# (which pair a compact and a multiline layout and select a spec by
-# rendering behavior), and a handful of one-off shapes.  A meta-test
-# holds this set to its current membership: new axes belong in
-# ``axes.toml``.
+# the ``json_type`` family (which starts from another axis's variants
+# rather than from a language, and whose declaration-style cross
+# filters on :exc:`~literalizer.exceptions.IncompatibleFormatsError`),
+# the widening and narrowing cases (which pair a compact and a
+# multiline layout and select a spec by rendering behavior), and a
+# handful of one-off shapes.  A meta-test holds this set to its current
+# membership: new axes belong in ``axes.toml``.
 _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "collection_layout": build_collection_layout_variants,
     "comment_terminator": build_comment_terminator_variants,
     "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
-    "dict_decl": build_dict_decl_variants,
     "empty_container_type_hint": build_empty_container_type_hint_variants,
     "empty_map_narrowing": build_empty_map_narrowing_variants,
-    "heterogeneous_strategy_datetime_cross": (
-        build_heterogeneous_strategy_datetime_cross_variants
-    ),
     "json_type": build_json_type_variants,
     "json_type_bytes_cross": build_json_type_bytes_cross_variants,
     "json_type_datetime_cross": build_json_type_datetime_cross_variants,
@@ -1267,30 +788,8 @@ _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
         build_multiline_raw_string_delimiter_variants
     ),
     "nested_map_widening": build_nested_map_widening_variants,
-    "numeric_style_datetime_cross": (
-        build_numeric_style_datetime_cross_variants
-    ),
     "record_nested_map_fallback": build_record_nested_map_fallback_variants,
-    "record_numeric_cross": build_record_numeric_cross_variants,
-    "sequence_decl": build_sequence_decl_variants,
-    "set_decl": build_set_decl_variants,
-    "statement_terminator_style_decl": (
-        build_statement_terminator_style_decl_variants
-    ),
     "string_embedded_nul": build_string_embedded_nul_variants,
-    "string_format_date_cross": lambda: build_string_format_cross_variants(
-        other_kwarg="date_format",
-        other_tag="date",
-        get_other_default=lambda s: s.date_format,
-        get_other_formats=lambda s: s.date_formats,
-    ),
-    "string_format_datetime_cross": lambda: build_string_format_cross_variants(
-        other_kwarg="datetime_format",
-        other_tag="dt",
-        get_other_default=lambda s: s.datetime_format,
-        get_other_formats=lambda s: s.datetime_formats,
-    ),
-    "type_hints_cross": build_type_hints_cross_variants,
     "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
 }
 

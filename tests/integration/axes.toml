@@ -139,6 +139,14 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "default_set_element_type" },
 ]
 
+[axes.dict_decl]
+plan = "cross_product"
+name_template = "{lang}_dict_{format}_{tag}_{secondary}"
+primary = "dict_format"
+secondaries = [
+  { tag = "decl", option = "declaration_style", declaration_style_sequence_override = true },
+]
+
 [axes.dict_entry_style]
 plan = "every_non_default_member"
 name_template = "{lang}_dict_entry_style_{format}"
@@ -180,6 +188,12 @@ option = "float_format"
 plan = "every_non_default_member"
 name_template = "{lang}_heterogeneous_strategy_{format}"
 option = "heterogeneous_strategy"
+
+[axes.heterogeneous_strategy_datetime_cross]
+plan = "cross_product"
+name_template = "{lang}_heterogeneous_strategy_{format}_{tag}_{secondary}"
+primary = "heterogeneous_strategy"
+secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
 
 [axes.heterogeneous_strategy_tagged_enum]
 plan = "fixed_overrides"
@@ -309,6 +323,15 @@ plan = "every_non_default_member"
 name_template = "{lang}_numeric_style_{format}"
 option = "numeric_style"
 
+# Covers formatters whose datetime rendering depends on the selected
+# numeric style, such as Haskell's explicit ``HInt`` constructor around
+# epoch seconds.
+[axes.numeric_style_datetime_cross]
+plan = "cross_product"
+name_template = "{lang}_numeric_style_{format}_{tag}_{secondary}"
+primary = "numeric_style"
+secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
+
 [axes.object_variant_containers]
 plan = "fixed_overrides"
 name_template = "{lang}_object_variant_containers"
@@ -366,6 +389,28 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+# Run against the ``record_wide_int`` input, these lock in that a
+# record's declared field type follows the value, not the formatted
+# literal (issue #2306, follow-up to #2297; extended to
+# Kotlin/Java/Scala by #2376): an integer field keeps its value-derived
+# type however the literal is written, and an integer beyond the signed
+# 64-bit range is typed to match its wide-integer overflow-fallback
+# literal instead of the type a formatted-string inspection would infer.
+[axes.record_numeric_cross]
+plan = "cross_product"
+name_template = "{lang}_heterogeneous_strategy_record_{tag}_{secondary}"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+secondaries = [
+  { tag = "integer", option = "integer_format" },
+  { tag = "separator", option = "numeric_separator" },
+  { tag = "suffix", option = "numeric_literal_suffix" },
+]
+
 [axes.record_quoted_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_quoted_field"
@@ -406,21 +451,58 @@ plan = "every_non_default_member"
 name_template = "{lang}_sequence_{format}"
 option = "sequence_format"
 
+[axes.sequence_decl]
+plan = "cross_product"
+name_template = "{lang}_sequence_{format}_{tag}_{secondary}"
+primary = "sequence_format"
+secondaries = [{ tag = "decl", option = "declaration_style" }]
+
 [axes.set]
 plan = "every_non_default_member"
 name_template = "{lang}_set_{format}"
 option = "set_format"
+
+[axes.set_decl]
+plan = "cross_product"
+name_template = "{lang}_set_{format}_{tag}_{secondary}"
+primary = "set_format"
+secondaries = [
+  { tag = "decl", option = "declaration_style", declaration_style_sequence_override = true },
+]
 
 [axes.statement_terminator_style]
 plan = "every_non_default_member"
 name_template = "{lang}_statement_terminator_style_{format}"
 option = "statement_terminator_style"
 
+[axes.statement_terminator_style_decl]
+plan = "cross_product"
+name_template = "{lang}_statement_terminator_style_{format}_{tag}_{secondary}"
+primary = "statement_terminator_style"
+secondaries = [{ tag = "decl", option = "declaration_style" }]
+
 [axes.string_format]
 plan = "every_non_default_member"
 name_template = "{lang}_string_format_{format}"
 option = "string_format"
 excluded_members = ["MULTILINE"]
+
+# Cover code paths where the chosen string format interacts with the
+# date or datetime format, such as the plain-ISO fallback that only
+# fires when both are non-default.
+[axes.string_format_date_cross]
+plan = "cross_product"
+name_template = "{lang}_string_{format}_{tag}_{secondary}"
+primary = "string_format"
+excluded_primary_members = ["MULTILINE"]
+secondaries = [{ tag = "date", option = "configured_date_format" }]
+
+[axes.string_format_datetime_cross]
+plan = "cross_product"
+name_template = "{lang}_string_{format}_{tag}_{secondary}"
+primary = "string_format"
+excluded_primary_members = ["MULTILINE"]
+secondaries = [{ tag = "dt", option = "configured_datetime_format" }]
 
 [axes.tagged_enum_empty_container]
 plan = "fixed_overrides"
@@ -441,6 +523,21 @@ option = "trailing_comma"
 plan = "every_non_default_member"
 name_template = "{lang}_type_hints_{format}"
 option = "variable_type_hints"
+
+# Cover code paths where the type annotation depends on the chosen
+# sequence / date / datetime / dict / set / suffix format.
+[axes.type_hints_cross]
+plan = "cross_product"
+name_template = "{lang}_type_hints_{format}_{tag}_{secondary}"
+primary = "variable_type_hints"
+secondaries = [
+  { tag = "seq", option = "sequence_format" },
+  { tag = "date", option = "date_format" },
+  { tag = "dt", option = "datetime_format" },
+  { tag = "dict", option = "dict_format" },
+  { tag = "set", option = "set_format" },
+  { tag = "nls", option = "numeric_literal_suffix" },
+]
 
 [axes.type_name]
 plan = "fixed_overrides"
