@@ -410,11 +410,6 @@ def test_unknown_axis_is_actionable() -> None:
             "unknown behavior flag 'vibes'",
         ),
         (
-            _VALID_AXIS + 'gates = [{ kind = "metadata_table_present", '
-            'table = "vibes" }]\n',
-            "unknown metadata table 'vibes'",
-        ),
-        (
             _VALID_AXIS
             + (
                 'overrides = [{ kind = "metadata_table", kwarg = "vibes", '
@@ -588,19 +583,6 @@ option = "heterogeneous_strategy"
 field = "empty_container_type_hint_heterogeneous_strategy"
 """
 
-_UNDECLARED_TABLE_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-
-[[axes.example.overrides]]
-kind = "metadata_table"
-kwarg = "empty_container_type_hints"
-table = "empty_container_type_hints"
-"""
-
 
 @pytest.mark.parametrize(
     argnames=("contents", "message"),
@@ -613,10 +595,6 @@ table = "empty_container_type_hints"
         (
             _UNDECLARED_TABLE_MEMBER_AXIS,
             "declares no 'empty_container_type_hint_heterogeneous_strategy'",
-        ),
-        (
-            _UNDECLARED_TABLE_AXIS,
-            "declares no 'empty_container_type_hints'",
         ),
     ],
 )

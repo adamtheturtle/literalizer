@@ -609,18 +609,6 @@ class _SpecConfigFieldPresentGate(
     field: Annotated[str, Field(min_length=1)]
 
 
-class _MetadataTablePresentGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages declaring a metadata sub-table."""
-
-    kind: Literal["metadata_table_present"]
-    table: Annotated[str, Field(min_length=1)]
-
-
 class _BehaviorFlagGate(
     BaseModel,
     extra="forbid",
@@ -646,7 +634,6 @@ type _Gate = Annotated[
     | _EnumMemberPresentGate
     | _MetadataFieldGate
     | _SpecConfigFieldPresentGate
-    | _MetadataTablePresentGate
     | _BehaviorFlagGate,
     Field(discriminator="kind"),
 ]
@@ -702,6 +689,8 @@ class _MetadataTableOverride(
 
     The table is fixture data the language file owns, so a plan names
     which table reaches which constructor parameter and nothing else.
+    A language declaring no such table does not participate in the axis,
+    so the table that supplies the value also decides who renders it.
     """
 
     kind: Literal["metadata_table"]
@@ -862,7 +851,7 @@ class _KwargValueChoice(
     frozen=True,
     strict=True,
 ):
-    """One value a kwarg-values axis passes for its parameter.
+    """One value the axis passes for its constructor parameter.
 
     Omitting ``value`` takes the language's own declared sample value
     for the parameter, so a base every participating language shares is
@@ -1068,13 +1057,6 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
                 msg = (
                     f"axis {axis_key!r}: unknown spec config field "
                     f"{gate.field!r}"
-                )
-                raise AxisPlanError(msg)
-            case _MetadataTablePresentGate() if (
-                gate.table not in _METADATA_TABLES
-            ):
-                msg = (
-                    f"axis {axis_key!r}: unknown metadata table {gate.table!r}"
                 )
                 raise AxisPlanError(msg)
             case _BehaviorFlagGate() if gate.flag not in _BEHAVIOR_FLAGS:
@@ -1498,8 +1480,6 @@ def _gate_admits(
             admits = _METADATA_FIELDS[gate.field](metadata) == gate.value
         case _SpecConfigFieldPresentGate():
             admits = _SPEC_CONFIG_FIELDS[gate.field](spec) is not None
-        case _MetadataTablePresentGate():
-            admits = _METADATA_TABLES[gate.table](metadata) is not None
         case _BehaviorFlagGate():
             admits = _BEHAVIOR_FLAGS[gate.flag](spec)
         case _ as unreachable:
@@ -1555,18 +1535,17 @@ def _metadata_member(
 @beartype
 def _metadata_table(
     *,
-    axis_key: str,
     override: _MetadataTableOverride,
     metadata: LanguageMetadata,
-) -> Mapping[str, object]:
-    """Resolve the metadata sub-table a language declares."""
+) -> Mapping[str, object] | None:
+    """Resolve the metadata sub-table a language declares.
+
+    Returns ``None`` for a language declaring no such table, which is
+    how this override excludes it from the axis.
+    """
     declared = _METADATA_TABLES[override.table](metadata)
     if declared is None:
-        msg = (
-            f"axis {axis_key!r}: {metadata.path} declares no "
-            f"{override.table!r}"
-        )
-        raise AxisPlanError(msg)
+        return None
     return {override.kwarg: declared}
 
 
@@ -1631,13 +1610,11 @@ def _override_selection(
                 name_value=None,
             )
         case _MetadataTableOverride():
-            resolved = _ResolvedOverrides(
-                kwargs=_metadata_table(
-                    axis_key=axis_key,
-                    override=override,
-                    metadata=metadata,
-                ),
-                name_value=None,
+            table = _metadata_table(override=override, metadata=metadata)
+            resolved = (
+                None
+                if table is None
+                else _ResolvedOverrides(kwargs=table, name_value=None)
             )
         case _TrueFlagOverride():
             resolved = _ResolvedOverrides(
@@ -1684,7 +1661,10 @@ def _resolve_overrides(
     """Resolve an axis's declared overrides for one language.
 
     Returns ``None`` when a ``behavior_flag_member`` override finds no
-    member to select, which is how that override excludes a language.
+    member to select, or a ``metadata_table`` override finds no declared
+    table, which is how those overrides exclude a language.  An override
+    that excludes stops the rest of the list, so one naming a table
+    comes before any override reading that table's own fields.
     """
     kwargs: dict[str, object] = {}
     name_value: str | None = None

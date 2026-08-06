@@ -193,15 +193,15 @@ option = "dict_format"
 # The hints themselves are fixture data: which value in the input gets
 # an explicit type, and what that type is spelled as, are choices the
 # language's own manifest makes alongside the strategy they hold under.
+# The table override comes first because it is what admits a language:
+# one declaring no hints does not participate, so the strategy those
+# hints are held under is never read for it.
 [axes.empty_container_type_hint]
 plan = "fixed_overrides"
 name_template = "{lang}_empty_container_type_hint"
-gates = [
-  { kind = "metadata_table_present", table = "empty_container_type_hints" },
-]
 overrides = [
-  { kind = "metadata_enum_member", option = "heterogeneous_strategy", field = "empty_container_type_hint_heterogeneous_strategy" },
   { kind = "metadata_table", kwarg = "empty_container_type_hints", table = "empty_container_type_hints" },
+  { kind = "metadata_enum_member", option = "heterogeneous_strategy", field = "empty_container_type_hint_heterogeneous_strategy" },
 ]
 
 [axes.empty_dict_key]
