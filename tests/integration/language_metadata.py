@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from beartype import beartype
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
@@ -165,11 +165,13 @@ class VariantPolicy(
     fixture picks instead so that it keeps compiling.
     """
 
-    def validate_consistency(self) -> None:
+    @model_validator(mode="after")
+    def _validate_consistency(self) -> VariantPolicy:
         """Validate relationships that span variant fields."""
         if len(self.record) != len(set(self.record)):
             msg = "record contains a duplicate entry"
             raise ValueError(msg)
+        return self
 
 
 class _LanguageMetadataData(
@@ -241,8 +243,6 @@ def load_language_metadata(
         raise _fail(path=path, message=f"invalid TOML: {exc}") from exc
     try:
         data = _LanguageMetadataData.model_validate(obj=raw)
-        variants: VariantPolicy = data.variants
-        variants.validate_consistency()
     except (ValidationError, ValueError) as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
 

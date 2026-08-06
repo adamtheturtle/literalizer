@@ -513,7 +513,8 @@ class _CaseManifestData(
             msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
-    def validate_consistency(self) -> None:
+    @model_validator(mode="after")
+    def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
         self._validate_owned_table(
             table_name="call",
@@ -549,6 +550,7 @@ class _CaseManifestData(
             if entry.axis not in KNOWN_VARIANT_AXES:
                 msg = f"unknown variant axis {entry.axis!r}"
                 raise ValueError(msg)
+        return self
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -594,7 +596,6 @@ def _load_manifest_data(*, path: Path) -> _CaseManifestData:
             obj=raw,
             context={"case_dir_name": path.parent.name},
         )
-        data.validate_consistency()
     except (ValidationError, ValueError) as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
     return data
