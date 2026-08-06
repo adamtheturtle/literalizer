@@ -8,3 +8,6 @@ per_element = true
 call_transform = "emit({call})"
 transform_stub_names = ["emit"]
 requires_call_returns_expression = true
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

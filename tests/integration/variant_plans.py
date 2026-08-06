@@ -13,7 +13,10 @@ fails when the registry loads rather than when a golden file is built.
 
 Axes whose expansion is genuinely irregular (the ``*_cross`` products,
 the ``json_type`` family, the layout-pair widening cases) stay as
-registered escape-hatch builders in :mod:`variant_cases`.
+registered escape-hatch builders in :mod:`variant_cases`.  A
+``filtered`` plan narrows any axis, declared or irregular, to the
+languages its gates admit, so a suite needing a smaller slice of an
+existing expansion names one rather than writing its own builder.
 """
 
 import dataclasses
@@ -21,7 +24,7 @@ import enum
 import functools
 import string
 import tomllib
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Mapping, Sequence
 from pathlib import Path
 from typing import (
     Annotated,
@@ -42,6 +45,7 @@ from .language_metadata import (
     language_metadata,
 )
 from .language_specs import make_spec, sorted_languages
+from .variant_axis_names import KNOWN_VARIANT_AXES
 from .variant_types import Variant, enum_member_by_name, find_enum_member
 
 AXES_PATH = Path(__file__).parent / "axes.toml"
@@ -49,6 +53,20 @@ AXES_PATH = Path(__file__).parent / "axes.toml"
 
 class AxisPlanError(ValueError):
     """The declared axis registry is missing or invalid."""
+
+
+@runtime_checkable
+class AxisResolver(Hashable, Protocol):
+    """Expands any variant axis the suite knows, by name.
+
+    A filtered plan narrows another axis, which may be an escape-hatch
+    builder this module cannot see, so callers hand in the suite's own
+    resolver instead.
+    """
+
+    def __call__(self, *, axis_key: str) -> list[Variant]:
+        """Return the variants *axis_key* expands to."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @runtime_checkable
@@ -283,6 +301,10 @@ _OPTIONS: Mapping[str, _Option] = {
 }
 
 _CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "declares_call_styles": lambda lang_cls: len(lang_cls.CallStyles) > 0,
+    "supports_json_call_result_binding": (
+        lambda lang_cls: lang_cls.supports_json_call_result_binding
+    ),
     "supports_multiline_string_literals": (
         lambda lang_cls: lang_cls.supports_multiline_string_literals
     ),
@@ -291,6 +313,14 @@ _CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     ),
     "supports_record_struct_name_prefix": (
         lambda lang_cls: lang_cls.supports_record_struct_name_prefix
+    ),
+    "supports_ref_elements_in_tuple_strategy": (
+        lambda lang_cls: (
+            lang_cls.variant_metadata.supports_ref_elements_in_tuple_strategy
+        )
+    ),
+    "supports_standalone_comments_in_wrapped_calls": (
+        lambda lang_cls: lang_cls.supports_standalone_comments_in_wrapped_calls
     ),
 }
 
@@ -520,8 +550,29 @@ class _FixedOverridesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+class _FilteredPlan(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Another axis's variants, narrowed to the languages a gate
+    admits.
+
+    The narrowed axis keeps the base axis's variant names and specs, so
+    a suite that needs the same expansion for a smaller set of
+    languages selects one by name instead of filtering in Python.
+    """
+
+    plan: Literal["filtered"]
+    base: Annotated[str, Field(min_length=1)]
+    gates: list[_Gate] = Field(default_factory=_no_gates)
+
+
+type _ExpandedAxis = _EveryNonDefaultMemberPlan | _FixedOverridesPlan
+
 type _Axis = Annotated[
-    _EveryNonDefaultMemberPlan | _FixedOverridesPlan,
+    _EveryNonDefaultMemberPlan | _FixedOverridesPlan | _FilteredPlan,
     Field(discriminator="plan"),
 ]
 
@@ -548,13 +599,14 @@ def _placeholders(*, template: str) -> frozenset[str]:
 
 
 @beartype
-def _validate_options(*, axis_key: str, axis: _Axis) -> None:
+def _validate_options(
+    *,
+    axis_key: str,
+    axis: _ExpandedAxis,
+    gate_options: Sequence[str],
+) -> None:
     """Check every formatter option an axis names."""
-    options = [
-        gate.option
-        for gate in axis.gates
-        if isinstance(gate, _EnumMemberPresentGate)
-    ]
+    options = list(gate_options)
     options.extend(
         override.option
         for override in axis.overrides
@@ -574,10 +626,11 @@ def _validate_options(*, axis_key: str, axis: _Axis) -> None:
 
 
 @beartype
-def _validate_names(*, axis_key: str, axis: _Axis) -> None:
-    """Check every name an axis uses against its closed registry."""
-    _validate_options(axis_key=axis_key, axis=axis)
-    for gate in axis.gates:
+def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
+    """Check every gate an axis declares, returning the options they
+    name.
+    """
+    for gate in gates:
         match gate:
             case _CapabilityFlagGate() if gate.flag not in _CAPABILITY_FLAGS:
                 msg = (
@@ -589,6 +642,21 @@ def _validate_names(*, axis_key: str, axis: _Axis) -> None:
                 raise AxisPlanError(msg)
             case _:
                 continue
+    return [
+        gate.option
+        for gate in gates
+        if isinstance(gate, _EnumMemberPresentGate)
+    ]
+
+
+@beartype
+def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
+    """Check every name an axis uses against its closed registry."""
+    _validate_options(
+        axis_key=axis_key,
+        axis=axis,
+        gate_options=_validate_gates(axis_key=axis_key, gates=axis.gates),
+    )
     for override in axis.overrides:
         if (
             isinstance(override, _MetadataEnumMemberOverride)
@@ -601,7 +669,7 @@ def _validate_names(*, axis_key: str, axis: _Axis) -> None:
 
 
 @beartype
-def _validate_template(*, axis_key: str, axis: _Axis) -> None:
+def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
     """Check a name template against the placeholders its plan
     offers.
     """
@@ -637,6 +705,25 @@ def _validate_template(*, axis_key: str, axis: _Axis) -> None:
         raise AxisPlanError(msg)
 
 
+@beartype
+def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
+    """Check one declared axis against the closed name registries."""
+    match axis:
+        case _FilteredPlan():
+            _validate_gates(axis_key=axis_key, gates=axis.gates)
+            if axis.base == axis_key:
+                msg = f"axis {axis_key!r}: base axis is itself"
+                raise AxisPlanError(msg)
+            if axis.base not in KNOWN_VARIANT_AXES:
+                msg = f"axis {axis_key!r}: unknown base axis {axis.base!r}"
+                raise AxisPlanError(msg)
+        case _EveryNonDefaultMemberPlan() | _FixedOverridesPlan():
+            _validate_names(axis_key=axis_key, axis=axis)
+            _validate_template(axis_key=axis_key, axis=axis)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 @functools.cache
 @beartype
 def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
@@ -652,8 +739,7 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
         msg = f"{path}: {exc}"
         raise AxisPlanError(msg) from exc
     for axis_key, axis in data.axes.items():
-        _validate_names(axis_key=axis_key, axis=axis)
-        _validate_template(axis_key=axis_key, axis=axis)
+        _validate_axis(axis_key=axis_key, axis=axis)
     return data.axes
 
 
@@ -881,7 +967,7 @@ def _sequence_format_override(
 @beartype
 def _selections(
     *,
-    axis: _Axis,
+    axis: _ExpandedAxis,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
 ) -> list[_Selection]:
@@ -917,7 +1003,7 @@ def _selections(
 @beartype
 def _language_versions(
     *,
-    axis: _Axis,
+    axis: _ExpandedAxis,
     default_spec: literalizer.Language,
 ) -> list[Mapping[str, object]]:
     """Return the per-version kwargs an axis repeats itself over."""
@@ -928,7 +1014,7 @@ def _language_versions(
 
 
 @beartype
-def _axis_variants(*, axis_key: str, axis: _Axis) -> list[Variant]:
+def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
     """Expand one declared axis into its variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
@@ -999,11 +1085,47 @@ def _axis_variants(*, axis_key: str, axis: _Axis) -> list[Variant]:
 
 
 @beartype
-def variants_for_declared_axis(*, axis_key: str) -> list[Variant]:
+def _filtered_variants(
+    *,
+    axis: _FilteredPlan,
+    base: list[Variant],
+) -> list[Variant]:
+    """Narrow a base axis's variants to the languages its gates admit."""
+    return [
+        variant
+        for variant in base
+        if all(
+            _gate_admits(
+                gate=gate,
+                lang_cls=variant.lang_cls,
+                metadata=language_metadata(
+                    language_id=variant.lang_cls.language_id
+                ),
+                default_spec=make_spec(lang_cls=variant.lang_cls),
+            )
+            for gate in axis.gates
+        )
+    ]
+
+
+@beartype
+def variants_for_declared_axis(
+    *,
+    axis_key: str,
+    resolve_axis: AxisResolver,
+) -> list[Variant]:
     """Return the variants the declared plan for *axis_key* expands
     to.
+
+    A filtered plan narrows another axis, which may itself be an
+    escape-hatch builder, so callers supply the suite's full axis
+    resolver rather than this module reaching back into it.
     """
-    return variants_for_registry_axis(path=AXES_PATH, axis_key=axis_key)
+    return variants_for_registry_axis(
+        path=AXES_PATH,
+        axis_key=axis_key,
+        resolve_axis=resolve_axis,
+    )
 
 
 @functools.cache
@@ -1012,16 +1134,24 @@ def variants_for_registry_axis(
     *,
     path: Path,
     axis_key: str,
+    resolve_axis: AxisResolver,
 ) -> list[Variant]:
     """Return the variants one axis of the registry at *path* expands
     to.
     """
     registry = load_axis_registry(path=path)
     axis = registry.get(axis_key)
-    if axis is None:
-        msg = (
-            f"{path}: no plan declared for variant axis {axis_key!r}; "
-            "add one here or register an escape-hatch builder"
-        )
-        raise AxisPlanError(msg)
-    return _axis_variants(axis_key=axis_key, axis=axis)
+    match axis:
+        case None:
+            msg = (
+                f"{path}: no plan declared for variant axis {axis_key!r}; "
+                "add one here or register an escape-hatch builder"
+            )
+            raise AxisPlanError(msg)
+        case _FilteredPlan():
+            return _filtered_variants(
+                axis=axis,
+                base=resolve_axis(axis_key=axis.base),
+            )
+        case _:
+            return _axis_variants(axis_key=axis_key, axis=axis)

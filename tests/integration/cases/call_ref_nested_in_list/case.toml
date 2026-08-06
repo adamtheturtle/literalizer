@@ -6,3 +6,6 @@ target_function = "process"
 parameter_names = ["data"]
 per_element = true
 ref_declarations = { my_var = "42", my_other = "7" }
+
+[[call.variants]]
+axis = "heterogeneous_strategy_tuple_ref_elements"

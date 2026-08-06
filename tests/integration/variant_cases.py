@@ -979,7 +979,8 @@ def build_multiline_string_context_cases(
     """
     cases: list[VariantCase] = []
     for base_variant in variants_for_declared_axis(
-        axis_key="multiline_string"
+        axis_key="multiline_string",
+        resolve_axis=variants_for_axis,
     ):
         spec = base_variant.spec
         redefinition_styles = find_redefinition_styles(spec=spec)
@@ -1346,11 +1347,16 @@ def variants_for_axis(*, axis_key: str) -> list[Variant]:
     """Return the variants for an axis key.
 
     Most axes name a typed plan in ``axes.toml``; the irregular tail
-    dispatches to its registered escape-hatch builder.
+    dispatches to its registered escape-hatch builder.  A declared plan
+    that narrows another axis resolves its base through here too, so a
+    narrowing may sit over either kind of expansion.
     """
     if axis_key in _ESCAPE_HATCH_BUILDERS:
         return list(_ESCAPE_HATCH_BUILDERS[axis_key]())
-    return variants_for_declared_axis(axis_key=axis_key)
+    return variants_for_declared_axis(
+        axis_key=axis_key,
+        resolve_axis=variants_for_axis,
+    )
 
 
 @beartype

@@ -8,3 +8,6 @@ target_function = "process"
 parameter_names = ["value"]
 per_element = true
 variant_only = true
+
+[[call.variants]]
+axis = "heterogeneous_strategy_tagged_enum"

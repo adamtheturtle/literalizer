@@ -4,7 +4,9 @@ schema_version = 1
 # from ``variant_plans.py`` and supplies that plan's parameters.  This
 # file selects and parameterizes plans; it never expresses a condition.
 # Axes whose expansion is genuinely irregular stay as registered
-# escape-hatch builders in ``variant_cases.py``.
+# escape-hatch builders in ``variant_cases.py``; a ``filtered`` plan
+# narrows one of those, or another declared axis, to the languages its
+# gates admit.
 
 [axes.annotation_evaluation]
 plan = "every_non_default_member"
@@ -44,6 +46,14 @@ overrides = [
 plan = "every_non_default_member"
 name_template = "{lang}_comment_{format}"
 option = "comment_format"
+
+[axes.comment_terminator_call]
+plan = "filtered"
+base = "comment_terminator"
+gates = [
+  { kind = "capability_flag", flag = "declares_call_styles" },
+  { kind = "capability_flag", flag = "supports_standalone_comments_in_wrapped_calls" },
+]
 
 [axes.constructor_name]
 plan = "fixed_overrides"
@@ -171,6 +181,27 @@ plan = "every_non_default_member"
 name_template = "{lang}_heterogeneous_strategy_{format}"
 option = "heterogeneous_strategy"
 
+[axes.heterogeneous_strategy_tagged_enum]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_strategy_tagged_enum"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+]
+
+[axes.heterogeneous_strategy_tuple_ref_elements]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_strategy_tuple"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+  { kind = "capability_flag", flag = "supports_ref_elements_in_tuple_strategy" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
 [axes.heterogeneous_value_enum_name]
 plan = "fixed_overrides"
 name_template = "{lang}_heterogeneous_value_enum_name_{value}"
@@ -214,6 +245,13 @@ option = "integer_format"
 plan = "every_non_default_member"
 name_template = "{lang}_integer_width_strategy_{format}"
 option = "integer_width_strategy"
+
+[axes.json_type_call_result]
+plan = "filtered"
+base = "json_type"
+gates = [
+  { kind = "capability_flag", flag = "supports_json_call_result_binding" },
+]
 
 [axes.language_version]
 plan = "every_non_default_member"

@@ -8,3 +8,6 @@ per_element = false
 wrap_in_file = true
 variable_form = "new"
 requires_call_returns_expression = true
+
+[[call.variants]]
+axis = "json_type_call_result"

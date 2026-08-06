@@ -8,3 +8,6 @@ per_element = true
 comment_source = ["first: */ |# -} *) ) =# ]] %} ]# % #>", "", "third: */ |# -} *) ) =# ]] %} ]# % #>"]
 requires_standalone_wrapped_comments = true
 variant_only = true
+
+[[call.variants]]
+axis = "comment_terminator_call"

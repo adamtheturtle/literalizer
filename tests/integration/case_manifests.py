@@ -225,6 +225,37 @@ def _empty_variants() -> list[ManifestVariant]:
     return []
 
 
+class CallManifestVariant(
+    BaseModel,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One call case's participation in a named, typed variant axis.
+
+    A call golden is named by the language variant alone, so a call
+    case names an axis and nothing else.
+    """
+
+    axis: Annotated[str, Field(min_length=1)]
+
+    @model_validator(mode="after")
+    def _validate_known_axis(self) -> CallManifestVariant:
+        """Reject an axis name no expansion answers to."""
+        if self.axis not in KNOWN_VARIANT_AXES:
+            msg = f"unknown variant axis {self.axis!r}"
+            raise ValueError(msg)
+        return self
+
+
+def _empty_call_variants() -> list[CallManifestVariant]:
+    """Return a typed empty call-variant list for the validation
+    model.
+    """
+    return []
+
+
 def _empty_names() -> tuple[str, ...]:
     """Return a typed empty name tuple for the validation model."""
     return ()
@@ -412,10 +443,35 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     # When ``True``, only languages whose default configuration can
     # represent heterogeneous dict values participate in the case.
     requires_heterogeneous_dict_values: bool = False
+    # The language-variant axes that drive this case in addition to (or
+    # instead of, with ``variant_only``) the default per-language call
+    # matrix.  Each axis expands to the specs the case is rendered
+    # with, so a case that the default spec rejects names the axis whose
+    # specs can represent its input.
+    variants: list[CallManifestVariant] = Field(
+        default_factory=_empty_call_variants,
+    )
     # When ``True`` the case is driven only by the call *variant*
     # suite, so the default per-language call matrix needs no
     # case-specific opt-out.
     variant_only: bool = False
+
+    @model_validator(mode="after")
+    def _validate_call_variants(self) -> CallCaseSpec:
+        """Validate the variant coverage a call case declares.
+
+        A case names each axis once, and one that opts out of the
+        default per-language matrix names at least one, so no call case
+        declares itself into having no coverage at all.
+        """
+        axes = [entry.axis for entry in self.variants]
+        if len(axes) != len(set(axes)):
+            msg = "duplicate call variant axis"
+            raise ValueError(msg)
+        if self.variant_only and not self.variants:
+            msg = "variant_only requires at least one call variant axis"
+            raise ValueError(msg)
+        return self
 
 
 class _CaseManifestData(
