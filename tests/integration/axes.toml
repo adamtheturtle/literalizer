@@ -260,11 +260,68 @@ plan = "every_non_default_member"
 name_template = "{lang}_integer_width_strategy_{format}"
 option = "integer_width_strategy"
 
+# The settings a language may take are ``None`` -- the narrow rendering
+# with no JSON value type -- together with each member of its
+# ``JsonTypes`` enum.  The JSON-capable languages default to ``None``
+# and gain their value type here, while D defaults to its only value
+# type and narrows back.  A language whose value type is better known by
+# its representation than by its member name declares that name itself.
+[axes.json_type]
+plan = "every_non_default_member"
+name_template = "{lang}_json_type_{format}"
+option = "json_type"
+unset_member_name = "narrow"
+member_name_source = "json_type_variant_name_suffix"
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[axes.json_type_bytes_cross]
+plan = "cross_product"
+name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
+primary_axis = "json_type"
+secondaries = [{ tag = "bytes", option = "configured_bytes_format" }]
+
 [axes.json_type_call_result]
 plan = "filtered"
 base = "json_type"
 gates = [
   { kind = "capability_flag", flag = "supports_json_call_result_binding" },
+]
+
+[axes.json_type_datetime_cross]
+plan = "cross_product"
+name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
+primary_axis = "json_type"
+secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
+
+# A declaration style a JSON value type cannot be declared under is
+# skipped: the pairing is rejected upfront rather than rendered.
+[axes.json_type_declaration_cross]
+plan = "cross_product"
+name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
+primary_axis = "json_type"
+skip_incompatible_formats = true
+secondaries = [
+  { tag = "declaration_style", option = "declaration_style", declaration_style_sequence_override = true },
+]
+
+[axes.json_type_language_version_cross]
+plan = "cross_product"
+name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
+primary_axis = "json_type"
+secondaries = [{ tag = "version", option = "language_version" }]
+
+# The shape keys, the shape name and the strategy that puts them to work
+# are the ones ``error_record_shape_names`` declares; this pairs them
+# with each JSON value type.  Unlike that axis, the fixture hosts no
+# external shape declaration: the JSON inputs render the shape inline.
+[axes.json_type_record_shape_names_cross]
+plan = "fixed_overrides"
+name_template = "{lang}_json_type_{format}_record_shape_names_{value}"
+primary_axis = "json_type"
+overrides_from = "error_record_shape_names"
+record_language_version = true
+gates = [
+  { kind = "capability_flag", flag = "supports_record_shape_names" },
 ]
 
 [axes.language_version]

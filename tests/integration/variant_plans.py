@@ -11,12 +11,14 @@ through a closed registry declared here, so an unknown name, an unknown
 plan, an unknown gate kind, or an unknown name-template placeholder
 fails when the registry loads rather than when a golden file is built.
 
-Axes whose expansion is genuinely irregular (the ``json_type`` family,
-the layout-pair widening cases) stay as registered escape-hatch
+Axes whose expansion is genuinely irregular (the layout-pair widening
+cases, a handful of one-off shapes) stay as registered escape-hatch
 builders in :mod:`variant_cases`.  A ``filtered`` plan narrows any
 axis, declared or irregular, to the languages its gates admit, so a
 suite needing a smaller slice of an existing expansion names one rather
-than writing its own builder.
+than writing its own builder.  A plan may also start from another
+declared axis, either pairing its own settings with that axis's option
+values or reusing its overrides outright.
 """
 
 import dataclasses
@@ -38,6 +40,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field, ValidationError
 
 import literalizer
+from literalizer.exceptions import IncompatibleFormatsError
 
 from .language_metadata import (
     LanguageMetadata,
@@ -101,6 +104,27 @@ class _HasUnionFormat(Protocol):
     union_formats: type[enum.Enum]
 
 
+@runtime_checkable
+class _HasJsonType(Protocol):
+    """A spec exposing a JSON value-type representation.
+
+    Languages without one omit the ``json_type`` constructor field
+    entirely, so a ``spec_field_present`` gate selects the languages
+    this reads from.
+    """
+
+    json_type: enum.Enum | None
+    json_types: type[enum.Enum]
+
+
+@runtime_checkable
+class _HasBytesFormat(Protocol):
+    """A spec exposing the configured bytes format."""
+
+    bytes_format: enum.Enum
+    bytes_formats: type[enum.Enum]
+
+
 @beartype
 def _bool_format(spec: literalizer.Language) -> object:
     """Return the configured boolean literal spelling."""
@@ -157,6 +181,34 @@ def _union_formats(spec: literalizer.Language) -> type[enum.Enum]:
     return spec.union_formats
 
 
+@beartype
+def _json_type(spec: literalizer.Language) -> object:
+    """Return the configured JSON value type, if any."""
+    assert isinstance(spec, _HasJsonType)  # noqa: S101
+    return spec.json_type
+
+
+@beartype
+def _json_types(spec: literalizer.Language) -> type[enum.Enum]:
+    """Return the JSON value types a language offers."""
+    assert isinstance(spec, _HasJsonType)  # noqa: S101
+    return spec.json_types
+
+
+@beartype
+def _configured_bytes_format(spec: literalizer.Language) -> object:
+    """Return the configured bytes format, despite JSON overrides."""
+    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
+    return spec.bytes_format
+
+
+@beartype
+def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
+    """Return the bytes formats a language offers."""
+    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
+    return spec.bytes_formats
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _Option:
     """One configurable formatter option a plan can select values from.
@@ -192,6 +244,15 @@ _OPTIONS: Mapping[str, _Option] = {
         kwarg="comment_format",
         get_default=lambda spec: spec.comment_format,
         get_members=lambda spec: spec.comment_formats,
+    ),
+    # ``bytes_format`` reads the derived ``format_bytes``, which a JSON
+    # value type overrides; ``configured_bytes_format`` reads the field
+    # the constructor set, so an axis crossing the two still expands
+    # every non-default bytes format.
+    "configured_bytes_format": _Option(
+        kwarg="bytes_format",
+        get_default=_configured_bytes_format,
+        get_members=_bytes_formats,
     ),
     # ``date_format`` and ``datetime_format`` read the derived
     # ``format_date``/``format_datetime`` callable, which Haskell, OCaml
@@ -259,6 +320,11 @@ _OPTIONS: Mapping[str, _Option] = {
         kwarg="integer_width_strategy",
         get_default=lambda spec: spec.integer_width_strategy,
         get_members=lambda spec: spec.integer_width_strategies,
+    ),
+    "json_type": _Option(
+        kwarg="json_type",
+        get_default=_json_type,
+        get_members=_json_types,
     ),
     "language_version": _Option(
         kwarg="language_version",
@@ -341,6 +407,18 @@ _CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     ),
 }
 
+# Language-owned replacements for the enum member name a plan would
+# otherwise put in a variant name.  A language declaring one names its
+# variants after the representation rather than the member.
+_MEMBER_NAME_SOURCES: Mapping[
+    str,
+    Callable[[literalizer.LanguageCls], str | None],
+] = {
+    "json_type_variant_name_suffix": (
+        lambda lang_cls: lang_cls.json_type_variant_name_suffix
+    ),
+}
+
 _METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
     "heterogeneous_value_variant_name_language_version": (
         lambda metadata: (
@@ -362,6 +440,7 @@ _SPEC_FIELDS = frozenset(
         "annotation_evaluation",
         "bool_format",
         "empty_dict_key",
+        "json_type",
         "union_format",
     }
 )
@@ -540,11 +619,19 @@ class _EveryNonDefaultMemberPlan(
     frozen=True,
     strict=True,
 ):
-    """One variant per non-default member of one formatter option."""
+    """One variant per non-default member of one formatter option.
+
+    ``unset_member_name`` adds the unset value to the members expanded
+    over, under that name, for an option a language may turn off as well
+    as choose between.  ``member_name_source`` names the language
+    attribute that replaces a member's own name in a variant name.
+    """
 
     plan: Literal["every_non_default_member"]
     name_template: Annotated[str, Field(min_length=1)]
     option: Annotated[str, Field(min_length=1)]
+    unset_member_name: Annotated[str, Field(min_length=1)] | None = None
+    member_name_source: Annotated[str, Field(min_length=1)] | None = None
     excluded_members: list[str] = Field(default_factory=_no_excluded_members)
     declaration_style_sequence_override: bool = False
     per_version: bool = False
@@ -558,10 +645,18 @@ class _FixedOverridesPlan(
     frozen=True,
     strict=True,
 ):
-    """One variant per admitted language, from fixed overrides."""
+    """One variant per admitted language, from fixed overrides.
+
+    ``primary_axis`` repeats those overrides once per variant of another
+    axis, which supplies the option value and the ``{format}`` half of
+    the name.  ``overrides_from`` reuses another axis's overrides, so a
+    setting two axes share is declared once.
+    """
 
     plan: Literal["fixed_overrides"]
     name_template: Annotated[str, Field(min_length=1)]
+    primary_axis: Annotated[str, Field(min_length=1)] | None = None
+    overrides_from: Annotated[str, Field(min_length=1)] | None = None
     record_language_version: bool = False
     external_record_shape_fixture: bool = False
     per_version: bool = False
@@ -594,18 +689,26 @@ class _CrossProductPlan(
 ):
     """One variant per pairing of two options' non-default members.
 
-    ``primary`` expands over its own non-default members.  Omitting it
-    pins the first half of the product to whatever the overrides select,
-    as the ``RECORD`` numeric crosses do.
+    ``primary`` expands over its own non-default members, and
+    ``primary_axis`` instead takes that first half from another declared
+    axis, whose variant names the pairing extends.  Omitting both pins
+    the first half to whatever the overrides select, as the ``RECORD``
+    numeric crosses do.
+
+    ``skip_incompatible_formats`` drops the pairings a language rejects
+    upfront, for an option whose members are not all compatible with the
+    first half.
     """
 
     plan: Literal["cross_product"]
     name_template: Annotated[str, Field(min_length=1)]
     secondaries: Annotated[list[_CrossSecondary], Field(min_length=1)]
     primary: Annotated[str, Field(min_length=1)] | None = None
+    primary_axis: Annotated[str, Field(min_length=1)] | None = None
     excluded_primary_members: list[str] = Field(
         default_factory=_no_excluded_members
     )
+    skip_incompatible_formats: bool = False
     per_version: bool = False
     gates: list[_Gate] = Field(default_factory=_no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
@@ -732,6 +835,26 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
         axis=axis,
         gate_options=_validate_gates(axis_key=axis_key, gates=axis.gates),
     )
+    if (
+        isinstance(axis, _CrossProductPlan)
+        and axis.primary is not None
+        and axis.primary_axis is not None
+    ):
+        msg = (
+            f"axis {axis_key!r}: declares both a 'primary' option and a "
+            "'primary_axis'"
+        )
+        raise AxisPlanError(msg)
+    if (
+        isinstance(axis, _EveryNonDefaultMemberPlan)
+        and axis.member_name_source is not None
+        and axis.member_name_source not in _MEMBER_NAME_SOURCES
+    ):
+        msg = (
+            f"axis {axis_key!r}: unknown member name source "
+            f"{axis.member_name_source!r}"
+        )
+        raise AxisPlanError(msg)
     for override in axis.overrides:
         if (
             isinstance(override, _MetadataEnumMemberOverride)
@@ -750,11 +873,14 @@ def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
         case _EveryNonDefaultMemberPlan():
             return frozenset({_LANG_PLACEHOLDER, _FORMAT_PLACEHOLDER})
         case _FixedOverridesPlan():
-            return frozenset({_LANG_PLACEHOLDER, _VALUE_PLACEHOLDER})
+            named = frozenset({_LANG_PLACEHOLDER, _VALUE_PLACEHOLDER})
+            if axis.primary_axis is None:
+                return named
+            return named | {_FORMAT_PLACEHOLDER}
         case _CrossProductPlan():
             primary = (
                 frozenset[str]()
-                if axis.primary is None
+                if axis.primary is None and axis.primary_axis is None
                 else frozenset({_FORMAT_PLACEHOLDER})
             )
             return primary | {
@@ -778,6 +904,15 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
         msg = (
             f"axis {axis_key!r}: unknown name-template placeholder(s) "
             f"{unknown}"
+        )
+        raise AxisPlanError(msg)
+    needs_format = (
+        isinstance(axis, _FixedOverridesPlan) and axis.primary_axis is not None
+    )
+    if needs_format and _FORMAT_PLACEHOLDER not in used:
+        msg = (
+            f"axis {axis_key!r}: name template omits placeholder(s) "
+            f"['{_FORMAT_PLACEHOLDER}']"
         )
         raise AxisPlanError(msg)
     if isinstance(axis, _CrossProductPlan):
@@ -806,6 +941,130 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
             "needs exactly one override marked 'name_value'"
         )
         raise AxisPlanError(msg)
+
+
+@beartype
+def _primary_axis_plan(
+    *,
+    axis_key: str,
+    primary_axis: str,
+    axes: Mapping[str, _Axis],
+) -> _EveryNonDefaultMemberPlan:
+    """Return the axis a plan takes the first half of its pairings
+    from.
+
+    Only a member expansion can supply that half: the pairing repeats
+    one option's members, and carries neither the base's overrides nor
+    its name template.
+    """
+    base = axes.get(primary_axis)
+    if not isinstance(base, _EveryNonDefaultMemberPlan):
+        msg = (
+            f"axis {axis_key!r}: primary axis {primary_axis!r} is not a "
+            "declared 'every_non_default_member' axis"
+        )
+        raise AxisPlanError(msg)
+    if base.overrides:
+        msg = (
+            f"axis {axis_key!r}: primary axis {primary_axis!r} declares "
+            "overrides, which a pairing does not carry"
+        )
+        raise AxisPlanError(msg)
+    return base
+
+
+@beartype
+def _primary_plan_for(
+    *,
+    axis_key: str,
+    axis: _ExpandedAxis,
+    axes: Mapping[str, _Axis],
+) -> _EveryNonDefaultMemberPlan | None:
+    """Return the axis *axis* pairs its overrides and secondaries
+    with.
+    """
+    if isinstance(axis, _EveryNonDefaultMemberPlan) or (
+        axis.primary_axis is None
+    ):
+        return None
+    return _primary_axis_plan(
+        axis_key=axis_key,
+        primary_axis=axis.primary_axis,
+        axes=axes,
+    )
+
+
+@beartype
+def _shared_overrides(
+    *,
+    axis_key: str,
+    overrides_from: str,
+    axes: Mapping[str, _Axis],
+) -> list[_Override]:
+    """Return the overrides an axis reuses from another axis."""
+    source = axes.get(overrides_from)
+    if not isinstance(
+        source,
+        _EveryNonDefaultMemberPlan | _FixedOverridesPlan | _CrossProductPlan,
+    ):
+        msg = f"axis {axis_key!r}: unknown overrides source {overrides_from!r}"
+        raise AxisPlanError(msg)
+    if isinstance(source, _FixedOverridesPlan) and (
+        source.overrides_from is not None
+    ):
+        msg = (
+            f"axis {axis_key!r}: overrides source {overrides_from!r} reuses "
+            "overrides itself"
+        )
+        raise AxisPlanError(msg)
+    return source.overrides
+
+
+@beartype
+def _resolved_axis(
+    *,
+    axis_key: str,
+    axis: _Axis,
+    axes: Mapping[str, _Axis],
+) -> _Axis:
+    """Return *axis* with any reused overrides spliced in.
+
+    Reuse is resolved once, when the registry loads, so everything
+    downstream sees one override list however it was declared.
+    """
+    if not isinstance(axis, _FixedOverridesPlan) or (
+        axis.overrides_from is None
+    ):
+        return axis
+    shared = _shared_overrides(
+        axis_key=axis_key,
+        overrides_from=axis.overrides_from,
+        axes=axes,
+    )
+    return axis.model_copy(
+        update={
+            "overrides": [*shared, *axis.overrides],
+            "overrides_from": None,
+        }
+    )
+
+
+@beartype
+def _validate_references(
+    *,
+    axis_key: str,
+    axis: _Axis,
+    axes: Mapping[str, _Axis],
+) -> None:
+    """Check the axes one axis names against the loaded registry."""
+    if isinstance(axis, _FixedOverridesPlan | _CrossProductPlan) and (
+        axis.primary_axis is not None
+    ):
+        _primary_axis_plan(
+            axis_key=axis_key,
+            primary_axis=axis.primary_axis,
+            axes=axes,
+        )
 
 
 @beartype
@@ -845,9 +1104,18 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
     except ValidationError as exc:
         msg = f"{path}: {exc}"
         raise AxisPlanError(msg) from exc
-    for axis_key, axis in data.axes.items():
+    axes = {
+        axis_key: _resolved_axis(
+            axis_key=axis_key,
+            axis=axis,
+            axes=data.axes,
+        )
+        for axis_key, axis in data.axes.items()
+    }
+    for axis_key, axis in axes.items():
         _validate_axis(axis_key=axis_key, axis=axis)
-    return data.axes
+        _validate_references(axis_key=axis_key, axis=axis, axes=axes)
+    return axes
 
 
 @beartype
@@ -880,6 +1148,17 @@ class _PrimaryChoice:
 
     kwargs: Mapping[str, object]
     format_name: str | None
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _MemberExpansion:
+    """How an axis walks one option's members into named values."""
+
+    option_key: str
+    excluded_members: frozenset[str]
+    unset_member_name: str | None
+    member_name_source: str | None
+    declaration_style_sequence_override: bool
 
 
 @beartype
@@ -1062,7 +1341,7 @@ def _record_language_version(
 
 
 @beartype
-def _sequence_format_override(
+def sequence_format_override(
     *,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
@@ -1082,37 +1361,133 @@ def _sequence_format_override(
 
 
 @beartype
+def _member_expansion(*, axis: _EveryNonDefaultMemberPlan) -> _MemberExpansion:
+    """Return how a declared member expansion walks its option."""
+    return _MemberExpansion(
+        option_key=axis.option,
+        excluded_members=frozenset(axis.excluded_members),
+        unset_member_name=axis.unset_member_name,
+        member_name_source=axis.member_name_source,
+        declaration_style_sequence_override=(
+            axis.declaration_style_sequence_override
+        ),
+    )
+
+
+@beartype
+def _member_name(
+    *,
+    expansion: _MemberExpansion,
+    lang_cls: literalizer.LanguageCls,
+    member: enum.Enum,
+) -> str:
+    """Return the name a selected member contributes to a variant
+    name.
+    """
+    if expansion.member_name_source is None:
+        return member.name.lower()
+    source = _MEMBER_NAME_SOURCES[expansion.member_name_source]
+    declared = source(lang_cls)
+    if declared is None:
+        return member.name.lower()
+    return declared
+
+
+@beartype
+def _member_choices(
+    *,
+    expansion: _MemberExpansion,
+    lang_cls: literalizer.LanguageCls,
+    metadata: LanguageMetadata,
+    default_spec: literalizer.Language,
+) -> list[_PrimaryChoice]:
+    """Return the values one option takes for a single language."""
+    option = _OPTIONS[expansion.option_key]
+    default = option.get_default(default_spec)
+    choices: list[_PrimaryChoice] = []
+    if expansion.unset_member_name is not None and default is not None:
+        choices.append(
+            _PrimaryChoice(
+                kwargs={option.kwarg: None},
+                format_name=expansion.unset_member_name,
+            )
+        )
+    for member in option.get_members(default_spec):
+        if member is default or member.name in expansion.excluded_members:
+            continue
+        kwargs: dict[str, object] = {option.kwarg: member}
+        if expansion.declaration_style_sequence_override:
+            kwargs.update(
+                sequence_format_override(
+                    metadata=metadata,
+                    default_spec=default_spec,
+                    declaration_style=member,
+                )
+            )
+        choices.append(
+            _PrimaryChoice(
+                kwargs=kwargs,
+                format_name=_member_name(
+                    expansion=expansion,
+                    lang_cls=lang_cls,
+                    member=member,
+                ),
+            )
+        )
+    return choices
+
+
+@beartype
 def _primary_choices(
     *,
     axis: _CrossProductPlan,
+    primary_plan: _EveryNonDefaultMemberPlan | None,
+    lang_cls: literalizer.LanguageCls,
+    metadata: LanguageMetadata,
     default_spec: literalizer.Language,
 ) -> list[_PrimaryChoice]:
     """Return the values a cross product's first half takes."""
+    if primary_plan is not None:
+        return _member_choices(
+            expansion=_member_expansion(axis=primary_plan),
+            lang_cls=lang_cls,
+            metadata=metadata,
+            default_spec=default_spec,
+        )
     if axis.primary is None:
         return [_PrimaryChoice(kwargs={}, format_name=None)]
-    option = _OPTIONS[axis.primary]
-    default = option.get_default(default_spec)
-    excluded = frozenset(axis.excluded_primary_members)
-    return [
-        _PrimaryChoice(
-            kwargs={option.kwarg: member},
-            format_name=member.name.lower(),
-        )
-        for member in option.get_members(default_spec)
-        if member is not default and member.name not in excluded
-    ]
+    return _member_choices(
+        expansion=_MemberExpansion(
+            option_key=axis.primary,
+            excluded_members=frozenset(axis.excluded_primary_members),
+            unset_member_name=None,
+            member_name_source=None,
+            declaration_style_sequence_override=False,
+        ),
+        lang_cls=lang_cls,
+        metadata=metadata,
+        default_spec=default_spec,
+    )
 
 
 @beartype
 def _cross_selections(
     *,
     axis: _CrossProductPlan,
+    primary_plan: _EveryNonDefaultMemberPlan | None,
+    lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
 ) -> list[_Selection]:
     """Return every pairing a cross product selects for one language."""
     selections: list[_Selection] = []
-    for primary in _primary_choices(axis=axis, default_spec=default_spec):
+    for primary in _primary_choices(
+        axis=axis,
+        primary_plan=primary_plan,
+        lang_cls=lang_cls,
+        metadata=metadata,
+        default_spec=default_spec,
+    ):
         for secondary in axis.secondaries:
             option = _OPTIONS[secondary.option]
             default = option.get_default(default_spec)
@@ -1125,7 +1500,7 @@ def _cross_selections(
                 }
                 if secondary.declaration_style_sequence_override:
                     kwargs.update(
-                        _sequence_format_override(
+                        sequence_format_override(
                             metadata=metadata,
                             default_spec=default_spec,
                             declaration_style=member,
@@ -1143,14 +1518,39 @@ def _cross_selections(
 
 
 @beartype
+def _choice_selections(*, choices: list[_PrimaryChoice]) -> list[_Selection]:
+    """Return one unpaired selection per option value."""
+    return [
+        _Selection(
+            kwargs=choice.kwargs,
+            format_name=choice.format_name,
+            tag=None,
+            secondary_name=None,
+        )
+        for choice in choices
+    ]
+
+
+@beartype
 def _selections(
     *,
     axis: _ExpandedAxis,
+    primary_plan: _EveryNonDefaultMemberPlan | None,
+    lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
 ) -> list[_Selection]:
     """Return the option values an axis selects for one language."""
     match axis:
+        case _FixedOverridesPlan() if primary_plan is not None:
+            return _choice_selections(
+                choices=_member_choices(
+                    expansion=_member_expansion(axis=primary_plan),
+                    lang_cls=lang_cls,
+                    metadata=metadata,
+                    default_spec=default_spec,
+                )
+            )
         case _FixedOverridesPlan():
             return [
                 _Selection(
@@ -1163,35 +1563,20 @@ def _selections(
         case _CrossProductPlan():
             return _cross_selections(
                 axis=axis,
+                primary_plan=primary_plan,
+                lang_cls=lang_cls,
                 metadata=metadata,
                 default_spec=default_spec,
             )
         case _EveryNonDefaultMemberPlan():
-            option = _OPTIONS[axis.option]
-            default = option.get_default(default_spec)
-            excluded = frozenset(axis.excluded_members)
-            selections: list[_Selection] = []
-            for member in option.get_members(default_spec):
-                if member is default or member.name in excluded:
-                    continue
-                kwargs: dict[str, object] = {option.kwarg: member}
-                if axis.declaration_style_sequence_override:
-                    kwargs.update(
-                        _sequence_format_override(
-                            metadata=metadata,
-                            default_spec=default_spec,
-                            declaration_style=member,
-                        )
-                    )
-                selections.append(
-                    _Selection(
-                        kwargs=kwargs,
-                        format_name=member.name.lower(),
-                        tag=None,
-                        secondary_name=None,
-                    )
+            return _choice_selections(
+                choices=_member_choices(
+                    expansion=_member_expansion(axis=axis),
+                    lang_cls=lang_cls,
+                    metadata=metadata,
+                    default_spec=default_spec,
                 )
-            return selections
+            )
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -1210,9 +1595,38 @@ def _language_versions(
 
 
 @beartype
-def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
+def _paired_spec(
+    *,
+    axis: _ExpandedAxis,
+    lang_cls: literalizer.LanguageCls,
+    kwargs: Mapping[str, object],
+) -> literalizer.Language | None:
+    """Return the spec for one pairing, or ``None`` if rejected.
+
+    A cross product may pair option members a language rejects upfront;
+    such a pairing has no golden file rather than a failing one.
+    """
+    skips = isinstance(axis, _CrossProductPlan) and (
+        axis.skip_incompatible_formats
+    )
+    if not skips:
+        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+    try:
+        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+    except IncompatibleFormatsError:
+        return None
+
+
+@beartype
+def _axis_variants(
+    *,
+    axis_key: str,
+    axis: _ExpandedAxis,
+    primary_plan: _EveryNonDefaultMemberPlan | None,
+) -> list[Variant]:
     """Expand one declared axis into its variants."""
     variants: list[Variant] = []
+    primary_gates = [] if primary_plan is None else primary_plan.gates
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         default_spec = make_spec(lang_cls=lang_cls)
@@ -1223,7 +1637,7 @@ def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
                 metadata=metadata,
                 default_spec=default_spec,
             )
-            for gate in axis.gates
+            for gate in [*primary_gates, *axis.gates]
         ):
             continue
         resolved = _resolve_overrides(
@@ -1247,6 +1661,8 @@ def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
                 )
         for selection in _selections(
             axis=axis,
+            primary_plan=primary_plan,
+            lang_cls=lang_cls,
             metadata=metadata,
             default_spec=default_spec,
         ):
@@ -1257,28 +1673,34 @@ def _axis_variants(*, axis_key: str, axis: _ExpandedAxis) -> list[Variant]:
                 tag=selection.tag,
                 secondary=selection.secondary_name,
             )
-            variants.extend(
-                Variant(
-                    name=name,
-                    spec=_build_spec(
-                        lang_cls=lang_cls,
-                        kwargs={
-                            **resolved.kwargs,
-                            **selection.kwargs,
-                            **record_version,
-                            **version,
-                        },
-                    ),
-                    lang_cls=lang_cls,
-                    collection_layout=literalizer.CollectionLayout.COMPACT,
-                    fixture_prefix=fixture_prefix,
-                    record_null_substitutions=None,
-                )
-                for version in _language_versions(
+            for version in _language_versions(
+                axis=axis,
+                default_spec=default_spec,
+            ):
+                spec = _paired_spec(
                     axis=axis,
-                    default_spec=default_spec,
+                    lang_cls=lang_cls,
+                    kwargs={
+                        **resolved.kwargs,
+                        **selection.kwargs,
+                        **record_version,
+                        **version,
+                    },
                 )
-            )
+                if spec is None:
+                    continue
+                variants.append(
+                    Variant(
+                        name=name,
+                        spec=spec,
+                        lang_cls=lang_cls,
+                        collection_layout=(
+                            literalizer.CollectionLayout.COMPACT
+                        ),
+                        fixture_prefix=fixture_prefix,
+                        record_null_substitutions=None,
+                    )
+                )
     return variants
 
 
@@ -1352,4 +1774,12 @@ def variants_for_registry_axis(
                 base=resolve_axis(axis_key=axis.base),
             )
         case _:
-            return _axis_variants(axis_key=axis_key, axis=axis)
+            return _axis_variants(
+                axis_key=axis_key,
+                axis=axis,
+                primary_plan=_primary_plan_for(
+                    axis_key=axis_key,
+                    axis=axis,
+                    axes=registry,
+                ),
+            )

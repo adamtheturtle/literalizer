@@ -4,10 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from literalizer.languages import ALL_LANGUAGES
+
 from .case_manifests import CaseManifestError
+from .language_specs import make_spec
 from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
 from .variant_cases import (
     ESCAPE_HATCH_VARIANT_AXES,
+    _HasJsonType,  # pyright: ignore[reportPrivateUsage]
     check_axis_coverage,
     variants_for_axis,
 )
@@ -29,12 +33,6 @@ _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
         "dhall_nested_map_widening",
         "empty_container_type_hint",
         "empty_map_narrowing",
-        "json_type",
-        "json_type_bytes_cross",
-        "json_type_datetime_cross",
-        "json_type_declaration_cross",
-        "json_type_language_version_cross",
-        "json_type_record_shape_names_cross",
         "multiline_raw_string_delimiter",
         "nested_map_widening",
         "record_nested_map_fallback",
@@ -76,6 +74,41 @@ plan = "cross_product"
 name_template = "{lang}_example_{format}_{tag}_{secondary}"
 primary = "date_format"
 secondaries = [{ tag = "dt", option = "datetime_format" }]
+"""
+
+_VALID_PAIRED_AXES = """
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example_{format}"
+primary_axis = "base"
+"""
+
+_CHAINED_OVERRIDES_AXES = """
+schema_version = 1
+
+[axes.source]
+plan = "fixed_overrides"
+name_template = "{lang}_source"
+overrides = [
+  { kind = "true_flag", kwarg = "record_unify_optional_fields" },
+]
+
+[axes.other]
+plan = "fixed_overrides"
+name_template = "{lang}_other"
+overrides_from = "source"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides_from = "other"
 """
 
 
@@ -138,6 +171,46 @@ def test_filtered_axis_narrows_its_base() -> None:
         for variant in base
         if variant.lang_cls.supports_json_call_result_binding
     ]
+
+
+def test_json_type_axis_covers_every_capable_language() -> None:
+    """Every language with a JSON value type gets JSON-type variants.
+
+    The axis selects languages by the presence of the ``json_type``
+    field, so a future JSON-capable language cannot land without
+    coverage.
+    """
+    supported = {
+        lang_cls
+        for lang_cls in ALL_LANGUAGES
+        if isinstance(make_spec(lang_cls=lang_cls), _HasJsonType)
+    }
+    covered = {
+        variant.lang_cls for variant in variants_for_axis(axis_key="json_type")
+    }
+
+    assert covered == supported
+
+
+def test_json_type_name_suffixes_rename_a_member() -> None:
+    """A declared JSON-type variant name suffix does something.
+
+    The suffix belongs to a JSON-capable language and differs from the
+    member name it stands in for, so neither a dead override nor a
+    silent duplicate of the member name survives.
+    """
+    for lang_cls in ALL_LANGUAGES:
+        suffix = lang_cls.json_type_variant_name_suffix
+        if suffix is None:
+            continue
+        spec = make_spec(lang_cls=lang_cls)
+
+        assert isinstance(spec, _HasJsonType), lang_cls.__name__
+        assert suffix not in {
+            member.name.lower()
+            for member in spec.json_types
+            if member is not spec.json_type
+        }, lang_cls.__name__
 
 
 def test_unknown_axis_is_actionable() -> None:
@@ -231,6 +304,44 @@ def test_unknown_axis_is_actionable() -> None:
                 'option = "vibe"',
             ),
             "unknown option 'vibe'",
+        ),
+        (
+            _VALID_AXIS + 'member_name_source = "vibes"\n',
+            "unknown member name source 'vibes'",
+        ),
+        (
+            _VALID_CROSS_AXIS + 'primary_axis = "date"\n',
+            "declares both a 'primary' option and a 'primary_axis'",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace("{lang}_example_{format}", "{lang}_x"),
+            r"name template omits placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace('primary_axis = "base"', ""),
+            r"unknown name-template placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace(
+                'primary_axis = "base"', 'primary_axis = "vibes"'
+            ),
+            "primary axis 'vibes' is not a declared",
+        ),
+        (
+            _VALID_PAIRED_AXES
+            + (
+                '[[axes.base.overrides]]\nkind = "true_flag"\n'
+                'kwarg = "record_unify_optional_fields"\n'
+            ),
+            "primary axis 'base' declares overrides",
+        ),
+        (
+            _VALID_FIXED_AXIS + 'overrides_from = "vibes"\n',
+            "unknown overrides source 'vibes'",
+        ),
+        (
+            _CHAINED_OVERRIDES_AXES,
+            "overrides source 'other' reuses overrides itself",
         ),
         (
             _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "vibes"'),
