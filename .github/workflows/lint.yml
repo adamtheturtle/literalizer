@@ -1517,7 +1517,17 @@ jobs:
       # Groovy ``>= V4``.
       - name: Install Groovy
         run: |-
-          curl -fsSL https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip -o /tmp/groovy.zip
+          # ``archive.apache.org`` intermittently refuses connections.
+          # curl's default retry delay backs off exponentially. Bound
+          # both the retry window and each individual attempt so a
+          # persistent archive failure still terminates the job. The
+          # distribution is tens of megabytes, so ``--max-time`` is
+          # looser than the small-jar downloads elsewhere in this file.
+          curl --fail --show-error --silent --location \
+            --retry 5 --retry-all-errors --retry-max-time 180 \
+            --connect-timeout 15 --max-time 120 \
+            https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
+            --output /tmp/groovy.zip
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
