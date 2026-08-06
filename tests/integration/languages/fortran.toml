@@ -1,1 +1,12 @@
 schema_version = 1
+
+[variants.non_default_kwargs]
+null_name = "jnull"
+bool_name = "jbool"
+int_name = "jint"
+real_name = "jreal"
+str_name = "jstr"
+list_name = "jlist"
+map_name = "jmap"
+set_name = "jset"
+entry_name = "jentry"

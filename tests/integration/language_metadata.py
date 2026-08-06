@@ -57,6 +57,11 @@ def _empty_record_variants() -> list[RecordVariantName]:
     return []
 
 
+def _empty_string_mapping() -> dict[str, str]:
+    """Return a typed empty string mapping for the model."""
+    return {}
+
+
 class GoldenPolicy(
     BaseModel,
     extra="forbid",
@@ -138,6 +143,28 @@ class VariantPolicy(
     empty_container_type_hint: EmptyContainerTypeHintVariant | None = None
     """Settings for the empty-container-hint golden, when it runs."""
 
+    non_default_kwargs: dict[
+        Annotated[str, Field(min_length=1)],
+        Annotated[str, Field(min_length=1)],
+    ] = Field(default_factory=_empty_string_mapping)
+    """Sample non-default values the golden suite passes to a language.
+
+    Keys are constructor field names.  These are chosen fixture inputs,
+    not capabilities: a language supports an option whether or not this
+    file names a value to exercise it with.
+    """
+
+    declaration_style_sequence_format_overrides: dict[
+        Annotated[str, Field(min_length=1)],
+        Annotated[str, Field(min_length=1)],
+    ] = Field(default_factory=_empty_string_mapping)
+    """Sequence formats the declaration-style goldens substitute in.
+
+    Production rejects the incompatible pairing itself, in
+    ``__post_init__``; this only records which compatible format the
+    fixture picks instead so that it keeps compiling.
+    """
+
     def validate_consistency(self) -> None:
         """Validate relationships that span variant fields."""
         if len(self.record) != len(set(self.record)):
@@ -172,6 +199,18 @@ class LanguageMetadata:
     def record_variants(self) -> frozenset[RecordVariantName]:
         """Return the focused record variants this language opts into."""
         return frozenset(self.variants.record)
+
+    @property
+    def non_default_kwargs(self) -> Mapping[str, str]:
+        """Return the sample constructor values this suite passes in."""
+        return dict(self.variants.non_default_kwargs)
+
+    @property
+    def declaration_style_sequence_format_overrides(
+        self,
+    ) -> Mapping[str, str]:
+        """Return the sequence formats declaration-style cases use."""
+        return dict(self.variants.declaration_style_sequence_format_overrides)
 
 
 def _fail(*, path: Path, message: str) -> LanguageMetadataError:

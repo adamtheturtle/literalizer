@@ -455,7 +455,8 @@ def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
             ),
             None,
         )
-        dict_value_type = lang_cls.non_default_kwargs.get(
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        dict_value_type = metadata.non_default_kwargs.get(
             "default_dict_value_type"
         )
         if old_version is None or dict_value_type is None:

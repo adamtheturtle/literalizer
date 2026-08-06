@@ -1,1 +1,7 @@
 schema_version = 1
+
+[variants.non_default_kwargs]
+default_set_element_type = "int"
+default_sequence_element_type = "int"
+default_dict_value_type = "int"
+default_dict_key_type = "int"

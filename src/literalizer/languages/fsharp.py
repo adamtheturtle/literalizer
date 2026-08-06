@@ -570,12 +570,7 @@ class FSharp(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    non_default_kwargs: ClassVar[dict[str, str]] = {
-        "type_name": "JsonVal",
-        "constructor_prefix": "J",
-    }
     json_type_variant_name_suffix = "json_node"
-    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     supports_non_ascii_string_literals = True
     supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True

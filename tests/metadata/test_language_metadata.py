@@ -30,10 +30,8 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
 _LANGUAGE_OWNED_METADATA = frozenset(
     {
         "language_id",
-        "declaration_style_sequence_format_overrides",
         "json_type_variant_name_suffix",
         "record_shape_names_emit_declarations",
-        "non_default_kwargs",
         "supports_empty_sibling_sequence_type_hints",
         "supports_multiline_string_literals",
         "supports_non_ascii_string_literals",

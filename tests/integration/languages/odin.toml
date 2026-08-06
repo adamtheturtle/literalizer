@@ -2,3 +2,6 @@ schema_version = 1
 
 [variants]
 record = ["field_type_split"]
+
+[variants.non_default_kwargs]
+default_set_element_type = "int"

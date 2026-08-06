@@ -3,3 +3,6 @@ schema_version = 1
 [variants]
 record = ["field_type_split", "nonrecord_dict_field"]
 heterogeneous_value_variant_name_strategy = "OBJECT_VARIANT"
+
+[variants.non_default_kwargs]
+heterogeneous_value_variant_name = "JsonValue"

@@ -11,7 +11,15 @@ from .language_metadata import (
     language_metadata_by_id,
     load_language_metadata,
 )
-from .language_specs import sorted_languages
+from .language_specs import make_spec, sorted_languages
+
+_DEFAULT_TYPE_CAPABILITY_FIELDS = (
+    "default_set_element_type",
+    "default_sequence_element_type",
+    "default_dict_value_type",
+    "default_dict_key_type",
+    "default_ordered_map_value_type",
+)
 
 
 def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
@@ -54,6 +62,21 @@ def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
         (
             'schema_version = 1\n[golden]\ncollection_layout_category = ""\n',
             "at least 1 character",
+        ),
+        (
+            (
+                "schema_version = 1\n[variants.non_default_kwargs]\n"
+                'type_name = ""\n'
+            ),
+            "at least 1 character",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                "[variants.declaration_style_sequence_format_overrides]\n"
+                "CONST = 3\n"
+            ),
+            "Input should be a valid string",
         ),
     ],
 )
@@ -114,6 +137,89 @@ def test_no_orphan_metadata_files() -> None:
     declared = {lang_cls.language_id for lang_cls in sorted_languages()}
     loaded = language_metadata_by_id(languages_dir=LANGUAGES_DIR)
     assert set(loaded) == declared
+
+
+def test_non_default_kwargs_change_the_spec() -> None:
+    """Every sample value must reach the constructor and change it.
+
+    No production annotation types these keys any more, so this is what
+    catches a misspelled one: an unknown field name raises ``TypeError``
+    from the constructor, and a value equal to the default builds a
+    fixture identical to the one it is supposed to vary.
+    """
+    for lang_cls in sorted_languages():
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        default_spec = make_spec(lang_cls=lang_cls)
+        for field_name, value in metadata.non_default_kwargs.items():
+            variant_spec = make_spec(
+                lang_cls=lang_cls,
+                **{field_name: value},
+            )
+            assert variant_spec != default_spec, (
+                f"{metadata.path}: {field_name}={value!r} is the default"
+            )
+
+
+def test_default_type_kwargs_match_capability_flags() -> None:
+    """Default-type sample values track the flags that enable them."""
+    for lang_cls in sorted_languages():
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        supported = {
+            field_name
+            for field_name, is_supported in (
+                (
+                    "default_set_element_type",
+                    lang_cls.supports_default_set_element_type,
+                ),
+                (
+                    "default_sequence_element_type",
+                    lang_cls.supports_default_sequence_element_type,
+                ),
+                (
+                    "default_dict_value_type",
+                    lang_cls.supports_default_dict_value_type,
+                ),
+                (
+                    "default_dict_key_type",
+                    lang_cls.supports_default_dict_key_type,
+                ),
+                (
+                    "default_ordered_map_value_type",
+                    lang_cls.supports_default_ordered_map_value_type,
+                ),
+            )
+            if is_supported
+        }
+        configured = set(metadata.non_default_kwargs) & set(
+            _DEFAULT_TYPE_CAPABILITY_FIELDS
+        )
+        assert configured == supported, (
+            f"{metadata.path}: default-type sample values "
+            f"{sorted(configured)} do not match the supported fields "
+            f"{sorted(supported)}"
+        )
+
+
+def test_declaration_style_overrides_name_real_formats() -> None:
+    """Substituted formats must resolve against the language's enums."""
+    for lang_cls in sorted_languages():
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        overrides = metadata.declaration_style_sequence_format_overrides
+        if not overrides:
+            continue
+        spec = make_spec(lang_cls=lang_cls)
+        style_names = {style.name for style in spec.declaration_styles}
+        format_names = {fmt.name for fmt in spec.sequence_formats}
+        unknown_styles = set(overrides) - style_names
+        unknown_formats = set(overrides.values()) - format_names
+        assert not unknown_styles, (
+            f"{metadata.path}: unknown declaration styles "
+            f"{sorted(unknown_styles)}"
+        )
+        assert not unknown_formats, (
+            f"{metadata.path}: unknown sequence formats "
+            f"{sorted(unknown_formats)}"
+        )
 
 
 def test_defaults_apply_to_a_minimal_file(tmp_path: Path) -> None:

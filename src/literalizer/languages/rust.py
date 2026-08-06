@@ -2561,17 +2561,6 @@ class Rust(metaclass=LanguageCls):
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
-    non_default_kwargs: ClassVar[dict[str, str]] = {
-        "default_set_element_type": "i32",
-        "default_sequence_element_type": "i32",
-        "default_dict_value_type": "i32",
-        "default_dict_key_type": "&str",
-        "heterogeneous_value_enum_name": "JsonValue",
-    }
-    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {
-        "CONST": "ARRAY",
-        "STATIC": "ARRAY",
-    }
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
     supports_multiline_string_literals = True

@@ -2,3 +2,6 @@ schema_version = 1
 
 [variants]
 nested_map_widening = "uniform_keys"
+
+[variants.non_default_kwargs]
+heterogeneous_value_union_name = "JsonValue"
