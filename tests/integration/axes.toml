@@ -193,7 +193,7 @@ option = "heterogeneous_strategy"
 plan = "cross_product"
 name_template = "{lang}_heterogeneous_strategy_{format}_{tag}_{secondary}"
 primary = "heterogeneous_strategy"
-secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
+secondaries = [{ tag = "datetime", option = "datetime_format" }]
 
 [axes.heterogeneous_strategy_tagged_enum]
 plan = "fixed_overrides"
@@ -278,7 +278,7 @@ gates = [{ kind = "spec_field_present", field = "json_type" }]
 plan = "cross_product"
 name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
 primary_axis = "json_type"
-secondaries = [{ tag = "bytes", option = "configured_bytes_format" }]
+secondaries = [{ tag = "bytes", option = "bytes_format" }]
 
 [axes.json_type_call_result]
 plan = "filtered"
@@ -291,7 +291,7 @@ gates = [
 plan = "cross_product"
 name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
 primary_axis = "json_type"
-secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
+secondaries = [{ tag = "datetime", option = "datetime_format" }]
 
 # A declaration style a JSON value type cannot be declared under is
 # skipped: the pairing is rejected upfront rather than rendered.
@@ -387,7 +387,7 @@ option = "numeric_style"
 plan = "cross_product"
 name_template = "{lang}_numeric_style_{format}_{tag}_{secondary}"
 primary = "numeric_style"
-secondaries = [{ tag = "datetime", option = "configured_datetime_format" }]
+secondaries = [{ tag = "datetime", option = "datetime_format" }]
 
 [axes.object_variant_containers]
 plan = "fixed_overrides"
@@ -552,14 +552,14 @@ plan = "cross_product"
 name_template = "{lang}_string_{format}_{tag}_{secondary}"
 primary = "string_format"
 excluded_primary_members = ["MULTILINE"]
-secondaries = [{ tag = "date", option = "configured_date_format" }]
+secondaries = [{ tag = "date", option = "date_format" }]
 
 [axes.string_format_datetime_cross]
 plan = "cross_product"
 name_template = "{lang}_string_{format}_{tag}_{secondary}"
 primary = "string_format"
 excluded_primary_members = ["MULTILINE"]
-secondaries = [{ tag = "dt", option = "configured_datetime_format" }]
+secondaries = [{ tag = "dt", option = "datetime_format" }]
 
 [axes.tagged_enum_empty_container]
 plan = "fixed_overrides"
