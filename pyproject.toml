@@ -489,6 +489,8 @@ ignore_names = [
     "OCTAL_C_STYLE",
     "ORDERED",
     "PAREN",
+    # Pydantic discriminator field, read by the model rather than by name
+    "plan",
     "PRIVATE",
     "project_copyright",
     "PROTECTED",
