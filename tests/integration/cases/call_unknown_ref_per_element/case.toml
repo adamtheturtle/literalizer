@@ -1,2 +1,14 @@
 schema_version = 1
 owner = "literalize-call"
+
+# ``unknown_value`` is declared so every emitted fixture is
+# self-contained, but omitted from ``ref_values`` so the call receives
+# ``None`` for that mapping.  With ``per_element=true``, Haskell must
+# strip the marker before preamble inference; retaining it would
+# visibly add HStr/HMap to the generated Val declaration.
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = true
+ref_declarations = { unknown_value = "[]" }
+unknown_ref_names = ["unknown_value"]

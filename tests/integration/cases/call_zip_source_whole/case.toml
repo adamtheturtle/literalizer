@@ -1,2 +1,16 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Companion to ``call_zip_values`` exercising the ``per_element=false``
+# path: the whole parsed ``zip_source`` value pairs with the single
+# generated call.
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+call_transform = "emit({call}, {zipped})"
+transform_stub_names = ["emit"]
+transform_stub_param_names = ["_call", "_zip"]
+zip_source = "--- true\n"
+zip_input_format = "yaml"
+requires_call_returns_expression = true

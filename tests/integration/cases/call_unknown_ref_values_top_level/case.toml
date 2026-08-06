@@ -1,2 +1,14 @@
 schema_version = 1
 owner = "literalize-call"
+
+# ``known_value`` makes ``ref_values`` non-empty while the top-level
+# ``unknown_value`` marker remains absent from it.  Haskell must still
+# strip that unknown marker before preamble inference; retaining it
+# would visibly add HStr/HMap to the generated Val declaration.
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = false
+ref_declarations = { unknown_value = "[]" }
+unknown_ref_names = ["unknown_value"]
+extra_ref_value_sources = { known_value = "1" }

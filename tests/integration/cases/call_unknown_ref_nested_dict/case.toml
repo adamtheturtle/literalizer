@@ -1,2 +1,19 @@
 schema_version = 1
 owner = "literalize-call"
+
+# ``my_list`` is declared so every emitted fixture is self-contained,
+# but omitted from ``ref_values``.  Its stand-in value matches the
+# string-map type inferred for the unresolved marker so statically
+# typed fixtures compile.  The marker sits below another dict, pinning
+# the recursive resolution shape and Haskell's resulting
+# HStr/HList/HMap ``Val`` declaration.  The unrelated ``other`` entry
+# keeps ``ref_values`` non-empty, exercising the branch used by callers
+# that know some refs but not this one.
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = false
+ref_declarations = { my_list = "{\"unused\": \"value\"}" }
+consumable_refs = ["my_list"]
+unknown_ref_names = ["my_list"]
+extra_ref_value_sources = { other = "true" }

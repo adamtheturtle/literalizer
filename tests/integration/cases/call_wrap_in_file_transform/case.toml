@@ -1,2 +1,15 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Same direct ``wrap_in_file`` path, but with a ``call_transform``
+# present.  Even though the transform returns the call unchanged, the
+# opaque hook means the core must treat the call result as consumed and
+# emit a value-returning target stub instead of a void one.
+[call]
+target_function = "process"
+parameter_names = ["a", "b"]
+per_element = true
+call_transform = "{call}"
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true

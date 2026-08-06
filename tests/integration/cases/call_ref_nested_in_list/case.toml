@@ -1,2 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = true
+ref_declarations = { my_var = "42", my_other = "7" }

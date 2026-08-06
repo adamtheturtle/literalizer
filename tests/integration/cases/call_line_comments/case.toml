@@ -1,2 +1,13 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+comment_source = ["first edition", "", "cyberpunk"]
+# ``comment_source`` emits trailing comments through the language's
+# call-sequence form, the same constraint as wrapped standalone
+# comments; languages without that support raise
+# UnsupportedCallShapeError (see ``_validate_comment_source_supported``).
+requires_standalone_wrapped_comments = true

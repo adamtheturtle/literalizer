@@ -1,2 +1,15 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Same zero-argument variable binding, but forced through positional
+# call style for languages where positional is a non-default call
+# style.  This keeps call-style coverage in the generic call-case
+# harness rather than in a language-specific variant builder.
+[call]
+target_function = "make_widget"
+parameter_names = []
+per_element = true
+call_style = "positional"
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true

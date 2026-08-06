@@ -1,2 +1,18 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Same ref reused across multiple per-element calls.  The caller
+# declares both refs consumable; the renderer must still avoid the
+# consuming form (e.g. C++ ``std::move``, Mojo ``^``) for the reused
+# ref so the second call does not read a moved-from variable.
+# ``repeated_var`` is a scalar int so it is ``Copy`` in Rust and can be
+# referenced twice; ``single_var`` is a list so the consuming form
+# rendered in C++ / Mojo operates on a non-trivial type and does not
+# trigger trivial-type "no effect" lints.  Variable names avoid
+# ``shared``, which is reserved in D, V, and VisualBasic.
+[call]
+target_function = "process"
+parameter_names = ["data", "count"]
+per_element = true
+ref_declarations = { single_var = "[4, 5, 6]", repeated_var = "1" }
+consumable_refs = ["repeated_var", "single_var"]

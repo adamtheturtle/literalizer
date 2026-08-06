@@ -73,6 +73,31 @@ def _write_case(
             ('schema_version = 1\nsuites = ["combined"]\n[base_context]\n'),
             "base_context requires participation in the base suite",
         ),
+        (
+            'schema_version = 1\nowner = "literalize-call"\n',
+            r"requires a \[call\] table",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+            ),
+            r"a \[call\] table requires owner",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'call_transform = "emit({bogus})"\n'
+            ),
+            "unknown call_transform placeholder 'bogus'",
+        ),
     ],
 )
 def test_invalid_manifest_is_actionable(

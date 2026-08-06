@@ -1,2 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+requires_standalone_wrapped_comments = true

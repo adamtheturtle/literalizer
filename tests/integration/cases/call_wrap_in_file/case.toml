@@ -1,2 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Drive ``literalize_call(..., wrap_in_file=True)`` directly so the
+# generated file includes its own target-function stub.
+[call]
+target_function = "process"
+parameter_names = ["a", "b"]
+per_element = true
+wrap_in_file = true

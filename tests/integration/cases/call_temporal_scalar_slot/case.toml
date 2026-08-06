@@ -1,3 +1,14 @@
 schema_version = 1
 input = "input.toml"
 owner = "literalize-call"
+
+# TOML is the only supported input format that can represent a time
+# scalar.  Select its ``calls`` array after parsing so it can drive the
+# same per-element renderer as root-list formats.  The single slot
+# varies across time, datetime, and int values, exercising temporal
+# carrier wrapping in C++14.
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+input_root_key = "calls"

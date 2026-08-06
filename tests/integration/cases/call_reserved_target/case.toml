@@ -1,2 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+# ``op`` is reserved in SML.
+target_function = "op"
+parameter_names = ["value"]
+per_element = true

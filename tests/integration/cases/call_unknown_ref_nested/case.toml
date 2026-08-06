@@ -1,2 +1,14 @@
 schema_version = 1
 owner = "literalize-call"
+
+# ``unknown_value`` is declared so every emitted fixture is
+# self-contained, but omitted from ``ref_values`` so call preamble
+# inference must strip its marker recursively.  In Haskell, retaining
+# the marker would visibly add HStr/HMap to the generated Val
+# declaration.
+[call]
+target_function = "process"
+parameter_names = ["known_value", "nested_missing"]
+per_element = true
+ref_declarations = { known_value = "true", unknown_value = "true" }
+unknown_ref_names = ["unknown_value"]

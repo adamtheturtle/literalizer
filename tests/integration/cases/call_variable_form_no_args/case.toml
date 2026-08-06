@@ -1,2 +1,18 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Zero-argument call bound to a variable: the ``p2 = Playlist()``
+# constructor case from issue #2534.  The ``input.yaml`` is a
+# single-element list whose element is an empty list (``- []``), so
+# ``per_element = true`` yields exactly one zero-argument call -- the
+# only shape that produces a call with no arguments
+# (``per_element = false`` always passes the whole value as one
+# argument).  ``variable_form`` is valid here because a single-element
+# source is exactly one call.
+[call]
+target_function = "make_widget"
+parameter_names = []
+per_element = true
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true

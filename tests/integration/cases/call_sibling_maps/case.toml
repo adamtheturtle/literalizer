@@ -1,2 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Values in this position are homogeneous per call but require
+# TAGGED_ENUM widening across sibling calls.
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+variant_only = true

@@ -13,11 +13,8 @@ from beartype import beartype
 
 import literalizer
 
-from .call_cases import (
-    CALL_CASE_CONFIGS,
-    CALL_VARIANT_CASE_CONFIGS,
-    CallCaseConfig,
-)
+from .call_cases import CASES_DIR
+from .case_manifests import CallCaseSpec, call_case_specs
 from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     Variant,
@@ -35,7 +32,7 @@ class CallVariantCase:
     language spec (e.g. a ``TAGGED_ENUM`` strategy).
     """
 
-    config: CallCaseConfig
+    config: CallCaseSpec
     variant: Variant
 
 
@@ -248,12 +245,12 @@ def build_call_variant_cases() -> list[CallVariantCase]:
     heterogeneous input the default spec rejects.
     """
     cases: list[CallVariantCase] = []
+    specs = {
+        spec.case_dir_name: spec
+        for spec in call_case_specs(cases_dir=CASES_DIR)
+    }
     for case_dir_name, builder in CALL_VARIANT_SOURCES:
-        config = next(
-            cfg
-            for cfg in CALL_CASE_CONFIGS + CALL_VARIANT_CASE_CONFIGS
-            if cfg.case_dir_name == case_dir_name
-        )
+        config = specs[case_dir_name]
         cases.extend(
             CallVariantCase(config=config, variant=variant)
             for variant in builder()
