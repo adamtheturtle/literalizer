@@ -1,6 +1,5 @@
 """Validation tests for test-owned language metadata files."""
 
-import inspect
 from pathlib import Path
 
 import pytest
@@ -140,17 +139,25 @@ def test_no_orphan_metadata_files() -> None:
     assert set(loaded) == declared
 
 
-def test_non_default_kwargs_name_constructor_fields() -> None:
-    """A sample value must name a real constructor field to reach it."""
+def test_non_default_kwargs_change_the_spec() -> None:
+    """Every sample value must reach the constructor and change it.
+
+    No production annotation types these keys any more, so this is what
+    catches a misspelled one: an unknown field name raises ``TypeError``
+    from the constructor, and a value equal to the default builds a
+    fixture identical to the one it is supposed to vary.
+    """
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
-        # ``LanguageCls.__call__`` hides the real parameters behind
-        # ``*args, **kwargs``, so read the generated ``__init__``.
-        signature = inspect.signature(obj=lang_cls.__init__)
-        unknown = set(metadata.non_default_kwargs) - set(signature.parameters)
-        assert not unknown, (
-            f"{metadata.path}: unknown constructor fields {sorted(unknown)}"
-        )
+        default_spec = make_spec(lang_cls=lang_cls)
+        for field_name, value in metadata.non_default_kwargs.items():
+            variant_spec = make_spec(
+                lang_cls=lang_cls,
+                **{field_name: value},
+            )
+            assert variant_spec != default_spec, (
+                f"{metadata.path}: {field_name}={value!r} is the default"
+            )
 
 
 def test_default_type_kwargs_match_capability_flags() -> None:
@@ -191,25 +198,6 @@ def test_default_type_kwargs_match_capability_flags() -> None:
             f"{sorted(configured)} do not match the supported fields "
             f"{sorted(supported)}"
         )
-
-
-def test_default_type_kwargs_differ_from_the_default() -> None:
-    """A sample value that matches the default exercises nothing."""
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        kwargs = metadata.non_default_kwargs
-        default_spec = make_spec(lang_cls=lang_cls)
-        for field_name in _DEFAULT_TYPE_CAPABILITY_FIELDS:
-            override = kwargs.get(field_name)
-            if override is None:
-                continue
-            variant_spec = make_spec(
-                lang_cls=lang_cls,
-                **{field_name: override},
-            )
-            assert variant_spec != default_spec, (
-                f"{metadata.path}: {field_name}={override!r} is the default"
-            )
 
 
 def test_declaration_style_overrides_name_real_formats() -> None:
