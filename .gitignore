@@ -49,3 +49,6 @@ uv.lock
 
 # Node
 node_modules/
+
+# Vale styles downloaded by ``vale sync``
+styles/
