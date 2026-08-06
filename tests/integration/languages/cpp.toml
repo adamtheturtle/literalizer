@@ -7,3 +7,7 @@ record_language_version = "CPP14"
 external_record_shape_fixture_prefix = "#include \"../../cpp_support/include/named_type.hpp\"\n"
 heterogeneous_value_variant_name_strategy = "ERROR"
 heterogeneous_value_variant_name_language_version = "CPP14"
+
+[variants.non_default_kwargs]
+heterogeneous_value_variant_name = "DynamicValue"
+multiline_raw_string_delimiter_base = "x0"

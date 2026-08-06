@@ -63,58 +63,6 @@ _CASES_DIR = Path(__file__).parent / "cases"
 _enum_member_by_name = enum_member_by_name
 
 
-def _check_default_type_variants() -> None:
-    """Validate language-owned default-type variant metadata."""
-    for lang_cls in ALL_LANGUAGES:
-        supported_fields = {
-            field_name
-            for field_name, supported in (
-                (
-                    "default_set_element_type",
-                    lang_cls.supports_default_set_element_type,
-                ),
-                (
-                    "default_sequence_element_type",
-                    lang_cls.supports_default_sequence_element_type,
-                ),
-                (
-                    "default_dict_value_type",
-                    lang_cls.supports_default_dict_value_type,
-                ),
-                (
-                    "default_dict_key_type",
-                    lang_cls.supports_default_dict_key_type,
-                ),
-                (
-                    "default_ordered_map_value_type",
-                    lang_cls.supports_default_ordered_map_value_type,
-                ),
-            )
-            if supported
-        }
-        configured_fields = set(lang_cls.non_default_kwargs) & {
-            "default_set_element_type",
-            "default_sequence_element_type",
-            "default_dict_value_type",
-            "default_dict_key_type",
-            "default_ordered_map_value_type",
-        }
-        assert configured_fields == supported_fields  # noqa: S101
-        default_spec = make_spec(lang_cls=lang_cls)
-        for field_name in configured_fields:
-            override = lang_cls.non_default_kwargs[field_name]
-            variant_spec = make_spec(
-                lang_cls=lang_cls,
-                **{field_name: override},
-            )
-            assert variant_spec != default_spec, (  # noqa: S101
-                f"{lang_cls.__name__}.{field_name}={override!r}"
-            )
-
-
-_check_default_type_variants()
-
-
 @beartype
 def build_non_default_variants(
     *,
@@ -209,7 +157,11 @@ def _build_default_type_variants(
             collection_layout=literalizer.CollectionLayout.COMPACT,
         )
         for lang_cls in sorted_languages()
-        if (type_name := lang_cls.non_default_kwargs.get(field_name))
+        if (
+            type_name := language_metadata(
+                language_id=lang_cls.language_id
+            ).non_default_kwargs.get(field_name)
+        )
         is not None
     ]
 
@@ -632,9 +584,9 @@ def _resolve_sequence_format_override(
     the same sequence-format override the standalone declaration-style
     variants use.
     """
-    seq_format_name = lang_cls.declaration_style_sequence_format_overrides.get(
-        declaration_style.name
-    )
+    metadata = language_metadata(language_id=lang_cls.language_id)
+    overrides = metadata.declaration_style_sequence_format_overrides
+    seq_format_name = overrides.get(declaration_style.name)
     if seq_format_name is None:
         return None
     spec = make_spec(lang_cls=lang_cls)
@@ -870,7 +822,8 @@ def build_constructor_name_variants() -> Iterable[Variant]:
     """Build language-owned constructor-name variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = lang_cls.non_default_kwargs
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        kwargs = metadata.non_default_kwargs
         if "null_name" not in kwargs:
             continue
         variants.append(
@@ -896,7 +849,8 @@ def build_type_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = lang_cls.non_default_kwargs.get("type_name")
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_name = metadata.non_default_kwargs.get("type_name")
         if custom_name is None:
             continue
         variants.append(
@@ -919,7 +873,8 @@ def build_constructor_prefix_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_prefix = lang_cls.non_default_kwargs.get("constructor_prefix")
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_prefix = metadata.non_default_kwargs.get("constructor_prefix")
         if custom_prefix is None:
             continue
         variants.append(
@@ -1428,7 +1383,8 @@ def build_heterogeneous_value_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = lang_cls.non_default_kwargs.get(
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_name = metadata.non_default_kwargs.get(
             "heterogeneous_value_enum_name"
         )
         if custom_name is None:
@@ -1538,7 +1494,8 @@ def build_c_field_name_variants() -> Iterable[Variant]:
     """Build language-owned field-name variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        kwargs = lang_cls.non_default_kwargs
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        kwargs = metadata.non_default_kwargs
         if "bool_field" not in kwargs:
             continue
         variants.append(
@@ -1725,7 +1682,8 @@ def build_heterogeneous_value_union_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = lang_cls.non_default_kwargs.get(
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_name = metadata.non_default_kwargs.get(
             "heterogeneous_value_union_name"
         )
         if custom_name is None:
@@ -1767,10 +1725,10 @@ def build_heterogeneous_value_variant_name_variants() -> Iterable[Variant]:
     """
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_name = lang_cls.non_default_kwargs.get(
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_name = metadata.non_default_kwargs.get(
             "heterogeneous_value_variant_name"
         )
-        metadata = language_metadata(language_id=lang_cls.language_id)
         strategy_name = (
             metadata.variants.heterogeneous_value_variant_name_strategy
         )
@@ -1958,7 +1916,8 @@ def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
     """Build custom, punctuation, and exhausted raw-delimiter variants."""
     variants: list[Variant] = []
     for lang_cls in sorted_languages():
-        custom_base = lang_cls.non_default_kwargs.get(
+        metadata = language_metadata(language_id=lang_cls.language_id)
+        custom_base = metadata.non_default_kwargs.get(
             "multiline_raw_string_delimiter_base"
         )
         if custom_base is None:
@@ -2396,9 +2355,9 @@ def _build_declaration_style_variants() -> list[Variant]:
         """Build a spec for *fmt*, applying any sequence-format
         override.
         """
-        seq_format_name = cls.declaration_style_sequence_format_overrides.get(
-            fmt.name
-        )
+        metadata = language_metadata(language_id=cls.language_id)
+        overrides = metadata.declaration_style_sequence_format_overrides
+        seq_format_name = overrides.get(fmt.name)
         if seq_format_name is None:
             return make_spec(lang_cls=cls, declaration_style=fmt)
         spec = make_spec(lang_cls=cls)

@@ -464,8 +464,6 @@ class Sml(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    non_default_kwargs: ClassVar[dict[str, str]] = {}
-    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     # A portable Standard ML ``string`` is an 8-bit type.  Raw UTF-8 and
     # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.

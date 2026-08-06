@@ -2,3 +2,7 @@ schema_version = 1
 
 [golden]
 filename_lowercase = true
+
+[variants.non_default_kwargs]
+type_name = "JsonVal"
+constructor_prefix = "J"

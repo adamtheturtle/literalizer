@@ -1,1 +1,5 @@
 schema_version = 1
+
+[variants.non_default_kwargs]
+type_name = "json_t"
+constructor_prefix = "J"

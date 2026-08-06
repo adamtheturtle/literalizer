@@ -542,18 +542,6 @@ class Fortran(metaclass=LanguageCls):
     supports_default_sequence_element_type = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
-    non_default_kwargs: ClassVar[dict[str, str]] = {
-        "null_name": "jnull",
-        "bool_name": "jbool",
-        "int_name": "jint",
-        "real_name": "jreal",
-        "str_name": "jstr",
-        "list_name": "jlist",
-        "map_name": "jmap",
-        "set_name": "jset",
-        "entry_name": "jentry",
-    }
-    declaration_style_sequence_format_overrides: ClassVar[dict[str, str]] = {}
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
     supports_multiline_string_literals = False

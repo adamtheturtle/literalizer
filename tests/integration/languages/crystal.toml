@@ -5,3 +5,8 @@ fixture_module_name_template = "Fixture_{parent}_{stem}"
 
 [variants]
 record = ["field_type_split"]
+
+[variants.non_default_kwargs]
+default_set_element_type = "Int32"
+default_dict_value_type = "Int32"
+default_dict_key_type = "Int32"

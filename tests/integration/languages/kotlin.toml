@@ -3,3 +3,8 @@ schema_version = 1
 [variants]
 record = ["field_type_split"]
 nested_map_widening = "default"
+
+[variants.non_default_kwargs]
+default_set_element_type = "String"
+default_dict_value_type = "Comparable<*>?"
+default_dict_key_type = "Any"
