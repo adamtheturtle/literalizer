@@ -1,2 +1,14 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Slot 0 holds lists whose Mojo element type disagrees across calls
+# (``List[Int]`` vs ``List[String]``), forcing
+# ``_mojo_typed_param_list`` to fall back to the generic
+# ``[*Ts: AnyType](*args: *Ts)`` stub so the typed list-slot path stays
+# the only producer of ``data: List[T]`` signatures.
+[call]
+target_function = "process"
+parameter_names = ["data", "count"]
+per_element = true
+ref_declarations = { my_ints = "[1, 2, 3]", my_strings = "[\"a\", \"b\"]", my_empty = "[]" }
+consumable_refs = ["my_empty", "my_ints", "my_strings"]

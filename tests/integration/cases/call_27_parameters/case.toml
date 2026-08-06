@@ -1,2 +1,11 @@
 schema_version = 1
 owner = "literalize-call"
+
+# 27-parameter call exercises the type-variable generators in languages
+# whose call-stub signatures use one type variable per parameter past
+# the 26-letter alphabet (Gleam ``a1``, Roc ``a1``, Rust ``A1``).
+[call]
+target_function = "process"
+parameter_names = ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p25", "p26"]
+per_element = true
+wrap_in_file = true

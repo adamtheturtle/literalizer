@@ -1,2 +1,7 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "my_app.http_client.fetch"
+parameter_names = ["payload"]
+per_element = true

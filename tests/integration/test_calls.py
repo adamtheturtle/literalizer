@@ -17,10 +17,10 @@ from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Python
 
 from .call_cases import (
-    CALL_CASE_CONFIGS,
     CallCase,
     _run_wrap_in_file_case,  # pyright: ignore[reportPrivateUsage]
     _select_call_input_root,  # pyright: ignore[reportPrivateUsage]
+    default_call_case_specs,
     discover_call_cases,
     run_call_golden_case,
 )
@@ -79,7 +79,7 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
     arguments.
     """
     config = next(
-        config for config in CALL_CASE_CONFIGS if config.wrap_in_file
+        config for config in default_call_case_specs() if config.wrap_in_file
     )
     golden_path = tmp_path / "stale.py"
     golden_path.write_text(data="stale\n")

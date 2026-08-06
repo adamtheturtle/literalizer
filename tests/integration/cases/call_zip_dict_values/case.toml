@@ -1,2 +1,26 @@
 schema_version = 1
 owner = "literalize-call"
+
+# Mapping-valued ``zip_source`` exercising issue #2532: under the
+# default ``CollectionLayout.COMPACT`` the ``$zipped`` mapping must
+# render single-line, consistent with the call-argument mapping
+# rendered by the same call, so a one-line ``call_transform`` stays on
+# one physical line.  The compact mapping is single-line, so the case
+# does not need multiline dictionary call argument support.
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_transform = "emit({call}, {zipped})"
+transform_stub_names = ["emit"]
+transform_stub_param_names = ["_call", "_zip"]
+zip_source = "---\n- a: 1\n  b: 2\n- c: 3\n  d: 4\n"
+zip_input_format = "yaml"
+requires_call_returns_expression = true
+# The ``$zipped`` value is a mapping spliced into the
+# ``call_transform`` as a free expression, so languages whose map
+# literal needs a typed left-hand side
+# (``supports_dict_literal_as_free_expression = false``) are skipped.
+# The two-parameter wrapper stub is gated generically via
+# ``supports_multi_param_call_wrapper_stub``.
+requires_dict_literal_as_free_expression = true

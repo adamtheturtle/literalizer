@@ -1,2 +1,12 @@
 schema_version = 1
 owner = "literalize-call"
+
+# ``call_transform`` is only valid for the expression call styles that
+# can be wrapped.  The command/curried style cannot host one, so this
+# variant exercises the bare curried call (and its per-argument
+# formatting) without a transform.
+[call]
+target_function = "throttler.check"
+parameter_names = ["user_id", "ts"]
+per_element = true
+call_style = "command"

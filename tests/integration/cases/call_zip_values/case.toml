@@ -1,2 +1,17 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_transform = "emit({call}, {zipped})"
+transform_stub_names = ["emit"]
+# The bool ``$zipped`` value is not a map literal, so no
+# free-expression dict support is needed.  The two-parameter wrapper
+# stub is gated generically: languages without
+# ``supports_multi_param_call_wrapper_stub`` are skipped.
+transform_stub_param_names = ["_call", "_zip"]
+zip_source = "---\n- true\n- false\n"
+zip_input_format = "yaml"
+requires_call_returns_expression = true

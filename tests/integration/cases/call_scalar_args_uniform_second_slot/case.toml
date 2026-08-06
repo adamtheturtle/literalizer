@@ -1,2 +1,7 @@
 schema_version = 1
 owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value", "label"]
+per_element = true

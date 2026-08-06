@@ -1,2 +1,9 @@
 schema_version = 1
 owner = "literalize-call"
+
+# C++14's native-only policy renders this fixed heterogeneous argument
+# as ``std::tuple`` without needing LiteralizerVariant.
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = false
