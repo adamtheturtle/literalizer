@@ -31,8 +31,6 @@ from .variant_types import find_enum_member
 _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
     {
         "comment_terminator",
-        "empty_container_type_hint",
-        "multiline_raw_string_delimiter",
         "string_embedded_nul",
         "typed_dict_null_filtering",
     }
@@ -53,6 +51,16 @@ schema_version = 1
 [axes.example]
 plan = "fixed_overrides"
 name_template = "{lang}_example"
+"""
+
+_VALID_KWARG_VALUES_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "kwarg_values"
+name_template = "{lang}_example_{format}"
+kwarg = "multiline_raw_string_delimiter_base"
+values = [{ name = "punctuation", value = "!?" }]
 """
 
 _VALID_FILTERED_AXIS = """
@@ -402,6 +410,23 @@ def test_unknown_axis_is_actionable() -> None:
             "unknown behavior flag 'vibes'",
         ),
         (
+            _VALID_AXIS + 'gates = [{ kind = "metadata_table_present", '
+            'table = "vibes" }]\n',
+            "unknown metadata table 'vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "metadata_table", kwarg = "vibes", '
+                'table = "vibes" }]\n'
+            ),
+            "unknown metadata table 'vibes'",
+        ),
+        (
+            _VALID_KWARG_VALUES_AXIS.replace("_{format}", ""),
+            r"name template omits placeholder\(s\) \['format'\]",
+        ),
+        (
             _VALID_AXIS + 'layouts = [{ layout = "SIDEWAYS" }]\n',
             "unknown layout 'SIDEWAYS'",
         ),
@@ -550,6 +575,33 @@ field = "heterogeneous_value_variant_name_strategy"
 """
 
 
+_UNDECLARED_TABLE_MEMBER_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "empty_container_type_hint_heterogeneous_strategy"
+"""
+
+_UNDECLARED_TABLE_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_table"
+kwarg = "empty_container_type_hints"
+table = "empty_container_type_hints"
+"""
+
+
 @pytest.mark.parametrize(
     argnames=("contents", "message"),
     argvalues=[
@@ -557,6 +609,14 @@ field = "heterogeneous_value_variant_name_strategy"
         (
             _UNDECLARED_METADATA_AXIS,
             "declares no 'heterogeneous_value_variant_name_strategy'",
+        ),
+        (
+            _UNDECLARED_TABLE_MEMBER_AXIS,
+            "declares no 'empty_container_type_hint_heterogeneous_strategy'",
+        ),
+        (
+            _UNDECLARED_TABLE_AXIS,
+            "declares no 'empty_container_type_hints'",
         ),
     ],
 )

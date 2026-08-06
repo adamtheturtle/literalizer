@@ -7,7 +7,7 @@ expresses a condition.
 
 Everything a plan looks up by name -- a formatter option, a language
 capability flag, a spec field, a rendering behavior flag, a
-language-metadata field -- resolves
+language-metadata field, a language-metadata sub-table -- resolves
 through a closed registry declared here, so an unknown name, an unknown
 plan, an unknown gate kind, or an unknown name-template placeholder
 fails when the registry loads rather than when a golden file is built.
@@ -417,7 +417,35 @@ _MEMBER_NAME_SOURCES: Mapping[
     ),
 }
 
+
+@beartype
+def _empty_container_type_hint_strategy(
+    metadata: LanguageMetadata,
+) -> str | None:
+    """Return the strategy the empty-container hints are declared
+    under.
+    """
+    settings = metadata.variants.empty_container_type_hint
+    if settings is None:
+        return None
+    return settings.heterogeneous_strategy
+
+
+@beartype
+def _empty_container_type_hints(
+    metadata: LanguageMetadata,
+) -> Mapping[object, object] | None:
+    """Return the declared empty-container hints, keyed by value path."""
+    settings = metadata.variants.empty_container_type_hint
+    if settings is None:
+        return None
+    return {tuple(entry.path): entry.hint for entry in settings.type_hints}
+
+
 _METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
+    "empty_container_type_hint_heterogeneous_strategy": (
+        _empty_container_type_hint_strategy
+    ),
     "heterogeneous_value_variant_name_language_version": (
         lambda metadata: (
             metadata.variants.heterogeneous_value_variant_name_language_version
@@ -451,6 +479,17 @@ _BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
     "widens_unrecordizable_nested_sibling_maps": (
         _widens_unrecordizable_nested_sibling_maps
     ),
+}
+
+# Language-declared metadata sub-tables a plan passes through as a
+# constructor argument.  A language declaring one participates in the
+# axis reading it; the entry here is what turns the declared table into
+# the value the constructor takes.
+_METADATA_TABLES: Mapping[
+    str,
+    Callable[[LanguageMetadata], Mapping[object, object] | None],
+] = {
+    "empty_container_type_hints": _empty_container_type_hints,
 }
 
 # Optional fields on a spec's nested format configuration, which a
@@ -570,6 +609,18 @@ class _SpecConfigFieldPresentGate(
     field: Annotated[str, Field(min_length=1)]
 
 
+class _MetadataTablePresentGate(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Admit languages declaring a metadata sub-table."""
+
+    kind: Literal["metadata_table_present"]
+    table: Annotated[str, Field(min_length=1)]
+
+
 class _BehaviorFlagGate(
     BaseModel,
     extra="forbid",
@@ -595,6 +646,7 @@ type _Gate = Annotated[
     | _EnumMemberPresentGate
     | _MetadataFieldGate
     | _SpecConfigFieldPresentGate
+    | _MetadataTablePresentGate
     | _BehaviorFlagGate,
     Field(discriminator="kind"),
 ]
@@ -638,6 +690,23 @@ class _MetadataEnumMemberOverride(
     option: Annotated[str, Field(min_length=1)]
     field: Annotated[str, Field(min_length=1)]
     optional: bool = False
+
+
+class _MetadataTableOverride(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Pass a language's declared metadata sub-table as a parameter.
+
+    The table is fixture data the language file owns, so a plan names
+    which table reaches which constructor parameter and nothing else.
+    """
+
+    kind: Literal["metadata_table"]
+    kwarg: Annotated[str, Field(min_length=1)]
+    table: Annotated[str, Field(min_length=1)]
 
 
 class _TrueFlagOverride(
@@ -687,6 +756,7 @@ type _Override = Annotated[
     _NonDefaultKwargOverride
     | _EnumMemberOverride
     | _MetadataEnumMemberOverride
+    | _MetadataTableOverride
     | _TrueFlagOverride
     | _RecordShapeNamesOverride
     | _BehaviorFlagMemberOverride,
@@ -786,6 +856,44 @@ class _FixedOverridesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+class _KwargValueChoice(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One value a kwarg-values axis passes for its parameter.
+
+    Omitting ``value`` takes the language's own declared sample value
+    for the parameter, so a base every participating language shares is
+    declared once here and a language-specific one stays in its
+    manifest.
+    """
+
+    name: Annotated[str, Field(min_length=1)]
+    value: Annotated[str, Field(min_length=1)] | None = None
+
+
+class _KwargValuesPlan(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One variant per declared value of one constructor parameter."""
+
+    plan: Literal["kwarg_values"]
+    name_template: Annotated[str, Field(min_length=1)]
+    kwarg: Annotated[str, Field(min_length=1)]
+    values: Annotated[list[_KwargValueChoice], Field(min_length=1)]
+    per_version: bool = False
+    layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
+        default_factory=_compact_layout
+    )
+    gates: list[_Gate] = Field(default_factory=_no_gates)
+    overrides: list[_Override] = Field(default_factory=_no_overrides)
+
+
 class _CrossSecondary(
     BaseModel,
     extra="forbid",
@@ -859,13 +967,17 @@ class _FilteredPlan(
 
 
 type _ExpandedAxis = (
-    _EveryNonDefaultMemberPlan | _FixedOverridesPlan | _CrossProductPlan
+    _EveryNonDefaultMemberPlan
+    | _FixedOverridesPlan
+    | _CrossProductPlan
+    | _KwargValuesPlan
 )
 
 type _Axis = Annotated[
     _EveryNonDefaultMemberPlan
     | _FixedOverridesPlan
     | _CrossProductPlan
+    | _KwargValuesPlan
     | _FilteredPlan,
     Field(discriminator="plan"),
 ]
@@ -958,6 +1070,13 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
                     f"{gate.field!r}"
                 )
                 raise AxisPlanError(msg)
+            case _MetadataTablePresentGate() if (
+                gate.table not in _METADATA_TABLES
+            ):
+                msg = (
+                    f"axis {axis_key!r}: unknown metadata table {gate.table!r}"
+                )
+                raise AxisPlanError(msg)
             case _BehaviorFlagGate() if gate.flag not in _BEHAVIOR_FLAGS:
                 msg = f"axis {axis_key!r}: unknown behavior flag {gate.flag!r}"
                 raise AxisPlanError(msg)
@@ -1022,6 +1141,14 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
             )
             raise AxisPlanError(msg)
         if (
+            isinstance(override, _MetadataTableOverride)
+            and override.table not in _METADATA_TABLES
+        ):
+            msg = (
+                f"axis {axis_key!r}: unknown metadata table {override.table!r}"
+            )
+            raise AxisPlanError(msg)
+        if (
             isinstance(override, _BehaviorFlagMemberOverride)
             and override.flag not in _BEHAVIOR_FLAGS
         ):
@@ -1033,7 +1160,7 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
 def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
     """Return the name-template placeholders a plan fills in."""
     match axis:
-        case _EveryNonDefaultMemberPlan():
+        case _EveryNonDefaultMemberPlan() | _KwargValuesPlan():
             return frozenset({_LANG_PLACEHOLDER, _FORMAT_PLACEHOLDER})
         case _FixedOverridesPlan():
             named = frozenset({_LANG_PLACEHOLDER, _VALUE_PLACEHOLDER})
@@ -1072,6 +1199,10 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
         )
         raise AxisPlanError(msg)
     required = frozenset[str]()
+    if isinstance(axis, _KwargValuesPlan):
+        # Every declared value has to reach the name, or two of them
+        # would claim one golden file.
+        required |= {_FORMAT_PLACEHOLDER}
     if isinstance(axis, _FixedOverridesPlan):
         if axis.primary_axis is not None:
             required |= {_FORMAT_PLACEHOLDER}
@@ -1151,7 +1282,7 @@ def _primary_plan_for(
     """Return the axis *axis* pairs its overrides and secondaries
     with.
     """
-    if isinstance(axis, _EveryNonDefaultMemberPlan) or (
+    if isinstance(axis, _EveryNonDefaultMemberPlan | _KwargValuesPlan) or (
         axis.primary_axis is None
     ):
         return None
@@ -1251,6 +1382,7 @@ def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
             _EveryNonDefaultMemberPlan()
             | _FixedOverridesPlan()
             | _CrossProductPlan()
+            | _KwargValuesPlan()
         ):
             _validate_names(axis_key=axis_key, axis=axis)
             _validate_template(axis_key=axis_key, axis=axis)
@@ -1366,6 +1498,8 @@ def _gate_admits(
             admits = _METADATA_FIELDS[gate.field](metadata) == gate.value
         case _SpecConfigFieldPresentGate():
             admits = _SPEC_CONFIG_FIELDS[gate.field](spec) is not None
+        case _MetadataTablePresentGate():
+            admits = _METADATA_TABLES[gate.table](metadata) is not None
         case _BehaviorFlagGate():
             admits = _BEHAVIOR_FLAGS[gate.flag](spec)
         case _ as unreachable:
@@ -1416,6 +1550,24 @@ def _metadata_member(
             name=declared,
         )
     }
+
+
+@beartype
+def _metadata_table(
+    *,
+    axis_key: str,
+    override: _MetadataTableOverride,
+    metadata: LanguageMetadata,
+) -> Mapping[str, object]:
+    """Resolve the metadata sub-table a language declares."""
+    declared = _METADATA_TABLES[override.table](metadata)
+    if declared is None:
+        msg = (
+            f"axis {axis_key!r}: {metadata.path} declares no "
+            f"{override.table!r}"
+        )
+        raise AxisPlanError(msg)
+    return {override.kwarg: declared}
 
 
 @beartype
@@ -1475,6 +1627,15 @@ def _override_selection(
                     override=override,
                     metadata=metadata,
                     default_spec=default_spec,
+                ),
+                name_value=None,
+            )
+        case _MetadataTableOverride():
+            resolved = _ResolvedOverrides(
+                kwargs=_metadata_table(
+                    axis_key=axis_key,
+                    override=override,
+                    metadata=metadata,
                 ),
                 name_value=None,
             )
@@ -1790,8 +1951,38 @@ def _choice_selections(*, choices: list[_PrimaryChoice]) -> list[_Selection]:
 
 
 @beartype
+def _kwarg_value_selections(
+    *,
+    axis_key: str,
+    axis: _KwargValuesPlan,
+    metadata: LanguageMetadata,
+) -> list[_Selection]:
+    """Return the parameter values an axis passes for one language."""
+    return [
+        _Selection(
+            kwargs={
+                axis.kwarg: (
+                    _sample_kwarg(
+                        axis_key=axis_key,
+                        kwarg=axis.kwarg,
+                        metadata=metadata,
+                    )
+                    if choice.value is None
+                    else choice.value
+                )
+            },
+            format_name=choice.name,
+            tag=None,
+            secondary_name=None,
+        )
+        for choice in axis.values
+    ]
+
+
+@beartype
 def _selections(
     *,
+    axis_key: str,
     axis: _ExpandedAxis,
     primary_plan: _EveryNonDefaultMemberPlan | None,
     lang_cls: literalizer.LanguageCls,
@@ -1800,6 +1991,12 @@ def _selections(
 ) -> list[_Selection]:
     """Return the option values an axis selects for one language."""
     match axis:
+        case _KwargValuesPlan():
+            return _kwarg_value_selections(
+                axis_key=axis_key,
+                axis=axis,
+                metadata=metadata,
+            )
         case _FixedOverridesPlan() if primary_plan is not None:
             return _choice_selections(
                 choices=_member_choices(
@@ -2010,6 +2207,7 @@ def _axis_variants(
             default_spec=default_spec,
         )
         for selection in _selections(
+            axis_key=axis_key,
             axis=axis,
             primary_plan=primary_plan,
             lang_cls=lang_cls,

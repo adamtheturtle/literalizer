@@ -13,7 +13,6 @@ from .case_manifests import CaseManifestError, ManifestVariant, RenderContext
 from .language_specs import sorted_languages
 from .variant_cases import (
     _case_for_manifest_variant,  # pyright: ignore[reportPrivateUsage]
-    _enum_member_by_name,  # pyright: ignore[reportPrivateUsage]
     _one_special_input,  # pyright: ignore[reportPrivateUsage]
     build_multiline_string_context_cases,
     build_typed_dict_null_filtering_variants,
@@ -21,6 +20,7 @@ from .variant_cases import (
     group_variant_cases_by_language,
     variant_languages,
 )
+from .variant_types import enum_member_by_name
 
 _SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])
 
@@ -31,7 +31,7 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
         expected_exception=ValueError,
         match=r"^_SampleEnum has no member named 'SECOND'$",
     ):
-        _enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
+        enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
 
 
 def test_manifest_variant_context_overrides_collection_layout() -> None:
@@ -154,7 +154,7 @@ def test_multiline_string_variants_follow_capability() -> None:
         }
         assert actual == expected
     assert all(
-        _enum_member_by_name(
+        enum_member_by_name(
             enum_cls=lang_cls.StringFormats,
             name="MULTILINE",
         ).name

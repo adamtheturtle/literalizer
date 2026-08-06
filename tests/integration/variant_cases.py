@@ -48,16 +48,12 @@ from .variant_types import (
     Variant,
     VariantCase,
     compact_variant,
-    enum_member_by_name,
     wrap_variable_form,
 )
 
 __all__ = ("Variant", "wrap_variable_form")
 
 _CASES_DIR = Path(__file__).parent / "cases"
-
-
-_enum_member_by_name = enum_member_by_name
 
 
 @beartype
@@ -272,34 +268,6 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_empty_container_type_hint_variants() -> Iterable[Variant]:
-    """Build variants for languages declaring empty-container hint support."""
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        settings = metadata.variants.empty_container_type_hint
-        if settings is None:
-            continue
-        kwargs: dict[str, object] = {
-            "heterogeneous_strategy": enum_member_by_name(
-                enum_cls=lang_cls.HeterogeneousStrategies,
-                name=settings.heterogeneous_strategy,
-            ),
-            "empty_container_type_hints": {
-                tuple(entry.path): entry.hint for entry in settings.type_hints
-            },
-        }
-        variants.append(
-            compact_variant(
-                name=f"{lang_cls.__name__}_empty_container_type_hint",
-                spec=lang_cls(**kwargs),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
-
-
-@beartype
 def build_multiline_string_context_cases(
     *,
     combined_case_dir_name: str,
@@ -369,57 +337,14 @@ def build_multiline_string_context_cases(
     return cases
 
 
-@beartype
-def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
-    """Build custom, punctuation, and exhausted raw-delimiter variants."""
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        custom_base = metadata.non_default_kwargs.get(
-            "multiline_raw_string_delimiter_base"
-        )
-        if custom_base is None:
-            continue
-        multiline = _enum_member_by_name(
-            enum_cls=lang_cls.StringFormats,
-            name="MULTILINE",
-        )
-        for name, delimiter_base in (
-            ("custom", custom_base),
-            ("punctuation", "_{}[]#<>%:;.?*"),
-            ("exhausted", "abcdefghijklmnop"),
-        ):
-            variants.append(
-                compact_variant(
-                    name=(
-                        f"{lang_cls.__name__}_multiline_raw_string_delimiter"
-                        f"_{name}"
-                    ),
-                    spec=make_spec(
-                        lang_cls=lang_cls,
-                        string_format=multiline,
-                        multiline_raw_string_delimiter_base=delimiter_base,
-                    ),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
 # Axes whose expansion is genuinely irregular, and so is written as a
 # typed Python builder instead of a declared plan in ``axes.toml``.
 # ``comment_terminator`` and ``string_embedded_nul`` gate on the member
-# rather than on the language; ``empty_container_type_hint`` and
-# ``multiline_raw_string_delimiter`` pass fixture data through as a
-# constructor argument; ``typed_dict_null_filtering`` renders through a
-# synthesized language subclass.  A meta-test holds this set to its
-# current membership: new axes belong in ``axes.toml``.
+# rather than on the language; ``typed_dict_null_filtering`` renders
+# through a synthesized language subclass.  A meta-test holds this set
+# to its current membership: new axes belong in ``axes.toml``.
 _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
     "comment_terminator": build_comment_terminator_variants,
-    "empty_container_type_hint": build_empty_container_type_hint_variants,
-    "multiline_raw_string_delimiter": (
-        build_multiline_raw_string_delimiter_variants
-    ),
     "string_embedded_nul": build_string_embedded_nul_variants,
     "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
 }
