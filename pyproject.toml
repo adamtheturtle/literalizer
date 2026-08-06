@@ -414,6 +414,8 @@ ignore_names = [
     "__call__",
     # Protocol and collection dunder methods used implicitly
     "__getitem__",
+    # pydantic validators, called by the model rather than by name
+    "_add_case_dir_name",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
     "ARRAY",

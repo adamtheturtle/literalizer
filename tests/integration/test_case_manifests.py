@@ -98,6 +98,72 @@ def _write_case(
             ),
             "unknown call_transform placeholder 'bogus'",
         ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'call_style = "mystery"\n'
+            ),
+            ("Input should be 'command', 'keyword', 'object', 'positional'"),
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                "call_style = 1\n"
+            ),
+            "call_style",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                "call_transform = 1\n"
+            ),
+            "call_transform",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'zip_input_format = "mystery"\n'
+            ),
+            "Input should be 'json', 'json5', 'toml', 'yaml'",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'variable_form = "mystery"\n'
+            ),
+            "Input should be 'existing', 'new'",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'self_contained_mirror_variable_form = "mystery"\n'
+            ),
+            "Input should be 'existing', 'new'",
+        ),
     ],
 )
 def test_invalid_manifest_is_actionable(
