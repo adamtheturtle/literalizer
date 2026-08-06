@@ -798,7 +798,7 @@ jobs:
       # pinned interpreter, so ``DateTime`` installs against it (no
       # ``sudo``, which would target the system Perl instead).
       - name: Set up Perl
-        uses: shogo82148/actions-setup-perl@v1.42.0
+        uses: shogo82148/actions-setup-perl@v1.43.0
         with:
           perl-version: '5.36'
       - name: Install Perl DateTime
