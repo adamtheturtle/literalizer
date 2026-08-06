@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from literalizer import CollectionLayout
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_manifests import CaseManifestError
@@ -22,20 +23,16 @@ from .variant_plans import (
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
+from .variant_types import find_enum_member
 
 # The axes that resolve to a typed Python builder instead of a declared
 # plan.  This list may shrink, never grow: a new axis belongs in
 # ``axes.toml``.
 _EXPECTED_ESCAPE_HATCH_AXES = frozenset(
     {
-        "collection_layout",
         "comment_terminator",
-        "dhall_nested_map_widening",
         "empty_container_type_hint",
-        "empty_map_narrowing",
         "multiline_raw_string_delimiter",
-        "nested_map_widening",
-        "record_nested_map_fallback",
         "string_embedded_nul",
         "typed_dict_null_filtering",
     }
@@ -213,6 +210,77 @@ def test_json_type_name_suffixes_rename_a_member() -> None:
         }, lang_cls.__name__
 
 
+def test_layout_paired_axis_renders_both_layouts() -> None:
+    """A declared pair of layouts renders each variant twice.
+
+    The compact and multiline paths render a widened literal
+    separately, so each participating language contributes one variant
+    per layout under one spec.
+    """
+    variants = variants_for_axis(axis_key="empty_map_narrowing")
+    by_layout = {
+        layout: sorted(
+            variant.name
+            for variant in variants
+            if variant.collection_layout is layout
+        )
+        for layout in CollectionLayout
+    }
+
+    assert by_layout[CollectionLayout.MULTILINE] == [
+        f"{name}_multiline" for name in by_layout[CollectionLayout.COMPACT]
+    ]
+    assert by_layout[CollectionLayout.COMPACT] != []
+
+
+def test_behavior_flag_gate_selects_the_widening_languages() -> None:
+    """The ``RECORD`` fallback axis follows the rendering behavior.
+
+    A language reaches the axis when its ``RECORD`` strategy widens the
+    nested sibling maps no record shape fits, so gaining that behavior
+    is what enrolls it rather than a list naming it.
+    """
+    widening = set[str]()
+    for lang_cls in ALL_LANGUAGES:
+        strategy = find_enum_member(
+            enum_cls=make_spec(lang_cls=lang_cls).heterogeneous_strategies,
+            name="RECORD",
+        )
+        if strategy is None:
+            continue
+        spec = make_spec(lang_cls=lang_cls, heterogeneous_strategy=strategy)
+        behavior = spec.heterogeneous_behavior
+        if behavior.widens_unrecordizable_nested_sibling_maps:
+            widening.add(lang_cls.__name__)
+    covered = {
+        variant.lang_cls.__name__
+        for variant in variants_for_axis(axis_key="record_nested_map_fallback")
+    }
+
+    assert covered == widening
+
+
+def test_nested_map_widening_axes_partition_their_languages() -> None:
+    """The two nested-map widening axes never share a language.
+
+    They render one input under one name, so a language reaching both
+    would claim one golden path twice.
+    """
+    declared = {
+        variant.lang_cls
+        for variant in variants_for_axis(axis_key="nested_map_widening")
+    }
+    wrapping = {
+        variant.lang_cls
+        for variant in variants_for_axis(
+            axis_key="nested_map_widening_scalar_wrapping"
+        )
+    }
+
+    assert declared & wrapping == set()
+    assert wrapping != set()
+
+
 def test_unknown_axis_is_actionable() -> None:
     """An axis with no plan and no builder names both options."""
     with pytest.raises(
@@ -308,6 +376,47 @@ def test_unknown_axis_is_actionable() -> None:
         (
             _VALID_AXIS + 'member_name_source = "vibes"\n',
             "unknown member name source 'vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + 'gates = [{ kind = "metadata_field", field = "vibe", '
+            'value = "default" }]\n',
+            "unknown metadata field 'vibe'",
+        ),
+        (
+            _VALID_AXIS + 'gates = [{ kind = "spec_config_field_present", '
+            'field = "vibe_config.vibe" }]\n',
+            "unknown spec config field 'vibe_config.vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + 'gates = [{ kind = "behavior_flag", flag = "vibes" }]\n',
+            "unknown behavior flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "behavior_flag_member", '
+                'option = "heterogeneous_strategy", flag = "vibes" }]\n'
+            ),
+            "unknown behavior flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS + 'layouts = [{ layout = "SIDEWAYS" }]\n',
+            "unknown layout 'SIDEWAYS'",
+        ),
+        (
+            _VALID_FIXED_AXIS + 'name_metadata_field = "vibes"\n',
+            "unknown name metadata field 'vibes'",
+        ),
+        (
+            _VALID_FIXED_AXIS
+            + 'name_metadata_field = "collection_layout_category"\n',
+            r"name template omits placeholder\(s\) \['category'\]",
+        ),
+        (
+            _VALID_FIXED_AXIS.replace("{lang}_example", "{lang}_{category}"),
+            r"unknown name-template placeholder\(s\) \['category'\]",
         ),
         (
             _VALID_CROSS_AXIS + 'primary_axis = "date"\n',

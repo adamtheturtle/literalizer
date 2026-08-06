@@ -42,6 +42,18 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "value_field" },
 ]
 
+# Every language renders the shared input under both layouts.  The
+# middle name segment is language metadata, because COBOL's goldens
+# call it ``layout`` rather than ``collection_layout``.
+[axes.collection_layout]
+plan = "fixed_overrides"
+name_template = "{lang}_{category}"
+name_metadata_field = "collection_layout_category"
+layouts = [
+  { layout = "COMPACT", name_suffix = "_compact" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
 [axes.comment]
 plan = "every_non_default_member"
 name_template = "{lang}_comment_{format}"
@@ -139,6 +151,27 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "default_set_element_type" },
 ]
 
+# Mirrors ``nested_map_widening`` for Dhall's ``UNION_TYPE`` strategy,
+# against a dedicated input.  Dhall renders dicts as records whose type
+# is fixed by their field set, so the shared input (whose sibling inner
+# maps also differ in *which* keys they carry) can never type-check as a
+# Dhall list regardless of widening.  This input keeps every sibling
+# inner map at the same key set while diverging its scalar value types,
+# so the widening fix is exactly what makes the list type-check (#2897).
+# It reuses that axis's strategy selection rather than restating the
+# behavior flag that names it.
+[axes.dhall_nested_map_widening]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_map_widening"
+overrides_from = "nested_map_widening_scalar_wrapping"
+gates = [
+  { kind = "metadata_field", field = "nested_map_widening", value = "uniform_keys" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
 [axes.dict_decl]
 plan = "cross_product"
 name_template = "{lang}_dict_{format}_{tag}_{secondary}"
@@ -162,6 +195,27 @@ plan = "every_non_default_member"
 name_template = "{lang}_empty_dict_key_{format}"
 option = "empty_dict_key"
 gates = [{ kind = "spec_field_present", field = "empty_dict_key" }]
+
+# An empty map beside a non-empty map sibling must borrow the sibling's
+# concrete key/value types, or the empty literal's fallback type
+# disagrees with the sibling and the list fails to compile (V issue
+# #3015: ``[map[string]IVal{}, {'x': 1}]`` is rejected because the
+# ``int`` value cannot coerce to the ``IVal`` interface; Rust issue
+# #3013: ``HashMap::<String, String>::from([])`` disagrees with the
+# sibling ``HashMap<&str, i32>``).  Only languages whose
+# ``dict_format_config`` declares a ``narrowed_empty_form`` narrow the
+# empty map this way; the others have their own, still-divergent
+# handling of this shape.
+[axes.empty_map_narrowing]
+plan = "fixed_overrides"
+name_template = "{lang}_empty_map_narrowing"
+gates = [
+  { kind = "spec_config_field_present", field = "dict_format_config.narrowed_empty_form" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
 
 [axes.error_record_shape_names]
 plan = "fixed_overrides"
@@ -354,6 +408,51 @@ overrides = [
   { kind = "enum_member", option = "string_format", member = "MULTILINE" },
 ]
 
+# Sibling dict values that are themselves maps share one declared value
+# type in the enclosing container, but each inner map otherwise renders
+# with its own narrowed opener, so a map narrower than the widened slot
+# type does not compile (issue #2878; the dict-value analogue of the
+# sibling widening #1471/#1472 applied to call arguments and sequence
+# elements).  Go widens every such inner map to ``map[string]any``
+# (#2878) and Kotlin widens the element maps to
+# ``mapOf<String, Map<String, Any?>>`` (#2890) so each literal matches
+# its declared type.  Only languages that declare this opt-in
+# participate today, so the input stays out of all-languages base
+# discovery; both layouts are covered because the compact and multiline
+# paths render the widened literals separately.
+[axes.nested_map_widening]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_map_widening"
+gates = [
+  { kind = "metadata_field", field = "nested_map_widening", value = "default" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
+# The same input, for the languages that widen it by wrapping every
+# sibling map's scalar leaves in a shared value carrier rather than by
+# widening the declared slot type: Rust's ``TAGGED_ENUM`` value enum
+# (#2879), Nim's ``OBJECT_VARIANT`` ``Value`` (#2898), Mojo's
+# ``VARIANT`` ``Value`` alias (#2895), V's ``INTERFACE`` ``IVal``
+# (#2896), Zig's value union and C++'s ``RECORD`` ``std::variant`` value
+# alias (#2917).  The strategy is the one whose rendering behavior says
+# so, rather than one named per language.
+[axes.nested_map_widening_scalar_wrapping]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_map_widening"
+gates = [
+  { kind = "metadata_field", field = "nested_map_widening", value = "none" },
+]
+overrides = [
+  { kind = "behavior_flag_member", option = "heterogeneous_strategy", flag = "widens_nested_maps_by_wrapping_scalars" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
 [axes.nested_tuple_strategy]
 plan = "fixed_overrides"
 name_template = "{lang}_heterogeneous_strategy_tuple_nested"
@@ -425,6 +524,40 @@ name_template = "{lang}_record_keyword_field"
 gates = [{ kind = "record_variant", variant = "keyword_field" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+# A list of records whose top-level keys are uniform but whose nested
+# map under one key differs in shape (divergent or disjoint key sets)
+# cannot render that nested field as a record: giving the two nested
+# maps distinct record shapes forces the enclosing records to split, so
+# the ``RECORD`` strategy would reject the sibling list.  The shared
+# widening pass drops such families from the shape mapping, so the outer
+# record survives.  Rust widens the field to
+# ``HashMap<&'static str, Value>`` and wraps the leaves in its value
+# enum (issue #2910).  Go, Java, C#, Kotlin, Scala, and Swift use their
+# universal top types (issues #2911 through #2916).  Crystal, Nim, V, D,
+# Odin, Zig, C, and C++ use language-specific value carriers (issues
+# #2917 and #2919 through #2924).  The remaining ``RECORD`` languages
+# gain their own widening in later sub-issues of #2909, which is what
+# the behavior flag selects on, so this stays out of all-languages base
+# discovery.  Every effective language version is covered because the
+# widened carrier and aggregate syntax can vary by target standard, and
+# both layouts because their widened-map paths render compact and
+# multiline literals separately.
+[axes.record_nested_map_fallback]
+plan = "fixed_overrides"
+name_template = "{lang}_record_nested_map_fallback"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "behavior_flag", flag = "widens_unrecordizable_nested_sibling_maps" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
 ]
 
 [axes.record_nonrecord_dict_field]

@@ -6,14 +6,15 @@ Python: the file selects a plan and supplies its parameters, it never
 expresses a condition.
 
 Everything a plan looks up by name -- a formatter option, a language
-capability flag, a spec field, a language-metadata field -- resolves
+capability flag, a spec field, a rendering behavior flag, a
+language-metadata field -- resolves
 through a closed registry declared here, so an unknown name, an unknown
 plan, an unknown gate kind, or an unknown name-template placeholder
 fails when the registry loads rather than when a golden file is built.
 
-Axes whose expansion is genuinely irregular (the layout-pair widening
-cases, a handful of one-off shapes) stay as registered escape-hatch
-builders in :mod:`variant_cases`.  A ``filtered`` plan narrows any
+Axes whose expansion is genuinely irregular (a handful of one-off
+shapes) stay as registered escape-hatch builders in
+:mod:`variant_cases`.  A ``filtered`` plan narrows any
 axis, declared or irregular, to the languages its gates admit, so a
 suite needing a smaller slice of an existing expansion names one rather
 than writing its own builder.  A plan may also start from another
@@ -207,6 +208,24 @@ def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the bytes formats a language offers."""
     assert isinstance(spec, _HasBytesFormat)  # noqa: S101
     return spec.bytes_formats
+
+
+@beartype
+def _widens_nested_maps_by_wrapping_scalars(
+    spec: literalizer.Language,
+) -> bool:
+    """Return whether the strategy wraps sibling maps' scalar leaves."""
+    behavior = spec.heterogeneous_behavior
+    return behavior.widens_nested_maps_by_wrapping_scalars
+
+
+@beartype
+def _widens_unrecordizable_nested_sibling_maps(
+    spec: literalizer.Language,
+) -> bool:
+    """Return whether the strategy widens nested maps no record fits."""
+    behavior = spec.heterogeneous_behavior
+    return behavior.widens_unrecordizable_nested_sibling_maps
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -409,6 +428,37 @@ _METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
             metadata.variants.heterogeneous_value_variant_name_strategy
         )
     ),
+    "nested_map_widening": (
+        lambda metadata: metadata.variants.nested_map_widening
+    ),
+}
+
+# Language-metadata fields a plan may put in a variant name.
+_NAME_METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str]] = {
+    "collection_layout_category": (
+        lambda metadata: metadata.golden.collection_layout_category
+    ),
+}
+
+# Rendering behaviors a strategy either has or has not.  A gate reads
+# one from the spec an axis's overrides select, and an override picks
+# the option member whose spec has it; the flag is named here once so
+# neither spells it itself.
+_BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
+    "widens_nested_maps_by_wrapping_scalars": (
+        _widens_nested_maps_by_wrapping_scalars
+    ),
+    "widens_unrecordizable_nested_sibling_maps": (
+        _widens_unrecordizable_nested_sibling_maps
+    ),
+}
+
+# Optional fields on a spec's nested format configuration, which a
+# language either declares a value for or leaves unset.
+_SPEC_CONFIG_FIELDS: Mapping[str, Callable[[literalizer.Language], object]] = {
+    "dict_format_config.narrowed_empty_form": (
+        lambda spec: spec.dict_format_config.narrowed_empty_form
+    ),
 }
 
 # Optional spec fields a gate may test for.  A language that cannot
@@ -425,6 +475,7 @@ _SPEC_FIELDS = frozenset(
 )
 
 _LANG_PLACEHOLDER = "lang"
+_CATEGORY_PLACEHOLDER = "category"
 _FORMAT_PLACEHOLDER = "format"
 _VALUE_PLACEHOLDER = "value"
 _TAG_PLACEHOLDER = "tag"
@@ -492,12 +543,59 @@ class _EnumMemberPresentGate(
     member: Annotated[str, Field(min_length=1)]
 
 
+class _MetadataFieldGate(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Admit languages whose metadata field holds a given value."""
+
+    kind: Literal["metadata_field"]
+    field: Annotated[str, Field(min_length=1)]
+    value: Annotated[str, Field(min_length=1)]
+
+
+class _SpecConfigFieldPresentGate(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Admit languages whose spec configuration sets an optional
+    field.
+    """
+
+    kind: Literal["spec_config_field_present"]
+    field: Annotated[str, Field(min_length=1)]
+
+
+class _BehaviorFlagGate(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Admit languages whose selected strategy sets a behavior flag.
+
+    Unlike every other gate, this one reads the spec an axis's
+    overrides build rather than the language default, because the
+    behavior it tests belongs to the strategy those overrides select.
+    """
+
+    kind: Literal["behavior_flag"]
+    flag: Annotated[str, Field(min_length=1)]
+
+
 type _Gate = Annotated[
     _CapabilityFlagGate
     | _RecordVariantGate
     | _NonDefaultKwargGate
     | _SpecFieldPresentGate
-    | _EnumMemberPresentGate,
+    | _EnumMemberPresentGate
+    | _MetadataFieldGate
+    | _SpecConfigFieldPresentGate
+    | _BehaviorFlagGate,
     Field(discriminator="kind"),
 ]
 
@@ -567,12 +665,31 @@ class _RecordShapeNamesOverride(
     name: Annotated[str, Field(min_length=1)]
 
 
+class _BehaviorFlagMemberOverride(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Select the option member whose spec sets a behavior flag.
+
+    A language offering no such member does not participate in the
+    axis, so the flag that names the member also decides who renders
+    it.
+    """
+
+    kind: Literal["behavior_flag_member"]
+    option: Annotated[str, Field(min_length=1)]
+    flag: Annotated[str, Field(min_length=1)]
+
+
 type _Override = Annotated[
     _NonDefaultKwargOverride
     | _EnumMemberOverride
     | _MetadataEnumMemberOverride
     | _TrueFlagOverride
-    | _RecordShapeNamesOverride,
+    | _RecordShapeNamesOverride
+    | _BehaviorFlagMemberOverride,
     Field(discriminator="kind"),
 ]
 
@@ -590,6 +707,23 @@ def _no_overrides() -> list[_Override]:
 def _no_excluded_members() -> list[str]:
     """Return a typed empty exclusion list for the models."""
     return []
+
+
+class _LayoutChoice(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """One collection layout an axis renders each variant under."""
+
+    layout: Annotated[str, Field(min_length=1)]
+    name_suffix: str = ""
+
+
+def _compact_layout() -> list[_LayoutChoice]:
+    """Return the single compact layout most axes render under."""
+    return [_LayoutChoice(layout="COMPACT")]
 
 
 class _EveryNonDefaultMemberPlan(
@@ -614,6 +748,9 @@ class _EveryNonDefaultMemberPlan(
     excluded_members: list[str] = Field(default_factory=_no_excluded_members)
     declaration_style_sequence_override: bool = False
     per_version: bool = False
+    layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
+        default_factory=_compact_layout
+    )
     gates: list[_Gate] = Field(default_factory=_no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
@@ -630,15 +767,21 @@ class _FixedOverridesPlan(
     axis, which supplies the option value and the ``{format}`` half of
     the name.  ``overrides_from`` reuses another axis's overrides, so a
     setting two axes share is declared once.
+    ``name_metadata_field`` fills the ``{category}`` half of the name
+    from a language-metadata field.
     """
 
     plan: Literal["fixed_overrides"]
     name_template: Annotated[str, Field(min_length=1)]
     primary_axis: Annotated[str, Field(min_length=1)] | None = None
     overrides_from: Annotated[str, Field(min_length=1)] | None = None
+    name_metadata_field: Annotated[str, Field(min_length=1)] | None = None
     record_language_version: bool = False
     external_record_shape_fixture: bool = False
     per_version: bool = False
+    layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
+        default_factory=_compact_layout
+    )
     gates: list[_Gate] = Field(default_factory=_no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
@@ -689,6 +832,9 @@ class _CrossProductPlan(
     )
     skip_incompatible_formats: bool = False
     per_version: bool = False
+    layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
+        default_factory=_compact_layout
+    )
     gates: list[_Gate] = Field(default_factory=_no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
@@ -760,7 +906,9 @@ def _validate_options(
         for override in axis.overrides
         if isinstance(
             override,
-            _EnumMemberOverride | _MetadataEnumMemberOverride,
+            _EnumMemberOverride
+            | _MetadataEnumMemberOverride
+            | _BehaviorFlagMemberOverride,
         )
     )
     if isinstance(axis, _EveryNonDefaultMemberPlan):
@@ -796,6 +944,22 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
                 raise AxisPlanError(msg)
             case _SpecFieldPresentGate() if gate.field not in _SPEC_FIELDS:
                 msg = f"axis {axis_key!r}: unknown spec field {gate.field!r}"
+                raise AxisPlanError(msg)
+            case _MetadataFieldGate() if gate.field not in _METADATA_FIELDS:
+                msg = (
+                    f"axis {axis_key!r}: unknown metadata field {gate.field!r}"
+                )
+                raise AxisPlanError(msg)
+            case _SpecConfigFieldPresentGate() if (
+                gate.field not in _SPEC_CONFIG_FIELDS
+            ):
+                msg = (
+                    f"axis {axis_key!r}: unknown spec config field "
+                    f"{gate.field!r}"
+                )
+                raise AxisPlanError(msg)
+            case _BehaviorFlagGate() if gate.flag not in _BEHAVIOR_FLAGS:
+                msg = f"axis {axis_key!r}: unknown behavior flag {gate.flag!r}"
                 raise AxisPlanError(msg)
             case _:
                 continue
@@ -834,6 +998,20 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
             f"{axis.member_name_source!r}"
         )
         raise AxisPlanError(msg)
+    if (
+        isinstance(axis, _FixedOverridesPlan)
+        and axis.name_metadata_field is not None
+        and axis.name_metadata_field not in _NAME_METADATA_FIELDS
+    ):
+        msg = (
+            f"axis {axis_key!r}: unknown name metadata field "
+            f"{axis.name_metadata_field!r}"
+        )
+        raise AxisPlanError(msg)
+    for layout in axis.layouts:
+        if layout.layout not in literalizer.CollectionLayout.__members__:
+            msg = f"axis {axis_key!r}: unknown layout {layout.layout!r}"
+            raise AxisPlanError(msg)
     for override in axis.overrides:
         if (
             isinstance(override, _MetadataEnumMemberOverride)
@@ -842,6 +1020,12 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
             msg = (
                 f"axis {axis_key!r}: unknown metadata field {override.field!r}"
             )
+            raise AxisPlanError(msg)
+        if (
+            isinstance(override, _BehaviorFlagMemberOverride)
+            and override.flag not in _BEHAVIOR_FLAGS
+        ):
+            msg = f"axis {axis_key!r}: unknown behavior flag {override.flag!r}"
             raise AxisPlanError(msg)
 
 
@@ -853,9 +1037,11 @@ def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
             return frozenset({_LANG_PLACEHOLDER, _FORMAT_PLACEHOLDER})
         case _FixedOverridesPlan():
             named = frozenset({_LANG_PLACEHOLDER, _VALUE_PLACEHOLDER})
-            if axis.primary_axis is None:
-                return named
-            return named | {_FORMAT_PLACEHOLDER}
+            if axis.primary_axis is not None:
+                named |= {_FORMAT_PLACEHOLDER}
+            if axis.name_metadata_field is not None:
+                named |= {_CATEGORY_PLACEHOLDER}
+            return named
         case _CrossProductPlan():
             primary = (
                 frozenset[str]()
@@ -885,13 +1071,16 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
             f"{unknown}"
         )
         raise AxisPlanError(msg)
-    needs_format = (
-        isinstance(axis, _FixedOverridesPlan) and axis.primary_axis is not None
-    )
-    if needs_format and _FORMAT_PLACEHOLDER not in used:
+    required = frozenset[str]()
+    if isinstance(axis, _FixedOverridesPlan):
+        if axis.primary_axis is not None:
+            required |= {_FORMAT_PLACEHOLDER}
+        if axis.name_metadata_field is not None:
+            required |= {_CATEGORY_PLACEHOLDER}
+    omitted = sorted(required - used)
+    if omitted:
         msg = (
-            f"axis {axis_key!r}: name template omits placeholder(s) "
-            f"['{_FORMAT_PLACEHOLDER}']"
+            f"axis {axis_key!r}: name template omits placeholder(s) {omitted}"
         )
         raise AxisPlanError(msg)
     if isinstance(axis, _CrossProductPlan):
@@ -1146,28 +1335,42 @@ def _gate_admits(
     gate: _Gate,
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
-    default_spec: literalizer.Language,
+    spec: literalizer.Language,
 ) -> bool:
-    """Return whether *gate* admits a language to its axis."""
+    """Return whether *gate* admits a language to its axis.
+
+    *spec* is the language default for every gate but
+    :class:`_BehaviorFlagGate`, which reads the spec built from the
+    axis's overrides.
+    """
     match gate:
         case _CapabilityFlagGate():
-            return _CAPABILITY_FLAGS[gate.flag](lang_cls)
+            admits = _CAPABILITY_FLAGS[gate.flag](lang_cls)
         case _RecordVariantGate():
-            return gate.variant in metadata.record_variants
+            admits = gate.variant in metadata.record_variants
         case _NonDefaultKwargGate():
-            return gate.kwarg in metadata.non_default_kwargs
+            admits = gate.kwarg in metadata.non_default_kwargs
         case _SpecFieldPresentGate():
-            fields = dataclasses.fields(class_or_instance=default_spec)
-            return gate.field in {spec_field.name for spec_field in fields}
+            fields = dataclasses.fields(class_or_instance=spec)
+            admits = gate.field in {spec_field.name for spec_field in fields}
         case _EnumMemberPresentGate():
             option = _OPTIONS[gate.option]
-            member = find_enum_member(
-                enum_cls=option.get_members(default_spec),
-                name=gate.member,
+            admits = (
+                find_enum_member(
+                    enum_cls=option.get_members(spec),
+                    name=gate.member,
+                )
+                is not None
             )
-            return member is not None
+        case _MetadataFieldGate():
+            admits = _METADATA_FIELDS[gate.field](metadata) == gate.value
+        case _SpecConfigFieldPresentGate():
+            admits = _SPEC_CONFIG_FIELDS[gate.field](spec) is not None
+        case _BehaviorFlagGate():
+            admits = _BEHAVIOR_FLAGS[gate.flag](spec)
         case _ as unreachable:
             assert_never(unreachable)
+    return admits
 
 
 @beartype
@@ -1216,51 +1419,127 @@ def _metadata_member(
 
 
 @beartype
+def _behavior_flag_member(
+    *,
+    override: _BehaviorFlagMemberOverride,
+    lang_cls: literalizer.LanguageCls,
+    default_spec: literalizer.Language,
+) -> enum.Enum | None:
+    """Return the option member whose spec sets a behavior flag."""
+    option = _OPTIONS[override.option]
+    has_flag = _BEHAVIOR_FLAGS[override.flag]
+    for member in option.get_members(default_spec):
+        spec = make_spec(lang_cls=lang_cls, **{option.kwarg: member})
+        if has_flag(spec):
+            return member
+    return None
+
+
+@beartype
+def _override_selection(
+    *,
+    axis_key: str,
+    override: _Override,
+    lang_cls: literalizer.LanguageCls,
+    metadata: LanguageMetadata,
+    default_spec: literalizer.Language,
+) -> _ResolvedOverrides | None:
+    """Resolve one declared override for one language."""
+    resolved: _ResolvedOverrides | None
+    match override:
+        case _NonDefaultKwargOverride():
+            value = _sample_kwarg(
+                axis_key=axis_key,
+                kwarg=override.kwarg,
+                metadata=metadata,
+            )
+            resolved = _ResolvedOverrides(
+                kwargs={override.kwarg: value},
+                name_value=value if override.name_value else None,
+            )
+        case _EnumMemberOverride():
+            option = _OPTIONS[override.option]
+            resolved = _ResolvedOverrides(
+                kwargs={
+                    option.kwarg: enum_member_by_name(
+                        enum_cls=option.get_members(default_spec),
+                        name=override.member,
+                    )
+                },
+                name_value=None,
+            )
+        case _MetadataEnumMemberOverride():
+            resolved = _ResolvedOverrides(
+                kwargs=_metadata_member(
+                    axis_key=axis_key,
+                    override=override,
+                    metadata=metadata,
+                    default_spec=default_spec,
+                ),
+                name_value=None,
+            )
+        case _TrueFlagOverride():
+            resolved = _ResolvedOverrides(
+                kwargs={override.kwarg: True},
+                name_value=None,
+            )
+        case _RecordShapeNamesOverride():
+            resolved = _ResolvedOverrides(
+                kwargs={
+                    "record_shape_names": {
+                        frozenset(override.keys): override.name
+                    }
+                },
+                name_value=override.name,
+            )
+        case _BehaviorFlagMemberOverride():
+            member = _behavior_flag_member(
+                override=override,
+                lang_cls=lang_cls,
+                default_spec=default_spec,
+            )
+            resolved = (
+                None
+                if member is None
+                else _ResolvedOverrides(
+                    kwargs={_OPTIONS[override.option].kwarg: member},
+                    name_value=None,
+                )
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+    return resolved
+
+
+@beartype
 def _resolve_overrides(
     *,
     axis_key: str,
     overrides: Sequence[_Override],
+    lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
-) -> _ResolvedOverrides:
-    """Resolve an axis's declared overrides for one language."""
+) -> _ResolvedOverrides | None:
+    """Resolve an axis's declared overrides for one language.
+
+    Returns ``None`` when a ``behavior_flag_member`` override finds no
+    member to select, which is how that override excludes a language.
+    """
     kwargs: dict[str, object] = {}
     name_value: str | None = None
     for override in overrides:
-        match override:
-            case _NonDefaultKwargOverride():
-                value = _sample_kwarg(
-                    axis_key=axis_key,
-                    kwarg=override.kwarg,
-                    metadata=metadata,
-                )
-                kwargs[override.kwarg] = value
-                if override.name_value:
-                    name_value = value
-            case _EnumMemberOverride():
-                option = _OPTIONS[override.option]
-                kwargs[option.kwarg] = enum_member_by_name(
-                    enum_cls=option.get_members(default_spec),
-                    name=override.member,
-                )
-            case _MetadataEnumMemberOverride():
-                kwargs.update(
-                    _metadata_member(
-                        axis_key=axis_key,
-                        override=override,
-                        metadata=metadata,
-                        default_spec=default_spec,
-                    )
-                )
-            case _TrueFlagOverride():
-                kwargs[override.kwarg] = True
-            case _RecordShapeNamesOverride():
-                kwargs["record_shape_names"] = {
-                    frozenset(override.keys): override.name
-                }
-                name_value = override.name
-            case _ as unreachable:
-                assert_never(unreachable)
+        resolved = _override_selection(
+            axis_key=axis_key,
+            override=override,
+            lang_cls=lang_cls,
+            metadata=metadata,
+            default_spec=default_spec,
+        )
+        if resolved is None:
+            return None
+        kwargs.update(resolved.kwargs)
+        if resolved.name_value is not None:
+            name_value = resolved.name_value
     return _ResolvedOverrides(kwargs=kwargs, name_value=name_value)
 
 
@@ -1597,6 +1876,111 @@ def _paired_spec(
 
 
 @beartype
+def _name_category(
+    *,
+    axis: _ExpandedAxis,
+    metadata: LanguageMetadata,
+) -> str | None:
+    """Return the metadata-supplied half of a variant name."""
+    if not isinstance(axis, _FixedOverridesPlan) or (
+        axis.name_metadata_field is None
+    ):
+        return None
+    return _NAME_METADATA_FIELDS[axis.name_metadata_field](metadata)
+
+
+@beartype
+def _admitted_overrides(
+    *,
+    axis_key: str,
+    overrides: Sequence[_Override],
+    gates: Sequence[_Gate],
+    lang_cls: literalizer.LanguageCls,
+    metadata: LanguageMetadata,
+    default_spec: literalizer.Language,
+) -> _ResolvedOverrides | None:
+    """Return one language's resolved overrides, or ``None``.
+
+    A behavior-flag gate reads the spec the overrides build, so the
+    two are resolved together: the gates that decide on the language
+    alone run first, then the overrides, then the gates that decide on
+    what those overrides selected.
+    """
+    admits = functools.partial(
+        _gate_admits,
+        lang_cls=lang_cls,
+        metadata=metadata,
+    )
+    behavior_gates = [
+        gate for gate in gates if isinstance(gate, _BehaviorFlagGate)
+    ]
+    language_gates = [
+        gate for gate in gates if not isinstance(gate, _BehaviorFlagGate)
+    ]
+    if not all(
+        admits(gate=gate, spec=default_spec) for gate in language_gates
+    ):
+        return None
+    resolved = _resolve_overrides(
+        axis_key=axis_key,
+        overrides=overrides,
+        lang_cls=lang_cls,
+        metadata=metadata,
+        default_spec=default_spec,
+    )
+    if resolved is None:
+        return None
+    if not all(
+        admits(
+            gate=gate,
+            spec=_build_spec(lang_cls=lang_cls, kwargs=resolved.kwargs),
+        )
+        for gate in behavior_gates
+    ):
+        return None
+    return resolved
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _FixtureContext:
+    """What an axis pins about the fixture hosting its variants."""
+
+    fixture_prefix: str
+    record_version: Mapping[str, object]
+
+
+@beartype
+def _fixture_context(
+    *,
+    axis: _ExpandedAxis,
+    lang_cls: literalizer.LanguageCls,
+    metadata: LanguageMetadata,
+    default_spec: literalizer.Language,
+) -> _FixtureContext:
+    """Return the fixture preamble and record version an axis pins."""
+    if not isinstance(axis, _FixedOverridesPlan):
+        return _FixtureContext(fixture_prefix="", record_version={})
+    return _FixtureContext(
+        fixture_prefix=(
+            _external_record_shape_prefix(
+                lang_cls=lang_cls,
+                metadata=metadata,
+            )
+            if axis.external_record_shape_fixture
+            else ""
+        ),
+        record_version=(
+            _record_language_version(
+                metadata=metadata,
+                default_spec=default_spec,
+            )
+            if axis.record_language_version
+            else {}
+        ),
+    )
+
+
+@beartype
 def _axis_variants(
     *,
     axis_key: str,
@@ -1609,35 +1993,22 @@ def _axis_variants(
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         default_spec = make_spec(lang_cls=lang_cls)
-        if not all(
-            _gate_admits(
-                gate=gate,
-                lang_cls=lang_cls,
-                metadata=metadata,
-                default_spec=default_spec,
-            )
-            for gate in [*primary_gates, *axis.gates]
-        ):
-            continue
-        resolved = _resolve_overrides(
+        resolved = _admitted_overrides(
             axis_key=axis_key,
             overrides=axis.overrides,
+            gates=[*primary_gates, *axis.gates],
+            lang_cls=lang_cls,
             metadata=metadata,
             default_spec=default_spec,
         )
-        fixture_prefix = ""
-        record_version: Mapping[str, object] = {}
-        if isinstance(axis, _FixedOverridesPlan):
-            if axis.external_record_shape_fixture:
-                fixture_prefix = _external_record_shape_prefix(
-                    lang_cls=lang_cls,
-                    metadata=metadata,
-                )
-            if axis.record_language_version:
-                record_version = _record_language_version(
-                    metadata=metadata,
-                    default_spec=default_spec,
-                )
+        if resolved is None:
+            continue
+        fixture = _fixture_context(
+            axis=axis,
+            lang_cls=lang_cls,
+            metadata=metadata,
+            default_spec=default_spec,
+        )
         for selection in _selections(
             axis=axis,
             primary_plan=primary_plan,
@@ -1647,11 +2018,13 @@ def _axis_variants(
         ):
             name = axis.name_template.format(
                 lang=lang_cls.__name__,
+                category=_name_category(axis=axis, metadata=metadata),
                 format=selection.format_name,
                 value=resolved.name_value,
                 tag=selection.tag,
                 secondary=selection.secondary_name,
             )
+            seen_versions: set[enum.Enum] = set()
             for version in _language_versions(
                 axis=axis,
                 default_spec=default_spec,
@@ -1662,23 +2035,29 @@ def _axis_variants(
                     kwargs={
                         **resolved.kwargs,
                         **selection.kwargs,
-                        **record_version,
+                        **fixture.record_version,
                         **version,
                     },
                 )
-                if spec is None:
+                # Two declared versions may resolve to one effective
+                # version once the axis's overrides raise the floor, as
+                # Java's ``JDK_11`` does under ``RECORD``; the pair
+                # renders one golden file, not two.
+                if spec is None or spec.language_version in seen_versions:
                     continue
-                variants.append(
+                seen_versions.add(spec.language_version)
+                variants.extend(
                     Variant(
-                        name=name,
+                        name=f"{name}{layout.name_suffix}",
                         spec=spec,
                         lang_cls=lang_cls,
-                        collection_layout=(
-                            literalizer.CollectionLayout.COMPACT
-                        ),
-                        fixture_prefix=fixture_prefix,
+                        collection_layout=literalizer.CollectionLayout[
+                            layout.layout
+                        ],
+                        fixture_prefix=fixture.fixture_prefix,
                         record_null_substitutions=None,
                     )
+                    for layout in axis.layouts
                 )
     return variants
 
@@ -1700,7 +2079,7 @@ def _filtered_variants(
                 metadata=language_metadata(
                     language_id=variant.lang_cls.language_id
                 ),
-                default_spec=make_spec(lang_cls=variant.lang_cls),
+                spec=variant.spec,
             )
             for gate in axis.gates
         )

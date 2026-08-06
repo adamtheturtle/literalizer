@@ -38,13 +38,7 @@ from .language_specs import (
     sorted_languages,
 )
 from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
-from .variant_metadata_builders import (
-    build_collection_layout_variants,
-    build_dhall_nested_map_widening_variants,
-    build_empty_map_narrowing_variants,
-    build_modifier_variant_cases,
-    build_nested_map_widening_variants,
-)
+from .variant_metadata_builders import build_modifier_variant_cases
 from .variant_plans import (
     declared_axis_names,
     sequence_format_override,
@@ -55,7 +49,6 @@ from .variant_types import (
     VariantCase,
     compact_variant,
     enum_member_by_name,
-    find_enum_member,
     wrap_variable_form,
 )
 
@@ -279,75 +272,6 @@ def build_string_embedded_nul_variants() -> Iterable[Variant]:
 
 
 @beartype
-def build_record_nested_map_fallback_variants() -> Iterable[Variant]:
-    """Build nested-map fallback variants for capable ``RECORD``
-    strategies.
-
-    A list of records whose top-level keys are uniform but whose nested
-    map under one key differs in shape (divergent or disjoint key sets)
-    cannot render that nested field as a record: giving the two nested
-    maps distinct record shapes forces the enclosing records to split,
-    so the ``RECORD`` strategy would reject the sibling list.  The shared
-    widening pass drops such families from the shape mapping, so the
-    outer record survives.  Rust widens the field to ``HashMap<&'static
-    str, Value>`` and wraps the leaves in its value enum (issue #2910).
-    Go, Java, C#, Kotlin, Scala, and Swift use their universal top types
-    (issues #2911 through #2916). Crystal, Nim, V, D, Odin, Zig, C, and
-    C++ use language-specific value carriers (issues #2917 and #2919
-    through #2924). The remaining ``RECORD`` languages gain their own
-    widening in later sub-issues of #2909, so this stays out of
-    all-languages base
-    discovery. Every effective language version is covered because the
-    widened carrier and aggregate syntax can vary by target standard.
-    Both layouts are covered because their widened-map paths render
-    compact and multiline literals separately.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        default_spec = make_spec(lang_cls=lang_cls)
-        record_strategy = find_enum_member(
-            enum_cls=default_spec.heterogeneous_strategies,
-            name="RECORD",
-        )
-        if record_strategy is None:
-            continue
-        default_spec = make_spec(
-            lang_cls=lang_cls,
-            heterogeneous_strategy=record_strategy,
-        )
-        behavior = default_spec.heterogeneous_behavior
-        if not behavior.widens_unrecordizable_nested_sibling_maps:
-            continue
-        specs_by_version: dict[enum.Enum, literalizer.Language] = {}
-        for version in lang_cls.VersionFormats:
-            version_spec = make_spec(
-                lang_cls=lang_cls,
-                heterogeneous_strategy=record_strategy,
-                language_version=version,
-            )
-            specs_by_version[version_spec.language_version] = version_spec
-        for spec in specs_by_version.values():
-            for suffix, layout in (
-                ("", literalizer.CollectionLayout.COMPACT),
-                ("_multiline", literalizer.CollectionLayout.MULTILINE),
-            ):
-                variants.append(
-                    Variant(
-                        name=(
-                            f"{lang_cls.__name__}_record_nested_map_fallback"
-                            f"{suffix}"
-                        ),
-                        spec=spec,
-                        lang_cls=lang_cls,
-                        collection_layout=layout,
-                        fixture_prefix="",
-                        record_null_substitutions=None,
-                    )
-                )
-    return variants
-
-
-@beartype
 def build_empty_container_type_hint_variants() -> Iterable[Variant]:
     """Build variants for languages declaring empty-container hint support."""
     variants: list[Variant] = []
@@ -483,22 +407,19 @@ def build_multiline_raw_string_delimiter_variants() -> list[Variant]:
 
 
 # Axes whose expansion is genuinely irregular, and so is written as a
-# typed Python builder instead of a declared plan in ``axes.toml``:
-# the widening and narrowing cases (which pair a compact and a
-# multiline layout and select a spec by rendering behavior), and a
-# handful of one-off shapes.  A meta-test holds this set to its current
-# membership: new axes belong in ``axes.toml``.
+# typed Python builder instead of a declared plan in ``axes.toml``.
+# ``comment_terminator`` and ``string_embedded_nul`` gate on the member
+# rather than on the language; ``empty_container_type_hint`` and
+# ``multiline_raw_string_delimiter`` pass fixture data through as a
+# constructor argument; ``typed_dict_null_filtering`` renders through a
+# synthesized language subclass.  A meta-test holds this set to its
+# current membership: new axes belong in ``axes.toml``.
 _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
-    "collection_layout": build_collection_layout_variants,
     "comment_terminator": build_comment_terminator_variants,
-    "dhall_nested_map_widening": build_dhall_nested_map_widening_variants,
     "empty_container_type_hint": build_empty_container_type_hint_variants,
-    "empty_map_narrowing": build_empty_map_narrowing_variants,
     "multiline_raw_string_delimiter": (
         build_multiline_raw_string_delimiter_variants
     ),
-    "nested_map_widening": build_nested_map_widening_variants,
-    "record_nested_map_fallback": build_record_nested_map_fallback_variants,
     "string_embedded_nul": build_string_embedded_nul_variants,
     "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
 }
