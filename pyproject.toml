@@ -418,6 +418,7 @@ ignore_names = [
     # pydantic validators, called by the model rather than by name
     "_add_case_dir_name",
     "_validate_call_variants",
+    "_validate_consistency",
     "_validate_known_axis",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
