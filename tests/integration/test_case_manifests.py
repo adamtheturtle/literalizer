@@ -18,9 +18,7 @@ from .case_manifests import (
 from .variant_cases import build_variant_cases, validate_unique_variant_targets
 
 
-def _write_case(
-    *, tmp_path: Path, manifest: str, input_name: str = "input.yaml"
-) -> Path:
+def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     """Create one temporary case directory and return its path."""
     case_dir = tmp_path / "example"
     case_dir.mkdir()
@@ -81,7 +79,9 @@ def test_invalid_manifest_is_actionable(
     message: str,
 ) -> None:
     """Invalid schema data reports the manifest and specific problem."""
-    case_dir = _write_case(tmp_path=tmp_path, manifest=manifest)
+    case_dir = _write_case(
+        tmp_path=tmp_path, manifest=manifest, input_name="input.yaml"
+    )
     with pytest.raises(expected_exception=CaseManifestError, match=message):
         load_case_manifest(case_dir=case_dir)
 
@@ -91,6 +91,7 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest="schema_version = [\n",
+        input_name="input.yaml",
     )
     with pytest.raises(
         expected_exception=CaseManifestError,
@@ -138,6 +139,7 @@ def test_declared_input_must_exist(tmp_path: Path) -> None:
         manifest=(
             'schema_version = 1\ninput = "input.json"\nsuites = ["base"]\n'
         ),
+        input_name="input.yaml",
     )
     with pytest.raises(
         expected_exception=CaseManifestError,
@@ -153,6 +155,7 @@ def test_declared_input_name_must_be_supported(tmp_path: Path) -> None:
         manifest=(
             'schema_version = 1\ninput = "data.yaml"\nsuites = ["base"]\n'
         ),
+        input_name="input.yaml",
     )
     with pytest.raises(
         expected_exception=CaseManifestError,
@@ -182,6 +185,7 @@ def test_input_inference_rejects_multiple_candidates(tmp_path: Path) -> None:
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest='schema_version = 1\nsuites = ["base"]\n',
+        input_name="input.yaml",
     )
     (case_dir / "input.json").write_text(data="{}\n", encoding="utf-8")
 
@@ -197,6 +201,7 @@ def test_case_input_returns_manifest_input(tmp_path: Path) -> None:
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest='schema_version = 1\nsuites = ["base"]\n',
+        input_name="input.yaml",
     )
 
     assert (
@@ -220,6 +225,7 @@ def test_render_context_is_loaded(tmp_path: Path) -> None:
             "[base_context.record_null_substitutions]\n"
             "missing = -1\n"
         ),
+        input_name="input.yaml",
     )
     context = load_case_manifest(case_dir=case_dir).base_context
     assert context.variable_form == "existing"

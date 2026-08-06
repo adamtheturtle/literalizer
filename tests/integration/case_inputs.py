@@ -24,9 +24,7 @@ class CaseInput:
 
 
 @beartype
-def infer_case_input(
-    *, case_dir: Path, input_name: str | None = None
-) -> CaseInput:
+def infer_case_input(*, case_dir: Path, input_name: str | None) -> CaseInput:
     """Resolve a manifest's explicit input or infer its sole input
     file.
     """
