@@ -22,7 +22,6 @@ from .variant_types import (
     VariantCase,
     compact_variant,
     enum_member_by_name,
-    find_enum_member,
 )
 
 _enum_member_by_name = enum_member_by_name
@@ -230,43 +229,6 @@ def build_empty_map_narrowing_variants() -> Iterable[Variant]:
                     fixture_prefix="",
                     record_null_substitutions=None,
                 ),
-            )
-        )
-    return variants
-
-
-@beartype
-def build_language_version_cross_dict_type_variants() -> Iterable[Variant]:
-    """Build old-version x non-default dict-value-type variants.
-
-    Exercises the False branch of the ``_any_types`` intersection check
-    in the PY38 type-hint preamble builder, where the dict value type is
-    not ``Any`` so ``from typing import Any`` is not emitted.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        old_version = find_enum_member(
-            enum_cls=lang_cls.VersionFormats,
-            name="PY38",
-        )
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        dict_value_type = metadata.non_default_kwargs.get(
-            "default_dict_value_type"
-        )
-        if old_version is None or dict_value_type is None:
-            continue
-        variants.append(
-            compact_variant(
-                name=(
-                    f"{lang_cls.__name__}_version_{old_version.name.lower()}"
-                    f"_default_dict_value_type_{dict_value_type}"
-                ),
-                spec=make_spec(
-                    lang_cls=lang_cls,
-                    language_version=old_version,
-                    default_dict_value_type=dict_value_type,
-                ),
-                lang_cls=lang_cls,
             )
         )
     return variants
