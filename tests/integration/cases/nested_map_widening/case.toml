@@ -3,3 +3,6 @@ owner = "variant"
 
 [[variants]]
 axis = "nested_map_widening"
+
+[[variants]]
+axis = "nested_map_widening_scalar_wrapping"

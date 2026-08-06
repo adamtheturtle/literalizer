@@ -55,6 +55,7 @@ KNOWN_VARIANT_AXES = frozenset(
         "multiline_string_combined",
         "multiline_string_pre_indent",
         "nested_map_widening",
+        "nested_map_widening_scalar_wrapping",
         "nested_tuple_strategy",
         "numeric_literal_suffix",
         "numeric_separator",
