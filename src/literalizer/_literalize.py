@@ -2932,16 +2932,16 @@ def literalize(
     source: str,
     input_format: InputFormat,
     language: Language,
-    pre_indent_level: int = 0,
-    include_delimiters: bool = True,
-    variable_form: VariableForm | None = None,
-    wrap_in_file: bool = False,
-    ref_case: IdentifierCase | None = None,
-    ref_values: Mapping[str, ValueInput] | None = None,
-    bound_refs: Mapping[str, ValueInput] | None = None,
-    ref_key: str = "$ref",
-    record_null_substitutions: Mapping[str, ValueInput] | None = None,
-    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    pre_indent_level: int = 0,  # noqa: NOD001
+    include_delimiters: bool = True,  # noqa: NOD001
+    variable_form: VariableForm | None = None,  # noqa: NOD001
+    wrap_in_file: bool = False,  # noqa: NOD001
+    ref_case: IdentifierCase | None = None,  # noqa: NOD001
+    ref_values: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    bound_refs: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    ref_key: str = "$ref",  # noqa: NOD001
+    record_null_substitutions: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,  # noqa: NOD001
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
@@ -4947,19 +4947,19 @@ def literalize_call(
     language: Language,
     target_function: str,
     parameter_names: Sequence[str],
-    call_transform: Callable[[CallContext], str] | None = None,
-    zip_source: str | None = None,
-    zip_input_format: InputFormat | None = None,
-    comment_source: Sequence[str] | None = None,
-    per_element: bool = True,
-    wrap_in_file: bool = False,
-    ref_case: IdentifierCase | None = None,
-    consumable_refs: frozenset[str] = frozenset(),
-    ref_values: Mapping[str, ValueInput] | None = None,
-    bound_refs: Mapping[str, ValueInput] | None = None,
-    ref_key: str = "$ref",
-    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
-    variable_form: VariableForm | None = None,
+    call_transform: Callable[[CallContext], str] | None = None,  # noqa: NOD001
+    zip_source: str | None = None,  # noqa: NOD001
+    zip_input_format: InputFormat | None = None,  # noqa: NOD001
+    comment_source: Sequence[str] | None = None,  # noqa: NOD001
+    per_element: bool = True,  # noqa: NOD001
+    wrap_in_file: bool = False,  # noqa: NOD001
+    ref_case: IdentifierCase | None = None,  # noqa: NOD001
+    consumable_refs: frozenset[str] = frozenset(),  # noqa: NOD001
+    ref_values: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    bound_refs: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    ref_key: str = "$ref",  # noqa: NOD001
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,  # noqa: NOD001
+    variable_form: VariableForm | None = None,  # noqa: NOD001
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 

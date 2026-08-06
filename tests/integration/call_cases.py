@@ -325,8 +325,8 @@ def _literalize_call_case(
     | literalizer.ExistingVariable
     | None,
     wrap_in_file: bool,
-    ref_values: Mapping[str, ValueInput] | None = None,
-    bound_refs: Mapping[str, ValueInput] | None = None,
+    ref_values: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
+    bound_refs: Mapping[str, ValueInput] | None = None,  # noqa: NOD001
 ) -> literalizer.LiteralizeResult:
     """Run a configured call through the public or parsed-input path."""
     if config.input_root_key is None:

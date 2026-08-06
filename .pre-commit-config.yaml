@@ -383,6 +383,16 @@ repos:
         groups: [fast]
         require_serial: true
 
+      - id: no-defaults
+        name: no-defaults
+        entry: uv run --extra=dev no-defaults
+        language: python
+        types_or: [python]
+        additional_dependencies: [*uv_version]
+        stages: [pre-commit]
+        groups: [fast]
+        require_serial: true
+
       - id: doc8
         name: doc8
         entry: uv run --extra=dev -m doc8
