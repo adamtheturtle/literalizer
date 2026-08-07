@@ -79,13 +79,13 @@ There are three styles:
 
    print(throttler.check({ user_id: "user_1", ts: 1000.0 }));
 
-**Positional** (e.g. Rust, Java, C++): arguments are passed by position only — parameter names are not included in the output.
+**Positional** (e.g. Rust, Java, C++): arguments are passed by position only, so parameter names are not included in the output.
 
 .. code-block:: rust
 
    print(throttler.check("user_1", 1000.0));
 
-You do not need to choose a style — it is determined automatically by the language you pass to :func:`~literalizer.literalize_call`.
+You do not need to choose a style, because it is determined automatically by the language you pass to :func:`~literalizer.literalize_call`.
 
 Constructor targets
 -------------------
@@ -189,7 +189,7 @@ Composing declarations and calls
 Pairing a :func:`~literalizer.literalize` call (which declares a variable) with a :func:`~literalizer.literalize_call` call (which references that variable via ``{"$ref": "name"}``) is the natural way to render a complete, self-contained source file: declaration first, call second.
 
 Each call independently computes its own :attr:`~literalizer.LiteralizeResult.preamble` and :attr:`~literalizer.LiteralizeResult.body_preamble` from the data it sees.
-When the two halves see overlapping data — for example, both contain integers in a language where integers require a wrapper type declaration — concatenating their outputs as-is produces duplicates.
+When the two halves see overlapping data (for example, both contain integers in a language where integers require a wrapper type declaration), concatenating their outputs as-is produces duplicates.
 Strict compilers reject the result (Haskell rejects duplicate ``data`` declarations; D rejects duplicate ``import`` lines) and a linter flags it (``ruff`` and ``pylint`` warn about repeated ``from typing import Any`` lines).
 
 Pass the ref values through the ``bound_refs`` argument of :func:`~literalizer.literalize_call` (with ``wrap_in_file=True``) and it renders the whole file for you: each ref is declared ahead of the calls, a no-op stub for the target function is injected, and one reconciled preamble is placed in front.

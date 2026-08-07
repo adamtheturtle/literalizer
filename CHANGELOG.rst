@@ -1234,8 +1234,8 @@ No significant changes.
   constructor parameter.  See #2299.
 
 - :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
-  parameter — a mapping from each record's key-set
-  (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name —
+  parameter, a mapping from each record's key-set
+  (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name,
   so the ``RECORD`` heterogeneous strategy can emit
   ``struct Entry { ... }`` instead of the auto-generated ``Record0``,
   ``Record1``, ... names.  Shape names that are not PascalCase Rust
@@ -1486,8 +1486,8 @@ No significant changes.
   languages (Rust, C, C++, Haskell, OCaml, Swift, Ada, D, Dart, C#, Elm,
   Mojo, Nim, Objective-C, Odin, SML, V, Zig, Go, Java, Kotlin, F#,
   Scala, Erlang, Gleam, Roc, PureScript, Tcl, Bash, VB, SystemVerilog,
-  Occam) opt out, along with Cobol, Fortran, Php, Lua, Toml, and Dhall
-  — each of which produced a file whose linter rejected the resulting
+  Occam) opt out, along with Cobol, Fortran, Php, Lua, Toml, and Dhall,
+  each of which produced a file whose linter rejected the resulting
   bare-value rendering even though the issue text initially listed them
   as opt-in.  The renderer no longer silently emits invalid output for
   any of these.
@@ -1980,7 +1980,7 @@ No significant changes.
   stubs that accept any arguments so generated files parse with
   ``bash -n`` and run under ``bash``.  A new
   ``CallArgNotSupportedError`` is raised at literalize time when a
-  list, dict, or set is passed as a Bash call argument — Bash has
+  list, dict, or set is passed as a Bash call argument: Bash has
   no inline compound-literal syntax in command invocations, so
   silently emitting ``cmd (1 2 3)`` (which parses as a nested
   ``(...)`` child-process group) would leave users with a broken
@@ -2058,7 +2058,7 @@ No significant changes.
   ``TAGGED_ENUM`` scalar wrapping across sibling calls at matching
   argument slots.  Previously the wrap analysis ran per call, so a
   locally-homogeneous sibling dict would emit unwrapped scalars
-  even when another call at the same slot was heterogeneous — a
+  even when another call at the same slot was heterogeneous: a
   second ``m.process(HashMap::from([("a", "x")]))`` would not match
   the ``&HashMap<&'static str, Value>`` parameter implied by the
   first heterogeneous call.  Mirrors the dict-opener widening
@@ -2163,7 +2163,7 @@ No significant changes.
   undefined functions, missing module imports, failed assertions)
   that the existing ``groovyc`` compile-only step let through.
   ``Groovy.format_call_stub`` now emits a single ``Map _args`` method
-  parameter when ``call_style`` is ``KEYWORD`` — previously the
+  parameter when ``call_style`` is ``KEYWORD``.  Previously the
   ``call_keyword_args`` fixture tripped ``MissingMethodException``
   because Groovy passes named arguments as a single ``LinkedHashMap``
   that a positional parameter list rejects.  ``POSITIONAL`` stubs
@@ -2175,8 +2175,8 @@ No significant changes.
   scalars the same way collection entries do
   (``id x = 42;`` → ``id x = @(42);``), single-name call stubs emit a
   ``static`` definition so fixtures link, and
-  ``ObjectiveC.supports_scalar_inline_comments`` is now ``False`` —
-  previously the trailing ``//`` comment swallowed the statement
+  ``ObjectiveC.supports_scalar_inline_comments`` is now ``False``.
+  Previously the trailing ``//`` comment swallowed the statement
   terminator.  A pre-existing casing bug in the workflow's
   ``lang_patterns`` (``objective_c*.m`` instead of ``ObjectiveC*.m``)
   that silently skipped every fixture is also fixed.
