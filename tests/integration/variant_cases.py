@@ -56,6 +56,11 @@ __all__ = ("Variant", "wrap_variable_form")
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
+_SPECIAL_FLOAT_CAPABILITIES: frozenset[VariantCapabilityName] = frozenset(
+    {"special_floats"},
+)
+"""The requirement carried by an input containing a non-finite float."""
+
 
 @runtime_checkable
 class _HasJsonType(Protocol):
@@ -342,10 +347,10 @@ def required_capabilities(
     are read out of the input itself so the requirement cannot go stale
     as the fixture changes.
     """
-    derived: frozenset[VariantCapabilityName] = frozenset(
-        {"special_floats"} if case_dir_name in special_float_cases else ()
-    )
-    return frozenset(manifest_variant.requires) | derived
+    declared = frozenset(manifest_variant.requires)
+    if case_dir_name in special_float_cases:
+        return declared | _SPECIAL_FLOAT_CAPABILITIES
+    return declared
 
 
 @beartype
