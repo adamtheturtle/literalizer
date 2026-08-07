@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import assert_never
 
 import pyjson5
-import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
@@ -38,7 +37,12 @@ from .case_manifests import (
     case_input,
     ref_case_specs,
 )
-from .golden_checks import check_golden
+from .golden_checks import (
+    GoldenSkips,
+    SkipPolicy,
+    SkipReason,
+    check_golden,
+)
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -47,6 +51,30 @@ from .language_specs import (
 from .variant_cases import wrap_variable_form
 
 CASES_DIR = Path(__file__).parent / "cases"
+
+# A ``$ref`` case is written once for every language, so an input a
+# language cannot represent, or a ref identifier it will not spell,
+# skips rather than fails.
+_REF_SKIPS: SkipPolicy = SkipPolicy(
+    reasons=(
+        SkipReason(
+            error=HeterogeneousCollectionError,
+            reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=UnrepresentableInputError,
+            reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=CallArgNotSupportedError,
+            reason="rejected ref identifier",
+            unlink=True,
+        ),
+    ),
+    suffix="",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -210,7 +238,11 @@ def run_literalize_ref_golden_case(
             ref_key=config.ref_key,
         )
     }
-    try:
+    with GoldenSkips(
+        policy=_REF_SKIPS,
+        golden_path=golden_path,
+        prefix=lang_cls.__name__,
+    ):
         result = literalizer.literalize(
             source=input_source,
             input_format=input_info.input_format,
@@ -220,16 +252,6 @@ def run_literalize_ref_golden_case(
             ref_case=ref_case,
             bound_refs=bound_refs_input or None,
             ref_key=config.ref_key,
-        )
-    except (HeterogeneousCollectionError, UnrepresentableInputError):
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous input",
-        )
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} rejected ref identifier: {exc.reason}"
         )
     check_golden(
         contents=result.code + "\n",
