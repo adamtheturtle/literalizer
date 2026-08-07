@@ -12,10 +12,12 @@ produces a parallel set of golden files; today the enum has a single
 member so the loop runs once per language and case.
 """
 
+import dataclasses
 from pathlib import Path
 from typing import NoReturn
 
 import pytest
+from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -68,73 +70,137 @@ from .variant_cases import (
     variant_languages,
 )
 
-_SkipReasons = tuple[tuple[type[Exception], str, bool], ...]
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _SkipReason:
+    """Why one error skips a golden rather than failing it.
+
+    ``unlink`` drops any golden file left by an earlier run, so a stale
+    fixture cannot pose as a real result on the next one.
+    """
+
+    error: type[Exception]
+    reason: str
+    unlink: bool
+
+
+type _SkipReasons = tuple[_SkipReason, ...]
 
 _LANG_SKIP_REASONS: _SkipReasons = (
-    (
-        UnrepresentableIntegerError,
-        "cannot represent integer in this input",
-        True,
+    _SkipReason(
+        error=UnrepresentableIntegerError,
+        reason="cannot represent integer in this input",
+        unlink=True,
     ),
-    (UnrepresentableEmptyDictError, "cannot represent an empty dict", True),
-    (
-        HeterogeneousCollectionError,
-        "cannot represent this heterogeneous input",
-        True,
+    _SkipReason(
+        error=UnrepresentableEmptyDictError,
+        reason="cannot represent an empty dict",
+        unlink=True,
     ),
-    (NullInCollectionError, "cannot represent null in a collection", True),
-    (UnrepresentableInputError, "cannot represent this input", True),
+    _SkipReason(
+        error=HeterogeneousCollectionError,
+        reason="cannot represent this heterogeneous input",
+        unlink=True,
+    ),
+    _SkipReason(
+        error=NullInCollectionError,
+        reason="cannot represent null in a collection",
+        unlink=True,
+    ),
+    _SkipReason(
+        error=UnrepresentableInputError,
+        reason="cannot represent this input",
+        unlink=True,
+    ),
 )
 
 _VARIANT_SKIP_REASONS: _SkipReasons = (
-    (
-        UnrepresentableIntegerError,
-        "cannot represent integer in this input",
-        True,
+    _SkipReason(
+        error=UnrepresentableIntegerError,
+        reason="cannot represent integer in this input",
+        unlink=True,
     ),
-    (UnrepresentableEmptyDictError, "cannot represent an empty dict", True),
-    (NullInCollectionError, "rejects null elements in this input", False),
-    (
-        HeterogeneousCollectionError,
-        "cannot represent this heterogeneous input",
-        True,
+    _SkipReason(
+        error=UnrepresentableEmptyDictError,
+        reason="cannot represent an empty dict",
+        unlink=True,
     ),
-    (
-        IncompatibleFormatsError,
-        "combination cannot represent this input",
-        True,
+    _SkipReason(
+        error=NullInCollectionError,
+        reason="rejects null elements in this input",
+        unlink=False,
     ),
-    (
-        UnrepresentableSpecialFloatError,
-        "cannot represent special floats in this input",
-        True,
+    _SkipReason(
+        error=HeterogeneousCollectionError,
+        reason="cannot represent this heterogeneous input",
+        unlink=True,
     ),
-    (UnrepresentableInputError, "cannot represent this input", True),
+    _SkipReason(
+        error=IncompatibleFormatsError,
+        reason="combination cannot represent this input",
+        unlink=True,
+    ),
+    _SkipReason(
+        error=UnrepresentableSpecialFloatError,
+        reason="cannot represent special floats in this input",
+        unlink=True,
+    ),
+    _SkipReason(
+        error=UnrepresentableInputError,
+        reason="cannot represent this input",
+        unlink=True,
+    ),
 )
 
 
+@beartype
+def _reasons_for(
+    *,
+    reasons: _SkipReasons,
+    errors: tuple[type[Exception], ...],
+) -> _SkipReasons:
+    """Return the entries of *reasons* covering exactly *errors*.
+
+    A runner that should skip on fewer errors than a table lists
+    narrows the table rather than restating a reason, so the message
+    for an error stays written once.
+    """
+    return tuple(entry for entry in reasons if entry.error in errors)
+
+
+# Rendering the paired fixture under a non-default heterogeneous
+# strategy skips only where the strategy cannot represent it; every
+# other error is a real failure, so the table is narrowed rather than
+# reused whole.
+_STRATEGY_SKIP_REASONS: _SkipReasons = _reasons_for(
+    reasons=_LANG_SKIP_REASONS,
+    errors=(HeterogeneousCollectionError,),
+)
+
+
+@beartype
 def _skip_unrepresentable(
     *,
     exc: Exception,
     reasons: _SkipReasons,
     golden_path: Path,
     prefix: str,
+    suffix: str,
 ) -> NoReturn:
     """Skip the current test with a message keyed off the caught error.
 
-    Callers pair their ``except`` tuple with the same reasons table,
-    so the lookup below is total by construction; ``StopIteration``
+    The message reads ``"{prefix} {reason}{suffix}"``, so a caller whose
+    skip turns on more than the error type -- the strategy a golden was
+    rendered under, say -- says so in *suffix* rather than restating the
+    reason.  Callers pair their ``except`` tuple with the same table, so
+    the lookup below is total by construction; ``StopIteration``
     propagating out of this helper would indicate a divergence between
-    the two.  For matching entries whose third tuple field is ``True``
-    the golden file is removed first so a stale fixture cannot pose
-    as a real failure on the next run.
+    the two.
     """
-    _, reason, unlink = next(
-        entry for entry in reasons if isinstance(exc, entry[0])
-    )
-    if unlink:
+    entry = next(entry for entry in reasons if isinstance(exc, entry.error))
+    if entry.unlink:
         golden_path.unlink(missing_ok=True)
-    pytest.skip(f"{prefix} {reason}")
+    pytest.skip(f"{prefix} {entry.reason}{suffix}")
 
 
 @pytest.mark.parametrize(
@@ -221,6 +287,7 @@ def test_golden_file(
                         reasons=_LANG_SKIP_REASONS,
                         golden_path=golden_path,
                         prefix=lang_name,
+                        suffix="",
                     )
                 # newline="" prevents Python text-mode from converting
                 # \r\n to \n on Windows, which would corrupt golden
@@ -401,33 +468,19 @@ def test_golden_file_combined_variable_forms(
                         ),
                         wrap_in_file=True,
                     )
-                except UnrepresentableIntegerError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_cls.__name__} cannot represent integer in "
-                        "this input"
-                    )
-                except UnrepresentableEmptyDictError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_cls.__name__} cannot represent an empty dict"
-                    )
-                except HeterogeneousCollectionError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_cls.__name__} cannot represent this "
-                        "heterogeneous input"
-                    )
-                except NullInCollectionError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_cls.__name__} cannot represent null in a "
-                        "collection"
-                    )
-                except UnrepresentableInputError:
-                    golden_path.unlink(missing_ok=True)
-                    pytest.skip(
-                        f"{lang_cls.__name__} cannot represent this input"
+                except (
+                    UnrepresentableIntegerError,
+                    UnrepresentableEmptyDictError,
+                    HeterogeneousCollectionError,
+                    NullInCollectionError,
+                    UnrepresentableInputError,
+                ) as exc:
+                    _skip_unrepresentable(
+                        exc=exc,
+                        reasons=_LANG_SKIP_REASONS,
+                        golden_path=golden_path,
+                        prefix=lang_cls.__name__,
+                        suffix="",
                     )
                 file_regression.check(
                     contents=result.code + "\n",
@@ -521,6 +574,7 @@ def test_format_variant_golden_file(
                     reasons=_VARIANT_SKIP_REASONS,
                     golden_path=golden_path,
                     prefix="Format",
+                    suffix="",
                 )
             file_regression.check(
                 contents=variant.fixture_prefix + result.code + "\n",
@@ -640,18 +694,20 @@ def test_heterogeneous_strategy_combined_variable_forms(
                     ),
                     wrap_in_file=True,
                 )
-            except HeterogeneousCollectionError:
+            except HeterogeneousCollectionError as exc:
                 # A strategy may not be able to represent the paired
                 # fixture for every language (e.g. Kotlin ``TUPLE`` has
                 # no native tuple for the four-element
                 # ``tuple_record_field`` array), exactly as the base
-                # variant golden test skips such an input.  Drop any
-                # stale golden and skip.
-                golden_path.unlink(missing_ok=True)
-                pytest.skip(
-                    f"{case.lang_cls.__name__} cannot represent this "
-                    "heterogeneous input under "
-                    f"{case.heterogeneous_strategy.name}",
+                # variant golden test skips such an input.  The strategy
+                # is named in the skip so two strategies failing on the
+                # same input stay distinguishable.
+                _skip_unrepresentable(
+                    exc=exc,
+                    reasons=_STRATEGY_SKIP_REASONS,
+                    golden_path=golden_path,
+                    prefix=case.lang_cls.__name__,
+                    suffix=f" under {case.heterogeneous_strategy.name}",
                 )
             file_regression.check(
                 contents=result.code + "\n",
