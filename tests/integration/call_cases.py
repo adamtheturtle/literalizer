@@ -14,7 +14,6 @@ import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -44,7 +43,13 @@ from literalizer.exceptions import (
 
 from .case_inputs import CaseInput
 from .case_manifests import CallCaseSpec, call_case_specs, case_input
-from .golden_checks import check_golden
+from .golden_checks import (
+    GoldenSkips,
+    SkipPolicy,
+    SkipReason,
+    check_golden,
+    skip_golden,
+)
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -53,6 +58,72 @@ from .language_specs import (
 from .parsed_values import ParsedValue
 
 CASES_DIR = Path(__file__).parent / "cases"
+
+# A wrapped call is rendered straight to its golden, so the only thing
+# that can stop it is the language refusing one of the call's arguments.
+_WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
+    reasons=(
+        SkipReason(
+            error=CallArgNotSupportedError,
+            reason="rejected call arg",
+            unlink=True,
+        ),
+    ),
+    suffix="",
+)
+
+# A case that binds its refs to declarations asks more of a language
+# than the call alone: it must name the declared variables, represent
+# their values, and spell whatever target the case calls.
+_DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
+    reasons=(
+        SkipReason(
+            error=VariableNameNotSupportedError,
+            reason=(
+                "does not support variable-name wrapping for ref declarations"
+            ),
+            unlink=True,
+        ),
+        SkipReason(
+            error=HeterogeneousCollectionError,
+            reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=UnrepresentableInputError,
+            reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=DottedCallTargetNotSupportedError,
+            reason="does not support dotted call targets",
+            unlink=True,
+        ),
+        SkipReason(
+            error=CallArgNotSupportedError,
+            reason="rejected call arg",
+            unlink=True,
+        ),
+    ),
+    suffix="",
+)
+
+# The typed preamble stub restates the call's argument types, which a
+# language with no type for a heterogeneous collection cannot write even
+# where the call itself renders.
+_PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
+    reasons=(
+        SkipReason(
+            error=HeterogeneousCollectionError,
+            reason=(
+                "cannot represent this heterogeneous input in its typed "
+                "call stub"
+            ),
+            unlink=True,
+        ),
+    ),
+    suffix="",
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -160,8 +231,7 @@ def _skip_if_wrapper_unsupported(
     """
     reason = _wrapper_capability_skip_reason(lang_cls=lang_cls, config=config)
     if reason is not None:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(reason)
+        skip_golden(reason=reason, golden_path=golden_path, unlink=True)
 
 
 @beartype
@@ -373,7 +443,11 @@ def _run_wrap_in_file_case(
     """Run ``literalize_call(..., wrap_in_file=True)`` and check
     golden.
     """
-    try:
+    with GoldenSkips(
+        policy=_WRAP_IN_FILE_SKIPS,
+        golden_path=golden_path,
+        prefix=lang_name,
+    ):
         wrap_result = _literalize_call_case(
             config=config,
             spec=spec,
@@ -385,9 +459,6 @@ def _run_wrap_in_file_case(
             ref_values=None,
             bound_refs=None,
         )
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
     mirror_form = config.self_contained_mirror_variable_form
     if mirror_form is not None:
         mirror_result = _literalize_call_case(
@@ -402,12 +473,15 @@ def _run_wrap_in_file_case(
             bound_refs=None,
         )
         if wrap_result.code != mirror_result.code:
-            golden_path.unlink(missing_ok=True)
-            pytest.skip(
-                f"{lang_name} {config.variable_form!r} call-binding is "
-                f"not self-contained (a bare assignment to an undeclared "
-                f"name); it diverges from the compilable "
-                f"{mirror_form!r} form, so no golden is emitted",
+            skip_golden(
+                reason=(
+                    f"{lang_name} {config.variable_form!r} call-binding is "
+                    f"not self-contained (a bare assignment to an undeclared "
+                    f"name); it diverges from the compilable "
+                    f"{mirror_form!r} form, so no golden is emitted"
+                ),
+                golden_path=golden_path,
+                unlink=True,
             )
     check_golden(
         contents=wrap_result.code + "\n",
@@ -440,7 +514,11 @@ def _run_call_with_declarations(
     """Run ref declarations and the call, skipping on typed unsupported
     signals.
     """
-    try:
+    with GoldenSkips(
+        policy=_DECLARATION_SKIPS,
+        golden_path=golden_path,
+        prefix=lang_name,
+    ):
         decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
             ref_name: literalizer.literalize(
                 source=ref_source,
@@ -478,23 +556,6 @@ def _run_call_with_declarations(
             ref_values=ref_values or None,
             bound_refs=None,
         )
-    except VariableNameNotSupportedError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_name} does not support variable-name wrapping "
-            f"for ref declarations",
-        )
-    except (HeterogeneousCollectionError, UnrepresentableInputError):
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_name} cannot represent this heterogeneous input",
-        )
-    except DottedCallTargetNotSupportedError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} does not support dotted call targets")
-    except CallArgNotSupportedError as exc:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(f"{lang_name} rejected call arg: {exc.reason}")
     return _CallWithDeclarations(decl_results=decl_results, result=result)
 
 
@@ -609,7 +670,11 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
-    try:
+    with GoldenSkips(
+        policy=_PREAMBLE_STUB_SKIPS,
+        golden_path=golden_path,
+        prefix=lang_cls.__name__,
+    ):
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
                 target_function_parts,
@@ -617,12 +682,6 @@ def run_call_golden_case(
                 stub_return,
                 call_arg_values,
             ),
-        )
-    except HeterogeneousCollectionError:
-        golden_path.unlink(missing_ok=True)
-        pytest.skip(
-            f"{lang_cls.__name__} cannot represent this heterogeneous "
-            "input in its typed call stub",
         )
     # Stubs for transform function names.  The parameter count matches
     # ``transform_stub_param_names`` so a wrapper called with the call

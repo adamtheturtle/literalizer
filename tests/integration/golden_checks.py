@@ -14,7 +14,8 @@ them.
 
 import dataclasses
 from pathlib import Path
-from typing import NoReturn
+from types import TracebackType
+from typing import NoReturn, Protocol, runtime_checkable
 
 import pytest
 from beartype import beartype
@@ -64,8 +65,35 @@ NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
 """Every error is a real failure."""
 
 
+@runtime_checkable
+class _ReasonedError(Protocol):
+    """An error that carries its own account of what it rejected."""
+
+    reason: str
+
+
 @beartype
-def skip_for_error(
+def skip_golden(
+    *,
+    reason: str,
+    golden_path: Path,
+    unlink: bool,
+) -> NoReturn:
+    """Skip the current golden case with *reason*.
+
+    Dropping the golden file is part of skipping it: a fixture left by
+    an earlier run would otherwise pose as a real result on the next
+    one, and the orphan-files check would count it as covered.  The two
+    steps are spelled together here so a skip cannot be written without
+    deciding which it is.
+    """
+    if unlink:
+        golden_path.unlink(missing_ok=True)
+    pytest.skip(reason)
+
+
+@beartype
+def _skip_for_error(
     *,
     exc: Exception,
     reasons: SkipReasons,
@@ -78,14 +106,55 @@ def skip_for_error(
     The message reads ``"{prefix} {reason}{suffix}"``, so a rendering
     whose skip turns on more than the error type -- the strategy it was
     rendered under, say -- says so in *suffix* rather than restating the
-    reason.  The ``except`` clause is built from the same table, so the
-    lookup below is total by construction; ``StopIteration`` propagating
-    out of this helper would indicate a divergence between the two.
+    reason.  An error that carries its own ``reason`` -- which argument
+    or identifier the language rejected -- has it appended after the
+    declared one, since only the error knows it.  The ``except`` clause
+    is built from the same table, so the lookup below is total by
+    construction; ``StopIteration`` propagating out of this helper would
+    indicate a divergence between the two.
     """
     entry = next(entry for entry in reasons if isinstance(exc, entry.error))
-    if entry.unlink:
-        golden_path.unlink(missing_ok=True)
-    pytest.skip(f"{prefix} {entry.reason}{suffix}")
+    detail = f": {exc.reason}" if isinstance(exc, _ReasonedError) else ""
+    skip_golden(
+        reason=f"{prefix} {entry.reason}{detail}{suffix}",
+        golden_path=golden_path,
+        unlink=entry.unlink,
+    )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class GoldenSkips:
+    """A block whose declared errors skip the golden rather than fail it.
+
+    Wrapping the rendering in this rather than catching *policy*'s
+    errors at each site keeps the table and its ``except`` clause in one
+    place, so a harness cannot catch an error it has no message for.  An
+    error the policy does not name propagates: ``__exit__`` never
+    swallows one, it either skips or returns.
+    """
+
+    policy: SkipPolicy
+    golden_path: Path
+    prefix: str
+
+    def __enter__(self) -> None:
+        """Enter the guarded rendering."""
+
+    def __exit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
+        """Skip the case when the rendering raised a declared error."""
+        if isinstance(exc, self.policy.errors):
+            _skip_for_error(
+                exc=exc,
+                reasons=self.policy.reasons,
+                golden_path=self.golden_path,
+                prefix=self.prefix,
+                suffix=self.policy.suffix,
+            )
 
 
 @beartype

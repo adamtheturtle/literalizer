@@ -22,10 +22,10 @@ from literalizer.exceptions import IncompatibleFormatsError
 
 from .golden_checks import (
     NO_SKIPS,
+    GoldenSkips,
     SkipPolicy,
     SkipReason,
     check_golden,
-    skip_for_error,
 )
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
@@ -242,7 +242,11 @@ def test_constructor_binding_golden_file(
                 language_version=version_format,
                 **case.spec_overrides,
             )
-            try:
+            with GoldenSkips(
+                policy=case.skip,
+                golden_path=golden_path,
+                prefix=case.lang_cls.__name__,
+            ):
                 result = literalize_call(
                     source="[[]]",
                     input_format=InputFormat.JSON,
@@ -252,14 +256,6 @@ def test_constructor_binding_golden_file(
                     ),
                     parameter_names=[],
                     variable_form=case.variable_form,
-                )
-            except case.skip.errors as exc:
-                skip_for_error(
-                    exc=exc,
-                    reasons=case.skip.reasons,
-                    golden_path=golden_path,
-                    prefix=case.lang_cls.__name__,
-                    suffix=case.skip.suffix,
                 )
             check_golden(
                 contents=result.code + "\n",

@@ -24,7 +24,7 @@ from literalizer.exceptions import VariableNameNotSupportedError
 
 from .case_inputs import CaseInput
 from .case_manifests import case_input
-from .golden_checks import check_golden, skip_for_error
+from .golden_checks import GoldenSkips, check_golden
 from .golden_scenarios import (
     GoldenGroup,
     GoldenRendering,
@@ -84,7 +84,11 @@ def _check_rendering(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    try:
+    with GoldenSkips(
+        policy=rendering.skip,
+        golden_path=golden_path,
+        prefix=rendering.lang_cls.__name__,
+    ):
         try:
             result = _literalize(
                 rendering=rendering,
@@ -101,14 +105,6 @@ def _check_rendering(
                 source_text=source_text,
                 variable_form=None,
             )
-    except rendering.skip.errors as exc:
-        skip_for_error(
-            exc=exc,
-            reasons=rendering.skip.reasons,
-            golden_path=golden_path,
-            prefix=rendering.lang_cls.__name__,
-            suffix=rendering.skip.suffix,
-        )
     check_golden(
         contents=rendering.fixture_prefix + result.code + "\n",
         extension=spec.extension,
