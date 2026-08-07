@@ -14,11 +14,10 @@ name-template placeholder fails when the registry loads rather than
 when a golden file is built.
 
 An axis whose expansion is genuinely irregular stays as a registered
-escape-hatch builder in :mod:`variant_cases`.  A ``filtered`` plan
-narrows any
-axis, declared or irregular, to the languages its gates admit, so a
-suite needing a smaller slice of an existing expansion names one rather
-than writing its own builder.  A plan may also start from another
+escape-hatch builder in :mod:`variant_escape_hatches`.  A ``filtered``
+plan narrows any axis, declared or irregular, to the languages its gates
+admit, so a suite needing a smaller slice of an existing expansion names
+one rather than writing its own builder.  A plan may also start from another
 declared axis, either pairing its own settings with that axis's option
 values or reusing its overrides outright.
 """
@@ -50,7 +49,7 @@ from .language_metadata import (
     language_metadata,
 )
 from .language_specs import make_spec, sorted_languages
-from .variant_axis_names import KNOWN_VARIANT_AXES
+from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
 from .variant_types import Variant, enum_member_by_name, find_enum_member
 
 AXES_PATH = Path(__file__).parent / "axes.toml"
@@ -1030,6 +1029,22 @@ type _Axis = Annotated[
 ]
 
 
+class _SpecialAxis(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """An axis named by a manifest but assembled with render context."""
+
+    reason: Annotated[str, Field(min_length=1)]
+
+
+def _no_special_axes() -> dict[str, _SpecialAxis]:
+    """Return a typed empty special-axis table for the models."""
+    return {}
+
+
 class _AxisRegistryData(
     BaseModel,
     extra="forbid",
@@ -1040,6 +1055,9 @@ class _AxisRegistryData(
 
     schema_version: Literal[1]
     axes: dict[Annotated[str, Field(min_length=1)], _Axis]
+    special_axes: dict[Annotated[str, Field(min_length=1)], _SpecialAxis] = (
+        Field(default_factory=_no_special_axes)
+    )
 
 
 @beartype
@@ -1464,7 +1482,12 @@ def _validate_references(
 
 
 @beartype
-def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
+def _validate_axis(
+    *,
+    axis_key: str,
+    axis: _Axis,
+    axes: Mapping[str, _Axis],
+) -> None:
     """Check one declared axis against the closed name registries."""
     match axis:
         case _FilteredPlan():
@@ -1472,7 +1495,7 @@ def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
             if axis.base == axis_key:
                 msg = f"axis {axis_key!r}: base axis is itself"
                 raise AxisPlanError(msg)
-            if axis.base not in KNOWN_VARIANT_AXES:
+            if axis.base not in axes.keys() | ESCAPE_HATCH_VARIANT_AXES:
                 msg = f"axis {axis_key!r}: unknown base axis {axis.base!r}"
                 raise AxisPlanError(msg)
         case (
@@ -1489,18 +1512,25 @@ def _validate_axis(*, axis_key: str, axis: _Axis) -> None:
 
 @functools.cache
 @beartype
-def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
-    """Return the validated axis registry declared in *path*."""
+def _registry_data(*, path: Path) -> _AxisRegistryData:
+    """Return the registry declared in *path*, parsed and typed."""
     try:
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as exc:
         msg = f"{path}: invalid TOML: {exc}"
         raise AxisPlanError(msg) from exc
     try:
-        data = _AxisRegistryData.model_validate(obj=raw)
+        return _AxisRegistryData.model_validate(obj=raw)
     except ValidationError as exc:
         msg = f"{path}: {exc}"
         raise AxisPlanError(msg) from exc
+
+
+@functools.cache
+@beartype
+def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
+    """Return the validated expansion plans declared in *path*."""
+    data = _registry_data(path=path)
     axes = {
         axis_key: _resolved_axis(
             axis_key=axis_key,
@@ -1510,7 +1540,7 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
         for axis_key, axis in data.axes.items()
     }
     for axis_key, axis in axes.items():
-        _validate_axis(axis_key=axis_key, axis=axis)
+        _validate_axis(axis_key=axis_key, axis=axis, axes=axes)
         _validate_references(axis_key=axis_key, axis=axis, axes=axes)
     return axes
 
@@ -1519,6 +1549,16 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
 def declared_axis_names() -> frozenset[str]:
     """Return every axis name expanded by a declared plan."""
     return frozenset(load_axis_registry(path=AXES_PATH))
+
+
+@beartype
+def special_axis_names() -> frozenset[str]:
+    """Return every axis name whose cases carry their own render context.
+
+    These axes name an input rather than an expansion: a builder in
+    :mod:`variant_cases` assembles their cases, so no plan expands them.
+    """
+    return frozenset(_registry_data(path=AXES_PATH).special_axes)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

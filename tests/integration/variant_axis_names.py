@@ -1,105 +1,17 @@
-"""Names understood by the typed integration variant runner."""
+"""Names understood by the typed integration variant runner.
 
-KNOWN_VARIANT_AXES = frozenset(
-    {
-        "annotation_evaluation",
-        "bool_format",
-        "bytes_format",
-        "c_field_name",
-        "collection_layout",
-        "comment",
-        "comment_terminator",
-        "comment_terminator_call",
-        "constructor_name",
-        "constructor_prefix",
-        "date",
-        "datetime",
-        "declaration_style",
-        "default_dict_key_type",
-        "default_dict_value_type",
-        "default_ordered_map_value_type",
-        "default_sequence_element_type",
-        "default_set_element_type",
-        "dhall_nested_map_widening",
-        "dict_decl",
-        "dict_entry_style",
-        "dict_format",
-        "empty_container_type_hint",
-        "empty_dict_key",
-        "empty_map_narrowing",
-        "error_record_shape_names",
-        "float_format",
-        "heterogeneous_strategy",
-        "heterogeneous_strategy_datetime_cross",
-        "heterogeneous_strategy_tagged_enum",
-        "heterogeneous_strategy_tuple_ref_elements",
-        "heterogeneous_value_enum_name",
-        "heterogeneous_value_union_name",
-        "heterogeneous_value_variant_name",
-        "integer_format",
-        "integer_width_strategy",
-        "json_type",
-        "json_type_bytes_cross",
-        "json_type_call_result",
-        "json_type_datetime_cross",
-        "json_type_declaration_cross",
-        "json_type_language_version_cross",
-        "json_type_record_shape_names_cross",
-        "json_type_variable_form",
-        "language_version",
-        "language_version_cross_dict_type",
-        "modifier_sequence_format",
-        "modifiers",
-        "multiline_raw_string_delimiter",
-        "multiline_string",
-        "multiline_string_combined",
-        "multiline_string_pre_indent",
-        "nested_map_widening",
-        "nested_map_widening_scalar_wrapping",
-        "nested_tuple_strategy",
-        "numeric_literal_suffix",
-        "numeric_separator",
-        "numeric_style",
-        "numeric_style_datetime_cross",
-        "object_variant_containers",
-        "record_epoch_i32_overflow",
-        "record_field_type_split",
-        "record_keyword_field",
-        "record_nested_map_fallback",
-        "record_nonrecord_dict_field",
-        "record_null_substitutions_record",
-        "record_numeric_cross",
-        "record_quoted_field",
-        "record_shape_names",
-        "record_unify_optional_fields",
-        "sequence",
-        "sequence_decl",
-        "set",
-        "set_decl",
-        "statement_terminator_style",
-        "statement_terminator_style_decl",
-        "string_embedded_nul",
-        "string_embedded_nul_json_type",
-        "string_format",
-        "string_format_date_cross",
-        "string_format_datetime_cross",
-        "tagged_enum_empty_container",
-        "trailing_comma",
-        "type_hints",
-        "type_hints_cross",
-        "type_name",
-        "typed_dict_null_filtering",
-        "union_format",
-        "union_format_type_hints",
-    }
-)
+An axis name is registered in exactly one place: as a declared plan or a
+special axis in ``axes.toml``, or as an escape-hatch builder in
+:mod:`variant_escape_hatches`.  The sets here are derived from those
+registrations, so a case manifest naming an axis no expansion knows
+about still fails at load, against a set that cannot drift.
+"""
 
-SPECIAL_VARIANT_AXES = frozenset(
-    {
-        "json_type_variable_form",
-        "modifier_sequence_format",
-        "modifiers",
-        "multiline_string_combined",
-        "multiline_string_pre_indent",
-    }
+from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
+from .variant_plans import declared_axis_names, special_axis_names
+
+SPECIAL_VARIANT_AXES = special_axis_names()
+
+KNOWN_VARIANT_AXES = (
+    declared_axis_names() | ESCAPE_HATCH_VARIANT_AXES | SPECIAL_VARIANT_AXES
 )

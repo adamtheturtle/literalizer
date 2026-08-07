@@ -5,15 +5,14 @@ non-default formatter spec; each :class:`VariantCase` pairs a variant
 with one of the input case directories under ``tests/integration/cases``.
 
 Axes declare their expansion in ``axes.toml`` and are built by the
-typed plans in :mod:`variant_plans`, bar the one still registered in
-:data:`ESCAPE_HATCH_VARIANT_AXES`.  What remains here is that builder,
-plus the assembly of variants and manifest inputs into cases.
+typed plans in :mod:`variant_plans`, bar the one registered as an
+escape-hatch builder in :mod:`variant_escape_hatches`.  What remains
+here is the assembly of variants and manifest inputs into cases.
 """
 
 import dataclasses
 import enum
 import functools
-from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -37,7 +36,11 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
-from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
+from .variant_axis_names import SPECIAL_VARIANT_AXES
+from .variant_escape_hatches import (
+    ESCAPE_HATCH_VARIANT_AXES,
+    escape_hatch_variants,
+)
 from .variant_metadata_builders import build_modifier_variant_cases
 from .variant_plans import (
     declared_axis_names,
@@ -54,29 +57,6 @@ from .variant_types import (
 __all__ = ("Variant", "wrap_variable_form")
 
 _CASES_DIR = Path(__file__).parent / "cases"
-
-
-@beartype
-def build_typed_dict_null_filtering_variants() -> Iterable[Variant]:
-    """Build null-filtering variants for typed-dict languages."""
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if not lang_cls.supports_typed_dict_open:
-            continue
-        variant_cls = type(
-            f"_{lang_cls.__name__}SkipNullDictValues",
-            (lang_cls,),
-            {"skip_null_dict_values": True},
-        )
-        assert isinstance(variant_cls, literalizer.LanguageCls)  # noqa: S101
-        variants.append(
-            compact_variant(
-                name=f"{lang_cls.__name__}_skip_null_dict_values",
-                spec=make_spec(lang_cls=variant_cls),
-                lang_cls=lang_cls,
-            )
-        )
-    return variants
 
 
 @runtime_checkable
@@ -240,30 +220,19 @@ def build_multiline_string_context_cases(
     return cases
 
 
-# Axes whose expansion is genuinely irregular, and so is written as a
-# typed Python builder instead of a declared plan in ``axes.toml``.
-# ``typed_dict_null_filtering`` renders through a language subclass
-# synthesized here, which no plan builds because nothing else needs one.
-# A meta-test holds this set to its current membership: new axes belong
-# in ``axes.toml``.
-_ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
-    "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
-}
-
-ESCAPE_HATCH_VARIANT_AXES = frozenset(_ESCAPE_HATCH_BUILDERS)
-
-
 @beartype
 def check_axis_coverage(
     *,
-    expandable: frozenset[str],
     declared: frozenset[str],
     escape_hatch: frozenset[str],
+    special: frozenset[str],
 ) -> None:
-    """Fail when an axis resolves to other than one expansion.
+    """Fail when an axis resolves to more than one expansion.
 
-    Every axis the case manifests may name has to reach exactly one
-    declared plan or one registered escape-hatch builder.
+    Every axis name the case manifests may use comes from exactly one of
+    the three registries, so an axis registered twice would silently
+    expand through whichever one :func:`variants_for_axis` consults
+    first.
     """
     both = sorted(declared & escape_hatch)
     if both:
@@ -272,25 +241,19 @@ def check_axis_coverage(
             f"escape-hatch builders: {both}"
         )
         raise CaseManifestError(msg)
-    unexpanded = sorted(expandable - declared - escape_hatch)
-    if unexpanded:
+    contextual = sorted(special & (declared | escape_hatch))
+    if contextual:
         msg = (
-            f"variant axes {unexpanded} have no expansion; declare a plan "
-            "in axes.toml or register an escape-hatch builder"
-        )
-        raise CaseManifestError(msg)
-    unknown = sorted((declared | escape_hatch) - expandable)
-    if unknown:
-        msg = (
-            f"variant axes {unknown} expand but are not in KNOWN_VARIANT_AXES"
+            "variant axes are declared as special axes in axes.toml and also "
+            f"expand as ordinary ones: {contextual}"
         )
         raise CaseManifestError(msg)
 
 
 check_axis_coverage(
-    expandable=KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES,
     declared=declared_axis_names(),
     escape_hatch=ESCAPE_HATCH_VARIANT_AXES,
+    special=SPECIAL_VARIANT_AXES,
 )
 
 
@@ -303,8 +266,8 @@ def variants_for_axis(*, axis_key: str) -> list[Variant]:
     that narrows another axis resolves its base through here too, so a
     narrowing may sit over either kind of expansion.
     """
-    if axis_key in _ESCAPE_HATCH_BUILDERS:
-        return list(_ESCAPE_HATCH_BUILDERS[axis_key]())
+    if axis_key in ESCAPE_HATCH_VARIANT_AXES:
+        return escape_hatch_variants(axis_key=axis_key)
     return variants_for_declared_axis(
         axis_key=axis_key,
         resolve_axis=variants_for_axis,
