@@ -12,7 +12,6 @@ import functools
 import json
 import math
 import tomllib
-from collections.abc import Mapping  # noqa: TC003
 from pathlib import Path
 from typing import Any, assert_never
 
@@ -26,17 +25,15 @@ from literalizer.exceptions import InvalidDictKeyError
 
 from .case_inputs import CaseInput
 from .case_manifests import (
-    HETEROGENEOUS_STRATEGY_DEFAULT_ROLE,
-    HETEROGENEOUS_STRATEGY_TUPLE_ROLE,
     INDENT_ROLE,
     NO_VARIABLE_FORM_ROLE,
     PRE_INDENT_COMMENT_SCALAR_ROLE,
     PRE_INDENT_CONTAINER_ROLE,
     STATEMENT_TERMINATOR_ROLE,
-    CaseRoleName,
     case_dir_name_for_role,
     case_dir_names_for_role,
     case_input,
+    heterogeneous_strategy_role,
     load_case_manifests,
 )
 from .language_metadata import language_metadata
@@ -502,14 +499,6 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     non-default heterogeneous-scalar strategies.
     """
     cases: list[HeterogeneousStrategyCombinedCase] = []
-    # Most strategies exercise the mixed-scalar dict; the TUPLE strategy
-    # needs an input that actually carries a tuple-eligible
-    # heterogeneous scalar array, so it is paired with the fixture
-    # declaring the tuple role (which also exercises RECORD/TUPLE
-    # composition) instead.
-    strategy_roles: Mapping[str, CaseRoleName] = {
-        "TUPLE": HETEROGENEOUS_STRATEGY_TUPLE_ROLE,
-    }
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
@@ -525,9 +514,8 @@ def build_heterogeneous_strategy_combined_cases() -> list[
             )
             case_dir_name = case_dir_name_for_role(
                 cases_dir=_CASES_DIR,
-                role=strategy_roles.get(
-                    strategy.name,
-                    HETEROGENEOUS_STRATEGY_DEFAULT_ROLE,
+                role=heterogeneous_strategy_role(
+                    strategy_name=strategy.name,
                 ),
             )
             cases.append(
