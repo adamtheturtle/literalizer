@@ -73,9 +73,6 @@ CASE_ROLE_NAMES: frozenset[CaseRoleName] = frozenset(
 HETEROGENEOUS_STRATEGY_DEFAULT_ROLE: CaseRoleName = (
     "heterogeneous-strategy-default-input"
 )
-HETEROGENEOUS_STRATEGY_TUPLE_ROLE: CaseRoleName = (
-    "heterogeneous-strategy-tuple-input"
-)
 INDENT_ROLE: CaseRoleName = "indent-input"
 NO_VARIABLE_FORM_ROLE: CaseRoleName = "no-variable-form-input"
 PRE_INDENT_COMMENT_SCALAR_ROLE: CaseRoleName = (
@@ -835,6 +832,27 @@ def case_dir_name_for_role(*, cases_dir: Path, role: CaseRoleName) -> str:
                 f"roles = [{role!r}], found {sorted(names)}"
             )
             raise CaseManifestError(msg)
+
+
+@beartype
+def heterogeneous_strategy_role(*, strategy_name: str) -> CaseRoleName:
+    """Return the role naming the input *strategy_name* renders.
+
+    Most strategies exercise the mixed-scalar dict holding the default
+    role.  A strategy that dict cannot exercise pairs with its own
+    input, which declares a role named after the strategy: ``TUPLE``
+    needs an input carrying a tuple-eligible heterogeneous scalar array,
+    so it renders the fixture declaring
+    ``heterogeneous-strategy-tuple-input``.
+
+    A strategy claims its own input by adding that role to the
+    vocabulary and to one case, rather than by being named here.
+    """
+    role = f"heterogeneous-strategy-{strategy_name.lower()}-input"
+    for name in CASE_ROLE_NAMES:
+        if name == role:
+            return name
+    return HETEROGENEOUS_STRATEGY_DEFAULT_ROLE
 
 
 @functools.cache
