@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["pre-indent-container-input", "statement-terminator-input"]
 
 [[variants]]
 axis = "default_dict_value_type"

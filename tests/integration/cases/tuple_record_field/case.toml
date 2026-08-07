@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["heterogeneous-strategy-tuple-input"]
 
 [[variants]]
 axis = "heterogeneous_strategy"

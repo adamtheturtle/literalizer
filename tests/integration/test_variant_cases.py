@@ -14,6 +14,7 @@ from .case_manifests import (
     ManifestVariant,
     RenderContext,
     VariantCapabilityName,
+    case_dir_names_for_variant_axis,
     load_case_manifests,
 )
 from .language_specs import sorted_languages
@@ -156,19 +157,22 @@ def test_typed_dict_null_filtering_follows_capability() -> None:
     )
 
 
-def test_multiline_string_variants_follow_capability() -> None:
+def test_multiline_string_variants_follow_capability(
+    cases_dir: Path,
+) -> None:
     """Only explicit multiline-capability languages join the axis."""
     expected = {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
         if lang_cls.supports_multiline_string_literals
     }
+    case_dir_names = case_dir_names_for_variant_axis(
+        cases_dir=cases_dir,
+        axis="multiline_string",
+    )
 
-    for case_dir_name in (
-        "multiline_string",
-        "multiline_string_scalar",
-        "multiline_string_nested",
-    ):
+    assert case_dir_names
+    for case_dir_name in case_dir_names:
         actual = {
             case.variant.lang_cls
             for case in build_variant_cases()
@@ -191,12 +195,7 @@ def test_multiline_string_variants_follow_capability() -> None:
     context_cases = [
         case
         for case in build_variant_cases()
-        if case.case_dir_name
-        in {
-            "multiline_string",
-            "multiline_string_scalar",
-            "multiline_string_nested",
-        }
+        if case.case_dir_name in set(case_dir_names)
     ]
     assert {case.variant.lang_cls for case in context_cases} == expected
     assert all(
@@ -205,11 +204,19 @@ def test_multiline_string_variants_follow_capability() -> None:
     )
 
 
-def test_multiline_context_cases_follow_capabilities() -> None:
+def test_multiline_context_cases_follow_capabilities(
+    cases_dir: Path,
+) -> None:
     """Assignment and indentation contexts follow language metadata."""
     combined_suffix = "_combined"
-    combined_case_dir_name = "multiline_string_scalar"
-    pre_indent_case_dir_name = "multiline_string_scalar"
+    (combined_case_dir_name,) = case_dir_names_for_variant_axis(
+        cases_dir=cases_dir,
+        axis="multiline_string_combined",
+    )
+    (pre_indent_case_dir_name,) = case_dir_names_for_variant_axis(
+        cases_dir=cases_dir,
+        axis="multiline_string_pre_indent",
+    )
     cases = build_multiline_string_context_cases(
         combined_case_dir_name=combined_case_dir_name,
         combined_suffix=combined_suffix,

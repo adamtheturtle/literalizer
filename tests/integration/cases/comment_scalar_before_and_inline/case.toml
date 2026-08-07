@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["pre-indent-comment-scalar-input"]
 
 [[variants]]
 axis = "language_version"

@@ -12,6 +12,7 @@ import functools
 import json
 import math
 import tomllib
+from collections.abc import Mapping  # noqa: TC003
 from pathlib import Path
 from typing import Any, assert_never
 
@@ -24,13 +25,28 @@ from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import InvalidDictKeyError
 
 from .case_inputs import CaseInput
-from .case_manifests import case_input, load_case_manifests
+from .case_manifests import (
+    HETEROGENEOUS_STRATEGY_DEFAULT_ROLE,
+    HETEROGENEOUS_STRATEGY_TUPLE_ROLE,
+    INDENT_ROLE,
+    NO_VARIABLE_FORM_ROLE,
+    PRE_INDENT_COMMENT_SCALAR_ROLE,
+    PRE_INDENT_CONTAINER_ROLE,
+    STATEMENT_TERMINATOR_ROLE,
+    CaseRoleName,
+    case_dir_name_for_role,
+    case_dir_names_for_role,
+    case_input,
+    load_case_manifests,
+)
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
 )
+
+_CASES_DIR = Path(__file__).parent / "cases"
 
 
 @beartype
@@ -427,7 +443,15 @@ def build_statement_terminator_combined_cases() -> list[
 ]:
     """Collect combined (declaration + assignment) test cases for
     non-default statement terminators.
+
+    The inputs are the cases declaring the statement-terminator role: a
+    sequence and a dict, so a terminator that only shows up after one
+    kind of multi-line value is still covered.
     """
+    case_dir_names = case_dir_names_for_role(
+        cases_dir=_CASES_DIR,
+        role=STATEMENT_TERMINATOR_ROLE,
+    )
     cases: list[StatementTerminatorCombinedCase] = []
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
@@ -441,7 +465,7 @@ def build_statement_terminator_combined_cases() -> list[
                 is default_statement_terminator_style
             ):
                 continue
-            for case_dir_name in ("simple_sequence", "simple_dict"):
+            for case_dir_name in case_dir_names:
                 name = (
                     f"{lang_name}_statement_terminator_style"
                     f"_{statement_terminator_style.name.lower()}_{case_dir_name}"
@@ -480,11 +504,12 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     cases: list[HeterogeneousStrategyCombinedCase] = []
     # Most strategies exercise the mixed-scalar dict; the TUPLE strategy
     # needs an input that actually carries a tuple-eligible
-    # heterogeneous scalar array, so it is paired with the canonical
-    # record-field fixture (which also exercises RECORD/TUPLE
+    # heterogeneous scalar array, so it is paired with the fixture
+    # declaring the tuple role (which also exercises RECORD/TUPLE
     # composition) instead.
-    default_case_dir_name = "dict_mixed_scalars"
-    strategy_case_dir_names = {"TUPLE": "tuple_record_field"}
+    strategy_roles: Mapping[str, CaseRoleName] = {
+        "TUPLE": HETEROGENEOUS_STRATEGY_TUPLE_ROLE,
+    }
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
@@ -498,9 +523,12 @@ def build_heterogeneous_strategy_combined_cases() -> list[
                 f"{lang_name}_heterogeneous_strategy"
                 f"_{strategy.name.lower()}_combined"
             )
-            case_dir_name = strategy_case_dir_names.get(
-                strategy.name,
-                default_case_dir_name,
+            case_dir_name = case_dir_name_for_role(
+                cases_dir=_CASES_DIR,
+                role=strategy_roles.get(
+                    strategy.name,
+                    HETEROGENEOUS_STRATEGY_DEFAULT_ROLE,
+                ),
             )
             cases.append(
                 HeterogeneousStrategyCombinedCase(
@@ -567,11 +595,14 @@ class NoVariableFormCase:
 def build_no_variable_form_cases() -> list[NoVariableFormCase]:
     """Build one ``no_variable_form`` case per opt-in language.
 
-    Uses the ``scalar_int`` fixture (``42``) because it is the
-    minimum input that exercises the bare-value-at-file-scope shape
+    The fixture declaring the role is a bare integer, because that is
+    the minimum input that exercises the bare-value-at-file-scope shape
     and matches every opt-in language's value vocabulary.
     """
-    case_dir_name = "scalar_int"
+    case_dir_name = case_dir_name_for_role(
+        cases_dir=_CASES_DIR,
+        role=NO_VARIABLE_FORM_ROLE,
+    )
     return [
         NoVariableFormCase(
             name=f"{lang_cls.__name__}_no_variable_form",
@@ -591,9 +622,13 @@ def build_indent_cases() -> list[IndentCase]:
     The chosen indent (``"   "``) is three spaces, which is distinct
     from every language's default (``"    "``, ``"  "``, or ``"\t"``)
     so the golden file is guaranteed to diverge from the default-indent
-    ``bool_list`` rendering unless ``self.indent`` is being ignored.
+    rendering of the role's fixture unless ``self.indent`` is being
+    ignored.
     """
-    case_dir_name = "bool_list"
+    case_dir_name = case_dir_name_for_role(
+        cases_dir=_CASES_DIR,
+        role=INDENT_ROLE,
+    )
     indent = "   "
     return [
         IndentCase(
@@ -619,20 +654,28 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
     fix: the declaration line carries the indent, the value sits flush
     against ``=``, and continuation lines keep their relative offsets.
 
-    ``simple_dict`` exercises a multi-line container value at indent
-    across every language with class-field modifiers.  Languages may
-    additionally opt into a focused ``comment_scalar_before_and_inline``
-    case through their test metadata.  It exercises a scalar whose
-    formatted value is preceded by comment lines carrying the same
+    The case declaring the container role exercises a multi-line
+    container value at indent across every language with class-field
+    modifiers.  Languages may additionally opt into the comment-scalar
+    role's case through their test metadata.  It exercises a scalar
+    whose formatted value is preceded by comment lines carrying the same
     ``line_prefix`` indent.
     """
+    container_case_dir_name = case_dir_name_for_role(
+        cases_dir=_CASES_DIR,
+        role=PRE_INDENT_CONTAINER_ROLE,
+    )
+    comment_scalar_case_dir_name = case_dir_name_for_role(
+        cases_dir=_CASES_DIR,
+        role=PRE_INDENT_COMMENT_SCALAR_ROLE,
+    )
     cases: list[PreIndentCase] = []
     for lang_cls in sorted_languages():
         cases.extend(
             PreIndentCase(
                 name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}",
                 lang_cls=lang_cls,
-                case_dir_name="simple_dict",
+                case_dir_name=container_case_dir_name,
                 pre_indent_level=1,
                 modifiers=combo.modifiers,
             )
@@ -646,10 +689,10 @@ def build_pre_indent_cases() -> list[PreIndentCase]:
             PreIndentCase(
                 name=(
                     f"{lang_cls.__name__}_pre_indent_1_{combo.name}"
-                    "_comment_scalar_before_and_inline"
+                    f"_{comment_scalar_case_dir_name}"
                 ),
                 lang_cls=lang_cls,
-                case_dir_name="comment_scalar_before_and_inline",
+                case_dir_name=comment_scalar_case_dir_name,
                 pre_indent_level=1,
                 modifiers=combo.modifiers,
             )

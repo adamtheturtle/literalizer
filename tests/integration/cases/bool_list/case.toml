@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["indent-input"]
 
 [[variants]]
 axis = "json_type"
