@@ -15,11 +15,11 @@ from .variant_cases import (
     _case_for_manifest_variant,  # pyright: ignore[reportPrivateUsage]
     _one_special_input,  # pyright: ignore[reportPrivateUsage]
     build_multiline_string_context_cases,
-    build_typed_dict_null_filtering_variants,
     build_variant_cases,
     group_variant_cases_by_language,
     variant_languages,
 )
+from .variant_escape_hatches import build_typed_dict_null_filtering_variants
 from .variant_types import enum_member_by_name
 
 _SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])

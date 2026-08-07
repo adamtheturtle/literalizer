@@ -11,15 +11,16 @@ from .case_manifests import CaseManifestError
 from .language_specs import make_spec
 from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
 from .variant_cases import (
-    ESCAPE_HATCH_VARIANT_AXES,
     _HasJsonType,  # pyright: ignore[reportPrivateUsage]
     check_axis_coverage,
     variants_for_axis,
 )
+from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
 from .variant_plans import (
     AxisPlanError,
     declared_axis_names,
     load_axis_registry,
+    special_axis_names,
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
@@ -59,6 +60,11 @@ values = [{ name = "punctuation", value = "!?" }]
 
 _VALID_FILTERED_AXIS = """
 schema_version = 1
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
 
 [axes.example]
 plan = "filtered"
@@ -130,6 +136,23 @@ def test_every_axis_resolves_to_exactly_one_expansion() -> None:
     assert declared & ESCAPE_HATCH_VARIANT_AXES == frozenset()
     assert declared | ESCAPE_HATCH_VARIANT_AXES == (
         KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
+    )
+
+
+def test_special_axes_are_declared() -> None:
+    """The context-assembled axes come from ``axes.toml`` as well."""
+    assert special_axis_names() == SPECIAL_VARIANT_AXES
+    assert (
+        frozenset(
+            {
+                "json_type_variable_form",
+                "modifier_sequence_format",
+                "modifiers",
+                "multiline_string_combined",
+                "multiline_string_pre_indent",
+            }
+        )
+        == SPECIAL_VARIANT_AXES
     )
 
 
@@ -579,36 +602,34 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("declared", "escape_hatch", "message"),
+    argnames=("declared", "escape_hatch", "special", "message"),
     argvalues=[
         (
             frozenset({"date", "json_type"}),
             frozenset({"json_type"}),
+            frozenset[str](),
             "both declared in axes.toml and registered",
         ),
         (
             frozenset({"date"}),
-            frozenset[str](),
-            r"\['json_type'\] have no expansion",
-        ),
-        (
-            frozenset({"date", "vibes"}),
             frozenset({"json_type"}),
-            r"\['vibes'\] expand but are not in KNOWN_VARIANT_AXES",
+            frozenset({"date"}),
+            r"also expand as ordinary ones: \['date'\]",
         ),
     ],
 )
 def test_axis_coverage_gaps_are_actionable(
     declared: frozenset[str],
     escape_hatch: frozenset[str],
+    special: frozenset[str],
     message: str,
 ) -> None:
-    """An axis with no expansion, or two, names what to do about it."""
+    """An axis registered twice names what to do about it."""
     with pytest.raises(expected_exception=CaseManifestError, match=message):
         check_axis_coverage(
-            expandable=frozenset({"date", "json_type"}),
             declared=declared,
             escape_hatch=escape_hatch,
+            special=special,
         )
 
 

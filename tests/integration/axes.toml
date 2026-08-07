@@ -1,12 +1,36 @@
 schema_version = 1
 
-# Declared variant axes.  Each entry names one typed expansion plan
-# from ``variant_plans.py`` and supplies that plan's parameters.  This
-# file selects and parameterizes plans; it never expresses a condition.
-# Axes whose expansion is genuinely irregular stay as registered
-# escape-hatch builders in ``variant_cases.py``; a ``filtered`` plan
-# narrows one of those, or another declared axis, to the languages its
-# gates admit.
+# Declared variant axes.  Each entry under ``axes`` names one typed
+# expansion plan from ``variant_plans.py`` and supplies that plan's
+# parameters.  This file selects and parameterizes plans; it never
+# expresses a condition.  Axes whose expansion is genuinely irregular
+# stay as registered escape-hatch builders in
+# ``variant_escape_hatches.py``; a ``filtered`` plan narrows one of
+# those, or another declared axis, to the languages its gates admit.
+#
+# Between the two tables here and those builders, every axis name the
+# suite knows is registered exactly once.
+
+# Axes a case manifest may name that do not expand to a list of
+# variants at all.  Each names an input whose cases are assembled with
+# render context -- a variable form, a set of modifiers, an indent
+# level -- by a builder in ``variant_cases.py``, so it is declared here
+# for its name alone.
+
+[special_axes.json_type_variable_form]
+reason = "Pairs each JSON-type variant with a redefinition-aware variable form."
+
+[special_axes.modifier_sequence_format]
+reason = "Supplies the sequence-format input the modifier builder renders."
+
+[special_axes.modifiers]
+reason = "Crosses declaration modifiers with the inputs that declare them."
+
+[special_axes.multiline_string_combined]
+reason = "Renders one input under every multiline-string option at once."
+
+[special_axes.multiline_string_pre_indent]
+reason = "Renders one input at each pre-indent level the suite covers."
 
 [axes.annotation_evaluation]
 plan = "every_non_default_member"
