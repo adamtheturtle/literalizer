@@ -14,19 +14,17 @@ import dataclasses
 import enum
 import functools
 from pathlib import Path
-from typing import Protocol, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
 
 import literalizer
 
-from .case_discovery import (
-    EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR,
-    cases_with_special_floats,
-)
+from .case_discovery import cases_with_special_floats
 from .case_manifests import (
     CaseManifestError,
     ManifestVariant,
+    VariantCapabilityName,
     load_case_manifests,
     variable_form_for_context,
 )
@@ -57,6 +55,11 @@ from .variant_types import (
 __all__ = ("Variant", "wrap_variable_form")
 
 _CASES_DIR = Path(__file__).parent / "cases"
+
+_SPECIAL_FLOAT_CAPABILITIES: frozenset[VariantCapabilityName] = frozenset(
+    {"special_floats"},
+)
+"""The requirement carried by an input containing a non-finite float."""
 
 
 @runtime_checkable
@@ -316,6 +319,41 @@ def _one_special_input(
 
 
 @beartype
+def language_supports_capability(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    capability: VariantCapabilityName,
+) -> bool:
+    """Return whether *lang_cls* provides the named capability."""
+    match capability:
+        case "empty_sibling_sequence_type_hints":
+            return lang_cls.supports_empty_sibling_sequence_type_hints
+        case "special_floats":
+            return lang_cls.supports_special_floats
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def required_capabilities(
+    *,
+    case_dir_name: str,
+    manifest_variant: ManifestVariant,
+    special_float_cases: frozenset[str],
+) -> frozenset[VariantCapabilityName]:
+    """Return the capabilities one manifest variant entry needs.
+
+    A case declares what its input requires, bar special floats, which
+    are read out of the input itself so the requirement cannot go stale
+    as the fixture changes.
+    """
+    declared = frozenset(manifest_variant.requires)
+    if case_dir_name in special_float_cases:
+        return declared | _SPECIAL_FLOAT_CAPABILITIES
+    return declared
+
+
+@beartype
 def validate_unique_variant_targets(cases: list[VariantCase]) -> None:
     """Fail when two inventory entries resolve to one golden path."""
     targets: dict[tuple[str, str, str, object], VariantCase] = {}
@@ -358,6 +396,11 @@ def build_variant_cases() -> list[VariantCase]:
         if manifest_variant.axis in SPECIAL_VARIANT_AXES:
             continue
         variants = variants_for_axis(axis_key=manifest_variant.axis)
+        required = required_capabilities(
+            case_dir_name=case_dir_name,
+            manifest_variant=manifest_variant,
+            special_float_cases=special_float_cases,
+        )
         cases.extend(
             _case_for_manifest_variant(
                 case_dir_name=case_dir_name,
@@ -365,15 +408,12 @@ def build_variant_cases() -> list[VariantCase]:
                 variant=variant,
             )
             for variant in variants
-            if not (
-                case_dir_name in special_float_cases
-                and not variant.lang_cls.supports_special_floats
-            )
-            and not (
-                case_dir_name == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
-                and not (
-                    variant.lang_cls.supports_empty_sibling_sequence_type_hints
+            if all(
+                language_supports_capability(
+                    lang_cls=variant.lang_cls,
+                    capability=capability,
                 )
+                for capability in required
             )
         )
 

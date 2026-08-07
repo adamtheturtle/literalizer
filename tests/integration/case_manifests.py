@@ -32,6 +32,10 @@ MANIFEST_NAME = "case.toml"
 type VariableFormName = Literal["new", "existing", "both"]
 type CollectionLayoutName = Literal["compact", "multiline"]
 type SuiteName = Literal["base", "combined"]
+type VariantCapabilityName = Literal[
+    "empty_sibling_sequence_type_hints",
+    "special_floats",
+]
 type OwnerName = Literal[
     "literalize-call",
     "literalize-ref",
@@ -57,6 +61,11 @@ CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
 
 def _empty_suites() -> list[SuiteName]:
     """Return a typed empty suite list for the validation model."""
+    return []
+
+
+def _empty_capabilities() -> list[VariantCapabilityName]:
+    """Return a typed empty capability list for the validation model."""
     return []
 
 
@@ -218,6 +227,20 @@ class ManifestVariant(
     axis: Annotated[str, Field(min_length=1)]
     suffix: str = ""
     context: RenderContext = Field(default_factory=RenderContext)
+    # The language capabilities this input needs in order to render at
+    # all.  A variant whose language lacks one of them is skipped (no
+    # golden) rather than emitting output the language cannot express.
+    requires: list[VariantCapabilityName] = Field(
+        default_factory=_empty_capabilities,
+    )
+
+    @model_validator(mode="after")
+    def _validate_requirements(self) -> ManifestVariant:
+        """Reject a capability named more than once."""
+        if len(self.requires) != len(set(self.requires)):
+            msg = "requires contains a duplicate entry"
+            raise ValueError(msg)
+        return self
 
 
 def _empty_variants() -> list[ManifestVariant]:

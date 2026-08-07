@@ -2,14 +2,20 @@
 
 import enum
 from collections import Counter
+from pathlib import Path
 
 import pytest
 
 import literalizer.languages
 from literalizer.languages import Kotlin, Python
 
-from .case_discovery import EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
-from .case_manifests import CaseManifestError, ManifestVariant, RenderContext
+from .case_manifests import (
+    CaseManifestError,
+    ManifestVariant,
+    RenderContext,
+    VariantCapabilityName,
+    load_case_manifests,
+)
 from .language_specs import sorted_languages
 from .variant_cases import (
     _case_for_manifest_variant,  # pyright: ignore[reportPrivateUsage]
@@ -20,7 +26,7 @@ from .variant_cases import (
     variant_languages,
 )
 from .variant_escape_hatches import build_typed_dict_null_filtering_variants
-from .variant_types import enum_member_by_name
+from .variant_types import VariantCase, enum_member_by_name
 
 _SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])
 
@@ -101,15 +107,35 @@ def test_variant_cases_have_unique_golden_paths() -> None:
     assert duplicates == []
 
 
-def test_empty_sibling_sequence_type_hints_follow_capability() -> None:
-    """The time-union fixture excludes languages that cannot compile
-    it.
-    """
-    cases = [
+def _cases_requiring(
+    *,
+    cases_dir: Path,
+    capability: VariantCapabilityName,
+) -> list[VariantCase]:
+    """Return the variant cases whose manifest declares *capability*."""
+    declared = {
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        for variant in manifest.variants
+        if capability in variant.requires
+    }
+    return [
         case
         for case in build_variant_cases()
-        if case.case_dir_name == EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR
+        if case.case_dir_name in declared
     ]
+
+
+def test_empty_sibling_sequence_type_hints_follow_capability(
+    cases_dir: Path,
+) -> None:
+    """A case requiring empty sibling sequence hints excludes languages
+    that cannot compile it.
+    """
+    cases = _cases_requiring(
+        cases_dir=cases_dir,
+        capability="empty_sibling_sequence_type_hints",
+    )
 
     assert cases
     assert not Kotlin.supports_empty_sibling_sequence_type_hints

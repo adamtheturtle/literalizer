@@ -32,11 +32,6 @@ from .language_specs import (
     sorted_languages,
 )
 
-EMPTY_SIBLING_SEQUENCE_TYPE_HINT_CASE_DIR = "time_union_type_hint"
-"""Golden case for explicit hints over empty/non-empty sibling
-sequences.
-"""
-
 
 @beartype
 def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
