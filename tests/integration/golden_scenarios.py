@@ -53,6 +53,12 @@ from .case_manifests import (
     case_manifests_by_name,
     variable_form_for_context,
 )
+from .golden_checks import (
+    NO_SKIPS,
+    SkipPolicy,
+    SkipReason,
+    SkipReasons,
+)
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -67,21 +73,6 @@ _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
     modifiers=frozenset(),
 )
 
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipReason:
-    """Why one error skips a golden rather than failing it.
-
-    ``unlink`` drops any golden file left by an earlier run, so a stale
-    fixture cannot pose as a real result on the next one.
-    """
-
-    error: type[Exception]
-    reason: str
-    unlink: bool
-
-
-type SkipReasons = tuple[SkipReason, ...]
 
 LANGUAGE_SKIP_REASONS: SkipReasons = (
     SkipReason(
@@ -174,22 +165,6 @@ _STRATEGY_SKIP_REASONS: SkipReasons = _reasons_for(
     errors=(HeterogeneousCollectionError,),
 )
 
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipPolicy:
-    """Which errors skip a rendering, and what the skip message says.
-
-    ``suffix`` is appended to the reason, so a skip that turns on more
-    than the error type -- the strategy the golden was rendered under,
-    say -- says so without restating the reason.
-    """
-
-    reasons: SkipReasons
-    suffix: str
-
-
-NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
-"""Every error is a real failure."""
 
 LANGUAGE_SKIPS: SkipPolicy = SkipPolicy(
     reasons=LANGUAGE_SKIP_REASONS,
@@ -290,16 +265,6 @@ class GoldenRendering:
         if pinned is not None:
             return (pinned.language_version,)
         return tuple(self.lang_cls.VersionFormats)
-
-    @property
-    def skip_errors(self) -> tuple[type[Exception], ...]:
-        """Return the errors that skip rather than fail this rendering.
-
-        The tuple is derived from the skip policy's reasons so an error
-        can never be caught without a message to skip with, nor listed
-        with a message that no ``except`` clause reaches.
-        """
-        return tuple(entry.error for entry in self.skip.reasons)
 
     def spec_for(self, *, version: enum.Enum) -> literalizer.Language:
         """Return the spec this rendering uses for *version*."""

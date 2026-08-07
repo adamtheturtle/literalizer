@@ -14,7 +14,6 @@ set of golden files.
 
 import enum
 from pathlib import Path
-from typing import NoReturn
 
 import pytest
 from beartype import beartype
@@ -25,39 +24,15 @@ from literalizer.exceptions import VariableNameNotSupportedError
 
 from .case_inputs import CaseInput
 from .case_manifests import case_input
+from .golden_checks import check_golden, skip_for_error
 from .golden_scenarios import (
     GoldenGroup,
     GoldenRendering,
-    SkipReasons,
     golden_groups,
 )
 from .language_specs import make_golden_path, with_per_fixture_module_name
 
 _GROUPS = golden_groups()
-
-
-@beartype
-def _skip_unrepresentable(
-    *,
-    exc: Exception,
-    reasons: SkipReasons,
-    golden_path: Path,
-    prefix: str,
-    suffix: str,
-) -> NoReturn:
-    """Skip the current test with a message keyed off the caught error.
-
-    The message reads ``"{prefix} {reason}{suffix}"``, so a rendering
-    whose skip turns on more than the error type -- the strategy it was
-    rendered under, say -- says so in *suffix* rather than restating the
-    reason.  The ``except`` clause is built from the same table, so the
-    lookup below is total by construction; ``StopIteration`` propagating
-    out of this helper would indicate a divergence between the two.
-    """
-    entry = next(entry for entry in reasons if isinstance(exc, entry.error))
-    if entry.unlink:
-        golden_path.unlink(missing_ok=True)
-    pytest.skip(f"{prefix} {entry.reason}{suffix}")
 
 
 @beartype
@@ -126,23 +101,19 @@ def _check_rendering(
                 source_text=source_text,
                 variable_form=None,
             )
-    except rendering.skip_errors as exc:
-        _skip_unrepresentable(
+    except rendering.skip.errors as exc:
+        skip_for_error(
             exc=exc,
             reasons=rendering.skip.reasons,
             golden_path=golden_path,
             prefix=rendering.lang_cls.__name__,
             suffix=rendering.skip.suffix,
         )
-    # newline="" prevents Python text-mode from converting \r\n to \n on
-    # Windows, which would corrupt golden files containing literal CR
-    # bytes (e.g. CommonLisp string_control_chars).
-    file_regression.check(
+    check_golden(
         contents=rendering.fixture_prefix + result.code + "\n",
-        encoding="utf-8",
         extension=spec.extension,
-        newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )
 
 
