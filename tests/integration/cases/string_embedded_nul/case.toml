@@ -4,3 +4,6 @@ owner = "variant"
 
 [[variants]]
 axis = "string_embedded_nul"
+
+[[variants]]
+axis = "string_embedded_nul_json_type"

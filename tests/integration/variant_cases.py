@@ -4,10 +4,10 @@ Each :class:`Variant` pairs a language class with a specific
 non-default formatter spec; each :class:`VariantCase` pairs a variant
 with one of the input case directories under ``tests/integration/cases``.
 
-Most axes declare their expansion in ``axes.toml`` and are built by the
-typed plans in :mod:`variant_plans`.  What remains here is the
-irregular tail registered in :data:`ESCAPE_HATCH_VARIANT_AXES`, plus
-the assembly of variants and manifest inputs into cases.
+Axes declare their expansion in ``axes.toml`` and are built by the
+typed plans in :mod:`variant_plans`, bar the one still registered in
+:data:`ESCAPE_HATCH_VARIANT_AXES`.  What remains here is that builder,
+plus the assembly of variants and manifest inputs into cases.
 """
 
 import dataclasses
@@ -54,40 +54,6 @@ from .variant_types import (
 __all__ = ("Variant", "wrap_variable_form")
 
 _CASES_DIR = Path(__file__).parent / "cases"
-
-
-@beartype
-def build_comment_terminator_variants() -> list[Variant]:
-    """Build every suffix-delimited comment-format variant.
-
-    Unlike the ordinary ``comment`` axis, this includes a language's
-    default format when that format has a suffix. The explicit
-    ``CommentFormats`` enum on each language class is the capability
-    source; line-comment members have an empty suffix and do not
-    participate.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        default_spec = make_spec(lang_cls=lang_cls)
-        for comment_format in default_spec.comment_formats:
-            config = comment_format.value
-            assert isinstance(config, literalizer.CommentConfig)  # noqa: S101
-            if not config.suffix:
-                continue
-            variants.append(
-                compact_variant(
-                    name=(
-                        f"{lang_cls.__name__}_comment_terminator"
-                        f"_{comment_format.name.lower()}"
-                    ),
-                    spec=make_spec(
-                        lang_cls=lang_cls,
-                        comment_format=comment_format,
-                    ),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
 
 
 @beartype
@@ -205,69 +171,6 @@ def build_json_type_variable_form_cases(
 
 
 @beartype
-def build_string_embedded_nul_variants() -> Iterable[Variant]:
-    r"""Build embedded-null-byte variants for the languages that escape it.
-
-    The ``string_embedded_nul`` input carries a bare null byte and a
-    null byte immediately followed by a digit.  Each golden file pins the
-    escape a language emits and its distinctness before a following digit
-    (issue #3006).  Participation is driven by
-    ``variant_metadata.string_literals_escape_null_byte``: languages that
-    reject the value (R, COBOL) or still emit a raw null byte are
-    excluded.  A language with more than one string format contributes
-    one variant per format. JSON type variants that can
-    represent null bytes opt in through their
-    ``string_literals_escape_null_byte`` property.
-    """
-    variants: list[Variant] = []
-    for lang_cls in sorted_languages():
-        if lang_cls.variant_metadata.string_literals_escape_null_byte:
-            string_formats = [
-                string_format
-                for string_format in make_spec(
-                    lang_cls=lang_cls
-                ).string_formats
-                if string_format.name != "MULTILINE"
-            ]
-            for string_format in string_formats:
-                suffix = (
-                    ""
-                    if len(string_formats) == 1
-                    else f"_{string_format.name.lower()}"
-                )
-                variants.append(
-                    compact_variant(
-                        name=(
-                            f"{lang_cls.__name__}_string_embedded_nul{suffix}"
-                        ),
-                        spec=make_spec(
-                            lang_cls=lang_cls,
-                            string_format=string_format,
-                        ),
-                        lang_cls=lang_cls,
-                    )
-                )
-        for json_type in lang_cls.JsonTypes:
-            if not json_type.string_literals_escape_null_byte:
-                continue
-            suffix = (
-                lang_cls.json_type_variant_name_suffix
-                or json_type.name.lower()
-            )
-            variants.append(
-                compact_variant(
-                    name=(f"{lang_cls.__name__}_string_embedded_nul_{suffix}"),
-                    spec=make_spec(
-                        lang_cls=lang_cls,
-                        json_type=json_type,
-                    ),
-                    lang_cls=lang_cls,
-                )
-            )
-    return variants
-
-
-@beartype
 def build_multiline_string_context_cases(
     *,
     combined_case_dir_name: str,
@@ -339,13 +242,11 @@ def build_multiline_string_context_cases(
 
 # Axes whose expansion is genuinely irregular, and so is written as a
 # typed Python builder instead of a declared plan in ``axes.toml``.
-# ``comment_terminator`` and ``string_embedded_nul`` gate on the member
-# rather than on the language; ``typed_dict_null_filtering`` renders
-# through a synthesized language subclass.  A meta-test holds this set
-# to its current membership: new axes belong in ``axes.toml``.
+# ``typed_dict_null_filtering`` renders through a language subclass
+# synthesized here, which no plan builds because nothing else needs one.
+# A meta-test holds this set to its current membership: new axes belong
+# in ``axes.toml``.
 _ESCAPE_HATCH_BUILDERS: dict[str, Callable[[], Iterable[Variant]]] = {
-    "comment_terminator": build_comment_terminator_variants,
-    "string_embedded_nul": build_string_embedded_nul_variants,
     "typed_dict_null_filtering": build_typed_dict_null_filtering_variants,
 }
 

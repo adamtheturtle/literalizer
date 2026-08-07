@@ -59,6 +59,17 @@ plan = "every_non_default_member"
 name_template = "{lang}_comment_{format}"
 option = "comment_format"
 
+# Unlike the ordinary ``comment`` axis, this keeps a language's default
+# format: the terminator is the subject, so a default comment that
+# closes with one belongs here.  A line-comment member has an empty
+# suffix and drops out.
+[axes.comment_terminator]
+plan = "every_non_default_member"
+name_template = "{lang}_comment_terminator_{format}"
+option = "comment_format"
+include_default = true
+member_flags = ["comment_suffix"]
+
 [axes.comment_terminator_call]
 plan = "filtered"
 base = "comment_terminator"
@@ -704,6 +715,36 @@ plan = "cross_product"
 name_template = "{lang}_statement_terminator_style_{format}_{tag}_{secondary}"
 primary = "statement_terminator_style"
 secondaries = [{ tag = "decl", option = "declaration_style" }]
+
+# The ``string_embedded_nul`` input carries a bare null byte and a null
+# byte immediately before a digit, and each golden pins the escape a
+# language emits for both (issue #3006).  A language participates when
+# its default string formatter escapes them faithfully; one that rejects
+# the value, emits a raw null byte, or emits a digit-greedy escape stays
+# out.  Naming the format says nothing for a language offering one, so
+# those goldens keep the bare name.
+[axes.string_embedded_nul]
+plan = "every_non_default_member"
+name_template = "{lang}_string_embedded_nul_{format}"
+sole_member_name_template = "{lang}_string_embedded_nul"
+option = "string_format"
+include_default = true
+excluded_members = ["MULTILINE"]
+gates = [
+  { kind = "capability_flag", flag = "string_literals_escape_null_byte" },
+]
+
+# A JSON value type escapes null bytes on its own account, whatever the
+# language's default string formatter does, so it opts in per member
+# rather than through the language's own capability.
+[axes.string_embedded_nul_json_type]
+plan = "every_non_default_member"
+name_template = "{lang}_string_embedded_nul_{format}"
+option = "json_type"
+include_default = true
+member_flags = ["string_literals_escape_null_byte"]
+member_name_source = "json_type_variant_name_suffix"
+gates = [{ kind = "spec_field_present", field = "json_type" }]
 
 [axes.string_format]
 plan = "every_non_default_member"
