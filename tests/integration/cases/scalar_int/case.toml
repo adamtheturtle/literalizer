@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["no-variable-form-input"]
 
 [[variants]]
 axis = "declaration_style"

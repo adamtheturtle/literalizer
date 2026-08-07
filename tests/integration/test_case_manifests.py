@@ -7,11 +7,16 @@ import pytest
 import literalizer
 
 from .case_manifests import (
+    CASE_ROLE_NAMES,
+    INDENT_ROLE,
     KEBAB_NEW_VARIABLE_OWNER,
     CaseManifestError,
     RenderContext,
     VariableFormName,
     case_dir_name_for_owner,
+    case_dir_name_for_role,
+    case_dir_names_for_role,
+    case_dir_names_for_variant_axis,
     case_input,
     case_manifests_by_name,
     load_case_manifest,
@@ -76,6 +81,17 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         (
             'schema_version = 1\nsuites = ["base", "base"]\n',
             "suites contains a duplicate entry",
+        ),
+        (
+            'schema_version = 1\nsuites = ["base"]\nroles = ["mascot"]\n',
+            "Input should be 'heterogeneous-strategy-default-input'",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'roles = ["indent-input", "indent-input"]\n'
+            ),
+            "roles contains a duplicate entry",
         ),
         (
             ('schema_version = 1\nsuites = ["base"]\nowner = "variant"\n'),
@@ -460,6 +476,59 @@ def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
             cases_dir=tmp_path,
             owner=KEBAB_NEW_VARIABLE_OWNER,
         )
+
+
+def test_every_declared_role_has_a_case(cases_dir: Path) -> None:
+    """Every role the schema accepts is claimed by a real case."""
+    for role in sorted(CASE_ROLE_NAMES):
+        assert case_dir_names_for_role(cases_dir=cases_dir, role=role)
+
+
+def test_role_lookup_requires_a_declaring_case(tmp_path: Path) -> None:
+    """A role no case declares fails naming the role and the manifest."""
+    _write_case(
+        tmp_path=tmp_path,
+        manifest='schema_version = 1\nsuites = ["base"]\n',
+        input_name="input.yaml",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match=r"no case\.toml under .* declares roles = \['indent-input'\]",
+    ):
+        case_dir_names_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
+
+
+def test_sole_role_lookup_rejects_a_shared_role(tmp_path: Path) -> None:
+    """A role two cases declare cannot be read as a single fixture."""
+    manifest = (
+        'schema_version = 1\nsuites = ["base"]\nroles = ["indent-input"]\n'
+    )
+    for name in ("first", "second"):
+        case_dir = tmp_path / name
+        case_dir.mkdir()
+        (case_dir / "input.yaml").write_text(
+            data="value: 1\n",
+            encoding="utf-8",
+        )
+        (case_dir / "case.toml").write_text(data=manifest, encoding="utf-8")
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match=(
+            "expected exactly one case.toml declaring "
+            r"roles = \['indent-input'\], found \['first', 'second'\]"
+        ),
+    ):
+        case_dir_name_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
+
+
+def test_variant_axis_lookup_finds_no_case_for_an_unused_axis(
+    cases_dir: Path,
+) -> None:
+    """An axis no case declares expands to no inputs."""
+    assert not case_dir_names_for_variant_axis(
+        cases_dir=cases_dir,
+        axis="not_an_axis",
+    )
 
 
 @pytest.mark.parametrize(

@@ -77,6 +77,17 @@ null record fields before inference:
    [base_context.record_null_substitutions]
    replacement = -1
 
+Some runners render one chosen input rather than the whole inventory: the
+non-default indent, the bare value at file scope, the pre-indent shapes.  The
+input declares the part it plays in a ``roles`` list, and the runner looks it
+up by role, so the directory name stays a single source of truth on disk:
+
+.. code-block:: toml
+
+   schema_version = 1
+   suites = ["base", "combined"]
+   roles = ["indent-input"]
+
 A ``literalize_call`` case declares that owner and describes its call in a
 ``[call]`` table, so the whole case lives in one directory:
 

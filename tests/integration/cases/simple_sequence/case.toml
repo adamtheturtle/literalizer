@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base", "combined"]
+roles = ["statement-terminator-input"]
 
 # The former sequence _varname entry duplicated the
 # suffix-free target byte-for-byte and was removed in #3307.

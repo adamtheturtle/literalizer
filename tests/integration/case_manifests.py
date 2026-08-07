@@ -8,7 +8,7 @@ import string
 import tomllib
 from collections.abc import Callable, Mapping  # noqa: TC003
 from pathlib import Path  # noqa: TC003
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 from beartype import beartype
 from pydantic import (
@@ -45,6 +45,45 @@ type OwnerName = Literal[
     "variant",
 ]
 
+# Spelled as an assignment rather than a ``type`` statement so the
+# accepted names can be read back out with ``get_args``.
+_CaseRoleNameLiteral = Literal[
+    "heterogeneous-strategy-default-input",
+    "heterogeneous-strategy-tuple-input",
+    "indent-input",
+    "no-variable-form-input",
+    "pre-indent-comment-scalar-input",
+    "pre-indent-container-input",
+    "statement-terminator-input",
+]
+
+type CaseRoleName = _CaseRoleNameLiteral
+"""Every load-bearing role a case may declare.
+
+A role names the part an input plays in a runner that renders a chosen
+fixture rather than the whole inventory.  The case declares the role, so
+its directory name stays a single source of truth on disk and reading
+the case tells you it is load-bearing.
+"""
+
+CASE_ROLE_NAMES: frozenset[CaseRoleName] = frozenset(
+    get_args(tp=_CaseRoleNameLiteral),
+)
+
+HETEROGENEOUS_STRATEGY_DEFAULT_ROLE: CaseRoleName = (
+    "heterogeneous-strategy-default-input"
+)
+HETEROGENEOUS_STRATEGY_TUPLE_ROLE: CaseRoleName = (
+    "heterogeneous-strategy-tuple-input"
+)
+INDENT_ROLE: CaseRoleName = "indent-input"
+NO_VARIABLE_FORM_ROLE: CaseRoleName = "no-variable-form-input"
+PRE_INDENT_COMMENT_SCALAR_ROLE: CaseRoleName = (
+    "pre-indent-comment-scalar-input"
+)
+PRE_INDENT_CONTAINER_ROLE: CaseRoleName = "pre-indent-container-input"
+STATEMENT_TERMINATOR_ROLE: CaseRoleName = "statement-terminator-input"
+
 CALL_OWNER: OwnerName = "literalize-call"
 
 REF_OWNER: OwnerName = "literalize-ref"
@@ -66,6 +105,11 @@ def _empty_suites() -> list[SuiteName]:
 
 def _empty_capabilities() -> list[VariantCapabilityName]:
     """Return a typed empty capability list for the validation model."""
+    return []
+
+
+def _empty_roles() -> list[CaseRoleName]:
+    """Return a typed empty role list for the validation model."""
     return []
 
 
@@ -510,6 +554,10 @@ class _CaseManifestData(
     input: str | None = None
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
+    # The load-bearing parts this input plays, beyond its participation
+    # in a suite or an axis.  A runner that renders one chosen fixture
+    # finds it by role rather than by naming the directory.
+    roles: list[CaseRoleName] = Field(default_factory=_empty_roles)
     base_context: RenderContext = Field(default_factory=RenderContext)
     variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
     call: CallCaseSpec | None = None
@@ -552,6 +600,9 @@ class _CaseManifestData(
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)
+        if len(self.roles) != len(set(self.roles)):
+            msg = "roles contains a duplicate entry"
+            raise ValueError(msg)
         if self.suites and self.owner is not None:
             msg = "suites and owner are mutually exclusive"
             raise ValueError(msg)
@@ -586,6 +637,7 @@ class CaseManifest:
     input: CaseInput
     suites: frozenset[SuiteName]
     owner: OwnerName | None
+    roles: frozenset[CaseRoleName]
     base_context: RenderContext
     variants: tuple[ManifestVariant, ...]
     call: CallCaseSpec | None
@@ -647,6 +699,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         input=input_info,
         suites=frozenset(data.suites),
         owner=data.owner,
+        roles=frozenset(data.roles),
         base_context=data.base_context,
         variants=tuple(data.variants),
         call=data.call,
@@ -717,6 +770,69 @@ def case_dir_name_for_owner(*, cases_dir: Path, owner: OwnerName) -> str:
             msg = (
                 f"expected exactly one case with owner {owner!r}, "
                 f"found {sorted(names)}"
+            )
+            raise CaseManifestError(msg)
+
+
+@functools.cache
+@beartype
+def case_dir_names_for_variant_axis(
+    *,
+    cases_dir: Path,
+    axis: str,
+) -> tuple[str, ...]:
+    """Return the names of the case directories declaring *axis*.
+
+    An axis is declared by the inputs it renders, so the set of inputs
+    an axis covers is read off the manifests rather than restated.
+    """
+    return tuple(
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        for manifest_variant in manifest.variants
+        if manifest_variant.axis == axis
+    )
+
+
+@functools.cache
+@beartype
+def case_dir_names_for_role(
+    *,
+    cases_dir: Path,
+    role: CaseRoleName,
+) -> tuple[str, ...]:
+    """Return the names of the case directories declaring *role*.
+
+    Names come back in directory order so a runner's expansion is
+    stable.  A role no case answers to is an error rather than an empty
+    expansion, so removing the fixture a runner needs fails naming the
+    role instead of silently dropping every golden file behind it.
+    """
+    names = tuple(
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if role in manifest.roles
+    )
+    if not names:
+        msg = (
+            f"no {MANIFEST_NAME} under {cases_dir} declares roles = [{role!r}]"
+        )
+        raise CaseManifestError(msg)
+    return names
+
+
+@functools.cache
+@beartype
+def case_dir_name_for_role(*, cases_dir: Path, role: CaseRoleName) -> str:
+    """Return the name of the sole case directory declaring *role*."""
+    names = case_dir_names_for_role(cases_dir=cases_dir, role=role)
+    match names:
+        case (name,):
+            return name
+        case _:
+            msg = (
+                f"expected exactly one {MANIFEST_NAME} declaring "
+                f"roles = [{role!r}], found {sorted(names)}"
             )
             raise CaseManifestError(msg)
 
