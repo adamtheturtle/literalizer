@@ -6,15 +6,16 @@ Python: the file selects a plan and supplies its parameters, it never
 expresses a condition.
 
 Everything a plan looks up by name -- a formatter option, a language
-capability flag, a spec field, a rendering behavior flag, a
-language-metadata field, a language-metadata sub-table -- resolves
-through a closed registry declared here, so an unknown name, an unknown
-plan, an unknown gate kind, or an unknown name-template placeholder
-fails when the registry loads rather than when a golden file is built.
+capability flag, a spec field, a rendering behavior flag, a fact about
+one option member, a language-metadata field, a language-metadata
+sub-table -- resolves through a closed registry declared here, so an
+unknown name, an unknown plan, an unknown gate kind, or an unknown
+name-template placeholder fails when the registry loads rather than
+when a golden file is built.
 
-Axes whose expansion is genuinely irregular (a handful of one-off
-shapes) stay as registered escape-hatch builders in
-:mod:`variant_cases`.  A ``filtered`` plan narrows any
+An axis whose expansion is genuinely irregular stays as a registered
+escape-hatch builder in :mod:`variant_cases`.  A ``filtered`` plan
+narrows any
 axis, declared or irregular, to the languages its gates admit, so a
 suite needing a smaller slice of an existing expansion names one rather
 than writing its own builder.  A plan may also start from another
@@ -126,6 +127,17 @@ class _HasBytesFormat(Protocol):
     bytes_formats: type[enum.Enum]
 
 
+@runtime_checkable
+class _EscapesNullByte(Protocol):
+    """An option member declaring how it renders an embedded null byte.
+
+    A JSON value type answers for itself, whatever its language's
+    default string formatter does.
+    """
+
+    string_literals_escape_null_byte: bool
+
+
 @beartype
 def _bool_format(spec: literalizer.Language) -> object:
     """Return the configured boolean literal spelling."""
@@ -208,6 +220,21 @@ def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the bytes formats a language offers."""
     assert isinstance(spec, _HasBytesFormat)  # noqa: S101
     return spec.bytes_formats
+
+
+@beartype
+def _comment_suffix(member: enum.Enum) -> bool:
+    """Return whether a comment format closes with a terminator."""
+    config = member.value
+    assert isinstance(config, literalizer.CommentConfig)  # noqa: S101
+    return bool(config.suffix)
+
+
+@beartype
+def _escapes_null_byte(member: enum.Enum) -> bool:
+    """Return whether a member encodes an embedded null byte."""
+    assert isinstance(member, _EscapesNullByte)  # noqa: S101
+    return member.string_literals_escape_null_byte
 
 
 @beartype
@@ -403,6 +430,20 @@ _CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_standalone_comments_in_wrapped_calls": (
         lambda lang_cls: lang_cls.supports_standalone_comments_in_wrapped_calls
     ),
+    "string_literals_escape_null_byte": (
+        lambda lang_cls: (
+            lang_cls.variant_metadata.string_literals_escape_null_byte
+        )
+    ),
+}
+
+# Facts about one member of an option enum.  Every other registry here
+# decides whether a language participates in an axis; these decide which
+# of that language's members do, for an axis whose subject is a property
+# of the member rather than of the language offering it.
+_MEMBER_FLAGS: Mapping[str, Callable[[enum.Enum], bool]] = {
+    "comment_suffix": _comment_suffix,
+    "string_literals_escape_null_byte": _escapes_null_byte,
 }
 
 # Language-owned replacements for the enum member name a plan would
@@ -768,6 +809,11 @@ def _no_excluded_members() -> list[str]:
     return []
 
 
+def _no_member_flags() -> list[str]:
+    """Return a typed empty member-flag list for the models."""
+    return []
+
+
 class _LayoutChoice(
     BaseModel,
     extra="forbid",
@@ -797,6 +843,13 @@ class _EveryNonDefaultMemberPlan(
     over, under that name, for an option a language may turn off as well
     as choose between.  ``member_name_source`` names the language
     attribute that replaces a member's own name in a variant name.
+
+    ``include_default`` keeps the language's own default member, for an
+    axis whose subject is a property some defaults have.
+    ``member_flags`` narrows the members to those declaring that
+    property, and ``sole_member_name_template`` names the variant of a
+    language left with a single member, for an axis where naming that
+    member would say nothing.
     """
 
     plan: Literal["every_non_default_member"]
@@ -804,6 +857,11 @@ class _EveryNonDefaultMemberPlan(
     option: Annotated[str, Field(min_length=1)]
     unset_member_name: Annotated[str, Field(min_length=1)] | None = None
     member_name_source: Annotated[str, Field(min_length=1)] | None = None
+    sole_member_name_template: Annotated[str, Field(min_length=1)] | None = (
+        None
+    )
+    include_default: bool = False
+    member_flags: list[str] = Field(default_factory=_no_member_flags)
     excluded_members: list[str] = Field(default_factory=_no_excluded_members)
     declaration_style_sequence_override: bool = False
     per_version: bool = False
@@ -1072,6 +1130,30 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
 
 
 @beartype
+def _validate_member_names(
+    *,
+    axis_key: str,
+    axis: _EveryNonDefaultMemberPlan,
+) -> None:
+    """Check the member-facing names a member expansion declares."""
+    if (
+        axis.member_name_source is not None
+        and axis.member_name_source not in _MEMBER_NAME_SOURCES
+    ):
+        msg = (
+            f"axis {axis_key!r}: unknown member name source "
+            f"{axis.member_name_source!r}"
+        )
+        raise AxisPlanError(msg)
+    unknown = sorted(
+        flag for flag in axis.member_flags if flag not in _MEMBER_FLAGS
+    )
+    if unknown:
+        msg = f"axis {axis_key!r}: unknown member flag {unknown[0]!r}"
+        raise AxisPlanError(msg)
+
+
+@beartype
 def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
     """Check every name an axis uses against its closed registry."""
     _validate_options(
@@ -1089,16 +1171,8 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
             "'primary_axis'"
         )
         raise AxisPlanError(msg)
-    if (
-        isinstance(axis, _EveryNonDefaultMemberPlan)
-        and axis.member_name_source is not None
-        and axis.member_name_source not in _MEMBER_NAME_SOURCES
-    ):
-        msg = (
-            f"axis {axis_key!r}: unknown member name source "
-            f"{axis.member_name_source!r}"
-        )
-        raise AxisPlanError(msg)
+    if isinstance(axis, _EveryNonDefaultMemberPlan):
+        _validate_member_names(axis_key=axis_key, axis=axis)
     if (
         isinstance(axis, _FixedOverridesPlan)
         and axis.name_metadata_field is not None
@@ -1167,12 +1241,63 @@ def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
 
 
 @beartype
+def _validate_sole_member_template(
+    *,
+    axis_key: str,
+    axis: _EveryNonDefaultMemberPlan,
+    allowed: frozenset[str],
+) -> None:
+    """Check the name template for a language left with one member.
+
+    That template names the whole variant, so it answers to the same
+    placeholder registry as any other, minus the member name it exists
+    to leave out.
+    """
+    if axis.sole_member_name_template is None:
+        return
+    unknown = sorted(
+        _placeholders(template=axis.sole_member_name_template)
+        - (allowed - {_FORMAT_PLACEHOLDER})
+    )
+    if unknown:
+        msg = (
+            f"axis {axis_key!r}: unknown sole-member name-template "
+            f"placeholder(s) {unknown}"
+        )
+        raise AxisPlanError(msg)
+
+
+@beartype
+def _required_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
+    """Return the placeholders a plan's name template has to use.
+
+    Whatever tells one variant of an axis from another has to reach the
+    name, or the two would claim one golden file.
+    """
+    required = frozenset[str]()
+    if isinstance(axis, _KwargValuesPlan):
+        required |= {_FORMAT_PLACEHOLDER}
+    if isinstance(axis, _FixedOverridesPlan):
+        if axis.primary_axis is not None:
+            required |= {_FORMAT_PLACEHOLDER}
+        if axis.name_metadata_field is not None:
+            required |= {_CATEGORY_PLACEHOLDER}
+    return required
+
+
+@beartype
 def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
     """Check a name template against the placeholders its plan
     offers.
     """
     allowed = _offered_placeholders(axis=axis)
     used = _placeholders(template=axis.name_template)
+    if isinstance(axis, _EveryNonDefaultMemberPlan):
+        _validate_sole_member_template(
+            axis_key=axis_key,
+            axis=axis,
+            allowed=allowed,
+        )
     unknown = sorted(used - allowed)
     if unknown:
         msg = (
@@ -1180,17 +1305,7 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
             f"{unknown}"
         )
         raise AxisPlanError(msg)
-    required = frozenset[str]()
-    if isinstance(axis, _KwargValuesPlan):
-        # Every declared value has to reach the name, or two of them
-        # would claim one golden file.
-        required |= {_FORMAT_PLACEHOLDER}
-    if isinstance(axis, _FixedOverridesPlan):
-        if axis.primary_axis is not None:
-            required |= {_FORMAT_PLACEHOLDER}
-        if axis.name_metadata_field is not None:
-            required |= {_CATEGORY_PLACEHOLDER}
-    omitted = sorted(required - used)
+    omitted = sorted(_required_placeholders(axis=axis) - used)
     if omitted:
         msg = (
             f"axis {axis_key!r}: name template omits placeholder(s) {omitted}"
@@ -1438,6 +1553,8 @@ class _MemberExpansion:
 
     option_key: str
     excluded_members: frozenset[str]
+    member_flags: tuple[str, ...]
+    include_default: bool
     unset_member_name: str | None
     member_name_source: str | None
     declaration_style_sequence_override: bool
@@ -1765,6 +1882,8 @@ def _member_expansion(*, axis: _EveryNonDefaultMemberPlan) -> _MemberExpansion:
     return _MemberExpansion(
         option_key=axis.option,
         excluded_members=frozenset(axis.excluded_members),
+        member_flags=tuple(axis.member_flags),
+        include_default=axis.include_default,
         unset_member_name=axis.unset_member_name,
         member_name_source=axis.member_name_source,
         declaration_style_sequence_override=(
@@ -1812,7 +1931,13 @@ def _member_choices(
             )
         )
     for member in option.get_members(default_spec):
-        if member is default or member.name in expansion.excluded_members:
+        if member is default and not expansion.include_default:
+            continue
+        if member.name in expansion.excluded_members:
+            continue
+        if not all(
+            _MEMBER_FLAGS[flag](member) for flag in expansion.member_flags
+        ):
             continue
         kwargs: dict[str, object] = {option.kwarg: member}
         if expansion.declaration_style_sequence_override:
@@ -1859,6 +1984,8 @@ def _primary_choices(
         expansion=_MemberExpansion(
             option_key=axis.primary,
             excluded_members=frozenset(axis.excluded_primary_members),
+            member_flags=(),
+            include_default=False,
             unset_member_name=None,
             member_name_source=None,
             declaration_style_sequence_override=False,
@@ -2067,6 +2194,27 @@ def _name_category(
 
 
 @beartype
+def _name_template(
+    *,
+    axis: _ExpandedAxis,
+    selections: Sequence[_Selection],
+) -> str:
+    """Return the name template an axis uses for one language.
+
+    An axis declaring a sole-member template uses it for a language
+    whose members narrow to one, where naming that member would say
+    nothing about the variant.
+    """
+    if (
+        isinstance(axis, _EveryNonDefaultMemberPlan)
+        and axis.sole_member_name_template is not None
+        and len(selections) == 1
+    ):
+        return axis.sole_member_name_template
+    return axis.name_template
+
+
+@beartype
 def _admitted_overrides(
     *,
     axis_key: str,
@@ -2186,15 +2334,17 @@ def _axis_variants(
             metadata=metadata,
             default_spec=default_spec,
         )
-        for selection in _selections(
+        selections = _selections(
             axis_key=axis_key,
             axis=axis,
             primary_plan=primary_plan,
             lang_cls=lang_cls,
             metadata=metadata,
             default_spec=default_spec,
-        ):
-            name = axis.name_template.format(
+        )
+        template = _name_template(axis=axis, selections=selections)
+        for selection in selections:
+            name = template.format(
                 lang=lang_cls.__name__,
                 category=_name_category(axis=axis, metadata=metadata),
                 format=selection.format_name,

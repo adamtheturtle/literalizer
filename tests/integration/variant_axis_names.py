@@ -79,6 +79,7 @@ KNOWN_VARIANT_AXES = frozenset(
         "statement_terminator_style",
         "statement_terminator_style_decl",
         "string_embedded_nul",
+        "string_embedded_nul_json_type",
         "string_format",
         "string_format_date_cross",
         "string_format_datetime_cross",

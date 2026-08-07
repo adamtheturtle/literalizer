@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from literalizer import CollectionLayout
+from literalizer import CollectionLayout, CommentConfig
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_manifests import CaseManifestError
@@ -28,13 +28,7 @@ from .variant_types import find_enum_member
 # The axes that resolve to a typed Python builder instead of a declared
 # plan.  This list may shrink, never grow: a new axis belongs in
 # ``axes.toml``.
-_EXPECTED_ESCAPE_HATCH_AXES = frozenset(
-    {
-        "comment_terminator",
-        "string_embedded_nul",
-        "typed_dict_null_filtering",
-    }
-)
+_EXPECTED_ESCAPE_HATCH_AXES = frozenset({"typed_dict_null_filtering"})
 
 _VALID_AXIS = """
 schema_version = 1
@@ -289,6 +283,69 @@ def test_nested_map_widening_axes_partition_their_languages() -> None:
     assert wrapping != set()
 
 
+def test_member_flags_select_terminated_comment_formats() -> None:
+    """The comment-terminator axis decides on the member.
+
+    A comment format participates when it closes with a terminator,
+    including a language's own default format, which the ordinary
+    ``comment`` axis leaves out.
+    """
+    expected = set[tuple[str, str]]()
+    defaults = set[tuple[str, str]]()
+    for lang_cls in ALL_LANGUAGES:
+        spec = make_spec(lang_cls=lang_cls)
+        for member in spec.comment_formats:
+            config = member.value
+
+            assert isinstance(config, CommentConfig), lang_cls.__name__
+            if config.suffix:
+                expected.add((lang_cls.__name__, member.name))
+                if member is spec.comment_format:
+                    defaults.add((lang_cls.__name__, member.name))
+    covered = {
+        (variant.lang_cls.__name__, variant.spec.comment_format.name)
+        for variant in variants_for_axis(axis_key="comment_terminator")
+    }
+
+    assert covered == expected
+    assert defaults & covered == defaults
+    assert defaults != set()
+
+
+def test_sole_member_template_drops_a_pointless_format_name() -> None:
+    """One participating format is named by the language alone.
+
+    A language offering several string formats renders one golden per
+    format, so each carries the format name; a language offering one has
+    nothing to tell apart.
+    """
+    by_language: dict[str, list[str]] = {}
+    for variant in variants_for_axis(axis_key="string_embedded_nul"):
+        by_language.setdefault(variant.lang_cls.__name__, []).append(
+            variant.name
+        )
+    sole = {
+        language: names
+        for language, names in by_language.items()
+        if len(names) == 1
+    }
+    several = {
+        language: names
+        for language, names in by_language.items()
+        if len(names) > 1
+    }
+
+    assert sole != {}
+    assert several != {}
+    assert sole == {
+        language: [f"{language}_string_embedded_nul"] for language in sole
+    }
+    for language, names in several.items():
+        prefix = f"{language}_string_embedded_nul_"
+
+        assert [name for name in names if name.startswith(prefix)] == names
+
+
 def test_unknown_axis_is_actionable() -> None:
     """An axis with no plan and no builder names both options."""
     with pytest.raises(
@@ -384,6 +441,14 @@ def test_unknown_axis_is_actionable() -> None:
         (
             _VALID_AXIS + 'member_name_source = "vibes"\n',
             "unknown member name source 'vibes'",
+        ),
+        (
+            _VALID_AXIS + 'member_flags = ["vibes"]\n',
+            "unknown member flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS + 'sole_member_name_template = "{lang}_{format}"\n',
+            r"unknown sole-member name-template placeholder\(s\) \['format'\]",
         ),
         (
             _VALID_AXIS
