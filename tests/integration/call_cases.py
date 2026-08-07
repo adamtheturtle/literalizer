@@ -8,7 +8,6 @@ those declarations into per-language cases.  The runner
 """
 
 import dataclasses
-import datetime
 import enum
 import functools
 import json
@@ -50,23 +49,7 @@ from .language_specs import (
     sorted_languages,
     with_per_fixture_module_name,
 )
-
-# Spelled out locally to mirror ``literalizer._types.Value`` without
-# importing from a private module (see issue #1947); ``source_data``
-# flows in from the parsed YAML, so containers may be ruamel
-# comment-tracking subclasses of ``list``/``dict``.
-type _Scalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
-)
-type _Value = _Scalar | list[_Value] | dict[_Scalar, _Value] | set[_Scalar]
+from .parsed_values import ParsedValue
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -518,9 +501,9 @@ def _run_call_with_declarations(
 @beartype
 def _arg_values_for_stub(
     *,
-    source_data: _Value,
+    source_data: ParsedValue,
     per_element: bool,
-) -> Sequence[_Value]:
+) -> Sequence[ParsedValue]:
     """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
     arguments rows for per-element calls; a single-entry list
     wrapping the whole data otherwise.

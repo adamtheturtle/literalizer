@@ -9,12 +9,10 @@ set to the language's default identifier case.  The runner
 """
 
 import dataclasses
-import datetime
 import enum
 import functools
 import json
 import tomllib
-from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import assert_never
 
@@ -25,6 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
+from literalizer._types import ValueInput  # noqa: TC001
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
@@ -47,24 +46,6 @@ from .language_specs import (
 from .variant_cases import wrap_variable_form
 
 CASES_DIR = Path(__file__).parent / "cases"
-
-type _Scalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
-)
-type _ValueInput = (
-    _Scalar
-    | Sequence[_ValueInput]
-    | Mapping[_Scalar, _ValueInput]
-    | set[_Scalar]
-)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -219,7 +200,7 @@ def run_literalize_ref_golden_case(
         input_format=input_info.input_format,
         input_source=input_source,
     )
-    bound_refs_input: dict[str, _ValueInput] = {
+    bound_refs_input: dict[str, ValueInput] = {
         raw_name: json.loads(
             s=config.value_sources.get(raw_name, '{"_": "_"}'),
         )
