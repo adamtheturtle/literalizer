@@ -287,7 +287,7 @@ def test_kebab_new_variable_golden_file(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=lang_cls.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
@@ -342,7 +342,7 @@ def test_primed_new_variable_golden_file(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=lang_cls.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
@@ -526,7 +526,7 @@ def test_format_variant_golden_file(
                 contents=variant.fixture_prefix + result.code + "\n",
                 encoding="utf-8",
                 extension=variant.spec.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
@@ -573,7 +573,7 @@ def test_statement_terminator_style_combined_variable_forms(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=spec.extension,
-                newline=None,
+                newline="",
                 fullpath=make_golden_path(
                     parent=input_info.path.parent,
                     name=case.name,
@@ -657,7 +657,7 @@ def test_heterogeneous_strategy_combined_variable_forms(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=spec.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
@@ -705,7 +705,7 @@ def test_pre_indent_level_with_new_variable_golden_file(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=spec.extension,
-                newline=None,
+                newline="",
                 fullpath=make_golden_path(
                     parent=input_info.path.parent,
                     name=case.name,
@@ -767,7 +767,7 @@ def test_no_variable_form_golden_file(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=case.lang_cls.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
@@ -837,7 +837,7 @@ def test_indent_golden_file(
                 contents=result.code + "\n",
                 encoding="utf-8",
                 extension=case.lang_cls.extension,
-                newline=None,
+                newline="",
                 fullpath=golden_path,
             )
 
