@@ -4,3 +4,4 @@ owner = "variant"
 
 [[variants]]
 axis = "type_hints"
+requires = ["empty_sibling_sequence_type_hints"]

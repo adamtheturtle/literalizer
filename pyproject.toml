@@ -422,6 +422,7 @@ ignore_names = [
     "_validate_call_variants",
     "_validate_consistency",
     "_validate_known_axis",
+    "_validate_requirements",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
     "ARRAY",

@@ -58,6 +58,22 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "duplicate logical variant case",
         ),
         (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[[variants]]\naxis = "date"\n'
+                'requires = ["teleportation"]\n'
+            ),
+            "Input should be 'empty_sibling_sequence_type_hints'",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[[variants]]\naxis = "date"\n'
+                'requires = ["special_floats", "special_floats"]\n'
+            ),
+            "requires contains a duplicate entry",
+        ),
+        (
             'schema_version = 1\nsuites = ["base", "base"]\n',
             "suites contains a duplicate entry",
         ),
