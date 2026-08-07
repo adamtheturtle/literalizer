@@ -44,6 +44,7 @@ from literalizer.exceptions import (
 
 from .case_inputs import CaseInput
 from .case_manifests import CallCaseSpec, call_case_specs, case_input
+from .golden_checks import check_golden
 from .language_specs import (
     make_golden_path,
     sorted_languages,
@@ -408,12 +409,11 @@ def _run_wrap_in_file_case(
                 f"name); it diverges from the compilable "
                 f"{mirror_form!r} form, so no golden is emitted",
             )
-    file_regression.check(
+    check_golden(
         contents=wrap_result.code + "\n",
-        encoding="utf-8",
         extension=lang_extension,
-        newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )
 
 
@@ -696,10 +696,9 @@ def run_call_golden_case(
             f"{config.case_dir_name}"
         )
         assert bound.code == composed.code, divergence_message  # noqa: S101
-    file_regression.check(
+    check_golden(
         contents=composed.code + "\n",
-        encoding="utf-8",
         extension=lang_cls.extension,
-        newline="",
-        fullpath=golden_path,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )
