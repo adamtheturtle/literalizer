@@ -1,6 +1,8 @@
 from __future__ import annotations
 import datetime
 import dataclasses
+
+
 @dataclasses.dataclass(frozen=True)
 class Record0:
     s: str
@@ -11,6 +13,8 @@ class Record0:
     d: datetime.date
     dt: int
     by: str
+
+
 my_data = Record0(
     s="string",
     i=1,

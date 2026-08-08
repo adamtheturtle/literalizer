@@ -1,3 +1,1 @@
-my_data = (
-    b'Hello',
-)
+my_data = (b"Hello",)

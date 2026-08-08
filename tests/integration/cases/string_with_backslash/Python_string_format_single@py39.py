@@ -1,9 +1,9 @@
 my_data = (
-    'C:\\path\\to\\file',
-    'back\\\\slash',
+    "C:\\path\\to\\file",
+    "back\\\\slash",
     'hello \\"world\\"',
     'path\\to "# file',
-    'trailing\\',
-    'both "quotes\'\'\' here',
-    'line1\\nline2\nwith newline',
+    "trailing\\",
+    "both \"quotes''' here",
+    "line1\\nline2\nwith newline",
 )

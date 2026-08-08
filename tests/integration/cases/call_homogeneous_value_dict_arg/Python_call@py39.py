@@ -1,2 +1,4 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
+
+
 process(value={"a": 1, "b": 2})

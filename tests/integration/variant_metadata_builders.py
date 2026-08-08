@@ -8,8 +8,7 @@ cases without depending on individual language classes.
 
 from __future__ import annotations
 
-import enum  # noqa: TC003  # Runtime-resolved by beartype.
-from collections.abc import Mapping  # noqa: TC003
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -21,6 +20,10 @@ from .variant_types import (
     compact_variant,
     enum_member_by_name,
 )
+
+if TYPE_CHECKING:
+    import enum
+    from collections.abc import Mapping
 
 _enum_member_by_name = enum_member_by_name
 

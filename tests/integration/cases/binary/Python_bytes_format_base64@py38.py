@@ -1,4 +1,3 @@
 from __future__ import annotations
-my_data = (
-    "SGVsbG8=",
-)
+
+my_data = ("SGVsbG8=",)

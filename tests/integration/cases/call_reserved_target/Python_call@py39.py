@@ -1,2 +1,4 @@
 def op(*_args: object, **_kwargs: object) -> object: ...
+
+
 op(value="hello")

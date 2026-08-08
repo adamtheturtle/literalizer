@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 my_data = (
     0.000000,
     1.000000,

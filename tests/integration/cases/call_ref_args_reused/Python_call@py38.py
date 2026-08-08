@@ -1,4 +1,6 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
+
+
 single_var = (
     4,
     5,

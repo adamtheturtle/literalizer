@@ -1,4 +1,9 @@
 my_data = {
     "collection": "alpha",
-    "featured_entry": {"id": 100, "label": "first entry", "enabled": False, "related_ids": (102, 103)},
+    "featured_entry": {
+        "id": 100,
+        "label": "first entry",
+        "enabled": False,
+        "related_ids": (102, 103),
+    },
 }

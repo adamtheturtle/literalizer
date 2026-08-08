@@ -14,7 +14,7 @@ import functools
 import json
 import tomllib
 from pathlib import Path
-from typing import assert_never
+from typing import TYPE_CHECKING, assert_never
 
 import pyjson5
 from beartype import beartype
@@ -22,7 +22,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
-from literalizer._types import ValueInput  # noqa: TC001
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
@@ -49,6 +48,9 @@ from .language_specs import (
     with_per_fixture_module_name,
 )
 from .variant_cases import wrap_variable_form
+
+if TYPE_CHECKING:
+    from literalizer._types import ValueInput
 
 CASES_DIR = Path(__file__).parent / "cases"
 

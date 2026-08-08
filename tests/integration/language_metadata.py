@@ -29,12 +29,14 @@ from __future__ import annotations
 import dataclasses
 import functools
 import tomllib
-from collections.abc import Mapping  # noqa: TC003
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
 from beartype import beartype
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 

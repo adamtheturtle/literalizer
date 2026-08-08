@@ -1,5 +1,5 @@
 my_data = (
-   True,
-   False,
-   True,
+    True,
+    False,
+    True,
 )

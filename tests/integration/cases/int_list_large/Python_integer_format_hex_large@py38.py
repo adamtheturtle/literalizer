@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 my_data = (
-    0xf4240,
-    -0x4d2,
-    0xff,
-    -0xa,
+    0xF4240,
+    -0x4D2,
+    0xFF,
+    -0xA,
 )

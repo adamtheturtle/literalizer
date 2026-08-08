@@ -1,8 +1,11 @@
 from collections import OrderedDict
+
 my_data = {
-    "omap_value": OrderedDict([
-        ("first", 1),
-    ]),
+    "omap_value": OrderedDict(
+        [
+            ("first", 1),
+        ]
+    ),
     "sibling_lists": {
         "numbers": (
             1,

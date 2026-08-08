@@ -1,9 +1,13 @@
 my_data = {
     """\
-outer""": (("""\
+outer""": (
+        (
+            """\
 nested first line
   indented
 
 nested last line
-""",),),
+""",
+        ),
+    ),
 }

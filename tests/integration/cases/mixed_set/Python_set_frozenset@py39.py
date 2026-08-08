@@ -1,5 +1,7 @@
-my_data = frozenset({
-    True,
-    42,
-    "apple",
-})
+my_data = frozenset(
+    {
+        True,
+        42,
+        "apple",
+    }
+)

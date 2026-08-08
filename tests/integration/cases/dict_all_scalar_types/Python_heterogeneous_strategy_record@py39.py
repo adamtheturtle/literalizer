@@ -1,6 +1,8 @@
 from __future__ import annotations
 import datetime
 import dataclasses
+
+
 @dataclasses.dataclass(frozen=True)
 class Record0:
     s: str
@@ -11,6 +13,8 @@ class Record0:
     d: datetime.date
     dt: datetime.datetime
     by: str
+
+
 my_data = Record0(
     s="string",
     i=1,
@@ -18,6 +22,8 @@ my_data = Record0(
     b=True,
     n=None,
     d=datetime.date(year=2024, month=1, day=15),
-    dt=datetime.datetime(year=2024, month=1, day=15, hour=12, minute=0, second=0),
+    dt=datetime.datetime(
+        year=2024, month=1, day=15, hour=12, minute=0, second=0
+    ),
     by="48656c6c6f",
 )

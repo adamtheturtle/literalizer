@@ -1,5 +1,7 @@
 from __future__ import annotations
 import dataclasses
+
+
 @dataclasses.dataclass(frozen=True)
 class Record0:
     quantity: int
@@ -7,9 +9,11 @@ class Record0:
     ratio: float
     label: str
     ok: bool
+
+
 my_data = Record0(
-    quantity=0xf4240,
-    big=0xffffffffffffffff,
+    quantity=0xF4240,
+    big=0xFFFFFFFFFFFFFFFF,
     ratio=2.5,
     label="tag",
     ok=True,

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 my_data = (
     0o3641100,
     -0o2322,

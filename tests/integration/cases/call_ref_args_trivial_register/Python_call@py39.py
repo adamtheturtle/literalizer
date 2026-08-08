@@ -1,4 +1,6 @@
 def process(*_args: object, **_kwargs: object) -> object: ...
+
+
 my_int = 1
 my_bool = True
 my_float = 3.14

@@ -9,9 +9,7 @@ my_data = {
         },
         {
             "name": "Carol",
-            "tags": (
-                "guest",
-            ),
+            "tags": ("guest",),
         },
     ),
 }

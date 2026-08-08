@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 my_data = {
     "users": (
         {
@@ -10,9 +11,7 @@ my_data = {
         },
         {
             "name": "Carol",
-            "tags": (
-                "guest",
-            ),
+            "tags": ("guest",),
         },
     ),
 }

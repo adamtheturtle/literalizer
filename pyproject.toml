@@ -217,8 +217,6 @@ lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
-    # FileRegressionFixture must be imported at runtime for beartype.
-    "TC002",
 ]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
