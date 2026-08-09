@@ -71,6 +71,9 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._json_native_document import (
+    register_json_native_document_fast,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -3650,3 +3653,6 @@ class Cpp(metaclass=LanguageCls):
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
+
+
+register_json_native_document_fast(language_cls=Cpp)

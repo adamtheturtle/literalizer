@@ -60,6 +60,9 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
+from literalizer._json_native_document import (
+    register_json_native_document_fast,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1612,3 +1615,6 @@ class Crystal(metaclass=LanguageCls):
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value
         return config
+
+
+register_json_native_document_fast(language_cls=Crystal)

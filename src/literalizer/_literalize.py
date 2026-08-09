@@ -609,7 +609,7 @@ def _format_set_value(
 
 
 @beartype
-def _guard_dict_keys_supported(
+def guard_dict_keys_supported(
     *,
     value: Mapping[Scalar, Value],
     spec: Language,
@@ -636,7 +636,7 @@ def _format_ordered_map_value(
 ) -> str:
     """Format an ordered map as a native language literal."""
     spec = ctx.spec
-    _guard_dict_keys_supported(value=value, spec=spec)
+    guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
     ordered_map_items: list[tuple[Scalar, Value]] = [
@@ -836,7 +836,7 @@ def _format_dict_value(
 ) -> str:
     """Format a dict as a native language literal."""
     spec = ctx.spec
-    _guard_dict_keys_supported(value=value, spec=spec)
+    guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
     dict_items: dict[Scalar, Value] = {
@@ -1931,7 +1931,7 @@ def _format_collection_lines(
     parent_id = id(data)
     match data:
         case dict() as dict_data:
-            _guard_dict_keys_supported(value=dict_data, spec=spec)
+            guard_dict_keys_supported(value=dict_data, spec=spec)
             entries = [
                 (k, v)
                 for k, v in dict_data.items()

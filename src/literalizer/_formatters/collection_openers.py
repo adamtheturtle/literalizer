@@ -17,6 +17,26 @@ from literalizer._formatters.type_inference import (
 from literalizer._types import Scalar, Value
 
 
+@dataclass(frozen=True)
+class FixedOpen:
+    """An opener that returns ``open_str`` whatever the collection holds.
+
+    A class rather than a closure so callers can recognize a
+    content-insensitive opener and read its delimiter back off
+    ``open_str``.  The JSON-native document fast path
+    (:mod:`literalizer._json_native_document`) uses that to hoist the
+    delimiter out of the per-node recursion, and to establish that none
+    of the sibling-widening overrides in the shared renderer can change
+    the opener a collection renders with.
+    """
+
+    open_str: str
+
+    def __call__(self, _items: list[Value] | dict[Scalar, Value], /) -> str:
+        """Return the fixed opening delimiter, ignoring *_items*."""
+        return self.open_str
+
+
 @beartype
 def fixed_open(
     *, open_str: str
@@ -29,12 +49,7 @@ def fixed_open(
 
     Example: ``fixed_open(open_str="[")([1, 2, 3])`` -> ``"["``.
     """
-
-    def _open(_items: list[Value] | dict[Scalar, Value], /) -> str:
-        """Return the fixed opening delimiter, ignoring *_items*."""
-        return open_str
-
-    return _open
+    return FixedOpen(open_str=open_str)
 
 
 @beartype

@@ -16,14 +16,34 @@ Each case exercises a distinct code path so regressions localize cleanly:
 * ``test_heterogeneous_widening`` — sibling dicts and lists with
   diverging inferred types, exercising the sequence/dict opener
   widening logic.
+* ``test_json_large_flat_records_json_native`` — the same flat record
+  array rendered by every language that opts into the shared
+  JSON-native whole-document fast path, one benchmark per language.
 """
 
 import json
 
+import pytest
 from pytest_codspeed import BenchmarkFixture
 
-from literalizer import InputFormat, literalize
-from literalizer.languages import Python, Rust
+from literalizer import InputFormat, Language, literalize
+from literalizer.languages import (
+    C,
+    Cpp,
+    Crystal,
+    Elm,
+    Erlang,
+    Gleam,
+    Haskell,
+    Kotlin,
+    OCaml,
+    Odin,
+    PureScript,
+    Python,
+    Rust,
+    Scala,
+    Zig,
+)
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
@@ -34,6 +54,27 @@ PYTHON = Python(
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
 RUST_JSON_VALUE = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
+
+# Every language registered on the shared JSON-native fast path, each
+# with the ``json_type`` mode that qualifies for it.  Keep in sync with
+# the ``register_json_native_document_fast`` calls in
+# :mod:`literalizer.languages`.
+JSON_NATIVE_LANGUAGES: dict[str, Language] = {
+    "C": C(json_type=C.json_types.CJSON),
+    "Cpp": Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
+    "Crystal": Crystal(json_type=Crystal.json_types.JSON_ANY),
+    "Elm": Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE),
+    "Erlang": Erlang(json_type=Erlang.json_types.OTP_JSON),
+    "Gleam": Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON),
+    "Haskell": Haskell(json_type=Haskell.json_types.AESON_VALUE),
+    "Kotlin": Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT),
+    "OCaml": OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T),
+    "Odin": Odin(json_type=Odin.json_types.JSON_VALUE),
+    "PureScript": PureScript(json_type=PureScript.json_types.ARGONAUT_JSON),
+    "Rust": RUST_JSON_VALUE,
+    "Scala": Scala(json_type=Scala.json_types.CIRCE),
+    "Zig": Zig(json_type=Zig.json_types.STD_JSON_VALUE),
+}
 
 
 def _build_yaml_source(*, n_records: int, with_comments: bool) -> str:
@@ -112,12 +153,12 @@ def _run(*, source: str, input_format: InputFormat) -> str:
     ).code
 
 
-def _run_rust_json_value(*, source: str) -> str:
-    """Literalize JSON to a Rust ``serde_json::Value`` expression."""
+def _run_json_native(*, source: str, language: Language) -> str:
+    """Literalize JSON to *language*'s dynamic JSON node type."""
     return literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=RUST_JSON_VALUE,
+        language=language,
     ).code
 
 
@@ -149,11 +190,21 @@ def test_json_large_flat_records(benchmark: BenchmarkFixture) -> None:
     )
 
 
-def test_json_large_flat_records_rust(
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=JSON_NATIVE_LANGUAGES.values(),
+    ids=JSON_NATIVE_LANGUAGES.keys(),
+)
+def test_json_large_flat_records_json_native(
     benchmark: BenchmarkFixture,
+    language: Language,
 ) -> None:
-    """Large JSON record array rendered as Rust ``serde_json::Value``."""
-    benchmark(_run_rust_json_value, source=_JSON_LARGE_FLAT_RECORDS)
+    """Large JSON record array through the JSON-native fast path."""
+    benchmark(
+        _run_json_native,
+        source=_JSON_LARGE_FLAT_RECORDS,
+        language=language,
+    )
 
 
 def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:
