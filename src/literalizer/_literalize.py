@@ -287,7 +287,11 @@ class NewVariable:
 
 @dataclasses.dataclass(frozen=True)
 class ExistingVariable:
-    """Wrap output in an assignment to an existing variable."""
+    """Wrap output in an assignment to an existing variable.
+
+    The name must be a non-reserved identifier accepted by the target
+    language; assignment expressions such as ``obj.field`` are not accepted.
+    """
 
     name: str
 
@@ -2349,6 +2353,10 @@ def _apply_variable_wrapper(
                 language.format_call_variable_assignment
                 if is_call_binding
                 else language.format_variable_assignment
+            )
+            validate_new_variable_name(
+                language=language,
+                name=variable_form.name,
             )
             wrapped = assignment_formatter(
                 variable_form.name,
