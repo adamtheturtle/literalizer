@@ -16,7 +16,8 @@ round-trip helpers.
 The literalized Common Lisp output is shape-ambiguous: a dict becomes
 ``(list (cons "k" v) ...)`` (an alist) and an array becomes
 ``(list v ...)``; both an empty dict and an empty array literalize to
-``nil``, and the boolean ``false`` is also ``nil``.  A purely runtime
+``nil``, and the boolean ``false`` is also ``nil``. The empty mapping is
+therefore excluded because the backend now rejects that lossy value. A runtime
 encoder therefore cannot tell ``{}`` from ``[]`` or ``false`` from a
 missing key.  This script sidesteps the ambiguity the same way the Tcl
 helper does: Python walks the parsed input and emits a single Common
@@ -54,6 +55,7 @@ type JsonValue = (
 
 _VAR_NAME = "my-data"
 _LABEL = "Common Lisp"
+_EXCLUDED_KEYS = ("empty_object",)
 
 # `*read-default-float-format*` defaults to `single-float`, which would
 # overflow on the `float_large_exponent` (`1.7976931348623157e308`)
@@ -136,7 +138,11 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Common Lisp backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.trim_keys(
+        json_text=roundtrip_common.read_input(),
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    program = _build_program(json_text=json_text)
     ros = shutil.which(cmd="ros") or "ros"
     roundtrip_common.execute(
         label=_LABEL,
@@ -156,7 +162,7 @@ def main() -> None:
                 failure_label="sbcl runtime error",
             ),
         ],
-        excluded_keys=(),
+        excluded_keys=_EXCLUDED_KEYS,
     )
 
 

@@ -449,7 +449,7 @@ class CommonLisp(metaclass=LanguageCls):
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Reject mappings that collapse onto the empty list."""
-        reject_empty_dicts(data=data, language_name="Common Lisp")
+        reject_empty_dicts(data=data, language_name=type(self).__name__)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
