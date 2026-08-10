@@ -38,4 +38,5 @@ def test_ordered_map_percent_string_keys_do_not_form_macro_tokens() -> None:
     )
 
     assert "{%" not in result.code
-    assert "{ %q|a| => 1, %q|b| => 2}" in result.code
+    assert "\n     %q|a| => 1," in result.code
+    assert "\n     %q|b| => 2," in result.code
