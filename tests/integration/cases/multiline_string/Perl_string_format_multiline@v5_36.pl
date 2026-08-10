@@ -30,7 +30,7 @@ value',
 value',
     'Swift interpolation collision: \\#(value)
 value',
-    "Ruby fallback interpolation  \n#{expression} #\\@instance #\\$global",
+    "Ruby fallback interpolation  \n#{expression} #\@instance #\$global",
     "NUL followed by a digit: \x{0}7",
     "carriage\rreturn",
 ];
