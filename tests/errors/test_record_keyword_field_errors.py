@@ -2,7 +2,7 @@
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Cpp, Java
 
@@ -21,7 +21,7 @@ from literalizer.languages import Cpp, Java
     ],
 )
 def test_unescapable_record_keyword_is_rejected(
-    language: Java | Cpp, keyword: str
+    language: Language, keyword: str
 ) -> None:
     """Java and C++ reject keywords used as generated record fields."""
     with pytest.raises(

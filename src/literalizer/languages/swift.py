@@ -471,8 +471,8 @@ def _swift_record_field_identifier(
     """Return the Swift ``struct`` member name for a dict *key*.
 
     Swift property identifiers preserve the dict keys (no case conversion),
-    escaping reserved words with backticks in both declarations and
-    synthesized-initializer argument labels.
+    escaping reserved words with backticks in declarations. Swift permits
+    keywords as argument labels, so the literal renderer removes them there.
     """
     return f"`{key}`" if key in reserved_identifiers else key
 
@@ -495,7 +495,8 @@ def _swift_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}(",
         entries=tuple(
-            f"{field.identifier}: {field.formatted}" for field in fields
+            f"{field.identifier.strip('`')}: {field.formatted}"
+            for field in fields
         ),
         closer=")",
         compact_pad="",
