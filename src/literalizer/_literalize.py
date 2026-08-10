@@ -493,7 +493,7 @@ def _nested_collection_context(
     if not isinstance(value, (dict, list, set)):
         return ctx
     language_cls = type(ctx.spec)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+    if not isinstance(language_cls, LanguageCls):
         msg = "Nested collection rendering requires a LanguageCls language"
         raise TypeError(msg)
     if not language_cls.stringifies_nested_collections:
