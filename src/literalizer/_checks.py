@@ -53,12 +53,12 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                     ),
                 )
         case dict():
-            precise_control_key_errors = {"Bash", "Dhall", "Nix"}
+            separately_safe_control_keys = {"Bash", "Cobol", "Dhall", "Nix"}
             for key, value in data.items():
-                # These back ends reject control-bearing keys through a
-                # dedicated InvalidDictKeyError contract later in their
-                # normal validation/rendering path.
-                if type(spec).__name__ not in precise_control_key_errors:
+                # These back ends either reject control-bearing keys via
+                # a dedicated contract or derive a safe identifier without
+                # rendering the string key itself.
+                if type(spec).__name__ not in separately_safe_control_keys:
                     _check_raw_control_characters(data=key, spec=spec)
                 _check_raw_control_characters(data=value, spec=spec)
         case list() | set():

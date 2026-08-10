@@ -8,7 +8,7 @@ from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
 )
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Cobol
 
 _LANGUAGES = sorted(ALL_LANGUAGES, key=lambda language: language.__name__)
 
@@ -65,3 +65,14 @@ def test_control_character_dict_key_is_escaped_or_rejected(
     except (InvalidDictKeyError, UnrepresentableStringError):
         return
     assert character not in result.code
+
+
+def test_cobol_control_character_key_uses_safe_data_name() -> None:
+    """COBOL derives a safe identifier without rendering the raw key."""
+    result = literalizer.literalize(
+        source='{"before\\u0001after": 1}',
+        input_format=literalizer.InputFormat.JSON,
+        language=Cobol(),
+    )
+
+    assert "\x01" not in result.code
