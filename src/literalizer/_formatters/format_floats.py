@@ -1,6 +1,7 @@
 """Float formatting functions for finite values."""
 
 import math
+from decimal import Decimal
 
 from beartype import beartype
 
@@ -80,8 +81,11 @@ def format_float_scientific(value: float) -> str:
 
 @beartype
 def format_float_fixed(value: float) -> str:
-    """Format a finite float in fixed-point notation (``%f``).
+    """Format a finite float in round-tripping fixed-point notation.
 
-    Example: ``1500.0`` -> ``"1500.000000"``, ``0.001`` -> ``"0.001000"``.
+    Example: ``1500.0`` -> ``"1500.000000"``, ``1e-9`` -> ``"0.000000001"``.
     """
-    return f"{value:f}"
+    six_places = f"{value:f}"
+    if float(six_places) == value:
+        return six_places
+    return format(Decimal(repr(value)), "f")
