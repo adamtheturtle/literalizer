@@ -233,7 +233,9 @@ class DictFormatConfig:
     ``None`` keeps the language's default ``empty_dict`` / opener path.
     """
 
-    def postprocess_entries(self, lines: list[str], /) -> list[str]:
+    def postprocess_entries(  # pylint: disable=no-self-use
+        self, lines: list[str], /
+    ) -> list[str]:
         """Return fully rendered mapping entry lines unchanged."""
         return lines
 
