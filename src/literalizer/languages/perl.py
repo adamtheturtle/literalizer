@@ -107,12 +107,7 @@ def _format_perl_string_multiline(value: str) -> str:
         or "\0" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
-        escaped = _format_perl_string_double(value=value)
-        return (
-            escaped.replace("$", r"\$")
-            .replace("@", r"\@")
-            .replace("\0", r"\x{0}")
-        )
+        return _format_perl_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
 
