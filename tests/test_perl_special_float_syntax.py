@@ -21,7 +21,7 @@ def test_perl_special_floats_are_strict_safe() -> None:
 
     perl = shutil.which(cmd="perl")
     if perl is None:
-        pytest.skip(reason="Perl is not installed")
+        pytest.skip(reason="Perl is not installed")  # pragma: no cover
     program = f"use strict; use warnings; my $value = {result.code};"
     completed = subprocess.run(
         args=[perl, "-e", program],
