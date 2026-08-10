@@ -43,7 +43,6 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     format_string_backslash_single_minimal,
     make_backslash_string_formatter,
 )
@@ -100,6 +99,14 @@ from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("#{", r"\#{"),
+        ("#@", r"\#@"),
+        ("#$", r"\#$"),
+    ],
+)
 _format_string_multiline_fallback = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
@@ -536,7 +543,7 @@ class Ruby(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
         MULTILINE = enum.member(value=_format_string_multiline)
 
