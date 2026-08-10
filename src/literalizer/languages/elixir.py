@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -93,7 +94,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableSpecialFloatError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 # Prevent Elixir from interpreting ``#{…}`` as string interpolation.
 _format_string = make_backslash_string_formatter(
@@ -950,7 +954,17 @@ class Elixir(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        finite = self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Delegate finite values and reject unsupported specials."""
+            if not math.isfinite(value):
+                msg = f"Elixir cannot represent special float {value!r}."
+                raise UnrepresentableSpecialFloatError(msg)
+            return finite(value)
+
+        return _format
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
