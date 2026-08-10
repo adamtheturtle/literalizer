@@ -7,7 +7,9 @@ from literalizer.languages import Erlang
 
 def test_erlang_default_module_name_is_an_atom() -> None:
     """The default Erlang module name begins with a lowercase letter."""
-    assert Erlang().module_name == "module"
+    language = Erlang()
+    assert isinstance(language, Erlang)
+    assert language.module_name == "module"
 
 
 def test_erlang_rejects_variable_as_module_name() -> None:
