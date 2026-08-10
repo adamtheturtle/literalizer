@@ -5,7 +5,10 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("a", GDict([#("x", GInt(1))])),
+    #("a", GDict([
+      // indented
+      #("x", GInt(1)),
+    ])),
     #("b", GInt(2)),
   ])
   let _ = my_data

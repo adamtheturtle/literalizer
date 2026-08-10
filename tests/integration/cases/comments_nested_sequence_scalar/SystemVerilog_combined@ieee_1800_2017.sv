@@ -13,11 +13,11 @@ module main;
 initial begin
 static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"ADD\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"alice\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"hello\"}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"DEL\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"bob\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"5\"}}"}  // removes "world"
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"DEL\"},\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"bob\"},\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"5\"}  // removes \"world\"\n    }"}
 };
 my_data = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"ADD\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"alice\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"hello\"}}"},
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"DEL\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"bob\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"5\"}}"}  // removes "world"
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"DEL\"},\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"bob\"},\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"5\"}  // removes \"world\"\n    }"}
 };
 end
 endmodule

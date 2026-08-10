@@ -22,7 +22,11 @@ subroutine main_declaration()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         flist([fval_t :: fstr('ADD'), fstr('alice'), fstr('hello')]), &
-        flist([fval_t :: fstr('DEL'), fstr('bob'), fstr('5')]) &  ! removes "world"
+        flist([fval_t :: &
+            fstr('DEL'), &
+            fstr('bob'), &
+            fstr('5') &  ! removes "world"
+        ]) &
     ])
 end subroutine main_declaration
 
@@ -32,7 +36,11 @@ subroutine main_assignment()
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
         flist([fval_t :: fstr('ADD'), fstr('alice'), fstr('hello')]), &
-        flist([fval_t :: fstr('DEL'), fstr('bob'), fstr('5')]) &  ! removes "world"
+        flist([fval_t :: &
+            fstr('DEL'), &
+            fstr('bob'), &
+            fstr('5') &  ! removes "world"
+        ]) &
     ])
 end subroutine main_assignment
 

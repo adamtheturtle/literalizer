@@ -13,11 +13,19 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{
         .{ .arr = &.{.{ .str = "ADD" }, .{ .str = "alice" }, .{ .str = "hello" }}},
-        .{ .arr = &.{.{ .str = "DEL" }, .{ .str = "bob" }, .{ .str = "5" }}},  // removes "world"
+        .{ .arr = &.{
+            .{ .str = "DEL" },
+            .{ .str = "bob" },
+            .{ .str = "5" },  // removes "world"
+        }},
     }};
     my_data = .{ .arr = &.{
         .{ .arr = &.{.{ .str = "ADD" }, .{ .str = "alice" }, .{ .str = "hello" }}},
-        .{ .arr = &.{.{ .str = "DEL" }, .{ .str = "bob" }, .{ .str = "5" }}},  // removes "world"
+        .{ .arr = &.{
+            .{ .str = "DEL" },
+            .{ .str = "bob" },
+            .{ .str = "5" },  // removes "world"
+        }},
     }};
     my_data = .nil;
 }

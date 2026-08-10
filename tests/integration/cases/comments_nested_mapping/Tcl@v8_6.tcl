@@ -1,4 +1,7 @@
 set my_data [dict create \
-    "a" [dict create "x" 1] \
+    "a" [dict create \
+        # indented \
+        "x" 1 \
+    ] \
     "b" 2 \
 ]

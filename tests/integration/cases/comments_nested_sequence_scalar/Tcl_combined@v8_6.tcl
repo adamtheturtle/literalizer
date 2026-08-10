@@ -1,10 +1,16 @@
-# removes "world"
 set my_data [list \
     [list "ADD" "alice" "hello"] \
-    [list "DEL" "bob" "5"] \
+    [list \
+        "DEL" \
+        "bob" \
+        "5"  # removes "world" \
+    ] \
 ]
-# removes "world"
 set my_data [list \
     [list "ADD" "alice" "hello"] \
-    [list "DEL" "bob" "5"] \
+    [list \
+        "DEL" \
+        "bob" \
+        "5"  # removes "world" \
+    ] \
 ]

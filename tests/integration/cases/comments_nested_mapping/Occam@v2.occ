@@ -13,7 +13,10 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "a"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "x"; MOBILE LIT(lit.int; 1))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "a"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+            -- indented
+            MOBILE LIT(lit.pair; MOBILE []BYTE "x"; MOBILE LIT(lit.int; 1))
+        ])),
         MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.int; 2))
     ]):
     SEQ

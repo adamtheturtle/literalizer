@@ -1,4 +1,7 @@
 let my_data: Any = [
-    "a": ["x": 1],
+    "a": [
+        // indented
+        "x": 1,
+    ],
     "b": 2,
 ]

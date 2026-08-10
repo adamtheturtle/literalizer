@@ -21,8 +21,10 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fmap([fval_t :: fentry('item', fstr('existing'))]), &
-        ! This comment describes the next item.
+        fmap([fval_t :: &
+            fentry('item', fstr('existing')) &
+            ! This comment describes the next item.
+        ]), &
         fmap([fval_t :: fentry('item', fstr('next'))]) &
     ])
 end subroutine main_declaration
@@ -32,8 +34,10 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fmap([fval_t :: fentry('item', fstr('existing'))]), &
-        ! This comment describes the next item.
+        fmap([fval_t :: &
+            fentry('item', fstr('existing')) &
+            ! This comment describes the next item.
+        ]), &
         fmap([fval_t :: fentry('item', fstr('next'))]) &
     ])
 end subroutine main_assignment
