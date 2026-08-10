@@ -75,7 +75,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
@@ -1067,9 +1066,16 @@ class FSharp(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return _format_fsharp_json_call_arg
+        entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
-            return _fsharp_format_call_arg
-        return identity_call_arg
+
+            def _curried_arg(original: Value, formatted: str) -> str:
+                """Tag the value and parenthesize the curried argument."""
+                tagged = entry_formatter(original, formatted)
+                return _fsharp_format_call_arg(original, tagged)
+
+            return _curried_arg
+        return entry_formatter
 
     @cached_property
     def format_call_preamble_stub(
