@@ -1,5 +1,5 @@
 my $my_data = [
-    Inf,
-    -Inf,
-    NaN,
+    (0.0 + Inf),
+    (0.0 + -Inf),
+    (0.0 + NaN),
 ];

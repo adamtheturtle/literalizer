@@ -1028,7 +1028,13 @@ class Perl(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        formatter = self.float_format
+
+        def format_numeric_float(value: float) -> str:
+            """Force Perl to retain the scalar's numeric identity."""
+            return f"(0.0 + {formatter(value)})"
+
+        return format_numeric_float
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
