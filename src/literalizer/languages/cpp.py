@@ -3348,7 +3348,7 @@ class Cpp(metaclass=LanguageCls):
             ),
             dict_type_name=(
                 "std::unordered_map"
-                if self.dict_format is self.DictFormats.UNORDERED_MAP
+                if self.dict_format.name == "UNORDERED_MAP"
                 else "std::map"
             ),
         )
