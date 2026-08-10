@@ -85,6 +85,23 @@ from literalizer._types import Scalar, Value
 
 
 @beartype
+def _format_matlab_string(value: str) -> str:
+    """Preserve backslashes while keeping Octave-compatible delimiters."""
+    expression = format_string_concat_control(
+        quote_char='"',
+        quote_escape='""',
+        control_char_template="char({})",
+        concat_operator=" + ",
+        escape_backslash=False,
+    )(value)
+    return re.sub(
+        pattern=r'\\"(?=(?: \+ char\(\d+\)|$))',
+        repl='" + char(92)',
+        string=expression,
+    )
+
+
+@beartype
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
 
@@ -827,13 +844,7 @@ class Matlab(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
-            quote_char='"',
-            quote_escape='""',
-            control_char_template="char({})",
-            concat_operator=" + ",
-            escape_backslash=False,
-        )
+        return _format_matlab_string
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

@@ -3,7 +3,7 @@ my_data = {
     "back\\slash",
     "hello \""world\""",
     "path\to ""# file",
-    "trailing\",
+    "trailing" + char(92),
     "both ""quotes''' here",
     "line1\nline2" + char(10) + "with newline"
 };
