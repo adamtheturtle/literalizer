@@ -89,8 +89,8 @@ def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
 
     Reverses the output of ``format_string_matlab``.  Handles both the
-    simple ``"..."`` form (with ``""`` for embedded double-quotes and
-    ``\\\\`` for literal backslashes) and the ``"..." + char(N) + "..."``
+    simple ``"..."`` form (with ``""`` for embedded double-quotes) and
+    the ``"..." + char(N) + "..."``
     concatenation form used for control characters.
     """
     raw: list[str] = []
@@ -101,7 +101,7 @@ def _decode_matlab_string_expr(expr: str) -> str:
         if char_code:
             raw.append(chr(int(char_code)))
         else:
-            raw.append(string_seg.replace('""', '"').replace("\\\\", "\\"))
+            raw.append(string_seg.replace('""', '"'))
     return "".join(raw)
 
 
@@ -832,7 +832,7 @@ class Matlab(metaclass=LanguageCls):
             quote_escape='""',
             control_char_template="char({})",
             concat_operator=" + ",
-            escape_backslash=True,
+            escape_backslash=False,
         )
 
     @cached_property
