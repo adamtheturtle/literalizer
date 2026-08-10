@@ -689,7 +689,8 @@ class SystemVerilog(metaclass=LanguageCls):
         """
         if _data_has_null(data=data):
             msg = (
-                "SystemVerilog cannot represent null distinctly from an "
+                f"{type(self).__name__} cannot represent null distinctly "
+                "from an "
                 "empty string."
             )
             raise UnrepresentableInputError(msg)
