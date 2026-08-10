@@ -2,7 +2,7 @@
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import UnrepresentableNullError
 from literalizer.languages import Bash, Tcl
 
@@ -17,7 +17,7 @@ from literalizer.languages import Bash, Tcl
     ],
 )
 def test_null_is_rejected(
-    source: str, input_format: InputFormat, language: Bash | Tcl
+    source: str, input_format: InputFormat, language: Language
 ) -> None:
     """Null is rejected at any reachable collection depth."""
     with pytest.raises(expected_exception=UnrepresentableNullError):
@@ -29,7 +29,7 @@ def test_null_is_rejected(
 
 
 @pytest.mark.parametrize(argnames="language", argvalues=[Bash(), Tcl()])
-def test_empty_string_remains_representable(language: Bash | Tcl) -> None:
+def test_empty_string_remains_representable(language: Language) -> None:
     """Rejecting null does not reject the distinct empty-string value."""
     result = literalize(
         source='""',
