@@ -91,7 +91,7 @@ def literalize(
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, valid source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.
-            Some backends require companion support files; in particular,
+            Some back ends require companion support files; in particular,
             Ada output imports the ``A_Stub`` package shipped in
             ``scripts/a_stub.ads`` and ``scripts/a_stub.adb``.
             When set, :attr:`preamble` and :attr:`body_preamble`
@@ -422,7 +422,7 @@ def literalize_call(
             a *call_transform* is supplied the wrapper name it
             introduces is not stubbed — callers that transform calls
             are responsible for providing that definition themselves.
-            Some backends require companion support files; Ada imports the
+            Some back ends require companion support files; Ada imports the
             ``A_Stub`` package shipped in ``scripts/a_stub.ads`` and
             ``scripts/a_stub.adb``.
             When set, :attr:`preamble` and :attr:`body_preamble`
