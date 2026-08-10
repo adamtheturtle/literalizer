@@ -1,4 +1,4 @@
-var my_data = [
+var my_data: [String: Any] = [
     "host": "it's here",  // a comment
     "port": 80,  // another
 ]

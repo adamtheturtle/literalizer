@@ -1,3 +1,3 @@
-let my_data = [
+let my_data: [Set<AnyHashable>] = [
     Set<AnyHashable>(["a", "b"]),
 ]

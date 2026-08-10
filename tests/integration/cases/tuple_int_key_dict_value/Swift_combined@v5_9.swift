@@ -1,4 +1,4 @@
-var my_data = [
+var my_data: Any = [
     1: [1, "email", "a@gmail.com", 100],
 ]
 my_data = [

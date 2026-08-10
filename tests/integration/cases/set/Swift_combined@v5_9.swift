@@ -1,4 +1,4 @@
-var my_data = Set<AnyHashable>([
+var my_data: Set<AnyHashable> = Set<AnyHashable>([
     "apple",
     "banana",
     "cherry",

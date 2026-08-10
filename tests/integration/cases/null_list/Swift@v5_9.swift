@@ -1,4 +1,4 @@
-let my_data = [
+let my_data: [Any?] = [
     nil,
     nil,
 ]

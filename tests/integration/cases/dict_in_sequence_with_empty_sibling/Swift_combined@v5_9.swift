@@ -1,4 +1,4 @@
-var my_data = [
+var my_data: [Any] = [
     ["a": 1],
     [Any](),
 ]

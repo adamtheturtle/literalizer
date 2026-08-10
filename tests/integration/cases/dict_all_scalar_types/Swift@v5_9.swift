@@ -1,5 +1,5 @@
 import Foundation
-let my_data = [
+let my_data: [String: Any?] = [
     "s": "string",
     "i": 1,
     "f": 1.5,

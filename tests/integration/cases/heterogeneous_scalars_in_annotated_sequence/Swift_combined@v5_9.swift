@@ -1,5 +1,5 @@
 import Foundation
-var my_data = [
+var my_data: [Any?] = [
     true,
     1.5,
     nil,

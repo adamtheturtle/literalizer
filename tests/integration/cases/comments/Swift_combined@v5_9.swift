@@ -1,4 +1,4 @@
-var my_data = [
+var my_data: [String: Any] = [
     // Server configuration
     "host": "localhost",  // default host
     "port": 8080,

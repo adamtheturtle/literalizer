@@ -1,4 +1,4 @@
-var my_data = [
+var my_data: [Any?] = [
     true,
     "hi",
     [1, 2],
