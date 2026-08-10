@@ -133,18 +133,6 @@ format_string_backslash_nul_braced_unicode = make_backslash_string_formatter(
 )
 r"""Format a double-quoted string and escape NUL as ``\u{0000}``."""
 
-format_string_backslash_single = make_backslash_string_formatter(
-    quote_char="'",
-    extra_replacements=(),
-)
-r"""Format a string using backslash escaping with single quotes.
-
-Escapes backslashes, single quotes, and newlines with a backslash
-prefix, then wraps the result in single quotes.
-
-Example: ``hello 'world'`` -> ``'hello \'world\''``.
-"""
-
 format_string_backslash_dollar = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("$", "\\$")],
