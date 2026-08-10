@@ -99,18 +99,6 @@ _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
 
 @beartype
-def _cobol_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
-    """Keep COBOL's structured empty literal beside typed siblings.
-
-    Inheriting a sibling's COMP-5 group opener for the empty slot
-    would produce a malformed COBOL record; the language's
-    ``PIC X(1) VALUE SPACES`` placeholder is the structurally valid
-    empty form here.
-    """
-    return _COBOL_EMPTY_LITERAL
-
-
-@beartype
 def _format_string_cobol(value: str) -> str:
     """Format a COBOL alphanumeric string literal.
 
@@ -1598,7 +1586,7 @@ class Cobol(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         return dataclasses.replace(
             self.sequence_format.value,
-            narrowed_empty_form=_cobol_narrowed_empty_form,
+            narrowed_empty_form=None,
         )
 
     @cached_property
