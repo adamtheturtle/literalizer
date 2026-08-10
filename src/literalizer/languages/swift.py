@@ -465,15 +465,16 @@ _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 
 
 @beartype
-def _swift_record_field_identifier(key: str, /) -> str:
+def _swift_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Swift ``struct`` member name for a dict *key*.
 
-    Swift property identifiers are the dict keys verbatim (no case
-    conversion), matching the synthesized-initializer literal form
-    ``Record0(id: 1, ...)`` whose argument labels are the property
-    names.
+    Swift property identifiers preserve the dict keys (no case conversion),
+    escaping reserved words with backticks in both declarations and
+    synthesized-initializer argument labels.
     """
-    return key
+    return f"`{key}`" if key in reserved_identifiers else key
 
 
 @beartype
@@ -1227,7 +1228,10 @@ class Swift(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_SWIFT_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_swift_record_field_identifier,
+            field_identifier=functools.partial(
+                _swift_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
