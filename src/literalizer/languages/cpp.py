@@ -1952,7 +1952,7 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=fixed_open(open_str="["),
+    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
     close="]",
     empty_set="[]",
     preamble_lines=(),
