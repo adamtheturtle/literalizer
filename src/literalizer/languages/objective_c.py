@@ -172,17 +172,25 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
 def _format_objc_string(value: str) -> str:
     r"""Format a string as an Objective-C ``NSString`` literal.
 
-    Escapes backslashes, double quotes, newlines, carriage returns, and
-    tabs, then wraps the result in ``@"..."``.
+    Escapes syntax characters and C0 controls, then wraps the result in
+    ``@"..."``. Fixed-width octal escapes keep a following hex digit
+    from being consumed as part of the escape.
 
     Example: ``hello "world"`` → ``@"hello \"world\""``.
     """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t")
+    named_escapes = {
+        "\\": "\\\\",
+        '"': '\\"',
+        "\n": "\\n",
+        "\r": "\\r",
+        "\t": "\\t",
+    }
+    escaped = "".join(
+        named_escapes.get(
+            character,
+            f"\\{ord(character):03o}" if character < " " else character,
+        )
+        for character in value
     )
     return f'@"{escaped}"'
 
