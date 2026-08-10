@@ -87,6 +87,30 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
+_JSONNET_IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+_JSONNET_RESERVED_FIELDS = frozenset(
+    {
+        "assert",
+        "else",
+        "error",
+        "false",
+        "for",
+        "function",
+        "if",
+        "import",
+        "importstr",
+        "in",
+        "local",
+        "null",
+        "self",
+        "super",
+        "tailstrict",
+        "then",
+        "true",
+    }
+)
+
 
 @beartype
 def _format_jsonnet_dict_entry(
@@ -102,8 +126,10 @@ def _format_jsonnet_dict_entry(
     Jsonnet output.
     """
     inner = key[1:-1]
-    identifier_pattern = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-    if identifier_pattern.match(string=inner):
+    if (
+        _JSONNET_IDENTIFIER_RE.match(string=inner)
+        and inner not in _JSONNET_RESERVED_FIELDS
+    ):
         return f"{inner}: {formatted_value}"
     return f"{key}: {formatted_value}"
 
