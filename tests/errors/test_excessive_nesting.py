@@ -1,4 +1,4 @@
-"""Errors for backends that stringify nested collections."""
+"""Errors for languages that encode nested collections as strings."""
 
 import pytest
 
@@ -18,7 +18,7 @@ def _nested_array_source(depth: int) -> str:
 def test_stringifying_backends_accept_depth_twelve(
     language: Language,
 ) -> None:
-    """The documented supported boundary remains renderable."""
+    """The documented supported boundary can still be rendered."""
     result = literalize(
         source=_nested_array_source(depth=12),
         input_format=InputFormat.JSON,
