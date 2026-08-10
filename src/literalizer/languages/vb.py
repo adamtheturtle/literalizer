@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
+    date_ymd_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -504,6 +505,13 @@ class VisualBasic(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
+        VISUAL_BASIC = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="New DateOnly({year}, {month}, {day})",
+            ),
+            type_produced=datetime.date,
+            preamble_lines=("Imports System",),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -834,7 +842,7 @@ class VisualBasic(metaclass=LanguageCls):
             "End Module"
         )
 
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.VISUAL_BASIC
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY

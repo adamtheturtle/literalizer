@@ -7,7 +7,7 @@ my_data = Record0.new(
     1.5,
     true,
     nil,
-    "2024-01-15",
+    Time.utc(2024, 1, 15),
     1705320000,
     "48656c6c6f",
 )

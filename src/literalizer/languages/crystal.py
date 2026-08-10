@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
+    date_ymd_formatter,
     datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
@@ -547,6 +548,13 @@ class Crystal(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
+        CRYSTAL = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="Time.utc({year}, {month}, {day})",
+            ),
+            type_produced=datetime.date,
+            preamble_lines=(),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -994,7 +1002,7 @@ class Crystal(metaclass=LanguageCls):
         )
 
     module_name: str = "Check"
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.CRYSTAL
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY

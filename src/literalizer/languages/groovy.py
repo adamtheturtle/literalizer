@@ -14,6 +14,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    date_ymd_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -289,6 +290,13 @@ class Groovy(metaclass=LanguageCls):
 
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
+        GROOVY = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="java.time.LocalDate.of({year}, {month}, {day})",
+            ),
+            type_produced=datetime.date,
+            preamble_lines=(),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -575,7 +583,7 @@ class Groovy(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.GROOVY
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
