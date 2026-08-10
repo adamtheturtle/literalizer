@@ -218,10 +218,17 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
     nanoseconds = value.microsecond * 1000
+    offset = value.utcoffset()
+    offset_seconds = 0 if offset is None else int(offset.total_seconds())
+    location = (
+        "time.UTC"
+        if offset_seconds == 0
+        else f'time.FixedZone("", {offset_seconds})'
+    )
     return (
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanoseconds}, time.UTC)"
+        f"{nanoseconds}, {location})"
     )
 
 
