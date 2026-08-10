@@ -35,6 +35,7 @@ from literalizer.exceptions import (
     ZipValuesWithoutCallTransformError,
 )
 from literalizer.languages import (
+    Ada,
     Bash,
     Cobol,
     Dhall,
@@ -166,6 +167,21 @@ def test_literalize_call_duplicate_parameter_name_raises() -> None:
             language=Python(),
             target_function="f",
             parameter_names=("value", "value"),
+        )
+
+
+def test_literalize_call_case_insensitive_duplicate_parameter_raises() -> None:
+    """Case-insensitive languages reject differently cased duplicates."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'count': it is duplicated",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Ada(),
+            target_function="f",
+            parameter_names=("Count", "count"),
         )
 
 

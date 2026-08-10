@@ -117,15 +117,17 @@ def validate_call_parameter_names(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call parameter validation requires a LanguageCls language"
         raise TypeError(msg)
+    case_sensitive = language.reserved_variable_identifiers_case_sensitive
     seen: set[str] = set()
     for name in names:
-        if name in seen:
+        comparison_name = name if case_sensitive else name.casefold()
+        if comparison_name in seen:
             raise InvalidCallParameterNameError(
                 language_name=language_name,
                 parameter_name=name,
                 reason="it is duplicated",
             )
-        seen.add(name)
+        seen.add(comparison_name)
         if reject_reserved:
             if language.reserved_variable_identifiers_case_sensitive:
                 reserved = name in language.reserved_variable_identifiers
