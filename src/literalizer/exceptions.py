@@ -643,7 +643,7 @@ class UnsupportedCallShapeError(Exception):
 
 
 class ExcessiveNestingError(Exception):
-    """Raised when a backend's safe collection nesting limit is
+    """Raised when a target language's safe collection nesting limit is
     exceeded.
     """
 
