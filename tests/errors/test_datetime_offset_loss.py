@@ -1,11 +1,16 @@
 """Errors for native datetime formats that cannot retain UTC offsets."""
 
+import datetime
+
 import pytest
 
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import CSharp, Kotlin, Rust
+from literalizer.languages.rust import (
+    _rust_scalar_type,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 @pytest.mark.parametrize(
@@ -45,3 +50,21 @@ def test_iso_datetime_preserves_offset(language: Language) -> None:
     )
 
     assert "-05:00" in result.code
+
+
+def test_rust_record_type_retains_native_naive_datetime_type() -> None:
+    """Naive native datetimes still receive their configured type."""
+    assert (
+        _rust_scalar_type(
+            data=datetime.datetime(  # noqa: DTZ001
+                year=2024,
+                month=1,
+                day=2,
+                hour=3,
+                minute=4,
+            ),
+            date_type="NaiveDate",
+            datetime_type="NaiveDateTime",
+        )
+        == "NaiveDateTime"
+    )
