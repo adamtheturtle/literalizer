@@ -3,7 +3,11 @@
 import pytest
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import UnrepresentableStringError
+from literalizer.exceptions import (
+    UnrepresentableEmptyDictError,
+    UnrepresentableInputError,
+    UnrepresentableStringError,
+)
 from literalizer.languages import Cobol
 
 
@@ -15,3 +19,35 @@ def test_cobol_rejects_empty_string_literal() -> None:
             input_format=InputFormat.JSON,
             language=Cobol(),
         )
+
+
+@pytest.mark.parametrize(
+    argnames=("source", "expected"),
+    argvalues=[
+        ("null", UnrepresentableInputError),
+        ("{}", UnrepresentableEmptyDictError),
+        ("[]", UnrepresentableInputError),
+    ],
+)
+def test_cobol_rejects_collapsed_placeholders(
+    source: str,
+    expected: type[Exception],
+) -> None:
+    """Null and empty containers never silently become spaces."""
+    with pytest.raises(expected_exception=expected):
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Cobol(),
+        )
+
+
+def test_cobol_preserves_single_space_string() -> None:
+    """A one-space string remains a legal, distinct literal."""
+    result = literalize(
+        source='{"value": " "}',
+        input_format=InputFormat.JSON,
+        language=Cobol(),
+    )
+
+    assert 'PIC X(1) VALUE " ".' in result.code

@@ -5,7 +5,7 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property, partial
 from typing import ClassVar
 
@@ -90,6 +90,8 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    UnrepresentableEmptyDictError,
+    UnrepresentableInputError,
     UnrepresentableStringError,
 )
 
@@ -136,6 +138,35 @@ def _data_has_empty_string_value(data: Value) -> bool:
     if isinstance(data, list | set):
         return any(_data_has_empty_string_value(data=value) for value in data)
     return data == ""
+
+
+@beartype
+def _first_cobol_placeholder(data: Value) -> str | None:
+    """Return the first value shape plain COBOL would collapse to
+    spaces.
+    """
+    values: Iterable[Value]
+    if data is None:
+        return "null"
+    if isinstance(data, dict):
+        if not data:
+            return "an empty mapping"
+        values = data.values()
+    elif isinstance(data, list | set):
+        if not data:
+            return "an empty container"
+        values = data
+    else:
+        return None
+    return next(
+        (
+            placeholder
+            for value in values
+            if (placeholder := _first_cobol_placeholder(data=value))
+            is not None
+        ),
+        None,
+    )
 
 
 @beartype
@@ -1159,6 +1190,13 @@ class Cobol(metaclass=LanguageCls):
                 language_name="COBOL",
                 character_name="an empty string",
             )
+        placeholder = _first_cobol_placeholder(data=data)
+        if self._json_type_active or placeholder is None:
+            return
+        if placeholder == "an empty mapping":
+            raise UnrepresentableEmptyDictError
+        msg = f"Plain COBOL cannot distinguish {placeholder} from spaces."
+        raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
