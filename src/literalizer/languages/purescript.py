@@ -323,10 +323,19 @@ def _build_purescript_float_wrapper(
 @beartype
 def _apply_purescript_string(value: str, prefix: str) -> str:
     """Format a string with a constructor prefix."""
-    escaped = format_string_backslash_control(
-        value=value,
-        control_char_fmt="\\x{:02x}",
-    )
+    pieces: list[str] = []
+    hex_run_after_control = False
+    for char in value:
+        if hex_run_after_control and char in "0123456789abcdefABCDEF":
+            pieces.append(f"\\x{ord(char):02x}")
+            continue
+        formatted = format_string_backslash_control(
+            value=char,
+            control_char_fmt="\\x{:02x}",
+        )[1:-1]
+        pieces.append(formatted)
+        hex_run_after_control = char <= "\x1f" and char not in "\t\n\r"
+    escaped = f'"{"".join(pieces)}"'
     return f"{prefix}Str {escaped}"
 
 
