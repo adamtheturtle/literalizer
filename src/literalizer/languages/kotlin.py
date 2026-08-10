@@ -13,7 +13,10 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
-from literalizer._checks import check_empty_sibling_sequence_type_hint_data
+from literalizer._checks import (
+    check_empty_sibling_sequence_type_hint_data,
+    reject_aware_datetimes,
+)
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_open,
@@ -1569,6 +1572,11 @@ class Kotlin(metaclass=LanguageCls):
         """
         if self._json_type_active:
             self._validate_json_value_keys(data)
+        if (
+            not self._json_type_active
+            and self.datetime_format.value.type_produced is datetime.datetime
+        ):
+            reject_aware_datetimes(data=data, language_name="Kotlin")
 
     def _validate_record_naming(self) -> None:
         """Validate ``record_shape_names`` for PascalCase identifier

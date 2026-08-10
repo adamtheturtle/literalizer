@@ -27,6 +27,29 @@ if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
 
 
+@beartype
+def reject_aware_datetimes(*, data: Value, language_name: str) -> None:
+    """Reject timezone-aware datetimes that a native formatter would
+    lose.
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case datetime.datetime() if value.utcoffset() is not None:
+                msg = (
+                    f"{language_name} native datetime format cannot preserve "
+                    f"UTC offset {value.utcoffset()}"
+                )
+                raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
 @overload
 def scalar_type_bucket(*, value: Scalar) -> type: ...
 
