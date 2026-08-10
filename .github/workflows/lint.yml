@@ -424,15 +424,15 @@ jobs:
         run: |-
           find tests/integration/cases -name '*@v2003.f90' -print0 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
           find tests/integration/cases -name '*@v2008.f90' -print0 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
-          xargs -0 gfortran -std=f2003 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran2003
-          xargs -0 gfortran -std=f2008 -ffree-line-length-none -fsyntax-only < /tmp/files-fortran2008
+          xargs -0 gfortran -std=f2003 -fsyntax-only < /tmp/files-fortran2003
+          xargs -0 gfortran -std=f2008 -fsyntax-only < /tmp/files-fortran2008
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           std=$1
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           src=$(realpath "$2")
           cd "$tmpdir" || exit 1
-          gfortran "-std=$std" -ffree-line-length-none "$src" -o run || exit 1
+          gfortran "-std=$std" "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003

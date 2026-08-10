@@ -80,6 +80,38 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_FORTRAN_STRING_CHUNK_WIDTH = 72
+_FORTRAN_WRAP_COLUMN = 110
+_format_fortran_string_chunk = format_string_concat_control(
+    quote_char="'",
+    quote_escape="''",
+    control_char_template="achar({})",
+    concat_operator=" // ",
+    escape_backslash=False,
+)
+
+
+@beartype
+def _format_fortran_string(value: str, /) -> str:
+    """Format a string with standard-conforming continuation lines."""
+    if len(_format_fortran_string_chunk(value)) <= _FORTRAN_STRING_CHUNK_WIDTH:
+        return _format_fortran_string_chunk(value)
+    chunks: list[str] = []
+    current = ""
+    for character in value:
+        candidate = current + character
+        if (
+            current
+            and len(_format_fortran_string_chunk(candidate))
+            > _FORTRAN_STRING_CHUNK_WIDTH
+        ):
+            chunks.append(_format_fortran_string_chunk(current))
+            current = character
+        else:
+            current = candidate
+    chunks.append(_format_fortran_string_chunk(current))
+    return " // &\n& ".join(chunks)
+
 
 @beartype
 def _format_fortran_datetime_epoch(value: datetime.datetime, /) -> str:
@@ -190,6 +222,44 @@ def _fortran_comment_pos(line: str) -> int | None:
 
 
 @beartype
+def _wrap_fortran_expression_line(line: str, /) -> list[str]:
+    """Split a long expression line at commas outside string literals."""
+    remaining = line
+    wrapped: list[str] = []
+    while len(remaining) > _FORTRAN_WRAP_COLUMN:
+        in_single_quote = False
+        in_double_quote = False
+        break_at: int | None = None
+        i = 0
+        while i < min(len(remaining), _FORTRAN_WRAP_COLUMN):
+            character = remaining[i]
+            if character == "'" and not in_double_quote:
+                if (
+                    in_single_quote
+                    and i + 1 < len(remaining)
+                    and remaining[i + 1] == "'"
+                ):
+                    i += 2
+                    continue
+                in_single_quote = not in_single_quote
+            elif character == '"' and not in_single_quote:
+                in_double_quote = not in_double_quote
+            elif (
+                character == ","
+                and not in_single_quote
+                and not in_double_quote
+            ):
+                break_at = i + 1
+            i += 1
+        if break_at is None:
+            break
+        wrapped.append(remaining[:break_at].rstrip())
+        remaining = "& " + remaining[break_at:].lstrip()
+    wrapped.append(remaining)
+    return wrapped
+
+
+@beartype
 def _add_continuation(value: str) -> str:
     """Add Fortran ``&`` line-continuation to non-comment, non-last
     lines.
@@ -200,7 +270,11 @@ def _add_continuation(value: str) -> str:
     comment lines (blank or starting with ``!``) are transparent to the
     continuation mechanism and receive no ``&``.
     """
-    lines = value.splitlines()
+    lines = [
+        wrapped
+        for line in value.splitlines()
+        for wrapped in _wrap_fortran_expression_line(line)
+    ]
     if len(lines) <= 1:
         return value
     result: list[str] = []
@@ -208,7 +282,7 @@ def _add_continuation(value: str) -> str:
         is_last = i == len(lines) - 1
         stripped = line.strip()
         is_pure_comment = not stripped or stripped.startswith("!")
-        if is_last or is_pure_comment:
+        if is_last or is_pure_comment or stripped.endswith("&"):
             result.append(line)
         else:
             pos = _fortran_comment_pos(line=line)
@@ -1301,13 +1375,7 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
-            quote_char="'",
-            quote_escape="''",
-            control_char_template="achar({})",
-            concat_operator=" // ",
-            escape_backslash=False,
-        )
+        return _format_fortran_string
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
