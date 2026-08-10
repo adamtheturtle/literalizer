@@ -13,6 +13,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    sequence_surrogate_set_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -1195,7 +1196,7 @@ class Nim(metaclass=LanguageCls):
         """Set type options for Nim."""
 
         SET = SetFormatConfig(
-            set_open=fixed_open(open_str="["),
+            set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
             close="]",
             empty_set=None,
             preamble_lines=(),
