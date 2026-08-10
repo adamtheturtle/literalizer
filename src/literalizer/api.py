@@ -59,8 +59,9 @@ def literalize(
     r"""Convert a JSON, JSON5, YAML, or TOML string to a native
     language literal.
 
-    YAML and TOML comments are preserved in the output using the
-    target language's comment syntax.
+    YAML and TOML comments are preserved in the output using the target
+    language's comment syntax. JSON5 comments are not preserved; JSON5 input
+    is parsed as plain data.
 
     Args:
         source: The input string to convert.
