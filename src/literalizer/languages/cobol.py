@@ -85,11 +85,13 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableStringError,
+)
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
@@ -122,6 +124,18 @@ def _format_string_cobol(value: str) -> str:
         cleaned = cleaned.replace(char, replacement)
     escaped = cleaned.replace('"', '""')
     return f'"{escaped}"'
+
+
+@beartype
+def _data_has_empty_string_value(data: Value) -> bool:
+    """Return whether a value position contains an empty string."""
+    if isinstance(data, dict):
+        return any(
+            _data_has_empty_string_value(data=value) for value in data.values()
+        )
+    if isinstance(data, list | set):
+        return any(_data_has_empty_string_value(data=value) for value in data)
+    return data == ""
 
 
 @beartype
@@ -1135,7 +1149,16 @@ class Cobol(metaclass=LanguageCls):
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject empty strings outside the faithful cJSON
+        representation.
+        """
+        has_empty_string = _data_has_empty_string_value(data=data)
+        if not self._json_type_active and has_empty_string:
+            raise UnrepresentableStringError(
+                language_name="COBOL",
+                character_name="an empty string",
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
