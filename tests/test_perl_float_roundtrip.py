@@ -4,8 +4,6 @@ import json
 import shutil
 import subprocess
 
-import pytest
-
 from literalizer import InputFormat, literalize
 from literalizer.languages import Perl
 
@@ -26,8 +24,7 @@ def test_perl_float_literals_force_numeric_identity() -> None:
 def test_json_pp_keeps_large_float_values_numeric() -> None:
     """JSON::PP emits the reported values as numbers without rounding."""
     perl = shutil.which(cmd="perl")
-    if perl is None:  # pragma: no cover - platform dependency
-        pytest.skip(reason="Perl is not installed")
+    assert perl is not None, "Perl is required for this test"
     result = literalize(
         source="[0.1, 1e16, 1e-5, 123456789012345678.0]",
         input_format=InputFormat.JSON,
