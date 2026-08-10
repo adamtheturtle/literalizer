@@ -24,7 +24,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Java, Nim, Rust
+from literalizer.languages import CSharp, Haskell, Java, Nim, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -33,6 +33,26 @@ RUST_CONST = Rust(
     sequence_format=Rust.sequence_formats.ARRAY,
     declaration_style=Rust.declaration_styles.CONST,
 )
+
+
+def test_haskell_nested_tuple_adt_raises() -> None:
+    """Haskell rejects raw tuples nested where ``Val`` is required."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match="Haskell sequence_format=TUPLE cannot represent",
+    ):
+        literalize(
+            source='{"arr": [1, 2]}',
+            input_format=InputFormat.JSON,
+            language=Haskell(
+                sequence_format=Haskell.sequence_formats.TUPLE,
+            ),
+            variable_form=NewVariable(
+                name="value",
+                modifiers=frozenset(),
+            ),
+            wrap_in_file=True,
+        )
 
 
 def test_rust_const_dict_raises() -> None:
