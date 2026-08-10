@@ -97,9 +97,9 @@ from literalizer.exceptions import UnrepresentableSpecialFloatError
 
 @beartype
 def _gleam_signed_base_impl(value: int, base: Callable[[int], str]) -> str:
-    """Parenthesize a negative base literal for Gleam's unary minus."""
+    """Group a negative base literal for Gleam's unary minus."""
     if value < 0:
-        return f"-({base(abs(value))})"
+        return f"-{{{base(abs(value))}}}"
     return base(value)
 
 
