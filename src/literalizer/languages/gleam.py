@@ -96,6 +96,27 @@ from literalizer.exceptions import UnrepresentableSpecialFloatError
 
 
 @beartype
+def _gleam_signed_base_impl(value: int, base: Callable[[int], str]) -> str:
+    """Parenthesize a negative base literal for Gleam's unary minus."""
+    if value < 0:
+        return f"-({base(abs(value))})"
+    return base(value)
+
+
+@beartype
+def _gleam_signed_base(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Build a Gleam-safe signed base formatter."""
+
+    def _format(value: int) -> str:
+        """Format using *base* with a valid negative expression."""
+        return _gleam_signed_base_impl(value=value, base=base)
+
+    return _format
+
+
+@beartype
 def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
     """Format a date as a Gleam string via ISO 8601."""
     return f"{prefix}Str({format_date_iso(value=value)})"
@@ -344,12 +365,12 @@ _gleam_dict_entry = _build_gleam_dict_entry(prefix="G")
 _GLEAM_INT_BASE: dict[tuple[str, str], Callable[[int], str]] = {
     ("DECIMAL", "NONE"): str,
     ("DECIMAL", "UNDERSCORE"): format_integer_underscore,
-    ("HEX", "NONE"): format_integer_hex,
-    ("HEX", "UNDERSCORE"): format_integer_hex,
-    ("OCTAL", "NONE"): format_integer_octal,
-    ("OCTAL", "UNDERSCORE"): format_integer_octal,
-    ("BINARY", "NONE"): format_integer_binary,
-    ("BINARY", "UNDERSCORE"): format_integer_binary,
+    ("HEX", "NONE"): _gleam_signed_base(base=format_integer_hex),
+    ("HEX", "UNDERSCORE"): _gleam_signed_base(base=format_integer_hex),
+    ("OCTAL", "NONE"): _gleam_signed_base(base=format_integer_octal),
+    ("OCTAL", "UNDERSCORE"): _gleam_signed_base(base=format_integer_octal),
+    ("BINARY", "NONE"): _gleam_signed_base(base=format_integer_binary),
+    ("BINARY", "UNDERSCORE"): _gleam_signed_base(base=format_integer_binary),
 }
 
 _GLEAM_FLOAT_BASE: dict[str, Callable[[float], str]] = {
@@ -927,11 +948,11 @@ class Gleam(metaclass=LanguageCls):
             mapping={
                 "NONE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_hex,
+                    base=_gleam_signed_base(base=format_integer_hex),
                 ),
                 "UNDERSCORE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_hex,
+                    base=_gleam_signed_base(base=format_integer_hex),
                 ),
             }
         )
@@ -939,11 +960,11 @@ class Gleam(metaclass=LanguageCls):
             mapping={
                 "NONE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_octal,
+                    base=_gleam_signed_base(base=format_integer_octal),
                 ),
                 "UNDERSCORE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_octal,
+                    base=_gleam_signed_base(base=format_integer_octal),
                 ),
             }
         )
@@ -951,11 +972,11 @@ class Gleam(metaclass=LanguageCls):
             mapping={
                 "NONE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_binary,
+                    base=_gleam_signed_base(base=format_integer_binary),
                 ),
                 "UNDERSCORE": _build_gleam_integer_wrapper(
                     prefix="G",
-                    base=format_integer_binary,
+                    base=_gleam_signed_base(base=format_integer_binary),
                 ),
             }
         )

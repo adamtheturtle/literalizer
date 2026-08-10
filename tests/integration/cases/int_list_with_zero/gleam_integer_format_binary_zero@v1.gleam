@@ -7,7 +7,7 @@ pub fn main() {
   let my_data = GList([
     GInt(0b0),
     GInt(0b1),
-    GInt(-0b1),
+    GInt(-(0b1)),
   ])
   let _ = my_data
 }
