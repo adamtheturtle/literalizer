@@ -3,8 +3,6 @@
 import shutil
 import subprocess
 
-import pytest
-
 from literalizer import InputFormat, literalize
 from literalizer.languages import Perl
 
@@ -20,8 +18,7 @@ def test_perl_special_floats_are_strict_safe() -> None:
     assert "Inf" not in result.code
 
     perl = shutil.which(cmd="perl")
-    if perl is None:
-        pytest.skip(reason="Perl is not installed")  # pragma: no cover
+    assert perl is not None, "Perl is required for this test"
     program = f"use strict; use warnings; my $value = {result.code};"
     completed = subprocess.run(
         args=[perl, "-e", program],
