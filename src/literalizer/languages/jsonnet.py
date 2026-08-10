@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -84,6 +85,7 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -732,7 +734,17 @@ class Jsonnet(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        finite = self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Delegate finite values and reject unsupported specials."""
+            if not math.isfinite(value):
+                msg = f"Jsonnet cannot represent special float {value!r}."
+                raise UnrepresentableSpecialFloatError(msg)
+            return finite(value)
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:
