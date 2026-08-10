@@ -642,6 +642,24 @@ class UnsupportedCallShapeError(Exception):
         self.reason = reason
 
 
+class ExcessiveNestingError(Exception):
+    """Raised when a backend's safe collection nesting limit is
+    exceeded.
+    """
+
+    def __init__(
+        self, *, language_name: str, maximum_depth: int, actual_depth: int
+    ) -> None:
+        """Create an ``ExcessiveNestingError``."""
+        super().__init__(
+            f"{language_name} supports collection nesting only through depth "
+            f"{maximum_depth}; received depth {actual_depth}"
+        )
+        self.language_name = language_name
+        self.maximum_depth = maximum_depth
+        self.actual_depth = actual_depth
+
+
 class WrapCombinedInFileNotSupportedError(Exception):
     """Raised when a language does not support ``wrap_combined_in_file``.
 

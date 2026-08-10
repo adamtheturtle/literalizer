@@ -11,6 +11,7 @@ from beartype import beartype
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    ExcessiveNestingError,
     HeterogeneousCollectionError,
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
@@ -25,6 +26,27 @@ from literalizer.exceptions import (
 
 if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
+
+
+@beartype
+def guard_collection_nesting_depth(
+    *, data: Value, language_name: str, maximum_depth: int
+) -> None:
+    """Raise before rendering a collection deeper than *maximum_depth*."""
+    pending: list[tuple[Value, int]] = [(data, 0)]
+    while pending:
+        value, parent_depth = pending.pop()
+        if not isinstance(value, dict | list | set):
+            continue
+        depth = parent_depth + 1
+        if depth > maximum_depth:
+            raise ExcessiveNestingError(
+                language_name=language_name,
+                maximum_depth=maximum_depth,
+                actual_depth=depth,
+            )
+        children = value.values() if isinstance(value, dict) else value
+        pending.extend((child, depth) for child in children)
 
 
 @overload

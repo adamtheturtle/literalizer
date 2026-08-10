@@ -9,6 +9,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import guard_collection_nesting_depth
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -83,6 +84,8 @@ from literalizer.exceptions import (
     InvalidDictKeyError,
 )
 
+_MAX_STRINGIFIED_COLLECTION_DEPTH = 12
+
 
 @beartype
 def _format_string_single(value: str) -> str:
@@ -146,6 +149,11 @@ def _format_bash_dict_entry(
 @beartype
 def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
     """Raise for dict keys that Bash cannot represent."""
+    guard_collection_nesting_depth(
+        data=data,
+        language_name="Bash",
+        maximum_depth=_MAX_STRINGIFIED_COLLECTION_DEPTH,
+    )
     _bash_validate_dict_keys(data=data)
 
 

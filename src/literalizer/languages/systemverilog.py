@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import guard_collection_nesting_depth
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -78,7 +79,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
@@ -86,6 +86,19 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
+_MAX_STRINGIFIED_COLLECTION_DEPTH = 12
+
+
+@beartype
+def _systemverilog_validate_spec_for_data(_self: object, data: Value) -> None:
+    """Reject nesting whose repeated string escaping grows
+    exponentially.
+    """
+    guard_collection_nesting_depth(
+        data=data,
+        language_name="SystemVerilog",
+        maximum_depth=_MAX_STRINGIFIED_COLLECTION_DEPTH,
+    )
 
 
 @beartype
@@ -669,7 +682,7 @@ class SystemVerilog(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    validate_spec_for_data = _systemverilog_validate_spec_for_data
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
