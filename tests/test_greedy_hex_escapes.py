@@ -2,7 +2,7 @@
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, Language, literalize
 from literalizer.languages import Haskell, PureScript
 
 
@@ -15,7 +15,7 @@ from literalizer.languages import Haskell, PureScript
     ids=["haskell", "purescript"],
 )
 def test_control_escape_before_hex_run_is_unambiguous(
-    language: Haskell | PureScript,
+    language: Language,
     expected: str,
 ) -> None:
     """A BEL followed by hex digits remains five source characters."""
