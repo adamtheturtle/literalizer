@@ -21,9 +21,9 @@ _LABEL = "Ruby"
 
 
 def _build_program(json_text: str) -> str:
-    """Return a runnable Ruby program literalized from *json_text*."""
+    """Return an executable Ruby program literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
-        language=Ruby(string_format=Ruby.string_formats.MULTILINE),
+        language=Ruby(),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
@@ -40,7 +40,7 @@ def _build_program(json_text: str) -> str:
 
 
 def main() -> None:
-    """Round-trip the shared document through the Ruby backend."""
+    """Round-trip the shared document through the Ruby back end."""
     program = _build_program(json_text=roundtrip_common.read_input())
     ruby = shutil.which(cmd="ruby") or "ruby"
     roundtrip_common.execute(
