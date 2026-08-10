@@ -2083,6 +2083,8 @@ def _format_collection_lines(
             )
         case _ as unreachable:
             assert_never(unreachable)
+    if isinstance(data, dict):
+        lines = spec.dict_format_config.postprocess_entries(lines)
     return lines
 
 
