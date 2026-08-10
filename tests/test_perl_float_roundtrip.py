@@ -18,8 +18,9 @@ def test_perl_float_literals_force_numeric_identity() -> None:
         language=Perl(),
     )
 
-    assert "(0.0 + 1.0e+16)" in result.code
-    assert "(0.0 + 1.2345678901234568e+17)" in result.code
+    assert 'Math::BigFloat->new("1.0e+16")' in result.code
+    assert 'Math::BigFloat->new("1.2345678901234568e+17")' in result.code
+    assert "use Math::BigFloat;" in result.preamble
 
 
 def test_json_pp_keeps_large_float_values_numeric() -> None:
@@ -32,8 +33,9 @@ def test_json_pp_keeps_large_float_values_numeric() -> None:
         input_format=InputFormat.JSON,
         language=Perl(),
     )
+    preamble = "\n".join(result.preamble)
     program = (
-        "use JSON::PP; my $value = "
+        f"use JSON::PP; {preamble}\nmy $value = "
         f"{result.code}; print JSON::PP->new->allow_bignum->encode($value);"
     )
     completed = subprocess.run(
