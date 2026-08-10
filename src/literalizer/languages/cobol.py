@@ -1169,8 +1169,8 @@ class Cobol(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
     def validate_spec_for_data(self, data: Value) -> None:
-        """Reject empty strings outside the faithful cJSON
-        representation.
+        """Reject empty strings outside the faithful JSON
+        representation backed by the C library.
         """
         has_empty_string = _data_has_empty_string_value(data=data)
         if not self._json_type_active and has_empty_string:
