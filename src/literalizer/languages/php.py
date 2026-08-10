@@ -102,6 +102,12 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _format_string_double(value: str) -> str:
+    r"""Format *value* as an interpolation-safe double-quoted PHP string."""
+    return format_string_backslash(value=value).replace("$", r"\$")
+
+
+@beartype
 def _format_string_multiline_fallback(value: str) -> str:
     r"""Format *value* as an interpolation-safe escaped PHP string."""
     escaped = format_string_backslash_control(
@@ -521,7 +527,7 @@ class Php(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
         MULTILINE = enum.member(value=_format_string_multiline)
 
