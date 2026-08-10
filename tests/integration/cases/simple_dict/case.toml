@@ -9,9 +9,6 @@ axis = "default_dict_value_type"
 axis = "default_dict_key_type"
 
 [[variants]]
-axis = "empty_dict_key"
-
-[[variants]]
 axis = "type_hints_cross"
 
 [[variants]]

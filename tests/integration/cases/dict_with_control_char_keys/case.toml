@@ -2,4 +2,7 @@ schema_version = 1
 suites = ["base", "combined"]
 
 [[variants]]
+axis = "empty_dict_key"
+
+[[variants]]
 axis = "language_version"
