@@ -26,6 +26,7 @@ from literalizer._types import ValueInput  # noqa: TC001
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    InvalidDictKeyError,
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
@@ -70,6 +71,11 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected ref identifier",
+            unlink=True,
+        ),
+        SkipReason(
+            error=InvalidDictKeyError,
+            reason="cannot represent a dictionary key",
             unlink=True,
         ),
     ),
@@ -217,7 +223,7 @@ def run_literalize_ref_golden_case(
     variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
     try:
         literalizer.literalize(
-            source='{"_": "_"}',
+            source='{"key": "value"}',
             input_format=literalizer.InputFormat.JSON,
             language=spec,
             variable_form=variable_form_obj,
