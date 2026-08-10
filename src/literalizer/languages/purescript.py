@@ -42,6 +42,9 @@ from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._json_native_document import (
+    register_json_native_document_fast,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1773,3 +1776,6 @@ class PureScript(metaclass=LanguageCls):
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
         )
+
+
+register_json_native_document_fast(language_cls=PureScript)

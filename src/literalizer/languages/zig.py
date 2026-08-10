@@ -59,6 +59,9 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
     record_shape_for_dict,
 )
+from literalizer._json_native_document import (
+    register_json_native_document_fast,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1876,3 +1879,6 @@ class Zig(metaclass=LanguageCls):
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
+
+
+register_json_native_document_fast(language_cls=Zig)

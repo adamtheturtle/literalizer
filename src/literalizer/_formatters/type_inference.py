@@ -69,14 +69,14 @@ class BeyondI64:
 # Keep in sync with ``_SCALA_INT32_MIN`` / ``_SCALA_INT32_MAX`` in
 # :mod:`literalizer.languages.scala`, which derives a ``Long`` record
 # field type from the same threshold.
-_I32_MIN = -(2**31)
-_I32_MAX = 2**31 - 1
+I32_MIN = -(2**31)
+I32_MAX = 2**31 - 1
 
 # Signed 64-bit range; an int outside it widens to :class:`BeyondI64`.
 # Keep in sync with ``I64_MIN`` / ``I64_MAX`` in
 # :mod:`literalizer._formatters.format_integers`.
-_I64_MIN = -(2**63)
-_I64_MAX = 2**63 - 1
+I64_MIN = -(2**63)
+I64_MAX = 2**63 - 1
 
 
 @beartype
@@ -85,7 +85,7 @@ def _int_needs_widening(items: list[Value]) -> bool:
     return any(
         isinstance(item, int)
         and not isinstance(item, bool)
-        and not _I32_MIN <= item <= _I32_MAX
+        and not I32_MIN <= item <= I32_MAX
         for item in items
     )
 
@@ -96,7 +96,7 @@ def _int_needs_beyond_i64(items: list[Value]) -> bool:
     return any(
         isinstance(item, int)
         and not isinstance(item, bool)
-        and not _I64_MIN <= item <= _I64_MAX
+        and not I64_MIN <= item <= I64_MAX
         for item in items
     )
 
@@ -116,9 +116,9 @@ def int_widening_tier(items: list[Value]) -> type | None:
     for item in items:
         if isinstance(item, bool) or not isinstance(item, int):
             return None
-        if item < _I64_MIN or item > _I64_MAX:
+        if item < I64_MIN or item > I64_MAX:
             widest = BeyondI64
-        elif widest is None and (item < _I32_MIN or item > _I32_MAX):
+        elif widest is None and (item < I32_MIN or item > I32_MAX):
             widest = WideInt
     return widest
 

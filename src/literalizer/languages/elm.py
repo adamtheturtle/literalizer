@@ -36,6 +36,9 @@ from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._json_native_document import (
+    register_json_native_document_fast,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1721,3 +1724,6 @@ class Elm(metaclass=LanguageCls):
             return _finite(value)
 
         return _format
+
+
+register_json_native_document_fast(language_cls=Elm)

@@ -3,6 +3,7 @@
 import base64
 import enum
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from beartype import beartype
 
@@ -256,16 +257,26 @@ def passthrough_set_entry(_value: Value, item: str) -> str:
     return item
 
 
-@beartype
-def _format_dict_entry_with_separator(
-    key: str,
-    raw_value: Value,
-    formatted_value: str,
-    separator: str,
-    format_value: Callable[[Value, str], str],
-) -> str:
-    """Format a dict entry by joining key and value with separator."""
-    return f"{key}{separator}{format_value(raw_value, formatted_value)}"
+@dataclass(frozen=True)
+class DictEntryWithSeparator:
+    """A ``format_dict_entry`` that joins key and value with a separator.
+
+    A class rather than a closure so callers can recognize the shape and
+    read ``separator`` back off it.  The JSON-native document fast path
+    (:mod:`literalizer._json_native_document`) uses that, together with
+    a ``format_value`` of :func:`passthrough_sequence_entry`, to build
+    the entry inline instead of calling through this hook per node.
+    """
+
+    separator: str
+    format_value: Callable[[Value, str], str]
+
+    def __call__(
+        self, key: str, raw_value: Value, formatted_value: str, /
+    ) -> str:
+        """Format a dict entry by joining key and value with separator."""
+        formatted = self.format_value(raw_value, formatted_value)
+        return f"{key}{self.separator}{formatted}"
 
 
 @beartype
@@ -283,18 +294,10 @@ def dict_entry_with_separator(
     Example: ``dict_entry_with_separator(": ", ...)("k", ..., "v")``
     -> ``"k: v"``.
     """
-
-    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _format_dict_entry_with_separator(
-            key=key,
-            raw_value=raw_value,
-            formatted_value=formatted_value,
-            separator=separator,
-            format_value=format_value,
-        )
-
-    return _format
+    return DictEntryWithSeparator(
+        separator=separator,
+        format_value=format_value,
+    )
 
 
 @beartype
