@@ -294,6 +294,14 @@ def _add_continuation(value: str) -> str:
 
 
 @beartype
+def _wrap_fortran_source_lines(value: str, /) -> str:
+    """Wrap each independent source line without joining statements."""
+    return "\n".join(
+        _add_continuation(value=line) for line in value.splitlines()
+    )
+
+
+@beartype
 def _apply_fortran_variable_declaration(
     name: str,
     value: str,
@@ -910,6 +918,7 @@ class Fortran(metaclass=LanguageCls):
         holds internal-procedure stubs that go in the ``contains`` section
         after the executable statements in *content*.
         """
+        content = _wrap_fortran_source_lines(content)
         if variable_name:
             content = prepend_body_preamble(
                 content=content,
@@ -924,7 +933,9 @@ class Fortran(metaclass=LanguageCls):
                 f"end program {self.module_name}"
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        stubs_str = "\n".join(body_preamble)
+        stubs_str = "\n".join(
+            _wrap_fortran_source_lines(stub) for stub in body_preamble
+        )
         indented_stubs = textwrap.indent(text=stubs_str, prefix=self.indent)
         return (
             f"program {self.module_name}\n"

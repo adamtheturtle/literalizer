@@ -6,7 +6,9 @@ import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Fortran
-from literalizer.languages.fortran import _wrap_fortran_expression_line
+from literalizer.languages.fortran import (
+    _wrap_fortran_expression_line,  # pyright: ignore[reportPrivateUsage]
+)
 
 _FORTRAN_MAX_LINE_LENGTH = 132
 
