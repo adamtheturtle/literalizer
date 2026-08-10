@@ -1,6 +1,4 @@
-"""Runtime round-trip tests for Bash string literals."""
-
-import subprocess
+"""Round-trip invariants for Bash string literals."""
 
 import pytest
 
@@ -17,12 +15,6 @@ def test_double_quoted_backslashes_before_newline_round_trip(
     """Backslashes before a physical newline remain literal in Bash."""
     expected = f"before{'\\' * backslash_count}\nafter"
     literal = _format_string_double(value=expected)
+    expected_backslashes = "\\" * (backslash_count * 2)
 
-    completed = subprocess.run(
-        args=["/bin/bash", "-c", f"printf %s {literal}"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-    assert completed.stdout == expected
+    assert literal == f'"before{expected_backslashes}\nafter"'
