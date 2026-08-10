@@ -53,8 +53,9 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                     ),
                 )
         case dict():
-            for key, value in data.items():
-                _check_raw_control_characters(data=key, spec=spec)
+            # Dict keys have language-specific label/identifier validation
+            # and must retain those more precise error contracts.
+            for value in data.values():
                 _check_raw_control_characters(data=value, spec=spec)
         case list() | set():
             for value in data:
