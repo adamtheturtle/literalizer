@@ -3483,6 +3483,7 @@ def _format_call_args(
         case (
             PostfixCallStyle(arg_separator=sep)
             | CommandCallStyle(arg_separator=sep)
+            | DottedCommandCallStyle(arg_separator=sep)
         ):
             result = sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
@@ -3528,7 +3529,10 @@ def _assemble_bare_call_expr(
                 else target_function
             )
             return f"({inside})"
-        case CommandCallStyle(arg_separator=sep):
+        case (
+            CommandCallStyle(arg_separator=sep)
+            | DottedCommandCallStyle(arg_separator=sep)
+        ):
             return (
                 f"{target_function}{sep}{args_str}"
                 if args_str
