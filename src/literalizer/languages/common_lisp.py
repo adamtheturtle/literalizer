@@ -75,7 +75,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
+    reject_empty_dicts,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -447,7 +447,9 @@ class CommonLisp(metaclass=LanguageCls):
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject mappings that collapse onto the empty list."""
+        reject_empty_dicts(data=data, language_name="Common Lisp")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
