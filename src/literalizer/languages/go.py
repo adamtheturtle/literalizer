@@ -948,12 +948,18 @@ class Go(metaclass=LanguageCls):
             case list():
                 opener = self.sequence_open(value)
             case int() if not isinstance(value, bool):
+                suffix_is_auto = (
+                    self.numeric_literal_suffix
+                    is type(self.numeric_literal_suffix).AUTO
+                )
                 return (
                     "uint64"
                     if value > I64_MAX
                     else (
                         "int64"
-                        if value < _GO_I32_MIN or value > _GO_I32_MAX
+                        if suffix_is_auto
+                        or value < _GO_I32_MIN
+                        or value > _GO_I32_MAX
                         else "int"
                     )
                 )

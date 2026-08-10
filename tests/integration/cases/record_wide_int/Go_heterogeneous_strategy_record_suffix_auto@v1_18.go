@@ -1,6 +1,6 @@
 package main
 type Record0 struct {
-	Quantity int
+	Quantity int64
 	Big uint64
 	Ratio float64
 	Label string
