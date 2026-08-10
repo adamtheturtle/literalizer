@@ -13,6 +13,24 @@ U64_MAX = 2**64 - 1
 
 
 @beartype
+def make_i64_min_safe_formatter(
+    *, base: Callable[[int], str]
+) -> Callable[[int], str]:
+    """Render ``INT64_MIN`` without an overflowing positive operand."""
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format one integer, special-casing the signed 64-bit
+        minimum.
+        """
+        if value == I64_MIN:
+            return "(-9223372036854775807LL - 1)"
+        return base(value)
+
+    return _format
+
+
+@beartype
 def _format_with_base(*, value: int, prefix: str, fmt: str) -> str:
     """Format an integer with a base prefix.
 

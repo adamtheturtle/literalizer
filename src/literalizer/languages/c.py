@@ -36,6 +36,7 @@ from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
     format_integer_hex,
+    make_i64_min_safe_formatter,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
@@ -1872,7 +1873,7 @@ class C(metaclass=LanguageCls):
             else self.integer_format
         )
         return make_overflow_fallback_formatter(
-            base=base,
+            base=make_i64_min_safe_formatter(base=base),
             fallback=make_ull_fallback(language_name="C"),
             min_value=I64_MIN,
             max_value=I64_MAX,
