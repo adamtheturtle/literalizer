@@ -1064,6 +1064,11 @@ class VisualBasic(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is int
             else "String"
         )
+        date_type = (
+            "DateOnly"
+            if self.date_format.value.type_produced is datetime.date
+            else "String"
+        )
         return make_element_to_type(
             str_type="String",
             bool_type="Boolean",
@@ -1073,7 +1078,7 @@ class VisualBasic(metaclass=LanguageCls):
             float_type="Double",
             mixed_numeric_type="Double",
             bytes_type="String",
-            date_type="String",
+            date_type=date_type,
             datetime_type=datetime_type,
             time_type="TimeOnly",
             list_template="{inner}()",
