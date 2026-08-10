@@ -1448,11 +1448,12 @@ class Java(metaclass=LanguageCls):
         When :attr:`json_type` is active, additionally walk *data* to
         reject non-string dict keys, which JSON objects cannot represent.
         """
-        _validate_no_null_map_values(data=data)
         if self._json_type_active:
             self._validate_json_value_keys(data)
             return
         strategies = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is not strategies.RECORD:
+            _validate_no_null_map_values(data=data)
         formats = type(self.sequence_format)
         if (
             self.heterogeneous_strategy is strategies.RECORD
