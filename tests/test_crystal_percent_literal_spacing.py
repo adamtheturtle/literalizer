@@ -27,3 +27,15 @@ def test_non_string_dict_keys_do_not_gain_spacing() -> None:
     assert "1 => %q|value|" in result.code
     assert "\n    1 =>" in result.code
     assert "\n     1 =>" not in result.code
+
+
+def test_ordered_map_percent_string_keys_do_not_form_macro_tokens() -> None:
+    """The ordered-map opener also stays separate from a percent key."""
+    result = literalize(
+        source="--- !!omap\n  - a: 1\n  - b: 2\n",
+        input_format=InputFormat.YAML,
+        language=Crystal(string_format=Crystal.string_formats.MULTILINE),
+    )
+
+    assert "{%" not in result.code
+    assert "{ %q|a| => 1, %q|b| => 2}" in result.code
