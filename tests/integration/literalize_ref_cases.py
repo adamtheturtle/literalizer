@@ -30,6 +30,7 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
+from literalizer.languages import Matlab
 
 from .case_manifests import (
     REF_DEFAULT_OWNER,
@@ -237,7 +238,10 @@ def run_literalize_ref_golden_case(
     )
     bound_refs_input: dict[str, ValueInput] = {
         raw_name: json.loads(
-            s=config.value_sources.get(raw_name, '{"_": "_"}'),
+            s=config.value_sources.get(
+                raw_name,
+                '{"key": "value"}' if lang_cls is Matlab else '{"_": "_"}',
+            ),
         )
         for raw_name in _collect_ref_names(
             data=raw_data,
