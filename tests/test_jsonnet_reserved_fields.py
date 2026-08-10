@@ -15,6 +15,7 @@ def test_jsonnet_quotes_reserved_object_fields() -> None:
         "function",
         "if",
         "import",
+        "importbin",
         "importstr",
         "in",
         "local",

@@ -99,6 +99,7 @@ _JSONNET_RESERVED_FIELDS = frozenset(
         "function",
         "if",
         "import",
+        "importbin",
         "importstr",
         "in",
         "local",
