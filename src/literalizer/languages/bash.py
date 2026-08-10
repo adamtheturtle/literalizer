@@ -30,9 +30,6 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import (
-    format_string_backslash,
-)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -82,6 +79,24 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     InvalidDictKeyError,
 )
+
+
+@beartype
+def _format_string_double(value: str) -> str:
+    r"""Format a value as an expansion-free Bash double-quoted word.
+
+    Bash does not interpret ``\n`` or ``\t`` inside double quotes, so
+    control characters remain literal.  Characters that retain special
+    meaning inside double quotes are escaped to prevent expansion or
+    command substitution.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("`", "\\`")
+    )
+    return f'"{escaped}"'
 
 
 @beartype
@@ -458,7 +473,7 @@ class Bash(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
 
         def __call__(self, value: str, /) -> str:
