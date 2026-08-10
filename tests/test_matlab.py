@@ -1,8 +1,17 @@
-"""Focused tests for MATLAB formatting helpers."""
+"""Focused tests for MATLAB rendering."""
 
-from literalizer.languages.matlab import _matlab_char_key
+import json
+
+from literalizer import InputFormat, literalize
+from literalizer.languages import Matlab
 
 
-def test_empty_matlab_char_key() -> None:
-    """Render an empty ``containers.Map`` key as an empty char vector."""
-    assert _matlab_char_key("") == "''"
+def test_matlab_map_char_keys() -> None:
+    """Escape empty, quoted, and control-character map keys."""
+    result = literalize(
+        source=json.dumps(obj={"": 1, "'": 2, "a\x01b": 3}),
+        input_format=InputFormat.JSON,
+        language=Matlab(dict_format=Matlab.dict_formats.CONTAINERS_MAP),
+    )
+
+    assert "{'', '''', ['a', char(1), 'b']}" in result.code
