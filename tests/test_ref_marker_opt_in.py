@@ -27,3 +27,19 @@ def test_explicit_ref_key_enables_marker_rendering() -> None:
     )
 
     assert '"schema": foo' in result.code
+
+
+def test_explicit_ref_key_handles_nested_collections() -> None:
+    """Opted-in refs remain active inside mappings and sequences."""
+    result = literalize(
+        source=(
+            '{"mapping": {"value": {"\\u0024ref": "foo"}}, '
+            '"items": [{"other": 1}, {"\\u0024ref": "foo"}]}'
+        ),
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_key="$ref",
+    )
+
+    assert '"value": foo' in result.code
+    assert '"items": ({"other": 1}, foo)' in result.code
