@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 import textwrap
 from collections.abc import Callable, Sequence
@@ -89,7 +90,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableSpecialFloatError,
+)
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 
@@ -807,7 +811,7 @@ class Cobol(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".cob"
     pygments_name = "cobol"
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
@@ -1592,7 +1596,17 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        finite = self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Delegate finite values and reject infinities and NaN."""
+            if not math.isfinite(value):
+                msg = f"COBOL cannot represent special float {value!r}."
+                raise UnrepresentableSpecialFloatError(msg)
+            return finite(value)
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:
