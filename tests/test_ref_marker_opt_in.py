@@ -50,6 +50,18 @@ def test_explicit_ref_key_handles_nested_collections() -> None:
     assert '"items": ({"other": 1}, foo)' in result.code
 
 
+def test_escaped_ref_key_is_found_after_plain_list_item() -> None:
+    """Escaped marker discovery traverses list items that are not refs."""
+    result = literalize(
+        source='[0, {"\\u0024ref": "foo"}]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_key="$ref",
+    )
+
+    assert result.code == "(\n    0,\n    foo,\n)"
+
+
 def test_explicit_ref_key_handles_all_ref_nested_collections() -> None:
     """Collection inference remains valid when every child is a ref."""
     result = literalize(
