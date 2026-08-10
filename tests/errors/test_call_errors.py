@@ -4,6 +4,7 @@ Positive-path checks for individual language behaviors live in the
 integration golden-file suite.
 """
 
+import inspect
 import re
 
 import pytest
@@ -16,6 +17,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
+from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -183,6 +185,16 @@ def test_literalize_call_case_insensitive_duplicate_parameter_raises() -> None:
             target_function="f",
             parameter_names=("Count", "count"),
         )
+
+
+def test_call_parameter_validation_requires_language_metaclass() -> None:
+    """Malformed internal language objects fail immediately."""
+    validator = inspect.unwrap(func=validate_call_parameter_names)
+    with pytest.raises(
+        expected_exception=TypeError,
+        match="requires a LanguageCls language",
+    ):
+        validator(language=object(), names=(), reject_reserved=True)
 
 
 def test_literalize_call_parameter_count_too_many_raises() -> None:

@@ -114,7 +114,7 @@ def validate_call_parameter_names(
     """Raise when call parameter names are invalid or duplicated."""
     language_name = language.__class__.__name__
     language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+    if not isinstance(language_cls, LanguageCls):
         msg = "Call parameter validation requires a LanguageCls language"
         raise TypeError(msg)
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
