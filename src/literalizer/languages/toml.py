@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
+import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -446,13 +447,30 @@ class Toml(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
     def wrap_in_file(
+        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap code in a valid file (no-op)."""
+        """Wrap code as a valid TOML document.
+
+        A top-level mapping declaration is rendered as a TOML table rather
+        than a multiline inline table, whose newlines TOML 1.0 forbids.
+        """
+        mapping_prefix = f"{variable_name} = {{\n"
+        if variable_name and content.startswith(mapping_prefix):
+            mapping_suffix = "\n}"
+            if content.endswith(mapping_suffix):
+                entries = content[len(mapping_prefix) : -len(mapping_suffix)]
+                dedented = textwrap.dedent(text=entries)
+                table_lines = [
+                    line[:-1]
+                    if line and not line[0].isspace() and line.endswith(",")
+                    else line
+                    for line in dedented.splitlines()
+                ]
+                return f"[{variable_name}]\n" + "\n".join(table_lines)
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,
