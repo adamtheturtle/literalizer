@@ -37,6 +37,7 @@ from literalizer._language import (
     CallSupport,
     CollectionLayout,
     CommandCallStyle,
+    DottedCommandCallStyle,
     FileSection,
     IdentifierCase,
     KeywordCallStyle,
@@ -4751,6 +4752,11 @@ def literalize_call_parsed(
         style=style,
         variable_form=variable_form,
     )
+    if (
+        isinstance(style, DottedCommandCallStyle)
+        and len(target_function_parts) > 1
+    ):
+        style = style.dotted_call_style
     zip_resolution = _resolve_zip_literals(
         zip_source=zip_source,
         zip_input_format=zip_input_format,
