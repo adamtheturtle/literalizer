@@ -1891,7 +1891,7 @@ def _format_multiline_collection_value(
 
 
 @beartype
-def _rstrip_lines(text: str) -> str:
+def rstrip_lines(text: str) -> str:
     """Remove trailing whitespace from each line."""
     return "\n".join(line.rstrip() for line in text.split(sep="\n"))
 
@@ -1910,7 +1910,7 @@ def _append_entries(
     for i, entry in enumerate(iterable=formatted_entries):
         add_sep = i < last_idx or trailing_comma
         sep = spec.element_separator.strip() if add_sep else ""
-        lines.append(f"{body_prefix}{_rstrip_lines(text=entry)}{sep}")
+        lines.append(f"{body_prefix}{rstrip_lines(text=entry)}{sep}")
 
 
 @beartype

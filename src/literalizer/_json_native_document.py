@@ -44,7 +44,7 @@ from literalizer._language import (
     no_compute_wrap_ids,
     no_empty_container_literal_overrides,
 )
-from literalizer._literalize import guard_dict_keys_supported
+from literalizer._literalize import guard_dict_keys_supported, rstrip_lines
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -266,8 +266,11 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
         body_prefix = line_prefix + language.indent
         separator_text = separator.strip()
         last_index = len(entries) - 1
+        # Trim per line, not just at the end of the entry: that is what
+        # the shared renderer does, and a scalar formatter that emits a
+        # multi-line literal would otherwise diverge from it.
         lines = [
-            f"{body_prefix}{entry.rstrip()}"
+            f"{body_prefix}{rstrip_lines(text=entry)}"
             f"{separator_text if index < last_index or trailing_comma else ''}"
             for index, entry in enumerate(iterable=entries)
         ]
