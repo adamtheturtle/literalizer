@@ -21,9 +21,12 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fmap([fval_t :: fentry('id', fint(1_int64)), fentry('label', fstr('first')), fentry('tags', flist([fval_t :: ]))]), &
-        fmap([fval_t :: fentry('id', fint(2_int64)), fentry('label', fstr('second')), fentry('tags', flist([fval_t :: ]))]), &
-        fmap([fval_t :: fentry('id', fint(3_int64)), fentry('label', fstr('third')), fentry('tags', flist([fval_t :: ]))]) &
+        fmap([fval_t :: fentry('id', fint(1_int64)), fentry('label', fstr('first')), fentry('tags', &
+    & flist([fval_t :: ]))]), &
+        fmap([fval_t :: fentry('id', fint(2_int64)), fentry('label', fstr('second')), fentry('tags', &
+    & flist([fval_t :: ]))]), &
+        fmap([fval_t :: fentry('id', fint(3_int64)), fentry('label', fstr('third')), fentry('tags', &
+    & flist([fval_t :: ]))]) &
     ])
 end subroutine main_declaration
 
@@ -32,9 +35,12 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fmap([fval_t :: fentry('id', fint(1_int64)), fentry('label', fstr('first')), fentry('tags', flist([fval_t :: ]))]), &
-        fmap([fval_t :: fentry('id', fint(2_int64)), fentry('label', fstr('second')), fentry('tags', flist([fval_t :: ]))]), &
-        fmap([fval_t :: fentry('id', fint(3_int64)), fentry('label', fstr('third')), fentry('tags', flist([fval_t :: ]))]) &
+        fmap([fval_t :: fentry('id', fint(1_int64)), fentry('label', fstr('first')), fentry('tags', &
+    & flist([fval_t :: ]))]), &
+        fmap([fval_t :: fentry('id', fint(2_int64)), fentry('label', fstr('second')), fentry('tags', &
+    & flist([fval_t :: ]))]), &
+        fmap([fval_t :: fentry('id', fint(3_int64)), fentry('label', fstr('third')), fentry('tags', &
+    & flist([fval_t :: ]))]) &
     ])
 end subroutine main_assignment
 

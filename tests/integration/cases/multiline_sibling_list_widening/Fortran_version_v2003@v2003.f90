@@ -22,7 +22,8 @@ program main
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
         fentry('omap_value', fmap([fval_t :: fentry('first', fint(1_int64))])), &
-        fentry('sibling_lists', fmap([fval_t :: fentry('numbers', flist([fval_t :: fint(1_int64), fint(2_int64)])), fentry('strings', flist([fval_t :: fstr('x'), fstr('y')]))])), &
+        fentry('sibling_lists', fmap([fval_t :: fentry('numbers', flist([fval_t :: fint(1_int64), &
+    & fint(2_int64)])), fentry('strings', flist([fval_t :: fstr('x'), fstr('y')]))])), &
         fentry('ref_marker_present', flist([fval_t :: fstr('$keep'), fstr('z')])) &
     ])
 end program main
