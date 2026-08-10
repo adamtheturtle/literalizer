@@ -27,17 +27,11 @@ binding shipped to users; rebinding any of the visitor words would emit
 a different format, but here the default ``jos`` JSON writer is exactly
 what the round-trip needs.
 
-Two top-level keys are excluded from the comparison:
+One top-level key is excluded from the comparison:
 
 * ``biginteger`` -- its 26-digit value overflows the 64-bit cell that
   ``gforth`` uses on the Ubuntu runner; same shape as the Go, TypeScript,
   Lua, Zig, Swift, Rust, D, C++, and Wren exclusions.
-* ``float_large_exponent`` -- ``Forth.float_format`` is
-  ``format_float_scientific``, which uses Python's ``f"{value:e}"``
-  (six fractional digits) and emits ``1.797693e308``, losing the
-  trailing significant digits of ``1.7976931348623157e+308``; the
-  truncation happens at literalize time before the Forth toolchain
-  ever sees the value, so the field is excluded from the round-trip.
 """
 
 import os
@@ -49,7 +43,7 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "Forth"
-_EXCLUDED_KEYS = ("biginteger", "float_large_exponent")
+_EXCLUDED_KEYS = ("biginteger",)
 
 # The shipped default visitor prelude (FFL `jos` JSON writer).  Included
 # by absolute path so the round-trip exercises the exact file users get.
