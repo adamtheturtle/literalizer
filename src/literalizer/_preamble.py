@@ -2,7 +2,7 @@
 
 import dataclasses
 import datetime
-from typing import assert_never
+from typing import Final, assert_never, get_args
 
 from beartype import beartype
 
@@ -24,40 +24,63 @@ class HeterogeneousElements:
     """
 
 
+_ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset(
+    # pylint does not model PEP 695 aliases, so it does not see the
+    # ``__value__`` every ``type`` statement defines.
+    get_args(tp=Scalar.__value__)  # pylint: disable=no-member
+) | {OrderedMap, dict, list, set}
+"""Every type :func:`_collect_value_types` can report.
+
+Once all of them have been observed there is nothing left to learn, so
+the walk stops early.  The scalar half is derived from :data:`Scalar`
+rather than listed by hand: a scalar type added there but missed here
+would let the walk stop before observing it.
+"""
+
+
 @beartype
 def _collect_value_types(*, data: Value) -> frozenset[type]:
-    """Return the set of Python types present in *data*."""
-    match data:
-        case dict():
-            child_types: frozenset[type] = frozenset()
-            for k, v in data.items():
-                child_types = child_types | _collect_value_types(data=k)
-                child_types = child_types | _collect_value_types(data=v)
-            container_type = (
-                OrderedMap if isinstance(data, OrderedMap) else dict
-            )
-            # ``str`` is included unconditionally because typed-map
-            # languages whose dict opener hard-codes the default key
-            # type (e.g. ``std::map<std::string, ...>`` in C++) still
-            # need the string preamble even when the data has no string
-            # keys or values.  The actual rendered code references
-            # ``std::string`` regardless of payload.
-            return frozenset({container_type, str}) | child_types
-        case set():
-            scalar_types: frozenset[type] = frozenset(
-                t
-                for v in data
-                if (t := _preamble_scalar_type(value=v)) is not None
-            )
-            return frozenset({set}) | scalar_types
-        case list():
-            child_types = frozenset()
-            for v in data:
-                child_types = child_types | _collect_value_types(data=v)
-            return frozenset({list}) | child_types
-        case _:
-            result = _preamble_scalar_type(value=data)
-            return frozenset({result}) if result is not None else frozenset()
+    """Return the set of Python types present in *data*.
+
+    The document is walked with an explicit stack, and the walk stops
+    as soon as every type in :data:`_ALL_VALUE_TYPES` has been seen, so
+    a large document costs no more than the point at which its type set
+    saturates.
+    """
+    found: set[type] = set()
+    pending: list[Value] = [data]
+    while pending and len(found) != len(_ALL_VALUE_TYPES):
+        value = pending.pop()
+        match value:
+            case OrderedMap():
+                # ``str`` is included unconditionally because typed-map
+                # languages whose dict opener hard-codes the default key
+                # type (e.g. ``std::map<std::string, ...>`` in C++)
+                # still need the string preamble even when the data has
+                # no string keys or values.  The actual rendered code
+                # references ``std::string`` regardless of payload.
+                found.update((OrderedMap, str))
+                pending.extend(value)
+                pending.extend(value.values())
+            case dict():
+                found.update((dict, str))
+                pending.extend(value)
+                pending.extend(value.values())
+            case set():
+                found.add(set)
+                pending.extend(value)
+            case list():
+                found.add(list)
+                pending.extend(value)
+            case _ if type(value) in found:
+                # ``found`` only ever holds the canonical types, so an
+                # exact-type hit means :func:`_preamble_scalar_type`
+                # would return a type already recorded.  A scalar of a
+                # subclass type misses here and takes the slow path.
+                pass
+            case _:
+                found.add(_preamble_scalar_type(value=value))
+    return frozenset(found)
 
 
 @beartype
@@ -135,7 +158,7 @@ def _collect_annotated_collection_types(*, data: Value) -> frozenset[type]:
 
 
 @beartype
-def _preamble_scalar_type(*, value: Value) -> type | None:
+def _preamble_scalar_type(*, value: Scalar) -> type:
     """Return the preamble-relevant type for a scalar.
 
     Like :func:`scalar_type_bucket` but distinguishes

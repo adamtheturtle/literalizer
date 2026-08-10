@@ -4,7 +4,7 @@ collection-shape constraints.
 
 import datetime
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from beartype import beartype
 
@@ -27,10 +27,21 @@ if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
 
 
+@overload
+def scalar_type_bucket(*, value: Scalar) -> type: ...
+
+
+@overload
+def scalar_type_bucket(*, value: Value) -> type | None: ...
+
+
 @beartype
 def scalar_type_bucket(*, value: Value) -> type | None:  # noqa: PLR0911
     """Return the type bucket for a scalar, or ``None`` for
     collections.
+
+    Every :data:`Scalar` has a bucket, so callers that have already
+    excluded collections get a plain ``type`` back.
     """
     # Check bool before int (bool is a subclass of int), and
     # datetime before date (datetime is a subclass of date).
