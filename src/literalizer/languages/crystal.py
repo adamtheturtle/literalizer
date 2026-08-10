@@ -1441,7 +1441,7 @@ class Crystal(metaclass=LanguageCls):
             default_type=self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
         )
-        if self.string_format is self.StringFormats.MULTILINE:
+        if self.string_format.name == "MULTILINE":
             return dataclasses.replace(
                 config, format_entry=_format_crystal_percent_dict_entry
             )
@@ -1558,7 +1558,7 @@ class Crystal(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             )
-        if self.string_format is self.StringFormats.MULTILINE:
+        if self.string_format.name == "MULTILINE":
             return _format_crystal_percent_dict_entry
         return dict_entry_with_separator(
             separator=" => ",
