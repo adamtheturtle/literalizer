@@ -193,7 +193,7 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
             case OrderedMap():
                 # Substitutions can introduce an ordered map below a
                 # plain JSON root.  Preserve its dedicated formatter.
-                raise _SharedRendererRequiredError  # pragma: no cover
+                raise _SharedRendererRequiredError
             case dict():
                 entries = dict_entries(value)
                 return dict_head + separator.join(entries) + dict_close
