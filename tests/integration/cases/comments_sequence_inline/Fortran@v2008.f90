@@ -25,40 +25,54 @@ contains
   end function fnull
   function fbool(b) result(v)
     logical, intent(in) :: b
+    type(fval_t) :: v
     v%tag = tag_bool
     v%bv = b
   end function fbool
   function fint(n) result(v)
     integer(kind=int64), intent(in) :: n
+    type(fval_t) :: v
     v%tag = tag_int
     v%iv = n
   end function fint
   function freal(x) result(v)
     real(kind=real64), intent(in) :: x
+    type(fval_t) :: v
     v%tag = tag_real
     v%rv = x
   end function freal
   function fstr(s) result(v)
     character(len=*), intent(in) :: s
+    type(fval_t) :: v
     v%tag = tag_str
     allocate(character(len=len(s)) :: v%sv)
     v%sv = s
   end function fstr
   function flist(a) result(v)
     type(fval_t), intent(in) :: a(:)
+    type(fval_t) :: v
     v%tag = tag_list
     allocate(v%items(size(a)))
     v%items = a
   end function flist
   function fmap(a) result(v)
+    type(fval_t), intent(in) :: a(:)
+    type(fval_t) :: v
     v%tag = tag_map
+    allocate(v%items(size(a)))
+    v%items = a
   end function fmap
   function fset(a) result(v)
+    type(fval_t), intent(in) :: a(:)
+    type(fval_t) :: v
     v%tag = tag_set
+    allocate(v%items(size(a)))
+    v%items = a
   end function fset
   function fentry(k, u) result(v)
     character(len=*), intent(in) :: k
     type(fval_t), intent(in) :: u
+    type(fval_t) :: v
     v%tag = tag_entry
     allocate(character(len=len(k)) :: v%sv)
     v%sv = k
