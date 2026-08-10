@@ -60,7 +60,7 @@ def test_r_empty_dict_key_raises(*, input_format: InputFormat) -> None:
         )
 
 
-@pytest.mark.parametrize(argnames="key", argvalues=["", "1a", "a b"])
+@pytest.mark.parametrize(argnames="key", argvalues=["", "1a", "a b", "a\x01b"])
 def test_matlab_invalid_struct_field_name_raises(*, key: str) -> None:
     """MATLAB rejects keys that cannot name struct fields."""
     expected_msg = re.escape(
