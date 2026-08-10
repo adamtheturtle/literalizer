@@ -29,7 +29,7 @@ def test_literalize_rejects_ref_case_collision() -> None:
 
 
 def test_literalize_call_rejects_nested_ref_case_collision() -> None:
-    """Call arguments apply the same injectivity check."""
+    """Call arguments require distinct identifiers after conversion."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
         match="cannot convert ref name 'user_id' to SNAKE",
