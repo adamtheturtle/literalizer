@@ -9,18 +9,26 @@ from literalizer._types import OrderedMap, Value
 
 @beartype
 def data_has_special_float(*, data: Value) -> bool:
-    """Return whether *data* contains NaN or an infinity."""
-    match data:
-        case float():
-            return not math.isfinite(data)
-        case OrderedMap() | dict():
-            return any(
-                data_has_special_float(data=value) for value in data.values()
-            )
-        case list() | set():
-            return any(data_has_special_float(data=value) for value in data)
-        case _:
-            return False
+    """Return whether *data* contains NaN or an infinity.
+
+    The document is walked with an explicit stack, and the walk stops
+    at the first special float, so the callers that run this on every
+    literalized document do not pay a recursive call per node.
+    """
+    pending: list[Value] = [data]
+    while pending:
+        value = pending.pop()
+        match value:
+            case float():
+                if not math.isfinite(value):
+                    return True
+            case OrderedMap() | dict():
+                pending.extend(value.values())
+            case list() | set():
+                pending.extend(value)
+            case _:
+                pass
+    return False
 
 
 @beartype

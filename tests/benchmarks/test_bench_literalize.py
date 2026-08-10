@@ -19,6 +19,11 @@ Each case exercises a distinct code path so regressions localize cleanly:
 * ``test_json_large_flat_records_json_native`` — the same flat record
   array rendered by every language that opts into the shared
   JSON-native whole-document fast path, one benchmark per language.
+* ``test_preamble_computation`` — preamble computation alone over a
+  large document, isolating the document walks that every language
+  pays regardless of the rendering strategy.  Preamble computation has
+  no public entry point, so this one benchmarks the internal callable
+  directly.
 """
 
 import json
@@ -27,6 +32,8 @@ import pytest
 from pytest_codspeed import BenchmarkFixture
 
 from literalizer import InputFormat, Language, literalize
+from literalizer._preamble import compute_preamble
+from literalizer._types import Value
 from literalizer.languages import (
     C,
     Cpp,
@@ -132,6 +139,7 @@ _YAML_FAST = _build_yaml_source(n_records=100, with_comments=False)
 _YAML_WITH_COMMENTS = _build_yaml_source(n_records=100, with_comments=True)
 _JSON_NESTED = _build_json_source(depth=4, fanout=4)
 _JSON_LARGE_FLAT_RECORDS = _build_json_flat_records_source(n_records=1_000)
+_PREAMBLE_DATA: Value = json.loads(s=_JSON_LARGE_FLAT_RECORDS)
 _JSON_HETEROGENEOUS = json.dumps(
     obj={
         "rows": [
@@ -213,4 +221,14 @@ def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:
         _run,
         source=_JSON_HETEROGENEOUS,
         input_format=InputFormat.JSON,
+    )
+
+
+def test_preamble_computation(benchmark: BenchmarkFixture) -> None:
+    """Preamble computation over a large document, without rendering."""
+    benchmark(
+        compute_preamble,
+        data=_PREAMBLE_DATA,
+        language=PYTHON,
+        has_variable_declaration=True,
     )

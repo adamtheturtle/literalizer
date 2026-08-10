@@ -349,6 +349,9 @@ SPELLING.spelling-store-unknown-words = "no"
 
 [tool.interrogate]
 fail-under = 100
+# An ``@overload`` stub has no body to document; the implementation it
+# belongs to carries the docstring.
+ignore-overloaded-functions = true
 exclude = [
     "tests/integration/cases",
 ]
