@@ -23,6 +23,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    InvalidCallParameterNameError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
@@ -112,6 +113,59 @@ def test_literalize_call_parameter_count_too_few_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["a"],
+        )
+
+
+@pytest.mark.parametrize(argnames="parameter_name", argvalues=["a b", "2c"])
+def test_literalize_call_invalid_parameter_name_raises(
+    parameter_name: str,
+) -> None:
+    """Parameter labels must follow the target language's grammar."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match=re.escape(
+            pattern=(
+                f"Python cannot use call parameter {parameter_name!r}: "
+                "it is not a valid identifier"
+            )
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=(parameter_name,),
+        )
+
+
+def test_literalize_call_reserved_parameter_name_raises() -> None:
+    """A language keyword cannot become a parameter label."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'class': it is a reserved identifier",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("class",),
+        )
+
+
+def test_literalize_call_duplicate_parameter_name_raises() -> None:
+    """Generated call stubs cannot declare one parameter twice."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'value': it is duplicated",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("value", "value"),
         )
 
 

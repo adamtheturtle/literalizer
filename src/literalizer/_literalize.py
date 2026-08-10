@@ -47,6 +47,7 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
     decode_file_sections,
+    validate_call_parameter_names,
     validate_new_variable_name,
 )
 from literalizer._parsing import (
@@ -4141,6 +4142,11 @@ def _validate_call_preconditions(
     """
     _validate_parameter_count(
         language=language, parameter_names=parameter_names
+    )
+    validate_call_parameter_names(
+        language=language,
+        names=parameter_names,
+        reject_reserved=isinstance(style, KeywordCallStyle),
     )
     if variable_form is not None:
         _validate_call_variable_form(

@@ -388,6 +388,28 @@ class InvalidNewVariableNameError(Exception):
         self.variable_name = variable_name
 
 
+class InvalidCallParameterNameError(Exception):
+    """Raised when a call parameter is not a target-language
+    identifier.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        parameter_name: str,
+        reason: str,
+    ) -> None:
+        """Create an ``InvalidCallParameterNameError``."""
+        super().__init__(
+            f"{language_name} cannot use call parameter "
+            f"{parameter_name!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.parameter_name = parameter_name
+        self.reason = reason
+
+
 class UnrepresentableIntegerError(Exception):
     """Raised when an integer value exceeds the range the target
     language can represent natively.
