@@ -447,8 +447,8 @@ class Toml(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
@@ -460,17 +460,19 @@ class Toml(metaclass=LanguageCls):
         """
         mapping_prefix = f"{variable_name} = {{\n"
         if variable_name and content.startswith(mapping_prefix):
-            mapping_suffix = "\n}"
-            if content.endswith(mapping_suffix):
-                entries = content[len(mapping_prefix) : -len(mapping_suffix)]
-                dedented = textwrap.dedent(text=entries)
-                table_lines = [
-                    line[:-1]
-                    if line and not line[0].isspace() and line.endswith(",")
-                    else line
-                    for line in dedented.splitlines()
-                ]
-                return f"[{variable_name}]\n" + "\n".join(table_lines)
+            entries = content[len(mapping_prefix) :].removesuffix("\n}")
+            dedented = textwrap.dedent(text=entries)
+            table_lines = [
+                re.sub(
+                    pattern=r",(?=\s*(?:#|$))",
+                    repl="",
+                    string=line,
+                )
+                if line and not line[0].isspace()
+                else line
+                for line in dedented.splitlines()
+            ]
+            return f"[{variable_name}]\n" + "\n".join(table_lines)
         return wrap_in_file_noop(
             content=content,
             variable_name=variable_name,

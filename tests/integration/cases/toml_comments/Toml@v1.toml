@@ -1,5 +1,5 @@
 [my_data]
 # before
-answer = 42,  # inline
+answer = 42  # inline
 plain = "ok"
 # trailing
