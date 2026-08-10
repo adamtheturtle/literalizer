@@ -28,7 +28,9 @@ if TYPE_CHECKING:
 
 
 @beartype
-def reject_aware_datetimes(*, data: Value, language_name: str) -> None:
+def reject_aware_datetimes(
+    *, data: Value, language_name: str, allow_utc_offset: bool
+) -> None:
     """Reject timezone-aware datetimes that a native formatter would
     lose.
     """
@@ -36,7 +38,9 @@ def reject_aware_datetimes(*, data: Value, language_name: str) -> None:
     while stack:
         value = stack.pop()
         match value:
-            case datetime.datetime() if value.utcoffset() is not None:
+            case datetime.datetime() if value.utcoffset() is not None and not (
+                allow_utc_offset and value.utcoffset() == datetime.timedelta()
+            ):
                 msg = (
                     f"{language_name} native datetime format cannot preserve "
                     f"UTC offset {value.utcoffset()}"

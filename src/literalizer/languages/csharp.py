@@ -1119,7 +1119,9 @@ class CSharp(metaclass=LanguageCls):
             not self._json_type_active
             and self.datetime_format.value.type_produced is datetime.datetime
         ):
-            reject_aware_datetimes(data=data, language_name="C#")
+            reject_aware_datetimes(
+                data=data, language_name="C#", allow_utc_offset=True
+            )
 
     def _validate_json_value_keys(self, data: Value, /) -> None:
         """Reject non-string object keys for ``JsonNode`` output."""

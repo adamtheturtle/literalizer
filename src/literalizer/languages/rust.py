@@ -3660,7 +3660,9 @@ class Rust(metaclass=LanguageCls):
             not self._json_type_active
             and self.datetime_format.value.type_produced is datetime.datetime
         ):
-            reject_aware_datetimes(data=data, language_name="Rust")
+            reject_aware_datetimes(
+                data=data, language_name="Rust", allow_utc_offset=False
+            )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

@@ -1576,7 +1576,9 @@ class Kotlin(metaclass=LanguageCls):
             not self._json_type_active
             and self.datetime_format.value.type_produced is datetime.datetime
         ):
-            reject_aware_datetimes(data=data, language_name="Kotlin")
+            reject_aware_datetimes(
+                data=data, language_name="Kotlin", allow_utc_offset=False
+            )
 
     def _validate_record_naming(self) -> None:
         """Validate ``record_shape_names`` for PascalCase identifier
