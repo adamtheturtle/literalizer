@@ -21,10 +21,46 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     MixedListValuesError,
     UnrepresentableInputError,
+    UnrepresentableStringError,
 )
 
 if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
+
+_C0_UPPER_BOUND = 0x20
+
+
+def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
+    """Reject strings whose selected formatter emits a raw C0 byte."""
+    match data:
+        case str():
+            formatted = spec.format_string(data)
+            unsafe_control = next(
+                (
+                    character
+                    for character in data
+                    if ord(character) < _C0_UPPER_BOUND
+                    and character not in "\0\t\n\r"
+                    and character in formatted
+                ),
+                None,
+            )
+            if unsafe_control is not None:
+                raise UnrepresentableStringError(
+                    language_name=type(spec).__name__,
+                    character_name=(
+                        f"U+{ord(unsafe_control):04X} control character"
+                    ),
+                )
+        case dict():
+            for key, value in data.items():
+                _check_raw_control_characters(data=key, spec=spec)
+                _check_raw_control_characters(data=value, spec=spec)
+        case list() | set():
+            for value in data:
+                _check_raw_control_characters(data=value, spec=spec)
+        case _:
+            return
 
 
 @overload
@@ -956,6 +992,7 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     data cannot be represented in the target language's collection
     formats.
     """
+    _check_raw_control_characters(data=data, spec=spec)
     if spec.sequence_format_config.requires_uniform_record_shapes:
         _check_mixed_dict_shapes(data=data)
 
