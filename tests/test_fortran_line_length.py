@@ -6,6 +6,7 @@ import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Fortran
+from literalizer.languages.fortran import _wrap_fortran_expression_line
 
 _FORTRAN_MAX_LINE_LENGTH = 132
 
@@ -51,3 +52,29 @@ def test_nested_fortran_expressions_use_continuation_lines() -> None:
         max(len(line) for line in result.code.splitlines())
         <= _FORTRAN_MAX_LINE_LENGTH
     )
+
+
+@pytest.mark.parametrize(
+    argnames=("line", "expected_first"),
+    argvalues=[
+        (
+            "call f('it''s, quoted', " + "x" * 120 + ")",
+            "call f('it''s, quoted',",
+        ),
+        (
+            'call f("a, quoted value", ' + "x" * 120 + ")",
+            'call f("a, quoted value",',
+        ),
+    ],
+)
+def test_expression_wrapper_avoids_quoted_commas(
+    line: str, expected_first: str
+) -> None:
+    """Commas inside quoted values are not selected as split points."""
+    assert _wrap_fortran_expression_line(line)[0] == expected_first
+
+
+def test_expression_wrapper_leaves_comma_free_line_intact() -> None:
+    """An overlong comma-free expression remains unchanged."""
+    line = "x" * 140
+    assert _wrap_fortran_expression_line(line) == [line]
