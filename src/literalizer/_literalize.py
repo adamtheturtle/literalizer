@@ -3529,13 +3529,13 @@ def _assemble_bare_call_expr(
                 else target_function
             )
             return f"({inside})"
-        case CommandCallStyle(arg_separator=sep):
+        case DottedCommandCallStyle(arg_separator=sep):
             return (
                 f"{target_function}{sep}{args_str}"
                 if args_str
                 else target_function
             )
-        case DottedCommandCallStyle(arg_separator=sep):
+        case CommandCallStyle(arg_separator=sep):
             return (
                 f"{target_function}{sep}{args_str}"
                 if args_str
