@@ -224,6 +224,8 @@ def _fortran_comment_pos(line: str) -> int | None:
 @beartype
 def _wrap_fortran_expression_line(line: str, /) -> list[str]:
     """Split a long expression line at commas outside string literals."""
+    if line.rstrip().endswith("&"):
+        return [line]
     remaining = line
     wrapped: list[str] = []
     while len(remaining) > _FORTRAN_WRAP_COLUMN:
