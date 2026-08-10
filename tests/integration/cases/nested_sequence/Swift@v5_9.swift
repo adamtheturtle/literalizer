@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     true,
     "hi",
     [1, 2],

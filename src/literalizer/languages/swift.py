@@ -774,13 +774,13 @@ class Swift(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="let {name}: Any = {value}"
+                template="let {name} = {value}"
             ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="var {name}: Any = {value}"
+                template="var {name} = {value}"
             ),
             supports_redefinition=True,
         )

@@ -1,5 +1,5 @@
 import Foundation
-var my_data: Any = [
+var my_data = [
     "s": "string",
     "i": 1,
     "f": 1.5,

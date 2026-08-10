@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "id": 1,
     "label": "She said \"hello\", then waved",
     "enabled": false,

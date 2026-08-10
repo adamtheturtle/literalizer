@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     "omap_value": [
         "first": 1,
     ],

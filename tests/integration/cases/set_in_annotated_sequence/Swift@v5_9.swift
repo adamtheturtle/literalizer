@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     Set<AnyHashable>(),
     Set<AnyHashable>([1, 2]),
     [Any](),

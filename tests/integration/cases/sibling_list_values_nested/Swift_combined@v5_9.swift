@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "lint": [2, [Any]()],
     "test": [5, ["compile"]],
 ]

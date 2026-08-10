@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     "name": "Alice",
     "score": nil,
     "age": 30,

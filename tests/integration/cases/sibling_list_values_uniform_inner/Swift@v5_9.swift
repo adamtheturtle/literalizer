@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     "lint": [2, [1]],
     "test": [5, [7]],
 ]

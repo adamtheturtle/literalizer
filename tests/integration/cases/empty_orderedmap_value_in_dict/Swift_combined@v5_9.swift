@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "a": [String: Any](),
     "b": 1,
 ]

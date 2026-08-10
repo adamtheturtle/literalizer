@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     // comment
     "name": "Alice",
     "score": nil,
