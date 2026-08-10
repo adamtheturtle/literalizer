@@ -85,7 +85,6 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
-    no_data_preamble,
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
@@ -887,8 +886,6 @@ class Perl(metaclass=LanguageCls):
                 else ()
             ),
         )
-        if not contributors:
-            return no_data_preamble
 
         def _composed(data: Value, /) -> tuple[str, ...]:
             """Concatenate every contributor's preamble lines."""
@@ -1055,7 +1052,7 @@ class Perl(metaclass=LanguageCls):
         formatter = self.float_format
 
         def format_numeric_float(value: float) -> str:
-            """Force Perl to retain the scalar's numeric identity."""
+            """Force Perl to retain the value's numeric identity."""
             if (
                 math.isfinite(value)
                 and abs(value) >= _PERL_NV_EXACT_INTEGER_MAX
