@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id my_data = @"2024-01-15T18:00:00+05:30";
+id my_data = [NSDate dateWithTimeIntervalSince1970:1705321800];
 (void)my_data;
-my_data = @"2024-01-15T18:00:00+05:30";
+my_data = [NSDate dateWithTimeIntervalSince1970:1705321800];
     (void)my_data;
 }
     return 0;

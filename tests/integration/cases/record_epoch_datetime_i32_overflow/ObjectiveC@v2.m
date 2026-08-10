@@ -2,8 +2,8 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"within_i32": @"2024-01-15T12:00:00",
-    @"beyond_i32": @"2099-06-15T08:30:00",
+    @"within_i32": [NSDate dateWithTimeIntervalSince1970:1705320000],
+    @"beyond_i32": [NSDate dateWithTimeIntervalSince1970:4085195400],
 };
     (void)my_data;
 }
