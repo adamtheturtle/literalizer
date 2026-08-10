@@ -121,7 +121,8 @@ def _format_string_multiline(value: str) -> str:
 def _format_date_lua(value: datetime.date) -> str:
     """Format a date as UTC Unix epoch seconds.
 
-    Lua's ``os.time`` interprets table fields in the machine's local timezone,
+    The Lua ``os.time`` function interprets table fields in the machine's
+    local timezone,
     so embedding an epoch literal is the only deterministic representation.
     """
     midnight_utc = datetime.datetime.combine(
