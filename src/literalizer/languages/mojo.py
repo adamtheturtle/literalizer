@@ -39,7 +39,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_hex,
+)
 from literalizer._formatters.type_inference import infer_element_type
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
@@ -1041,7 +1043,7 @@ class Mojo(metaclass=LanguageCls):
     language_id: ClassVar[str] = "mojo"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -1439,7 +1441,7 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul_hex
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

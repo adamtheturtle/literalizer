@@ -44,9 +44,8 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     format_string_backslash_nul_hex,
-    format_string_backslash_single,
+    format_string_backslash_single_nul_hex,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -250,7 +249,7 @@ class JavaScript(metaclass=LanguageCls):
     language_id: ClassVar[str] = "javascript"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -518,8 +517,8 @@ class JavaScript(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_backslash_single)
+        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

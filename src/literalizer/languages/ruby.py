@@ -43,7 +43,6 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     format_string_backslash_single_minimal,
     make_backslash_string_formatter,
 )
@@ -100,6 +99,15 @@ from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("#{", r"\#{"),
+        ("#@", r"\#@"),
+        ("#$", r"\#$"),
+        ("\0", r"\x00"),
+    ],
+)
 _format_string_multiline_fallback = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
@@ -109,6 +117,14 @@ _format_string_multiline_fallback = make_backslash_string_formatter(
         ("\0", r"\x00"),
     ],
 )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Fall back to an escaped Ruby literal for embedded NUL."""
+    if "\0" in value:
+        return _format_string_double(value=value)
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -320,7 +336,7 @@ class Ruby(metaclass=LanguageCls):
     language_id: ClassVar[str] = "ruby"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -536,8 +552,8 @@ class Ruby(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        DOUBLE = enum.member(value=_format_string_double)
+        SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

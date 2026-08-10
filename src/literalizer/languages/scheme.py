@@ -33,7 +33,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    make_backslash_string_formatter,
+)
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -86,6 +88,11 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
+)
+
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x0;")],
 )
 
 # Format definitions used while ``json_type=GUILE_JSON`` is active.
@@ -231,7 +238,7 @@ class Scheme(metaclass=LanguageCls):
     language_id: ClassVar[str] = "scheme"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -656,7 +663,7 @@ class Scheme(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return _format_string
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

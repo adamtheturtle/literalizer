@@ -53,7 +53,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
+    format_string_backslash_nul_octal,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -680,7 +680,7 @@ _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 def _java_read_tree_expression(data: Value) -> str:
     """Render ``new ObjectMapper().readTree("...")`` for *data*."""
     json_text = format_json_value_text(data=data)
-    java_literal = format_string_backslash(value=json_text)
+    java_literal = format_string_backslash_nul_octal(value=json_text)
     mapper = "new ObjectMapper()"
     if data_has_special_float(data=data):
         mapper = (
@@ -904,7 +904,7 @@ class Java(metaclass=LanguageCls):
     language_id: ClassVar[str] = "java"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = True
@@ -1205,7 +1205,7 @@ class Java(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_nul_octal)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

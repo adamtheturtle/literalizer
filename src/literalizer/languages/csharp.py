@@ -59,7 +59,6 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
@@ -141,6 +140,8 @@ def _format_string_verbatim(value: str) -> str:
     Backslashes are kept verbatim. Double quotes are doubled per C#
     verbatim-string rules.
     """
+    if "\0" in value:
+        return _format_string_backslash_nul(value=value)
     escaped = value.replace('"', '""')
     return f'@"{escaped}"'
 
@@ -778,7 +779,7 @@ class CSharp(metaclass=LanguageCls):
     language_id: ClassVar[str] = "csharp"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={"READONLY": "ARRAY"},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -1031,7 +1032,7 @@ class CSharp(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_backslash_nul)
         VERBATIM = enum.member(value=_format_string_verbatim)
         MULTILINE = enum.member(value=_format_string_multiline)
 

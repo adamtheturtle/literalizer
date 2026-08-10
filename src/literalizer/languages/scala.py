@@ -52,7 +52,6 @@ from literalizer._formatters.format_integers import (
     make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
@@ -557,7 +556,7 @@ class Scala(metaclass=LanguageCls):
     language_id: ClassVar[str] = "scala"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = True
@@ -851,7 +850,7 @@ class Scala(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_backslash_nul)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

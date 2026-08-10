@@ -48,7 +48,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar,
+    format_string_backslash_dollar_nul_hex,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -106,7 +106,7 @@ from literalizer.exceptions import (
 # Dart interpolates ``$`` in both single- and double-quoted strings.
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
-    extra_replacements=[("$", "\\$")],
+    extra_replacements=[("$", "\\$"), ("\0", r"\x00")],
 )
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -496,7 +496,7 @@ class Dart(metaclass=LanguageCls):
     language_id: ClassVar[str] = "dart"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -729,7 +729,7 @@ class Dart(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        DOUBLE = enum.member(value=format_string_backslash_dollar_nul_hex)
         SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 

@@ -43,7 +43,9 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_octal,
+)
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -454,7 +456,7 @@ class OCaml(metaclass=LanguageCls):
     language_id: ClassVar[str] = "ocaml"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -853,7 +855,7 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul_octal
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

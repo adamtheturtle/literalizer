@@ -32,7 +32,9 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import format_integer_hex
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_hex,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -318,7 +320,7 @@ class Haxe(metaclass=LanguageCls):
     language_id: ClassVar[str] = "haxe"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -504,7 +506,7 @@ class Haxe(metaclass=LanguageCls):
         literal ``$`` with no escaping.
         """
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

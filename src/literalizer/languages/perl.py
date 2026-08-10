@@ -117,6 +117,14 @@ def _format_perl_string_multiline(value: str) -> str:
 
 
 @beartype
+def _format_perl_string_single(value: str) -> str:
+    """Fall back to an escaped Perl literal for embedded NUL."""
+    if "\0" in value:
+        return _format_perl_string_double(value=value)
+    return format_string_backslash_single_minimal(value=value)
+
+
+@beartype
 def _perl_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -182,7 +190,12 @@ def _format_perl_string_double(value: str) -> str:
     keeps the output pure ASCII so the snippet round-trips regardless
     of source-file encoding.
     """
-    base = format_string_backslash(value)
+    base = (
+        format_string_backslash(value)
+        .replace("$", r"\$")
+        .replace("@", r"\@")
+        .replace("\0", r"\x{0}")
+    )
     if base.isascii():
         return base
     return "".join(
@@ -200,7 +213,12 @@ def _format_perl_string_double_utf8(value: str) -> str:
     rather than its raw byte sequence.  Matches the style a human Perl
     author would write in a UTF-8 source file.
     """
-    return format_string_backslash(value)
+    return (
+        format_string_backslash(value)
+        .replace("$", r"\$")
+        .replace("@", r"\@")
+        .replace("\0", r"\x{0}")
+    )
 
 
 @beartype
@@ -407,7 +425,7 @@ class Perl(metaclass=LanguageCls):
     language_id: ClassVar[str] = "perl"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -647,7 +665,7 @@ class Perl(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=_format_perl_string_double)
         DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        SINGLE = enum.member(value=_format_perl_string_single)
         MULTILINE = enum.member(value=_format_perl_string_multiline)
 
         def __call__(self, value: str, /) -> str:

@@ -84,6 +84,7 @@ def _format_string_forth(value: str) -> str:
         .replace("\n", "\\n")
         .replace("\r", "\\r")
         .replace("\t", "\\t")
+        .replace("\0", "\\x00")
     )
     return f's\\" {escaped}"'
 
@@ -322,7 +323,7 @@ class Forth(metaclass=LanguageCls):
     language_id: ClassVar[str] = "forth"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

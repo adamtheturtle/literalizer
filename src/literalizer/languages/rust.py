@@ -170,8 +170,8 @@ def _format_string_raw(value: str) -> str:
     Falls back to an escaped string for multiline content, since
     indentation applied by wrapping code would corrupt the value.
     """
-    if "\n" in value or "\r" in value:
-        return format_string_backslash(value)
+    if "\n" in value or "\r" in value or "\0" in value:
+        return _format_string_backslash_nul(value=value)
     hashes = "#"
     while f'"{hashes}' in value:
         hashes += "#"
@@ -2568,7 +2568,7 @@ class Rust(metaclass=LanguageCls):
     language_id: ClassVar[str] = "rust"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = True
@@ -3053,7 +3053,7 @@ class Rust(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_backslash_nul)
         RAW = enum.member(value=_format_string_raw)
         MULTILINE = enum.member(value=_format_string_multiline)
 

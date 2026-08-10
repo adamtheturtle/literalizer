@@ -91,7 +91,7 @@ _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
 # Prevent HCL template interpolation and directive syntax.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("${", "$${"), ("%{", "%%{")],
+    extra_replacements=[("${", "$${"), ("%{", "%%{"), ("\0", "\\u0000")],
 )
 
 
@@ -253,7 +253,7 @@ class Hcl(metaclass=LanguageCls):
     language_id: ClassVar[str] = "hcl"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

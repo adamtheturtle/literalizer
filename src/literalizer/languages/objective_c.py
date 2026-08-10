@@ -183,6 +183,7 @@ def _format_objc_string(value: str) -> str:
         .replace("\n", "\\n")
         .replace("\r", "\\r")
         .replace("\t", "\\t")
+        .replace("\0", "\\000")
     )
     return f'@"{escaped}"'
 
@@ -423,7 +424,7 @@ class ObjectiveC(metaclass=LanguageCls):
     language_id: ClassVar[str] = "objective_c"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

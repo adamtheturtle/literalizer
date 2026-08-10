@@ -91,8 +91,17 @@ def _format_string(value: str) -> str:
     actual newlines, carriage returns, tabs, and other control characters
     are embedded literally.
     """
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
+    if "\0" not in value:
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    parts: list[str] = []
+    segments = value.split(sep="\0")
+    for index, segment in enumerate(iterable=segments):
+        if segment:
+            parts.append(_format_string(value=segment))
+        if index < len(segments) - 1:
+            parts.append("(string (code-char 0))")
+    return f"(concatenate 'string {' '.join(parts)})"
 
 
 @beartype
@@ -195,7 +204,7 @@ class CommonLisp(metaclass=LanguageCls):
     language_id: ClassVar[str] = "common_lisp"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

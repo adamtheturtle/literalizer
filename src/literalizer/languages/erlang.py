@@ -36,7 +36,9 @@ from literalizer._formatters.format_integers import (
     format_integer_binary_erlang,
     format_integer_hex_erlang,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    make_backslash_string_formatter,
+)
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -90,6 +92,11 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x{0}")],
+)
+
 
 @beartype
 def _format_bytes(value: bytes) -> str:
@@ -117,7 +124,7 @@ def _wrap_utf8_binary(quoted: str) -> str:
 @beartype
 def _format_string_otp_json(value: str) -> str:
     """Format a string as an Erlang UTF-8 binary literal."""
-    return _wrap_utf8_binary(quoted=format_string_backslash(value))
+    return _wrap_utf8_binary(quoted=_format_string(value))
 
 
 @beartype
@@ -344,7 +351,7 @@ class Erlang(metaclass=LanguageCls):
     language_id: ClassVar[str] = "erlang"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -802,7 +809,7 @@ class Erlang(metaclass=LanguageCls):
         """Format a string value as a quoted literal."""
         if self._json_type_active:
             return _format_string_otp_json
-        return format_string_backslash
+        return _format_string
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

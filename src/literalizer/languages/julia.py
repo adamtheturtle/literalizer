@@ -42,7 +42,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -95,6 +95,11 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
+
+_format_string = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("$", "\\$"), ("\0", "\\0")],
+)
 
 
 @beartype
@@ -243,7 +248,7 @@ class Julia(metaclass=LanguageCls):
     language_id: ClassVar[str] = "julia"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -677,7 +682,7 @@ class Julia(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_dollar
+        return _format_string
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:

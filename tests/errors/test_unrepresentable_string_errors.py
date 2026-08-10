@@ -10,10 +10,13 @@ import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableStringError
-from literalizer.languages import Cobol, R
+from literalizer.languages import Bash, Cobol, Nix, Norg, Occam, R
 
 
-@pytest.mark.parametrize(argnames="language", argvalues=[R(), Cobol()])
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Bash(), Cobol(), Nix(), Norg(), Occam(), R()],
+)
 def test_string_literals_reject_unrepresentable_nul(
     language: Language,
 ) -> None:
