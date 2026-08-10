@@ -88,4 +88,4 @@ def format_float_fixed(value: float) -> str:
     six_places = f"{value:f}"
     if float(six_places) == value:
         return six_places
-    return format(Decimal(repr(value)), "f")
+    return format(Decimal(value=repr(value)), "f")
