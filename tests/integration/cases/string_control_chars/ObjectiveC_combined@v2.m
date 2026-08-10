@@ -4,13 +4,13 @@ int main(void) {
 id my_data = @[
     @"line1\r\nline2",
     @"line1\rline2",
-    @"",
+    @"\001",
 ];
 (void)my_data;
 my_data = @[
     @"line1\r\nline2",
     @"line1\rline2",
-    @"",
+    @"\001",
 ];
     (void)my_data;
 }
