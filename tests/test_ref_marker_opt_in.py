@@ -1,6 +1,11 @@
 """Opt-in ref-marker API behavior."""
 
-from literalizer import InputFormat, literalize, literalize_call
+from literalizer import (
+    CollectionLayout,
+    InputFormat,
+    literalize,
+    literalize_call,
+)
 from literalizer.languages import Python
 
 
@@ -73,3 +78,22 @@ def test_call_ref_key_handles_all_ref_argument_collections() -> None:
     )
 
     assert 'consume(items=(foo,), mapping={"left": foo})' in result.code
+
+
+def test_multiline_call_ref_openers_ignore_marker_children() -> None:
+    """Multiline dict and sequence openers infer from non-ref children."""
+    result = literalize_call(
+        source=(
+            '[[[{"other": 1}, {"\\u0024ref": "foo"}], '
+            '{"left": {"\\u0024ref": "foo"}, "other": 1}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="consume",
+        parameter_names=("items", "mapping"),
+        ref_key="$ref",
+        collection_layout=CollectionLayout.MULTILINE,
+    )
+
+    assert "foo" in result.code
+    assert '"other": 1' in result.code
