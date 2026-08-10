@@ -41,6 +41,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     Language,
+    LanguageCls,
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
@@ -488,10 +489,14 @@ class _RenderContext:
 def _nested_collection_context(
     *, value: Value, ctx: _RenderContext
 ) -> _RenderContext:
-    """Keep stringified nested collection payloads layout-independent."""
+    """Keep nested collection payload strings layout-independent."""
     if not isinstance(value, (dict, list, set)):
         return ctx
-    if not getattr(type(ctx.spec), "stringifies_nested_collections", False):
+    language_cls = type(ctx.spec)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Nested collection rendering requires a LanguageCls language"
+        raise TypeError(msg)
+    if not language_cls.stringifies_nested_collections:
         return ctx
     return ctx.compact()
 
