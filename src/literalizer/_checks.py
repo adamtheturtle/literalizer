@@ -53,9 +53,13 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                     ),
                 )
         case dict():
-            # Dict keys have language-specific label/identifier validation
-            # and must retain those more precise error contracts.
-            for value in data.values():
+            precise_control_key_errors = {"Bash", "Dhall", "Nix"}
+            for key, value in data.items():
+                # These back ends reject control-bearing keys through a
+                # dedicated InvalidDictKeyError contract later in their
+                # normal validation/rendering path.
+                if type(spec).__name__ not in precise_control_key_errors:
+                    _check_raw_control_characters(data=key, spec=spec)
                 _check_raw_control_characters(data=value, spec=spec)
         case list() | set():
             for value in data:
