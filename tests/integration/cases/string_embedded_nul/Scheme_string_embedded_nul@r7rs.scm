@@ -1,4 +1,4 @@
 (define my_data (list
-    (cons "x" "\x0;")
-    (cons "y" "\x0;1")
+    (cons "x" "\x00")
+    (cons "y" "\x001")
 ))
