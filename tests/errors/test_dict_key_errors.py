@@ -14,7 +14,7 @@ import pytest
 
 from literalizer import InputFormat, literalize
 from literalizer.exceptions import InvalidDictKeyError
-from literalizer.languages import Dhall, Nix, R
+from literalizer.languages import Dhall, Matlab, Nix, R
 
 _EMPTY_KEY_DICT: dict[str, str] = {"": "value"}
 _CONTROL_CHAR_KEY_DICT: dict[str, str] = {"\x01": "value"}
@@ -55,6 +55,29 @@ def test_r_empty_dict_key_raises(*, input_format: InputFormat) -> None:
             source=_yaml_flow(obj=_EMPTY_KEY_DICT),
             input_format=input_format,
             language=_R_EMPTY_KEY,
+            pre_indent_level=0,
+            include_delimiters=True,
+        )
+
+
+@pytest.mark.parametrize(argnames="key", argvalues=["", "1a", "a b"])
+def test_matlab_invalid_struct_field_name_raises(*, key: str) -> None:
+    """MATLAB rejects keys that cannot name struct fields."""
+    expected_msg = re.escape(
+        pattern=(
+            f"MATLAB does not support the struct field name {key!r}. "
+            "Field names must start with a letter and contain only letters, "
+            "digits, and underscores."
+        )
+    )
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match=f"^{expected_msg}$",
+    ):
+        literalize(
+            source=json.dumps(obj={key: "value"}),
+            input_format=InputFormat.JSON,
+            language=Matlab(),
             pre_indent_level=0,
             include_delimiters=True,
         )
