@@ -400,6 +400,7 @@ def _literalize_call_case(
             consumable_refs=config.consumable_refs,
             ref_values=ref_values,
             bound_refs=bound_refs,
+            ref_key="$ref",
             variable_form=variable_form,
         )
     return literalize_call_parsed(

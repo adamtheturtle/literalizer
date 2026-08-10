@@ -52,7 +52,7 @@ def literalize(
     ref_case: IdentifierCase | None = None,
     ref_values: Mapping[str, ValueInput] | None = None,
     bound_refs: Mapping[str, ValueInput] | None = None,
-    ref_key: str = "$ref",
+    ref_key: str | None = None,
     record_null_substitutions: Mapping[str, ValueInput] | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
@@ -136,10 +136,12 @@ def literalize(
             any *ref_case* conversion.  Defaults to ``None`` (no
             bindings emitted; behavior is byte-identical to omitting
             this argument).
-        ref_key: The dict key used to identify variable-reference
+        ref_key: Optional dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as a
-            ref marker.  Defaults to ``"$ref"``.
+            ref marker.  Detection is disabled by default so JSON Schema and
+            OpenAPI ``$ref`` objects remain data; pass ``"$ref"`` explicitly
+            to enable the historical marker syntax.
         record_null_substitutions: Optional replacements for null-valued
             record fields, keyed by original field name. Replacements are
             applied before validation and type inference, so their normal
@@ -181,6 +183,7 @@ def literalize(
             to ``False`` (i.e. it cannot represent a bare value at
             file-statement scope).
     """
+    effective_ref_key = ref_key or ""
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -250,7 +253,7 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_values=materialized_ref_values,
-            ref_key=ref_key,
+            ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,
         )
@@ -270,7 +273,7 @@ def literalize(
             ref_case=ref_case,
             explicit_ref_values=explicit_ref_values or None,
             bound_refs=materialized_bound_refs,
-            ref_key=ref_key,
+            ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,
         )
@@ -283,7 +286,7 @@ def literalize(
         include_delimiters=include_delimiters,
         ref_case=ref_case,
         ref_values=materialized_ref_values,
-        ref_key=ref_key,
+        ref_key=effective_ref_key,
         record_null_substitutions=materialized_record_null_substitutions,
         collection_layout=collection_layout,
     )
@@ -313,7 +316,7 @@ def literalize_call(
     consumable_refs: frozenset[str] = frozenset(),
     ref_values: Mapping[str, ValueInput] | None = None,
     bound_refs: Mapping[str, ValueInput] | None = None,
-    ref_key: str = "$ref",
+    ref_key: str | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
     variable_form: VariableForm | None = None,
 ) -> LiteralizeResult:
@@ -483,10 +486,11 @@ def literalize_call(
             *ref_case* conversion.  Defaults to ``None`` (no bindings
             emitted; behavior is byte-identical to omitting this
             argument).
-        ref_key: The dict key used to identify variable-reference
+        ref_key: Optional dict key used to identify variable-reference
             markers in the input data.  A single-key dict whose key
             equals *ref_key* and whose value is a string is treated as
-            a ref marker.  Defaults to ``"$ref"``.
+            a ref marker.  Detection is disabled by default; pass ``"$ref"``
+            explicitly to enable ref markers.
         collection_layout: Controls layout for collections nested
             inside call arguments.  ``CollectionLayout.COMPACT``
             preserves the existing one-line nested rendering, while
@@ -537,6 +541,7 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
+    effective_ref_key = ref_key or ""
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent
         # side-effect bug for any non-pure target.  Reject up front so
@@ -565,7 +570,7 @@ def literalize_call(
         consumable_refs=consumable_refs,
         ref_values=ref_values,
         bound_refs=bound_refs,
-        ref_key=ref_key,
+        ref_key=effective_ref_key,
         collection_layout=collection_layout,
         variable_form=variable_form,
     )
