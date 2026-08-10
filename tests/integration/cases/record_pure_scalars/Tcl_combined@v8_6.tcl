@@ -1,12 +1,12 @@
 set my_data [dict create \
     "name" "Alice" \
     "age" 30 \
-    "active" 1 \
+    "active" true \
     "score" 4.5 \
 ]
 set my_data [dict create \
     "name" "Alice" \
     "age" 30 \
-    "active" 1 \
+    "active" true \
     "score" 4.5 \
 ]

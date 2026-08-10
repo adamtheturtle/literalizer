@@ -1,6 +1,7 @@
+use JSON::PP;
 use DateTime;
 my $my_data = [
-    1,
+    JSON::PP::true,
     1.5,
     undef,
     DateTime->new(year => 2020, month => 1, day => 1),
@@ -8,7 +9,7 @@ my $my_data = [
     [],
 ];
 $my_data = [
-    1,
+    JSON::PP::true,
     1.5,
     undef,
     DateTime->new(year => 2020, month => 1, day => 1),
