@@ -1,6 +1,6 @@
 """Opt-in ref-marker API behavior."""
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, literalize, literalize_call
 from literalizer.languages import Python
 
 
@@ -43,3 +43,33 @@ def test_explicit_ref_key_handles_nested_collections() -> None:
 
     assert '"value": foo' in result.code
     assert '"items": ({"other": 1}, foo)' in result.code
+
+
+def test_explicit_ref_key_handles_all_ref_nested_collections() -> None:
+    """Collection inference remains valid when every child is a ref."""
+    result = literalize(
+        source=(
+            '{"mapping": {"left": {"$ref": "foo"}}, '
+            '"items": [{"$ref": "foo"}]}'
+        ),
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_key="$ref",
+    )
+
+    assert '"left": foo' in result.code
+    assert '"items": (foo,)' in result.code
+
+
+def test_call_ref_key_handles_all_ref_argument_collections() -> None:
+    """Call argument openers ignore ref markers during type inference."""
+    result = literalize_call(
+        source='[[[{"$ref": "foo"}], {"left": {"$ref": "foo"}}]]',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        target_function="consume",
+        parameter_names=("items", "mapping"),
+        ref_key="$ref",
+    )
+
+    assert 'consume(items=(foo,), mapping={"left": foo})' in result.code
