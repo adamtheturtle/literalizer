@@ -286,6 +286,26 @@ def _list_of_open(items: list[Any]) -> str:
 
 
 @beartype
+def _validate_no_null_map_values(data: Value) -> None:
+    """Reject null-valued map entries unsupported by ``Map.entry``."""
+    match data:
+        case dict():
+            for value in data.values():
+                if value is None:
+                    msg = (
+                        "Java's Map.entry() does not accept null values; "
+                        "remove the null-valued entry"
+                    )
+                    raise UnrepresentableInputError(msg)
+                _validate_no_null_map_values(data=value)
+        case list() | set():
+            for value in data:
+                _validate_no_null_map_values(data=value)
+        case _:
+            return
+
+
+@beartype
 def _java_box(type_name: str) -> str:
     """Return the boxed wrapper type for a Java primitive, or the type
     itself for reference types.
@@ -1428,6 +1448,7 @@ class Java(metaclass=LanguageCls):
         When :attr:`json_type` is active, additionally walk *data* to
         reject non-string dict keys, which JSON objects cannot represent.
         """
+        _validate_no_null_map_values(data=data)
         if self._json_type_active:
             self._validate_json_value_keys(data)
             return

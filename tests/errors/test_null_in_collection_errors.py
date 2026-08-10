@@ -15,7 +15,10 @@ import re
 import pytest
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    NullInCollectionError,
+    UnrepresentableInputError,
+)
 from literalizer.languages import Java, V
 
 _V_NULL_ONLY_MSG = re.escape(
@@ -45,6 +48,25 @@ def test_java_list_rejects_null_elements() -> None:
             language=spec,
             pre_indent_level=0,
             include_delimiters=True,
+            variable_form=None,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=['{"a": null, "b": 1}', '[{"a": {"b": null}}]'],
+    ids=["map", "nested_map"],
+)
+def test_java_map_rejects_null_values(source: str) -> None:
+    """Java's ``Map.entry`` rejects null values at runtime."""
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match=r"Java's Map\.entry\(\) does not accept null values",
+    ):
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Java(),
             variable_form=None,
         )
 
