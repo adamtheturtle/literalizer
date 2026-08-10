@@ -27,11 +27,14 @@ binding shipped to users; rebinding any of the visitor words would emit
 a different format, but here the default ``jos`` JSON writer is exactly
 what the round-trip needs.
 
-One top-level key is excluded from the comparison:
+Two top-level keys are excluded from the comparison:
 
 * ``biginteger`` -- its 26-digit value overflows the 64-bit cell that
   ``gforth`` uses on the Ubuntu runner; same shape as the Go, TypeScript,
   Lua, Zig, Swift, Rust, D, C++, and Wren exclusions.
+* ``float_large_exponent`` -- gforth 0.7.3 accepts the finite maximum
+  IEEE-754 literal but FFL's JSON writer rounds it upward to infinity.
+  This is a target serializer limit rather than lost literal precision.
 """
 
 import os
@@ -43,7 +46,7 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "Forth"
-_EXCLUDED_KEYS = ("biginteger",)
+_EXCLUDED_KEYS = ("biginteger", "float_large_exponent")
 
 # The shipped default visitor prelude (FFL `jos` JSON writer).  Included
 # by absolute path so the round-trip exercises the exact file users get.
