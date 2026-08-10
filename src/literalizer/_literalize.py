@@ -485,6 +485,17 @@ class _RenderContext:
         )
 
 
+def _nested_collection_context(
+    *, value: Value, ctx: _RenderContext
+) -> _RenderContext:
+    """Keep stringified nested collection payloads layout-independent."""
+    if not isinstance(value, (dict, list, set)):
+        return ctx
+    if not getattr(type(ctx.spec), "stringifies_nested_collections", False):
+        return ctx
+    return ctx.compact()
+
+
 @beartype
 def _maybe_wrap_child(
     *,
@@ -946,10 +957,11 @@ def _format_dict_entry_value(
     *int_formatter* is the map's mixed-magnitude integer widener when
     values inferred :class:`WideInt` or :class:`BeyondI64`.
     """
+    child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
-            ctx=ctx,
+            ctx=child_ctx,
         )
         if tuple_literal is not None:
             return tuple_literal
@@ -957,13 +969,13 @@ def _format_dict_entry_value(
             value=value,
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
-            ctx=ctx,
+            ctx=child_ctx,
         )
     return _format_value(
         value=value,
         dict_open_override=None,
         sequence_open_override=None,
-        ctx=ctx,
+        ctx=child_ctx,
         int_formatter=int_formatter,
     )
 
@@ -1513,13 +1525,14 @@ def _format_sequence_child(
             ]
             if non_empty_map_siblings:
                 return narrowed_empty_dict(non_empty_map_siblings)
+    child_ctx = _nested_collection_context(value=child, ctx=ctx)
     return _format_value(
         value=child,
         dict_open_override=dict_open_override,
         sequence_open_override=(
             parent_override if parent_override is not None else sibling_open
         ),
-        ctx=ctx,
+        ctx=child_ctx,
         int_formatter=int_formatter,
     )
 
