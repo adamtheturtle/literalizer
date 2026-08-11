@@ -4,7 +4,7 @@ from literalizer.languages import C, Cpp, Fortran, ObjectiveC
 
 
 def test_c_family_i64_min_avoids_out_of_range_positive_literal() -> None:
-    """C-family backends spell INT64_MIN as an in-range expression."""
+    """C-family back-ends spell INT64_MIN as an in-range expression."""
     value = -(2**63)
     expected = "(-9223372036854775807LL - 1)"
 
