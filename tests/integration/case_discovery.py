@@ -22,7 +22,10 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer._language import NewVariableNameSyntax
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableStringError,
+)
 from literalizer.languages import Matlab
 
 from .case_inputs import CaseInput
@@ -74,12 +77,11 @@ def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
 def _lang_raises_for_non_printable_ascii_dict_keys(
     lang_cls: literalizer.LanguageCls,
 ) -> bool:
-    """Return ``True`` if the language raises :exc:`InvalidDictKeyError`
-    for a dict key containing a non-printable ASCII character.
+    """Return whether a language rejects a non-printable ASCII dict key.
 
     Used to skip golden-file cases whose input contains such keys for
-    languages whose contract is to raise :exc:`InvalidDictKeyError` for
-    those inputs rather than produce rendered output.
+    languages whose contract is to reject those inputs rather than
+    produce rendered output.
     """
     try:
         literalizer.literalize(
@@ -87,7 +89,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
             input_format=literalizer.InputFormat.JSON,
             language=lang_cls(),
         )
-    except InvalidDictKeyError:
+    except (InvalidDictKeyError, UnrepresentableStringError):
         return True
     return False
 

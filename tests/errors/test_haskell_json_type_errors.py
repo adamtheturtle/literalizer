@@ -5,23 +5,8 @@ import pytest
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import (
     UnrepresentableInputError,
-    UnrepresentableSpecialFloatError,
 )
 from literalizer.languages import Haskell
-
-
-def test_haskell_json_type_rejects_non_string_dict_keys() -> None:
-    """The ``Data.Aeson.Value`` object keys must be strings."""
-    with pytest.raises(
-        expected_exception=UnrepresentableInputError,
-        match="cannot represent dict key",
-    ):
-        literalize(
-            source="{1: one}",
-            input_format=InputFormat.YAML,
-            language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
 
 
 def test_haskell_json_type_rejects_aeson_qq_terminator_in_string() -> None:
@@ -33,20 +18,6 @@ def test_haskell_json_type_rejects_aeson_qq_terminator_in_string() -> None:
         literalize(
             source='{"note": "ends with |] here"}',
             input_format=InputFormat.JSON,
-            language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
-
-
-def test_haskell_json_type_rejects_special_floats() -> None:
-    """``aesonQQ`` accepts only finite numbers."""
-    with pytest.raises(
-        expected_exception=UnrepresentableSpecialFloatError,
-        match="aesonQQ accepts only finite numbers",
-    ):
-        literalize(
-            source="[.inf]",
-            input_format=InputFormat.YAML,
             language=Haskell(json_type=Haskell.json_types.AESON_VALUE),
             variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

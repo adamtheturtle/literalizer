@@ -42,8 +42,8 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     format_string_backslash_single_minimal,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -96,6 +96,15 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
+
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("#{", r"\#{"),
+        ("#@", r"\#@"),
+        ("#$", r"\#$"),
+    ],
+)
 
 
 @beartype
@@ -511,7 +520,7 @@ class Ruby(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:
