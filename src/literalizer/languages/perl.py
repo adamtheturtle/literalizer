@@ -162,7 +162,9 @@ def _format_perl_string_double(value: str) -> str:
     keeps the output pure ASCII so the snippet round-trips regardless
     of source-file encoding.
     """
-    base = format_string_backslash(value)
+    base = (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
     if base.isascii():
         return base
     return "".join(
@@ -180,7 +182,9 @@ def _format_perl_string_double_utf8(value: str) -> str:
     rather than its raw byte sequence.  Matches the style a human Perl
     author would write in a UTF-8 source file.
     """
-    return format_string_backslash(value)
+    return (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
 
 
 @beartype
@@ -537,9 +541,9 @@ class Perl(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="Inf",
-        negative_infinity="-Inf",
-        nan="NaN",
+        positive_infinity="9**9**9",
+        negative_infinity="-(9**9**9)",
+        nan="(9**9**9) - (9**9**9)",
     ):
         """Float format options."""
 

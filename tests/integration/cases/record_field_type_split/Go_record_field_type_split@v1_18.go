@@ -25,7 +25,7 @@ type Record8 struct {
 	Holder Record2
 }
 type Record9 struct {
-	Nums []int
+	Nums []int64
 }
 type Record0 struct {
 	Plain Record1
@@ -67,7 +67,7 @@ my_data := Record0{
 		},
 	},
 	Wide: Record9{
-		Nums: []int{
+		Nums: []int64{
 			1,
 			1099511627776,
 		},

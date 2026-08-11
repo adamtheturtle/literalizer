@@ -112,6 +112,9 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidRecordNameError
 
+_GO_I32_MIN = -(2**31)
+_GO_I32_MAX = 2**31 - 1
+
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -217,10 +220,17 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
     nanoseconds = value.microsecond * 1000
+    offset = value.utcoffset()
+    offset_seconds = 0 if offset is None else int(offset.total_seconds())
+    location = (
+        "time.UTC"
+        if offset_seconds == 0
+        else f'time.FixedZone("", {offset_seconds})'
+    )
     return (
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanoseconds}, time.UTC)"
+        f"{nanoseconds}, {location})"
     )
 
 
@@ -953,8 +963,22 @@ class Go(metaclass=LanguageCls):
                 )
             case list():
                 opener = self.sequence_open(value)
-            case int() if not isinstance(value, bool) and value > I64_MAX:
-                return "uint64"
+            case int() if not isinstance(value, bool):
+                suffix_is_auto = (
+                    self.numeric_literal_suffix
+                    is type(self.numeric_literal_suffix).AUTO
+                )
+                return (
+                    "uint64"
+                    if value > I64_MAX
+                    else (
+                        "int64"
+                        if suffix_is_auto
+                        or value < _GO_I32_MIN
+                        or value > _GO_I32_MAX
+                        else "int"
+                    )
+                )
             case _:
                 return self._init_element_to_type(type(value)) or "any"
         return opener[: -len("{")]
@@ -1139,7 +1163,7 @@ class Go(metaclass=LanguageCls):
             enable_list_type=True,
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
-            wide_int_type=None,
+            wide_int_type="int64",
             beyond_i64_type="uint64",
         )
 
