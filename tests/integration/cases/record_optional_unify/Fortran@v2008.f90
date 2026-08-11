@@ -85,6 +85,8 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('items', flist([fval_t :: fmap([fval_t :: fentry('id', fint(1_int64))]), fmap([fval_t :: fentry('id', fint(2_int64)), fentry('count', fint(10_int64))]), fmap([fval_t :: fentry('id', fint(3_int64)), fentry('count', fint(20_int64))])])) &
+        fentry('items', flist([fval_t :: fmap([fval_t :: fentry('id', fint(1_int64))]), &
+    & fmap([fval_t :: fentry('id', fint(2_int64)), fentry('count', fint(10_int64))]), fmap([fval_t :: fentry('id', &
+    & fint(3_int64)), fentry('count', fint(20_int64))])])) &
     ])
 end program main

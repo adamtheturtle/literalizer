@@ -83,10 +83,16 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call process(fint(0_int64), fint(1_int64), fint(2_int64), fint(3_int64), fint(4_int64), fint(5_int64), fint(6_int64), fint(7_int64), fint(8_int64), fint(9_int64), fint(10_int64), fint(11_int64), fint(12_int64), fint(13_int64), fint(14_int64), fint(15_int64), fint(16_int64), fint(17_int64), fint(18_int64), fint(19_int64), fint(20_int64), fint(21_int64), fint(22_int64), fint(23_int64), fint(24_int64), fint(25_int64), fint(26_int64))
+    call process(fint(0_int64), fint(1_int64), fint(2_int64), fint(3_int64), fint(4_int64), fint(5_int64), &
+    & fint(6_int64), fint(7_int64), fint(8_int64), fint(9_int64), fint(10_int64), fint(11_int64), fint(12_int64), &
+    & fint(13_int64), fint(14_int64), fint(15_int64), fint(16_int64), fint(17_int64), fint(18_int64), &
+    & fint(19_int64), fint(20_int64), fint(21_int64), fint(22_int64), fint(23_int64), fint(24_int64), &
+    & fint(25_int64), fint(26_int64))
 contains
-    subroutine process(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26)
+    subroutine process(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, &
+    & p20, p21, p22, p23, p24, p25, p26)
         implicit none
-        type(fval_t), intent(in) :: p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26
+        type(fval_t), intent(in) :: p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, &
+    & p17, p18, p19, p20, p21, p22, p23, p24, p25, p26
     end subroutine process
 end program main
