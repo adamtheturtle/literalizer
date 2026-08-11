@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import QuoteSensitiveCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -568,7 +569,7 @@ class OCaml(metaclass=LanguageCls):
 
         PAREN_STAR = CommentConfig(
             prefix="(*",
-            suffix=" *)",
+            suffix=QuoteSensitiveCommentSuffix(object=" *)"),
         )
 
     class DeclarationStyles(enum.Enum):

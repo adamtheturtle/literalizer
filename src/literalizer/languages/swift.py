@@ -162,9 +162,12 @@ def _format_date_swift(value: datetime.date) -> str:
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
+    offset = value.utcoffset() or datetime.timedelta()
+    offset_seconds = int(offset.total_seconds())
     parts = (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
+        f"timeZone: TimeZone(secondsFromGMT: {offset_seconds})!, "
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
