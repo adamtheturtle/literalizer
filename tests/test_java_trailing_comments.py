@@ -1,8 +1,11 @@
 """Java declaration termination checks."""
 
 from literalizer import InputFormat, NewVariable, literalize
+from literalizer._types import Value
 from literalizer.languages import Java
-from literalizer.languages.java import _format_java_var_declaration
+from literalizer.languages.java import (
+    _format_java_var_declaration,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 def test_java_declaration_terminates_after_trailing_comment() -> None:
@@ -19,10 +22,15 @@ def test_java_declaration_terminates_after_trailing_comment() -> None:
 
 def test_java_var_declaration_terminates_before_trailing_comment() -> None:
     """The declaration formatter keeps a final comment after its semicolon."""
+
+    def make_value() -> Value:
+        """Return a recursively typed list value."""
+        return [1]
+
     result = _format_java_var_declaration(
         name="my_data",
         value="List.of(1)\n// trailing",
-        _data=[1],
+        _data=make_value(),
         _modifiers=frozenset(),
     )
 
