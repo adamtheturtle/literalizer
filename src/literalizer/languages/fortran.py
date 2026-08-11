@@ -226,12 +226,12 @@ def _wrap_fortran_expression_line(line: str, /) -> list[str]:
         in_single_quote = False
         break_at: int | None = None
         scan = remaining[:_FORTRAN_WRAP_COLUMN].replace("''", "  ")
-        for i, character in enumerate(scan):
+        for i, character in enumerate(iterable=scan):
             if character == "'":
                 in_single_quote = not in_single_quote
             elif character == "," and not in_single_quote:
                 break_at = i + 1
-        split_at: int = break_at  # pyright: ignore[reportAssignmentType]
+        split_at = break_at if break_at is not None else len(remaining)
         wrapped.append(remaining[:split_at].rstrip())
         remaining = "& " + remaining[split_at:].lstrip()
     wrapped.append(remaining)
