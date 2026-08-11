@@ -1,2 +1,2 @@
 // before
-let my_data: Any = "plain"  // inline
+let my_data = "plain"  // inline

@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     "description": "# not a comment\n",
     "name": "foo",
 ]
