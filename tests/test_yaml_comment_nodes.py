@@ -5,7 +5,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from literalizer._literalize import (
     _collect_yaml_comment_nodes,  # pyright: ignore[reportPrivateUsage]
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 def test_yaml_comment_nodes_ignore_transformed_missing_keys() -> None:
@@ -13,7 +13,9 @@ def test_yaml_comment_nodes_ignore_transformed_missing_keys() -> None:
 
     def make_value() -> Value:
         """Return a value with contextual recursive typing."""
-        return {"missing": 1}
+        result: dict[Scalar, Value] = {}
+        result["missing"] = 1
+        return result
 
     value = make_value()
     raw_value = CommentedMap({"present": 1})

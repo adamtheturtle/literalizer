@@ -2167,9 +2167,10 @@ def _collect_yaml_comment_nodes(
     """Map rendered container identities to their ruamel YAML nodes."""
     if isinstance(raw_value, CommentedMap) and isinstance(value, dict):
         out[id(value)] = raw_value
+        typed_raw_map: Mapping[object, object] = raw_value
         for key, child in value.items():
-            if key in raw_value:
-                raw_map_child: object = raw_value[key]
+            if key in typed_raw_map:
+                raw_map_child = typed_raw_map[key]
                 _collect_yaml_comment_nodes(
                     value=child,
                     raw_value=raw_map_child,
@@ -2178,8 +2179,9 @@ def _collect_yaml_comment_nodes(
         return
     if isinstance(raw_value, CommentedSeq) and isinstance(value, list):
         out[id(value)] = raw_value
+        typed_raw_sequence: Sequence[object] = raw_value
         for index, child in enumerate(iterable=value):
-            raw_sequence_child: object = raw_value[index]
+            raw_sequence_child = typed_raw_sequence[index]
             _collect_yaml_comment_nodes(
                 value=child,
                 raw_value=raw_sequence_child,
