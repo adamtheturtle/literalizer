@@ -11,7 +11,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, TypeGuard
+from typing import ClassVar, TypeGuard, assert_never
 
 from beartype import beartype
 
@@ -2020,6 +2020,8 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
             rendered = (
                 f"nlohmann::json::object({{{', '.join(object_entries)}}})"
             )
+        case _ as unreachable:
+            assert_never(unreachable)
     return rendered
 
 
