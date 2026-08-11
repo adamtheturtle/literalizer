@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import itertools
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -16,6 +17,7 @@ from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    sequence_surrogate_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -345,6 +347,7 @@ def _make_cpp_element_to_type(
     int_type: str,
     date_type: str | None,
     datetime_type: str | None,
+    dict_type_name: str,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -359,7 +362,7 @@ def _make_cpp_element_to_type(
         time_type="std::string",
         list_template="std::vector<{inner}>",
         enable_list_type=True,
-        dict_type_template="std::map<std::string, {inner}>",
+        dict_type_template=f"{dict_type_name}<std::string, {{inner}}>",
         fallback_value_type=None,
         wide_int_type=None,
         beyond_i64_type=None,
@@ -405,6 +408,11 @@ class _CppTypeCtx:
     datetime_type: str | None
     tuple_strategy: bool
     variant_type_name: str
+    dict_type_name: str
+
+    def dict_type(self, value_type: str, /) -> str:
+        """Return the active string-keyed mapping type."""
+        return f"{self.dict_type_name}<std::string, {value_type}>"
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
@@ -422,6 +430,7 @@ class _CppTypeCtx:
             int_type=int_type,
             date_type=self.date_type,
             datetime_type=self.datetime_type,
+            dict_type_name=self.dict_type_name,
         )
 
 
@@ -603,7 +612,7 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            return f"std::map<std::string, {value_type}>"
+            return type_ctx.dict_type(value_type)
         case list() if type_ctx.tuple_strategy and is_tuple_eligible(
             value=item,
         ):
@@ -690,7 +699,7 @@ def _compute_element_type_for_items(
                     type_ctx=type_ctx,
                     in_mapping_value=True,
                 )
-                return f"std::map<std::string, {value_type}>"
+                return type_ctx.dict_type(value_type)
             case _:
                 int_leaves = _collect_int_leaves(
                     items=items,
@@ -1329,13 +1338,18 @@ _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
 @beartype
-def _cpp_record_field_identifier(key: str, /) -> str:
+def _cpp_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the C++ ``struct`` member name for a dict *key*.
 
     C++ member identifiers are the dict keys verbatim (no case
     conversion), matching the designated-initializer literal form
     ``Record0{.id = 1, ...}``.
     """
+    if key in reserved_identifiers:
+        msg = f"C++ record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1951,7 +1965,7 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=fixed_open(open_str="["),
+    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
     close="]",
     empty_set="[]",
     preamble_lines=(),
@@ -2307,7 +2321,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            set_open=lambda _items: "{",
+            set_open=sequence_surrogate_set_open(lambda _items: "{"),
             close="}",
             empty_set=None,
             preamble_lines=("#include <vector>",),
@@ -2324,7 +2338,9 @@ class Cpp(metaclass=LanguageCls):
             """Return the set format config with variant opener."""
             return dataclasses.replace(
                 self.value,
-                set_open=_build_variant_set_open(type_ctx=type_ctx),
+                set_open=sequence_surrogate_set_open(
+                    _build_variant_set_open(type_ctx=type_ctx)
+                ),
             )
 
     class CommentFormats(enum.Enum):
@@ -3255,7 +3271,10 @@ class Cpp(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
-            field_identifier=_cpp_record_field_identifier,
+            field_identifier=functools.partial(
+                _cpp_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
             render_literal=(
@@ -3338,6 +3357,11 @@ class Cpp(metaclass=LanguageCls):
                 self.heterogeneous_value_variant_name
                 if self.language_version is self.version_formats.CPP14
                 else "std::variant"
+            ),
+            dict_type_name=(
+                "std::unordered_map"
+                if self.dict_format.name == "UNORDERED_MAP"
+                else "std::map"
             ),
         )
 

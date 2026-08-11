@@ -1,6 +1,6 @@
-let deep: Any = [
+let deep = [
     "_": "_",
 ]
-let my_data: Any = [
+let my_data = [
     "a": ["b": ["c": deep]],
 ]

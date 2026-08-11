@@ -28,7 +28,6 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
     format_bytes_base64,
-    format_bytes_hex,
     passthrough_sequence_entry,
     variable_declaration_formatter,
     variable_formatter,
@@ -119,6 +118,20 @@ _format_string = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
 )
+
+
+@beartype
+def _format_v_bytes_hex(value: bytes) -> str:
+    """Format hexadecimal bytes through V's string formatter."""
+    return _format_string(value=value.hex())
+
+
+@beartype
+def _format_v_bytes_base64(value: bytes) -> str:
+    """Format base64 bytes through V's string formatter."""
+    encoded = format_bytes_base64(value=value)[1:-1]
+    return _format_string(value=encoded)
+
 
 _V_I32_MIN = -(2**31)  # -2147483648
 _V_I32_MAX = 2**31 - 1  # 2147483647
@@ -733,8 +746,8 @@ class V(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = enum.member(value=_format_v_bytes_hex)
+        BASE64 = enum.member(value=_format_v_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

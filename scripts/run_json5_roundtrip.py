@@ -1,13 +1,13 @@
 """JSON5 JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to a JSON5
-value, parse the resulting JSON5 text with ``pyjson5``, then re-serialize
+value, parse the resulting JSON5 text with ``json5``, then re-serialize
 the parsed value as JSON and hand it to :func:`roundtrip_common.verify`.
 
 Like the TOML round-trip, there is no language runtime to invoke: the
 analogous "back to JSON" step is a JSON5 parser re-emitting the parsed
-value.  ``pyjson5`` is already a core ``literalizer`` dependency, so the
-``Lint Toml`` job's ``uv run`` (project mode) resolves it without extra
+value.  ``json5`` is already a core ``literalizer`` dependency, so the
+JSON5 lint job's ``uv run`` (project mode) resolves it without extra
 ``--with`` layering.  Unlike most other backends, ``Json5`` does not
 support a ``variable_form``: the literalized output is a bare JSON5
 value, so the parsed result is fed directly to ``verify``.
@@ -16,7 +16,7 @@ value, so the parsed result is fed directly to ``verify``.
 import json
 import sys
 
-import pyjson5
+import json5
 
 from literalizer import InputFormat, literalize
 from literalizer.languages import Json5
@@ -42,7 +42,10 @@ def _build_document(json_text: str) -> str:
 def main() -> None:
     """Round-trip the shared document through the JSON5 backend."""
     document = _build_document(json_text=roundtrip_common.read_input())
-    parsed: dict[str, object] = pyjson5.loads(s=document)
+    parsed: dict[str, object] = json5.loads(
+        s=document,
+        allow_duplicate_keys=False,
+    )
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

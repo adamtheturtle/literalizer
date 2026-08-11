@@ -4,6 +4,6 @@ type Val =
     | FInt of int64
     | FList of Val list
 let process (_value: obj) : obj = null
-process(-1)
-process(-2)
-process(-3)
+process(FInt(-1L))
+process(FInt(-2L))
+process(FInt(-3L))

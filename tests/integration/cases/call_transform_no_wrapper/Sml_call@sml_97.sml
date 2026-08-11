@@ -4,6 +4,6 @@ datatype val_t =
   | SStr of string
   | SList of val_t list
 fun process _ = ()
-val _ = process("hello")
-val _ = process(42)
+val _ = process(SStr "hello")
+val _ = process(SInt 42)
 val _ = process(SBool true)

@@ -13,6 +13,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    date_ymd_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -43,6 +44,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    DottedCommandCallStyle,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -283,6 +285,13 @@ class PowerShell(metaclass=LanguageCls):
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
+        POWERSHELL = DateFormatConfig(
+            formatter=date_ymd_formatter(
+                template="[datetime]::new({year}, {month}, {day})",
+            ),
+            type_produced=datetime.date,
+            preamble_lines=(),
+        )
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
@@ -466,8 +475,11 @@ class PowerShell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """PowerShell call style options."""
 
-        POSITIONAL = PositionalCallStyle(
-            arg_separator=", ", parenthesize_each_arg=False
+        POSITIONAL = DottedCommandCallStyle(
+            arg_separator=" ",
+            dotted_call_style=PositionalCallStyle(
+                arg_separator=", ", parenthesize_each_arg=False
+            ),
         )
 
     call_styles = CallStyles
@@ -554,7 +566,7 @@ class PowerShell(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.POWERSHELL
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
