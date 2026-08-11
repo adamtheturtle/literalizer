@@ -16,6 +16,12 @@ from tomlkit.items import Comment, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
 
+class QuoteSensitiveCommentSuffix(str):
+    """Mark a comment form whose lexer parses quotes inside comments."""
+
+    __slots__ = ()
+
+
 @dataclasses.dataclass(frozen=True)
 class ElementComments:
     """Comments associated with a single top-level YAML element."""
@@ -324,6 +330,8 @@ def neutralize_comment_terminator(
     ``<U+0029>``). Line-comment formats have an empty suffix and leave
     the source text unchanged.
     """
+    if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
+        text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
     if not terminator or terminator not in text:
         return text
