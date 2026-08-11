@@ -161,6 +161,7 @@ def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
             ):
                 return ("use Math::BigFloat;",)
             case dict():
+                pending.extend(value.keys())
                 pending.extend(value.values())
             case list() | set():
                 pending.extend(value)

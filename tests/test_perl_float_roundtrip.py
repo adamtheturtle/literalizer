@@ -21,6 +21,18 @@ def test_perl_float_literals_force_numeric_identity() -> None:
     assert "use Math::BigFloat;" in result.preamble
 
 
+def test_perl_large_float_key_imports_bigfloat() -> None:
+    """A large float used only as a key still adds its import."""
+    result = literalize(
+        source="1.0e+16: value",
+        input_format=InputFormat.YAML,
+        language=Perl(),
+    )
+
+    assert 'Math::BigFloat->new("1.0e+16")' in result.code
+    assert "use Math::BigFloat;" in result.preamble
+
+
 def test_json_pp_keeps_large_float_values_numeric() -> None:
     """JSON::PP emits the reported values as numbers without rounding."""
     perl = shutil.which(cmd="perl")
