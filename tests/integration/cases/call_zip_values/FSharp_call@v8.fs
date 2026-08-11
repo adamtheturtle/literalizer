@@ -7,5 +7,5 @@ type Val =
     | FList of Val list
 let process (_value: obj) : obj = null
 let emit (__call: obj, __zip: obj) : obj = null
-emit(process("hello"), FBool true)
-emit(process(42), FBool false)
+emit(process(FStr "hello"), FBool true)
+emit(process(FInt 42L), FBool false)

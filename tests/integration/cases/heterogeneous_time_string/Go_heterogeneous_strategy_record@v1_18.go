@@ -1,4 +1,5 @@
 package main
+import "time"
 type Record0 struct {
 	Vals []any
 }
@@ -6,7 +7,7 @@ type Record0 struct {
 func main() {
 my_data := Record0{
 	Vals: []any{
-		"09:30:00",
+		time.Date(0, time.January, 1, 9, 30, 0, 0, time.UTC),
 		"hello",
 	},
 }

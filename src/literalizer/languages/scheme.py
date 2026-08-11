@@ -78,6 +78,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
+    reject_empty_dicts,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -615,6 +616,8 @@ class Scheme(metaclass=LanguageCls):
         """
         if self._json_type_active:
             self._validate_guile_json_value(data)
+        else:
+            reject_empty_dicts(data=data, language_name="Scheme")
 
     def _validate_guile_json_value(self, data: Value, /) -> None:
         """Recursively validate that *data* is JSON-representable."""
