@@ -1,9 +1,11 @@
 my $my_data = {
-    'name' => 'Alice',
-    # score collection
-    'scores' => {
-        # score meaning
-        1 => 'first',
-        2 => 'second',  # latest score
+    'ordered' => {
+        # ordered entry
+        'name' => 'Alice',
+        'scores' => {
+            # score meaning
+            1 => 'first',
+            2 => 'second',  # latest score
+        },
     },
 };

@@ -1,6 +1,6 @@
---- !!omap
+ordered: !!omap
+  # ordered entry
   - name: Alice
-  # score collection
   - scores:
       # score meaning
       1: first

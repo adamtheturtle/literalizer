@@ -1,5 +1,3 @@
-# score collection
 set my_data [dict create \
-    "name" "Alice" \
-    "scores" [dict create 1 "first" 2 "second"] \
+    "ordered" [dict create "name" "Alice" "scores" [dict create 1 "first" 2 "second"]] \
 ]
