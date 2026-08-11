@@ -1,1 +1,1 @@
-let my_data: Any = [AnyHashable: Any]()
+let my_data = [AnyHashable: Any]()

@@ -1,0 +1,1 @@
+Perl, Tcl, and SystemVerilog booleans now use representations distinct from integer ``1`` and ``0``: ``JSON::PP`` singletons, Tcl boolean words, and a dedicated SystemVerilog value tag respectively.

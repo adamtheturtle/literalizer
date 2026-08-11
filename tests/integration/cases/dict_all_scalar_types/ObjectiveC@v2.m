@@ -7,8 +7,8 @@ id my_data = @{
     @"f": @1.5,
     @"b": @YES,
     @"n": [NSNull null],
-    @"d": @"2024-01-15",
-    @"dt": @"2024-01-15T12:00:00",
+    @"d": [NSDate dateWithTimeIntervalSince1970:1705276800],
+    @"dt": [NSDate dateWithTimeIntervalSince1970:1705320000],
     @"by": @"48656c6c6f",
 };
     (void)my_data;

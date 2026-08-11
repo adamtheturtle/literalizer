@@ -162,7 +162,9 @@ def _format_perl_string_double(value: str) -> str:
     keeps the output pure ASCII so the snippet round-trips regardless
     of source-file encoding.
     """
-    base = format_string_backslash(value)
+    base = (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
     if base.isascii():
         return base
     return "".join(
@@ -180,7 +182,9 @@ def _format_perl_string_double_utf8(value: str) -> str:
     rather than its raw byte sequence.  Matches the style a human Perl
     author would write in a UTF-8 source file.
     """
-    return format_string_backslash(value)
+    return (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
 
 
 @beartype
@@ -265,15 +269,15 @@ class Perl(metaclass=LanguageCls):
             native boolean type, so the choice trades off readability
             against round-trip fidelity through JSON and YAML libraries.
 
-            * ``bool_formats.INTEGER`` -- bare ``1`` / ``0`` (default,
-              preserves prior output).  Re-encoding to JSON loses the
-              boolean type.
+            * ``bool_formats.INTEGER`` -- bare ``1`` / ``0``. Re-encoding
+              to JSON loses the boolean type.
             * ``bool_formats.JSON_PP_REF`` -- ``\1`` / ``\0`` scalar
               references, the conventional form used by ``JSON::PP``,
               ``JSON::XS``, ``Cpanel::JSON::XS`` and ``Mojo::JSON``.
               Round-trips back to JSON ``true`` / ``false`` with no
               ``use`` preamble required.
-            * ``bool_formats.JSON_PP_SINGLETON`` -- ``JSON::PP::true`` /
+            * ``bool_formats.JSON_PP_SINGLETON`` (default) --
+              ``JSON::PP::true`` /
               ``JSON::PP::false`` blessed singletons; adds a
               ``use JSON::PP;`` preamble (``JSON::PP`` is a core
               module).
@@ -537,9 +541,9 @@ class Perl(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="Inf",
-        negative_infinity="-Inf",
-        nan="NaN",
+        positive_infinity="9**9**9",
+        negative_infinity="-(9**9**9)",
+        nan="(9**9**9) - (9**9**9)",
     ):
         """Float format options."""
 
@@ -757,7 +761,7 @@ class Perl(metaclass=LanguageCls):
 
     date_format: DateFormats = DateFormats.PERL
     datetime_format: DatetimeFormats = DatetimeFormats.PERL
-    bool_format: BoolFormats = BoolFormats.INTEGER
+    bool_format: BoolFormats = BoolFormats.JSON_PP_SINGLETON
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
@@ -1101,3 +1105,7 @@ class Perl(metaclass=LanguageCls):
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
+
+
+# The variant planner accesses non-default enum members dynamically.
+_PERL_INTEGER_BOOL_FORMAT = Perl.BoolFormats.INTEGER  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]
