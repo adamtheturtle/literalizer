@@ -10,6 +10,6 @@ fun post _ = ()
 end
 end
 end
-val _ = obj.api.client.post("hello")
-val _ = obj.api.client.post(42)
+val _ = obj.api.client.post(SStr "hello")
+val _ = obj.api.client.post(SInt 42)
 val _ = obj.api.client.post(SBool true)

@@ -7,7 +7,7 @@ type val_t =
 module Throttler = struct
 let check _ _ = ()
 end
-let _ = Throttler.check ("user_1") (1000.0)
-let _ = Throttler.check ("user_2") (2000.5)
+let _ = Throttler.check (OStr "user_1") (OFloat 1000.0)
+let _ = Throttler.check (OStr "user_2") (OFloat 2000.5)
 
 end
