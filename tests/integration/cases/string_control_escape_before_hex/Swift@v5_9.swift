@@ -1,1 +1,1 @@
-let my_data: Any = "a\u{7}face"
+let my_data = "a\u{7}face"
