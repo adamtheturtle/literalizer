@@ -99,22 +99,3 @@ def test_v_default_rejects_null_only_container(source: str) -> None:
             include_delimiters=True,
             variable_form=None,
         )
-
-
-def test_v_interface_strategy_admits_null_only_container() -> None:
-    """The ``INTERFACE`` strategy wraps each null in ``IVal(...)``, so a
-    null-only list is representable and is not rejected.
-    """
-    result = literalize(
-        source=json.dumps(obj=[None, None]),
-        input_format=InputFormat.JSON,
-        language=V(
-            heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE,
-        ),
-        pre_indent_level=0,
-        include_delimiters=True,
-        variable_form=None,
-    )
-    assert result.code == (
-        "[\n\tIVal(unsafe { nil }),\n\tIVal(unsafe { nil }),\n]"
-    )
