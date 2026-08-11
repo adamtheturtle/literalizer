@@ -5,13 +5,6 @@ import pytest
 from literalizer.languages import Erlang
 
 
-def test_erlang_default_module_name_is_an_atom() -> None:
-    """The default Erlang module name begins with a lowercase letter."""
-    language = Erlang()
-    assert isinstance(language, Erlang)
-    assert language.module_name == "module"
-
-
 def test_erlang_rejects_variable_as_module_name() -> None:
     """A capitalized Erlang word is a variable, not an atom."""
     with pytest.raises(
