@@ -1998,23 +1998,25 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
         case bool():
             rendered = "true" if value else "false"
         case str():
-            rendered = json.dumps(value, ensure_ascii=False)
+            rendered = json.dumps(obj=value, ensure_ascii=False)
         case float() if math.isnan(value):
             rendered = "std::numeric_limits<double>::quiet_NaN()"
         case float() if math.isinf(value):
             sign = "-" if value < 0 else ""
             rendered = f"{sign}std::numeric_limits<double>::infinity()"
+        case int() if value > I64_MAX:
+            rendered = f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
         case int() | float():
-            rendered = json.dumps(value)
+            rendered = json.dumps(obj=value)
         case list():
             entries = ", ".join(
-                _render_nlohmann_json_node(item) for item in value
+                _render_nlohmann_json_node(value=item) for item in value
             )
             rendered = f"nlohmann::json::array({{{entries}}})"
         case dict():
             object_entries = (
-                "{" + json.dumps(key, ensure_ascii=False) + ", "
-                f"{_render_nlohmann_json_node(item)}}}"
+                "{" + json.dumps(obj=key, ensure_ascii=False) + ", "
+                f"{_render_nlohmann_json_node(value=item)}}}"
                 for key, item in value.items()
             )
             rendered = (
@@ -2035,7 +2037,7 @@ def _nlohmann_json_expression(data: Value) -> str:
     normalization identical to the other JSON-value backends.
     """
     normalized = to_jsonable(data=data)
-    rendered = _render_nlohmann_json_node(normalized)
+    rendered = _render_nlohmann_json_node(value=normalized)
     if isinstance(normalized, list | dict):
         return rendered
     return f"nlohmann::json({rendered})"
