@@ -1991,6 +1991,17 @@ _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
+def _render_nlohmann_json_float(value: float) -> str:
+    """Render one normalized JSON floating-point value."""
+    if math.isnan(value):
+        return "std::numeric_limits<double>::quiet_NaN()"
+    if math.isinf(value):
+        sign = "-" if value < 0 else ""
+        return f"{sign}std::numeric_limits<double>::infinity()"
+    return json.dumps(obj=value)
+
+
+@beartype
 def _render_nlohmann_json_node(value: JsonValue) -> str:
     """Render one normalized JSON node."""
     match value:
@@ -2000,14 +2011,11 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
             rendered = "true" if value else "false"
         case str():
             rendered = json.dumps(obj=value, ensure_ascii=False)
-        case float() if math.isnan(value):
-            rendered = "std::numeric_limits<double>::quiet_NaN()"
-        case float() if math.isinf(value):
-            sign = "-" if value < 0 else ""
-            rendered = f"{sign}std::numeric_limits<double>::infinity()"
+        case float():
+            rendered = _render_nlohmann_json_float(value=value)
         case int() if value > I64_MAX:
             rendered = f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
-        case int() | float():
+        case int():
             rendered = json.dumps(obj=value)
         case list():
             entries = ", ".join(
@@ -2033,9 +2041,9 @@ def _nlohmann_json_expression(data: Value) -> str:
     """Render *data* as a structural ``nlohmann::json`` expression.
 
     Explicit ``array`` and ``object`` factories preserve empty-container
-    intent and avoid nlohmann's brace-initializer ambiguity for nested
+    intent and avoid the library's brace-initializer ambiguity for nested
     arrays.  :func:`to_jsonable` keeps temporal, bytes, set and ordered-map
-    normalization identical to the other JSON-value backends.
+    normalization identical to the other JSON-value back ends.
     """
     normalized = to_jsonable(data=data)
     rendered = _render_nlohmann_json_node(value=normalized)
