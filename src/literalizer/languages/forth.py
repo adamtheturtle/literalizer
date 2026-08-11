@@ -19,7 +19,7 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
 )
-from literalizer._formatters.format_floats import format_float_scientific
+from literalizer._formatters.format_floats import format_float_repr
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -99,7 +99,7 @@ def _format_float_forth(value: float) -> str:
 
     Example: ``1.5`` -> ``1.5e0``.
     """
-    result = format_float_scientific(value=value)
+    result = format_float_repr(value=value)
     if "e" not in result:
         return f"{result}e0"
     return result

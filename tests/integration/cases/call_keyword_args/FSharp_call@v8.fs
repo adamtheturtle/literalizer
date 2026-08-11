@@ -8,5 +8,5 @@ type ThrottlerType_() =
     member _.check(_user_id: obj, _ts: obj) : obj = null
 let throttler = ThrottlerType_()
 let emit (__arg: obj) : obj = null
-emit(throttler.check("user_1", 1000.0))
-emit(throttler.check("user_2", 2000.5))
+emit(throttler.check(FStr "user_1", FFloat 1000.0))
+emit(throttler.check(FStr "user_2", FFloat 2000.5))

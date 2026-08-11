@@ -80,14 +80,28 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableInputError,
+)
 
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
+
+
+@beartype
+def _data_has_null(data: Value) -> bool:
+    """Return whether *data* contains null in a value position."""
+    if data is None:
+        return True
+    if isinstance(data, dict):
+        return any(_data_has_null(data=value) for value in data.values())
+    if isinstance(data, list | set):
+        return any(_data_has_null(data=value) for value in data)
+    return False
 
 
 @beartype
@@ -671,7 +685,17 @@ class SystemVerilog(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject null values that have no distinct tagged
+        representation.
+        """
+        if _data_has_null(data=data):
+            msg = (
+                f"{type(self).__name__} cannot represent null distinctly "
+                "from an "
+                "empty string."
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -794,10 +818,10 @@ class SystemVerilog(metaclass=LanguageCls):
         '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
     )
     true_literal: ClassVar[str] = (
-        '_VVal\'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}'
+        '_VVal\'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}'
     )
     false_literal: ClassVar[str] = (
-        '_VVal\'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""}'
+        '_VVal\'{tag: _VVAL_BOOL, i: 0, r: 0.0, s: ""}'
     )
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
@@ -808,7 +832,8 @@ class SystemVerilog(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
         (
-            "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;\n"
+            "typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, "
+            "_VVAL_STR} _VTag;\n"
             "typedef struct {\n"
             "    _VTag tag;\n"
             "    longint i;\n"

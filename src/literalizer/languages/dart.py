@@ -988,6 +988,21 @@ class Dart(metaclass=LanguageCls):
         _decl_cls = type(self.declaration_style)
         if self.declaration_style is not _decl_cls.CONST:
             return
+        if value_contains(
+            data=data,
+            predicate=lambda value: (
+                isinstance(value, int)
+                and not isinstance(value, bool)
+                and not I64_MIN <= value <= I64_MAX
+            ),
+        ):
+            msg = (
+                "Dart CONST requires a constant-expression initializer, "
+                "but integers outside the signed 64-bit range produce a "
+                "BigInt.parse(…) call which is not a constant expression. "
+                "Use FINAL instead."
+            )
+            raise IncompatibleFormatsError(msg)
         _date_cls = type(self.date_format)
         _datetime_cls = type(self.datetime_format)
         # Match pure ``date`` values only — ``datetime`` is a subclass

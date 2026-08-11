@@ -1,13 +1,14 @@
 package main
+import "time"
 
 func main() {
-var my_data = map[string]string{
-	"exact_millisecond": "09:30:15.123000",
-	"sub_millisecond": "09:30:15.123456",
+var my_data = map[string]time.Time{
+	"exact_millisecond": time.Date(0, time.January, 1, 9, 30, 15, 123000000, time.UTC),
+	"sub_millisecond": time.Date(0, time.January, 1, 9, 30, 15, 123456000, time.UTC),
 }
-my_data = map[string]string{
-	"exact_millisecond": "09:30:15.123000",
-	"sub_millisecond": "09:30:15.123456",
+my_data = map[string]time.Time{
+	"exact_millisecond": time.Date(0, time.January, 1, 9, 30, 15, 123000000, time.UTC),
+	"sub_millisecond": time.Date(0, time.January, 1, 9, 30, 15, 123456000, time.UTC),
 }
 _ = my_data
 }

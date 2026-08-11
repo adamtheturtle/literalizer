@@ -1,1 +1,1 @@
-var my_data: Any = [Any]()
+var my_data = [Any]()

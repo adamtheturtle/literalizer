@@ -1,1 +1,2 @@
-my $my_data = 1;
+use JSON::PP;
+my $my_data = JSON::PP::true;

@@ -44,6 +44,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DeclarationStyleConfig,
     DictFormatConfig,
+    DottedCommandCallStyle,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -475,8 +476,11 @@ class PowerShell(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """PowerShell call style options."""
 
-        POSITIONAL = PositionalCallStyle(
-            arg_separator=", ", parenthesize_each_arg=False
+        POSITIONAL = DottedCommandCallStyle(
+            arg_separator=" ",
+            dotted_call_style=PositionalCallStyle(
+                arg_separator=", ", parenthesize_each_arg=False
+            ),
         )
 
     call_styles = CallStyles

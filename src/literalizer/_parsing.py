@@ -7,7 +7,7 @@ import functools
 import json
 from typing import assert_never
 
-import pyjson5
+import json5
 import tomlkit
 from beartype import beartype
 from ruamel.yaml import YAML
@@ -40,8 +40,30 @@ _HIGH_SURROGATE_START = 0xD800
 _LOW_SURROGATE_END = 0xDFFF
 
 
+class _DuplicateJSONKeyError(ValueError):
+    """A JSON object contains the same member name more than once."""
+
+
+def _json_object_without_duplicate_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    """Build a JSON object while rejecting repeated member names."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            msg = f"duplicate key {key!r}"
+            raise _DuplicateJSONKeyError(msg)
+        result[key] = value
+    return result
+
+
 class InputFormat(enum.Enum):
-    """Supported input serialization formats."""
+    """Supported input serialization formats.
+
+    YAML and TOML comments are preserved for rendering in the target
+    language. JSON and JSON5 are parsed as plain data, so JSON5 comments are
+    discarded.
+    """
 
     JSON = enum.auto()
     JSON5 = enum.auto()
@@ -254,7 +276,13 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
 def _parse_json(*, source: str) -> ParsedInput:
     """Parse a JSON string into a ``ParsedInput``."""
     try:
-        data = json.loads(s=source)
+        data = json.loads(
+            s=source,
+            object_pairs_hook=_json_object_without_duplicate_keys,
+        )
+    except _DuplicateJSONKeyError as exc:
+        message = f"Invalid JSON: {exc}"
+        raise JSONParseError(message) from exc
     except json.JSONDecodeError as exc:
         message = (
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
@@ -267,8 +295,8 @@ def _parse_json(*, source: str) -> ParsedInput:
 def _parse_json5(*, source: str) -> ParsedInput:
     """Parse a JSON5 string into a ``ParsedInput``."""
     try:
-        data = pyjson5.decode(data=source)  # pylint: disable=no-member
-    except pyjson5.Json5DecoderException as exc:  # pylint: disable=no-member
+        data = json5.loads(s=source, allow_duplicate_keys=False)
+    except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
         raise JSON5ParseError(message) from exc
     return ParsedPlain(data=data)

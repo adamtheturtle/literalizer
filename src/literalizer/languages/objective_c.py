@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
+    datetime_epoch_seconds,
     datetime_iso_formatter,
     format_datetime_epoch,
     format_time_iso,
@@ -80,6 +81,24 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_date_objc(value: datetime.date) -> str:
+    """Format a date as an ``NSDate`` at midnight UTC."""
+    midnight = datetime.datetime.combine(
+        date=value, time=datetime.time(), tzinfo=datetime.UTC
+    )
+    seconds = datetime_epoch_seconds(value=midnight)
+    return f"[NSDate dateWithTimeIntervalSince1970:{seconds}]"
+
+
+@beartype
+def _format_datetime_objc(value: datetime.datetime) -> str:
+    """Format a datetime as an ``NSDate`` preserving its instant."""
+    seconds = datetime_epoch_seconds(value=value)
+    return f"[NSDate dateWithTimeIntervalSince1970:{seconds}]"
+
 
 # A formatted numeric value can follow ``@`` directly when it is a
 # bare unsigned numeric literal (digits, hex/exponent letters, dot,
@@ -436,7 +455,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Date format options for ObjectiveC."""
 
         OBJC = DateFormatConfig(
-            formatter=date_iso_formatter(template='@"{iso}"'),
+            formatter=_format_date_objc,
             preamble_lines=(),
             type_produced=datetime.date,
         )
@@ -454,7 +473,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Datetime format options for ObjectiveC."""
 
         OBJC = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(template='@"{iso}"'),
+            formatter=_format_datetime_objc,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )

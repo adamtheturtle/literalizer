@@ -1,4 +1,4 @@
 proc my_app.http_client.fetch {args} {}
 my_app.http_client.fetch "hello"
 my_app.http_client.fetch 42
-my_app.http_client.fetch 1
+my_app.http_client.fetch true
