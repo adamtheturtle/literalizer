@@ -34,14 +34,20 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
     """Reject strings whose selected formatter emits a raw C0 byte."""
     match data:
         case str():
+            candidates = tuple(
+                character
+                for character in data
+                if ord(character) < _C0_UPPER_BOUND
+                and character not in "\0\t\n\r"
+            )
+            if not candidates:
+                return
             formatted = spec.format_string(data)
             unsafe_control = next(
                 (
                     character
-                    for character in data
-                    if ord(character) < _C0_UPPER_BOUND
-                    and character not in "\0\t\n\r"
-                    and character in formatted
+                    for character in candidates
+                    if character in formatted
                 ),
                 None,
             )
