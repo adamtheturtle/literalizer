@@ -2,6 +2,7 @@ module Fixture_ordered_map_nested_values_Crystal
 extend self
 my_data = {
     "name" => "Alice",
+    # score collection
     "scores" => {
         # score meaning
         1 => "first",

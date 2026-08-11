@@ -1,6 +1,7 @@
 from collections import OrderedDict
 my_data = OrderedDict([
     ("name", "Alice"),
+    # score collection
     ("scores", {
         # score meaning
         1: "first",
@@ -9,6 +10,7 @@ my_data = OrderedDict([
 ])
 my_data = OrderedDict([
     ("name", "Alice"),
+    # score collection
     ("scores", {
         # score meaning
         1: "first",

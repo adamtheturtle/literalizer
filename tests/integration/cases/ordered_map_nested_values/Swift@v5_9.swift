@@ -1,5 +1,6 @@
 let my_data: Any = [
     "name": "Alice",
+    // score collection
     "scores": [
         // score meaning
         1: "first",

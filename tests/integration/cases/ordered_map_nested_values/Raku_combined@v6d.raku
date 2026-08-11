@@ -1,5 +1,6 @@
 my $my_data = {
     'name' => 'Alice',
+    # score collection
     'scores' => {
         # score meaning
         1 => 'first',
@@ -8,6 +9,7 @@ my $my_data = {
 };
 $my_data = {
     'name' => 'Alice',
+    # score collection
     'scores' => {
         # score meaning
         1 => 'first',

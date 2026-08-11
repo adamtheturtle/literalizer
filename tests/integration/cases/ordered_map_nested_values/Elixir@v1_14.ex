@@ -2,6 +2,7 @@ defmodule Check do
   def x do
     my_data = [
         {"name", "Alice"},
+        # score collection
         {"scores", %{
             # score meaning
             1 => "first",

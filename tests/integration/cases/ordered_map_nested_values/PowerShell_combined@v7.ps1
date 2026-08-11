@@ -1,5 +1,6 @@
 $my_data = [ordered]@{
     "name" = "Alice";
+    # score collection
     "scores" = @{
         # score meaning
         1 = "first";
@@ -8,6 +9,7 @@ $my_data = [ordered]@{
 }
 $my_data = [ordered]@{
     "name" = "Alice";
+    # score collection
     "scores" = @{
         # score meaning
         1 = "first";

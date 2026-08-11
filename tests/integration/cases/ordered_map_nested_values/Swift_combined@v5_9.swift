@@ -1,5 +1,6 @@
 var my_data: Any = [
     "name": "Alice",
+    // score collection
     "scores": [
         // score meaning
         1: "first",
@@ -8,6 +9,7 @@ var my_data: Any = [
 ]
 my_data = [
     "name": "Alice",
+    // score collection
     "scores": [
         // score meaning
         1: "first",

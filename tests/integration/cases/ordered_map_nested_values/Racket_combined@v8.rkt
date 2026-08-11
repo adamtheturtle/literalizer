@@ -1,6 +1,7 @@
 #lang racket
 (define my_data (hash
     "name" "Alice"
+    ; score collection
     "scores" (hash
         ; score meaning
         1 "first"
@@ -9,6 +10,7 @@
 ))
 (set! my_data (hash
     "name" "Alice"
+    ; score collection
     "scores" (hash
         ; score meaning
         1 "first"

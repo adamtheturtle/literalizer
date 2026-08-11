@@ -1,5 +1,6 @@
 (define my_data (list
     (cons "name" "Alice")
+    ; score collection
     (cons "scores" (list
         ; score meaning
         (cons 1 "first")
