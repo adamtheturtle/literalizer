@@ -106,6 +106,7 @@ _format_string_double = make_backslash_string_formatter(
     ],
 )
 
+
 @beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
