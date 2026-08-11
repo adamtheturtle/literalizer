@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data: [String: [String: Any]] = [
     "ordered": [
         // ordered entry
         "name": "Alice",

@@ -7,6 +7,6 @@ WORKING-STORAGE SECTION.
 
         10 F-HOST PIC X(9) VALUE "localhost".
         10 F-PORT PIC X(1) VALUE SPACES.  *> not configured yet
-        10 F-DEBUG PIC X(5) VALUE "TRUE".
+        10 F-DEBUG PIC S9(18) COMP-5 VALUE 1.
 PROCEDURE DIVISION.
     STOP RUN.

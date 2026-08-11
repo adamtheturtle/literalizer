@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data: [String: Any] = [
     "a": [
         // inner note
         "b": 1,  // inline b

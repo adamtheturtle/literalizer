@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data: [String: Any] = [
     "a": [
         // inner note
         "b": 1,  // inline b

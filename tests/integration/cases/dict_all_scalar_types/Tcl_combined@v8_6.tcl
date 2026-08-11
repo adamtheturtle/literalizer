@@ -2,7 +2,7 @@ set my_data [dict create \
     "s" "string" \
     "i" 1 \
     "f" 1.5 \
-    "b" 1 \
+    "b" true \
     "n" "" \
     "d" "2024-01-15" \
     "dt" "2024-01-15T12:00:00" \
@@ -12,7 +12,7 @@ set my_data [dict create \
     "s" "string" \
     "i" 1 \
     "f" 1.5 \
-    "b" 1 \
+    "b" true \
     "n" "" \
     "d" "2024-01-15" \
     "dt" "2024-01-15T12:00:00" \
