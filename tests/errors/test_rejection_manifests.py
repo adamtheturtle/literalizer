@@ -140,6 +140,38 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
         ),
         (
             _manifest(
+                selection=(
+                    'gates = [{ kind = "capability_flag", flag = "sorcery" }]'
+                ),
+                call=_CONSTRUCTOR,
+                extra=_NO_EXTRA,
+            ),
+            "unknown capability flag 'sorcery'",
+        ),
+        (
+            _manifest(
+                selection=(
+                    'gates = [{ kind = "enum_member_present", '
+                    'option = "sorcery", member = "MAGIC" }]'
+                ),
+                call=_CONSTRUCTOR,
+                extra=_NO_EXTRA,
+            ),
+            "unknown gate option 'sorcery'",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                call=_CONSTRUCTOR,
+                extra=(
+                    '[[accepts]]\nlanguages = ["Go"]\n'
+                    'reason = "not selected by the gate"'
+                ),
+            ),
+            r"accepts language\(s\) not admitted by gates \['Go'\]",
+        ),
+        (
+            _manifest(
                 selection=_JSON_TYPE_GATE,
                 extra='values = ["b", "a"]',
                 call=(

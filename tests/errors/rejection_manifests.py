@@ -34,8 +34,13 @@ from pydantic import (
 import literalizer
 from literalizer import exceptions as literalizer_exceptions
 from literalizer.languages import ALL_LANGUAGES
-from tests.language_gates import LanguageGate  # noqa: TC001
-from tests.language_options import OPTIONS
+from tests.language_gates import (
+    CapabilityFlagGate,
+    EnumMemberPresentGate,
+    LanguageGate,
+    language_gate_admits,
+)
+from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 
 REJECTIONS_DIR = Path(__file__).parent / "rejections"
 """Where the declared rejections live."""
@@ -212,6 +217,40 @@ def _no_acceptances() -> tuple[Acceptance, ...]:
     return ()
 
 
+@beartype
+def _validate_gate_references(*, gates: tuple[LanguageGate, ...]) -> None:
+    """Reject gate names that the shared gate evaluator cannot resolve."""
+    for gate in gates:
+        match gate:
+            case CapabilityFlagGate() if gate.flag not in CAPABILITY_FLAGS:
+                msg = f"unknown capability flag {gate.flag!r}"
+                raise ValueError(msg)
+            case EnumMemberPresentGate() if gate.option not in OPTIONS:
+                msg = f"unknown gate option {gate.option!r}"
+                raise ValueError(msg)
+            case _:
+                pass
+
+
+@beartype
+def _unadmitted_acceptances(
+    *, gates: tuple[LanguageGate, ...], names: tuple[str, ...]
+) -> list[str]:
+    """Return accepted languages that the manifest's gates exclude."""
+    return sorted(
+        name
+        for name in names
+        if not all(
+            language_gate_admits(
+                gate=gate,
+                lang_cls=LANGUAGES_BY_NAME[name],
+                spec=LANGUAGES_BY_NAME[name](),
+            )
+            for gate in gates
+        )
+    )
+
+
 class Acceptance(
     BaseModel,
     extra="forbid",
@@ -348,6 +387,14 @@ class _RejectionData(  # noqa: NOD001
             raise ValueError(msg)
         if self.option is not None and self.option not in OPTIONS:
             msg = f"unknown option {self.option!r}"
+            raise ValueError(msg)
+        _validate_gate_references(gates=self.gates)
+        unadmitted = _unadmitted_acceptances(
+            gates=self.gates,
+            names=accepting,
+        )
+        if unadmitted:
+            msg = f"accepts language(s) not admitted by gates {unadmitted}"
             raise ValueError(msg)
         return self
 
