@@ -1038,7 +1038,6 @@ class Ada(metaclass=LanguageCls):
             quote_escape='""',
             control_char_template="Character'Val({})",
             concat_operator=" & ",
-            escape_backslash=False,
         )
 
         def _format(value: str) -> str:

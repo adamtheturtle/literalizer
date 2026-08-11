@@ -86,8 +86,10 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Alice'))]), fmap([fval_t :: fentry('name', fstr('Bob'))])]), &
-        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Charlie'))]), fmap([fval_t :: fentry('name', fstr('Dave'))])]) &
+        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Alice'))]), fmap([fval_t :: fentry('name', &
+    & fstr('Bob'))])]), &
+        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Charlie'))]), fmap([fval_t :: fentry('name', &
+    & fstr('Dave'))])]) &
     ])
 end subroutine main_declaration
 
@@ -96,8 +98,10 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Alice'))]), fmap([fval_t :: fentry('name', fstr('Bob'))])]), &
-        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Charlie'))]), fmap([fval_t :: fentry('name', fstr('Dave'))])]) &
+        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Alice'))]), fmap([fval_t :: fentry('name', &
+    & fstr('Bob'))])]), &
+        flist([fval_t :: fmap([fval_t :: fentry('name', fstr('Charlie'))]), fmap([fval_t :: fentry('name', &
+    & fstr('Dave'))])]) &
     ])
 end subroutine main_assignment
 
