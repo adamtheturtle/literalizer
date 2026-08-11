@@ -101,6 +101,7 @@ def _format_string_double(value: str) -> str:
     r"""Format *value* as an interpolation-safe double-quoted PHP string."""
     return format_string_backslash(value=value).replace("$", r"\$")
 
+
 @beartype
 def _php_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
