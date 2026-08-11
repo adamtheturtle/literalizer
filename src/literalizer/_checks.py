@@ -21,10 +21,57 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     MixedListValuesError,
     UnrepresentableInputError,
+    UnrepresentableStringError,
 )
 
 if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
+
+_C0_UPPER_BOUND = 0x20
+
+
+def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
+    """Reject strings whose selected formatter emits a raw C0 byte."""
+    match data:
+        case str():
+            candidates = tuple(
+                character
+                for character in data
+                if ord(character) < _C0_UPPER_BOUND
+                and character not in "\0\t\n\r"
+            )
+            if not candidates:
+                return
+            formatted = spec.format_string(data)
+            unsafe_control = next(
+                (
+                    character
+                    for character in candidates
+                    if character in formatted
+                ),
+                None,
+            )
+            if unsafe_control is not None:
+                raise UnrepresentableStringError(
+                    language_name=type(spec).__name__,
+                    character_name=(
+                        f"U+{ord(unsafe_control):04X} control character"
+                    ),
+                )
+        case dict():
+            separately_safe_control_keys = {"Bash", "Cobol", "Dhall", "Nix"}
+            for key, value in data.items():
+                # These back ends either reject control-bearing keys via
+                # a dedicated contract or derive a safe identifier without
+                # rendering the string key itself.
+                if type(spec).__name__ not in separately_safe_control_keys:
+                    _check_raw_control_characters(data=key, spec=spec)
+                _check_raw_control_characters(data=value, spec=spec)
+        case list() | set():
+            for value in data:
+                _check_raw_control_characters(data=value, spec=spec)
+        case _:
+            return
 
 
 def _contains_set(data: Value, /) -> bool:
@@ -972,6 +1019,7 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     data cannot be represented in the target language's collection
     formats.
     """
+    _check_raw_control_characters(data=data, spec=spec)
     if not spec.set_format_config.preserves_set_semantics and _contains_set(
         data
     ):
