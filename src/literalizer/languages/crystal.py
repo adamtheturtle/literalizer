@@ -127,6 +127,17 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _format_crystal_percent_dict_entry(
+    key: str, value: Value, formatted_value: str
+) -> str:
+    """Keep ``{%`` from becoming a Crystal macro-control opener."""
+    entry = dict_entry_with_separator(
+        separator=" => ", format_value=passthrough_sequence_entry
+    )(key, value, formatted_value)
+    return f" {entry}" if key.startswith("%") else entry
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating Crystal percent string."""
     if (
@@ -1441,10 +1452,15 @@ class Crystal(metaclass=LanguageCls):
                 supports_trailing_comma=False,
                 narrowed_empty_form=None,
             )
-        return self.dict_format(
+        config = self.dict_format(
             default_type=self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
         )
+        if self.string_format.name == "MULTILINE":
+            return dataclasses.replace(
+                config, format_entry=_format_crystal_percent_dict_entry
+            )
+        return config
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -1557,10 +1573,13 @@ class Crystal(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             )
-        return dict_entry_with_separator(
+        native_formatter = dict_entry_with_separator(
             separator=" => ",
             format_value=passthrough_sequence_entry,
         )
+        return {
+            "MULTILINE": _format_crystal_percent_dict_entry,
+        }.get(self.string_format.name, native_formatter)
 
     @cached_property
     def format_variable_declaration(

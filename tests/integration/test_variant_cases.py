@@ -8,6 +8,7 @@ import pytest
 
 import literalizer.languages
 from literalizer.languages import Kotlin, Python
+from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
     CaseManifestError,
@@ -27,7 +28,7 @@ from .variant_cases import (
     variant_languages,
 )
 from .variant_escape_hatches import build_typed_dict_null_filtering_variants
-from .variant_types import VariantCase, enum_member_by_name
+from .variant_types import VariantCase
 
 _SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])
 

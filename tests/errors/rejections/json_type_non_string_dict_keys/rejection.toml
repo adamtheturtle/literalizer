@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A JSON value type keys its objects with strings, so a dict with a
+non-string key has no representation under one.
+"""
+exceptions = ["UnrepresentableInputError"]
+option = "json_type"
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+source = "{1: one}"
+input_format = "yaml"

@@ -5,7 +5,7 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property, partial
 from typing import ClassVar
 
@@ -32,8 +32,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
-    I64_MAX,
-    I64_MIN,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
@@ -85,25 +83,19 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import Value
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    UnrepresentableEmptyDictError,
+    UnrepresentableInputError,
+    UnrepresentableStringError,
+)
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
-
-
-@beartype
-def _cobol_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
-    """Keep COBOL's structured empty literal beside typed siblings.
-
-    Inheriting a sibling's COMP-5 group opener for the empty slot
-    would produce a malformed COBOL record; the language's
-    ``PIC X(1) VALUE SPACES`` placeholder is the structurally valid
-    empty form here.
-    """
-    return _COBOL_EMPTY_LITERAL
+_COBOL_PIC_S9_18_MAX = 10**18 - 1
+_COBOL_PIC_S9_18_MIN = -_COBOL_PIC_S9_18_MAX
 
 
 @beartype
@@ -122,6 +114,47 @@ def _format_string_cobol(value: str) -> str:
         cleaned = cleaned.replace(char, replacement)
     escaped = cleaned.replace('"', '""')
     return f'"{escaped}"'
+
+
+@beartype
+def _data_has_empty_string_value(data: Value) -> bool:
+    """Return whether a value position contains an empty string."""
+    if isinstance(data, dict):
+        return any(
+            _data_has_empty_string_value(data=value) for value in data.values()
+        )
+    if isinstance(data, list | set):
+        return any(_data_has_empty_string_value(data=value) for value in data)
+    return data == ""
+
+
+@beartype
+def _first_cobol_placeholder(data: Value) -> str | None:
+    """Return the first value shape plain COBOL would collapse to
+    spaces.
+    """
+    values: Iterable[Value]
+    if data is None:
+        return "null"
+    if isinstance(data, dict):
+        if not data:
+            return "an empty mapping"
+        values = data.values()
+    elif isinstance(data, list | set):
+        if not data:
+            return "an empty container"
+        values = data
+    else:
+        return None
+    return next(
+        (
+            placeholder
+            for value in values
+            if (placeholder := _first_cobol_placeholder(data=value))
+            is not None
+        ),
+        None,
+    )
 
 
 @beartype
@@ -309,6 +342,17 @@ def _disambiguate_data_names(content: str) -> str:
             f"{match['indent']}{match['level']} {new_name}{match['rest']}"
         )
     return "\n".join(out_lines)
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _CobolDictFormatConfig(DictFormatConfig):
+    """COBOL mapping config that makes normalized sibling names unique."""
+
+    def postprocess_entries(self, lines: list[str], /) -> list[str]:
+        """Disambiguate one mapping even without a variable wrapper."""
+        rooted = "\n".join(("00 ROOT.", *lines))
+        return _disambiguate_data_names(content=rooted).split(sep="\n")[1:]
 
 
 @beartype
@@ -1137,7 +1181,23 @@ class Cobol(metaclass=LanguageCls):
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject empty strings outside the faithful JSON
+        representation backed by the C library.
+        """
+        has_empty_string = _data_has_empty_string_value(data=data)
+        if not self._json_type_active and has_empty_string:
+            raise UnrepresentableStringError(
+                language_name="COBOL",
+                character_name="an empty string",
+            )
+        placeholder = _first_cobol_placeholder(data=data)
+        if self._json_type_active or placeholder is None:
+            return
+        if placeholder == "an empty mapping":
+            raise UnrepresentableEmptyDictError
+        msg = f"Plain COBOL cannot distinguish {placeholder} from spaces."
+        raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1329,8 +1389,8 @@ class Cobol(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=str,
             fallback=raise_for_unrepresentable_int(language_name="Cobol"),
-            min_value=I64_MIN,
-            max_value=I64_MAX,
+            min_value=_COBOL_PIC_S9_18_MIN,
+            max_value=_COBOL_PIC_S9_18_MAX,
         )
 
     @cached_property
@@ -1539,7 +1599,7 @@ class Cobol(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         return dataclasses.replace(
             self.sequence_format.value,
-            narrowed_empty_form=_cobol_narrowed_empty_form,
+            narrowed_empty_form=None,
         )
 
     @cached_property
@@ -1555,7 +1615,7 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _CobolDictFormatConfig(
             dict_open=fixed_open(open_str=""),
             close="",
             format_entry=_format_cobol_dict_entry,

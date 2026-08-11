@@ -12,6 +12,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._checks import reject_aware_datetimes
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -406,10 +407,12 @@ def _rust_scalar_type(
             result = "f64"
         case str() | bytes():
             result = "&str"
-        case datetime.datetime():
-            result = datetime_type
         case datetime.date():
-            result = date_type
+            result = (
+                datetime_type
+                if isinstance(data, datetime.datetime)
+                else date_type
+            )
         case datetime.time():
             result = "&str"
         case None:
@@ -3656,6 +3659,13 @@ class Rust(metaclass=LanguageCls):
         """Validate Rust-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data)
+        if (
+            not self._json_type_active
+            and self.datetime_format.value.type_produced is datetime.datetime
+        ):
+            reject_aware_datetimes(
+                data=data, language_name="Rust", allow_utc_offset=False
+            )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

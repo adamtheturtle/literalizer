@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import itertools
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -442,10 +443,32 @@ def _build_string_formatters(
 
     def base_format_string(value: str) -> str:
         r"""Format a Haskell string with ``\x..`` control-char escapes."""
-        return format_string_backslash_control(
-            value=value,
-            control_char_fmt="\\x{:02x}",
+        has_greedy_hex_boundary = any(
+            character <= "\x1f"
+            and character not in "\t\n\r"
+            and following in "0123456789abcdefABCDEF"
+            for character, following in itertools.pairwise(value)
         )
+        if not has_greedy_hex_boundary:
+            return format_string_backslash_control(
+                value=value,
+                control_char_fmt="\\x{:02x}",
+            )
+        pieces: list[str] = []
+        for index, char in enumerate(iterable=value):
+            formatted = format_string_backslash_control(
+                value=char,
+                control_char_fmt="\\x{:02x}",
+            )[1:-1]
+            pieces.append(formatted)
+            is_hex_control = char <= "\x1f" and char not in "\t\n\r"
+            if (
+                is_hex_control
+                and index + 1 < len(value)
+                and value[index + 1] in "0123456789abcdefABCDEF"
+            ):
+                pieces.append("\\&")
+        return f'"{"".join(pieces)}"'
 
     if string_format_name != "EXPLICIT":
         return _StringFormatters(

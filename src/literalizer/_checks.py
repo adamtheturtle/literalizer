@@ -11,6 +11,7 @@ from beartype import beartype
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    ExcessiveNestingError,
     HeterogeneousCollectionError,
     HeterogeneousScalarCollectionError,
     HeterogeneousSetError,
@@ -71,6 +72,55 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                 _check_raw_control_characters(data=value, spec=spec)
         case _:
             return
+
+
+@beartype
+def guard_collection_nesting_depth(
+    *, data: Value, language_name: str, maximum_depth: int
+) -> None:
+    """Raise before rendering a collection deeper than *maximum_depth*."""
+    pending: list[tuple[Value, int]] = [(data, 0)]
+    while pending:
+        value, parent_depth = pending.pop()
+        if not isinstance(value, dict | list | set):
+            continue
+        depth = parent_depth + 1
+        if depth > maximum_depth:
+            raise ExcessiveNestingError(
+                language_name=language_name,
+                maximum_depth=maximum_depth,
+                actual_depth=depth,
+            )
+        children = value.values() if isinstance(value, dict) else value
+        pending.extend((child, depth) for child in children)
+
+
+@beartype
+def reject_aware_datetimes(
+    *, data: Value, language_name: str, allow_utc_offset: bool
+) -> None:
+    """Reject timezone-aware datetimes that a native formatter would
+    lose.
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case datetime.datetime() if value.utcoffset() is not None and not (
+                allow_utc_offset and value.utcoffset() == datetime.timedelta()
+            ):
+                msg = (
+                    f"{language_name} native datetime format cannot preserve "
+                    f"UTC offset {value.utcoffset()}"
+                )
+                raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
 
 
 def _contains_set(data: Value, /) -> bool:

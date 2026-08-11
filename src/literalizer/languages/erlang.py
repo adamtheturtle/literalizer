@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -305,7 +306,7 @@ class Erlang(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
-    module_name: str = "Module"
+    module_name: str = "module"
 
     leading_preamble = no_leading_preamble
     extension = ".erl"
@@ -632,6 +633,18 @@ class Erlang(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
+
+    def __post_init__(self) -> None:
+        """Validate that the module name is an unquoted Erlang atom."""
+        if re.fullmatch(
+            pattern=r"[a-z][A-Za-z0-9_@]*", string=self.module_name
+        ):
+            return
+        msg = (
+            "Erlang module_name must be an unquoted atom beginning with a "
+            f"lowercase letter, got {self.module_name!r}"
+        )
+        raise ValueError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

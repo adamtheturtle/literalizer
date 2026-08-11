@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import guard_collection_nesting_depth
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -88,6 +89,19 @@ from literalizer.exceptions import (
 
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
+_MAX_STRINGIFIED_COLLECTION_DEPTH = 12
+
+
+@beartype
+def _systemverilog_validate_spec_for_data(_self: object, data: Value) -> None:
+    """Reject nesting whose repeated string escaping grows
+    exponentially.
+    """
+    guard_collection_nesting_depth(
+        data=data,
+        language_name="SystemVerilog",
+        maximum_depth=_MAX_STRINGIFIED_COLLECTION_DEPTH,
+    )
 
 
 @beartype
@@ -685,9 +699,8 @@ class SystemVerilog(metaclass=LanguageCls):
     )
 
     def validate_spec_for_data(self, data: Value) -> None:
-        """Reject null values that have no distinct tagged
-        representation.
-        """
+        """Reject excessive nesting and ambiguous null values."""
+        _systemverilog_validate_spec_for_data(_self=self, data=data)
         if _data_has_null(data=data):
             msg = (
                 f"{type(self).__name__} cannot represent null distinctly "
