@@ -127,14 +127,6 @@ def _format_date_zig(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_zig(value: datetime.datetime) -> str:
-    """Format a datetime as epoch seconds (UTC)."""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=datetime.UTC)
-    return str(object=int(value.timestamp()))
-
-
-@beartype
 def _make_zig_integer_formatter(
     base: Callable[[int], str],
 ) -> Callable[[int], str]:
@@ -703,11 +695,6 @@ class Zig(metaclass=LanguageCls):
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
 
-        ZIG = DatetimeFormatConfig(
-            formatter=_format_datetime_zig,
-            type_produced=int,
-            preamble_lines=(),
-        )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -1064,7 +1051,7 @@ class Zig(metaclass=LanguageCls):
         )
 
     date_format: DateFormats = DateFormats.ZIG
-    datetime_format: DatetimeFormats = DatetimeFormats.ZIG
+    datetime_format: DatetimeFormats = DatetimeFormats.EPOCH
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
