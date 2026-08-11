@@ -2012,12 +2012,11 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
             )
             rendered = f"nlohmann::json::array({{{entries}}})"
         case dict():
-            object_entries: list[str] = []
-            for key, item in value.items():
-                assert isinstance(key, str)  # noqa: S101
-                rendered_key = json.dumps(key, ensure_ascii=False)
-                rendered_item = _render_nlohmann_json_node(item)
-                object_entries.append(f"{{{rendered_key}, {rendered_item}}}")
+            object_entries = (
+                "{" + json.dumps(key, ensure_ascii=False) + ", "
+                f"{_render_nlohmann_json_node(item)}}}"
+                for key, item in value.items()
+            )
             rendered = (
                 f"nlohmann::json::object({{{', '.join(object_entries)}}})"
             )
