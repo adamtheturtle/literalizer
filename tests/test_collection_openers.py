@@ -40,22 +40,26 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     language = Cpp()
     nested_set = make_set(1, 2)
 
-    assert language.set_format_config.set_open([1, "two"]).startswith(
-        "std::vector<std::variant<"
+    assert (
+        language.set_format_config.set_open([1, "two"])
+        == "std::vector<std::variant<int, std::string>>{"
     )
-    assert language.set_format_config.set_open([nested_set, "two"]).startswith(
-        "std::vector<std::variant<std::vector<"
+    assert (
+        language.set_format_config.set_open([nested_set, "two"])
+        == "std::vector<std::variant<std::vector<int>, std::string>>{"
     )
-    assert "#include <variant>" in language.data_dependent_preamble(
-        [nested_set, "two"]
+    assert language.data_dependent_preamble([nested_set, "two"]) == (
+        "#include <variant>",
     )
-    assert "#include <variant>" in language.data_dependent_preamble(
-        make_set(1, "two")
+    assert language.data_dependent_preamble(make_set(1, "two")) == (
+        "#include <variant>",
     )
 
     cpp14 = Cpp(language_version=Cpp.version_formats.CPP14)
     outer: Value = [nested_set, "two"]
-    assert id(outer) in cpp14.heterogeneous_behavior.compute_wrap_ids(outer)
+    assert cpp14.heterogeneous_behavior.compute_wrap_ids(outer) == frozenset(
+        {id(outer)}
+    )
 
 
 @pytest.mark.parametrize(

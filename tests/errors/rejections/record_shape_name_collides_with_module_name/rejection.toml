@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Java records are emitted as top-level types beside the class the module
+name declares, so the two cannot share an identifier.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Java"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "module_name", value = "Entry" },
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["Entry"] },
+]

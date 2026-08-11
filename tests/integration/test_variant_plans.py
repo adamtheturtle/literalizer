@@ -6,6 +6,7 @@ import pytest
 
 from literalizer import CollectionLayout, CommentConfig
 from literalizer.languages import ALL_LANGUAGES
+from tests.enum_members import find_enum_member
 
 from .case_manifests import CaseManifestError
 from .language_specs import make_spec
@@ -24,7 +25,6 @@ from .variant_plans import (
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
-from .variant_types import find_enum_member
 
 # The axes that resolve to a typed Python builder instead of a declared
 # plan.  This list may shrink, never grow: a new axis belongs in
