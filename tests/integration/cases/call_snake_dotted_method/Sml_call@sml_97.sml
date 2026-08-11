@@ -8,6 +8,6 @@ structure http_client = struct
 fun fetch _ = ()
 end
 end
-val _ = my_app.http_client.fetch("hello")
-val _ = my_app.http_client.fetch(42)
+val _ = my_app.http_client.fetch(SStr "hello")
+val _ = my_app.http_client.fetch(SInt 42)
 val _ = my_app.http_client.fetch(SBool true)

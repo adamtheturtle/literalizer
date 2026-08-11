@@ -719,12 +719,17 @@ def _format_java_json_call_arg(raw_value: Value, _formatted: str) -> str:
 
 
 @beartype
-def _java_record_field_identifier(key: str, /) -> str:
+def _java_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Java record component name for a dict *key*.
 
     Java record components keep the original key (identity); the
     literal is positional so the name only labels the declaration.
     """
+    if key in reserved_identifiers:
+        msg = f"Java record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1860,7 +1865,10 @@ class Java(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
-            field_identifier=_java_record_field_identifier,
+            field_identifier=functools.partial(
+                _java_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._java_record_field_type,
             render_declaration=_java_render_declaration,
             render_literal=_java_record_literal,
