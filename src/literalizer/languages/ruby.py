@@ -138,6 +138,7 @@ def _format_string_multiline(value: str) -> str:
         return _format_string_multiline_fallback(value=value)
     return format_string_backslash_single_minimal(value=value)
 
+
 @beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""

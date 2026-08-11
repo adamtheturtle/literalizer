@@ -118,6 +118,7 @@ def _format_perl_string_single(value: str) -> str:
         return _format_perl_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
+
 @beartype
 def _perl_call_stub(
     parts: Sequence[str],
