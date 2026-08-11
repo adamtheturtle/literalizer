@@ -14,7 +14,7 @@ $my_data = [
         ],
     ],
     "ref_marker_present" => [
-        "$keep",
+        "\$keep",
         "z",
     ],
 ];

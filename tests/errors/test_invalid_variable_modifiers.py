@@ -67,4 +67,4 @@ def test_target_language_modifier_remains_valid() -> None:
         ),
     )
 
-    assert result.code.startswith("final ")
+    assert result.code == "final int value = 1;"

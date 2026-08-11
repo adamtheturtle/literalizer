@@ -1,0 +1,24 @@
+schema_version = 1
+summary = """
+A JSON value type builds its value at run time, so a declaration style
+demanding a constant-expression initializer cannot hold one.
+"""
+exceptions = ["IncompatibleFormatsError"]
+option = "json_type"
+gates = [
+  { kind = "spec_field_present", field = "json_type" },
+  { kind = "enum_member_present", option = "declaration_style", member = "CONST" },
+]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]
+
+[[accepts]]
+languages = ["Zig"]
+reason = """
+Zig's const binds any comptime-known expression, and the parse result
+is bound rather than evaluated at compile time.
+"""
