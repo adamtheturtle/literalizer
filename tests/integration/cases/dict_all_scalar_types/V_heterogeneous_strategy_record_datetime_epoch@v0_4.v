@@ -18,7 +18,7 @@ fn main() {
 		n: unsafe { nil },
 		d: "2024-01-15",
 		dt: 1705320000,
-		by: "48656c6c6f",
+		by: '48656c6c6f',
 	}
 	_ = my_data
 }

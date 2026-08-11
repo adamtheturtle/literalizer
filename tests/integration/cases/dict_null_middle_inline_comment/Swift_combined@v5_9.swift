@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data: [String: Any?] = [
     "host": "localhost",
     "port": nil,  // not configured yet
     "debug": true,
