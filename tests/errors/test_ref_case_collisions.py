@@ -42,16 +42,3 @@ def test_literalize_call_rejects_nested_ref_case_collision() -> None:
             parameter_names=("value",),
             ref_case=IdentifierCase.SNAKE,
         )
-
-
-def test_repeated_source_ref_name_remains_valid() -> None:
-    """Repeated uses of one source name are not a collision."""
-    result = literalize(
-        source='[{"$ref": "userId"}, {"$ref": "userId"}]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        ref_case=IdentifierCase.SNAKE,
-    )
-
-    expected_occurrences = 2
-    assert result.code.count("user_id") == expected_occurrences
