@@ -91,10 +91,11 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
+    value_contains,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
+    IncompatibleFormatsError,
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
@@ -1696,7 +1697,36 @@ class Haskell(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject tuple sequences nested inside the generated ``Val``
+        ADT.
+        """
+        if (
+            self.json_type is not None
+            or self.sequence_format is not type(self.sequence_format).TUPLE
+        ):
+            return
+        nested_list = (
+            any(
+                value_contains(
+                    data=item,
+                    predicate=lambda value: isinstance(value, list),
+                )
+                for item in data
+            )
+            if isinstance(data, list)
+            else value_contains(
+                data=data,
+                predicate=lambda value: isinstance(value, list),
+            )
+        )
+        if nested_list:
+            msg = (
+                "Haskell sequence_format=TUPLE cannot represent a tuple "
+                "nested inside the generated Val ADT. Use LIST or select "
+                "the Aeson JSON type."
+            )
+            raise IncompatibleFormatsError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

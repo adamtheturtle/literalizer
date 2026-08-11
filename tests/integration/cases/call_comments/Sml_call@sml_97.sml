@@ -3,6 +3,6 @@ datatype val_t =
   | SList of val_t list
 fun process _ = ()
 (* Test cases *)
-val _ = process("hello")  (* single word *)
-val _ = process("hello world")  (* two words *)
+val _ = process(SStr "hello")  (* single word *)
+val _ = process(SStr "hello world")  (* two words *)
 (* trailing comment *)
