@@ -5,8 +5,8 @@ id my_data = @[
     @YES,
     @1.5,
     [NSNull null],
-    @"2020-01-01",
-    @"2020-01-01T00:00:00+00:00",
+    [NSDate dateWithTimeIntervalSince1970:1577836800],
+    [NSDate dateWithTimeIntervalSince1970:1577836800],
     @[],
 ];
 (void)my_data;
@@ -14,8 +14,8 @@ my_data = @[
     @YES,
     @1.5,
     [NSNull null],
-    @"2020-01-01",
-    @"2020-01-01T00:00:00+00:00",
+    [NSDate dateWithTimeIntervalSince1970:1577836800],
+    [NSDate dateWithTimeIntervalSince1970:1577836800],
     @[],
 ];
     (void)my_data;

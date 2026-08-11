@@ -143,8 +143,6 @@ def _pic_from_value(value: str) -> str:
     """
     if value == "SPACES":
         return "PIC X(1)"
-    if value in {'"TRUE"', '"FALSE"'}:
-        return "PIC X(5)"
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
@@ -1300,8 +1298,8 @@ class Cobol(metaclass=LanguageCls):
     indent: str = "    "
 
     null_literal: ClassVar[str] = "SPACES"
-    true_literal: ClassVar[str] = '"TRUE"'
-    false_literal: ClassVar[str] = '"FALSE"'
+    true_literal: ClassVar[str] = "1"
+    false_literal: ClassVar[str] = "0"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = "\n"
     skip_null_dict_values: ClassVar[bool] = False

@@ -1,6 +1,6 @@
-let item_var: Any = [
+let item_var = [
     "_": "_",
 ]
-let my_data: Any = [
+let my_data = [
     "items": [item_var, ["fallback": "value"]],
 ]

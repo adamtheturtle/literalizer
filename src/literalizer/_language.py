@@ -19,7 +19,10 @@ from typing import (
 import humps
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import typed_collection_open
+from literalizer._formatters.collection_openers import (
+    SequenceSurrogateSetOpen,
+    typed_collection_open,
+)
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
@@ -188,6 +191,11 @@ class SetFormatConfig:
     supports_heterogeneity: bool
     supports_trailing_comma: bool
 
+    @property
+    def preserves_set_semantics(self) -> bool:
+        """Return whether the opener represents a set, not a sequence."""
+        return not isinstance(self.set_open, SequenceSurrogateSetOpen)
+
     def with_typed_opener(
         self,
         *,
@@ -347,6 +355,17 @@ class CommandCallStyle:
     arg_separator: str
 
 
+@dataclasses.dataclass(frozen=True)
+class DottedCommandCallStyle(CommandCallStyle):
+    """Command calls with a distinct style for dotted member calls.
+
+    Some command-oriented languages use command syntax for free functions but
+    conventional parenthesized syntax for member methods.
+    """
+
+    dotted_call_style: PositionalCallStyle
+
+
 CallStyle = (
     PositionalCallStyle
     | KeywordCallStyle
@@ -354,6 +373,7 @@ CallStyle = (
     | PostfixCallStyle
     | PrefixCallStyle
     | CommandCallStyle
+    | DottedCommandCallStyle
 )
 """Tagged union describing how a language passes call arguments."""
 
