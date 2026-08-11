@@ -8,7 +8,7 @@ module Throttler = struct
 let check _ = ()
 end
 let emit _ = ()
-let _ = emit(Throttler.check("user_1", 1000.0))
-let _ = emit(Throttler.check("user_2", 2000.5))
+let _ = emit(Throttler.check(OStr "user_1", OFloat 1000.0))
+let _ = emit(Throttler.check(OStr "user_2", OFloat 2000.5))
 
 end

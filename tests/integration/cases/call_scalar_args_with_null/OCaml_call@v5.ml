@@ -6,6 +6,6 @@ type val_t =
   | OList of val_t list
 let process _ = ()
 let _ = process(ONull)
-let _ = process("hello")
+let _ = process(OStr "hello")
 
 end

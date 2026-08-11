@@ -1,11 +1,12 @@
 package main
+import "time"
 
 func main() {
-var my_data = map[string]string{
-	"starts_at": "09:30:00",
+var my_data = map[string]time.Time{
+	"starts_at": time.Date(0, time.January, 1, 9, 30, 0, 0, time.UTC),
 }
-my_data = map[string]string{
-	"starts_at": "09:30:00",
+my_data = map[string]time.Time{
+	"starts_at": time.Date(0, time.January, 1, 9, 30, 0, 0, time.UTC),
 }
 _ = my_data
 }

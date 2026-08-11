@@ -1,11 +1,11 @@
 package main
 
 func main() {
-my_data := map[string]int{
+my_data := map[string]int64{
 	"a": 1,
 	"b": 1099511627776,
 }
-my_data = map[string]int{
+my_data = map[string]int64{
 	"a": 1,
 	"b": 1099511627776,
 }

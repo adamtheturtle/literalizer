@@ -74,7 +74,6 @@ from literalizer._language import (
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_call_target,
     identity_constructor_target,
@@ -903,9 +902,16 @@ class Sml(metaclass=LanguageCls):
         applications are not parsed as additional arguments to the outer
         call.
         """
+        entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
-            return _sml_format_call_arg
-        return identity_call_arg
+
+            def _curried_arg(original: Value, formatted: str) -> str:
+                """Tag the value and parenthesize the curried argument."""
+                tagged = entry_formatter(original, formatted)
+                return _sml_format_call_arg(original, tagged)
+
+            return _curried_arg
+        return entry_formatter
 
     @cached_property
     def format_call_preamble_stub(
@@ -1206,6 +1212,7 @@ class Sml(metaclass=LanguageCls):
             float: (_h, f"{p}Real of real"),
             str: (_h, f"{p}Str of string"),
             bytes: (_h, f"{p}Str of string"),
+            datetime.time: (_h, f"{p}Str of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
             list: (_h, f"{p}List of {self.type_name} list"),

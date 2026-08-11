@@ -12,7 +12,7 @@ val my_list : val_t = SList [
     SInt 2,
     SInt 3
 ]
-val _ = process(my_int, 42)
-val _ = process(my_bool, 7)
-val _ = process(my_float, 9)
-val _ = process(my_list, 1)
+val _ = process(my_int, SInt 42)
+val _ = process(my_bool, SInt 7)
+val _ = process(my_float, SInt 9)
+val _ = process(my_list, SInt 1)

@@ -8,6 +8,6 @@ structure client = struct
 fun fetch _ = ()
 end
 end
-val _ = app.client.fetch("hello")
-val _ = app.client.fetch(42)
+val _ = app.client.fetch(SStr "hello")
+val _ = app.client.fetch(SInt 42)
 val _ = app.client.fetch(SBool true)
