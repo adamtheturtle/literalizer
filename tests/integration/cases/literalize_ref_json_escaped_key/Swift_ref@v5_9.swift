@@ -1,4 +1,4 @@
-let myVar: Any = [
+let myVar = [
     "_": "_",
 ]
-let my_data: Any = myVar
+let my_data = myVar

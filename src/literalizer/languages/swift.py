@@ -411,54 +411,6 @@ def _format_swift_typed_declaration(
     return f"{keyword} {name}: {hint} = {value}"
 
 
-@beartype
-def _apply_swift_optional_nil_declaration(
-    *,
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
-    keyword: str,
-) -> str:
-    """Format a Swift variable declaration, guarding top-level ``nil``."""
-    if data is None:
-        return f"{keyword} {name}: Any? = {value}"
-    return base_formatter(name, value, data, _modifiers)
-
-
-@beartype
-def _optional_nil_declaration(
-    *,
-    base_formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str],
-    keyword: str,
-) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-    """Wrap *base_formatter* so top-level ``nil`` gets an optional type.
-
-    ``Any`` is non-optional in Swift, so ``let my_data: Any = nil`` fails
-    to compile.  Emit ``{keyword} {name}: Any? = nil`` when the value is
-    ``None``.
-    """
-
-    def _format(
-        name: str,
-        value: str,
-        data: Value,
-        _modifiers: frozenset[enum.Enum],
-    ) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_swift_optional_nil_declaration(
-            name=name,
-            value=value,
-            data=data,
-            _modifiers=_modifiers,
-            base_formatter=base_formatter,
-            keyword=keyword,
-        )
-
-    return _format
-
-
 # The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
 # names (no ``record_shape_names``), so the shared renderer always gets
 # an empty custom-name mapping.
@@ -777,13 +729,13 @@ class Swift(metaclass=LanguageCls):
 
         LET = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="let {name}: Any = {value}"
+                template="let {name} = {value}"
             ),
             supports_redefinition=False,
         )
         VAR = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="var {name}: Any = {value}"
+                template="var {name} = {value}"
             ),
             supports_redefinition=True,
         )
@@ -941,10 +893,40 @@ class Swift(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
-                return _optional_nil_declaration(
-                    base_formatter=auto_formatter,
-                    keyword=keyword,
-                )
+
+                def _inferred_formatter(
+                    name: str,
+                    value: str,
+                    data: Value,
+                    modifiers: frozenset[enum.Enum],
+                ) -> str:
+                    """Annotate only values Swift cannot infer safely."""
+                    hint = _swift_type_hint(
+                        data=data,
+                        date_hint=date_hint,
+                        datetime_hint=datetime_hint,
+                        default_set_element_type=default_set_element_type,
+                        default_sequence_element_type=(
+                            default_sequence_element_type
+                        ),
+                        default_dict_value_type=default_dict_value_type,
+                        sequence_is_tuple=sequence_is_tuple,
+                    )
+                    needs_context = data is None or (
+                        bool(data) and "Record0(" not in value
+                    )
+                    if isinstance(data, dict) and any(
+                        not isinstance(key, str) for key in data
+                    ):
+                        hint = "Any"
+                    if value == "()":
+                        hint = "Any"
+                        needs_context = True
+                    if "Any" in hint and needs_context:
+                        return f"{keyword} {name}: {hint} = {value}"
+                    return auto_formatter(name, value, data, modifiers)
+
+                return _inferred_formatter
 
             def _typed_formatter(
                 name: str,

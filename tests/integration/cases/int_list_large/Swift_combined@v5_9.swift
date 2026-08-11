@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     1000000,
     -1234,
     255,

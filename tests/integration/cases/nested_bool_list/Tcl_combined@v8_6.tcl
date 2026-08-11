@@ -1,8 +1,8 @@
 set my_data [list \
-    [list 1 0] \
-    [list 1 1] \
+    [list true false] \
+    [list true true] \
 ]
 set my_data [list \
-    [list 1 0] \
-    [list 1 1] \
+    [list true false] \
+    [list true true] \
 ]
