@@ -92,7 +92,7 @@ subroutine main_declaration()
         fentry('n', fnull()), &
         fentry('d', fstr("2024-01-15")), &
         fentry('dt', fstr("2024-01-15T12:00:00")), &
-        fentry('by', fstr("48656c6c6f")) &
+        fentry('by', fstr('48656c6c6f')) &
     ])
 end subroutine main_declaration
 
@@ -108,7 +108,7 @@ subroutine main_assignment()
         fentry('n', fnull()), &
         fentry('d', fstr("2024-01-15")), &
         fentry('dt', fstr("2024-01-15T12:00:00")), &
-        fentry('by', fstr("48656c6c6f")) &
+        fentry('by', fstr('48656c6c6f')) &
     ])
 end subroutine main_assignment
 

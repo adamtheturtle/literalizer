@@ -1,1 +1,1 @@
-let p: Any = Playlist()
+let p = Playlist()

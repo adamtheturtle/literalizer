@@ -603,13 +603,15 @@ def _kotlin_opener_to_type(opener: str, /) -> str:
 
 
 @beartype
-def _kotlin_record_field_identifier(key: str, /) -> str:
+def _kotlin_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Kotlin record field name for a dict *key*.
 
-    Kotlin allows the original (possibly snake_case) key verbatim as a
-    ``data class`` property name, so the mapping is the identity.
+    Kotlin allows ordinary identifiers verbatim and reserved words when
+    enclosed in backticks.
     """
-    return key
+    return f"`{key}`" if key in reserved_identifiers else key
 
 
 @beartype
@@ -1772,7 +1774,10 @@ class Kotlin(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
-            field_identifier=_kotlin_record_field_identifier,
+            field_identifier=functools.partial(
+                _kotlin_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._kotlin_record_field_type,
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,

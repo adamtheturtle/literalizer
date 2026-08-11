@@ -48,3 +48,19 @@ def test_invalid_json5_is_parse_error() -> None:
             include_delimiters=False,
             variable_form=None,
         )
+
+
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=["{a: 1, a: 2}", "{outer: {a: 1, a: 2}}"],
+)
+def test_json5_rejects_duplicate_keys(source: str) -> None:
+    """JSON5 objects reject repeated keys at every nesting level."""
+    with pytest.raises(
+        expected_exception=JSON5ParseError, match="Duplicate key"
+    ):
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON5,
+            language=PYTHON,
+        )

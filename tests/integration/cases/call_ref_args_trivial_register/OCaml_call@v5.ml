@@ -14,9 +14,9 @@ let my_list : val_t = OList [
     OInt 2;
     OInt 3
 ]
-let _ = process(my_int, 42)
-let _ = process(my_bool, 7)
-let _ = process(my_float, 9)
-let _ = process(my_list, 1)
+let _ = process(my_int, OInt 42)
+let _ = process(my_bool, OInt 7)
+let _ = process(my_float, OInt 9)
+let _ = process(my_list, OInt 1)
 
 end

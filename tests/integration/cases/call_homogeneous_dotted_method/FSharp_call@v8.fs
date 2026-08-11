@@ -8,5 +8,5 @@ type ClientType_() =
 type AppType_() =
     member _.client = ClientType_()
 let app = AppType_()
-app.client.fetch("hello")
-app.client.fetch("world")
+app.client.fetch(FStr "hello")
+app.client.fetch(FStr "world")
