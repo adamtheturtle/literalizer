@@ -1,4 +1,4 @@
-var my_data: Any = Set<AnyHashable>([
+var my_data: Set<AnyHashable> = Set<AnyHashable>([
     1,
     2,
     3,

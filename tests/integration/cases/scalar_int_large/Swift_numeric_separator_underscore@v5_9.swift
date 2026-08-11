@@ -1,1 +1,1 @@
-let my_data: Any = 2_147_483_648
+let my_data = 2_147_483_648

@@ -3,13 +3,13 @@ Imports System.Collections.Generic
 Module Check
     Sub _declaration()
         Dim my_data = New Dictionary(Of String, Object) From {
-            {"vals", New Object() {"2024-01-15", New TimeOnly(9, 30, 0)}}
+            {"vals", New Object() {New DateOnly(2024, 1, 15), New TimeOnly(9, 30, 0)}}
         }
     End Sub
     Sub _assignment()
         Dim my_data As Object
         my_data = New Dictionary(Of String, Object) From {
-            {"vals", New Object() {"2024-01-15", New TimeOnly(9, 30, 0)}}
+            {"vals", New Object() {New DateOnly(2024, 1, 15), New TimeOnly(9, 30, 0)}}
         }
     End Sub
 End Module

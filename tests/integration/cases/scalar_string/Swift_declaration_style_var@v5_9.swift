@@ -1,1 +1,1 @@
-var my_data: Any = "hello"
+var my_data = "hello"

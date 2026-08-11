@@ -1,1 +1,1 @@
-let my_data: Any = 3.14
+let my_data = 3.14

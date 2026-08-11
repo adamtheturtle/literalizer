@@ -1,5 +1,6 @@
 var my_data = {
     "name": "Alice",
     "age": 30,
-    "active": true
+    "active": true,
+    "score": null
 }
