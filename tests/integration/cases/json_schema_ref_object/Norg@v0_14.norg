@@ -1,0 +1,6 @@
+* my_data
+@code json
+{
+    "schema": {"$ref": "#/defs/Foo"}
+}
+@end
