@@ -32,8 +32,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
-    I64_MAX,
-    I64_MIN,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
 )
@@ -92,6 +90,8 @@ from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
+_COBOL_PIC_S9_18_MAX = 10**18 - 1
+_COBOL_PIC_S9_18_MIN = -_COBOL_PIC_S9_18_MAX
 
 
 @beartype
@@ -1339,8 +1339,8 @@ class Cobol(metaclass=LanguageCls):
         return make_overflow_fallback_formatter(
             base=str,
             fallback=raise_for_unrepresentable_int(language_name="Cobol"),
-            min_value=I64_MIN,
-            max_value=I64_MAX,
+            min_value=_COBOL_PIC_S9_18_MIN,
+            max_value=_COBOL_PIC_S9_18_MAX,
         )
 
     @cached_property
