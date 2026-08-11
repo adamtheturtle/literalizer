@@ -9,5 +9,5 @@ $MyOther = @(
     5;
     6
 )
-process($MyVar, 42)
-process($MyOther, 7)
+process $MyVar 42
+process $MyOther 7

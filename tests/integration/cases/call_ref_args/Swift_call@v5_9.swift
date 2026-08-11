@@ -1,10 +1,10 @@
 @discardableResult func process(data: Any = 0, count: Any = 0) -> Any { 0 }
-let my_var: Any = [
+let my_var = [
     1,
     2,
     3,
 ]
-let my_other: Any = [
+let my_other = [
     4,
     5,
     6,

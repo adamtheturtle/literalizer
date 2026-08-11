@@ -22,7 +22,6 @@ from literalizer._formatters.format_dates import (
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
     format_bytes_base64,
-    format_bytes_hex,
     passthrough_sequence_entry,
 )
 from literalizer._formatters.format_floats import (
@@ -79,6 +78,31 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _format_fortran_string(value: str) -> str:
+    """Format a string with Fortran quoting and control escapes."""
+    return format_string_concat_control(
+        quote_char="'",
+        quote_escape="''",
+        control_char_template="achar({})",
+        concat_operator=" // ",
+        escape_backslash=False,
+    )(value)
+
+
+@beartype
+def _format_fortran_bytes_hex(value: bytes) -> str:
+    """Format hexadecimal bytes through the Fortran string formatter."""
+    return _format_fortran_string(value=value.hex())
+
+
+@beartype
+def _format_fortran_bytes_base64(value: bytes) -> str:
+    """Format base64 bytes through the Fortran string formatter."""
+    encoded = format_bytes_base64(value=value)[1:-1]
+    return _format_fortran_string(value=encoded)
 
 
 @beartype
@@ -591,8 +615,8 @@ class Fortran(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = enum.member(value=_format_fortran_bytes_hex)
+        BASE64 = enum.member(value=_format_fortran_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -1301,13 +1325,7 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
-            quote_char="'",
-            quote_escape="''",
-            control_char_template="achar({})",
-            concat_operator=" // ",
-            escape_backslash=False,
-        )
+        return _format_fortran_string
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
