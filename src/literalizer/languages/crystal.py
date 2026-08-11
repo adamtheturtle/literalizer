@@ -1195,7 +1195,8 @@ class Crystal(metaclass=LanguageCls):
                 # by any record golden; the ``or`` widens it to ``Nil``.
                 return (
                     "Time"
-                    if type(value) is datetime.date
+                    if isinstance(value, datetime.date)
+                    and not isinstance(value, datetime.datetime)
                     and self.date_format.value.type_produced is datetime.date
                     else _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"
                 )
