@@ -23,7 +23,6 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
-    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
@@ -112,6 +111,9 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidRecordNameError
+
+_GO_I32_MIN = -(2**31)
+_GO_I32_MAX = 2**31 - 1
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -218,10 +220,27 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
     nanoseconds = value.microsecond * 1000
+    offset = value.utcoffset()
+    offset_seconds = 0 if offset is None else int(offset.total_seconds())
+    location = (
+        "time.UTC"
+        if offset_seconds == 0
+        else f'time.FixedZone("", {offset_seconds})'
+    )
     return (
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
-        f"{nanoseconds}, time.UTC)"
+        f"{nanoseconds}, {location})"
+    )
+
+
+@beartype
+def _format_time_go(value: datetime.time) -> str:
+    """Format a local time as a Go ``time.Time`` with a zero date."""
+    nanoseconds = value.microsecond * 1000
+    return (
+        f"time.Date(0, time.January, 1, {value.hour}, {value.minute}, "
+        f"{value.second}, {nanoseconds}, time.UTC)"
     )
 
 
@@ -944,8 +963,22 @@ class Go(metaclass=LanguageCls):
                 )
             case list():
                 opener = self.sequence_open(value)
-            case int() if not isinstance(value, bool) and value > I64_MAX:
-                return "uint64"
+            case int() if not isinstance(value, bool):
+                suffix_is_auto = (
+                    self.numeric_literal_suffix
+                    is type(self.numeric_literal_suffix).AUTO
+                )
+                return (
+                    "uint64"
+                    if value > I64_MAX
+                    else (
+                        "int64"
+                        if suffix_is_auto
+                        or value < _GO_I32_MIN
+                        or value > _GO_I32_MAX
+                        else "int"
+                    )
+                )
             case _:
                 return self._init_element_to_type(type(value)) or "any"
         return opener[: -len("{")]
@@ -1125,12 +1158,12 @@ class Go(metaclass=LanguageCls):
             bytes_type="string",
             date_type=date_type,
             datetime_type=datetime_type,
-            time_type="string",
+            time_type="time.Time",
             list_template="[]{inner}",
             enable_list_type=True,
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
             fallback_value_type="any",
-            wide_int_type=None,
+            wide_int_type="int64",
             beyond_i64_type="uint64",
         )
 
@@ -1231,7 +1264,7 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _format_time_go
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
@@ -1339,7 +1372,7 @@ class Go(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra=None,
+            extra={datetime.time: ('import "time"',)},
         )
 
     @cached_property

@@ -15,6 +15,6 @@ let my_strings: Val = FList [
     FStr "b"
 ]
 let my_empty: Val = FList []
-process(my_ints, 42)
-process(my_strings, 7)
-process(my_empty, 99)
+process(my_ints, FInt 42L)
+process(my_strings, FInt 7L)
+process(my_empty, FInt 99L)

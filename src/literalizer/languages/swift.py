@@ -162,9 +162,12 @@ def _format_date_swift(value: datetime.date) -> str:
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
+    offset = value.utcoffset() or datetime.timedelta()
+    offset_seconds = int(offset.total_seconds())
     parts = (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
+        f"timeZone: TimeZone(secondsFromGMT: {offset_seconds})!, "
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
@@ -417,15 +420,16 @@ _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 
 
 @beartype
-def _swift_record_field_identifier(key: str, /) -> str:
+def _swift_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Swift ``struct`` member name for a dict *key*.
 
-    Swift property identifiers are the dict keys verbatim (no case
-    conversion), matching the synthesized-initializer literal form
-    ``Record0(id: 1, ...)`` whose argument labels are the property
-    names.
+    Swift property identifiers preserve the dict keys (no case conversion),
+    escaping reserved words with backticks in declarations. Swift permits
+    keywords as argument labels, so the literal renderer removes them there.
     """
-    return key
+    return f"`{key}`" if key in reserved_identifiers else key
 
 
 @beartype
@@ -446,7 +450,8 @@ def _swift_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}(",
         entries=tuple(
-            f"{field.identifier}: {field.formatted}" for field in fields
+            f"{field.identifier.strip('`')}: {field.formatted}"
+            for field in fields
         ),
         closer=")",
         compact_pad="",
@@ -1209,7 +1214,10 @@ class Swift(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_SWIFT_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_swift_record_field_identifier,
+            field_identifier=functools.partial(
+                _swift_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
