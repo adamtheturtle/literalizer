@@ -1,7 +1,8 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json("2024-01-15T12:30:00+00:00")json", nullptr, false);
+auto my_data = nlohmann::json("2024-01-15T12:30:00+00:00");
     (void)my_data;
         return 0;
     } catch (...) {
