@@ -85,14 +85,14 @@ subroutine main_declaration()
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fint(-9223372036854775808_int64)
+    my_data = fint((-9223372036854775807_int64 - 1_int64))
 end subroutine main_declaration
 
 subroutine main_assignment()
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fint(-9223372036854775808_int64)
+    my_data = fint((-9223372036854775807_int64 - 1_int64))
 end subroutine main_assignment
 
 program main

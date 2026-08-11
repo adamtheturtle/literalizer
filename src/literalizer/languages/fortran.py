@@ -1007,8 +1007,15 @@ class Fortran(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as an int64 Fortran literal."""
+
+        def format_int64(value: int) -> str:
+            """Avoid an out-of-range positive operand for INT64_MIN."""
+            if value == I64_MIN:
+                return "(-9223372036854775807_int64 - 1_int64)"
+            return f"{value}_int64"
+
         return make_overflow_fallback_formatter(
-            base=lambda value: f"{value}_int64",
+            base=format_int64,
             fallback=raise_for_unrepresentable_int(language_name="Fortran"),
             min_value=I64_MIN,
             max_value=I64_MAX,
