@@ -92,6 +92,6 @@ program main
         fentry('score', fnull()), &
         fentry('joined', fstr("2024-01-15")), &
         fentry('last_login', fstr("2024-01-15T12:30:00+00:00")), &
-        fentry('avatar', fstr("48656c6c6f")) &
+        fentry('avatar', fstr('48656c6c6f')) &
     ])
 end program main
