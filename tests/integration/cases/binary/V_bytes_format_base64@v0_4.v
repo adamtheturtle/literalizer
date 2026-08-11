@@ -1,7 +1,7 @@
 
 fn main() {
 	my_data := [
-		"SGVsbG8=",
+		'SGVsbG8=',
 	]
 	_ = my_data
 }

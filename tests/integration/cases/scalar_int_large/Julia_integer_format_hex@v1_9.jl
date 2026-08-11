@@ -1,1 +1,1 @@
-my_data = 0x80000000
+my_data = Int(0x80000000)

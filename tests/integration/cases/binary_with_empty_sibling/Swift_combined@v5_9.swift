@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data: [Any] = [
     "48656c6c6f",
     [Any](),
 ]

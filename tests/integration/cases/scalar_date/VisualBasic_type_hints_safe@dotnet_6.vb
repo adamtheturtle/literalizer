@@ -1,3 +1,3 @@
 Module Check
-    Dim my_data = "2024-01-15"
+    Dim my_data = New DateOnly(2024, 1, 15)
 End Module

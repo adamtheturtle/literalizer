@@ -80,12 +80,12 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    UnrepresentableInputError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -124,9 +124,8 @@ class Toml(metaclass=LanguageCls):
     arrays for sequences and sets — using TOML v1.1 multiline inline
     table syntax, which permits newlines and comments within braces.
 
-    ``null`` is not a TOML type; dict entries whose value is ``null``
-    are omitted (``skip_null_dict_values = True``), and ``null`` values
-    in sequences are rendered as the empty string ``""``.
+    ``null`` is not a TOML type, so inputs containing it are rejected
+    instead of silently dropping entries or substituting another value.
 
     Dates and datetimes are rendered as unquoted TOML native date /
     datetime literals, which are a distinct TOML type.
@@ -432,7 +431,23 @@ class Toml(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject ``null`` values, which TOML cannot represent."""
+        match data:
+            case None:
+                msg = (
+                    "TOML cannot represent null values; remove the null "
+                    "or choose a language with a null literal"
+                )
+                raise UnrepresentableInputError(msg)
+            case dict():
+                for value in data.values():
+                    self.validate_spec_for_data(data=value)
+            case list() | set():
+                for value in data:
+                    self.validate_spec_for_data(data=value)
+            case _:
+                return
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

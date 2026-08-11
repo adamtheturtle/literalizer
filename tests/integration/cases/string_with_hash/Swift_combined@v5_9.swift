@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "issue #{42}",
     "color #red",
 ]
