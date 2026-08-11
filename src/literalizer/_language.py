@@ -349,6 +349,17 @@ class CommandCallStyle:
     arg_separator: str
 
 
+@dataclasses.dataclass(frozen=True)
+class DottedCommandCallStyle(CommandCallStyle):
+    """Command calls with a distinct style for dotted member calls.
+
+    Some command-oriented languages use command syntax for free functions but
+    conventional parenthesized syntax for member methods.
+    """
+
+    dotted_call_style: PositionalCallStyle
+
+
 CallStyle = (
     PositionalCallStyle
     | KeywordCallStyle
@@ -356,6 +367,7 @@ CallStyle = (
     | PostfixCallStyle
     | PrefixCallStyle
     | CommandCallStyle
+    | DottedCommandCallStyle
 )
 """Tagged union describing how a language passes call arguments."""
 

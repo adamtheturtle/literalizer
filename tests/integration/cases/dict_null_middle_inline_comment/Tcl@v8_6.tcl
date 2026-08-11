@@ -2,5 +2,5 @@
 set my_data [dict create \
     "host" "localhost" \
     "port" "" \
-    "debug" 1 \
+    "debug" true \
 ]

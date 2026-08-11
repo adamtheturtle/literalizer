@@ -2,6 +2,7 @@
 
 import math
 from collections.abc import Callable
+from decimal import Decimal
 
 from beartype import beartype
 
@@ -17,6 +18,7 @@ def reject_special_floats(
 
     @beartype
     def _format(value: float) -> str:
+        """Reject a special float before delegating finite values."""
         if not math.isfinite(value):
             msg = f"{language_name} cannot represent special float {value!r}."
             raise UnrepresentableSpecialFloatError(msg)
@@ -98,8 +100,11 @@ def format_float_scientific(value: float) -> str:
 
 @beartype
 def format_float_fixed(value: float) -> str:
-    """Format a finite float in fixed-point notation (``%f``).
+    """Format a finite float in round-tripping fixed-point notation.
 
-    Example: ``1500.0`` -> ``"1500.000000"``, ``0.001`` -> ``"0.001000"``.
+    Example: ``1500.0`` -> ``"1500.000000"``, ``1e-9`` -> ``"0.000000001"``.
     """
-    return f"{value:f}"
+    six_places = f"{value:f}"
+    if float(six_places) == value:
+        return six_places
+    return format(Decimal(value=repr(value)), "f")
