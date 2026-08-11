@@ -2240,14 +2240,11 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
         typed_raw_map: Mapping[object, object] = raw_value
         for key, child in value.items():
-            if key in typed_raw_map:
-                _collect_yaml_comment_nodes(
-                    value=child,
-                    raw_value=_mapping_object_at(
-                        mapping=typed_raw_map, key=key
-                    ),
-                    out=out,
-                )
+            _collect_yaml_comment_nodes(
+                value=child,
+                raw_value=_mapping_object_at(mapping=typed_raw_map, key=key),
+                out=out,
+            )
         return
     if isinstance(raw_value, CommentedSeq) and isinstance(value, list):
         out[id(value)] = raw_value
