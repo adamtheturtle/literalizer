@@ -21,7 +21,7 @@ from literalizer._formatters.format_dates import (
     format_time_local_time_of,
 )
 from literalizer._formatters.format_entries import (
-    dict_entry_with_separator,
+    DictEntryWithSeparator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -90,6 +90,18 @@ from literalizer._language import (
 from literalizer._types import Value
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+class _GroovyDictEntryWithSeparator(DictEntryWithSeparator):
+    """Parenthesize expression keys required by Groovy map literals."""
+
+    def __call__(
+        self, key: str, raw_value: Value, formatted_value: str, /
+    ) -> str:
+        """Protect a method-call key from parsing as a label."""
+        if key.startswith("java.time."):
+            key = f"({key})"
+        return super().__call__(key, raw_value, formatted_value)
 
 
 @beartype
@@ -775,7 +787,7 @@ class Groovy(metaclass=LanguageCls):
         return DictFormatConfig(
             dict_open=fixed_open(open_str="["),
             close="]",
-            format_entry=dict_entry_with_separator(
+            format_entry=_GroovyDictEntryWithSeparator(
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
@@ -833,7 +845,7 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        return dict_entry_with_separator(
+        return _GroovyDictEntryWithSeparator(
             separator=": ",
             format_value=passthrough_sequence_entry,
         )
