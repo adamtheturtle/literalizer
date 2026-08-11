@@ -72,6 +72,7 @@ Letting ``wrap_in_file`` do the assembly
 
 Stitching the fields together yourself is error-prone, because the correct placement of :attr:`~literalizer.LiteralizeResult.preamble` and :attr:`~literalizer.LiteralizeResult.body_preamble` differs by language.
 Pass ``wrap_in_file=True`` and |project| assembles a complete, valid file for you: the preamble is placed at the top, the literal is bound to your variable inside whatever scope the language requires, and the regions are ordered correctly.
+Most back ends produce a self-contained file. Ada additionally imports the companion ``A_Stub`` package; copy ``scripts/a_stub.ads`` and ``scripts/a_stub.adb`` beside the generated file before compiling it.
 
 .. code-block:: python
 
@@ -108,7 +109,7 @@ Pass ``wrap_in_file=True`` and |project| assembles a complete, valid file for yo
        "}"
    )
 
-Prefer ``wrap_in_file=True`` whenever you need output that compiles or runs as-is.
+Prefer ``wrap_in_file=True`` whenever you need assembled output, adding any companion support files documented by the selected language.
 Read :attr:`~literalizer.LiteralizeResult.code` and :attr:`~literalizer.LiteralizeResult.preamble` separately only when you are embedding the literal into a larger template of your own and want to control where the preamble lands.
 
 ``body_preamble`` and ``bare_code``

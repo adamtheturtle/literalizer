@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -23,6 +23,6 @@ ObjType_ obj = new();
 initial begin
 obj.api.client.post(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"});
 obj.api.client.post(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-obj.api.client.post(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+obj.api.client.post(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""});
 end
 endmodule

@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
     "first",  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
     /* before second: * / |# -} *) ) =# ]] %} ]# % #> */

@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
@@ -45,7 +44,6 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash,
     format_string_backslash_single_minimal,
-    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -98,29 +96,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
-
-_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
-_format_string_multiline_fallback = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[
-        ("#{", r"\#{"),
-        ("#@", r"\#@"),
-        ("#$", r"\#$"),
-        ("\0", r"\x00"),
-    ],
-)
-
-
-@beartype
-def _format_string_multiline(value: str) -> str:
-    r"""Format *value* as a non-interpolating multiline Ruby literal."""
-    if (
-        "\r" in value
-        or "\0" in value
-        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
-    ):
-        return _format_string_multiline_fallback(value=value)
-    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -314,7 +289,7 @@ class Ruby(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = True
+    supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "ruby"
@@ -538,7 +513,6 @@ class Ruby(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=format_string_backslash)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
-        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
