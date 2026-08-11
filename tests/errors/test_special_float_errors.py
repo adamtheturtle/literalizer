@@ -14,7 +14,7 @@ import pytest
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
 from literalizer.exceptions import UnrepresentableSpecialFloatError
-from literalizer.languages import Elixir, Erlang, Gleam
+from literalizer.languages import Elixir, Erlang, Gleam, Hcl
 
 
 @pytest.mark.parametrize(
@@ -53,4 +53,19 @@ def test_beam_special_floats_raise(
             source=f"- {yaml_value}\n",
             input_format=InputFormat.YAML,
             language=language,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="yaml_value",
+    argvalues=[".inf", "-.inf", ".nan"],
+    ids=["positive_infinity", "negative_infinity", "nan"],
+)
+def test_hcl_special_floats_raise(yaml_value: str) -> None:
+    """HCL rejects values for which it has no literal expression."""
+    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
+        literalize(
+            source=f"- {yaml_value}\n",
+            input_format=InputFormat.YAML,
+            language=Hcl(),
         )

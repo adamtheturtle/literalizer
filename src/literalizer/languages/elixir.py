@@ -732,7 +732,7 @@ class Elixir(metaclass=LanguageCls):
         del declaration, assignment, variable_name, body_preamble
         raise WrapCombinedInFileNotSupportedError
 
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.ELIXIR
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST

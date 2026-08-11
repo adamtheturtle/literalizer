@@ -37,6 +37,26 @@ class FixedOpen:
         return self.open_str
 
 
+@dataclass(frozen=True)
+class SequenceSurrogateSetOpen:
+    """Mark a set opener whose target value is actually a sequence."""
+
+    opener: Callable[[list[Value]], str]
+
+    def __call__(self, items: list[Value], /) -> str:
+        """Delegate to the sequence-surrogate opener."""
+        return self.opener(items)
+
+
+@beartype
+def sequence_surrogate_set_open(
+    opener: Callable[[list[Value]], str],
+    /,
+) -> Callable[[list[Value]], str]:
+    """Mark *opener* as degrading set values to sequence values."""
+    return SequenceSurrogateSetOpen(opener=opener)
+
+
 @beartype
 def fixed_open(
     *, open_str: str
