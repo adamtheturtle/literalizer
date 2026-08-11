@@ -41,7 +41,12 @@ _LOW_SURROGATE_END = 0xDFFF
 
 
 class InputFormat(enum.Enum):
-    """Supported input serialization formats."""
+    """Supported input serialization formats.
+
+    YAML and TOML comments are preserved for rendering in the target
+    language. JSON and JSON5 are parsed as plain data, so JSON5 comments are
+    discarded.
+    """
 
     JSON = enum.auto()
     JSON5 = enum.auto()
