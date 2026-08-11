@@ -6,7 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from literalizer import InputFormat, NewVariable, _literalize, literalize
+from literalizer import (
+    CollectionLayout,
+    InputFormat,
+    NewVariable,
+    _literalize,
+    literalize,
+)
 from literalizer.languages import Python
 
 if TYPE_CHECKING:
@@ -43,6 +49,9 @@ def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
     assert not _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
         value=absent, ref_key="$ref"
     )
+    assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
+        value={"nested": present}, ref_key="$ref"
+    )
 
 
 def test_ref_markers_are_opt_in() -> None:
@@ -65,3 +74,32 @@ def test_ref_markers_are_opt_in() -> None:
         variable_form=variable_form,
         ref_key="$ref",
     ).code == ('my_data = {\n    "value": foo,\n}')
+
+
+def test_ref_markers_preserve_multiline_collection_openers() -> None:
+    """Ref-aware nested dicts and lists keep their multiline openers."""
+    result = literalize(
+        source=(
+            '{"mapping":{"value":1,"ref":{"$ref":"foo"}},'
+            '"sequence":[1,{"$ref":"bar"},2]}'
+        ),
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+        ref_key="$ref",
+        collection_layout=CollectionLayout.MULTILINE,
+    )
+
+    assert result.code == (
+        "my_data = {\n"
+        '    "mapping": {\n'
+        '        "value": 1,\n'
+        '        "ref": foo,\n'
+        "    },\n"
+        '    "sequence": (\n'
+        "        1,\n"
+        "        bar,\n"
+        "        2,\n"
+        "    ),\n"
+        "}"
+    )
