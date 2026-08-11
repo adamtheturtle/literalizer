@@ -1,0 +1,1 @@
+F# native dates and datetimes now use their generated ``Date`` and ``Datetime`` union constructors instead of culture-dependent string conversions, and those cases are declared only when the selected format uses them.
