@@ -2,7 +2,9 @@
 
 import pytest
 
-from literalizer.languages.bash import _format_string_double
+from literalizer.languages.bash import (
+    _format_string_double,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 @pytest.mark.parametrize(
