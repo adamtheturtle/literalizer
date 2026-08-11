@@ -1,0 +1,9 @@
+package main
+
+func main() {
+my_data := []int{
+	999999999999999999,
+	-999999999999999999,
+}
+_ = my_data
+}
