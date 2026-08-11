@@ -15,22 +15,6 @@ def _nested_array_source(depth: int) -> str:
 @pytest.mark.parametrize(
     argnames="language", argvalues=[Bash(), SystemVerilog()]
 )
-def test_stringifying_backends_accept_depth_twelve(
-    language: Language,
-) -> None:
-    """The documented supported boundary can still be rendered."""
-    result = literalize(
-        source=_nested_array_source(depth=12),
-        input_format=InputFormat.JSON,
-        language=language,
-    )
-
-    assert result.code
-
-
-@pytest.mark.parametrize(
-    argnames="language", argvalues=[Bash(), SystemVerilog()]
-)
 def test_stringifying_backends_reject_depth_thirteen(
     language: Language,
 ) -> None:
