@@ -1,0 +1,21 @@
+C[CJSON] -> UnrepresentableInputError: C json_type can only represent dict keys as JSON object strings, not int
+CSharp[SYSTEM_TEXT_JSON_NODE] -> UnrepresentableInputError: C# json_type can only represent dict keys as JSON object strings, not int
+Cobol[CJSON] -> UnrepresentableInputError: Cobol cannot represent dict key of type int
+Cpp[NLOHMANN_JSON] -> UnrepresentableInputError: Cpp json_type can only represent dict keys as JSON object strings, not int
+Crystal[JSON_ANY] -> UnrepresentableInputError: Crystal json_type can only represent dict keys as JSON object strings, not int
+D[STD_JSON_VALUE] -> UnrepresentableInputError: D cannot represent dict key of type int
+Elm[JSON_ENCODE_VALUE] -> UnrepresentableInputError: Elm(json_type=JSON_ENCODE_VALUE) cannot represent dict key 1: Json.Encode.object keys must be strings.
+Erlang[OTP_JSON] -> UnrepresentableInputError: Erlang(json_type=OTP_JSON) cannot represent dict key 1: json:encode/1 requires string keys.
+FSharp[SYSTEM_TEXT_JSON_NODE] -> UnrepresentableInputError: F# json_type can only represent dict keys as JSON object strings, not int
+Gleam[GLEAM_JSON_JSON] -> UnrepresentableInputError: Gleam cannot represent dict key of type int
+Haskell[AESON_VALUE] -> UnrepresentableInputError: Haskell cannot represent dict key of type int
+Java[JACKSON_JSON_NODE] -> UnrepresentableInputError: Java json_type can only represent dict keys as JSON object strings, not int
+Kotlin[KOTLINX_JSON_ELEMENT] -> UnrepresentableInputError: Kotlin json_type can only represent dict keys as JSON object strings, not int
+Nim[JSON_NODE] -> UnrepresentableInputError: Nim cannot represent dict key of type int
+OCaml[YOJSON_SAFE_T] -> UnrepresentableInputError: OCaml cannot represent dict key of type int
+Odin[JSON_VALUE] -> UnrepresentableInputError: Odin json_type can only represent dict keys as JSON object strings, not int
+PureScript[ARGONAUT_JSON] -> UnrepresentableInputError: PureScript json_type=ARGONAUT_JSON can only represent dict keys as JSON object strings, not int.
+Rust[SERDE_JSON_VALUE] -> UnrepresentableInputError: Rust json_type can only represent dict keys as JSON object strings, not int
+Scala[CIRCE] -> UnrepresentableInputError: Scala json_type can only represent dict keys as JSON object strings, not int
+Scheme[GUILE_JSON] -> UnrepresentableInputError: Scheme json_type=GUILE_JSON can only represent dict keys as JSON object strings, not int
+Zig[STD_JSON_VALUE] -> UnrepresentableInputError: Zig json_type can only represent dict keys as JSON object strings, not int

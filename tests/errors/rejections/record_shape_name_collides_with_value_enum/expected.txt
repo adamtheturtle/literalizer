@@ -1,0 +1,1 @@
+Rust -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Entry', which collides with heterogeneous_value_enum_name.

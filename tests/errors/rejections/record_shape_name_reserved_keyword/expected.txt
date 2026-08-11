@@ -1,0 +1,1 @@
+Rust -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Self', which is a Rust reserved keyword.

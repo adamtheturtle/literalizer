@@ -1,0 +1,2 @@
+Cpp[NLOHMANN_JSON] -> IncompatibleFormatsError: Cpp json_type renders data through nlohmann::json::parse(...) and is incompatible with heterogeneous_strategy=TUPLE, which generates std::tuple<...> declarations. Use heterogeneous_strategy=ERROR.
+Kotlin[KOTLINX_JSON_ELEMENT] -> IncompatibleFormatsError: Kotlin json_type renders data through Json.parseToJsonElement(...) and is incompatible with heterogeneous_strategy=TUPLE, which generates typed declarations. Use heterogeneous_strategy=ERROR.

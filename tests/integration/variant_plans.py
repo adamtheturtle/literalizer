@@ -42,6 +42,14 @@ from pydantic import BaseModel, Field, ValidationError
 
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
+from tests.enum_members import enum_member_by_name
+from tests.language_gates import (
+    CapabilityFlagGate,
+    EnumMemberPresentGate,
+    SpecFieldPresentGate,
+    language_gate_admits,
+)
+from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 
 from .language_metadata import (
     LanguageMetadata,
@@ -50,7 +58,7 @@ from .language_metadata import (
 )
 from .language_specs import make_spec, sorted_languages
 from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
-from .variant_types import Variant, enum_member_by_name, find_enum_member
+from .variant_types import Variant
 
 AXES_PATH = Path(__file__).parent / "axes.toml"
 
@@ -74,59 +82,6 @@ class AxisResolver(Hashable, Protocol):
 
 
 @runtime_checkable
-class _HasBoolFormat(Protocol):
-    """A spec exposing a configurable boolean literal spelling."""
-
-    bool_format: enum.Enum
-    bool_formats: type[enum.Enum]
-
-
-@runtime_checkable
-class _HasEmptyDictKey(Protocol):
-    """A spec exposing a configurable empty-dict key policy."""
-
-    empty_dict_key: enum.Enum
-    empty_dict_keys: type[enum.Enum]
-
-
-@runtime_checkable
-class _HasAnnotationEvaluation(Protocol):
-    """A spec exposing configurable annotation evaluation."""
-
-    annotation_evaluation: enum.Enum
-    annotation_evaluations: type[enum.Enum]
-
-
-@runtime_checkable
-class _HasUnionFormat(Protocol):
-    """A spec exposing configurable union annotation syntax."""
-
-    union_format: enum.Enum
-    union_formats: type[enum.Enum]
-
-
-@runtime_checkable
-class _HasJsonType(Protocol):
-    """A spec exposing a JSON value-type representation.
-
-    Languages without one omit the ``json_type`` constructor field
-    entirely, so a ``spec_field_present`` gate selects the languages
-    this reads from.
-    """
-
-    json_type: enum.Enum | None
-    json_types: type[enum.Enum]
-
-
-@runtime_checkable
-class _HasBytesFormat(Protocol):
-    """A spec exposing the configured bytes format."""
-
-    bytes_format: enum.Enum
-    bytes_formats: type[enum.Enum]
-
-
-@runtime_checkable
 class _EscapesNullByte(Protocol):
     """An option member declaring how it renders an embedded null byte.
 
@@ -135,90 +90,6 @@ class _EscapesNullByte(Protocol):
     """
 
     string_literals_escape_null_byte: bool
-
-
-@beartype
-def _bool_format(spec: literalizer.Language) -> object:
-    """Return the configured boolean literal spelling."""
-    assert isinstance(spec, _HasBoolFormat)  # noqa: S101
-    return spec.bool_format
-
-
-@beartype
-def _bool_formats(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the boolean literal spellings a language offers."""
-    assert isinstance(spec, _HasBoolFormat)  # noqa: S101
-    return spec.bool_formats
-
-
-@beartype
-def _empty_dict_key(spec: literalizer.Language) -> object:
-    """Return the configured empty-dict key policy."""
-    assert isinstance(spec, _HasEmptyDictKey)  # noqa: S101
-    return spec.empty_dict_key
-
-
-@beartype
-def _empty_dict_keys(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the empty-dict key policies a language offers."""
-    assert isinstance(spec, _HasEmptyDictKey)  # noqa: S101
-    return spec.empty_dict_keys
-
-
-@beartype
-def _annotation_evaluation(spec: literalizer.Language) -> object:
-    """Return the configured annotation-evaluation mode."""
-    assert isinstance(spec, _HasAnnotationEvaluation)  # noqa: S101
-    return spec.annotation_evaluation
-
-
-@beartype
-def _annotation_evaluations(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the annotation-evaluation modes a language offers."""
-    assert isinstance(spec, _HasAnnotationEvaluation)  # noqa: S101
-    return spec.annotation_evaluations
-
-
-@beartype
-def _union_format(spec: literalizer.Language) -> object:
-    """Return the configured union annotation syntax."""
-    assert isinstance(spec, _HasUnionFormat)  # noqa: S101
-    return spec.union_format
-
-
-@beartype
-def _union_formats(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the union annotation forms a language offers."""
-    assert isinstance(spec, _HasUnionFormat)  # noqa: S101
-    return spec.union_formats
-
-
-@beartype
-def _json_type(spec: literalizer.Language) -> object:
-    """Return the configured JSON value type, if any."""
-    assert isinstance(spec, _HasJsonType)  # noqa: S101
-    return spec.json_type
-
-
-@beartype
-def _json_types(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the JSON value types a language offers."""
-    assert isinstance(spec, _HasJsonType)  # noqa: S101
-    return spec.json_types
-
-
-@beartype
-def _bytes_format(spec: literalizer.Language) -> object:
-    """Return the configured bytes format, despite JSON overrides."""
-    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
-    return spec.bytes_format
-
-
-@beartype
-def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the bytes formats a language offers."""
-    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
-    return spec.bytes_formats
 
 
 @beartype
@@ -253,188 +124,6 @@ def _widens_unrecordizable_nested_sibling_maps(
     behavior = spec.heterogeneous_behavior
     return behavior.widens_unrecordizable_nested_sibling_maps
 
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _Option:
-    """One configurable formatter option a plan can select values from.
-
-    ``kwarg`` is the language-class constructor parameter name; each
-    accessor reads the configured value or the member enum from a built
-    spec.
-    """
-
-    kwarg: str
-    get_default: Callable[[literalizer.Language], object]
-    get_members: Callable[[literalizer.Language], type[enum.Enum]]
-
-
-_OPTIONS: Mapping[str, _Option] = {
-    "annotation_evaluation": _Option(
-        kwarg="annotation_evaluation",
-        get_default=_annotation_evaluation,
-        get_members=_annotation_evaluations,
-    ),
-    "bool_format": _Option(
-        kwarg="bool_format",
-        get_default=_bool_format,
-        get_members=_bool_formats,
-    ),
-    # Each option reads the value the constructor took, not the derived
-    # formatter the language built from it: a JSON value type overrides
-    # ``format_bytes``, and Haskell, OCaml and SML build a closure from
-    # their date and datetime members rather than returning the member,
-    # so a derived accessor never compares equal to the default and
-    # expands the language default under a non-default name.
-    "bytes_format": _Option(
-        kwarg="bytes_format",
-        get_default=_bytes_format,
-        get_members=_bytes_formats,
-    ),
-    "comment_format": _Option(
-        kwarg="comment_format",
-        get_default=lambda spec: spec.comment_format,
-        get_members=lambda spec: spec.comment_formats,
-    ),
-    "date_format": _Option(
-        kwarg="date_format",
-        get_default=lambda spec: spec.date_format,
-        get_members=lambda spec: spec.date_formats,
-    ),
-    "datetime_format": _Option(
-        kwarg="datetime_format",
-        get_default=lambda spec: spec.datetime_format,
-        get_members=lambda spec: spec.datetime_formats,
-    ),
-    "declaration_style": _Option(
-        kwarg="declaration_style",
-        get_default=lambda spec: spec.declaration_style,
-        get_members=lambda spec: spec.declaration_styles,
-    ),
-    "dict_entry_style": _Option(
-        kwarg="dict_entry_style",
-        get_default=lambda spec: spec.dict_entry_style,
-        get_members=lambda spec: spec.dict_entry_styles,
-    ),
-    "dict_format": _Option(
-        kwarg="dict_format",
-        get_default=lambda spec: spec.dict_format,
-        get_members=lambda spec: spec.dict_formats,
-    ),
-    "empty_dict_key": _Option(
-        kwarg="empty_dict_key",
-        get_default=_empty_dict_key,
-        get_members=_empty_dict_keys,
-    ),
-    "float_format": _Option(
-        kwarg="float_format",
-        get_default=lambda spec: spec.float_format,
-        get_members=lambda spec: spec.float_formats,
-    ),
-    "heterogeneous_strategy": _Option(
-        kwarg="heterogeneous_strategy",
-        get_default=lambda spec: spec.heterogeneous_strategy,
-        get_members=lambda spec: spec.heterogeneous_strategies,
-    ),
-    "integer_format": _Option(
-        kwarg="integer_format",
-        get_default=lambda spec: spec.integer_format,
-        get_members=lambda spec: spec.integer_formats,
-    ),
-    "integer_width_strategy": _Option(
-        kwarg="integer_width_strategy",
-        get_default=lambda spec: spec.integer_width_strategy,
-        get_members=lambda spec: spec.integer_width_strategies,
-    ),
-    "json_type": _Option(
-        kwarg="json_type",
-        get_default=_json_type,
-        get_members=_json_types,
-    ),
-    "language_version": _Option(
-        kwarg="language_version",
-        get_default=lambda spec: spec.language_version,
-        get_members=lambda spec: spec.version_formats,
-    ),
-    "numeric_literal_suffix": _Option(
-        kwarg="numeric_literal_suffix",
-        get_default=lambda spec: spec.numeric_literal_suffix,
-        get_members=lambda spec: spec.numeric_literal_suffixes,
-    ),
-    "numeric_separator": _Option(
-        kwarg="numeric_separator",
-        get_default=lambda spec: spec.numeric_separator,
-        get_members=lambda spec: spec.numeric_separators,
-    ),
-    "numeric_style": _Option(
-        kwarg="numeric_style",
-        get_default=lambda spec: spec.numeric_style,
-        get_members=lambda spec: spec.numeric_styles,
-    ),
-    "sequence_format": _Option(
-        kwarg="sequence_format",
-        get_default=lambda spec: spec.sequence_format,
-        get_members=lambda spec: spec.sequence_formats,
-    ),
-    "set_format": _Option(
-        kwarg="set_format",
-        get_default=lambda spec: spec.set_format,
-        get_members=lambda spec: spec.set_formats,
-    ),
-    "statement_terminator_style": _Option(
-        kwarg="statement_terminator_style",
-        get_default=lambda spec: spec.statement_terminator_style,
-        get_members=lambda spec: spec.statement_terminator_styles,
-    ),
-    "string_format": _Option(
-        kwarg="string_format",
-        get_default=lambda spec: spec.string_format,
-        get_members=lambda spec: spec.string_formats,
-    ),
-    "trailing_comma": _Option(
-        kwarg="trailing_comma",
-        get_default=lambda spec: spec.trailing_comma,
-        get_members=lambda spec: spec.trailing_commas,
-    ),
-    "union_format": _Option(
-        kwarg="union_format",
-        get_default=_union_format,
-        get_members=_union_formats,
-    ),
-    "variable_type_hints": _Option(
-        kwarg="variable_type_hints",
-        get_default=lambda spec: spec.variable_type_hints,
-        get_members=lambda spec: spec.variable_type_hints_formats,
-    ),
-}
-
-_CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
-    "declares_call_styles": lambda lang_cls: len(lang_cls.CallStyles) > 0,
-    "supports_json_call_result_binding": (
-        lambda lang_cls: lang_cls.supports_json_call_result_binding
-    ),
-    "supports_multiline_string_literals": (
-        lambda lang_cls: lang_cls.supports_multiline_string_literals
-    ),
-    "supports_record_shape_names": (
-        lambda lang_cls: lang_cls.supports_record_shape_names
-    ),
-    "supports_record_struct_name_prefix": (
-        lambda lang_cls: lang_cls.supports_record_struct_name_prefix
-    ),
-    "supports_ref_elements_in_tuple_strategy": (
-        lambda lang_cls: (
-            lang_cls.variant_metadata.supports_ref_elements_in_tuple_strategy
-        )
-    ),
-    "supports_standalone_comments_in_wrapped_calls": (
-        lambda lang_cls: lang_cls.supports_standalone_comments_in_wrapped_calls
-    ),
-    "string_literals_escape_null_byte": (
-        lambda lang_cls: (
-            lang_cls.variant_metadata.string_literals_escape_null_byte
-        )
-    ),
-}
 
 # Facts about one member of an option enum.  Every other registry here
 # decides whether a language participates in an axis; these decide which
@@ -561,18 +250,6 @@ _TAG_PLACEHOLDER = "tag"
 _SECONDARY_PLACEHOLDER = "secondary"
 
 
-class _CapabilityFlagGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages whose class declares a capability flag."""
-
-    kind: Literal["capability_flag"]
-    flag: Annotated[str, Field(min_length=1)]
-
-
 class _RecordVariantGate(
     BaseModel,
     extra="forbid",
@@ -595,31 +272,6 @@ class _NonDefaultKwargGate(
 
     kind: Literal["non_default_kwarg"]
     kwarg: Annotated[str, Field(min_length=1)]
-
-
-class _SpecFieldPresentGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages whose spec exposes an optional field."""
-
-    kind: Literal["spec_field_present"]
-    field: Annotated[str, Field(min_length=1)]
-
-
-class _EnumMemberPresentGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages offering a named member of an option enum."""
-
-    kind: Literal["enum_member_present"]
-    option: Annotated[str, Field(min_length=1)]
-    member: Annotated[str, Field(min_length=1)]
 
 
 class _MetadataFieldGate(
@@ -667,11 +319,11 @@ class _BehaviorFlagGate(
 
 
 type _Gate = Annotated[
-    _CapabilityFlagGate
+    CapabilityFlagGate
     | _RecordVariantGate
     | _NonDefaultKwargGate
-    | _SpecFieldPresentGate
-    | _EnumMemberPresentGate
+    | SpecFieldPresentGate
+    | EnumMemberPresentGate
     | _MetadataFieldGate
     | _SpecConfigFieldPresentGate
     | _BehaviorFlagGate,
@@ -1101,7 +753,7 @@ def _validate_options(
             for secondary in axis.secondaries
         ):
             options.append("sequence_format")
-    unknown = sorted({option for option in options if option not in _OPTIONS})
+    unknown = sorted({option for option in options if option not in OPTIONS})
     if unknown:
         msg = f"axis {axis_key!r}: unknown option {unknown[0]!r}"
         raise AxisPlanError(msg)
@@ -1114,12 +766,12 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
     """
     for gate in gates:
         match gate:
-            case _CapabilityFlagGate() if gate.flag not in _CAPABILITY_FLAGS:
+            case CapabilityFlagGate() if gate.flag not in CAPABILITY_FLAGS:
                 msg = (
                     f"axis {axis_key!r}: unknown capability flag {gate.flag!r}"
                 )
                 raise AxisPlanError(msg)
-            case _SpecFieldPresentGate() if gate.field not in _SPEC_FIELDS:
+            case SpecFieldPresentGate() if gate.field not in _SPEC_FIELDS:
                 msg = f"axis {axis_key!r}: unknown spec field {gate.field!r}"
                 raise AxisPlanError(msg)
             case _MetadataFieldGate() if gate.field not in _METADATA_FIELDS:
@@ -1143,7 +795,7 @@ def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
     return [
         gate.option
         for gate in gates
-        if isinstance(gate, _EnumMemberPresentGate)
+        if isinstance(gate, EnumMemberPresentGate)
     ]
 
 
@@ -1615,24 +1267,20 @@ def _gate_admits(
     axis's overrides.
     """
     match gate:
-        case _CapabilityFlagGate():
-            admits = _CAPABILITY_FLAGS[gate.flag](lang_cls)
+        case (
+            CapabilityFlagGate()
+            | SpecFieldPresentGate()
+            | EnumMemberPresentGate()
+        ):
+            admits = language_gate_admits(
+                gate=gate,
+                lang_cls=lang_cls,
+                spec=spec,
+            )
         case _RecordVariantGate():
             admits = gate.variant in metadata.record_variants
         case _NonDefaultKwargGate():
             admits = gate.kwarg in metadata.non_default_kwargs
-        case _SpecFieldPresentGate():
-            fields = dataclasses.fields(class_or_instance=spec)
-            admits = gate.field in {spec_field.name for spec_field in fields}
-        case _EnumMemberPresentGate():
-            option = _OPTIONS[gate.option]
-            admits = (
-                find_enum_member(
-                    enum_cls=option.get_members(spec),
-                    name=gate.member,
-                )
-                is not None
-            )
         case _MetadataFieldGate():
             admits = _METADATA_FIELDS[gate.field](metadata) == gate.value
         case _SpecConfigFieldPresentGate():
@@ -1671,7 +1319,7 @@ def _metadata_member(
     default_spec: literalizer.Language,
 ) -> Mapping[str, object]:
     """Resolve the option member a language's metadata names."""
-    option = _OPTIONS[override.option]
+    option = OPTIONS[override.option]
     declared = _METADATA_FIELDS[override.field](metadata)
     if declared is None:
         if override.optional:
@@ -1714,7 +1362,7 @@ def _behavior_flag_member(
     default_spec: literalizer.Language,
 ) -> enum.Enum | None:
     """Return the option member whose spec sets a behavior flag."""
-    option = _OPTIONS[override.option]
+    option = OPTIONS[override.option]
     has_flag = _BEHAVIOR_FLAGS[override.flag]
     for member in option.get_members(default_spec):
         spec = make_spec(lang_cls=lang_cls, **{option.kwarg: member})
@@ -1746,7 +1394,7 @@ def _override_selection(
                 name_value=value if override.name_value else None,
             )
         case _EnumMemberOverride():
-            option = _OPTIONS[override.option]
+            option = OPTIONS[override.option]
             resolved = _ResolvedOverrides(
                 kwargs={
                     option.kwarg: enum_member_by_name(
@@ -1797,7 +1445,7 @@ def _override_selection(
                 None
                 if member is None
                 else _ResolvedOverrides(
-                    kwargs={_OPTIONS[override.option].kwarg: member},
+                    kwargs={OPTIONS[override.option].kwarg: member},
                     name_value=None,
                 )
             )
@@ -1890,7 +1538,7 @@ def _record_language_version(
         return {}
     return {
         "language_version": enum_member_by_name(
-            enum_cls=_OPTIONS["language_version"].get_members(default_spec),
+            enum_cls=OPTIONS["language_version"].get_members(default_spec),
             name=declared,
         )
     }
@@ -1910,7 +1558,7 @@ def sequence_format_override(
         return {}
     return {
         "sequence_format": enum_member_by_name(
-            enum_cls=_OPTIONS["sequence_format"].get_members(default_spec),
+            enum_cls=OPTIONS["sequence_format"].get_members(default_spec),
             name=declared,
         )
     }
@@ -1960,7 +1608,7 @@ def _member_choices(
     default_spec: literalizer.Language,
 ) -> list[_PrimaryChoice]:
     """Return the values one option takes for a single language."""
-    option = _OPTIONS[expansion.option_key]
+    option = OPTIONS[expansion.option_key]
     default = option.get_default(default_spec)
     choices: list[_PrimaryChoice] = []
     if expansion.unset_member_name is not None and default is not None:
@@ -2055,7 +1703,7 @@ def _cross_selections(
         default_spec=default_spec,
     ):
         for secondary in axis.secondaries:
-            option = _OPTIONS[secondary.option]
+            option = OPTIONS[secondary.option]
             default = option.get_default(default_spec)
             for member in option.get_members(default_spec):
                 if member is default:
@@ -2192,7 +1840,7 @@ def _language_versions(
     """Return the per-version kwargs an axis repeats itself over."""
     if not axis.per_version:
         return [{}]
-    members = _OPTIONS["language_version"].get_members(default_spec)
+    members = OPTIONS["language_version"].get_members(default_spec)
     return [{"language_version": version} for version in members]
 
 
