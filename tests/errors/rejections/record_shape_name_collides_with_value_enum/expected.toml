@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+Rust = "record_shape_names entry for keys ['id', 'name'] maps to 'Entry', which collides with heterogeneous_value_enum_name."

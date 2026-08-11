@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+Two distinct key sets mapped to one name would declare the same type
+twice, so the pairing is rejected rather than rendered.
+"""
+exceptions = ["InvalidRecordNameError"]
+gates = [{ kind = "capability_flag", flag = "supports_record_shape_names" }]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["id", "name"], ["id", "title"]], names = ["Entry", "Entry"] },
+]

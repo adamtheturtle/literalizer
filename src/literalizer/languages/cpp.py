@@ -1009,8 +1009,9 @@ def _build_tuple_preamble(
     heterogeneous scalar array.  The ``<tuple>`` line is emitted off
     :func:`_cpp_tuple_list_ids` alone, so it fires even when the
     data has no record-shaped dicts at all (e.g. a bare top-level
-    heterogeneous array) -- C++ has no ``RECORD`` strategy, so this is
-    the only thing that pulls in the tuple header.
+    heterogeneous array).  The ``TUPLE`` preamble is built with no
+    record dict ids, so this is the only source of the tuple header on
+    this path.
     """
 
     def _tuple_preamble(data: Value, /) -> tuple[str, ...]:

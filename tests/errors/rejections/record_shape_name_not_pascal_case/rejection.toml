@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+An externally declared record name is emitted as a type declaration, so
+it must be a PascalCase identifier in the target language.
+"""
+exceptions = ["InvalidRecordNameError"]
+gates = [{ kind = "capability_flag", flag = "supports_record_shape_names" }]
+values = ["9Entry", "My-Entry", "entry"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["{value}"] },
+]

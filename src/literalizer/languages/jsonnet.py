@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -32,6 +31,7 @@ from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
+    reject_special_floats,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
@@ -85,8 +85,32 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
-    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
+)
+
+_JSONNET_IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+_JSONNET_RESERVED_FIELDS = frozenset(
+    {
+        "assert",
+        "else",
+        "error",
+        "false",
+        "for",
+        "function",
+        "if",
+        "import",
+        "importbin",
+        "importstr",
+        "in",
+        "local",
+        "null",
+        "self",
+        "super",
+        "tailstrict",
+        "then",
+        "true",
+    }
 )
 
 
@@ -104,8 +128,10 @@ def _format_jsonnet_dict_entry(
     Jsonnet output.
     """
     inner = key[1:-1]
-    identifier_pattern = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
-    if identifier_pattern.match(string=inner):
+    if (
+        _JSONNET_IDENTIFIER_RE.match(string=inner)
+        and inner not in _JSONNET_RESERVED_FIELDS
+    ):
         return f"{inner}: {formatted_value}"
     return f"{key}: {formatted_value}"
 
@@ -734,17 +760,10 @@ class Jsonnet(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        finite = self.float_format
-
-        @beartype
-        def _format(value: float) -> str:
-            """Delegate finite values and reject unsupported specials."""
-            if not math.isfinite(value):
-                msg = f"Jsonnet cannot represent special float {value!r}."
-                raise UnrepresentableSpecialFloatError(msg)
-            return finite(value)
-
-        return _format
+        return reject_special_floats(
+            formatter=self.float_format,
+            language_name="Jsonnet",
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

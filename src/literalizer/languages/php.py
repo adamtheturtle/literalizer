@@ -131,6 +131,12 @@ def _format_string_single(value: str) -> str:
 
 
 @beartype
+def _format_string_double(value: str) -> str:
+    r"""Format *value* as an interpolation-safe double-quoted PHP string."""
+    return format_string_backslash_dollar_nul_hex(value=value)
+
+
+@beartype
 def _php_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
     if len(parts) == 1:
@@ -529,7 +535,7 @@ class Php(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 

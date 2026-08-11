@@ -35,6 +35,7 @@ from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
+    reject_special_floats,
 )
 from literalizer._formatters.format_integers import (
     format_integer_binary,
@@ -240,7 +241,7 @@ class Elixir(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".ex"
     pygments_name = "elixir"
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
     dict_supports_heterogeneous_values = True
@@ -950,7 +951,10 @@ class Elixir(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return reject_special_floats(
+            formatter=self.float_format,
+            language_name="Elixir",
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
