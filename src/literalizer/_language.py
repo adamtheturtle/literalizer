@@ -19,7 +19,10 @@ from typing import (
 import humps
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import typed_collection_open
+from literalizer._formatters.collection_openers import (
+    SequenceSurrogateSetOpen,
+    typed_collection_open,
+)
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
@@ -187,6 +190,11 @@ class SetFormatConfig:
     set_opener_template: str
     supports_heterogeneity: bool
     supports_trailing_comma: bool
+
+    @property
+    def preserves_set_semantics(self) -> bool:
+        """Return whether the opener represents a set, not a sequence."""
+        return not isinstance(self.set_open, SequenceSurrogateSetOpen)
 
     def with_typed_opener(
         self,

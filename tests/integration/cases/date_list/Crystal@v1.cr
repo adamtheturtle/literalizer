@@ -1,7 +1,7 @@
 module Fixture_date_list_Crystal
 extend self
 my_data = [
-    "2024-01-15",
-    "2024-02-20",
+    Time.utc(2024, 1, 15),
+    Time.utc(2024, 2, 20),
 ]
 end
