@@ -8,7 +8,7 @@ let my_data : val_t = OList [
     OList [
         OStr "DEL";
         OStr "bob";
-        OStr "5"  (* removes "world" *)
+        OStr "5"  (* removes world *)
     ]
 ]
 
