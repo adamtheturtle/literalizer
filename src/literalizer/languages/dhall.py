@@ -99,6 +99,27 @@ _DHALL_UNESCAPE_RE = re.compile(pattern=r"\\([$\"\\nrt]|u\{([0-9A-Fa-f]+)\})")
 # %x20-5F / %x61-7E (space through underscore, a-z plus {|}~).
 _BACKTICK_LABEL_RE = re.compile(pattern=r"^[\x20-\x5f\x61-\x7e]+$")
 
+_DHALL_RESERVED_LABELS = frozenset(
+    {
+        "Infinity",
+        "NaN",
+        "Some",
+        "as",
+        "assert",
+        "else",
+        "forall",
+        "if",
+        "in",
+        "let",
+        "merge",
+        "missing",
+        "then",
+        "toMap",
+        "using",
+        "with",
+    }
+)
+
 
 @beartype
 def _unescape_dhall_string(value: str) -> str:
@@ -195,7 +216,10 @@ def _format_dhall_dict_entry(
     labels.
     """
     inner = key[1:-1]
-    if _IDENTIFIER_RE.match(string=inner):
+    if (
+        _IDENTIFIER_RE.match(string=inner)
+        and inner not in _DHALL_RESERVED_LABELS
+    ):
         return f"{inner} = {formatted_value}"
     raw = _unescape_dhall_string(value=inner)
     if not raw or not _BACKTICK_LABEL_RE.match(string=raw):

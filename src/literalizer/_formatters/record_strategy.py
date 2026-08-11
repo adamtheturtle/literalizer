@@ -58,12 +58,15 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
 
 # A shared record renderer may use a conventional ASCII identifier, or an
-# escaped identifier in the syntax currently used by Zig.  Languages that
-# need another spelling must make ``field_identifier`` produce one of these
-# forms (or reject the key themselves) so a generated declaration and literal
-# never interpolate arbitrary JSON-key text as source code.
+# escaped identifier in the syntax used by Zig, Kotlin, and Swift.  Languages
+# that need another spelling must make ``field_identifier`` produce one of
+# these forms (or reject the key themselves) so a generated declaration and
+# literal never interpolate arbitrary JSON-key text as source code.
 _RECORD_FIELD_IDENTIFIER = re.compile(
-    pattern=r'^(?:[A-Za-z_][A-Za-z0-9_]*|@"(?:[^"\\]|\\["\\])*")$',
+    pattern=(
+        r"^(?:[A-Za-z_][A-Za-z0-9_]*|`[A-Za-z_][A-Za-z0-9_]*`|"
+        r'@"(?:[^"\\]|\\["\\])*")$'
+    ),
 )
 
 
@@ -124,10 +127,10 @@ class RecordRenderer:
     only for the shapes with no custom name (mirrors Rust).
     ``field_identifier`` maps an original dict key to a lexical field
     identifier (identity for most languages, PascalCase for Go).  Its result
-    must be a conventional ASCII identifier or a quoted Zig-style identifier;
-    the shared renderer rejects any other result before it returns target
-    source.  This makes the mapping safe to use consistently in both
-    declarations and literals.
+    must be a conventional ASCII identifier, a backtick-escaped identifier,
+    or a quoted Zig-style identifier; the shared renderer rejects any other
+    result before it returns target source.  This makes the mapping safe to
+    use consistently in both declarations and literals.
     ``field_type`` maps a :class:`RecordFieldType`
     (raw field value plus any resolved nested-record name) to its
     declared type, using the language's own collection openers rather
