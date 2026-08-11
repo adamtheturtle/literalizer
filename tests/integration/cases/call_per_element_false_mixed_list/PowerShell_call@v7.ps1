@@ -1,2 +1,2 @@
 function process {}
-process(@(1; "x"))
+process @(1; "x")

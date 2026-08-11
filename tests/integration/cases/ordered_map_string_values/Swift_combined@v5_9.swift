@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "first": "one",
     "second": "two",
     "third": "three",

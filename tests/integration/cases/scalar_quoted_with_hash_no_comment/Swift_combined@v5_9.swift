@@ -1,2 +1,2 @@
-var my_data: Any = "hello # world"
+var my_data = "hello # world"
 my_data = "hello # world"

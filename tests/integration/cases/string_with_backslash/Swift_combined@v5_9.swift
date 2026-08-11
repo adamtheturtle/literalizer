@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "C:\\path\\to\\file",
     "back\\\\slash",
     "hello \\\"world\\\"",
