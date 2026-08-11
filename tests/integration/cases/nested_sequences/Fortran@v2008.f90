@@ -85,7 +85,8 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        flist([fval_t :: flist([fval_t :: fint(1_int64), fint(2_int64)]), flist([fval_t :: fint(3_int64), fint(4_int64)])]), &
+        flist([fval_t :: flist([fval_t :: fint(1_int64), fint(2_int64)]), flist([fval_t :: fint(3_int64), &
+    & fint(4_int64)])]), &
         flist([fval_t :: flist([fval_t :: fint(5_int64)])]) &
     ])
 end program main
