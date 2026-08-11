@@ -241,7 +241,11 @@ type RefIdentifierCase = Annotated[
 ]
 
 
-class RenderContext(
+# A field default here is what a manifest means by leaving the key
+# out, rather than a value a caller may lean on: a manifest supplies
+# only what it has an opinion about, and TOML cannot spell the
+# ``None`` many of these values take.
+class RenderContext(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
@@ -256,7 +260,8 @@ class RenderContext(
     record_null_substitutions: Mapping[str, ValueInput] | None = None
 
 
-class ManifestVariant(
+# Defaults stand in for omitted keys, as above.
+class ManifestVariant(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
@@ -538,7 +543,8 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
         return self
 
 
-class _CaseManifestData(
+# Defaults stand in for omitted keys, as above.
+class _CaseManifestData(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
