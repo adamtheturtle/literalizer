@@ -90,22 +90,6 @@ def _contains_set(data: Value, /) -> bool:
             return False
 
 
-def _contains_set(data: Value, /) -> bool:
-    """Return whether *data* contains a set at any depth."""
-    match data:
-        case set():
-            return True
-        case dict():
-            return any(
-                _contains_set(key) or _contains_set(value)
-                for key, value in data.items()
-            )
-        case list():
-            return any(_contains_set(value) for value in data)
-        case _:
-            return False
-
-
 @overload
 def scalar_type_bucket(*, value: Scalar) -> type: ...
 
