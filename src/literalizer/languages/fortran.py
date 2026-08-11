@@ -231,7 +231,9 @@ def _wrap_fortran_expression_line(line: str, /) -> list[str]:
                 in_single_quote = not in_single_quote
             elif character == "," and not in_single_quote:
                 break_at = i + 1
-        split_at = break_at if break_at is not None else len(remaining)
+        if break_at is None:
+            break
+        split_at = break_at
         wrapped.append(remaining[:split_at].rstrip())
         remaining = "& " + remaining[split_at:].lstrip()
     wrapped.append(remaining)
