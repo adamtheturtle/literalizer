@@ -1,5 +1,6 @@
 """Tests for Java rendering helpers."""
 
+# pylint: disable=protected-access,wrong-spelling-in-comment
 # ruff: noqa: SLF001
 
 from literalizer.languages import java as java_module
