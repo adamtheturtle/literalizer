@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     "assert": 1,
     "else": 1,
     "error": 1,
