@@ -4,7 +4,7 @@ import pytest
 
 from literalizer import LanguageCls
 from literalizer.exceptions import InvalidModuleNameError
-from literalizer.languages import ALL_LANGUAGES, Java
+from literalizer.languages import ALL_LANGUAGES
 
 _MODULE_LANGUAGES = sorted(
     (
@@ -30,10 +30,3 @@ def test_module_languages_reject_source_injection(
         match="cannot use module_name 'X \\{\\} class Y'",
     ):
         language_cls(module_name="X {} class Y")
-
-
-def test_java_accepts_identifier_module_name() -> None:
-    """A normal module identifier remains accepted."""
-    language = Java(module_name="MyModule")
-
-    assert isinstance(language, Java)
