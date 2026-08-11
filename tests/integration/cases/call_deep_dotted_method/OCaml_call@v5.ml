@@ -12,8 +12,8 @@ let post _ = ()
 end
 end
 end
-let _ = Obj.Api.Client.post("hello")
-let _ = Obj.Api.Client.post(42)
+let _ = Obj.Api.Client.post(OStr "hello")
+let _ = Obj.Api.Client.post(OInt 42)
 let _ = Obj.Api.Client.post(OBool true)
 
 end

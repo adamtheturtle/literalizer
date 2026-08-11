@@ -23,7 +23,6 @@ from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
-    format_time_iso,
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
@@ -222,6 +221,16 @@ def _format_datetime_go(value: datetime.datetime) -> str:
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
         f"{nanoseconds}, time.UTC)"
+    )
+
+
+@beartype
+def _format_time_go(value: datetime.time) -> str:
+    """Format a local time as a Go ``time.Time`` with a zero date."""
+    nanoseconds = value.microsecond * 1000
+    return (
+        f"time.Date(0, time.January, 1, {value.hour}, {value.minute}, "
+        f"{value.second}, {nanoseconds}, time.UTC)"
     )
 
 
@@ -1125,7 +1134,7 @@ class Go(metaclass=LanguageCls):
             bytes_type="string",
             date_type=date_type,
             datetime_type=datetime_type,
-            time_type="string",
+            time_type="time.Time",
             list_template="[]{inner}",
             enable_list_type=True,
             dict_type_template=f"map[{self.default_dict_key_type}]{{inner}}",
@@ -1231,7 +1240,7 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return format_time_iso
+        return _format_time_go
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
@@ -1339,7 +1348,7 @@ class Go(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra=None,
+            extra={datetime.time: ('import "time"',)},
         )
 
     @cached_property

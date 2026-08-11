@@ -12,6 +12,6 @@ type ApiType_() =
 type ObjType_() =
     member _.api = ApiType_()
 let obj = ObjType_()
-obj.api.client.post("hello")
-obj.api.client.post(42)
+obj.api.client.post(FStr "hello")
+obj.api.client.post(FInt 42L)
 obj.api.client.post(FBool true)
