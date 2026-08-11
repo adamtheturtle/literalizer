@@ -143,7 +143,6 @@ version_scheme = "post-release"
 
 [tool.ruff]
 line-length = 79
-lint.external = [ "NOD" ]
 lint.select = [ "ALL" ]
 lint.ignore = [
     # Ruff warns that this conflicts with the formatter.
@@ -225,6 +224,7 @@ lint.per-file-ignores."tests/integration/test_*.py" = [
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
 lint.unfixable = [ "ERA001" ]
+lint.external = [ "NOD" ]
 lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
 lint.pydocstyle.convention = "google"
 per-file-target-version = { "tests/integration/cases/**/Python*@py38.py" = "py38" }
