@@ -312,6 +312,17 @@ def _disambiguate_data_names(content: str) -> str:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class _CobolDictFormatConfig(DictFormatConfig):
+    """COBOL mapping config that makes normalized sibling names unique."""
+
+    def postprocess_entries(self, lines: list[str], /) -> list[str]:
+        """Disambiguate one mapping even without a variable wrapper."""
+        rooted = "\n".join(("00 ROOT.", *lines))
+        return _disambiguate_data_names(content=rooted).split(sep="\n")[1:]
+
+
+@beartype
 def _format_cobol_dict_entry(
     key: str,
     _raw_value: Value,
@@ -1554,7 +1565,7 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _CobolDictFormatConfig(
             dict_open=fixed_open(open_str=""),
             close="",
             format_entry=_format_cobol_dict_entry,
