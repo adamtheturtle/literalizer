@@ -1,7 +1,16 @@
 """Tests for intentionally incomplete literal fragments."""
 
-from literalizer import InputFormat, literalize
+# ruff: noqa: SLF001
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from literalizer import InputFormat, NewVariable, _literalize, literalize
 from literalizer.languages import Python
+
+if TYPE_CHECKING:
+    from literalizer._types import Scalar, Value
 
 
 def test_binary_without_sequence_delimiters() -> None:
@@ -15,3 +24,44 @@ def test_binary_without_sequence_delimiters() -> None:
         variable_form=None,
     )
     assert result.code == '"48656c6c6f",'
+
+
+def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
+    """Nested lists are searched and scalar leaves terminate recursion."""
+    marker: dict[Scalar, Value] = {"$ref": "existing"}
+    present_nested: list[Value] = []
+    present_nested.append(marker)
+    present: list[Value] = [0]
+    present.append(present_nested)
+    absent_nested: list[Value] = []
+    absent_nested.append("plain")
+    absent: list[Value] = [0]
+    absent.append(absent_nested)
+    assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
+        value=present, ref_key="$ref"
+    )
+    assert not _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
+        value=absent, ref_key="$ref"
+    )
+
+
+def test_ref_markers_are_opt_in() -> None:
+    """A ``$ref`` object remains data unless marker handling is
+    enabled.
+    """
+    source = '{"value":{"$ref":"foo"}}'
+    variable_form = NewVariable(name="my_data", modifiers=frozenset())
+
+    assert literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=variable_form,
+    ).code == ('my_data = {\n    "value": {"$ref": "foo"},\n}')
+    assert literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=variable_form,
+        ref_key="$ref",
+    ).code == ('my_data = {\n    "value": foo,\n}')
