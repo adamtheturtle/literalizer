@@ -7,7 +7,7 @@ type Val =
     | FFloat of float
     | FStr of string
     | FMap of (string * Val) list
-    | FDate of System.DateTime
+    | FDate of System.DateOnly
     | FDatetime of System.DateTime
 let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
@@ -16,8 +16,8 @@ let private _mainDeclaration () =
         ("f", FFloat 1.5);
         ("b", FBool true);
         ("n", FNull);
-        ("d", FStr (string (System.DateOnly(2024, 1, 15))));
-        ("dt", FStr (string (System.DateTime(2024, 1, 15, 12, 0, 0))));
+        ("d", FDate (System.DateOnly(2024, 1, 15)));
+        ("dt", FDatetime (System.DateTime(2024, 1, 15, 12, 0, 0)));
         ("by", FStr "48656c6c6f")
     ]
     ignore my_data
@@ -29,8 +29,8 @@ let private _mainAssignment () =
         ("f", FFloat 1.5);
         ("b", FBool true);
         ("n", FNull);
-        ("d", FStr (string (System.DateOnly(2024, 1, 15))));
-        ("dt", FStr (string (System.DateTime(2024, 1, 15, 12, 0, 0))));
+        ("d", FDate (System.DateOnly(2024, 1, 15)));
+        ("dt", FDatetime (System.DateTime(2024, 1, 15, 12, 0, 0)));
         ("by", FStr "48656c6c6f")
     ]
     ignore my_data

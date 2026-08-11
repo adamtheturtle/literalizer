@@ -1,1 +1,1 @@
-let my_data: Any = "hello # world"
+let my_data = "hello # world"

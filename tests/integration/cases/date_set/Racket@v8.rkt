@@ -1,5 +1,5 @@
 #lang racket
 (define my_data (set
-    "2024-01-15"
-    "2024-06-01"
+    (date 0 0 0 15 1 2024 1 14 #f 0)
+    (date 0 0 0 1 6 2024 6 152 #f 0)
 ))
