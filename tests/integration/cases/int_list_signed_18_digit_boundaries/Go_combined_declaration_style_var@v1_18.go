@@ -1,11 +1,11 @@
 package main
 
 func main() {
-var my_data = []int{
+var my_data = []int64{
 	999999999999999999,
 	-999999999999999999,
 }
-my_data = []int{
+my_data = []int64{
 	999999999999999999,
 	-999999999999999999,
 }
