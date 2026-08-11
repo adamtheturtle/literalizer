@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+A container call argument has no single-expression cJSON form: reading
+[[[1, 2]]] per element makes one call whose argument is the list
+[1, 2], which cannot be built inline as one cJSON_Create*(...) call.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["C"]
+
+[call]
+api = "literalize_call"
+source = "[[[1, 2]]]"
+input_format = "json"
+target_function = "process"
+parameter_names = ["x"]
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "CJSON" },
+]
