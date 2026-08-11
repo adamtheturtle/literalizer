@@ -117,6 +117,35 @@ def _format_string_single(value: str) -> str:
 
 
 @beartype
+def _escape_bash_nested_expression(value: str, /) -> str:
+    """Escape Bash source for an outer double-quoted collection value.
+
+    Preserve escapes already protecting expansion characters.  Re-escaping
+    those pairs would leave a literal backslash in the resulting value.
+    """
+    escaped: list[str] = []
+    index = 0
+    while index < len(value):
+        character = value[index]
+        if (
+            character == "\\"
+            and index + 1 < len(value)
+            and value[index + 1] in {"$", "`"}
+        ):
+            escaped.append(character + value[index + 1])
+            index += 2
+            continue
+        escaped.append(
+            {"\\": "\\\\", '"': '\\"', "$": "\\$", "`": "\\`"}.get(
+                character,
+                character,
+            )
+        )
+        index += 1
+    return "".join(escaped)
+
+
+@beartype
 def _to_bash_value(item: str) -> str:
     """Quote an item if it is a nested array or dict expression.
 
@@ -125,12 +154,7 @@ def _to_bash_value(item: str) -> str:
     ``(``) is double-quoted with special characters escaped.
     """
     if item.startswith("("):
-        escaped = (
-            item.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("$", "\\$")
-            .replace("`", "\\`")
-        )
+        escaped = _escape_bash_nested_expression(item)
         return f'"{escaped}"'
     return item
 
@@ -139,12 +163,7 @@ def _to_bash_value(item: str) -> str:
 def _format_bash_sequence_entry(original: Value, item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
     if isinstance(original, (list, dict, set)):
-        escaped = (
-            item.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("$", "\\$")
-            .replace("`", "\\`")
-        )
+        escaped = _escape_bash_nested_expression(item)
         return f'"{escaped}"'
     return item
 
