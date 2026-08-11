@@ -6,8 +6,8 @@ type val_t =
   | OStr of string
   | OList of val_t list
 let process _ = ()
-let _ = process("hello", "a")
-let _ = process(42, "b")
-let _ = process(OBool true, "c")
+let _ = process(OStr "hello", OStr "a")
+let _ = process(OInt 42, OStr "b")
+let _ = process(OBool true, OStr "c")
 
 end

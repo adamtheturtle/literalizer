@@ -1,6 +1,6 @@
 proc process {args} {}
 set my_int 1
-set my_bool 1
+set my_bool true
 set my_float 3.14
 set my_list [list \
     1 \

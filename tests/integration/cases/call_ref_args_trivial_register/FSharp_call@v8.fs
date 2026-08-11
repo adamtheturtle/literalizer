@@ -14,7 +14,7 @@ let my_list: Val = FList [
     FInt 2L;
     FInt 3L
 ]
-process(my_int, 42)
-process(my_bool, 7)
-process(my_float, 9)
-process(my_list, 1)
+process(my_int, FInt 42L)
+process(my_bool, FInt 7L)
+process(my_float, FInt 9L)
+process(my_list, FInt 1L)

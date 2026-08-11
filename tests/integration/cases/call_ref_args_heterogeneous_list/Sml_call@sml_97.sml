@@ -13,6 +13,6 @@ val my_strings : val_t = SList [
     SStr "b"
 ]
 val my_empty : val_t = SList []
-val _ = process(my_ints, 42)
-val _ = process(my_strings, 7)
-val _ = process(my_empty, 99)
+val _ = process(my_ints, SInt 42)
+val _ = process(my_strings, SInt 7)
+val _ = process(my_empty, SInt 99)

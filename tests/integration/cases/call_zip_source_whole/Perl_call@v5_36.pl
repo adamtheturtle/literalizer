@@ -1,3 +1,4 @@
+use JSON::PP;
 sub process {}
 sub emit {}
-emit(process(42), 1);
+emit(process(42), JSON::PP::true);

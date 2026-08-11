@@ -271,7 +271,13 @@ def _ada_call_target(parts: Sequence[str], /) -> str:
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Ada(metaclass=LanguageCls):
-    """Ada language specification."""
+    """Ada language specification.
+
+    Wrapped Ada output depends on the companion ``A_Stub`` package that
+    defines ``A_Val`` and its constructors.  Copy ``scripts/a_stub.ads`` and
+    ``scripts/a_stub.adb`` beside the generated ``.adb`` file before compiling
+    it.  The package requires Ada 2022 aggregate support.
+    """
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
@@ -680,6 +686,10 @@ class Ada(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap an Ada object declaration or call block inside a procedure.
+
+        The returned compilation unit imports the companion ``A_Stub``
+        package shipped as ``scripts/a_stub.ads`` and ``scripts/a_stub.adb``;
+        those two files must be present beside the generated source.
 
         When *variable_name* is non-empty (variable declaration mode),
         *body_preamble* and *content* go in the declarative section and

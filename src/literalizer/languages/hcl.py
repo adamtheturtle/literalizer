@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -85,7 +86,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableSpecialFloatError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
 # Prevent HCL template interpolation and directive syntax.
@@ -218,7 +222,7 @@ class Hcl(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".hcl"
     pygments_name = "hcl"
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
     dict_supports_heterogeneous_values = True
@@ -791,7 +795,17 @@ class Hcl(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        finite = self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Delegate finite values and reject unsupported specials."""
+            if not math.isfinite(value):
+                msg = f"HCL cannot represent special float {value!r}."
+                raise UnrepresentableSpecialFloatError(msg)
+            return finite(value)
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:

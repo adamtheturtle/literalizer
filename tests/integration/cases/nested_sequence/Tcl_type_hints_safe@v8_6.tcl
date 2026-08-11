@@ -1,5 +1,5 @@
 set my_data [list \
-    1 \
+    true \
     "hi" \
     [list 1 2] \
     "" \

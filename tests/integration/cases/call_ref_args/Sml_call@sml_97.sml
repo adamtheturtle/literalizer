@@ -12,5 +12,5 @@ val my_other : val_t = SList [
     SInt 5,
     SInt 6
 ]
-val _ = process(my_var, 42)
-val _ = process(my_other, 7)
+val _ = process(my_var, SInt 42)
+val _ = process(my_other, SInt 7)
