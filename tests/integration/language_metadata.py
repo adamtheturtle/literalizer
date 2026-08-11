@@ -62,7 +62,7 @@ def _empty_string_mapping() -> dict[str, str]:
     return {}
 
 
-class GoldenPolicy(
+class GoldenPolicy(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -109,7 +109,7 @@ class EmptyContainerTypeHintVariant(
     type_hints: list[EmptyContainerTypeHint]
 
 
-class VariantPolicy(
+class VariantPolicy(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -174,7 +174,7 @@ class VariantPolicy(
         return self
 
 
-class _LanguageMetadataData(
+class _LanguageMetadataData(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,

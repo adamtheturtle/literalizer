@@ -241,7 +241,7 @@ type RefIdentifierCase = Annotated[
 ]
 
 
-class RenderContext(
+class RenderContext(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
@@ -256,7 +256,7 @@ class RenderContext(
     record_null_substitutions: Mapping[str, ValueInput] | None = None
 
 
-class ManifestVariant(
+class ManifestVariant(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
@@ -538,7 +538,7 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
         return self
 
 
-class _CaseManifestData(
+class _CaseManifestData(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",

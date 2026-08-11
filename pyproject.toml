@@ -143,6 +143,7 @@ version_scheme = "post-release"
 
 [tool.ruff]
 line-length = 79
+lint.external = [ "NOD" ]
 lint.select = [ "ALL" ]
 lint.ignore = [
     # Ruff warns that this conflicts with the formatter.

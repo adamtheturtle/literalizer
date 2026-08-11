@@ -679,7 +679,7 @@ type _Gate = Annotated[
 ]
 
 
-class _NonDefaultKwargOverride(
+class _NonDefaultKwargOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -705,7 +705,7 @@ class _EnumMemberOverride(
     member: Annotated[str, Field(min_length=1)]
 
 
-class _MetadataEnumMemberOverride(
+class _MetadataEnumMemberOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -813,7 +813,7 @@ def _no_member_flags() -> list[str]:
     return []
 
 
-class _LayoutChoice(
+class _LayoutChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -830,7 +830,7 @@ def _compact_layout() -> list[_LayoutChoice]:
     return [_LayoutChoice(layout="COMPACT")]
 
 
-class _EveryNonDefaultMemberPlan(
+class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -871,7 +871,7 @@ class _EveryNonDefaultMemberPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _FixedOverridesPlan(
+class _FixedOverridesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -902,7 +902,7 @@ class _FixedOverridesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _KwargValueChoice(
+class _KwargValueChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -920,7 +920,7 @@ class _KwargValueChoice(
     value: Annotated[str, Field(min_length=1)] | None = None
 
 
-class _KwargValuesPlan(
+class _KwargValuesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -940,7 +940,7 @@ class _KwargValuesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _CrossSecondary(
+class _CrossSecondary(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -957,7 +957,7 @@ class _CrossSecondary(
     declaration_style_sequence_override: bool = False
 
 
-class _CrossProductPlan(
+class _CrossProductPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -993,7 +993,7 @@ class _CrossProductPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _FilteredPlan(
+class _FilteredPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -1045,7 +1045,7 @@ def _no_special_axes() -> dict[str, _SpecialAxis]:
     return {}
 
 
-class _AxisRegistryData(
+class _AxisRegistryData(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
