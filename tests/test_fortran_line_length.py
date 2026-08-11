@@ -32,7 +32,8 @@ def test_long_fortran_strings_stay_within_free_form_limit(value: str) -> None:
 
 
 def test_nested_fortran_expressions_use_continuation_lines() -> None:
-    """Long nested constructor expressions split at safe commas."""
+    """Wrapping accounts for a long assignment prefix."""
+    variable_name = "long_fortran_variable_name_near_the_column_limit"
     result = literalize(
         source=json.dumps(
             obj={
@@ -45,7 +46,7 @@ def test_nested_fortran_expressions_use_continuation_lines() -> None:
         ),
         input_format=InputFormat.JSON,
         language=Fortran(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+        variable_form=NewVariable(name=variable_name, modifiers=frozenset()),
         wrap_in_file=True,
     )
 

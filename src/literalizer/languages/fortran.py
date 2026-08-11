@@ -312,8 +312,8 @@ def _apply_fortran_variable_declaration(
 ) -> str:
     """Format a variable declaration and initialisation."""
     fval = format_entry(data, value)
-    continued = _add_continuation(value=fval)
-    return f"type(fval_t) :: {name}\n{name} = {continued}"
+    assignment = _add_continuation(value=f"{name} = {fval}")
+    return f"type(fval_t) :: {name}\n{assignment}"
 
 
 @beartype
