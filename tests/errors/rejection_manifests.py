@@ -233,7 +233,7 @@ class Acceptance(
     reason: Annotated[str, Field(min_length=1)]
 
 
-class CallSpec(
+class CallSpec(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -279,7 +279,7 @@ class CallSpec(
         return self
 
 
-class _RejectionData(
+class _RejectionData(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
