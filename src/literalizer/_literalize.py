@@ -2159,14 +2159,14 @@ def _format_collection_lines(
 
 @beartype
 def _mapping_object_at(
-    mapping: Mapping[object, object], key: object
+    *, mapping: Mapping[object, object], key: object
 ) -> object:
     """Return a mapping value with its public boundary type preserved."""
     return mapping[key]
 
 
 @beartype
-def _sequence_object_at(sequence: Sequence[object], index: int) -> object:
+def _sequence_object_at(*, sequence: Sequence[object], index: int) -> object:
     """Return a sequence value with its public boundary type preserved."""
     return sequence[index]
 
@@ -2186,7 +2186,9 @@ def _collect_yaml_comment_nodes(
             if key in typed_raw_map:
                 _collect_yaml_comment_nodes(
                     value=child,
-                    raw_value=_mapping_object_at(typed_raw_map, key),
+                    raw_value=_mapping_object_at(
+                        mapping=typed_raw_map, key=key
+                    ),
                     out=out,
                 )
         return
@@ -2196,7 +2198,9 @@ def _collect_yaml_comment_nodes(
         for index, child in enumerate(iterable=value):
             _collect_yaml_comment_nodes(
                 value=child,
-                raw_value=_sequence_object_at(typed_raw_sequence, index),
+                raw_value=_sequence_object_at(
+                    sequence=typed_raw_sequence, index=index
+                ),
                 out=out,
             )
         return
