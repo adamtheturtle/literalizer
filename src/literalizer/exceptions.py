@@ -85,6 +85,19 @@ class UnrepresentableStringError(UnrepresentableInputError):
         self.character_name = character_name
 
 
+class UnrepresentableNullError(UnrepresentableInputError):
+    """Raised when null collapses onto another target-language value."""
+
+    def __init__(self, *, language_name: str, conflated_value: str) -> None:
+        """Create an ``UnrepresentableNullError``."""
+        super().__init__(
+            f"{language_name} cannot represent null distinctly from "
+            f"{conflated_value}"
+        )
+        self.language_name = language_name
+        self.conflated_value = conflated_value
+
+
 class HeterogeneousCollectionError(Exception):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
