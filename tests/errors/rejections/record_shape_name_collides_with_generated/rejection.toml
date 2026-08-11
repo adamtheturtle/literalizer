@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A record name matching the generated {prefix}{N} pattern would clash
+with an index-named record at render time.
+"""
+exceptions = ["InvalidRecordNameError"]
+gates = [{ kind = "capability_flag", flag = "supports_record_shape_names" }]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["Record0"] },
+]

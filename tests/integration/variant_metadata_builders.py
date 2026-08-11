@@ -14,13 +14,10 @@ from collections.abc import Mapping  # noqa: TC003
 from beartype import beartype
 
 import literalizer
+from tests.enum_members import enum_member_by_name
 
 from .language_specs import make_spec, sorted_languages
-from .variant_types import (
-    VariantCase,
-    compact_variant,
-    enum_member_by_name,
-)
+from .variant_types import VariantCase, compact_variant
 
 _enum_member_by_name = enum_member_by_name
 

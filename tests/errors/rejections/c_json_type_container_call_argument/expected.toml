@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+C = "C json_type can only render a scalar (or temporal / bytes) call argument inline as a single cJSON_Create*(...) expression; a container call argument is not supported in this slice"

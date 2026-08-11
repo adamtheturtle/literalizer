@@ -49,6 +49,7 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
     decode_file_sections,
+    validate_call_parameter_names,
     validate_new_variable_name,
 )
 from literalizer._parsing import (
@@ -2103,6 +2104,8 @@ def _format_collection_lines(
             )
         case _ as unreachable:
             assert_never(unreachable)
+    if isinstance(data, dict):
+        lines = spec.dict_format_config.postprocess_entries(lines)
     return lines
 
 
@@ -2153,6 +2156,11 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         collection_layout: Controls layout for collections nested
             inside other collections.
     """
+    _validate_ref_case_is_injective(
+        value=data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+    )
     if ref_key and isinstance(data, dict):
         raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if raw_ref_name is not None:
@@ -3212,6 +3220,33 @@ def _call_arg_ref_names_in_value(
 
 
 @beartype
+def _validate_ref_case_is_injective(
+    *,
+    value: Value,
+    ref_key: str,
+    ref_case: IdentifierCase | None,
+) -> None:
+    """Reject distinct ref names that case-convert to one identifier."""
+    if ref_case is None:
+        return
+    source_name_by_identifier: dict[str, str] = {}
+    for source_name in _call_arg_ref_names_in_value(
+        value=value,
+        ref_key=ref_key,
+    ):
+        identifier = ref_case.convert(name=source_name)
+        previous = source_name_by_identifier.get(identifier)
+        if previous is not None and previous != source_name:
+            msg = (
+                f"cannot convert ref name {source_name!r} to "
+                f"{ref_case.name}: its identifier {identifier!r} "
+                f"collides with ref name {previous!r}"
+            )
+            raise UnrepresentableInputError(msg)
+        source_name_by_identifier[identifier] = source_name
+
+
+@beartype
 def _format_call_arg_ref_identifier(
     *,
     raw_ref_name: str,
@@ -4190,6 +4225,11 @@ def _validate_call_preconditions(
     _validate_parameter_count(
         language=language, parameter_names=parameter_names
     )
+    validate_call_parameter_names(
+        language=language,
+        names=parameter_names,
+        reject_reserved=isinstance(style, KeywordCallStyle),
+    )
     if variable_form is not None:
         _validate_call_variable_form(
             language=language,
@@ -4760,6 +4800,11 @@ def literalize_call_parsed(
     entry point.
     """
     data = parsed.data
+    _validate_ref_case_is_injective(
+        value=data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+    )
     contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
