@@ -223,7 +223,7 @@ def test_ecmascript_reserved_property_call_remains_valid(
         parameter_names=["value"],
     )
 
-    assert result.code
+    assert result.code == "foo.class({ value: 1 });"
 
 
 @pytest.mark.parametrize(
@@ -271,7 +271,9 @@ def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
         wrap_in_file=True,
     )
 
-    assert "If =" in result.code
+    assert result.code == (
+        "-module(Module).\n-export([x/0]).\nx() ->\n    If = 1,\n    If."
+    )
 
 
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(

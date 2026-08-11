@@ -425,10 +425,14 @@ ignore_names = [
     "__getitem__",
     # pydantic validators, called by the model rather than by name
     "_add_case_dir_name",
+    "_validate_api_arguments",
     "_validate_call_variants",
     "_validate_consistency",
     "_validate_known_axis",
+    "_validate_pairing",
     "_validate_requirements",
+    "_validate_selection",
+    "_validate_values",
     # Enum members accessed by consumers iterating format enums
     "ALLOW",
     "ARRAY",
@@ -473,6 +477,8 @@ ignore_names = [
     "htmlhelp_basename",
     "INTERFACE",
     "intersphinx_mapping",
+    # Named only by a rejection manifest, which spells it in TOML
+    "JACKSON_JSON_NODE",
     "JDK_16",
     # Read by the ``sphinx_jinja`` extension to populate ``.. jinja::``
     # blocks; see the support-matrix context built in ``conf.py``.

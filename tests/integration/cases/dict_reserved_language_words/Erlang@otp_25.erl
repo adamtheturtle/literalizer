@@ -1,0 +1,25 @@
+-module(fixture_dict_reserved_language_words_erlang).
+-export([x/0]).
+x() ->
+    My_data = #{
+        "assert" => 1,
+        "else" => 1,
+        "error" => 1,
+        "false" => 1,
+        "for" => 1,
+        "function" => 1,
+        "if" => 1,
+        "import" => 1,
+        "importbin" => 1,
+        "importstr" => 1,
+        "in" => 1,
+        "local" => 1,
+        "null" => 1,
+        "self" => 1,
+        "super" => 1,
+        "tailstrict" => 1,
+        "then" => 1,
+        "true" => 1,
+        "ordinary" => 1
+    },
+    My_data.

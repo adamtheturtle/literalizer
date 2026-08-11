@@ -97,6 +97,12 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_string_double(value: str) -> str:
+    r"""Format *value* as an interpolation-safe double-quoted PHP string."""
+    return format_string_backslash(value=value).replace("$", r"\$")
+
+
+@beartype
 def _php_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a dotted call target into PHP's ``$obj->method`` form."""
     if len(parts) == 1:
@@ -495,7 +501,7 @@ class Php(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
 
         def __call__(self, value: str, /) -> str:

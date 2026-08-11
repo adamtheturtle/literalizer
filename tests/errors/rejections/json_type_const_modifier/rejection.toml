@@ -1,0 +1,24 @@
+schema_version = 1
+summary = """
+A JSON value type builds its value at run time, so a declaration
+carrying the const modifier cannot initialize from one.
+"""
+exceptions = ["IncompatibleFormatsError"]
+option = "json_type"
+gates = [
+  { kind = "spec_field_present", field = "json_type" },
+  { kind = "modifier_present", modifier = "CONST" },
+]
+
+[call]
+api = "literalize"
+source = "[1, 2, 3]"
+input_format = "json"
+modifiers = ["CONST"]
+
+[[accepts]]
+languages = ["Cpp"]
+reason = """
+C++ const is a read-only binding rather than a compile-time constant
+initializer, so it accepts the parse expression.
+"""
