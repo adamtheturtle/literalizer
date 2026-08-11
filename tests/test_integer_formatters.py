@@ -1,5 +1,6 @@
 """Tests for integer literal formatters."""
 
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import C, Cpp, Fortran, ObjectiveC
 
 
@@ -11,6 +12,19 @@ def test_c_family_i64_min_avoids_out_of_range_positive_literal() -> None:
     assert C().format_integer(value) == expected
     assert Cpp().format_integer(value) == expected
     assert ObjectiveC().format_integer(value) == expected
+
+
+def test_objective_c_boxes_i64_min_without_redundant_parentheses() -> None:
+    """Objective-C boxes the safe signed-minimum expression directly."""
+    result = literalize(
+        source="-9223372036854775808",
+        input_format=InputFormat.JSON,
+        language=ObjectiveC(),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+        wrap_in_file=False,
+    )
+
+    assert result.code == "id my_data = @(-9223372036854775807LL - 1);"
 
 
 def test_fortran_i64_min_avoids_out_of_range_positive_literal() -> None:
