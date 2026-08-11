@@ -4,4 +4,4 @@ datatype val_t =
   | SList of val_t list
 fun process _ = ()
 val _ = process(SNull)
-val _ = process("hello")
+val _ = process(SStr "hello")

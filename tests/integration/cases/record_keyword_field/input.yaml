@@ -2,4 +2,16 @@
   match: b
   error: c
   switch: d
+  class: e
+  int: f
+  new: g
+  static: h
+  fun: i
+  object: j
+  val: k
+  when: l
+  func: m
+  let: n
+  var: o
+  template: p
   id: 1
