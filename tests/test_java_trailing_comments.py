@@ -25,7 +25,9 @@ def test_java_var_declaration_terminates_before_trailing_comment() -> None:
 
     def make_value() -> Value:
         """Return a recursively typed list value."""
-        return [1]
+        result: list[Value] = []
+        result.append(1)
+        return result
 
     result = _format_java_var_declaration(
         name="my_data",
