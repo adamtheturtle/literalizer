@@ -1,6 +1,6 @@
 module Fixture_dict_all_scalar_types_Crystal_heterogeneous_strategy_record
 extend self
-record Record0, s : String, i : Int32, f : Float64, b : Bool, n : Nil, d : String, dt : String, by : String
+record Record0, s : String, i : Int32, f : Float64, b : Bool, n : Nil, d : Time, dt : String, by : String
 my_data = Record0.new(
     "string",
     1,

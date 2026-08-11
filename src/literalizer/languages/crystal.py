@@ -1193,7 +1193,12 @@ class Crystal(metaclass=LanguageCls):
                 # A set or non-record dict field is out of scope for
                 # the base ``RECORD`` port (#2317) and is not reached
                 # by any record golden; the ``or`` widens it to ``Nil``.
-                return _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"
+                return (
+                    "Time"
+                    if type(value) is datetime.date
+                    and self.date_format.value.type_produced is datetime.date
+                    else _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"
+                )
 
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Crystal ``record`` field type for a record field.
