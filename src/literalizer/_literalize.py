@@ -1923,6 +1923,8 @@ def _nested_yaml_collection_comments(
     ctx: _RenderContext,
 ) -> CollectionComments | None:
     """Return comments for a nested YAML collection, when present."""
+    if not ctx.spec.supports_collection_comments:
+        return None
     if id(value) == ctx.yaml_comment_root_id:
         return None
     raw_value = ctx.yaml_comment_nodes.get(id(value))
@@ -2167,18 +2169,20 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
         for key, child in value.items():
             if key in raw_value:
+                raw_map_child: object = raw_value[key]
                 _collect_yaml_comment_nodes(
                     value=child,
-                    raw_value=raw_value[key],
+                    raw_value=raw_map_child,
                     out=out,
                 )
         return
     if isinstance(raw_value, CommentedSeq) and isinstance(value, list):
         out[id(value)] = raw_value
-        for child, raw_child in zip(value, raw_value, strict=True):
+        for index, child in enumerate(iterable=value):
+            raw_sequence_child: object = raw_value[index]
             _collect_yaml_comment_nodes(
                 value=child,
-                raw_value=raw_child,
+                raw_value=raw_sequence_child,
                 out=out,
             )
         return
