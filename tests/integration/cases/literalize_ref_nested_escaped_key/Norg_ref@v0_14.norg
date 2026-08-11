@@ -1,0 +1,13 @@
+* foo
+@code json
+{
+    "_": "_"
+}
+@end
+* my_data
+@code json
+{
+    "items": [{"other": 1}, foo],
+    "mapping": {"value": foo}
+}
+@end
