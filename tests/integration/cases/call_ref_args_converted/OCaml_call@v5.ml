@@ -14,7 +14,7 @@ let my_other : val_t = OList [
     OInt 5;
     OInt 6
 ]
-let _ = process(my_var, 42)
-let _ = process(my_other, 7)
+let _ = process(my_var, OInt 42)
+let _ = process(my_other, OInt 7)
 
 end

@@ -9,6 +9,6 @@ fun fetch _ = ()
 end
 end
 fun emit _ = ()
-val _ = emit(app.client.fetch("hello"))
-val _ = emit(app.client.fetch(42))
+val _ = emit(app.client.fetch(SStr "hello"))
+val _ = emit(app.client.fetch(SInt 42))
 val _ = emit(app.client.fetch(SBool true))
