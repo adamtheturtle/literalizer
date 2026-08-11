@@ -143,8 +143,6 @@ def _pic_from_value(value: str) -> str:
     """
     if value == "SPACES":
         return "PIC X(1)"
-    if value in {'"TRUE"', '"FALSE"'}:
-        return "PIC X(5)"
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
@@ -197,7 +195,8 @@ def _format_cobol_sequence_entry(_original: Value, item: str) -> str:
     """
     if "\n" in item:
         bumped = _bump_levels(content=item)
-        return f"05 FILLER.\n{bumped}"
+        nested = textwrap.indent(text=bumped, prefix="    ")
+        return f"05 FILLER.\n{nested}"
     if _is_data_entry(s=item.strip()):
         return item.strip()
     return _to_cobol_entry(value=item, name="FILLER", level=5)
@@ -327,10 +326,12 @@ def _format_cobol_dict_entry(
     name = _key_to_cobol_name(key_str=key)
     if "\n" in formatted_value:
         bumped = _bump_levels(content=formatted_value)
-        return f"05 {name}.\n{bumped}"
+        nested = textwrap.indent(text=bumped, prefix="    ")
+        return f"05 {name}.\n{nested}"
     if _is_data_entry(s=formatted_value.strip()):
         bumped = _bump_levels(content=formatted_value.strip())
-        return f"05 {name}.\n{bumped}"
+        nested = textwrap.indent(text=bumped, prefix="    ")
+        return f"05 {name}.\n{nested}"
     picture_clause = _pic_from_value(value=formatted_value)
     return f"05 {name} {picture_clause} VALUE {formatted_value}."
 
@@ -1289,8 +1290,8 @@ class Cobol(metaclass=LanguageCls):
     indent: str = "    "
 
     null_literal: ClassVar[str] = "SPACES"
-    true_literal: ClassVar[str] = '"TRUE"'
-    false_literal: ClassVar[str] = '"FALSE"'
+    true_literal: ClassVar[str] = "1"
+    false_literal: ClassVar[str] = "0"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = "\n"
     skip_null_dict_values: ClassVar[bool] = False

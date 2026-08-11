@@ -6,6 +6,6 @@ type Val =
     | FStr of string
     | FDatetime of System.DateTime
 let process (_value: obj) : obj = null
-process(System.TimeOnly(9, 30, 0))
-process(System.DateTime(2024, 1, 15, 0, 0, 0))
-process(1)
+process(FStr (string (System.TimeOnly(9, 30, 0))))
+process(FDatetime (System.DateTime(2024, 1, 15, 0, 0, 0)))
+process(FInt 1L)

@@ -62,6 +62,10 @@ def _empty_string_mapping() -> dict[str, str]:
     return {}
 
 
+# A field default here is what a language file means by leaving the
+# key out, rather than a value a caller may lean on: a file supplies
+# only what it has an opinion about, and TOML cannot spell the
+# ``None`` many of these values take.
 class GoldenPolicy(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -109,6 +113,7 @@ class EmptyContainerTypeHintVariant(
     type_hints: list[EmptyContainerTypeHint]
 
 
+# Defaults stand in for omitted keys, as above.
 class VariantPolicy(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -174,6 +179,7 @@ class VariantPolicy(  # noqa: NOD001
         return self
 
 
+# Defaults stand in for omitted keys, as above.
 class _LanguageMetadataData(  # noqa: NOD001
     BaseModel,
     extra="forbid",

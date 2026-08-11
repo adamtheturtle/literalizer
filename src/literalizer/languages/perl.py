@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -96,25 +95,6 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
-_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
-
-
-@beartype
-def _format_perl_string_multiline(value: str) -> str:
-    r"""Format *value* as a non-interpolating multiline Perl literal."""
-    if (
-        "\r" in value
-        or "\0" in value
-        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
-    ):
-        escaped = _format_perl_string_double(value=value)
-        return (
-            escaped.replace("$", r"\$")
-            .replace("@", r"\@")
-            .replace("\0", r"\x{0}")
-        )
-    return format_string_backslash_single_minimal(value=value)
-
 
 @beartype
 def _perl_call_stub(
@@ -182,7 +162,9 @@ def _format_perl_string_double(value: str) -> str:
     keeps the output pure ASCII so the snippet round-trips regardless
     of source-file encoding.
     """
-    base = format_string_backslash(value)
+    base = (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
     if base.isascii():
         return base
     return "".join(
@@ -200,7 +182,9 @@ def _format_perl_string_double_utf8(value: str) -> str:
     rather than its raw byte sequence.  Matches the style a human Perl
     author would write in a UTF-8 source file.
     """
-    return format_string_backslash(value)
+    return (
+        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+    )
 
 
 @beartype
@@ -285,15 +269,15 @@ class Perl(metaclass=LanguageCls):
             native boolean type, so the choice trades off readability
             against round-trip fidelity through JSON and YAML libraries.
 
-            * ``bool_formats.INTEGER`` -- bare ``1`` / ``0`` (default,
-              preserves prior output).  Re-encoding to JSON loses the
-              boolean type.
+            * ``bool_formats.INTEGER`` -- bare ``1`` / ``0``. Re-encoding
+              to JSON loses the boolean type.
             * ``bool_formats.JSON_PP_REF`` -- ``\1`` / ``\0`` scalar
               references, the conventional form used by ``JSON::PP``,
               ``JSON::XS``, ``Cpanel::JSON::XS`` and ``Mojo::JSON``.
               Round-trips back to JSON ``true`` / ``false`` with no
               ``use`` preamble required.
-            * ``bool_formats.JSON_PP_SINGLETON`` -- ``JSON::PP::true`` /
+            * ``bool_formats.JSON_PP_SINGLETON`` (default) --
+              ``JSON::PP::true`` /
               ``JSON::PP::false`` blessed singletons; adds a
               ``use JSON::PP;`` preamble (``JSON::PP`` is a core
               module).
@@ -316,13 +300,8 @@ class Perl(metaclass=LanguageCls):
               Perl author would write in a UTF-8 source file.
             * ``string_formats.SINGLE`` -- single-quoted, with only
               ``\\`` and ``\'`` recognized as escapes.  Non-ASCII
-              characters are emitted as their raw UTF-8 bytes; the
-              caller is responsible for placing the snippet in a
-              source file whose encoding declaration matches.
-            * ``string_formats.MULTILINE`` -- non-interpolating
-              single-quoted strings with physical line breaks.  Falls
-              back to an escaped double-quoted string for carriage
-              returns, null bytes, and source-line trailing whitespace.
+              characters are emitted literally and contribute
+              ``use utf8;`` to the file preamble.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -401,7 +380,7 @@ class Perl(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = True
+    supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "perl"
@@ -562,9 +541,9 @@ class Perl(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="Inf",
-        negative_infinity="-Inf",
-        nan="NaN",
+        positive_infinity="9**9**9",
+        negative_infinity="-(9**9**9)",
+        nan="(9**9**9) - (9**9**9)",
     ):
         """Float format options."""
 
@@ -648,7 +627,6 @@ class Perl(metaclass=LanguageCls):
         DOUBLE = enum.member(value=_format_perl_string_double)
         DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
         SINGLE = enum.member(value=format_string_backslash_single_minimal)
-        MULTILINE = enum.member(value=_format_perl_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
@@ -783,7 +761,7 @@ class Perl(metaclass=LanguageCls):
 
     date_format: DateFormats = DateFormats.PERL
     datetime_format: DatetimeFormats = DatetimeFormats.PERL
-    bool_format: BoolFormats = BoolFormats.INTEGER
+    bool_format: BoolFormats = BoolFormats.JSON_PP_SINGLETON
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
@@ -858,7 +836,7 @@ class Perl(metaclass=LanguageCls):
                 if self.string_format
                 in {
                     type(self.string_format).DOUBLE_UTF8,
-                    type(self.string_format).MULTILINE,
+                    type(self.string_format).SINGLE,
                 }
                 else ()
             ),
@@ -1127,3 +1105,7 @@ class Perl(metaclass=LanguageCls):
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
+
+
+# The variant planner accesses non-default enum members dynamically.
+_PERL_INTEGER_BOOL_FORMAT = Perl.BoolFormats.INTEGER  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]

@@ -3,6 +3,7 @@
 import pytest
 
 from literalizer import (
+    ExistingVariable,
     InputFormat,
     LanguageCls,
     NewVariable,
@@ -31,6 +32,7 @@ from literalizer.languages import (
     Haxe,
     Java,
     JavaScript,
+    Python,
     Rust,
     Scala,
     Sml,
@@ -80,6 +82,42 @@ def test_hyphenated_new_variable_name_raises(
             language=language_cls(),
             variable_form=NewVariable(name="a-b", modifiers=frozenset()),
             wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(argnames="name", argvalues=["", "a.b[0]"])
+def test_invalid_existing_variable_name_raises(name: str) -> None:
+    """Assignment targets must be plain identifiers, not expressions."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize(
+            source="[1]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            variable_form=ExistingVariable(name=name),
+        )
+
+
+def test_reserved_existing_variable_name_raises() -> None:
+    """Assignment targets reject target-language reserved words."""
+    with pytest.raises(expected_exception=ReservedVariableNameError):
+        literalize(
+            source="[1]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            variable_form=ExistingVariable(name="class"),
+        )
+
+
+def test_call_existing_variable_name_is_validated() -> None:
+    """Call-result assignments use the same target validation."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="consume",
+            parameter_names=("value",),
+            variable_form=ExistingVariable(name="target.value"),
         )
 
 

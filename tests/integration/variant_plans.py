@@ -679,6 +679,10 @@ type _Gate = Annotated[
 ]
 
 
+# A field default here is what a declared axis means by leaving the
+# key out, rather than a value a caller may lean on: an entry supplies
+# only what it has an opinion about, and TOML cannot spell the
+# ``None`` many of these values take.
 class _NonDefaultKwargOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -705,6 +709,7 @@ class _EnumMemberOverride(
     member: Annotated[str, Field(min_length=1)]
 
 
+# Defaults stand in for omitted keys, as above.
 class _MetadataEnumMemberOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -813,6 +818,7 @@ def _no_member_flags() -> list[str]:
     return []
 
 
+# Defaults stand in for omitted keys, as above.
 class _LayoutChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -830,6 +836,7 @@ def _compact_layout() -> list[_LayoutChoice]:
     return [_LayoutChoice(layout="COMPACT")]
 
 
+# Defaults stand in for omitted keys, as above.
 class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -871,6 +878,7 @@ class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+# Defaults stand in for omitted keys, as above.
 class _FixedOverridesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -902,6 +910,7 @@ class _FixedOverridesPlan(  # noqa: NOD001
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+# Defaults stand in for omitted keys, as above.
 class _KwargValueChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -920,6 +929,7 @@ class _KwargValueChoice(  # noqa: NOD001
     value: Annotated[str, Field(min_length=1)] | None = None
 
 
+# Defaults stand in for omitted keys, as above.
 class _KwargValuesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -940,6 +950,7 @@ class _KwargValuesPlan(  # noqa: NOD001
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+# Defaults stand in for omitted keys, as above.
 class _CrossSecondary(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -957,6 +968,7 @@ class _CrossSecondary(  # noqa: NOD001
     declaration_style_sequence_override: bool = False
 
 
+# Defaults stand in for omitted keys, as above.
 class _CrossProductPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -993,6 +1005,7 @@ class _CrossProductPlan(  # noqa: NOD001
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
+# Defaults stand in for omitted keys, as above.
 class _FilteredPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -1045,6 +1058,7 @@ def _no_special_axes() -> dict[str, _SpecialAxis]:
     return {}
 
 
+# Defaults stand in for omitted keys, as above.
 class _AxisRegistryData(  # noqa: NOD001
     BaseModel,
     extra="forbid",

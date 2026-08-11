@@ -96,7 +96,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
         case int():
             return f"MOBILE LIT(lit.int; {formatted})"
         case float():
-            return f"MOBILE LIT(lit.float; {formatted}(REAL32))"
+            return f"MOBILE LIT(lit.float; {formatted}(REAL64))"
         case str() | bytes() | datetime.date():
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
@@ -577,7 +577,7 @@ class Occam(metaclass=LanguageCls):
             "    lit.null\n"
             "    lit.bool ; BOOL\n"
             "    lit.int ; INT\n"
-            "    lit.float ; REAL32\n"
+            "    lit.float ; REAL64\n"
             "    lit.str ; MOBILE []BYTE\n"
             "    lit.list ; MOBILE []MOBILE LIT\n"
             "    lit.map ; MOBILE []MOBILE LIT\n"

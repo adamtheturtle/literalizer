@@ -9,7 +9,7 @@ fn main() {
 		'n': IVal(unsafe { nil }),
 		'd': IVal("2024-01-15"),
 		'dt': IVal(1705320000),
-		'by': IVal("48656c6c6f"),
+		'by': IVal('48656c6c6f'),
 	}
 	_ = my_data
 }
