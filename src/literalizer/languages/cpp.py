@@ -16,6 +16,7 @@ from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    sequence_surrogate_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -1951,7 +1952,7 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=fixed_open(open_str="["),
+    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
     close="]",
     empty_set="[]",
     preamble_lines=(),
@@ -2307,7 +2308,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            set_open=lambda _items: "{",
+            set_open=sequence_surrogate_set_open(lambda _items: "{"),
             close="}",
             empty_set=None,
             preamble_lines=("#include <vector>",),
@@ -2324,7 +2325,9 @@ class Cpp(metaclass=LanguageCls):
             """Return the set format config with variant opener."""
             return dataclasses.replace(
                 self.value,
-                set_open=_build_variant_set_open(type_ctx=type_ctx),
+                set_open=sequence_surrogate_set_open(
+                    _build_variant_set_open(type_ctx=type_ctx)
+                ),
             )
 
     class CommentFormats(enum.Enum):

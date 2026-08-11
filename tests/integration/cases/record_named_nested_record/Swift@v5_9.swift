@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data: [String: Any] = [
     "collection": "alpha",
     "featured_entry": ["id": 100, "label": "first entry", "enabled": false, "related_ids": [102, 103]],
 ]

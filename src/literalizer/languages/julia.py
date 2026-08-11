@@ -98,6 +98,26 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
+def _format_julia_signed_base(value: int, base: Callable[[int], str]) -> str:
+    """Render a Julia base literal as a signed machine integer."""
+    sign = "-" if value < 0 else ""
+    return f"{sign}Int({base(abs(value))})"
+
+
+@beartype
+def _julia_signed_base(
+    base: Callable[[int], str],
+) -> Callable[[int], str]:
+    """Wrap an unsigned Julia base literal in ``Int``."""
+
+    def _format(value: int) -> str:
+        """Format *value* using the selected base."""
+        return _format_julia_signed_base(value=value, base=base)
+
+    return _format
+
+
+@beartype
 def _julia_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -446,20 +466,20 @@ class Julia(metaclass=LanguageCls):
         )
         HEX = MappingProxyType(
             mapping={
-                "NONE": format_integer_hex,
-                "UNDERSCORE": format_integer_hex,
+                "NONE": _julia_signed_base(base=format_integer_hex),
+                "UNDERSCORE": _julia_signed_base(base=format_integer_hex),
             }
         )
         OCTAL = MappingProxyType(
             mapping={
-                "NONE": format_integer_octal,
-                "UNDERSCORE": format_integer_octal,
+                "NONE": _julia_signed_base(base=format_integer_octal),
+                "UNDERSCORE": _julia_signed_base(base=format_integer_octal),
             }
         )
         BINARY = MappingProxyType(
             mapping={
-                "NONE": format_integer_binary,
-                "UNDERSCORE": format_integer_binary,
+                "NONE": _julia_signed_base(base=format_integer_binary),
+                "UNDERSCORE": _julia_signed_base(base=format_integer_binary),
             }
         )
 

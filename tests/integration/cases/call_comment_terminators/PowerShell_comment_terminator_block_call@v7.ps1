@@ -1,4 +1,4 @@
 function process {}
-process("Dune")  <# first: */ |# -} *) ) =# ]] %} ]# % # > #>
-process("Solaris")
-process("Neuromancer")  <# third: */ |# -} *) ) =# ]] %} ]# % # > #>
+process "Dune"  <# first: */ |# -} *) ) =# ]] %} ]# % # > #>
+process "Solaris"
+process "Neuromancer"  <# third: */ |# -} *) ) =# ]] %} ]# % # > #>

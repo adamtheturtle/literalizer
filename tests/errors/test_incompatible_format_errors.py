@@ -24,7 +24,7 @@ from literalizer import (
 from literalizer.exceptions import (
     IncompatibleFormatsError,
 )
-from literalizer.languages import CSharp, Haskell, Java, Nim, Rust
+from literalizer.languages import CSharp, Dart, Haskell, Java, Nim, Rust
 
 RUST_CONST = Rust(
     date_format=Rust.date_formats.ISO,
@@ -46,6 +46,26 @@ def test_haskell_nested_tuple_adt_raises() -> None:
             input_format=InputFormat.JSON,
             language=Haskell(
                 sequence_format=Haskell.sequence_formats.TUPLE,
+            ),
+            variable_form=NewVariable(
+                name="value",
+                modifiers=frozenset(),
+            ),
+            wrap_in_file=True,
+        )
+
+
+def test_dart_const_with_bigint_raises() -> None:
+    """Dart ``CONST`` rejects runtime ``BigInt.parse`` expressions."""
+    with pytest.raises(
+        expected_exception=IncompatibleFormatsError,
+        match="Dart CONST requires a constant-expression initializer",
+    ):
+        literalize(
+            source='{"big": 12345678901234567890123}',
+            input_format=InputFormat.JSON,
+            language=Dart(
+                declaration_style=Dart.declaration_styles.CONST,
             ),
             variable_form=NewVariable(
                 name="value",
