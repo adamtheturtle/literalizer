@@ -32,12 +32,9 @@ Two top-level keys are excluded from the comparison:
 * ``biginteger`` -- its 26-digit value overflows the 64-bit cell that
   ``gforth`` uses on the Ubuntu runner; same shape as the Go, TypeScript,
   Lua, Zig, Swift, Rust, D, C++, and Wren exclusions.
-* ``float_large_exponent`` -- ``Forth.float_format`` is
-  ``format_float_scientific``, which uses Python's ``f"{value:e}"``
-  (six fractional digits) and emits ``1.797693e308``, losing the
-  trailing significant digits of ``1.7976931348623157e+308``; the
-  truncation happens at literalize time before the Forth toolchain
-  ever sees the value, so the field is excluded from the round-trip.
+* ``float_large_exponent`` -- gforth 0.7.3 accepts the finite maximum
+  IEEE-754 literal but FFL's JSON writer rounds it upward to infinity.
+  This is a target serializer limit rather than lost literal precision.
 """
 
 import os
