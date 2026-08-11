@@ -1,6 +1,6 @@
 var my_data = {
-    "outer": {"a": 1, "b": "x"},
+    "outer": {"a": 1, "b": "x", "c": null},
 }
 my_data = {
-    "outer": {"a": 1, "b": "x"},
+    "outer": {"a": 1, "b": "x", "c": null},
 }
