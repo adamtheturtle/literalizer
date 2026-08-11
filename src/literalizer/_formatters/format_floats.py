@@ -1,11 +1,30 @@
 """Float formatting functions for finite values."""
 
 import math
+from collections.abc import Callable
 from decimal import Decimal
 
 from beartype import beartype
 
 from literalizer._types import OrderedMap, Value
+from literalizer.exceptions import UnrepresentableSpecialFloatError
+
+
+@beartype
+def reject_special_floats(
+    *, formatter: Callable[[float], str], language_name: str
+) -> Callable[[float], str]:
+    """Wrap a finite-float formatter with a clear special-float error."""
+
+    @beartype
+    def _format(value: float) -> str:
+        """Reject a special float before delegating finite values."""
+        if not math.isfinite(value):
+            msg = f"{language_name} cannot represent special float {value!r}."
+            raise UnrepresentableSpecialFloatError(msg)
+        return formatter(value)
+
+    return _format
 
 
 @beartype

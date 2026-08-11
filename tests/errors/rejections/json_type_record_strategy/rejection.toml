@@ -1,0 +1,25 @@
+schema_version = 1
+summary = """
+A JSON value type renders the whole document through one parse or
+node-building expression, which leaves nowhere for the typed record
+declarations the RECORD strategy generates.
+"""
+exceptions = ["IncompatibleFormatsError"]
+option = "json_type"
+gates = [
+  { kind = "spec_field_present", field = "json_type" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = ["CSharp", "Crystal", "D", "Nim", "Rust", "Scala"]
+reason = """
+Renders records alongside the JSON value type rather than instead of
+it, so the two settings compose.
+"""
