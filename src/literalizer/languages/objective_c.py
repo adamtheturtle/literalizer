@@ -136,6 +136,8 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
         return formatted
     if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):
         return f"@{formatted}"
+    if formatted.startswith("(") and formatted.endswith(")"):
+        return f"@{formatted}"
     return f"@({formatted})"
 
 
