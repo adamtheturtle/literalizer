@@ -408,10 +408,11 @@ def _rust_scalar_type(
         case str() | bytes():
             result = "&str"
         case datetime.date():
-            result = {
-                datetime.date: date_type,
-                datetime.datetime: datetime_type,
-            }[type(data)]
+            result = (
+                datetime_type
+                if isinstance(data, datetime.datetime)
+                else date_type
+            )
         case datetime.time():
             result = "&str"
         case None:
