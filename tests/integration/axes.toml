@@ -753,7 +753,6 @@ name_template = "{lang}_string_embedded_nul_{format}"
 sole_member_name_template = "{lang}_string_embedded_nul"
 option = "string_format"
 include_default = true
-excluded_members = ["MULTILINE"]
 gates = [
   { kind = "capability_flag", flag = "string_literals_escape_null_byte" },
 ]
