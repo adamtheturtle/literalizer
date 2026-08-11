@@ -407,6 +407,7 @@ class InvalidCallParameterNameError(Exception):
     """Raised when a call parameter is not a target-language
     identifier.
     """
+
     def __init__(
         self,
         *,
