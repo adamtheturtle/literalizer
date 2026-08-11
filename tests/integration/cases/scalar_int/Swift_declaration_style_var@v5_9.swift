@@ -1,1 +1,1 @@
-var my_data: Any = 42
+var my_data = 42

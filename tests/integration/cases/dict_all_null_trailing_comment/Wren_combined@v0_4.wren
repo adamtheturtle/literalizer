@@ -1,4 +1,10 @@
-var my_data = {}
+var my_data = {
+    "a": null,
+    "b": null,
     // trailing
-my_data = {}
+}
+my_data = {
+    "a": null,
+    "b": null,
     // trailing
+}

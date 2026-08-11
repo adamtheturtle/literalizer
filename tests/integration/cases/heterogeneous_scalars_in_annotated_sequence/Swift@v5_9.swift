@@ -1,5 +1,5 @@
 import Foundation
-let my_data: Any = [
+let my_data: [Any?] = [
     true,
     1.5,
     nil,

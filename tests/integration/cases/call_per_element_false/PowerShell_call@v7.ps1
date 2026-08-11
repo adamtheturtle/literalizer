@@ -1,2 +1,2 @@
 function process {}
-process(1)
+process 1

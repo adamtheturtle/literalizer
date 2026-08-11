@@ -1,5 +1,0 @@
-[
-    "Infinity",
-    "-Infinity",
-    "NaN",
-]

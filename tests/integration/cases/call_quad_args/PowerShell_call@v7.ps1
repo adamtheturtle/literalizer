@@ -1,3 +1,3 @@
 function process {}
-process(1, 2, 3, 4)
-process(5, 6, 7, 8)
+process 1 2 3 4
+process 5 6 7 8

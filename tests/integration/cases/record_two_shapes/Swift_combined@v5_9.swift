@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "metrics": ["count": 100, "rate": 50],
     "flags": ["retries": 3, "timeout": 30],
 ]
