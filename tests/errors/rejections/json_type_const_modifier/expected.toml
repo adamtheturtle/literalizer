@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 1
+
+[IncompatibleFormatsError]
+"CSharp[SYSTEM_TEXT_JSON_NODE]" = "C# 'const' requires a compile-time constant initializer, but JsonNode expressions are not constant. Use 'readonly' or remove the 'const' modifier."

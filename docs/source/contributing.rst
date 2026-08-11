@@ -142,6 +142,75 @@ variant context fields are ``variable_form`` (``new``, ``existing``, or
 ``record_null_substitutions``.  The loader rejects unknown fields or axes,
 missing inputs, duplicate logical cases, and duplicate golden targets.
 
+Rejection manifests
+-------------------
+
+A rejection that holds for a family of languages -- every language with a
+``json_type`` refusing a non-string dict key, every language taking
+``record_shape_names`` refusing a name that is not PascalCase -- is declared
+once under :file:`tests/errors/rejections/`.  Each directory holds a
+:file:`rejection.toml` and an :file:`expected.toml` golden file.  The golden
+opens with the split of the languages the manifest selected, then groups what
+each raised under a table per exception type:
+
+.. code-block:: toml
+
+   # languages rejecting: 21; languages accepting: 0
+
+   [UnrepresentableInputError]
+   "C[CJSON]" = "C json_type can only represent dict keys as JSON object strings, not int"
+
+A language raising a different exception from the rest of its family therefore
+appears as its own table rather than as a word buried in a line.
+
+A case is keyed by its language, then by the option member it ran under and the
+declared value it substituted, if the manifest varies either.  An option member
+is named (``[CJSON]``) and a declared value is quoted (``['9Entry']``).
+
+The manifest itself declares only what provokes the rejection:
+
+.. code-block:: toml
+
+   schema_version = 1
+   summary = """
+   A JSON value type keys its objects with strings.
+   """
+   exceptions = ["UnrepresentableInputError"]
+   option = "json_type"
+   gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+   [call]
+   api = "literalize"
+   source = "{1: one}"
+   input_format = "yaml"
+
+``gates`` selects the languages the rejection is claimed for, using the same
+vocabulary as the golden suite's variant axes; a language that later joins
+those gates is covered without editing the manifest.  A rejection about one
+language's own rendering names it in ``languages`` instead.  ``option`` runs
+each language once per member of that option, and ``values`` runs a case per
+declared value, which any ``{value}`` in a constructor argument substitutes.
+
+``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the
+loader rejects an argument the named API does not take.  ``exceptions`` lists
+the exception types any selected language may raise; the golden file records
+which one each raised, together with its message.
+
+A language a gate admits that represents the input rather than refusing it is
+declared in an ``accepts`` entry with the reason it does:
+
+.. code-block:: toml
+
+   [[accepts]]
+   languages = ["Rust", "Scala"]
+   reason = """
+   Renders tuples alongside the JSON value type rather than instead of it.
+   """
+
+An entry there is an assertion rather than a mute: the suite makes the same
+call for those languages and fails if it stops going through, so a language
+that starts rejecting cannot sit behind a stale reason.
+
 Documentation
 -------------
 

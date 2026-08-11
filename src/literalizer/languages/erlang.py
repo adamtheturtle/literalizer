@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -31,6 +32,7 @@ from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
+    reject_special_floats,
 )
 from literalizer._formatters.format_integers import (
     format_integer_binary_erlang,
@@ -304,12 +306,12 @@ class Erlang(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
-    module_name: str = "Module"
+    module_name: str = "module"
 
     leading_preamble = no_leading_preamble
     extension = ".erl"
     pygments_name = "erlang"
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
@@ -630,6 +632,18 @@ class Erlang(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
+
+    def __post_init__(self) -> None:
+        """Validate that the module name is an unquoted Erlang atom."""
+        if re.fullmatch(
+            pattern=r"[a-z][A-Za-z0-9_@]*", string=self.module_name
+        ):
+            return
+        msg = (
+            "Erlang module_name must be an unquoted atom beginning with a "
+            f"lowercase letter, got {self.module_name!r}"
+        )
+        raise ValueError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -999,7 +1013,10 @@ class Erlang(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return reject_special_floats(
+            formatter=self.float_format,
+            language_name="Erlang",
+        )
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
