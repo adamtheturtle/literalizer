@@ -3,7 +3,7 @@ use DateTime;
 my $my_data = {
     "s" => "string",
     "i" => 1,
-    "f" => 1.5,
+    "f" => (0.0 + 1.5),
     "b" => JSON::PP::true,
     "n" => undef,
     "d" => DateTime->new(year => 2024, month => 1, day => 15),
@@ -13,7 +13,7 @@ my $my_data = {
 $my_data = {
     "s" => "string",
     "i" => 1,
-    "f" => 1.5,
+    "f" => (0.0 + 1.5),
     "b" => JSON::PP::true,
     "n" => undef,
     "d" => DateTime->new(year => 2024, month => 1, day => 15),

@@ -3,7 +3,7 @@ use Math::BigInt;
 my $my_data = {
     "quantity" => 1000000,
     "big" => Math::BigInt->new("18446744073709551615"),
-    "ratio" => 2.5,
+    "ratio" => (0.0 + 2.5),
     "label" => "tag",
     "ok" => JSON::PP::true,
 };

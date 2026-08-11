@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -83,7 +84,6 @@ from literalizer._language import (
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
-    no_data_preamble,
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
@@ -125,6 +125,29 @@ def _perl_format_call_ref_identifier(
 
 _PERL_NV_INT_MIN = -(2**53)
 _PERL_NV_INT_MAX = 2**53
+_PERL_NV_EXACT_INTEGER_MAX = float(2**53)
+
+
+@beartype
+def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
+    """Import ``Math::BigFloat`` when a large finite float needs it."""
+    pending = [data]
+    while pending:
+        value = pending.pop()
+        match value:
+            case float() if (
+                math.isfinite(value)
+                and abs(value) >= _PERL_NV_EXACT_INTEGER_MAX
+            ):
+                return ("use Math::BigFloat;",)
+            case dict():
+                pending.extend(value.keys())
+                pending.extend(value.values())
+            case list() | set():
+                pending.extend(value)
+            case _:
+                continue
+    return ()
 
 
 @beartype
@@ -825,6 +848,7 @@ class Perl(metaclass=LanguageCls):
         both gets both preamble lines in a stable order.
         """
         contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
+            _perl_math_bigfloat_preamble,
             *(
                 (_perl_math_bigint_preamble,)
                 if self.integer_width_strategy
@@ -841,8 +865,6 @@ class Perl(metaclass=LanguageCls):
                 else ()
             ),
         )
-        if not contributors:
-            return no_data_preamble
 
         def _composed(data: Value, /) -> tuple[str, ...]:
             """Concatenate every contributor's preamble lines."""
@@ -1006,7 +1028,18 @@ class Perl(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        formatter = self.float_format
+
+        def format_numeric_float(value: float) -> str:
+            """Force Perl to retain the value's numeric identity."""
+            if (
+                math.isfinite(value)
+                and abs(value) >= _PERL_NV_EXACT_INTEGER_MAX
+            ):
+                return f'Math::BigFloat->new("{formatter(value)}")'
+            return f"(0.0 + {formatter(value)})"
+
+        return format_numeric_float
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

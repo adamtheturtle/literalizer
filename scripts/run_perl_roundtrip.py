@@ -18,20 +18,11 @@ the values Perl *can* represent:
   The default ``BARE`` form would silently demote the 26-digit
   ``biginteger`` field to an NV (see issue #2588).
 
-One key is excluded from the comparison because of a target-runtime
-serializer limit, not a literalizer formatter limit.  The literalizer
-emits a valid Perl numeric literal that the interpreter loads as exactly
-``1.7976931348623157e308``; ``JSON::PP``'s encoder then writes floats
-with only 15 significant digits, rounding ``DBL_MAX`` to
-``1.79769313486232e+308``, which on decode rounds *up* past ``DBL_MAX``
-and Python reads as ``inf``:
-
-* ``float_large_exponent`` -- ``1.7976931348623157e308`` -> ``inf``
-  after encode/decode.
-
-Working around the encoder's precision (e.g. by emitting floats as
-pre-formatted JSON via a custom hook) is outside the literalizer's
-scope.
+Large finite floats use core ``Math::BigFloat`` values so JSON::PP's
+``allow_bignum`` mode preserves all significant digits on every platform.
+``float_large_exponent`` remains excluded because JSON::PP expands that
+integral-valued maximum double to a decimal integer whose exact mathematical
+value differs from the original binary64 value.
 
 ``double_array`` (``[1.0, 2.5]`` -> ``[1, 2.5]``) and ``negative_zero``
 (``-0.0`` -> ``0``) survive the comparison because Python treats
