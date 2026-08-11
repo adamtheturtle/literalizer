@@ -18,7 +18,9 @@ def _misaligned_comments(*, ruamel_data: object) -> CollectionComments:
 def test_literalize_fails_on_yaml_comment_misalignment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The public API fails hard when parser comment slots misalign."""
+    """The public API fails hard when parser comment slots are
+    misaligned.
+    """
     literalize_module = importlib.import_module(name="literalizer._literalize")
     monkeypatch.setattr(
         target=literalize_module,
