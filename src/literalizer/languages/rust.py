@@ -407,10 +407,11 @@ def _rust_scalar_type(
             result = "f64"
         case str() | bytes():
             result = "&str"
-        case datetime.datetime():
-            result = datetime_type
         case datetime.date():
-            result = date_type
+            result = {
+                datetime.date: date_type,
+                datetime.datetime: datetime_type,
+            }[type(data)]
         case datetime.time():
             result = "&str"
         case None:
