@@ -272,7 +272,7 @@ def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
     )
 
     assert result.code == (
-        "-module(Module).\n-export([x/0]).\nx() ->\n    If = 1,\n    If."
+        "-module(module).\n-export([x/0]).\nx() ->\n    If = 1,\n    If."
     )
 
 
