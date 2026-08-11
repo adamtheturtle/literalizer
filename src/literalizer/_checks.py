@@ -96,6 +96,34 @@ def guard_collection_nesting_depth(
         pending.extend((child, depth) for child in children)
 
 
+@beartype
+def reject_aware_datetimes(
+    *, data: Value, language_name: str, allow_utc_offset: bool
+) -> None:
+    """Reject timezone-aware datetimes that a native formatter would
+    lose.
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case datetime.datetime() if value.utcoffset() is not None and not (
+                allow_utc_offset and value.utcoffset() == datetime.timedelta()
+            ):
+                msg = (
+                    f"{language_name} native datetime format cannot preserve "
+                    f"UTC offset {value.utcoffset()}"
+                )
+                raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
 def _contains_set(data: Value, /) -> bool:
     """Return whether *data* contains a set at any depth."""
     match data:
