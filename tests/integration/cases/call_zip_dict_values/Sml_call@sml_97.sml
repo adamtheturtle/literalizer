@@ -5,5 +5,5 @@ datatype val_t =
   | SMap of (string * val_t) list
 fun process _ = ()
 fun emit _ = ()
-val _ = emit(process("hello"), SMap [("a", SInt 1), ("b", SInt 2)])
-val _ = emit(process(42), SMap [("c", SInt 3), ("d", SInt 4)])
+val _ = emit(process(SStr "hello"), SMap [("a", SInt 1), ("b", SInt 2)])
+val _ = emit(process(SInt 42), SMap [("c", SInt 3), ("d", SInt 4)])

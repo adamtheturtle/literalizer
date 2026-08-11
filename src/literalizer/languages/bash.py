@@ -74,6 +74,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
+    reject_nulls,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -145,7 +146,8 @@ def _format_bash_dict_entry(
 
 @beartype
 def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
-    """Raise for dict keys that Bash cannot represent."""
+    """Raise for values and dict keys that Bash cannot represent."""
+    reject_nulls(data=data, language_name="Bash")
     _bash_validate_dict_keys(data=data)
 
 

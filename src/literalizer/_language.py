@@ -33,6 +33,7 @@ from literalizer.exceptions import (
     InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
+    UnrepresentableNullError,
 )
 
 
@@ -2544,6 +2545,25 @@ def reject_empty_dicts(*, data: Value, language_name: str) -> None:
             "distinction is lost on round-trip."
         )
         raise UnrepresentableEmptyDictError(msg)
+
+
+@beartype
+def reject_nulls(*, data: Value, language_name: str) -> None:
+    """Reject null anywhere when it collapses onto the empty string."""
+    match data:
+        case None:
+            raise UnrepresentableNullError(
+                language_name=language_name,
+                conflated_value="the empty string",
+            )
+        case dict():
+            for value in data.values():
+                reject_nulls(data=value, language_name=language_name)
+        case list() | set():
+            for item in data:
+                reject_nulls(data=item, language_name=language_name)
+        case _:
+            return
 
 
 @beartype
