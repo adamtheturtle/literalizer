@@ -1,22 +1,38 @@
 """Tests for YAML comment alignment errors."""
 
+import importlib
+
 import pytest
 
+import literalizer
 from literalizer._comments import CollectionComments
-from literalizer._literalize import (
-    _filter_collection_comments,  # pyright: ignore[reportPrivateUsage]
-)
+from literalizer.languages import Java
 
 
-def test_filter_collection_comments_fails_on_misalignment() -> None:
-    """An internal comment-slot mismatch fails hard."""
-    comments = CollectionComments(elements=(), trailing=())
+def _misaligned_comments(*, ruamel_data: object) -> CollectionComments:
+    """Return deliberately malformed parser metadata for an error test."""
+    del ruamel_data
+    return CollectionComments(elements=(), trailing=("trailing",))
+
+
+def test_literalize_fails_on_yaml_comment_misalignment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The public API fails hard when parser comment slots misalign."""
+    literalize_module = importlib.import_module(name="literalizer._literalize")
+    monkeypatch.setattr(
+        target=literalize_module,
+        name="extract_yaml_comments",
+        value=_misaligned_comments,
+    )
 
     with pytest.raises(
         expected_exception=ValueError,
         match=r"zip\(\) argument 2 is longer than argument 1",
     ):
-        _filter_collection_comments(
-            collection_comments=comments,
-            keep=(True,),
+        literalizer.literalize(
+            source="outer:\n  # nested\n  keep: 1\n  drop:\n",
+            input_format=literalizer.InputFormat.YAML,
+            language=Java(),
+            collection_layout=literalizer.CollectionLayout.MULTILINE,
         )
