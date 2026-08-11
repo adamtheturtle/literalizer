@@ -1,7 +1,7 @@
 package main
 type Record0 struct {
 	A int
-	B int
+	B int64
 	C string
 }
 

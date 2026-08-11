@@ -4,4 +4,4 @@ let process (_p0: obj, _p1: obj, _p2: obj, _p3: obj, _p4: obj, _p5: obj, _p6: ob
 type Val =
     | FInt of int64
     | FList of Val list
-process(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)
+process(FInt 0L, FInt 1L, FInt 2L, FInt 3L, FInt 4L, FInt 5L, FInt 6L, FInt 7L, FInt 8L, FInt 9L, FInt 10L, FInt 11L, FInt 12L, FInt 13L, FInt 14L, FInt 15L, FInt 16L, FInt 17L, FInt 18L, FInt 19L, FInt 20L, FInt 21L, FInt 22L, FInt 23L, FInt 24L, FInt 25L, FInt 26L)

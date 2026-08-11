@@ -4,6 +4,6 @@ let process _ = ()
 type val_t =
   | OInt of int
   | OList of val_t list
-let _ = process(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)
+let _ = process(OInt 0, OInt 1, OInt 2, OInt 3, OInt 4, OInt 5, OInt 6, OInt 7, OInt 8, OInt 9, OInt 10, OInt 11, OInt 12, OInt 13, OInt 14, OInt 15, OInt 16, OInt 17, OInt 18, OInt 19, OInt 20, OInt 21, OInt 22, OInt 23, OInt 24, OInt 25, OInt 26)
 
 end
