@@ -4,4 +4,4 @@ $MyVar = @(
     2;
     3
 )
-process($MyVar)
+process $MyVar

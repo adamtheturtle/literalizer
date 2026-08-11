@@ -1,14 +1,15 @@
+use JSON::PP;
 my $my_data = {
     # Server configuration
     "host" => "localhost",  # default host
     "port" => 8080,
     # Enable debug mode
-    "debug" => 1,
+    "debug" => JSON::PP::true,
 };
 $my_data = {
     # Server configuration
     "host" => "localhost",  # default host
     "port" => 8080,
     # Enable debug mode
-    "debug" => 1,
+    "debug" => JSON::PP::true,
 };

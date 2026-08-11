@@ -556,8 +556,8 @@ class Tcl(metaclass=LanguageCls):
     indent: str = "    "
 
     null_literal: ClassVar[str] = '""'
-    true_literal: ClassVar[str] = "1"
-    false_literal: ClassVar[str] = "0"
+    true_literal: ClassVar[str] = "true"
+    false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = " "
     skip_null_dict_values: ClassVar[bool] = False

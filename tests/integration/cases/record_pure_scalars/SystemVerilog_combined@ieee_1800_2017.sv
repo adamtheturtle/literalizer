@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -14,13 +14,13 @@ initial begin
 static _VKV my_data[] = '{
     _VKV'{k: "name", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "Alice"}},
     _VKV'{k: "age", v: _VVal'{tag: _VVAL_INT, i: 30, r: 0.0, s: ""}},
-    _VKV'{k: "active", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}},
+    _VKV'{k: "active", v: _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}},
     _VKV'{k: "score", v: _VVal'{tag: _VVAL_REAL, i: 0, r: 4.5, s: ""}}
 };
 my_data = '{
     _VKV'{k: "name", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "Alice"}},
     _VKV'{k: "age", v: _VVal'{tag: _VVAL_INT, i: 30, r: 0.0, s: ""}},
-    _VKV'{k: "active", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}},
+    _VKV'{k: "active", v: _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}},
     _VKV'{k: "score", v: _VVal'{tag: _VVAL_REAL, i: 0, r: 4.5, s: ""}}
 };
 end

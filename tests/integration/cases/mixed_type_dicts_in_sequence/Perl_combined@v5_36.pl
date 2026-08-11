@@ -1,8 +1,9 @@
+use JSON::PP;
 my $my_data = [
-    {"type" => "create", "pr_id" => "pr_1", "draft" => 1},
+    {"type" => "create", "pr_id" => "pr_1", "draft" => JSON::PP::true},
     {"type" => "create", "pr_id" => "pr_2"},
 ];
 $my_data = [
-    {"type" => "create", "pr_id" => "pr_1", "draft" => 1},
+    {"type" => "create", "pr_id" => "pr_1", "draft" => JSON::PP::true},
     {"type" => "create", "pr_id" => "pr_2"},
 ];

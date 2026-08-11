@@ -1,1 +1,1 @@
-var my_data: Any = true
+var my_data = true
