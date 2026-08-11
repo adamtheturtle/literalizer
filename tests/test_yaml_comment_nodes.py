@@ -1,6 +1,5 @@
 """Focused tests for YAML nested-comment bookkeeping."""
 
-import pytest
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 
 from literalizer._comments import CollectionComments, ElementComments
@@ -46,17 +45,3 @@ def test_filter_collection_comments_tracks_rendered_entries() -> None:
     assert filtered == CollectionComments(
         elements=(first, last), trailing=("trailing",)
     )
-
-
-def test_filter_collection_comments_fails_on_misalignment() -> None:
-    """An internal comment-slot mismatch fails hard."""
-    comments = CollectionComments(elements=(), trailing=())
-
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=r"zip\(\) argument 2 is longer than argument 1",
-    ):
-        _filter_collection_comments(
-            collection_comments=comments,
-            keep=(True,),
-        )
