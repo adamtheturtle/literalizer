@@ -14,5 +14,5 @@ let my_other: Val = FList [
     FInt 5L;
     FInt 6L
 ]
-process(my_var, 42)
-process(my_other, 7)
+process(my_var, FInt 42L)
+process(my_other, FInt 7L)
