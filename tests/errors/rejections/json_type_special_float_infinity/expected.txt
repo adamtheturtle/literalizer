@@ -1,3 +1,5 @@
+# languages rejecting: 7; languages accepting: 14
+
 Crystal[JSON_ANY] -> UnrepresentableSpecialFloatError: Crystal(json_type=JSON_ANY) cannot represent special floats because JSON.parse accepts only finite numbers.
 Gleam[GLEAM_JSON_JSON] -> UnrepresentableSpecialFloatError: Gleam cannot represent special float inf on the Erlang target.
 Haskell[AESON_VALUE] -> UnrepresentableSpecialFloatError: Haskell(json_type=AESON_VALUE) cannot represent special floats because aesonQQ accepts only finite numbers.

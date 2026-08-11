@@ -1,3 +1,5 @@
+# languages rejecting: 21; languages accepting: 0
+
 C[CJSON] -> UnrepresentableInputError: C json_type can only represent dict keys as JSON object strings, not int
 CSharp[SYSTEM_TEXT_JSON_NODE] -> UnrepresentableInputError: C# json_type can only represent dict keys as JSON object strings, not int
 Cobol[CJSON] -> UnrepresentableInputError: Cobol cannot represent dict key of type int

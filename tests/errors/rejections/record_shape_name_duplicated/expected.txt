@@ -1,3 +1,5 @@
+# languages rejecting: 6; languages accepting: 0
+
 Cpp -> InvalidRecordNameError: record_shape_names maps multiple key-sets to 'Entry'; externally declared type names must be unique.
 Go -> InvalidRecordNameError: record_shape_names maps multiple key-sets to 'Entry'; struct names must be unique.
 Java -> InvalidRecordNameError: record_shape_names maps multiple key-sets to 'Entry'; record names must be unique.

@@ -17,7 +17,12 @@ import literalizer
 from tests.enum_members import enum_member_by_name
 from tests.integration.golden_checks import check_golden
 
-from .rejection_cases import RejectionCase, accepting_cases, rejection_cases
+from .rejection_cases import (
+    RejectionCase,
+    accepting_cases,
+    rejection_cases,
+    selected_languages,
+)
 from .rejection_manifests import (
     REJECTIONS_DIR,
     CallSpec,
@@ -93,7 +98,13 @@ def test_rejection_messages(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Every selected language raises, with the golden file's message."""
-    lines: list[str] = []
+    accepting = len(manifest.accepting_languages)
+    header = (
+        f"# languages rejecting: "
+        f"{len(selected_languages(manifest=manifest)) - accepting}"
+        f"; languages accepting: {accepting}"
+    )
+    lines: list[str] = [header, ""]
     for case in rejection_cases(manifest=manifest):
         with pytest.raises(expected_exception=manifest.exceptions) as caught:
             _run(case=case, call=manifest.call)

@@ -55,11 +55,16 @@ def _admits(
 
 
 @beartype
-def _selected_languages(
+def selected_languages(
     *,
     manifest: RejectionManifest,
 ) -> tuple[literalizer.LanguageCls, ...]:
-    """Return every language the manifest's gates or list select."""
+    """Return every language the manifest's gates or list select.
+
+    Both the languages the manifest claims the rejection for and the
+    ones it records as accepting the input are drawn from here, so a
+    golden file can state the whole population it was built from.
+    """
     if manifest.languages:
         return tuple(
             LANGUAGES_BY_NAME[name] for name in sorted(manifest.languages)
@@ -158,8 +163,11 @@ def _cases_for_languages(
     for lang_cls in lang_classes:
         for member in _option_members(manifest=manifest, lang_cls=lang_cls):
             for value in values:
+                # An option member is named, a declared value is quoted:
+                # the two read differently in a golden file, and a value
+                # that is the empty string is still visible.
                 suffixes = [
-                    part.name if isinstance(part, enum.Enum) else part
+                    part.name if isinstance(part, enum.Enum) else repr(part)
                     for part in (member, value)
                     if part is not None
                 ]
@@ -191,7 +199,7 @@ def rejection_cases(
     accepting = frozenset(manifest.accepting_languages)
     selected = [
         lang_cls
-        for lang_cls in _selected_languages(manifest=manifest)
+        for lang_cls in selected_languages(manifest=manifest)
         if lang_cls.__name__ not in accepting
     ]
     return _cases_for_languages(manifest=manifest, lang_classes=selected)

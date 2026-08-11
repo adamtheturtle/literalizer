@@ -1,3 +1,5 @@
+# languages rejecting: 6; languages accepting: 0
+
 Cpp -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names.
 Go -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names.
 Java -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed record names.

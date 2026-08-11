@@ -1,3 +1,5 @@
+# languages rejecting: 6; languages accepting: 6
+
 C[CJSON] -> IncompatibleFormatsError: C json_type renders data as a cJSON_Create*(...) node tree and is incompatible with heterogeneous_strategy=RECORD, which generates struct declarations. Use heterogeneous_strategy=ERROR.
 Cpp[NLOHMANN_JSON] -> IncompatibleFormatsError: Cpp json_type renders data through nlohmann::json::parse(...) and is incompatible with heterogeneous_strategy=RECORD, which generates struct declarations. Use heterogeneous_strategy=ERROR.
 Java[JACKSON_JSON_NODE] -> IncompatibleFormatsError: Java json_type renders data through ObjectMapper.readTree(...) and is incompatible with heterogeneous_strategy=RECORD, which generates typed record declarations. Use heterogeneous_strategy=ERROR.
