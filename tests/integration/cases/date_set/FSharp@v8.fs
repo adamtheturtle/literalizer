@@ -2,9 +2,8 @@ module Main
 
 type Val =
     | FSet of Val list
-    | FStr of string
-    | FDate of System.DateTime
+    | FDate of System.DateOnly
 let my_data: Val = FSet [
-    FStr (string (System.DateOnly(2024, 1, 15)));
-    FStr (string (System.DateOnly(2024, 6, 1)))
+    FDate (System.DateOnly(2024, 1, 15));
+    FDate (System.DateOnly(2024, 6, 1))
 ]

@@ -1,3 +1,3 @@
 function process {}
-process($null)
-process("hello")
+process $null
+process "hello"

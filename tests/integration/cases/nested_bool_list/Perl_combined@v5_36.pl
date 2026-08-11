@@ -1,8 +1,9 @@
+use JSON::PP;
 my $my_data = [
-    [1, 0],
-    [1, 1],
+    [JSON::PP::true, JSON::PP::false],
+    [JSON::PP::true, JSON::PP::true],
 ];
 $my_data = [
-    [1, 0],
-    [1, 1],
+    [JSON::PP::true, JSON::PP::false],
+    [JSON::PP::true, JSON::PP::true],
 ];

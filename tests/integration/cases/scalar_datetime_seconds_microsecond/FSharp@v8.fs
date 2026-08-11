@@ -1,6 +1,5 @@
 module Main
 
 type Val =
-    | FStr of string
     | FDatetime of System.DateTime
-let my_data: Val = FStr (string (System.DateTime(2024, 1, 15, 12, 30, 45)))
+let my_data: Val = FDatetime (System.DateTime(2024, 1, 15, 12, 30, 45))

@@ -1,1 +1,1 @@
-let my_data: Any = true
+let my_data = true

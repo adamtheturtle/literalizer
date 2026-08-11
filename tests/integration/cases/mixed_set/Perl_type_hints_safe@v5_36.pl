@@ -1,5 +1,6 @@
+use JSON::PP;
 my $my_data = [
-    1,
+    JSON::PP::true,
     42,
     "apple",
 ];

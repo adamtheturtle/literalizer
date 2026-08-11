@@ -1,1 +1,1 @@
-let my_data: Any = 1705321800
+let my_data = 1705321800

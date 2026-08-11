@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "section": ["value": 1],
 ]
 my_data = [
