@@ -699,7 +699,7 @@ class SystemVerilog(metaclass=LanguageCls):
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Reject excessive nesting and ambiguous null values."""
-        _systemverilog_validate_spec_for_data(self, data)
+        _systemverilog_validate_spec_for_data(_self=self, data=data)
         if _data_has_null(data=data):
             msg = (
                 f"{type(self).__name__} cannot represent null distinctly "
