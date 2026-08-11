@@ -1,0 +1,7 @@
+#lang racket
+(define my_data (hash
+    "deep" (list (list (list (list 1))))
+))
+(set! my_data (hash
+    "deep" (list (list (list (list 1))))
+))
