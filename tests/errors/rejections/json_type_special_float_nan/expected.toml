@@ -1,10 +1,11 @@
-# languages rejecting: 7; languages accepting: 14
+# languages rejecting: 8; languages accepting: 13
 
 [UnrepresentableInputError]
 "Odin[JSON_VALUE]" = "Odin json_type renders the literalized value as a JSON text; JSON has no representation for non-finite floats (NaN / +Infinity / -Infinity) and json.parse_string rejects them at runtime."
 
 [UnrepresentableSpecialFloatError]
 "Crystal[JSON_ANY]" = "Crystal(json_type=JSON_ANY) cannot represent special floats because JSON.parse accepts only finite numbers."
+"Erlang[OTP_JSON]" = "Erlang cannot represent special float nan."
 "Gleam[GLEAM_JSON_JSON]" = "Gleam cannot represent special float nan on the Erlang target."
 "Haskell[AESON_VALUE]" = "Haskell(json_type=AESON_VALUE) cannot represent special floats because aesonQQ accepts only finite numbers."
 "PureScript[ARGONAUT_JSON]" = "PureScript json_type=ARGONAUT_JSON cannot represent the special float value nan because JSON has no syntax for NaN or infinity."
