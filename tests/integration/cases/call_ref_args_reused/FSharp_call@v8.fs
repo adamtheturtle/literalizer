@@ -10,6 +10,6 @@ let single_var: Val = FList [
     FInt 6L
 ]
 let repeated_var: Val = FInt 1L
-process(repeated_var, 1)
-process(single_var, 0)
-process(repeated_var, 8)
+process(repeated_var, FInt 1L)
+process(single_var, FInt 0L)
+process(repeated_var, FInt 8L)

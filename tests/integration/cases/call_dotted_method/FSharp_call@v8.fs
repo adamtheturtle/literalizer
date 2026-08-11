@@ -10,6 +10,6 @@ type ClientType_() =
 type AppType_() =
     member _.client = ClientType_()
 let app = AppType_()
-app.client.fetch("hello")
-app.client.fetch(42)
+app.client.fetch(FStr "hello")
+app.client.fetch(FInt 42L)
 app.client.fetch(FBool true)

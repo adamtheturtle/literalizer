@@ -1,0 +1,1 @@
+Fixed-point float formatting now increases precision when six decimal places would change the value, preventing small nonzero values such as ``1e-9`` from being emitted as zero.
