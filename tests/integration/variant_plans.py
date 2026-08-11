@@ -331,7 +331,11 @@ type _Gate = Annotated[
 ]
 
 
-class _NonDefaultKwargOverride(
+# A field default here is what a declared axis means by leaving the
+# key out, rather than a value a caller may lean on: an entry supplies
+# only what it has an opinion about, and TOML cannot spell the
+# ``None`` many of these values take.
+class _NonDefaultKwargOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -357,7 +361,8 @@ class _EnumMemberOverride(
     member: Annotated[str, Field(min_length=1)]
 
 
-class _MetadataEnumMemberOverride(
+# Defaults stand in for omitted keys, as above.
+class _MetadataEnumMemberOverride(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -465,7 +470,8 @@ def _no_member_flags() -> list[str]:
     return []
 
 
-class _LayoutChoice(
+# Defaults stand in for omitted keys, as above.
+class _LayoutChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -482,7 +488,8 @@ def _compact_layout() -> list[_LayoutChoice]:
     return [_LayoutChoice(layout="COMPACT")]
 
 
-class _EveryNonDefaultMemberPlan(
+# Defaults stand in for omitted keys, as above.
+class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -523,7 +530,8 @@ class _EveryNonDefaultMemberPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _FixedOverridesPlan(
+# Defaults stand in for omitted keys, as above.
+class _FixedOverridesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -554,7 +562,8 @@ class _FixedOverridesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _KwargValueChoice(
+# Defaults stand in for omitted keys, as above.
+class _KwargValueChoice(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -572,7 +581,8 @@ class _KwargValueChoice(
     value: Annotated[str, Field(min_length=1)] | None = None
 
 
-class _KwargValuesPlan(
+# Defaults stand in for omitted keys, as above.
+class _KwargValuesPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -592,7 +602,8 @@ class _KwargValuesPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _CrossSecondary(
+# Defaults stand in for omitted keys, as above.
+class _CrossSecondary(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -609,7 +620,8 @@ class _CrossSecondary(
     declaration_style_sequence_override: bool = False
 
 
-class _CrossProductPlan(
+# Defaults stand in for omitted keys, as above.
+class _CrossProductPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -645,7 +657,8 @@ class _CrossProductPlan(
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
-class _FilteredPlan(
+# Defaults stand in for omitted keys, as above.
+class _FilteredPlan(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
@@ -697,7 +710,8 @@ def _no_special_axes() -> dict[str, _SpecialAxis]:
     return {}
 
 
-class _AxisRegistryData(
+# Defaults stand in for omitted keys, as above.
+class _AxisRegistryData(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,

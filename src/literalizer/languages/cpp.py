@@ -347,6 +347,7 @@ def _make_cpp_element_to_type(
     int_type: str,
     date_type: str | None,
     datetime_type: str | None,
+    dict_type_name: str,
 ) -> Callable[[type | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver."""
     return make_element_to_type(
@@ -361,7 +362,7 @@ def _make_cpp_element_to_type(
         time_type="std::string",
         list_template="std::vector<{inner}>",
         enable_list_type=True,
-        dict_type_template="std::map<std::string, {inner}>",
+        dict_type_template=f"{dict_type_name}<std::string, {{inner}}>",
         fallback_value_type=None,
         wide_int_type=None,
         beyond_i64_type=None,
@@ -407,6 +408,11 @@ class _CppTypeCtx:
     datetime_type: str | None
     tuple_strategy: bool
     variant_type_name: str
+    dict_type_name: str
+
+    def dict_type(self, value_type: str, /) -> str:
+        """Return the active string-keyed mapping type."""
+        return f"{self.dict_type_name}<std::string, {value_type}>"
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
@@ -424,6 +430,7 @@ class _CppTypeCtx:
             int_type=int_type,
             date_type=self.date_type,
             datetime_type=self.datetime_type,
+            dict_type_name=self.dict_type_name,
         )
 
 
@@ -605,7 +612,7 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            return f"std::map<std::string, {value_type}>"
+            return type_ctx.dict_type(value_type)
         case list() if type_ctx.tuple_strategy and is_tuple_eligible(
             value=item,
         ):
@@ -692,7 +699,7 @@ def _compute_element_type_for_items(
                     type_ctx=type_ctx,
                     in_mapping_value=True,
                 )
-                return f"std::map<std::string, {value_type}>"
+                return type_ctx.dict_type(value_type)
             case _:
                 int_leaves = _collect_int_leaves(
                     items=items,
@@ -3350,6 +3357,11 @@ class Cpp(metaclass=LanguageCls):
                 self.heterogeneous_value_variant_name
                 if self.language_version is self.version_formats.CPP14
                 else "std::variant"
+            ),
+            dict_type_name=(
+                "std::unordered_map"
+                if self.dict_format.name == "UNORDERED_MAP"
+                else "std::map"
             ),
         )
 
