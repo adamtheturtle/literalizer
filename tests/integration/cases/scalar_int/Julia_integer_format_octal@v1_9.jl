@@ -1,1 +1,1 @@
-my_data = 0o52
+my_data = Int(0o52)
