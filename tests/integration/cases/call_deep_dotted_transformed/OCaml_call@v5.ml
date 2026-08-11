@@ -11,8 +11,8 @@ let fetch _ = ()
 end
 end
 let emit _ = ()
-let _ = emit(App.Client.fetch("hello"))
-let _ = emit(App.Client.fetch(42))
+let _ = emit(App.Client.fetch(OStr "hello"))
+let _ = emit(App.Client.fetch(OInt 42))
 let _ = emit(App.Client.fetch(OBool true))
 
 end
