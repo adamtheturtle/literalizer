@@ -1086,6 +1086,7 @@ class LanguageCls(type):
     supports_call_style: bool
     supports_default_dict_key_type: bool
     supports_non_string_dict_keys: bool
+    checks_raw_control_dict_keys_separately: bool
     supports_default_dict_value_type: bool
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
@@ -2114,6 +2115,14 @@ class Language(Protocol):
     Most languages allow scalar dict keys natively; pure data formats
     whose surface syntax only admits string keys (JSON-family, TOML)
     set this to ``False``.
+    """
+
+    checks_raw_control_dict_keys_separately: bool
+    """Whether dict keys bypass generic formatted-string validation.
+
+    Set this when the backend either rejects control-bearing keys through a
+    dedicated contract or derives a safe identifier without emitting the
+    formatted string key.
     """
 
     @property

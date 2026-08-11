@@ -59,12 +59,11 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                     ),
                 )
         case dict():
-            separately_safe_control_keys = {"Bash", "Cobol", "Dhall", "Nix"}
             for key, value in data.items():
                 # These back ends either reject control-bearing keys via
                 # a dedicated contract or derive a safe identifier without
                 # rendering the string key itself.
-                if type(spec).__name__ not in separately_safe_control_keys:
+                if not spec.checks_raw_control_dict_keys_separately:
                     _check_raw_control_characters(data=key, spec=spec)
                 _check_raw_control_characters(data=value, spec=spec)
         case list() | set():
