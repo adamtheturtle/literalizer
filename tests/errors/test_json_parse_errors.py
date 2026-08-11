@@ -43,3 +43,19 @@ def test_literalize_json_invalid_is_parse_error() -> None:
             pre_indent_level=0,
             include_delimiters=False,
         )
+
+
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=['{"a": 1, "a": 2}', '{"outer": {"a": 1, "a": 2}}'],
+)
+def test_literalize_json_rejects_duplicate_keys(source: str) -> None:
+    """JSON objects reject repeated keys at every nesting level."""
+    with pytest.raises(
+        expected_exception=JSONParseError, match="duplicate key 'a'"
+    ):
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=PYTHON,
+        )

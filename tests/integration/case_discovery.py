@@ -15,7 +15,7 @@ import tomllib
 from pathlib import Path
 from typing import Any, assert_never
 
-import pyjson5
+import json5
 from beartype import beartype
 from ruamel.yaml import YAML
 
@@ -128,7 +128,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
 
     Dispatches on :attr:`_CaseInput.input_format` so discovery code can
     inspect any case's data without knowing which serialization backs
-    it.  ``tomllib``/``json``/``pyjson5`` yield plain containers and
+    it.  ``tomllib``/``json``/``json5`` yield plain containers and
     ``ruamel`` yields its comment-tracking mappings; both are walked
     structurally by the ``has_*`` predicates.
     """
@@ -138,7 +138,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=source)
         case literalizer.InputFormat.JSON5:
-            parsed = pyjson5.decode(data=source)  # pylint: disable=no-member
+            parsed = json5.loads(s=source, allow_duplicate_keys=False)
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,

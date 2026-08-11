@@ -8,6 +8,6 @@ val single_var : val_t = SList [
     SInt 6
 ]
 val repeated_var : val_t = SInt 1
-val _ = process(repeated_var, 1)
-val _ = process(single_var, 0)
-val _ = process(repeated_var, 8)
+val _ = process(repeated_var, SInt 1)
+val _ = process(single_var, SInt 0)
+val _ = process(repeated_var, SInt 8)

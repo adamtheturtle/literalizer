@@ -1,7 +1,7 @@
 package main
 
 func main() {
-my_data := map[int]struct{}{
+my_data := map[int64]struct{}{
 	1: struct{}{},
 	1099511627776: struct{}{},
 }
