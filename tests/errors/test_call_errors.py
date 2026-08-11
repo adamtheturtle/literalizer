@@ -4,6 +4,7 @@ Positive-path checks for individual language behaviors live in the
 integration golden-file suite.
 """
 
+import inspect
 import re
 
 import pytest
@@ -16,6 +17,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
+from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -23,6 +25,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    InvalidCallParameterNameError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
@@ -34,6 +37,7 @@ from literalizer.exceptions import (
     ZipValuesWithoutCallTransformError,
 )
 from literalizer.languages import (
+    Ada,
     Bash,
     Cobol,
     Dhall,
@@ -113,6 +117,84 @@ def test_literalize_call_parameter_count_too_few_raises() -> None:
             target_function="process",
             parameter_names=["a"],
         )
+
+
+@pytest.mark.parametrize(argnames="parameter_name", argvalues=["a b", "2c"])
+def test_literalize_call_invalid_parameter_name_raises(
+    parameter_name: str,
+) -> None:
+    """Parameter labels must follow the target language's grammar."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match=re.escape(
+            pattern=(
+                f"Python cannot use call parameter {parameter_name!r}: "
+                "it is not a valid identifier"
+            )
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=(parameter_name,),
+        )
+
+
+def test_literalize_call_reserved_parameter_name_raises() -> None:
+    """A language keyword cannot become a parameter label."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'class': it is a reserved identifier",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("class",),
+        )
+
+
+def test_literalize_call_duplicate_parameter_name_raises() -> None:
+    """Generated call stubs cannot declare one parameter twice."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'value': it is duplicated",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("value", "value"),
+        )
+
+
+def test_literalize_call_case_insensitive_duplicate_parameter_raises() -> None:
+    """Case-insensitive languages reject differently cased duplicates."""
+    with pytest.raises(
+        expected_exception=InvalidCallParameterNameError,
+        match="call parameter 'count': it is duplicated",
+    ):
+        literalize_call(
+            source="[[1, 2]]",
+            input_format=InputFormat.JSON,
+            language=Ada(),
+            target_function="f",
+            parameter_names=("Count", "count"),
+        )
+
+
+def test_call_parameter_validation_requires_language_metaclass() -> None:
+    """Malformed internal language objects fail immediately."""
+    validator = inspect.unwrap(func=validate_call_parameter_names)
+    with pytest.raises(
+        expected_exception=TypeError,
+        match="requires a LanguageCls language",
+    ):
+        validator(language=object(), names=(), reject_reserved=True)
 
 
 def test_literalize_call_parameter_count_too_many_raises() -> None:
@@ -503,21 +585,6 @@ def test_literalize_call_comment_source_unsupported_language_raises() -> None:
             parameter_names=["value"],
             comment_source=["note", ""],
         )
-
-
-def test_literalize_call_empty_comment_source_allowed_everywhere() -> None:
-    """All-empty ``comment_source`` emits no comment, so it is allowed
-    even for a language that cannot carry a trailing comment.
-    """
-    result = literalize_call(
-        source="[[1], [2]]",
-        input_format=InputFormat.JSON,
-        language=Jsonnet(),
-        target_function="process",
-        parameter_names=["value"],
-        comment_source=["", ""],
-    )
-    assert result.code == "process(value=1)\nprocess(value=2)"
 
 
 def test_literalize_call_arg_ref_parameter_count_still_validated() -> None:

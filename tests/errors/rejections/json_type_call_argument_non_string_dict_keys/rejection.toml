@@ -1,0 +1,39 @@
+schema_version = 1
+summary = """
+A dict passed as a call argument goes through the same JSON object-key
+rule as a declared value.
+"""
+exceptions = ["UnrepresentableInputError"]
+option = "json_type"
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+source = "- {1: one}"
+input_format = "yaml"
+target_function = "process"
+parameter_names = ["x"]
+
+[[accepts]]
+languages = ["Erlang", "Scheme"]
+reason = """
+Renders the call argument in the language's own map syntax rather than
+through the JSON value type, so the object-key rule does not apply to
+it.  Whether that is intended is under discussion in issue #3559.
+"""
+
+[[accepts]]
+languages = ["Java"]
+reason = """
+Writes the argument as a JSON document with the key quoted, so an
+integer key becomes a string key rather than a rejection.  Whether that
+is intended is under discussion in issue #3559.
+"""
+
+[[accepts]]
+languages = ["Crystal", "Rust"]
+reason = """
+Renders the argument without applying the object-key rule, which emits
+a document these languages cannot parse.  This entry records the gap
+rather than endorsing it.  Tracked in issue #3559.
+"""

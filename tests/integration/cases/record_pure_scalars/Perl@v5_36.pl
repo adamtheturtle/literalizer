@@ -3,5 +3,5 @@ my $my_data = {
     "name" => "Alice",
     "age" => 30,
     "active" => JSON::PP::true,
-    "score" => 4.5,
+    "score" => (0.0 + 4.5),
 };

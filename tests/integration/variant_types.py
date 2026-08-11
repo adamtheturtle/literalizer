@@ -1,7 +1,6 @@
 """Shared data types for integration-test language variants."""
 
 import dataclasses
-import enum
 from collections.abc import Mapping
 
 from beartype import beartype
@@ -20,33 +19,6 @@ def wrap_variable_form() -> literalizer.NewVariable:
     rather than pre-filtering on ``supports_variable_names``.
     """
     return literalizer.NewVariable(name="my_data", modifiers=frozenset())
-
-
-@beartype
-def find_enum_member(
-    *,
-    enum_cls: type[enum.Enum],
-    name: str,
-) -> enum.Enum | None:
-    """Return the member of *enum_cls* named *name*, or ``None``."""
-    for member in enum_cls:
-        if member.name == name:
-            return member
-    return None
-
-
-@beartype
-def enum_member_by_name(
-    *,
-    enum_cls: type[enum.Enum],
-    name: str,
-) -> enum.Enum:
-    """Return the enum member in *enum_cls* whose ``.name`` matches."""
-    member = find_enum_member(enum_cls=enum_cls, name=name)
-    if member is None:
-        msg = f"{enum_cls.__name__} has no member named {name!r}"
-        raise ValueError(msg)
-    return member
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
