@@ -47,6 +47,7 @@ def reject_aware_datetimes(
                 )
                 raise UnrepresentableInputError(msg)
             case dict():
+                stack.extend(value.keys())
                 stack.extend(value.values())
             case list() | set():
                 stack.extend(value)

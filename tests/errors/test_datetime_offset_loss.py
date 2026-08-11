@@ -52,6 +52,19 @@ def test_iso_datetime_preserves_offset(language: Language) -> None:
     assert "-05:00" in result.code
 
 
+def test_native_datetime_rejects_offset_loss_in_dict_key() -> None:
+    """Timezone-aware mapping keys are validated like values."""
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="native datetime format cannot preserve UTC offset",
+    ):
+        literalize(
+            source="2024-01-02 03:04:05 -05:00: value",
+            input_format=InputFormat.YAML,
+            language=Rust(),
+        )
+
+
 def test_rust_record_type_retains_native_naive_datetime_type() -> None:
     """Naive native datetimes still receive their configured type."""
     assert (
