@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     0.000000001,
     -0.000000001,
 ]
