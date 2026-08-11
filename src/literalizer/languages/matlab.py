@@ -33,7 +33,6 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -87,18 +86,23 @@ from literalizer._types import Scalar, Value
 @beartype
 def _format_matlab_string(value: str) -> str:
     """Preserve backslashes while keeping Octave-compatible delimiters."""
-    expression = format_string_concat_control(
-        quote_char='"',
-        quote_escape='""',
-        control_char_template="char({})",
-        concat_operator=" + ",
-        escape_backslash=False,
-    )(value)
-    return re.sub(
-        pattern=r'\\"(?=(?: \+ char\(\d+\)|$))',
-        repl='" + char(92)',
-        string=expression,
-    )
+    control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\\\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and (
+            segment == "\\" or ord(segment) < control_char_threshold
+        ):
+            parts.append(f"char({ord(segment)})")
+        else:
+            parts.append(f'"{segment.replace(chr(34), chr(34) * 2)}"')
+    if not parts:
+        return '""'
+    if len(parts) == 1 and parts[0].startswith('"'):
+        return parts[0]
+    placeholders = "%s" * len(parts)
+    return f"sprintf('{placeholders}', {', '.join(parts)})"
 
 
 @beartype
@@ -107,9 +111,11 @@ def _decode_matlab_string_expr(expr: str) -> str:
 
     Reverses the output of ``format_string_matlab``.  Handles both the
     simple ``"..."`` form (with ``""`` for embedded double-quotes) and
-    the ``"..." + char(N) + "..."``
+    the ``sprintf('%s...', "...", char(N), ...)``
     concatenation form used for control characters.
     """
+    if expr.startswith("sprintf("):
+        expr = expr.partition(", ")[2].removesuffix(")")
     raw: list[str] = []
     for string_seg, char_code in re.findall(
         pattern=r'"((?:[^"]|"")*)"|char\((\d+)\)',
