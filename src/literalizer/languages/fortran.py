@@ -88,7 +88,6 @@ def _format_fortran_string(value: str) -> str:
         quote_escape="''",
         control_char_template="achar({})",
         concat_operator=" // ",
-        escape_backslash=False,
     )(value)
 
 
