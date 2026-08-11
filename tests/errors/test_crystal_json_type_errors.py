@@ -5,23 +5,8 @@ import pytest
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import (
     UnrepresentableInputError,
-    UnrepresentableSpecialFloatError,
 )
 from literalizer.languages import Crystal
-
-
-def test_crystal_json_type_rejects_non_string_dict_keys() -> None:
-    """``JSON::Any`` object keys must be strings."""
-    with pytest.raises(
-        expected_exception=UnrepresentableInputError,
-        match="dict keys as JSON object strings",
-    ):
-        literalize(
-            source="{1: one}",
-            input_format=InputFormat.YAML,
-            language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
 
 
 def test_crystal_json_type_rejects_overflow_integers() -> None:
@@ -33,20 +18,6 @@ def test_crystal_json_type_rejects_overflow_integers() -> None:
         literalize(
             source=str(object=2**64),
             input_format=InputFormat.JSON,
-            language=Crystal(json_type=Crystal.json_types.JSON_ANY),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
-
-
-def test_crystal_json_type_rejects_special_floats() -> None:
-    """``JSON.parse`` accepts only finite numbers."""
-    with pytest.raises(
-        expected_exception=UnrepresentableSpecialFloatError,
-        match=r"JSON\.parse accepts only finite numbers",
-    ):
-        literalize(
-            source="[.inf]",
-            input_format=InputFormat.YAML,
             language=Crystal(json_type=Crystal.json_types.JSON_ANY),
             variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         )

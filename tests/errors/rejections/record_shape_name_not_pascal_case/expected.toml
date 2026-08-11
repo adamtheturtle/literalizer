@@ -1,0 +1,21 @@
+# languages rejecting: 6; languages accepting: 0
+
+[InvalidRecordNameError]
+"Cpp['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase C++ identifier."
+"Cpp['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase C++ identifier."
+"Cpp['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase C++ identifier."
+"Go['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase Go identifier."
+"Go['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase Go identifier."
+"Go['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase Go identifier."
+"Java['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase Java identifier."
+"Java['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase Java identifier."
+"Java['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase Java identifier."
+"Kotlin['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase Kotlin identifier."
+"Kotlin['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase Kotlin identifier."
+"Kotlin['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase Kotlin identifier."
+"Rust['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase Rust identifier."
+"Rust['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase Rust identifier."
+"Rust['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase Rust identifier."
+"Scala['9Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to '9Entry', which is not a PascalCase Scala identifier."
+"Scala['My-Entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'My-Entry', which is not a PascalCase Scala identifier."
+"Scala['entry']" = "record_shape_names entry for keys ['id', 'name'] maps to 'entry', which is not a PascalCase Scala identifier."
