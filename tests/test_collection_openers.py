@@ -7,7 +7,14 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
-from literalizer.languages import Cpp, Haxe, Nim, Raku
+from literalizer.languages import Cpp, Crystal, Haxe, Nim, Raku
+
+
+def test_crystal_tuple_entry_separates_nested_openers() -> None:
+    """Nested tuple openers do not form Crystal macro syntax."""
+    language = Crystal(sequence_format=Crystal.sequence_formats.TUPLE)
+
+    assert language.format_sequence_entry([], "{{1}}") == " {{1}}"
 
 
 def test_sequence_surrogate_set_open_delegates() -> None:
