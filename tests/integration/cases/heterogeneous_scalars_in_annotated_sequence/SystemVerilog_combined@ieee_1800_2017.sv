@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -12,7 +12,7 @@ typedef struct {
 module main;
 initial begin
 static _VVal my_data[] = '{
-    _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""},
+    _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_REAL, i: 0, r: 1.5, s: ""},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2020-01-01"},
@@ -20,7 +20,7 @@ static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{}"}
 };
 my_data = '{
-    _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""},
+    _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_REAL, i: 0, r: 1.5, s: ""},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2020-01-01"},

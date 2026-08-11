@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     0x0,
     0x1,
     -0x1,

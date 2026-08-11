@@ -27,6 +27,22 @@ if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
 
 
+def _contains_set(data: Value, /) -> bool:
+    """Return whether *data* contains a set at any depth."""
+    match data:
+        case set():
+            return True
+        case dict():
+            return any(
+                _contains_set(key) or _contains_set(value)
+                for key, value in data.items()
+            )
+        case list():
+            return any(_contains_set(value) for value in data)
+        case _:
+            return False
+
+
 @overload
 def scalar_type_bucket(*, value: Scalar) -> type: ...
 
@@ -956,6 +972,14 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
     data cannot be represented in the target language's collection
     formats.
     """
+    if not spec.set_format_config.preserves_set_semantics and _contains_set(
+        data
+    ):
+        msg = (
+            f"{type(spec).__name__} cannot preserve native set semantics "
+            "with the selected set format"
+        )
+        raise UnrepresentableInputError(msg)
     if spec.sequence_format_config.requires_uniform_record_shapes:
         _check_mixed_dict_shapes(data=data)
 
