@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     Double.infinity,
     -Double.infinity,
     Double.nan,

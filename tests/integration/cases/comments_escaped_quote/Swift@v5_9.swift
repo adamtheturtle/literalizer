@@ -1,3 +1,3 @@
-let my_data: Any = [
+let my_data = [
     "key": "value \" # not a comment",  // real
 ]

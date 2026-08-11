@@ -1,5 +1,5 @@
 set my_data [list \
-    1 \
+    true \
     1.5 \
     "" \
     "2020-01-01" \
@@ -7,7 +7,7 @@ set my_data [list \
     [list ] \
 ]
 set my_data [list \
-    1 \
+    true \
     1.5 \
     "" \
     "2020-01-01" \

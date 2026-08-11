@@ -1,4 +1,5 @@
+use JSON::PP;
 my $my_data = {
-    1 => "yes",
-    0 => "no",
+    JSON::PP::true => "yes",
+    JSON::PP::false => "no",
 };

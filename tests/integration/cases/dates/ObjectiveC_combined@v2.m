@@ -2,13 +2,13 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"date": @"2024-01-15",
-    @"datetime": @"2024-01-15T12:30:00+00:00",
+    @"date": [NSDate dateWithTimeIntervalSince1970:1705276800],
+    @"datetime": [NSDate dateWithTimeIntervalSince1970:1705321800],
 };
 (void)my_data;
 my_data = @{
-    @"date": @"2024-01-15",
-    @"datetime": @"2024-01-15T12:30:00+00:00",
+    @"date": [NSDate dateWithTimeIntervalSince1970:1705276800],
+    @"datetime": [NSDate dateWithTimeIntervalSince1970:1705321800],
 };
     (void)my_data;
 }

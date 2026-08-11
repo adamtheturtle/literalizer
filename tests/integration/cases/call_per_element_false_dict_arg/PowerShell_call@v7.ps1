@@ -1,2 +1,2 @@
 function process {}
-process(@{"a" = 1; "b" = "x"})
+process @{"a" = 1; "b" = "x"}
