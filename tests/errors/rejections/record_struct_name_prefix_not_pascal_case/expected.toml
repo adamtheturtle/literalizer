@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 13
+
+[InvalidRecordNameError]
+"Rust['']" = "record_struct_name_prefix '' must be a PascalCase identifier starting with an uppercase letter."
+"Rust['9Record']" = "record_struct_name_prefix '9Record' must be a PascalCase identifier starting with an uppercase letter."
+"Rust['My-Record']" = "record_struct_name_prefix 'My-Record' must be a PascalCase identifier starting with an uppercase letter."
+"Rust['record']" = "record_struct_name_prefix 'record' must be a PascalCase identifier starting with an uppercase letter."

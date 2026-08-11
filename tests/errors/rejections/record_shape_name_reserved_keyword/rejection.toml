@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A record name that is a reserved word cannot be declared as a type.
+Only Rust has a PascalCase keyword; every other language's keywords are
+lowercase, so its PascalCase check already covers them.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Rust"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["Self"] },
+]

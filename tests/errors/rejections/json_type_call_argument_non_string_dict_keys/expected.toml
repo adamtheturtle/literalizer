@@ -1,0 +1,19 @@
+# languages rejecting: 16; languages accepting: 5
+
+[UnrepresentableInputError]
+"C[CJSON]" = "C cannot represent dict key of type int"
+"CSharp[SYSTEM_TEXT_JSON_NODE]" = "CSharp cannot represent dict key of type int"
+"Cobol[CJSON]" = "Cobol cannot represent dict key of type int"
+"Cpp[NLOHMANN_JSON]" = "Cpp cannot represent dict key of type int"
+"D[STD_JSON_VALUE]" = "D cannot represent dict key of type int"
+"Elm[JSON_ENCODE_VALUE]" = "Elm cannot represent dict key of type int"
+"FSharp[SYSTEM_TEXT_JSON_NODE]" = "FSharp cannot represent dict key of type int"
+"Gleam[GLEAM_JSON_JSON]" = "Gleam cannot represent dict key of type int"
+"Haskell[AESON_VALUE]" = "Haskell cannot represent dict key of type int"
+"Kotlin[KOTLINX_JSON_ELEMENT]" = "Kotlin cannot represent dict key of type int"
+"Nim[JSON_NODE]" = "Nim cannot represent dict key of type int"
+"OCaml[YOJSON_SAFE_T]" = "OCaml cannot represent dict key of type int"
+"Odin[JSON_VALUE]" = "Odin json_type can only represent dict keys as JSON object strings, not int"
+"PureScript[ARGONAUT_JSON]" = "PureScript cannot represent dict key of type int"
+"Scala[CIRCE]" = "Scala cannot represent dict key of type int"
+"Zig[STD_JSON_VALUE]" = "Zig cannot represent dict key of type int"
