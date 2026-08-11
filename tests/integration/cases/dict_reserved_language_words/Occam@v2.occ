@@ -1,0 +1,38 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL32
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "assert"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "else"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "error"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "false"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "for"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "function"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "if"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "import"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "importbin"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "importstr"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "in"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "local"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "null"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "self"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "super"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "tailstrict"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "then"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "true"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "ordinary"; MOBILE LIT(lit.int; 1))
+    ]):
+    SEQ
+        SKIP
+:
