@@ -1,1 +1,1 @@
-my_data = 0b101010
+my_data = Int(0b101010)

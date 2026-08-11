@@ -4,7 +4,7 @@ def my_data = [
     "f": 1.5,
     "b": true,
     "n": null,
-    "d": "2024-01-15",
+    "d": java.time.LocalDate.of(2024, 1, 15),
     "dt": "2024-01-15T12:00:00",
     "by": "48656c6c6f",
 ]
@@ -14,7 +14,7 @@ my_data = [
     "f": 1.5,
     "b": true,
     "n": null,
-    "d": "2024-01-15",
+    "d": java.time.LocalDate.of(2024, 1, 15),
     "dt": "2024-01-15T12:00:00",
     "by": "48656c6c6f",
 ]

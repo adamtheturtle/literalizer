@@ -1,1 +1,1 @@
-def my_data = "2024-01-15"
+def my_data = java.time.LocalDate.of(2024, 1, 15)
