@@ -1,10 +1,12 @@
 var my_data = {
-    "host": "localhost",
-    // not configured yet
-    "debug": true,
+    "server": {
+        "host": "localhost",
+        "debug": true,
+    },
 }
 my_data = {
-    "host": "localhost",
-    // not configured yet
-    "debug": true,
+    "server": {
+        "host": "localhost",
+        "debug": true,
+    },
 }

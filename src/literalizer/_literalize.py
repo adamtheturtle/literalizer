@@ -649,6 +649,14 @@ def _format_ordered_map_value(
     guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
+    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+        return _format_multiline_collection_value(
+            value=value,
+            ctx=ctx,
+            dict_open_override=None,
+            sequence_open_override=None,
+        )
+
     ordered_map_items: list[tuple[Scalar, Value]] = [
         (k, v)
         for k, v in value.items()
@@ -1978,6 +1986,28 @@ def _append_entries(
 
 
 @beartype
+def _filter_collection_comments(
+    *, collection_comments: CollectionComments, keep: Sequence[bool]
+) -> CollectionComments:
+    """Keep comment slots corresponding to rendered collection entries.
+
+    A length mismatch is an internal alignment error and intentionally
+    raises rather than silently assigning comments to different values.
+    """
+    elements = tuple(
+        element
+        for element, keep_element in zip(
+            collection_comments.elements, keep, strict=True
+        )
+        if keep_element
+    )
+    return CollectionComments(
+        elements=elements,
+        trailing=collection_comments.trailing,
+    )
+
+
+@beartype
 def _format_collection_lines(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
@@ -2000,11 +2030,22 @@ def _format_collection_lines(
     match data:
         case dict() as dict_data:
             guard_dict_keys_supported(value=dict_data, spec=spec)
+            keep_entries = [
+                not (spec.skip_null_dict_values and value is None)
+                for value in dict_data.values()
+            ]
             entries = [
                 (k, v)
-                for k, v in dict_data.items()
-                if not (spec.skip_null_dict_values and v is None)
+                for (k, v), keep_entry in zip(
+                    dict_data.items(), keep_entries, strict=True
+                )
+                if keep_entry
             ]
+            if collection_comments is not None:
+                collection_comments = _filter_collection_comments(
+                    collection_comments=collection_comments,
+                    keep=keep_entries,
+                )
             sibling_list_values: list[list[Value]] = [
                 v for _, v in entries if isinstance(v, list)
             ]
@@ -2143,7 +2184,19 @@ def _format_collection_lines(
             # empty sub-list (possible in languages like Forth whose
             # empty-sequence opener and close are both empty) does not
             # leave a dangling indented blank line in the output.
-            formatted_entries = [e for e in formatted_entries if e]
+            keep_entries = [bool(entry) for entry in formatted_entries]
+            formatted_entries = [
+                entry
+                for entry, keep_entry in zip(
+                    formatted_entries, keep_entries, strict=True
+                )
+                if keep_entry
+            ]
+            if collection_comments is not None:
+                collection_comments = _filter_collection_comments(
+                    collection_comments=collection_comments,
+                    keep=keep_entries,
+                )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,

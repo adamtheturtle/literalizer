@@ -1,8 +1,16 @@
 (def my_data {
     "name" "Alice"
-    "scores" {1 "first" 2 "second"}
+    "scores" {
+        ; score meaning
+        1 "first"
+        2 "second"  ; latest score
+    }
 })
 (def my_data {
     "name" "Alice"
-    "scores" {1 "first" 2 "second"}
+    "scores" {
+        ; score meaning
+        1 "first"
+        2 "second"  ; latest score
+    }
 })

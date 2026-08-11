@@ -12,9 +12,7 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
-    _VKV'{k: "host", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "localhost"}},
-    _VKV'{k: "port", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}},  // not configured yet
-    _VKV'{k: "debug", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}}
+    _VKV'{k: "server", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VKV'{k: \"host\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"localhost\"}},\n        _VKV'{k: \"port\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"\"}},  // not configured yet\n        _VKV'{k: \"debug\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}\n    }"}}
 };
 end
 endmodule
