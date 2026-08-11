@@ -5,5 +5,5 @@ datatype val_t =
   | SList of val_t list
 fun process _ = ()
 fun emit _ = ()
-val _ = emit(process("hello"), SBool true)
-val _ = emit(process(42), SBool false)
+val _ = emit(process(SStr "hello"), SBool true)
+val _ = emit(process(SInt 42), SBool false)

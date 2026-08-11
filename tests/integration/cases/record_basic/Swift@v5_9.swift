@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data: [String: Any] = [
     "id": 1,
     "label": "She said \"hello\", then waved",
     "enabled": false,

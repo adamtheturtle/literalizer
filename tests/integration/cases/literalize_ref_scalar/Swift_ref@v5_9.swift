@@ -1,2 +1,2 @@
-let myInt: Any = 42
-let my_data: Any = myInt
+let myInt = 42
+let my_data = myInt

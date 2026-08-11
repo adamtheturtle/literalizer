@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data = [
     ["ADD", "alice", "hello"],
     ["DEL", "bob", "5"],  // removes "world"
 ]

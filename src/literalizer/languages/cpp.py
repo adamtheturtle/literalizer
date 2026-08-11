@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import itertools
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -16,6 +17,7 @@ from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
+    sequence_surrogate_set_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -1329,13 +1331,18 @@ _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
 @beartype
-def _cpp_record_field_identifier(key: str, /) -> str:
+def _cpp_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the C++ ``struct`` member name for a dict *key*.
 
     C++ member identifiers are the dict keys verbatim (no case
     conversion), matching the designated-initializer literal form
     ``Record0{.id = 1, ...}``.
     """
+    if key in reserved_identifiers:
+        msg = f"C++ record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1951,7 +1958,7 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=fixed_open(open_str="["),
+    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
     close="]",
     empty_set="[]",
     preamble_lines=(),
@@ -2307,7 +2314,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            set_open=lambda _items: "{",
+            set_open=sequence_surrogate_set_open(lambda _items: "{"),
             close="}",
             empty_set=None,
             preamble_lines=("#include <vector>",),
@@ -2324,7 +2331,9 @@ class Cpp(metaclass=LanguageCls):
             """Return the set format config with variant opener."""
             return dataclasses.replace(
                 self.value,
-                set_open=_build_variant_set_open(type_ctx=type_ctx),
+                set_open=sequence_surrogate_set_open(
+                    _build_variant_set_open(type_ctx=type_ctx)
+                ),
             )
 
     class CommentFormats(enum.Enum):
@@ -3255,7 +3264,10 @@ class Cpp(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
-            field_identifier=_cpp_record_field_identifier,
+            field_identifier=functools.partial(
+                _cpp_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
             render_literal=(

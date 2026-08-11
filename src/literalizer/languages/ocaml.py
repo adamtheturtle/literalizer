@@ -75,7 +75,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
     never_inhibits_consuming_form,
@@ -905,9 +904,16 @@ class OCaml(metaclass=LanguageCls):
         applications are not parsed as additional arguments to the outer
         call.
         """
+        entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
-            return _ocaml_format_call_arg
-        return identity_call_arg
+
+            def _curried_arg(original: Value, formatted: str) -> str:
+                """Tag the value and parenthesize the curried argument."""
+                tagged = entry_formatter(original, formatted)
+                return _ocaml_format_call_arg(original, tagged)
+
+            return _curried_arg
+        return entry_formatter
 
     @cached_property
     def format_call_preamble_stub(
@@ -1279,6 +1285,7 @@ class OCaml(metaclass=LanguageCls):
             float: (_h, f"  | {p}Float of float"),
             str: (_h, f"  | {p}Str of string"),
             bytes: (_h, f"  | {p}Str of string"),
+            datetime.time: (_h, f"  | {p}Str of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
             list: (_h, f"  | {p}List of {self.type_name} list"),

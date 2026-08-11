@@ -1,5 +1,7 @@
 """Exceptions raised by literalizer."""
 
+import enum
+
 
 class ParseError(Exception):
     """Raised when input cannot be parsed into a data structure.
@@ -83,6 +85,19 @@ class UnrepresentableStringError(UnrepresentableInputError):
         )
         self.language_name = language_name
         self.character_name = character_name
+
+
+class UnrepresentableNullError(UnrepresentableInputError):
+    """Raised when null collapses onto another target-language value."""
+
+    def __init__(self, *, language_name: str, conflated_value: str) -> None:
+        """Create an ``UnrepresentableNullError``."""
+        super().__init__(
+            f"{language_name} cannot represent null distinctly from "
+            f"{conflated_value}"
+        )
+        self.language_name = language_name
+        self.conflated_value = conflated_value
 
 
 class HeterogeneousCollectionError(Exception):
@@ -392,7 +407,6 @@ class InvalidCallParameterNameError(Exception):
     """Raised when a call parameter is not a target-language
     identifier.
     """
-
     def __init__(
         self,
         *,
@@ -408,6 +422,26 @@ class InvalidCallParameterNameError(Exception):
         self.language_name = language_name
         self.parameter_name = parameter_name
         self.reason = reason
+
+
+class InvalidVariableModifierError(Exception):
+    """Raised when a declaration modifier belongs to another language."""
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        modifier: enum.Enum,
+    ) -> None:
+        """Create an ``InvalidVariableModifierError``."""
+        modifier_name = f"{type(modifier).__qualname__}.{modifier.name}"
+        super().__init__(
+            f"{language_name} cannot apply variable modifier "
+            f"{modifier_name}: it is not a member of the target "
+            "language's Modifiers enum"
+        )
+        self.language_name = language_name
+        self.modifier = modifier
 
 
 class UnrepresentableIntegerError(Exception):

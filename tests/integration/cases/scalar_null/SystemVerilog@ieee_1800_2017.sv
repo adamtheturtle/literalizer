@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;

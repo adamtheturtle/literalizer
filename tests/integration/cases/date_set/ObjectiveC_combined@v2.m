@@ -2,13 +2,13 @@
 int main(void) {
 @autoreleasepool {
 id my_data = [NSSet setWithArray:@[
-    @"2024-01-15",
-    @"2024-06-01",
+    [NSDate dateWithTimeIntervalSince1970:1705276800],
+    [NSDate dateWithTimeIntervalSince1970:1717200000],
 ]];
 (void)my_data;
 my_data = [NSSet setWithArray:@[
-    @"2024-01-15",
-    @"2024-06-01",
+    [NSDate dateWithTimeIntervalSince1970:1705276800],
+    [NSDate dateWithTimeIntervalSince1970:1717200000],
 ]];
     (void)my_data;
 }
