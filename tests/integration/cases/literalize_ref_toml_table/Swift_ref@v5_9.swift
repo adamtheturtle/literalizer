@@ -1,6 +1,6 @@
-let myVar: Any = [
+let myVar = [
     "_": "_",
 ]
-let my_data: Any = [
+let my_data = [
     "key": myVar,
 ]

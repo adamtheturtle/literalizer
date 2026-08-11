@@ -83,7 +83,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     """
     try:
         literalizer.literalize(
-            source='{"key\\u0001": 1}',
+            source='{"": 1, "key\\u0001": 2}',
             input_format=literalizer.InputFormat.JSON,
             language=lang_cls(),
         )

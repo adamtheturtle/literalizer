@@ -19,14 +19,6 @@ from literalizer.languages import Dhall, Matlab, Nix, R
 _EMPTY_KEY_DICT: dict[str, str] = {"": "value"}
 _CONTROL_CHAR_KEY_DICT: dict[str, str] = {"\x01": "value"}
 
-_R_EMPTY_KEY = R(
-    date_format=R.date_formats.R,
-    datetime_format=R.datetime_formats.R,
-    empty_dict_key=R.empty_dict_keys.ERROR,
-    bytes_format=R.bytes_formats.HEX,
-    sequence_format=R.sequence_formats.LIST,
-)
-
 
 def _yaml_flow(obj: dict[str, str]) -> str:
     """Serialize *obj* as flow-form text accepted by both JSON and
@@ -41,7 +33,7 @@ def _yaml_flow(obj: dict[str, str]) -> str:
     ids=["json", "yaml"],
 )
 def test_r_empty_dict_key_raises(*, input_format: InputFormat) -> None:
-    """R with ERROR empty_dict_key raises InvalidDictKeyError."""
+    """R rejects an empty dict key by default."""
     expected_msg = re.escape(
         pattern='R does not support the dict key "". '
         "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
@@ -54,7 +46,7 @@ def test_r_empty_dict_key_raises(*, input_format: InputFormat) -> None:
         literalize(
             source=_yaml_flow(obj=_EMPTY_KEY_DICT),
             input_format=input_format,
-            language=_R_EMPTY_KEY,
+            language=R(),
             pre_indent_level=0,
             include_delimiters=True,
         )

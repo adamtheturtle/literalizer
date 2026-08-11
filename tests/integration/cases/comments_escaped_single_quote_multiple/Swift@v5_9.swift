@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data: [String: Any] = [
     "host": "it's here",  // a comment
     "port": 80,  // another
 ]
