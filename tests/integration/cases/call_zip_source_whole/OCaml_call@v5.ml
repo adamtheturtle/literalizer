@@ -6,6 +6,6 @@ type val_t =
   | OList of val_t list
 let process _ = ()
 let emit _ = ()
-let _ = emit(process(42), OBool true)
+let _ = emit(process(OInt 42), OBool true)
 
 end

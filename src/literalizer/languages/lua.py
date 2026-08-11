@@ -14,6 +14,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -118,31 +119,22 @@ def _format_string_multiline(value: str) -> str:
 
 @beartype
 def _format_date_lua(value: datetime.date) -> str:
-    """Format a date as a Lua ``os.time(...)`` call.
+    """Format a date as UTC Unix epoch seconds.
 
-    Example::
-
-        os.time({year = 2024, month = 1, day = 15, ...})
+    The Lua ``os.time`` function interprets table fields in the machine's
+    local timezone,
+    so embedding an epoch literal is the only deterministic representation.
     """
-    return (
-        f"os.time({{year = {value.year}, month = {value.month}, "
-        f"day = {value.day}, hour = 0, min = 0, sec = 0}})"
+    midnight_utc = datetime.datetime.combine(
+        date=value, time=datetime.time(), tzinfo=datetime.UTC
     )
+    return str(object=datetime_epoch_seconds(value=midnight_utc))
 
 
 @beartype
 def _format_datetime_lua(value: datetime.datetime) -> str:
-    """Format a datetime as a Lua ``os.time(...)`` call.
-
-    Example::
-
-        os.time({year = 2024, month = 1, day = 15, ...})
-    """
-    return (
-        f"os.time({{year = {value.year}, month = {value.month}, "
-        f"day = {value.day}, hour = {value.hour}, "
-        f"min = {value.minute}, sec = {value.second}}})"
-    )
+    """Format a datetime as deterministic Unix epoch seconds."""
+    return str(object=datetime_epoch_seconds(value=value))
 
 
 @beartype

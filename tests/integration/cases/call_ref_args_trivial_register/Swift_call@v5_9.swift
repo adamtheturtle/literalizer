@@ -1,8 +1,8 @@
 @discardableResult func process(value: Any = 0, count: Any = 0) -> Any { 0 }
-let my_int: Any = 1
-let my_bool: Any = true
-let my_float: Any = 3.14
-let my_list: Any = [
+let my_int = 1
+let my_bool = true
+let my_float = 3.14
+let my_list = [
     1,
     2,
     3,

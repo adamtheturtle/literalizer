@@ -8,7 +8,7 @@ module Client = struct
 let fetch _ = ()
 end
 end
-let _ = App.Client.fetch("hello")
-let _ = App.Client.fetch("world")
+let _ = App.Client.fetch(OStr "hello")
+let _ = App.Client.fetch(OStr "world")
 
 end

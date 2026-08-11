@@ -9,6 +9,6 @@ let process (_value: obj) : obj = null
 type TracerType_() =
     member _.emit(__arg: obj) : obj = null
 let tracer = TracerType_()
-tracer.emit(process("hello"))
-tracer.emit(process(42))
+tracer.emit(process(FStr "hello"))
+tracer.emit(process(FInt 42L))
 tracer.emit(process(FBool true))

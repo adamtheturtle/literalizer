@@ -5,6 +5,6 @@ type Val =
     | FList of Val list
 let process (_value: obj) : obj = null
 // Test cases
-process("hello")  // single word
-process("hello world")  // two words
+process(FStr "hello")  // single word
+process(FStr "hello world")  // two words
 // trailing comment
