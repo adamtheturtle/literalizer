@@ -88,6 +88,17 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
+def _format_date_racket(value: datetime.date) -> str:
+    """Format *value* as a deterministic Racket ``date`` structure."""
+    week_day = (value.weekday() + 1) % 7
+    year_day = value.timetuple().tm_yday - 1
+    return (
+        f"(date 0 0 0 {value.day} {value.month} {value.year} "
+        f"{week_day} {year_day} #f 0)"
+    )
+
+
+@beartype
 def _racket_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -223,6 +234,11 @@ class Racket(metaclass=LanguageCls):
 
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
+        RACKET = DateFormatConfig(
+            formatter=_format_date_racket,
+            type_produced=datetime.date,
+            preamble_lines=("(require racket/date)",),
         )
 
         def __call__(self, date_value: datetime.date, /) -> str:
@@ -494,7 +510,7 @@ class Racket(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    date_format: DateFormats = DateFormats.ISO
+    date_format: DateFormats = DateFormats.RACKET
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST

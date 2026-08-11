@@ -102,7 +102,9 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
+def _apply_fsharp_entry(  # noqa: PLR0911
+    original: Value, formatted: str, prefix: str
+) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
     """
@@ -133,6 +135,10 @@ def _apply_fsharp_entry(original: Value, formatted: str, prefix: str) -> str:
             )
         case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
             return formatted
+        case datetime.datetime() if formatted.startswith("System.DateTime"):
+            return f"{prefix}Datetime ({formatted})"
+        case datetime.date() if formatted.startswith("System.DateOnly"):
+            return f"{prefix}Date ({formatted})"
         case str() | bytes() | datetime.date() | datetime.time():
             return (
                 f"{prefix}Str (string ({formatted}))"
@@ -1508,18 +1514,19 @@ class FSharp(metaclass=LanguageCls):
             ),
             set: (header, f"    | {p}Set of {self.type_name} list"),
             datetime.date: (
-                header,
-                f_str,
-                f"    | {p}Date of System.DateTime",
+                (header, f"    | {p}Date of System.DateOnly")
+                if self.date_format.value.type_produced is datetime.date
+                else (header, f_str)
             ),
             datetime.time: (header, f_str),
             datetime.datetime: (
                 (header, f"    | {p}Int of int64")
                 if self.datetime_format.value.type_produced is int
                 else (
-                    header,
-                    f_str,
-                    f"    | {p}Datetime of System.DateTime",
+                    (header, f"    | {p}Datetime of System.DateTime")
+                    if self.datetime_format.value.type_produced
+                    is datetime.datetime
+                    else (header, f_str)
                 )
             ),
         }

@@ -9,7 +9,10 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._formatters.collection_openers import fixed_open
+from literalizer._formatters.collection_openers import (
+    fixed_open,
+    sequence_surrogate_set_open,
+)
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
@@ -873,8 +876,12 @@ class Haxe(metaclass=LanguageCls):
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
-        return self.set_format(
+        base = self.set_format(
             default_type=self.default_set_element_type,
+        )
+        return dataclasses.replace(
+            base,
+            set_open=sequence_surrogate_set_open(base.set_open),
         )
 
     @cached_property

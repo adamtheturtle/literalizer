@@ -1,10 +1,10 @@
 (def my_data {
-    "2024-01-01" "new_year"
-    "2024-07-04" "independence_day"
-    "2024-12-25" "christmas"
+    #inst "2024-01-01T00:00:00.000-00:00" "new_year"
+    #inst "2024-07-04T00:00:00.000-00:00" "independence_day"
+    #inst "2024-12-25T00:00:00.000-00:00" "christmas"
 })
 (def my_data {
-    "2024-01-01" "new_year"
-    "2024-07-04" "independence_day"
-    "2024-12-25" "christmas"
+    #inst "2024-01-01T00:00:00.000-00:00" "new_year"
+    #inst "2024-07-04T00:00:00.000-00:00" "independence_day"
+    #inst "2024-12-25T00:00:00.000-00:00" "christmas"
 })

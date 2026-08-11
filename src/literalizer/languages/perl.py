@@ -118,7 +118,6 @@ def _format_perl_string_single(value: str) -> str:
         return _format_perl_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
-
 @beartype
 def _perl_call_stub(
     parts: Sequence[str],
@@ -329,13 +328,8 @@ class Perl(metaclass=LanguageCls):
               Perl author would write in a UTF-8 source file.
             * ``string_formats.SINGLE`` -- single-quoted, with only
               ``\\`` and ``\'`` recognized as escapes.  Non-ASCII
-              characters are emitted as their raw UTF-8 bytes; the
-              caller is responsible for placing the snippet in a
-              source file whose encoding declaration matches.
-            * ``string_formats.MULTILINE`` -- non-interpolating
-              single-quoted strings with physical line breaks.  Falls
-              back to an escaped double-quoted string for carriage
-              returns, null bytes, and source-line trailing whitespace.
+              characters are emitted literally and contribute
+              ``use utf8;`` to the file preamble.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -414,7 +408,7 @@ class Perl(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = True
+    supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "perl"
@@ -871,7 +865,7 @@ class Perl(metaclass=LanguageCls):
                 if self.string_format
                 in {
                     type(self.string_format).DOUBLE_UTF8,
-                    type(self.string_format).MULTILINE,
+                    type(self.string_format).SINGLE,
                 }
                 else ()
             ),

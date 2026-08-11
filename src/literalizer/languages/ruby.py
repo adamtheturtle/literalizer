@@ -138,7 +138,6 @@ def _format_string_multiline(value: str) -> str:
         return _format_string_multiline_fallback(value=value)
     return format_string_backslash_single_minimal(value=value)
 
-
 @beartype
 def _to_pascal_case(name: str) -> str:
     """Convert *name* to PascalCase."""
@@ -330,7 +329,7 @@ class Ruby(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = True
+    supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "ruby"

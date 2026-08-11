@@ -146,18 +146,6 @@ def _format_string_verbatim(value: str) -> str:
     return f'@"{escaped}"'
 
 
-@beartype
-def _format_string_multiline(value: str) -> str:
-    r"""Format *value* as a non-interpolated C# verbatim string."""
-    if (
-        "\0" in value
-        or "\r" in value
-        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
-    ):
-        return _format_string_backslash_nul(value=value)
-    return _format_string_verbatim(value=value)
-
-
 class _CSharpModifiers(enum.Enum):
     """Declaration modifiers supported by C#.
 
@@ -773,7 +761,7 @@ class CSharp(metaclass=LanguageCls):
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix = "json_node"
     supports_non_ascii_string_literals = True
-    supports_multiline_string_literals = True
+    supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = True
     language_id: ClassVar[str] = "csharp"
@@ -1034,7 +1022,6 @@ class CSharp(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=_format_string_backslash_nul)
         VERBATIM = enum.member(value=_format_string_verbatim)
-        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
