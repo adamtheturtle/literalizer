@@ -32,11 +32,28 @@ from literalizer._literalize import (
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
+    InvalidVariableModifierError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+
+
+def _validate_variable_modifiers(
+    *,
+    language: Language,
+    variable_form: VariableForm | None,
+) -> None:
+    """Reject declaration modifiers owned by another language."""
+    if not isinstance(variable_form, NewVariable | BothVariableForms):
+        return
+    for modifier in variable_form.modifiers:
+        if not isinstance(modifier, language.modifiers):
+            raise InvalidVariableModifierError(
+                language_name=type(language).__name__,
+                modifier=modifier,
+            )
 
 
 @beartype
@@ -188,6 +205,10 @@ def literalize(
             file-statement scope).
     """
     effective_ref_key = ref_key or ""
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -549,6 +570,10 @@ def literalize_call(
         :doc:`/function-call-use-case` shows a worked example.
     """
     effective_ref_key = ref_key or ""
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent
         # side-effect bug for any non-pure target.  Reject up front so

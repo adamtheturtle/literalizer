@@ -10,8 +10,8 @@ module Client = struct
 let fetch _ = ()
 end
 end
-let _ = App.Client.fetch("hello")
-let _ = App.Client.fetch(42)
+let _ = App.Client.fetch(OStr "hello")
+let _ = App.Client.fetch(OInt 42)
 let _ = App.Client.fetch(OBool true)
 
 end
