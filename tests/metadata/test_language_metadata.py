@@ -67,10 +67,12 @@ def test_language_ids_are_unique_lower_snake_identifiers() -> None:
     """Every language owns a distinct, stable, neutral identifier."""
     language_ids = [cls.language_id for cls in _SORTED_LANGUAGES]
     assert len(set(language_ids)) == len(language_ids)
-    assert all(
-        language_id.isidentifier() and language_id.islower()
+    malformed = [
+        language_id
         for language_id in language_ids
-    )
+        if not (language_id.isidentifier() and language_id.islower())
+    ]
+    assert malformed == []
 
 
 def test_variant_metadata_fields_have_no_defaults() -> None:
@@ -79,10 +81,12 @@ def test_variant_metadata_fields_have_no_defaults() -> None:
         obj=type(Python.variant_metadata)
     ).parameters
     assert parameters
-    assert all(
-        parameter.default is inspect.Parameter.empty
-        for parameter in parameters.values()
-    )
+    defaulted = [
+        name
+        for name, parameter in parameters.items()
+        if parameter.default is not inspect.Parameter.empty
+    ]
+    assert defaulted == []
 
 
 @pytest.mark.parametrize(

@@ -183,10 +183,9 @@ def test_multiline_string_new_and_existing_variable_round_trip() -> None:
         ]
 
         assert len(assignments) == expected_assignment_count
-        assert all(
-            ast.literal_eval(node_or_string=node.value) == _MULTILINE_VALUE
-            for node in assignments
-        )
+        assert [
+            ast.literal_eval(node_or_string=node.value) for node in assignments
+        ] == [_MULTILINE_VALUE] * expected_assignment_count
 
 
 def test_multiline_string_pre_indent_round_trip() -> None:

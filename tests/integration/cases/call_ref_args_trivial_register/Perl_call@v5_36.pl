@@ -2,7 +2,7 @@ use JSON::PP;
 sub process {}
 my $my_int = 1;
 my $my_bool = JSON::PP::true;
-my $my_float = 3.14;
+my $my_float = (0.0 + 3.14);
 my $my_list = [
     1,
     2,

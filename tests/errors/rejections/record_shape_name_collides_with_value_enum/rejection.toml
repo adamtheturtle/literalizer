@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A record name matching heterogeneous_value_enum_name would give the
+generated enum and the named record one type identifier.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Rust"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "heterogeneous_value_enum_name", value = "Entry" },
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["Entry"] },
+]

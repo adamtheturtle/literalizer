@@ -30,6 +30,7 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
+    InvalidCallParameterNameError,
     InvalidModuleNameError,
     InvalidNewVariableNameError,
     ReservedVariableNameError,
@@ -106,6 +107,55 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
             language_name=language_name,
             variable_name=name,
         )
+
+
+@beartype
+def validate_call_parameter_names(
+    *,
+    language: "Language",
+    names: Sequence[str],
+    reject_reserved: bool,
+) -> None:
+    """Raise when call parameter names are invalid or duplicated."""
+    language_name = language.__class__.__name__
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):
+        msg = "Call parameter validation requires a LanguageCls language"
+        raise TypeError(msg)
+    case_sensitive = language.reserved_variable_identifiers_case_sensitive
+    seen: set[str] = set()
+    for name in names:
+        comparison_name = name if case_sensitive else name.casefold()
+        if comparison_name in seen:
+            raise InvalidCallParameterNameError(
+                language_name=language_name,
+                parameter_name=name,
+                reason="it is duplicated",
+            )
+        seen.add(comparison_name)
+        if reject_reserved:
+            if language.reserved_variable_identifiers_case_sensitive:
+                reserved = name in language.reserved_variable_identifiers
+            else:
+                folded_name = name.casefold()
+                reserved = any(
+                    folded_name == reserved_name.casefold()
+                    for reserved_name in (
+                        language.reserved_variable_identifiers
+                    )
+                )
+            if reserved:
+                raise InvalidCallParameterNameError(
+                    language_name=language_name,
+                    parameter_name=name,
+                    reason="it is a reserved identifier",
+                )
+        if not language_cls.new_variable_name_syntax.accepts(name=name):
+            raise InvalidCallParameterNameError(
+                language_name=language_name,
+                parameter_name=name,
+                reason="it is not a valid identifier",
+            )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -242,6 +292,12 @@ class DictFormatConfig:
     (e.g. V's ``map[string]int{}`` when a sibling is ``{"x": 1}``).
     ``None`` keeps the language's default ``empty_dict`` / opener path.
     """
+
+    def postprocess_entries(  # pylint: disable=no-self-use
+        self, lines: list[str], /
+    ) -> list[str]:
+        """Return fully rendered mapping entry lines unchanged."""
+        return lines
 
 
 @dataclasses.dataclass(frozen=True)

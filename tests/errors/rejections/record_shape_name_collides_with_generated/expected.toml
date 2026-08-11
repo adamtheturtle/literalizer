@@ -1,0 +1,9 @@
+# languages rejecting: 6; languages accepting: 0
+
+[InvalidRecordNameError]
+Cpp = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names."
+Go = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names."
+Java = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed record names."
+Kotlin = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names."
+Rust = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names."
+Scala = "record_shape_names entry for keys ['id', 'name'] maps to 'Record0', which collides with the auto-generated 'Record'-prefixed struct names."

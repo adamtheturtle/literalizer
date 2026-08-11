@@ -416,6 +416,28 @@ class InvalidModuleNameError(Exception):
         self.module_name = module_name
 
 
+class InvalidCallParameterNameError(Exception):
+    """Raised when a call parameter is not a target-language
+    identifier.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        parameter_name: str,
+        reason: str,
+    ) -> None:
+        """Create an ``InvalidCallParameterNameError``."""
+        super().__init__(
+            f"{language_name} cannot use call parameter "
+            f"{parameter_name!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.parameter_name = parameter_name
+        self.reason = reason
+
+
 class InvalidVariableModifierError(Exception):
     """Raised when a declaration modifier belongs to another language."""
 
@@ -688,6 +710,24 @@ class UnsupportedCallShapeError(Exception):
         )
         self.language_name = language_name
         self.reason = reason
+
+
+class ExcessiveNestingError(Exception):
+    """Raised when a target language's safe collection nesting limit is
+    exceeded.
+    """
+
+    def __init__(
+        self, *, language_name: str, maximum_depth: int, actual_depth: int
+    ) -> None:
+        """Create an ``ExcessiveNestingError``."""
+        super().__init__(
+            f"{language_name} supports collection nesting only through depth "
+            f"{maximum_depth}; received depth {actual_depth}"
+        )
+        self.language_name = language_name
+        self.maximum_depth = maximum_depth
+        self.actual_depth = actual_depth
 
 
 class WrapCombinedInFileNotSupportedError(Exception):
