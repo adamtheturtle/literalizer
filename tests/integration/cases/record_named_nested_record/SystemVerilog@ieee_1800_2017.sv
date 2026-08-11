@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -13,7 +13,7 @@ module main;
 initial begin
 static _VKV my_data[] = '{
     _VKV'{k: "collection", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "alpha"}},
-    _VKV'{k: "featured_entry", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 100, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first entry\"}}, _VKV'{k: \"enabled\", v: _VVal'{tag: _VVAL_INT, i: 0, r: 0.0, s: \"\"}}, _VKV'{k: \"related_ids\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_INT, i: 102, r: 0.0, s: \\\"\\\"}, _VVal'{tag: _VVAL_INT, i: 103, r: 0.0, s: \\\"\\\"}}\"}}}"}}
+    _VKV'{k: "featured_entry", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"id\", v: _VVal'{tag: _VVAL_INT, i: 100, r: 0.0, s: \"\"}}, _VKV'{k: \"label\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"first entry\"}}, _VKV'{k: \"enabled\", v: _VVal'{tag: _VVAL_BOOL, i: 0, r: 0.0, s: \"\"}}, _VKV'{k: \"related_ids\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_INT, i: 102, r: 0.0, s: \\\"\\\"}, _VVal'{tag: _VVAL_INT, i: 103, r: 0.0, s: \\\"\\\"}}\"}}}"}}
 };
 end
 endmodule
