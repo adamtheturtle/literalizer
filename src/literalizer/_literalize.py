@@ -281,8 +281,7 @@ class NewVariable:
     """Declaration modifiers to apply.  Each language exposes its own
     modifier enum as ``Language.Modifiers`` (e.g. ``Java.Modifiers.FINAL``,
     ``CSharp.Modifiers.READONLY``, ``Cpp.Modifiers.STATIC``).  Values
-    that are not members of the target language's ``Modifiers`` enum
-    are silently ignored.
+    must be members of the target language's ``Modifiers`` enum.
     """
 
 
