@@ -1,6 +1,6 @@
 struct Record1 { let id: Int; let label: String }
 struct Record0 { let name: String; let items: [Record1] }
-let my_data: Any = Record0(
+let my_data = Record0(
     name: "box",
     items: [
         Record1(

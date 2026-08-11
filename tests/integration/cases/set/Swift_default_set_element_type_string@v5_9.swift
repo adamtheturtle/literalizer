@@ -1,4 +1,4 @@
-let my_data: Any = Set<String>([
+let my_data = Set<String>([
     "apple",
     "banana",
     "cherry",
