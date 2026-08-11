@@ -1,31 +1,18 @@
 """C++ ``json_type`` rejection paths."""
 
-import pytest
-
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import (
-    UnrepresentableInputError,
-)
 from literalizer.languages import Cpp
 
 
-def test_cpp_json_type_rejects_raw_string_terminator_in_key() -> None:
-    r"""Reject dict keys that close the ``R"json(...)json"`` literal.
+def test_cpp_json_type_structurally_renders_terminator_key() -> None:
+    r"""Structural JSON rendering does not use a raw-string delimiter."""
+    result = literalize(
+        source='{")json": "x"}',
+        input_format=InputFormat.JSON,
+        language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+    )
 
-    A key whose name ends with ``)json`` collides with the raw-string
-    terminator because :func:`json.dumps` writes ``")json"`` as a
-    literal byte sequence, which would close the C++ raw-string literal
-    mid-document.  String *values* containing literal ``"`` characters
-    are escaped to ``\"`` and so cannot reach the terminator unless they
-    end with ``)json`` themselves (covered by the same check).
-    """
-    with pytest.raises(
-        expected_exception=UnrepresentableInputError,
-        match="raw-string terminator",
-    ):
-        literalize(
-            source='{")json": "x"}',
-            input_format=InputFormat.JSON,
-            language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
+    assert result.code == (
+        'auto my_data = nlohmann::json::object({{")json", "x"}});'
+    )
