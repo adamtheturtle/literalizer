@@ -1,2 +1,2 @@
-var my_data: Any = true
+var my_data = true
 my_data = true

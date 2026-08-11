@@ -16,7 +16,7 @@ import tomllib
 from pathlib import Path
 from typing import assert_never
 
-import pyjson5
+import json5
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
@@ -169,7 +169,7 @@ def _parse_ref_input(
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=input_source)
         case literalizer.InputFormat.JSON5:
-            parsed = pyjson5.decode(data=input_source)  # pylint: disable=no-member
+            parsed = json5.loads(s=input_source, allow_duplicate_keys=False)
         case literalizer.InputFormat.YAML:
             ruamel_yaml = _YAML()
             parsed = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]

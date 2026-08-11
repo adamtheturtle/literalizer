@@ -1,4 +1,4 @@
 def my_data = [
-    "2024-01-15",
-    "2024-02-20",
+    java.time.LocalDate.of(2024, 1, 15),
+    java.time.LocalDate.of(2024, 2, 20),
 ]

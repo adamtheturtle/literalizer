@@ -1,6 +1,6 @@
 import Foundation
 struct Record0 { let s: String; let i: Int; let f: Double; let b: Bool; let n: Any?; let d: Date; let dt: String; let by: String }
-let my_data: Any = Record0(
+let my_data = Record0(
     s: "string",
     i: 1,
     f: 1.5,

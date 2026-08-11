@@ -1,2 +1,2 @@
 /* before scalar: * / |# -} *) ) =# ]] %} ]# % #> */
-let my_data: Any = "value"  /* inline scalar: * / |# -} *) ) =# ]] %} ]# % #> */
+let my_data = "value"  /* inline scalar: * / |# -} *) ) =# ]] %} ]# % #> */

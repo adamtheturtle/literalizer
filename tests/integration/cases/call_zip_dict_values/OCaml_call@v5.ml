@@ -7,7 +7,7 @@ type val_t =
   | OMap of (string * val_t) list
 let process _ = ()
 let emit _ = ()
-let _ = emit(process("hello"), OMap [("a", OInt 1); ("b", OInt 2)])
-let _ = emit(process(42), OMap [("c", OInt 3); ("d", OInt 4)])
+let _ = emit(process(OStr "hello"), OMap [("a", OInt 1); ("b", OInt 2)])
+let _ = emit(process(OInt 42), OMap [("c", OInt 3); ("d", OInt 4)])
 
 end
