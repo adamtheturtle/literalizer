@@ -794,10 +794,10 @@ class SystemVerilog(metaclass=LanguageCls):
         '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
     )
     true_literal: ClassVar[str] = (
-        '_VVal\'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}'
+        '_VVal\'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}'
     )
     false_literal: ClassVar[str] = (
-        '_VVal\'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""}'
+        '_VVal\'{tag: _VVAL_BOOL, i: 0, r: 0.0, s: ""}'
     )
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
@@ -808,7 +808,8 @@ class SystemVerilog(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = (
         (
-            "typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;\n"
+            "typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, "
+            "_VVAL_STR} _VTag;\n"
             "typedef struct {\n"
             "    _VTag tag;\n"
             "    longint i;\n"

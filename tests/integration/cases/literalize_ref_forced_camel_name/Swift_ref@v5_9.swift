@@ -1,4 +1,4 @@
-let userObj: Any = [
+let userObj = [
     "_": "_",
 ]
-let my_data: Any = userObj
+let my_data = userObj
