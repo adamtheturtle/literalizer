@@ -421,6 +421,7 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     target_function: str
     parameter_names: StringTuple
     per_element: bool
+    collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``

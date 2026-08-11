@@ -1,0 +1,6 @@
+[
+  [
+    [{"other": 1}, {"$ref": "foo"}],
+    {"left": {"$ref": "foo"}, "other": 1}
+  ]
+]

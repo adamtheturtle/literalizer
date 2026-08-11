@@ -1,0 +1,4 @@
+{
+  "mapping": {"value": {"\u0024ref": "foo"}},
+  "items": [{"other": 1}, {"\u0024ref": "foo"}]
+}
