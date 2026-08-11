@@ -4,13 +4,13 @@ DATA DIVISION.
 WORKING-STORAGE SECTION.
 01 MY-DATA.
     05 FILLER.
-10 FILLER PIC X(3) VALUE "ADD".
-10 FILLER PIC X(5) VALUE "alice".
-10 FILLER PIC X(5) VALUE "hello".
+    10 FILLER PIC X(3) VALUE "ADD".
+    10 FILLER PIC X(5) VALUE "alice".
+    10 FILLER PIC X(5) VALUE "hello".
     05 FILLER.
 
-        10 FILLER PIC X(3) VALUE "DEL".
-        10 FILLER PIC X(3) VALUE "bob".
-        10 FILLER PIC X(1) VALUE "5".  *> removes "world"
+            10 FILLER PIC X(3) VALUE "DEL".
+            10 FILLER PIC X(3) VALUE "bob".
+            10 FILLER PIC X(1) VALUE "5".  *> removes "world"
 PROCEDURE DIVISION.
     STOP RUN.

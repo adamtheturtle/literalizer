@@ -5,12 +5,12 @@ WORKING-STORAGE SECTION.
 01 MY-DATA.
     05 F-A.
 
-        *> inner note
-        10 F-B PIC S9(18) COMP-5 VALUE 1.  *> inline b
+            *> inner note
+            10 F-B PIC S9(18) COMP-5 VALUE 1.  *> inline b
 
     05 F-LIST.
 
-        10 FILLER PIC S9(18) COMP-5 VALUE 1.  *> first
-        10 FILLER PIC S9(18) COMP-5 VALUE 2.  *> second
+            10 FILLER PIC S9(18) COMP-5 VALUE 1.  *> first
+            10 FILLER PIC S9(18) COMP-5 VALUE 2.  *> second
 PROCEDURE DIVISION.
     STOP RUN.

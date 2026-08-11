@@ -5,9 +5,9 @@ WORKING-STORAGE SECTION.
 01 MY-DATA.
     05 F-SERVER.
 
-        10 F-HOST PIC X(9) VALUE "localhost".
-        10 F-PORT PIC X(1) VALUE SPACES.  *> not configured yet
-        10 F-DEBUG PIC S9(18) COMP-5 VALUE 1.
+            10 F-HOST PIC X(9) VALUE "localhost".
+            10 F-PORT PIC X(1) VALUE SPACES.  *> not configured yet
+            10 F-DEBUG PIC S9(18) COMP-5 VALUE 1.
 PROCEDURE DIVISION.
     INITIALIZE MY-DATA.
     STOP RUN.
