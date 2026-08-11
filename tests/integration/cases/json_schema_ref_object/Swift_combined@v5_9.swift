@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "schema": ["$ref": "#/defs/Foo"],
 ]
 my_data = [
