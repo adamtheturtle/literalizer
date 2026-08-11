@@ -7,7 +7,7 @@ instance IsString Val where
 my_data :: Val
 my_data = HMap [
     ("x", "\x00"),
-    ("y", "\x001")
+    ("y", "\x00\&1")
     ]
 main :: IO ()
 main = seq my_data (return ())
