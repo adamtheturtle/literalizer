@@ -85,6 +85,7 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('outer', fmap([fval_t :: fentry('a', fint(1_int64)), fentry('b', fstr('x')), fentry('c', fnull())])) &
+        fentry('outer', fmap([fval_t :: fentry('a', fint(1_int64)), fentry('b', fstr('x')), fentry('c', &
+    & fnull())])) &
     ])
 end program main
