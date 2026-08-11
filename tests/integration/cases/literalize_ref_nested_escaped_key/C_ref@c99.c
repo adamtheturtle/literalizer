@@ -19,8 +19,8 @@ CVal foo = ((CVal){.m = (CKV[]){
     {"_", ((CVal){.s = "_"})},
 }});
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"mapping", ((CVal){.m = (CKV[]){{"value", foo}}})},
     {"items", ((CVal){.a = (CVal[]){((CVal){.m = (CKV[]){{"other", ((CVal){.i = 1})}}}), foo}})},
+    {"mapping", ((CVal){.m = (CKV[]){{"value", foo}}})},
 }});
     (void)my_data;
     return 0;

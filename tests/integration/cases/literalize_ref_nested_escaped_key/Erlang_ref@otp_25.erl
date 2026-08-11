@@ -5,7 +5,7 @@ x() ->
         "_" => "_"
     },
     My_data = #{
-        "mapping" => #{"value" => Foo},
-        "items" => [#{"other" => 1}, Foo]
+        "items" => [#{"other" => 1}, Foo],
+        "mapping" => #{"value" => Foo}
     },
     My_data.

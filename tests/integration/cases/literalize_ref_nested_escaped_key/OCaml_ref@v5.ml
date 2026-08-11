@@ -9,8 +9,8 @@ let foo : val_t = OMap [
     ("_", OStr "_")
 ]
 let my_data : val_t = OMap [
-    ("mapping", OMap [("value", foo)]);
-    ("items", OList [OMap [("other", OInt 1)]; foo])
+    ("items", OList [OMap [("other", OInt 1)]; foo]);
+    ("mapping", OMap [("value", foo)])
 ]
 
 end

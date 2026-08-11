@@ -4,8 +4,8 @@ defmodule Check do
         "_" => "_",
     }
     my_data = %{
-        "mapping" => %{"value" => foo},
         "items" => [%{"other" => 1}, foo],
+        "mapping" => %{"value" => foo},
     }
     _ = my_data
   end

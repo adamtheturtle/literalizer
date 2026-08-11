@@ -9,6 +9,6 @@ let foo: Val = FMap [
     ("_", FStr "_")
 ]
 let my_data: Val = FMap [
-    ("mapping", FMap [("value", foo)]);
-    ("items", FList [FMap [("other", FInt 1L)]; foo])
+    ("items", FList [FMap [("other", FInt 1L)]; foo]);
+    ("mapping", FMap [("value", foo)])
 ]

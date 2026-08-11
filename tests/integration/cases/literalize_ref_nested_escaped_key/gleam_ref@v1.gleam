@@ -10,8 +10,8 @@ pub fn main() {
     #("_", GStr("_")),
   ])
   let my_data = GDict([
-    #("mapping", GDict([#("value", foo)])),
     #("items", GList([GDict([#("other", GInt(1))]), foo])),
+    #("mapping", GDict([#("value", foo)])),
   ])
   let _ = my_data
 }

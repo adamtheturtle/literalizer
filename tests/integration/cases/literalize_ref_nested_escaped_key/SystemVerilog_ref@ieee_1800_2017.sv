@@ -15,8 +15,8 @@ static _VKV foo[] = '{
     _VKV'{k: "_", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "_"}}
 };
 static _VKV my_data[] = '{
-    _VKV'{k: "mapping", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"value\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"foo\"}}}"}},
-    _VKV'{k: "items", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"other\\\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \\\"\\\"}}}\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"foo\"}}"}}
+    _VKV'{k: "items", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"other\\\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \\\"\\\"}}}\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"foo\"}}"}},
+    _VKV'{k: "mapping", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"value\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"foo\"}}}"}}
 };
 end
 endmodule

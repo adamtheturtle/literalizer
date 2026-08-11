@@ -15,6 +15,6 @@ foo = PDict [
     ]
 my_data :: Val
 my_data = PDict [
-    (Tuple "mapping" (PDict [(Tuple "value" (foo))])),
-    (Tuple "items" (PList [PDict [(Tuple "other" (PInt 1))], foo]))
+    (Tuple "items" (PList [PDict [(Tuple "other" (PInt 1))], foo])),
+    (Tuple "mapping" (PDict [(Tuple "value" (foo))]))
     ]

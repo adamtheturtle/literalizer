@@ -89,7 +89,7 @@ program main
         fentry('_', fstr('_')) &
     ])
     my_data = fmap([fval_t :: &
-        fentry('mapping', fmap([fval_t :: fentry('value', foo)])), &
-        fentry('items', flist([fval_t :: fmap([fval_t :: fentry('other', fint(1_int64))]), foo])) &
+        fentry('items', flist([fval_t :: fmap([fval_t :: fentry('other', fint(1_int64))]), foo])), &
+        fentry('mapping', fmap([fval_t :: fentry('value', foo)])) &
     ])
 end program main

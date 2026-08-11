@@ -14,6 +14,6 @@ foo = EDict [
     ]
 my_data : Val
 my_data = EDict [
-    ("mapping", EDict [("value", foo)]),
-    ("items", EList [EDict [("other", EInt 1)], foo])
+    ("items", EList [EDict [("other", EInt 1)], foo]),
+    ("mapping", EDict [("value", foo)])
     ]

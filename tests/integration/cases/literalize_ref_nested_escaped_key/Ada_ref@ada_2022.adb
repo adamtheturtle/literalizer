@@ -4,8 +4,8 @@ procedure Main is
         AEntry ("_", AStr ("_"))
     ];
     my_data : A_Val := AMap'[
-        AEntry ("mapping", AMap'[AEntry ("value", foo)]),
-        AEntry ("items", AList'[AMap'[AEntry ("other", AInt (1))], foo])
+        AEntry ("items", AList'[AMap'[AEntry ("other", AInt (1))], foo]),
+        AEntry ("mapping", AMap'[AEntry ("value", foo)])
     ];
 begin
     null;

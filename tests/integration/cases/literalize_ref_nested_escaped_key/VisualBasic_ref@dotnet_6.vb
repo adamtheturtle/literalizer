@@ -4,7 +4,7 @@ Module Check
         {"_", "_"}
     }
     Dim my_data = New Dictionary(Of String, Object) From {
-        {"mapping", New Dictionary(Of String, Object) From {{"value", Foo}}},
-        {"items", New Object() {New Dictionary(Of String, Object) From {{"other", 1}}, Foo}}
+        {"items", New Object() {New Dictionary(Of String, Object) From {{"other", 1}}, Foo}},
+        {"mapping", New Dictionary(Of String, Object) From {{"value", Foo}}}
     }
 End Module

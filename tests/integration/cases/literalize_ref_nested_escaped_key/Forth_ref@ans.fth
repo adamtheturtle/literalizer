@@ -5,7 +5,7 @@
 ;
 : my_data
 +obj
-    s\" mapping" +key +obj s\" value" +key FOO -obj
     s\" items" +key +arr +obj s\" other" +key 1 +int -obj FOO -arr
+    s\" mapping" +key +obj s\" value" +key FOO -obj
  -obj
 ;

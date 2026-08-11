@@ -13,6 +13,6 @@ foo = RDict [
     ]
 my_data : Val
 my_data = RDict [
-    ("mapping", RDict [("value", foo)]),
     ("items", RList [RDict [("other", RInt 1i128)], foo]),
+    ("mapping", RDict [("value", foo)]),
     ]

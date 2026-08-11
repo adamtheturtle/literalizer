@@ -47,8 +47,8 @@ auto foo = std::map<std::string, std::string>{
     {"_", "_"},
 };
 auto my_data = std::map<std::string, Value>{
-    {"mapping", Value{std::map<std::string, std::map<std::string, std::string>>{{"value", std::move(foo)}}}},
     {"items", Value{std::vector<std::map<std::string, int>>{std::map<std::string, Value>{{"other", Value{1}}}, std::move(foo)}}},
+    {"mapping", Value{std::map<std::string, std::map<std::string, std::string>>{{"value", std::move(foo)}}}},
 };
     (void)my_data;
     return 0;

@@ -5,8 +5,8 @@ id foo = @{
     @"_": @"_",
 };
 id my_data = @{
-    @"mapping": @{@"value": foo},
     @"items": @[@{@"other": @1}, foo],
+    @"mapping": @{@"value": foo},
 };
     (void)my_data;
 }

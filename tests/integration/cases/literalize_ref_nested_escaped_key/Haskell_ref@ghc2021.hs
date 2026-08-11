@@ -14,8 +14,8 @@ foo = HMap [
     ]
 my_data :: Val
 my_data = HMap [
-    ("mapping", HMap [("value", foo)]),
-    ("items", HList [HMap [("other", 1)], foo])
+    ("items", HList [HMap [("other", 1)], foo]),
+    ("mapping", HMap [("value", foo)])
     ]
 main :: IO ()
 main = seq my_data (return ())

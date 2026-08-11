@@ -7,7 +7,7 @@ val foo : val_t = SMap [
     ("_", SStr "_")
 ]
 val my_data : val_t = SMap [
-    ("mapping", SMap [("value", foo)]),
-    ("items", SList [SMap [("other", SInt 1)], foo])
+    ("items", SList [SMap [("other", SInt 1)], foo]),
+    ("mapping", SMap [("value", foo)])
 ]
 val _ = my_data

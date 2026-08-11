@@ -3,7 +3,7 @@ val foo = Map[String, String](
     "_" -> "_",
 )
 val my_data = Map(
-    "mapping" -> Map("value" -> foo),
     "items" -> List[Map[String, Int]](Map("other" -> 1), foo),
+    "mapping" -> Map("value" -> foo),
 )
 }
