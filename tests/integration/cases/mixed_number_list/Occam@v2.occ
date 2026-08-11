@@ -3,7 +3,7 @@ MOBILE DATA TYPE LIT IS
     lit.null
     lit.bool ; BOOL
     lit.int ; INT
-    lit.float ; REAL32
+    lit.float ; REAL64
     lit.str ; MOBILE []BYTE
     lit.list ; MOBILE []MOBILE LIT
     lit.map ; MOBILE []MOBILE LIT
@@ -14,7 +14,7 @@ MOBILE DATA TYPE LIT IS
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.int; 1),
-        MOBILE LIT(lit.float; 2.5(REAL32)),
+        MOBILE LIT(lit.float; 2.5(REAL64)),
         MOBILE LIT(lit.int; 3)
     ]):
     SEQ

@@ -6,4 +6,4 @@ type Val =
     | FList of Val list
 let process (_value: obj) : obj = null
 process(FNull)
-process("hello")
+process(FStr "hello")

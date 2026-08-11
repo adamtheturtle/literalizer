@@ -4,8 +4,8 @@ type val_t =
   | OInt of int
   | OList of val_t list
 let process _ = ()
-let _ = process(-1)
-let _ = process(-2)
-let _ = process(-3)
+let _ = process(OInt (-1))
+let _ = process(OInt (-2))
+let _ = process(OInt (-3))
 
 end

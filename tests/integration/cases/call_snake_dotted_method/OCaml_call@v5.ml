@@ -10,8 +10,8 @@ module Http_client = struct
 let fetch _ = ()
 end
 end
-let _ = My_app.Http_client.fetch("hello")
-let _ = My_app.Http_client.fetch(42)
+let _ = My_app.Http_client.fetch(OStr "hello")
+let _ = My_app.Http_client.fetch(OInt 42)
 let _ = My_app.Http_client.fetch(OBool true)
 
 end

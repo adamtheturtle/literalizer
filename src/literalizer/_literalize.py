@@ -281,14 +281,17 @@ class NewVariable:
     """Declaration modifiers to apply.  Each language exposes its own
     modifier enum as ``Language.Modifiers`` (e.g. ``Java.Modifiers.FINAL``,
     ``CSharp.Modifiers.READONLY``, ``Cpp.Modifiers.STATIC``).  Values
-    that are not members of the target language's ``Modifiers`` enum
-    are silently ignored.
+    must be members of the target language's ``Modifiers`` enum.
     """
 
 
 @dataclasses.dataclass(frozen=True)
 class ExistingVariable:
-    """Wrap output in an assignment to an existing variable."""
+    """Wrap output in an assignment to an existing variable.
+
+    The name must be a non-reserved identifier accepted by the target
+    language; assignment expressions such as ``obj.field`` are not accepted.
+    """
 
     name: str
 
@@ -1667,10 +1670,10 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
             value=value, ref_key=ctx.ref_key
         )
         if raw_ref_name is not None:
-            ref_name = (
-                ctx.ref_case.convert(name=raw_ref_name)
-                if ctx.ref_case is not None
-                else raw_ref_name
+            ref_name = _validated_ref_name(
+                raw_ref_name=raw_ref_name,
+                ref_case=ctx.ref_case,
+                language=spec,
             )
             ref_value = (
                 ctx.ref_values.get(raw_ref_name)
@@ -2139,10 +2142,10 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     if ref_key and isinstance(data, dict):
         raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if raw_ref_name is not None:
-            ref_name = (
-                ref_case.convert(name=raw_ref_name)
-                if ref_case is not None
-                else raw_ref_name
+            ref_name = _validated_ref_name(
+                raw_ref_name=raw_ref_name,
+                ref_case=ref_case,
+                language=language,
             )
             ref_value = (
                 ref_values.get(raw_ref_name)
@@ -2352,6 +2355,10 @@ def _apply_variable_wrapper(
                 language.format_call_variable_assignment
                 if is_call_binding
                 else language.format_variable_assignment
+            )
+            validate_new_variable_name(
+                language=language,
+                name=variable_form.name,
             )
             wrapped = assignment_formatter(
                 variable_form.name,
@@ -2967,6 +2974,23 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
 
 
 @beartype
+def _validated_ref_name(
+    *,
+    raw_ref_name: str,
+    ref_case: IdentifierCase | None,
+    language: Language,
+) -> str:
+    """Convert and validate a ref name before emitting source code."""
+    ref_name = (
+        ref_case.convert(name=raw_ref_name)
+        if ref_case is not None
+        else raw_ref_name
+    )
+    validate_new_variable_name(language=language, name=ref_name)
+    return ref_name
+
+
+@beartype
 def _contains_ref_marker(*, value: Value, ref_key: str) -> bool:
     """Return whether *value* contains a ``{ref_key: "name"}`` marker."""
     if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is not None:
@@ -3304,10 +3328,10 @@ def _format_single_call_arg(
     """
     raw_ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
     if raw_ref_name is not None:
-        ref_name = (
-            ref_case.convert(name=raw_ref_name)
-            if ref_case is not None
-            else raw_ref_name
+        ref_name = _validated_ref_name(
+            raw_ref_name=raw_ref_name,
+            ref_case=ref_case,
+            language=language,
         )
         ref_value = (
             ref_values.get(raw_ref_name) if ref_values is not None else None
