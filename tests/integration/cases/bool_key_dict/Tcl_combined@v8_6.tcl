@@ -1,8 +1,8 @@
 set my_data [dict create \
-    1 "yes" \
-    0 "no" \
+    true "yes" \
+    false "no" \
 ]
 set my_data [dict create \
-    1 "yes" \
-    0 "no" \
+    true "yes" \
+    false "no" \
 ]

@@ -1,2 +1,2 @@
 function op {}
-op("hello")
+op "hello"

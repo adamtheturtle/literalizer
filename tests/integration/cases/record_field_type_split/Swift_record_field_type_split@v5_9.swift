@@ -8,7 +8,7 @@ struct Record7 { let holder: Record1 }
 struct Record8 { let holder: Record2 }
 struct Record9 { let nums: [Int] }
 struct Record0 { let plain: Record1; let other: Record2; let nested_a: Record3; let nested_b: Record5; let wrap_a: Record7; let wrap_b: Record8; let wide: Record9 }
-let my_data: Any = Record0(
+let my_data = Record0(
     plain: Record1(
         status: 1,
     ),

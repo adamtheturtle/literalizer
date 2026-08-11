@@ -1,10 +1,10 @@
-let valX: Any = [
+let valX = [
     "_": "_",
 ]
-let valY: Any = [
+let valY = [
     "_": "_",
 ]
-let my_data: Any = [
+let my_data = [
     valX,
     valY,
 ]

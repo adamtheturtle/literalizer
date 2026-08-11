@@ -11,6 +11,6 @@ type AppType_() =
     member _.client = ClientType_()
 let app = AppType_()
 let emit (__arg: obj) : obj = null
-emit(app.client.fetch("hello"))
-emit(app.client.fetch(42))
+emit(app.client.fetch(FStr "hello"))
+emit(app.client.fetch(FInt 42L))
 emit(app.client.fetch(FBool true))

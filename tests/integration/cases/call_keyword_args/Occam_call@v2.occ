@@ -3,7 +3,7 @@ MOBILE DATA TYPE LIT IS
     lit.null
     lit.bool ; BOOL
     lit.int ; INT
-    lit.float ; REAL32
+    lit.float ; REAL64
     lit.str ; MOBILE []BYTE
     lit.list ; MOBILE []MOBILE LIT
     lit.map ; MOBILE []MOBILE LIT
@@ -18,8 +18,8 @@ PROC emit (VAL MOBILE LIT _arg)
     SKIP
 :
 PROC main ()
-    emit(throttler.check(MOBILE LIT(lit.str; MOBILE []BYTE "user_1"), MOBILE LIT(lit.float; 1000.0(REAL32))))
-    emit(throttler.check(MOBILE LIT(lit.str; MOBILE []BYTE "user_2"), MOBILE LIT(lit.float; 2000.5(REAL32))))
+    emit(throttler.check(MOBILE LIT(lit.str; MOBILE []BYTE "user_1"), MOBILE LIT(lit.float; 1000.0(REAL64))))
+    emit(throttler.check(MOBILE LIT(lit.str; MOBILE []BYTE "user_2"), MOBILE LIT(lit.float; 2000.5(REAL64))))
     SEQ
         SKIP
 :

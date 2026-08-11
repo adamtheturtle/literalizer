@@ -33,6 +33,7 @@ from literalizer.exceptions import (
     InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
+    UnrepresentableNullError,
 )
 
 
@@ -349,6 +350,17 @@ class CommandCallStyle:
     arg_separator: str
 
 
+@dataclasses.dataclass(frozen=True)
+class DottedCommandCallStyle(CommandCallStyle):
+    """Command calls with a distinct style for dotted member calls.
+
+    Some command-oriented languages use command syntax for free functions but
+    conventional parenthesized syntax for member methods.
+    """
+
+    dotted_call_style: PositionalCallStyle
+
+
 CallStyle = (
     PositionalCallStyle
     | KeywordCallStyle
@@ -356,6 +368,7 @@ CallStyle = (
     | PostfixCallStyle
     | PrefixCallStyle
     | CommandCallStyle
+    | DottedCommandCallStyle
 )
 """Tagged union describing how a language passes call arguments."""
 
@@ -2529,6 +2542,25 @@ def reject_empty_dicts(*, data: Value, language_name: str) -> None:
             "distinction is lost on round-trip."
         )
         raise UnrepresentableEmptyDictError(msg)
+
+
+@beartype
+def reject_nulls(*, data: Value, language_name: str) -> None:
+    """Reject null anywhere when it collapses onto the empty string."""
+    match data:
+        case None:
+            raise UnrepresentableNullError(
+                language_name=language_name,
+                conflated_value="the empty string",
+            )
+        case dict():
+            for value in data.values():
+                reject_nulls(data=value, language_name=language_name)
+        case list() | set():
+            for item in data:
+                reject_nulls(data=item, language_name=language_name)
+        case _:
+            return
 
 
 @beartype
