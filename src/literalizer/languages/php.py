@@ -124,7 +124,7 @@ def _format_string_multiline(value: str) -> str:
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Fall back to an escaped PHP literal for embedded NUL."""
+    """Fall back to an escaped PHP literal for an embedded null byte."""
     if "\0" in value:
         return format_string_backslash_dollar_nul_hex(value=value)
     return format_string_backslash_single_minimal(value=value)

@@ -113,7 +113,7 @@ def _format_perl_string_multiline(value: str) -> str:
 
 @beartype
 def _format_perl_string_single(value: str) -> str:
-    """Fall back to an escaped Perl literal for embedded NUL."""
+    """Fall back to an escaped Perl literal for an embedded null byte."""
     if "\0" in value:
         return _format_perl_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)

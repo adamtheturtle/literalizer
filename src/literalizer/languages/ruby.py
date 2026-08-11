@@ -121,7 +121,7 @@ _format_string_multiline_fallback = make_backslash_string_formatter(
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Fall back to an escaped Ruby literal for embedded NUL."""
+    """Fall back to an escaped Ruby literal for an embedded null byte."""
     if "\0" in value:
         return _format_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
