@@ -22,7 +22,6 @@ input_format = "json5"
 languages = [
   "C",
   "CSharp",
-  "Cobol",
   "Cpp",
   "D",
   "Elm",
