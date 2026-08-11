@@ -469,6 +469,35 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _JavaTerminatedValue:
+    """A Java value split before its trailing line comments."""
+
+    code: str
+    trailing: str
+
+
+@beartype
+def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
+    """Keep a statement terminator ahead of trailing ``//`` comments."""
+    lines = value.split(sep="\n")
+    split_index = next(
+        (
+            index + 1
+            for index, line in reversed(list(enumerate(iterable=lines)))
+            if not line.lstrip().startswith("//")
+        ),
+        0,
+    )
+    if split_index == len(lines):
+        return _JavaTerminatedValue(code=value, trailing="")
+    return _JavaTerminatedValue(
+        code="\n".join(lines[:split_index]),
+        trailing="\n" + "\n".join(lines[split_index:]),
+    )
+
+
+@beartype
 def _format_java_var_declaration(
     name: str,
     value: str,
@@ -476,7 +505,8 @@ def _format_java_var_declaration(
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a ``var`` declaration."""
-    return f"var {name} = {value};"
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"var {name} = {terminated.code};{terminated.trailing}"
 
 
 @beartype
@@ -486,7 +516,8 @@ def _format_java_assignment(
     _data: Value,
 ) -> str:
     """Format a Java assignment."""
-    return f"{name} = {value};"
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"{name} = {terminated.code};{terminated.trailing}"
 
 
 @beartype
@@ -530,7 +561,8 @@ def _format_java_typed_declaration(
         set_outer=set_outer,
     )
     prefix = _java_modifier_prefix(modifiers=modifiers)
-    return f"{prefix}{hint} {name} = {value};"
+    terminated = _java_split_trailing_line_comments(value=value)
+    return f"{prefix}{hint} {name} = {terminated.code};{terminated.trailing}"
 
 
 @beartype
@@ -549,7 +581,8 @@ def _apply_java_object_nil_declaration(
     if modifiers:
         return typed_formatter(name, value, data, modifiers)
     if data is None:
-        return f"Object {name} = {value};"
+        terminated = _java_split_trailing_line_comments(value=value)
+        return f"Object {name} = {terminated.code};{terminated.trailing}"
     return base_formatter(name, value, data, modifiers)
 
 
