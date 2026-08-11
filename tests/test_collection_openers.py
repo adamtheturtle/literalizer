@@ -6,7 +6,7 @@ from literalizer._formatters.collection_openers import (
     sequence_surrogate_set_open,
 )
 from literalizer._language import Language
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.languages import Cpp, Haxe, Nim, Raku
 
 
@@ -24,8 +24,14 @@ def test_sequence_surrogate_set_open_delegates() -> None:
 
 def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     """C++'s rejected surrogate still has internally consistent typing."""
+
+    def make_set(*items: Scalar) -> Value:
+        """Return a recursively typed scalar set."""
+        result: set[Scalar] = set(items)
+        return result
+
     language = Cpp()
-    nested_set: Value = {1, 2}
+    nested_set = make_set(1, 2)
 
     assert language.set_format_config.set_open([1, "two"]).startswith(
         "std::vector<std::variant<"
@@ -36,7 +42,9 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     assert "#include <variant>" in language.data_dependent_preamble(
         [nested_set, "two"]
     )
-    assert "#include <variant>" in language.data_dependent_preamble({1, "two"})
+    assert "#include <variant>" in language.data_dependent_preamble(
+        make_set(1, "two")
+    )
 
     cpp14 = Cpp(language_version=Cpp.version_formats.CPP14)
     outer: Value = [nested_set, "two"]
