@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import itertools
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -1330,13 +1331,18 @@ _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
 @beartype
-def _cpp_record_field_identifier(key: str, /) -> str:
+def _cpp_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the C++ ``struct`` member name for a dict *key*.
 
     C++ member identifiers are the dict keys verbatim (no case
     conversion), matching the designated-initializer literal form
     ``Record0{.id = 1, ...}``.
     """
+    if key in reserved_identifiers:
+        msg = f"C++ record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -3258,7 +3264,10 @@ class Cpp(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
-            field_identifier=_cpp_record_field_identifier,
+            field_identifier=functools.partial(
+                _cpp_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
             render_literal=(

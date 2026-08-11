@@ -86,7 +86,7 @@ subroutine main_declaration()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fstr("48656c6c6f"), &
+        fstr('48656c6c6f'), &
         flist([fval_t :: ]) &
     ])
 end subroutine main_declaration
@@ -96,7 +96,7 @@ subroutine main_assignment()
     implicit none
     type(fval_t) :: my_data
     my_data = flist([fval_t :: &
-        fstr("48656c6c6f"), &
+        fstr('48656c6c6f'), &
         flist([fval_t :: ]) &
     ])
 end subroutine main_assignment

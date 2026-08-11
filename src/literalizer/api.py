@@ -32,11 +32,28 @@ from literalizer._literalize import (
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
+    InvalidVariableModifierError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+
+
+def _validate_variable_modifiers(
+    *,
+    language: Language,
+    variable_form: VariableForm | None,
+) -> None:
+    """Reject declaration modifiers owned by another language."""
+    if not isinstance(variable_form, NewVariable | BothVariableForms):
+        return
+    for modifier in variable_form.modifiers:
+        if not isinstance(modifier, language.modifiers):
+            raise InvalidVariableModifierError(
+                language_name=type(language).__name__,
+                modifier=modifier,
+            )
 
 
 @beartype
@@ -92,6 +109,9 @@ def literalize(
         wrap_in_file: If ``True``, assemble :attr:`code` as a
             complete, valid source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.
+            Some back ends require companion support files; in particular,
+            Ada output imports the ``A_Stub`` package shipped in
+            ``scripts/a_stub.ads`` and ``scripts/a_stub.adb``.
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
@@ -182,6 +202,10 @@ def literalize(
             to ``False`` (i.e. it cannot represent a bare value at
             file-statement scope).
     """
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -413,13 +437,16 @@ def literalize_call(
             zero-argument constructor ``p2 = Playlist()`` is produced by
             the latter with a ``[[]]`` source.
         wrap_in_file: If ``True``, assemble :attr:`code` as a
-            complete, self-contained source file using the language's
+            complete source file using the language's
             ``wrap_in_file`` method and prepend :attr:`preamble`.  A
             no-op stub for *target_function* is also injected so the
             generated file does not reference an undefined name; when
             a *call_transform* is supplied the wrapper name it
             introduces is not stubbed — callers that transform calls
             are responsible for providing that definition themselves.
+            Some back ends require companion support files; Ada imports the
+            ``A_Stub`` package shipped in ``scripts/a_stub.ads`` and
+            ``scripts/a_stub.adb``.
             When set, :attr:`preamble` and :attr:`body_preamble`
             on the result are empty tuples (their content has been
             folded into :attr:`code`).
@@ -538,6 +565,10 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent
         # side-effect bug for any non-pure target.  Reject up front so

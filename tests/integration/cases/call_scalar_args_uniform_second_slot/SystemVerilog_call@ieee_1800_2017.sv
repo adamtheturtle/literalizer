@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -14,6 +14,6 @@ task process(input _VVal value, input _VVal label); endtask
 initial begin
 process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a"});
 process(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "b"});
-process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "c"});
+process(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "c"});
 end
 endmodule

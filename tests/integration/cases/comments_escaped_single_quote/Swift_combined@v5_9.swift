@@ -1,4 +1,4 @@
-var my_data: Any = [
+var my_data = [
     "key": "it's here",  // a comment
 ]
 my_data = [

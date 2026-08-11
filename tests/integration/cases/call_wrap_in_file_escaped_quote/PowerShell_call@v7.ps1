@@ -1,2 +1,2 @@
 function process {}
-process("a`"b")
+process "a`"b"

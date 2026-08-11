@@ -1,1 +1,1 @@
-let my_data: Any = [String: String]()
+let my_data = [String: String]()

@@ -10,8 +10,8 @@ let single_var : val_t = OList [
     OInt 6
 ]
 let repeated_var : val_t = OInt 1
-let _ = process(repeated_var, 1)
-let _ = process(single_var, 0)
-let _ = process(repeated_var, 8)
+let _ = process(repeated_var, OInt 1)
+let _ = process(single_var, OInt 0)
+let _ = process(repeated_var, OInt 8)
 
 end
