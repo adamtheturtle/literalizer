@@ -1,4 +1,4 @@
-let my_data: Any = (
+let my_data = (
     1000000,
     -1234,
     255,

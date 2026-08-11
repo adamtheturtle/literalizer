@@ -150,8 +150,9 @@ class R(metaclass=LanguageCls):
 
     Dicts are represented as named ``list()`` calls where each entry is
     written as ``"key" = value``.  R's parser rejects zero-length names, so
-    by default **dict keys that are empty strings are emitted as positional
-    (unnamed) list elements** rather than as ``"" = value``.
+    by default dict keys that are empty strings raise
+    :class:`~literalizer.exceptions.InvalidDictKeyError`.  Positional
+    (unnamed) list elements are available as an explicit opt-in.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -581,7 +582,7 @@ class R(metaclass=LanguageCls):
 
     date_format: DateFormats = DateFormats.R
     datetime_format: DatetimeFormats = DatetimeFormats.R
-    empty_dict_key: EmptyDictKey = EmptyDictKey.POSITIONAL
+    empty_dict_key: EmptyDictKey = EmptyDictKey.ERROR
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
     set_format: SetFormats = SetFormats.SET

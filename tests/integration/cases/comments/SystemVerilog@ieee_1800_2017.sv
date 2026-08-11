@@ -1,4 +1,4 @@
-typedef enum int {_VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
 typedef struct {
     _VTag tag;
     longint i;
@@ -16,7 +16,7 @@ static _VKV my_data[] = '{
     _VKV'{k: "host", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "localhost"}},  // default host
     _VKV'{k: "port", v: _VVal'{tag: _VVAL_INT, i: 8080, r: 0.0, s: ""}},
     // Enable debug mode
-    _VKV'{k: "debug", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}}
+    _VKV'{k: "debug", v: _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}}
 };
 end
 endmodule

@@ -1,4 +1,4 @@
-let my_data: Any = [
+let my_data: [String: Any] = [
     "scores": [10, 20, 30],
     "args": [1, "email", "a@gmail.com", 100],
 ]
