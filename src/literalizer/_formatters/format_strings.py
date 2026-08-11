@@ -165,6 +165,8 @@ def format_string_concat_control(
     control_char_template: str,
     concat_operator: str,
     escape_backslash: bool,
+    multi_open: str,
+    multi_close: str,
 ) -> Callable[[str], str]:
     """Return a string formatter that splits on control characters and
     concatenates parts with a language-specific operator.
@@ -185,6 +187,9 @@ def format_string_concat_control(
             quote_escape="''",
             control_char_template="achar({})",
             concat_operator=" // ",
+            escape_backslash=False,
+            multi_open="",
+            multi_close="",
         )
         format_string("hello")  # => "'hello'"
     """
@@ -200,6 +205,8 @@ def format_string_concat_control(
             concat_operator=concat_operator,
             escape_backslash=escape_backslash,
             empty=empty,
+            multi_open=multi_open,
+            multi_close=multi_close,
         )
 
     return _format
@@ -215,6 +222,8 @@ def _apply_concat_control(
     concat_operator: str,
     escape_backslash: bool,
     empty: str,
+    multi_open: str,
+    multi_close: str,
 ) -> str:
     """Format a string with control character concatenation."""
     control_char_threshold = 32
@@ -236,7 +245,7 @@ def _apply_concat_control(
         case [single]:
             return single
         case _:
-            return concat_operator.join(parts)
+            return f"{multi_open}{concat_operator.join(parts)}{multi_close}"
 
 
 @beartype

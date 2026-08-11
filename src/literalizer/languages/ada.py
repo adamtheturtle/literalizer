@@ -1038,6 +1038,8 @@ class Ada(metaclass=LanguageCls):
             control_char_template="Character'Val({})",
             concat_operator=" & ",
             escape_backslash=False,
+            multi_open="",
+            multi_close="",
         )
 
         def _format(value: str) -> str:

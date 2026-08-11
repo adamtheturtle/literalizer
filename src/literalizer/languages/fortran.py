@@ -89,6 +89,8 @@ def _format_fortran_string(value: str) -> str:
         control_char_template="achar({})",
         concat_operator=" // ",
         escape_backslash=False,
+        multi_open="",
+        multi_close="",
     )(value)
 
 

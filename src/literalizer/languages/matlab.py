@@ -108,30 +108,15 @@ def _decode_matlab_string_expr(expr: str) -> str:
     return "".join(raw)
 
 
-@beartype
-def _matlab_char_key(s: str) -> str:
-    """Build a MATLAB char-array expression for a struct key.
-
-    Single quotes are doubled for valid char-vector literals.  Control
-    characters (code points 0-31) cannot appear literally inside a
-    MATLAB char vector, so they are emitted as ``char(N)`` calls and
-    concatenated with ``[...]``.
-    """
-    control_char_threshold = 32
-    parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
-        if not segment:
-            continue
-        if len(segment) == 1 and ord(segment) < control_char_threshold:
-            parts.append(f"char({ord(segment)})")
-        else:
-            escaped = segment.replace("'", "''")
-            parts.append(f"'{escaped}'")
-    if not parts:
-        return "''"
-    if len(parts) == 1:
-        return parts[0]
-    return "[" + ", ".join(parts) + "]"
+_matlab_char_key = format_string_concat_control(
+    quote_char="'",
+    quote_escape="''",
+    control_char_template="char({})",
+    concat_operator=", ",
+    escape_backslash=False,
+    multi_open="[",
+    multi_close="]",
+)
 
 
 @beartype
@@ -161,7 +146,7 @@ def _format_matlab_dict_entry(
             "digits, and underscores."
         )
         raise InvalidDictKeyError(msg)
-    key_expr = _matlab_char_key(s=inner)
+    key_expr = _matlab_char_key(inner)
     if formatted_value.startswith("{") and formatted_value.endswith("}"):
         formatted_value = f"{{{formatted_value}}}"
     return f"{key_expr}, {formatted_value}"
@@ -183,7 +168,7 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
 @beartype
 def _containers_map_open(data: dict[Scalar, Value]) -> str:
     """Build the ``containers.Map`` opener with all keys collected."""
-    keys = ", ".join(_matlab_char_key(s=k) for k in data if isinstance(k, str))
+    keys = ", ".join(_matlab_char_key(k) for k in data if isinstance(k, str))
     return f"containers.Map({{{keys}}}, {{"
 
 
@@ -843,6 +828,8 @@ class Matlab(metaclass=LanguageCls):
             control_char_template="char({})",
             concat_operator=" + ",
             escape_backslash=True,
+            multi_open="",
+            multi_close="",
         )
 
     @cached_property
