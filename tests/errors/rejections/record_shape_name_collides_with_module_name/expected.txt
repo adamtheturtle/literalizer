@@ -1,3 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-Java -> InvalidRecordNameError: record_shape_names entry for keys ['id', 'name'] maps to 'Entry', which collides with the wrapper class name (module_name).

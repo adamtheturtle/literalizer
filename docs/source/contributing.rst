@@ -149,15 +149,19 @@ A rejection that holds for a family of languages -- every language with a
 ``json_type`` refusing a non-string dict key, every language taking
 ``record_shape_names`` refusing a name that is not PascalCase -- is declared
 once under :file:`tests/errors/rejections/`.  Each directory holds a
-:file:`rejection.toml` and an :file:`expected.txt` golden file.  The golden
-opens with the split of the languages the manifest selected, then records what
-each raised, one line per case:
+:file:`rejection.toml` and an :file:`expected.toml` golden file.  The golden
+opens with the split of the languages the manifest selected, then groups what
+each raised under a table per exception type:
 
-.. code-block:: text
+.. code-block:: toml
 
    # languages rejecting: 21; languages accepting: 0
 
-   C[CJSON] -> UnrepresentableInputError: C json_type can only represent dict keys as JSON object strings, not int
+   [UnrepresentableInputError]
+   "C[CJSON]" = "C json_type can only represent dict keys as JSON object strings, not int"
+
+A language raising a different exception from the rest of its family therefore
+appears as its own table rather than as a word buried in a line.
 
 A case is keyed by its language, then by the option member it ran under and the
 declared value it substituted, if the manifest varies either.  An option member

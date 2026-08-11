@@ -1,15 +1,16 @@
 """Golden-file tests for the declared per-language rejections.
 
 Each manifest under ``rejections/`` runs its call against every
-language it selects and records what was raised, one line per case, in
-that manifest's ``expected.txt``.  A language that joins a manifest's
-gates -- a new language declaring ``json_type``, say -- shows up as a
-new line rather than as silence.
+language it selects and records what was raised in that manifest's
+``expected.toml``: a table per exception type, a line per case.  A
+language that joins a manifest's gates -- a new language declaring
+``json_type``, say -- shows up as a new line rather than as silence.
 """
 
 from typing import assert_never
 
 import pytest
+import tomlkit
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -98,21 +99,35 @@ def test_rejection_messages(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Every selected language raises, with the golden file's message."""
-    accepting = len(manifest.accepting_languages)
-    header = (
-        f"# languages rejecting: "
-        f"{len(selected_languages(manifest=manifest)) - accepting}"
-        f"; languages accepting: {accepting}"
-    )
-    lines: list[str] = [header, ""]
+    messages_by_exception: dict[str, dict[str, str]] = {}
     for case in rejection_cases(manifest=manifest):
         with pytest.raises(expected_exception=manifest.exceptions) as caught:
             _run(case=case, call=manifest.call)
         raised = caught.value
-        lines.append(f"{case.case_id} -> {type(raised).__name__}: {raised}")
+        raised_by = messages_by_exception.setdefault(type(raised).__name__, {})
+        raised_by[case.case_id] = str(object=raised)
+    accepting = len(manifest.accepting_languages)
+    document = tomlkit.document()
+    document.add(
+        key=tomlkit.comment(
+            string=(
+                f"languages rejecting: "
+                f"{len(selected_languages(manifest=manifest)) - accepting}"
+                f"; languages accepting: {accepting}"
+            ),
+        ),
+    )
+    # One table per exception type, so a language raising a different
+    # one from the rest of its family stands out as its own table
+    # rather than as a word buried in a line.
+    for exception_name in sorted(messages_by_exception):
+        table = tomlkit.table()
+        for case_id, message in messages_by_exception[exception_name].items():
+            table[case_id] = message
+        document[exception_name] = table
     check_golden(
-        contents="".join(f"{line}\n" for line in lines),
-        extension=".txt",
+        contents=tomlkit.dumps(data=document),
+        extension=".toml",
         golden_path=manifest.golden_path,
         file_regression=file_regression,
     )

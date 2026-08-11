@@ -8,7 +8,8 @@ for a family of languages is declared once and a language joining that
 family is covered the day it lands.
 
 The manifest never carries the message a language raises with.  That
-is kept in a golden file next to the manifest, one line per case.
+is kept in a golden file next to the manifest, which is itself TOML so
+that a malformed one fails the repository's own TOML check.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ REJECTIONS_DIR = Path(__file__).parent / "rejections"
 """Where the declared rejections live."""
 
 MANIFEST_NAME = "rejection.toml"
-GOLDEN_NAME = "expected.txt"
+GOLDEN_NAME = "expected.toml"
 
 VALUE_PLACEHOLDER = "value"
 """The only placeholder a manifest's constructor arguments substitute."""
