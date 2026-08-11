@@ -541,9 +541,9 @@ class Perl(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="Inf",
-        negative_infinity="-Inf",
-        nan="NaN",
+        positive_infinity="9**9**9",
+        negative_infinity="-(9**9**9)",
+        nan="(9**9**9) - (9**9**9)",
     ):
         """Float format options."""
 
