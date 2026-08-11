@@ -1572,12 +1572,13 @@ class Crystal(metaclass=LanguageCls):
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             )
-        if self.string_format.name == "MULTILINE":
-            return _format_crystal_percent_dict_entry
-        return dict_entry_with_separator(
+        native_formatter = dict_entry_with_separator(
             separator=" => ",
             format_value=passthrough_sequence_entry,
         )
+        return {
+            "MULTILINE": _format_crystal_percent_dict_entry,
+        }.get(self.string_format.name, native_formatter)
 
     @cached_property
     def format_variable_declaration(
