@@ -2126,9 +2126,9 @@ class Language(Protocol):
     checks_raw_control_dict_keys_separately: bool
     """Whether dict keys bypass generic formatted-string validation.
 
-    Set this when the backend either rejects control-bearing keys through a
-    dedicated contract or derives a safe identifier without emitting the
-    formatted string key.
+        Set this when the back-end either rejects control-bearing keys
+    through a dedicated contract or derives a safe identifier without
+    emitting the formatted string key.
     """
 
     @property
