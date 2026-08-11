@@ -12,8 +12,9 @@ no golden-file surface and needs unit coverage.
 import pytest
 
 from literalizer import InputFormat, literalize
+from literalizer._language import Language
 from literalizer.exceptions import UnrepresentableSpecialFloatError
-from literalizer.languages import Gleam, Hcl
+from literalizer.languages import Elixir, Erlang, Gleam, Hcl
 
 
 @pytest.mark.parametrize(
@@ -34,6 +35,24 @@ def test_gleam_special_floats_raise(yaml_value: str) -> None:
             source=f"- {yaml_value}\n",
             input_format=InputFormat.YAML,
             language=Gleam(),
+        )
+
+
+@pytest.mark.parametrize(argnames="language", argvalues=[Erlang(), Elixir()])
+@pytest.mark.parametrize(
+    argnames="yaml_value",
+    argvalues=[".inf", "-.inf", ".nan"],
+    ids=["positive_infinity", "negative_infinity", "nan"],
+)
+def test_beam_special_floats_raise(
+    language: Language, yaml_value: str
+) -> None:
+    """BEAM languages reject non-numeric atom substitutions."""
+    with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):
+        literalize(
+            source=f"- {yaml_value}\n",
+            input_format=InputFormat.YAML,
+            language=language,
         )
 
 

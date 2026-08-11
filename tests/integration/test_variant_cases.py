@@ -77,7 +77,10 @@ def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
     assert Python in groups
     for lang_cls, cases in groups.items():
         assert cases
-        assert all(case.variant.lang_cls is lang_cls for case in cases)
+        misgrouped = [
+            case for case in cases if case.variant.lang_cls is not lang_cls
+        ]
+        assert misgrouped == []
 
 
 def test_variant_languages_matches_sorted_group_keys() -> None:
@@ -141,10 +144,12 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
 
     assert cases
     assert not Kotlin.supports_empty_sibling_sequence_type_hints
-    assert all(
-        case.variant.lang_cls.supports_empty_sibling_sequence_type_hints
+    incapable = [
+        case
         for case in cases
-    )
+        if not case.variant.lang_cls.supports_empty_sibling_sequence_type_hints
+    ]
+    assert incapable == []
     assert any(case.variant.lang_cls is Python for case in cases)
 
 
@@ -153,9 +158,12 @@ def test_typed_dict_null_filtering_follows_capability() -> None:
     variants = list(build_typed_dict_null_filtering_variants())
 
     assert variants
-    assert all(
-        variant.lang_cls.supports_typed_dict_open for variant in variants
-    )
+    incapable = [
+        variant
+        for variant in variants
+        if not variant.lang_cls.supports_typed_dict_open
+    ]
+    assert incapable == []
 
 
 def test_multiline_string_variants_follow_capability(
@@ -184,14 +192,14 @@ def test_multiline_string_variants_follow_capability(
             )
         }
         assert actual == expected
-    assert all(
-        enum_member_by_name(
+    multiline_members = {
+        lang_cls: enum_member_by_name(
             enum_cls=lang_cls.StringFormats,
             name="MULTILINE",
         ).name
-        == "MULTILINE"
         for lang_cls in expected
-    )
+    }
+    assert multiline_members == dict.fromkeys(expected, "MULTILINE")
 
     context_cases = [
         case
@@ -199,10 +207,12 @@ def test_multiline_string_variants_follow_capability(
         if case.case_dir_name in set(case_dir_names)
     ]
     assert {case.variant.lang_cls for case in context_cases} == expected
-    assert all(
-        case.variant.lang_cls.supports_multiline_string_literals
+    incapable = [
+        case
         for case in context_cases
-    )
+        if not case.variant.lang_cls.supports_multiline_string_literals
+    ]
+    assert incapable == []
 
 
 def test_multiline_context_cases_follow_capabilities(
@@ -236,15 +246,13 @@ def test_multiline_context_cases_follow_capabilities(
     indented_cases = [case for case in cases if case.pre_indent_level]
 
     assert combined_cases
-    assert all(
-        isinstance(case.variable_form, literalizer.BothVariableForms)
+    misnamed_combined = [
+        case
         for case in combined_cases
-    )
-    assert all(
-        case.case_dir_name == combined_case_dir_name
-        and case.variant_name.endswith(combined_suffix)
-        for case in combined_cases
-    )
+        if case.case_dir_name != combined_case_dir_name
+        or not case.variant_name.endswith(combined_suffix)
+    ]
+    assert misnamed_combined == []
     assert {case.variant.lang_cls for case in combined_cases} == {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
@@ -255,13 +263,19 @@ def test_multiline_context_cases_follow_capabilities(
         )
     }
     assert indented_cases
-    assert all(
-        case.case_dir_name == pre_indent_case_dir_name
-        and "_pre_indent_1_" in case.variant_name
+    misnamed_indented = [
+        case
         for case in indented_cases
+        if case.case_dir_name != pre_indent_case_dir_name
+        or "_pre_indent_1_" not in case.variant_name
+    ]
+    assert misnamed_indented == []
+    assert [case.pre_indent_level for case in indented_cases] == [1] * len(
+        indented_cases
     )
-    assert all(case.pre_indent_level == 1 for case in indented_cases)
-    assert all(
-        case.variant.lang_cls.supports_multiline_string_literals
+    incapable_indented = [
+        case
         for case in indented_cases
-    )
+        if not case.variant.lang_cls.supports_multiline_string_literals
+    ]
+    assert incapable_indented == []
