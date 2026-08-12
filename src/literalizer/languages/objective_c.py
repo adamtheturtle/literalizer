@@ -445,6 +445,7 @@ class ObjectiveC(metaclass=LanguageCls):
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "objective_c"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
+        round_trip_capabilities=frozenset(),
         modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,

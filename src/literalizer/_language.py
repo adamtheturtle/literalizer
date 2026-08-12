@@ -82,6 +82,15 @@ class NewVariableNameSyntax(enum.Enum):
         return re.fullmatch(pattern=pattern, string=name) is not None
 
 
+class RoundTripCapability(enum.StrEnum):
+    """Adversarial corpus groups supported by a target runtime."""
+
+    I64_BOUNDARIES = "i64_boundaries"
+    INTERPOLATION_STRINGS = "interpolation_strings"
+    CONTROL_STRINGS = "control_strings"
+    EMBEDDED_NUL = "embedded_nul"
+
+
 @beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* cannot be used for a new variable declaration."""
@@ -983,6 +992,7 @@ class VariantMetadata:
     sequence format that stays compatible with it.
     """
 
+    round_trip_capabilities: frozenset[RoundTripCapability]
     modifier_sequence_format_overrides: dict[str, str]
     string_literals_escape_null_byte: bool
     supports_ref_elements_in_tuple_strategy: bool

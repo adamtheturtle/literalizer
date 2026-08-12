@@ -13,6 +13,10 @@ type coverage (wide ints, large-exponent / negative-zero floats, unicode
 and escaped strings, empty/nested arrays and objects, heterogeneous
 arrays) lives in that one file rather than in many small cases.
 
+Special floats are not capability-corpus entries because strict JSON cannot
+transport NaN or infinity. They remain language error/golden cases until a
+typed, non-JSON round-trip transport is introduced.
+
 The helpers below collapse the boilerplate shared across the per-language
 scripts: :func:`trim_keys` drops the language-specific lossy fields from
 the input JSON before re-serialization, :func:`literalize_new_variable`
@@ -22,7 +26,6 @@ of :class:`Step` subprocesses (compile then run, or just run), and hands
 the final stdout to :func:`verify`.
 """
 
-import enum
 import json
 import subprocess
 import sys
@@ -36,6 +39,7 @@ from literalizer import (
     Language,
     LiteralizeResult,
     NewVariable,
+    RoundTripCapability,
     literalize,
 )
 
@@ -43,15 +47,6 @@ INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
 CAPABILITY_INPUT_PATH = (
     Path(__file__).resolve().parent / "roundtrip_capability_input.json"
 )
-
-
-class RoundTripCapability(enum.StrEnum):
-    """Adversarial corpus groups a target runtime may opt into."""
-
-    I64_BOUNDARIES = "i64_boundaries"
-    INTERPOLATION_STRINGS = "interpolation_strings"
-    CONTROL_STRINGS = "control_strings"
-    EMBEDDED_NUL = "embedded_nul"
 
 
 def input_for_capabilities(
@@ -76,13 +71,15 @@ def read_input() -> str:
     return INPUT_PATH.read_text(encoding="utf-8")
 
 
-def expected() -> dict[str, object]:
+def expected(*, json_text: str | None = None) -> dict[str, object]:
     """Return the parsed value the round-trip must reproduce.
 
     The shared ``roundtrip_input.json`` document is a top-level JSON
     object, so the parsed value is always a ``dict``.
     """
-    parsed: dict[str, object] = json.loads(s=read_input())
+    parsed: dict[str, object] = json.loads(
+        s=read_input() if json_text is None else json_text
+    )
     return parsed
 
 
@@ -90,6 +87,7 @@ def verify(
     label: str,
     produced_json: str,
     exclude_keys: tuple[str, ...],
+    expected_json: str | None = None,
 ) -> None:
     """Compare *produced_json* to :func:`expected`, exiting 1 on mismatch.
 
@@ -103,7 +101,7 @@ def verify(
     program collapses the 26-digit literal to a JS ``number`` before
     serialization).  Pass ``()`` when no field needs to be skipped.
     """
-    want = expected()
+    want = expected(json_text=expected_json)
     try:
         got: dict[str, object] = json.loads(s=produced_json)
     except json.JSONDecodeError as exc:
@@ -183,6 +181,7 @@ def execute(
     program: str,
     steps: Sequence[Step],
     excluded_keys: tuple[str, ...],
+    expected_json: str | None = None,
     extra_files: Mapping[str, str] | None = None,
 ) -> None:
     """Run *program* through *steps* and verify the final stdout.
@@ -230,5 +229,6 @@ def execute(
         label=label,
         produced_json=last_stdout,
         exclude_keys=excluded_keys,
+        expected_json=expected_json,
     )
     sys.stdout.write(f"{label} round-trip OK\n")
