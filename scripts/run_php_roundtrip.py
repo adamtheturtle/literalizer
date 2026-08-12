@@ -41,7 +41,7 @@ def _build_program(json_text: str) -> str:
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Php(string_format=Php.string_formats.SINGLE),
+        language=Php(),
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=0,
