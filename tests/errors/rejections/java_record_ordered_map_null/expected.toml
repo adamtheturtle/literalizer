@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Java = "Java's Map.entry() does not accept null values; remove the null-valued entry"
