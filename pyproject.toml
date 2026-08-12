@@ -575,6 +575,7 @@ exclude = [
     "repro.py",
     "tests/integration/cases/.*@.*",
 ]
+exclude_gitignore = true
 follow_untyped_imports = true
 strict = true
 plugins = [ "mypy_strict_kwargs" ]
@@ -603,7 +604,9 @@ project-excludes = [ "repro.py" ]
 [tool.pyright]
 typeCheckingMode = "strict"
 exclude = [
-    ".venv",
+    "**/.claude",
+    "**/.venv",
+    "**/venv",
     "repro.py",
 ]
 enableTypeIgnoreComments = false
