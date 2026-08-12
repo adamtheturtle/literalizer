@@ -110,6 +110,7 @@ from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
+    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -948,7 +949,7 @@ class Odin(metaclass=LanguageCls):
                     "floats (NaN / +Infinity / -Infinity) and "
                     "json.parse_string rejects them at runtime."
                 )
-                raise UnrepresentableInputError(msg)
+                raise UnrepresentableSpecialFloatError(msg)
             case _:
                 return
 
