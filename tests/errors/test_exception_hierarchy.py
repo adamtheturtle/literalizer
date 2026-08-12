@@ -5,9 +5,7 @@ from literalizer import LiteralizerError
 
 
 def test_every_literalizer_exception_has_public_base() -> None:
-    """Every exception declared by Literalizer shares one catchable
-    base.
-    """
+    """Every exception declared by Literalizer shares one public base."""
     exception_classes = [
         member
         for member in vars(literalizer.exceptions).values()
