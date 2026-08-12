@@ -3,6 +3,13 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.12.5
+------------
+
+- Require explicit round-trip capability metadata on every language and exercise Rust with the adversarial corpus.
+
+- Expose structured input paths and parser line and column positions on public exceptions.
+
 2026.08.12.4
 ------------
 
