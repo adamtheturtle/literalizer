@@ -3,5 +3,9 @@ var deep = %* {
     "_": "_"
 }
 var my_data = %* {
-    "a": {"b": {"c": deep}}
+    "a": {
+        "b": {
+            "c": deep
+        }
+    }
 }
