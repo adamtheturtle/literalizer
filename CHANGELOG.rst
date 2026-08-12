@@ -3,6 +3,11 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.12.2
+------------
+
+- ``Cpp(json_type=...)`` accepts an opt-in ``json_rendering=Cpp.json_renderings.INLINE_DOCUMENT`` constructor argument that renders the value as one inline JSON document handed to ``nlohmann::json::parse`` in a ``R"json(...)json"`` raw string, honoring ``collection_layout``, instead of the default structural ``nlohmann::json`` factory expressions.
+
 2026.08.12.1
 ------------
 
