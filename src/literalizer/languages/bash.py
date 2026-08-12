@@ -246,6 +246,8 @@ def _format_call_variable_declaration(
 class Bash(metaclass=LanguageCls):
     """Bash language specification."""
 
+    stringifies_nested_collections = True
+
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (

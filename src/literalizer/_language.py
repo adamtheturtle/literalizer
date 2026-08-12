@@ -1021,6 +1021,9 @@ class LanguageCls(type):
     or ``type: ignore``.
     """
 
+    stringifies_nested_collections: bool = False
+    """Whether nested collection syntax becomes string payload data."""
+
     language_id: str
     """Stable, implementation-neutral identifier for this language.
 
