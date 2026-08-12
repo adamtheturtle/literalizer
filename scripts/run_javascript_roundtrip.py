@@ -33,8 +33,7 @@ def _build_program(json_text: str) -> str:
     *json_text*.
     """
     result = roundtrip_common.literalize_new_variable(
-        language=JavaScript(
-        ),
+        language=JavaScript(),
         json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
