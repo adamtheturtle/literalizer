@@ -2033,7 +2033,7 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
         case dict():
             assert all(isinstance(key, str) for key in value)  # noqa: S101
             object_entries = (
-                "{" + _format_string_cpp_escaped(value=key) + ", "
+                "{" + _format_string_cpp_escaped(value=str(object=key)) + ", "
                 f"{_render_nlohmann_json_node(value=item)}}}"
                 for key, item in value.items()
             )
