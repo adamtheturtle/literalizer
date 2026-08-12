@@ -46,6 +46,7 @@ jobs:
         group: [fast, typecheck, pylint, docs]
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v7
@@ -680,6 +681,7 @@ jobs:
 
   lint-roc:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Roc has no stable release, and the upstream ``nightly`` GitHub
     # release only ever retains the moving
     # ``roc_nightly-linux_x86_64-latest.tar.gz`` asset -- old dated
@@ -828,6 +830,7 @@ jobs:
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -872,6 +875,7 @@ jobs:
   # so each long-running per-fixture loop fans out instead of serializing.
   lint-npm-installed:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -944,6 +948,7 @@ jobs:
   # check instead of after it.
   lint-typescript-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -990,6 +995,7 @@ jobs:
   # meaningful wall-clock for ~10-15s of extra setup.
   lint-elm:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1026,6 +1032,7 @@ jobs:
   # execute pass runs in parallel with the format + compile-only pass.
   lint-elm-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1066,6 +1073,7 @@ jobs:
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1185,6 +1193,7 @@ jobs:
   # steps so the .NET runtime startup is paid once for the whole job.
   lint-dotnet:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1273,6 +1282,7 @@ jobs:
 
   lint-sml:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1313,6 +1323,7 @@ jobs:
 
   lint-elixir:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Every Elixir fixture on disk carries the tag from
     # ``Elixir.VersionFormats`` (e.g. `Elixir@v1_14.ex`); bumping the
     # compiler pin and the enum member name are reviewed together.
@@ -1358,6 +1369,7 @@ jobs:
 
   lint-erlang:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Every Erlang fixture on disk carries the tag from
     # ``Erlang.VersionFormats`` (e.g. `Erlang@otp_25.erl`); bumping the
     # OTP pin and the enum member name are reviewed together.
@@ -1430,6 +1442,7 @@ jobs:
 
   lint-gleam:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Every Gleam fixture on disk carries the tag from
     # ``Gleam.VersionFormats`` (e.g. `gleam_combined@v1.gleam`);
     # bumping the compiler pin and the enum member name are reviewed
@@ -1495,6 +1508,7 @@ jobs:
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1578,6 +1592,7 @@ jobs:
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1704,6 +1719,7 @@ jobs:
   # compile command and skips searching for a compile_commands.json.
   lint-c-tidy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1730,6 +1746,7 @@ jobs:
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1765,6 +1782,7 @@ jobs:
 
   lint-cobol:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       # Pin the GnuCOBOL toolchain so the implicitly installed compiler
       # does not drift. ``3.2`` supports the COBOL 2002 standard, which
@@ -1839,6 +1857,7 @@ jobs:
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1902,6 +1921,7 @@ jobs:
 
   lint-kotlin:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # 2.3.10's kotlin-scripting-jvm references a legacy
     # ``ScriptExpectedLocation`` class that is no longer shipped, so
     # ``K2JVMCompiler.exec("-script", ...)`` from inside a
@@ -1980,6 +2000,7 @@ jobs:
 
   lint-swift:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2025,6 +2046,7 @@ jobs:
 
   lint-ocaml:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2081,6 +2103,7 @@ jobs:
 
   lint-commonlisp:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # The ``LISP`` environment variable pins the SBCL build that
     # 40ants/setup-lisp installs to ``sbcl-bin/2.6.4`` (without the
     # version, ``sbcl-bin`` drifts to whatever is latest). SBCL
@@ -2139,6 +2162,7 @@ jobs:
 
   lint-scala:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2199,6 +2223,7 @@ jobs:
 
   lint-haxe:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2253,6 +2278,7 @@ jobs:
 
   lint-dart:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2325,6 +2351,7 @@ jobs:
 
   lint-julia:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2371,6 +2398,7 @@ jobs:
 
   lint-go:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2412,6 +2440,7 @@ jobs:
 
   lint-rust:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2477,6 +2506,7 @@ jobs:
 
   lint-r:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2527,6 +2557,7 @@ jobs:
 
   lint-d:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2585,6 +2616,7 @@ jobs:
 
   lint-crystal:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2646,6 +2678,7 @@ jobs:
   # parallel invocations without the workarounds.
   lint-mojo:
     runs-on: ubicloud-standard-4
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2677,6 +2710,7 @@ jobs:
 
   lint-nim:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Promote every Nim warning to a CI failure. Nim's
     # ``--warningAsError`` rejects ``all:on`` and bare ``on``, so list
     # each warning name explicitly. The catalogue comes from
@@ -2807,6 +2841,7 @@ jobs:
 
   lint-python:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2844,6 +2879,7 @@ jobs:
 
   lint-racket:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2883,6 +2919,7 @@ jobs:
 
   lint-raku:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # The pinned Rakudo ``2026.04`` release implements Raku language
     # version 6.d, the ``V6D`` default of ``Raku.language_version`` in
     # ``src/literalizer/languages/raku.py``; keep them in sync. Rakudo
@@ -2931,6 +2968,7 @@ jobs:
 
   lint-zig:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Every Zig fixture on disk carries the tag from
     # ``Zig.VersionFormats`` (e.g. `Zig@v0_12.zig`); bumping the
     # compiler pin and the enum member name are reviewed together.
@@ -2997,6 +3035,7 @@ jobs:
 
   lint-systemverilog:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3041,6 +3080,7 @@ jobs:
 
   lint-v:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3106,6 +3146,7 @@ jobs:
     # in sync. ``V2`` is a fixed language generation, so the pin is for
     # build reproducibility, not to track a moving standard.
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3162,6 +3203,7 @@ jobs:
     # ``ObjectiveC.language_version`` default in
     # ``src/literalizer/languages/objective_c.py``; keep them in sync.
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3235,6 +3277,7 @@ jobs:
       - lint-objectivec
       - lint-objectivec-tidy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: always()
     steps:
       - name: Check all jobs succeeded
