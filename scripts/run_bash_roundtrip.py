@@ -158,6 +158,8 @@ def _next_var(*, counter: list[int]) -> str:
 def _build_program(json_text: str) -> str:
     """Return a runnable Bash script literalized from *json_text*."""
     result = roundtrip_common.literalize_new_variable(
+        # The default double-quoted format is covered by PR #3528; retain
+        # this additional single-quoted run until that fix reaches main.
         language=Bash(string_format=Bash.string_formats.SINGLE),
         json_text=json_text,
         var_name=_VAR_NAME,

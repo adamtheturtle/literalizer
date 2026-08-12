@@ -111,7 +111,6 @@ from literalizer._language import (
     no_data_preamble,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
@@ -286,6 +285,41 @@ def _list_of_open(items: list[Any]) -> str:
 
 
 @beartype
+def _validate_no_null_map_values(data: Value) -> None:
+    """Reject null-valued map entries unsupported by ``Map.entry``."""
+    match data:
+        case dict():
+            for value in data.values():
+                if value is None:
+                    msg = (
+                        "Java's Map.entry() does not accept null values; "
+                        "remove the null-valued entry"
+                    )
+                    raise UnrepresentableInputError(msg)
+                _validate_no_null_map_values(data=value)
+        case list() | set():
+            for value in data:
+                _validate_no_null_map_values(data=value)
+        case _:
+            return
+
+
+@beartype
+def _walk_java_ordered_map_values(
+    *, data: OrderedMap, walk: Callable[[Value], None]
+) -> None:
+    """Validate direct ordered-map nulls, then walk through its values."""
+    for item in data.values():
+        if item is None:
+            msg = (
+                "Java's Map.entry() does not accept null values; "
+                "remove the null-valued entry"
+            )
+            raise UnrepresentableInputError(msg)
+        walk(item)
+
+
+@beartype
 def _java_box(type_name: str) -> str:
     """Return the boxed wrapper type for a Java primitive, or the type
     itself for reference types.
@@ -451,17 +485,7 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _JavaTerminatedValue:
-    r"""A Java value rewritten so a terminating ``;`` lands on the code
-    line, not on a trailing ``//`` line comment.
-
-    Attributes:
-        code: The portion of the original value preceding any trailing
-            ``//`` line comments.  The terminating ``;`` is appended
-            here.
-        trailing: The trailing ``//`` line comments (including the
-            leading ``\n`` separator) that follow the terminator.  Empty
-            when the value did not end with a line comment.
-    """
+    """A Java value split before its trailing line comments."""
 
     code: str
     trailing: str
@@ -469,10 +493,7 @@ class _JavaTerminatedValue:
 
 @beartype
 def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
-    """Split *value* at the boundary before any trailing ``//`` line
-    comments so a terminating ``;`` can be placed on the code line
-    rather than inside the comment.
-    """
+    """Keep a statement terminator ahead of trailing ``//`` comments."""
     lines = value.split(sep="\n")
     split_index = next(
         (
@@ -484,9 +505,10 @@ def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
     )
     if split_index == len(lines):
         return _JavaTerminatedValue(code=value, trailing="")
-    code = "\n".join(lines[:split_index])
-    trailing = "\n" + "\n".join(lines[split_index:])
-    return _JavaTerminatedValue(code=code, trailing=trailing)
+    return _JavaTerminatedValue(
+        code="\n".join(lines[:split_index]),
+        trailing="\n" + "\n".join(lines[split_index:]),
+    )
 
 
 @beartype
@@ -496,9 +518,7 @@ def _format_java_var_declaration(
     _data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a ``var`` declaration, terminating before any trailing
-    ``//`` line comment in *value*.
-    """
+    """Format a ``var`` declaration."""
     terminated = _java_split_trailing_line_comments(value=value)
     return f"var {name} = {terminated.code};{terminated.trailing}"
 
@@ -509,9 +529,7 @@ def _format_java_assignment(
     value: str,
     _data: Value,
 ) -> str:
-    """Format a Java assignment, terminating before any trailing ``//``
-    line comment in *value*.
-    """
+    """Format a Java assignment."""
     terminated = _java_split_trailing_line_comments(value=value)
     return f"{name} = {terminated.code};{terminated.trailing}"
 
@@ -1438,6 +1456,10 @@ class Java(metaclass=LanguageCls):
             self._validate_json_value_keys(data)
             return
         strategies = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is strategies.RECORD:
+            self._validate_record_null_map_values(data=data)
+        else:
+            _validate_no_null_map_values(data=data)
         formats = type(self.sequence_format)
         if (
             self.heterogeneous_strategy is strategies.RECORD
@@ -1453,12 +1475,52 @@ class Java(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
 
+    def _validate_record_null_map_values(self, data: Value) -> None:
+        """Reject nulls in maps that the record strategy leaves as
+        maps.
+        """
+        strategy = self._record_strategy
+        compute_record_shapes = strategy.behavior.compute_record_shapes
+        record_name_for_value = strategy.record_name_for_value
+        assert compute_record_shapes is not None  # noqa: S101
+        assert record_name_for_value is not None  # noqa: S101
+        compute_record_shapes(data)
+
+        @beartype
+        def _walk(value: Value) -> None:
+            """Walk nested values and distinguish records from maps."""
+            match value:
+                case OrderedMap():
+                    _walk_java_ordered_map_values(data=value, walk=_walk)
+                case dict():
+                    rendered_as_record = (
+                        record_name_for_value(value) is not None
+                    )
+                    for item in value.values():
+                        if item is None and not rendered_as_record:
+                            msg = (
+                                "Java's Map.entry() does not accept null "
+                                "values; remove the null-valued entry"
+                            )
+                            raise UnrepresentableInputError(msg)
+                        _walk(value=item)
+                case list() | set():
+                    for item in value:
+                        _walk(value=item)
+                case _:
+                    return
+
+        _walk(value=data)
+
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
         if self._json_type_active:
             return self._validate_json_value_keys
-        return no_validate_call_arg
+        strategies = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is strategies.RECORD:
+            return self._validate_record_null_map_values
+        return _validate_no_null_map_values
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:

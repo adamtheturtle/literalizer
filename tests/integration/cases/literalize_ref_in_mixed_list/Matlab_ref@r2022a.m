@@ -1,5 +1,5 @@
 refX = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = {
     refX,

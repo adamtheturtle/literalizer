@@ -1,5 +1,5 @@
 deep = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = struct(
     'a', struct(

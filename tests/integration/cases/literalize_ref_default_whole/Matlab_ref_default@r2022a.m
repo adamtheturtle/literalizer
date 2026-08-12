@@ -1,4 +1,4 @@
 my_var = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = my_var;

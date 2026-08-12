@@ -1,5 +1,5 @@
 item_var = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = struct(
     'items', {{item_var, struct('fallback', "value")}}

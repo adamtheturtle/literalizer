@@ -14,26 +14,3 @@ api = "constructor"
 kwargs = [
   { kind = "text", kwarg = "record_struct_name_prefix", value = "{value}" },
 ]
-
-[[accepts]]
-languages = [
-  "Cpp",
-  "Crystal",
-  "D",
-  "Go",
-  "Java",
-  "Kotlin",
-  "Nim",
-  "Odin",
-  "Python",
-  "Scala",
-  "Swift",
-  "V",
-  "Zig",
-]
-reason = """
-These languages take the prefix without checking its shape, so an
-invalid one reaches the rendered declaration.  Rust is the only
-language validating it today; this entry records the gap rather than
-endorsing it.  Tracked in issue #3558.
-"""

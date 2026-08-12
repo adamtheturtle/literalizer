@@ -2,6 +2,7 @@
 
 import pytest
 
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer._formatters.collection_openers import (
     sequence_surrogate_set_open,
 )
@@ -52,6 +53,44 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     outer: Value = [nested_set, "two"]
     assert cpp14.heterogeneous_behavior.compute_wrap_ids(outer) == frozenset(
         {id(outer)}
+    )
+
+
+def test_cpp_record_ordered_map_falls_back_for_distinct_record_types() -> None:
+    """Unlike uniform record lists, distinct list types use the base
+    opener.
+    """
+    language = Cpp(
+        heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+    )
+
+    result = literalize(
+        source=("!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"),
+        input_format=InputFormat.YAML,
+        language=language,
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+    )
+
+    assert "std::vector<std::pair<std::string, std::variant<" in result.code
+
+
+def test_cpp14_tuple_ordered_map_uses_rendered_record_value_type() -> None:
+    """C++14 tuple records and their ordered-map type agree."""
+    language = Cpp(
+        language_version=Cpp.version_formats.CPP14,
+        heterogeneous_strategy=Cpp.heterogeneous_strategies.TUPLE,
+    )
+
+    result = literalize(
+        source="!!omap\n- entries:\n  - id: 1\n",
+        input_format=InputFormat.YAML,
+        language=language,
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+    )
+
+    assert (
+        "std::vector<std::pair<std::string, std::vector<Record0>>>"
+        in result.code
     )
 
 

@@ -1,8 +1,8 @@
 valX = struct(
-    '_', "_"
+    'key', "value"
 );
 valY = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = {
     valX,

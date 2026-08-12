@@ -30,6 +30,7 @@ from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
+    reject_special_floats,
 )
 from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
@@ -852,7 +853,7 @@ class Cobol(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".cob"
     pygments_name = "cobol"
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
     dict_supports_heterogeneous_values = True
@@ -1654,7 +1655,10 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return reject_special_floats(
+            formatter=self.float_format,
+            language_name="COBOL",
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

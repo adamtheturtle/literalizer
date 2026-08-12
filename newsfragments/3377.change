@@ -1,1 +1,0 @@
-Speed up literalizing large documents.  The preamble phase, which every language pays regardless of its rendering strategy, now walks the parsed document with an explicit stack and stops as soon as it has seen every type it can report, rather than making a recursive call for every node twice over.  Generated output is unchanged.

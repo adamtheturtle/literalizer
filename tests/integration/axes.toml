@@ -629,6 +629,18 @@ layouts = [
   { layout = "MULTILINE", name_suffix = "_multiline" },
 ]
 
+[axes.record_nested_in_ordered_map]
+plan = "fixed_overrides"
+name_template = "{lang}_record_nested_in_ordered_map"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
+]
+
 [axes.record_nonrecord_dict_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_nonrecord_dict_field"

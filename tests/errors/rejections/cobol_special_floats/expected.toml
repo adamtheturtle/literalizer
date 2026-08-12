@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableSpecialFloatError]
+"Cobol['value: -.inf']" = "COBOL cannot represent special float -inf."
+"Cobol['value: .inf']" = "COBOL cannot represent special float inf."
+"Cobol['value: .nan']" = "COBOL cannot represent special float nan."

@@ -1,5 +1,5 @@
 myVar = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = struct(
     'key', myVar
