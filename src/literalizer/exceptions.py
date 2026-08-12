@@ -7,6 +7,21 @@ class LiteralizerError(Exception):
     """Base class for every public error raised by Literalizer."""
 
 
+class UnsupportedOptionError(LiteralizerError):
+    """Raised when a language does not accept a known constructor option.
+
+    Capability flags remain the preferred pre-construction check. This error
+    is the backstop when an option supported by another Literalizer language
+    is passed to a language that does not offer it.
+    """
+
+    def __init__(self, *, language_name: str, option: str) -> None:
+        """Create an ``UnsupportedOptionError``."""
+        super().__init__(f"{language_name} does not support option {option!r}")
+        self.language_name = language_name
+        self.option = option
+
+
 class ParseError(LiteralizerError):
     """Raised when input cannot be parsed into a data structure.
 
