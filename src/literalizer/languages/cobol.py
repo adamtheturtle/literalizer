@@ -1655,7 +1655,7 @@ class Cobol(metaclass=LanguageCls):
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return reject_special_floats(
-            format_finite=self.float_format,
+            formatter=self.float_format,
             language_name="COBOL",
         )
 
