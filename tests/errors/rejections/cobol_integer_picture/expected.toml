@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Cobol['[9223372036854775807]']" = "Cobol cannot represent integer 9223372036854775807 without external arbitrary-precision integer support."
+"Cobol['[-9223372036854775808]']" = "Cobol cannot represent integer -9223372036854775808 without external arbitrary-precision integer support."

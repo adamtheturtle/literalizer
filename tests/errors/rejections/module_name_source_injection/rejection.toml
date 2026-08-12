@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A module name is written into the output as a name rather than as a
+literal, so every language taking one refuses a value that is not an
+identifier instead of emitting the declarations it carries.  The
+braces in the declared name are doubled because a declared argument is
+a substitution template.
+"""
+exceptions = ["InvalidModuleNameError"]
+gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "module_name", value = "X {{}} class Y" },
+]

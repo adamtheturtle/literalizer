@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableSpecialFloatError]
+"Jsonnet['- .inf\\n']" = "Jsonnet cannot represent special float inf."
+"Jsonnet['- -.inf\\n']" = "Jsonnet cannot represent special float -inf."
+"Jsonnet['- .nan\\n']" = "Jsonnet cannot represent special float nan."

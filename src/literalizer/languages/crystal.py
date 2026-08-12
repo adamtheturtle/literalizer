@@ -127,6 +127,12 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _format_crystal_tuple_entry(_original: Value, formatted: str) -> str:
+    """Separate adjacent tuple openers from Crystal macro syntax."""
+    return f" {formatted}" if formatted.startswith("{") else formatted
+
+
+@beartype
 def _format_crystal_percent_dict_entry(
     key: str, value: Value, formatted_value: str
 ) -> str:
@@ -627,7 +633,7 @@ class Crystal(metaclass=LanguageCls):
             supports_trailing_comma=True,
             empty_sequence="Tuple.new",
             preamble_lines=(),
-            format_entry=passthrough_sequence_entry,
+            format_entry=_format_crystal_tuple_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
@@ -893,7 +899,7 @@ class Crystal(metaclass=LanguageCls):
                 raise UnrepresentableSpecialFloatError(msg)
             self._validate_json_any_data(data=data)
 
-    def _validate_json_any_data(self, *, data: Value) -> None:
+    def _validate_json_any_data(self, data: Value) -> None:
         """Recursively validate *data* for ``JSON::Any`` rendering."""
         match data:
             case dict():
@@ -976,6 +982,8 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self._uses_json_any:
+            return self._validate_json_any_data
         return no_validate_call_arg
 
     @cached_property
@@ -1095,7 +1103,7 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return passthrough_sequence_entry
+        return self.sequence_format_config.format_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:

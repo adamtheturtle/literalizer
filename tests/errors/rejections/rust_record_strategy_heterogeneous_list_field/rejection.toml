@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+The RECORD strategy's carve-out covers record-shaped dicts only, so a
+heterogeneous list nested in a record still meets the standard check:
+vec! has no element type that holds mixed scalars.
+"""
+exceptions = ["HeterogeneousCollectionError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ["items:\n  - 1\n  - \"two\"\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

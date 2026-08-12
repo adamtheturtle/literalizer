@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Crystal = "Crystal json_type cannot embed '#{' in a string value: Crystal's %(...) percent literal would interpret it as string interpolation."
