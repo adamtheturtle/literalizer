@@ -43,12 +43,18 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, Value>{
-    {"a", Value{std::map<std::string, int>{{"x", 1}}}},
+    {"a", Value{std::map<std::string, int>{
+        // indented
+        {"x", 1},
+    }}},
     {"b", Value{2}},
 };
 (void)my_data;
 my_data = std::map<std::string, Value>{
-    {"a", Value{std::map<std::string, int>{{"x", 1}}}},
+    {"a", Value{std::map<std::string, int>{
+        // indented
+        {"x", 1},
+    }}},
     {"b", Value{2}},
 };
     (void)my_data;
