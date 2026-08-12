@@ -1118,15 +1118,15 @@ class LanguageCls(type):
     _language_classes: ClassVar[list["LanguageCls"]] = []
 
     def __new__(
-        mcls,
+        mcs,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, object],
         **kwargs: object,
     ) -> "LanguageCls":
         """Create and register a language class for option discovery."""
-        created = super().__new__(mcls, name, bases, namespace, **kwargs)
-        mcls._language_classes.append(created)
+        created = super().__new__(mcs, name, bases, namespace, **kwargs)
+        mcs._language_classes.append(created)
         return created
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
@@ -1135,7 +1135,10 @@ class LanguageCls(type):
         known_options = {
             field_name
             for language_cls in LanguageCls._language_classes
-            for field_name in getattr(language_cls, "__dataclass_fields__", {})
+            for field_name in vars(language_cls).get(
+                "__dataclass_fields__",
+                {},
+            )
         }
         known_unsupported = unsupported & known_options
         if known_unsupported:
