@@ -1,1 +1,1 @@
-Fix the Crystal ``json_type`` rendering of an embedded NUL: the escape is now the JSON-valid ``\u0000`` rather than ``\x00``, so the generated ``JSON.parse`` call no longer rejects the document at runtime.
+Fix the Crystal ``json_type`` rendering of an embedded null byte: the escape is now the JSON-valid ``\u0000`` rather than ``\x00``, so the generated ``JSON.parse`` call no longer rejects the document at runtime.
