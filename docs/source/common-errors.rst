@@ -110,6 +110,13 @@ Identifiers and variable wrapping
 
 Raised when ``variable_form`` or ``ref_case`` asks for output the target language cannot produce.
 
+Capability flags such as ``supports_empty_dict_key`` let callers check an
+option before constructing a language. If a known option is nevertheless
+passed to a language that does not support it, construction raises:
+
+.. autoexception:: literalizer.exceptions.UnsupportedOptionError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.UnsupportedIdentifierCaseError
    :no-index:
 
