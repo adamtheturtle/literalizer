@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+An explicit Kotlin annotation is one type, so sibling sequences that
+mix an empty one with a non-empty one have no annotation that holds
+both and the value is refused.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Kotlin"]
+
+[call]
+api = "literalize"
+sources = ["mixed = [[09:30:00], []]\n"]
+input_format = "toml"
+kwargs = [
+  { kind = "option_member", option = "variable_type_hints", member = "ALWAYS" },
+]

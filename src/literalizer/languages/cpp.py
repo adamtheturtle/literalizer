@@ -5,11 +5,13 @@ import datetime
 import enum
 import functools
 import itertools
+import json
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, TypeGuard
+from typing import ClassVar, TypeGuard, assert_never
 
 from beartype import beartype
 
@@ -46,11 +48,12 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_tick,
+    make_i64_min_safe_formatter,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
-from literalizer._formatters.format_json_value import format_json_value_text
+from literalizer._formatters.format_json_value import JsonValue, to_jsonable
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -1935,18 +1938,8 @@ def _cpp_call_stub(
 
 _NLOHMANN_JSON_STATIC_PREAMBLE: tuple[str, ...] = (
     "#include <nlohmann/json.hpp>",
+    "#include <limits>",
 )
-
-# C++ raw-string delimiter used to wrap the inline JSON document for
-# ``nlohmann::json::parse``.  The lexer terminates the raw string at the
-# first byte sequence ``)json"``; :func:`json.dumps` always escapes ``"``
-# inside string literals as ``\"``, so the rendered JSON cannot contain
-# the terminator unless the source data itself encodes the literal
-# sequence ``)json"`` (e.g. through a Unicode escape).  The defensive
-# check in :func:`_nlohmann_json_expression` rejects such inputs.
-_NLOHMANN_JSON_DELIM = "json"
-_NLOHMANN_JSON_RAW_TERMINATOR = f'){_NLOHMANN_JSON_DELIM}"'
-
 
 _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
     sequence_open=fixed_open(open_str="["),
@@ -1999,41 +1992,79 @@ _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
+def _render_nlohmann_json_float(value: float) -> str:
+    """Render one normalized JSON floating-point value."""
+    if math.isnan(value):
+        return "std::numeric_limits<double>::quiet_NaN()"
+    if math.isinf(value):
+        sign = "-" if value < 0 else ""
+        return f"{sign}std::numeric_limits<double>::infinity()"
+    return json.dumps(obj=value)
+
+
+@beartype
+def _render_nlohmann_json_int(value: int) -> str:
+    """Render one integer without relying on an out-of-range C++ token."""
+    if value > I64_MAX:
+        return f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
+    if value == I64_MIN:
+        return "nlohmann::json::number_integer_t{(-9223372036854775807LL - 1)}"
+    return json.dumps(obj=value)
+
+
+@beartype
+def _render_nlohmann_json_node(value: JsonValue) -> str:
+    """Render one normalized JSON node."""
+    match value:
+        case None:
+            rendered = "nullptr"
+        case bool():
+            rendered = "true" if value else "false"
+        case str():
+            rendered = _format_string_cpp_escaped(value=value)
+        case float():
+            rendered = _render_nlohmann_json_float(value=value)
+        case int():
+            rendered = _render_nlohmann_json_int(value=value)
+        case list():
+            entries = ", ".join(
+                _render_nlohmann_json_node(value=item) for item in value
+            )
+            rendered = f"nlohmann::json::array({{{entries}}})"
+        case dict():
+            assert all(isinstance(key, str) for key in value)  # noqa: S101
+            object_entries = (
+                "{" + _format_string_cpp_escaped(value=str(object=key)) + ", "
+                f"{_render_nlohmann_json_node(value=item)}}}"
+                for key, item in value.items()
+            )
+            rendered = (
+                f"nlohmann::json::object({{{', '.join(object_entries)}}})"
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+    return rendered
+
+
+@beartype
 def _nlohmann_json_expression(data: Value) -> str:
-    """Render a ``nlohmann::json::parse(...)`` expression for *data*.
+    """Render *data* as a structural ``nlohmann::json`` expression.
 
-    The framework's rendered ``value`` string is discarded in favor of a
-    fresh :func:`json.dumps` of the raw data, so heterogeneous
-    collections, ``OrderedMap`` values, sets, bytes and temporal values
-    all fold into one shared JSON document.  The raw-string delimiter is
-    chosen so the JSON encoding cannot terminate the literal early; if a
-    pathological input still encodes the terminator sequence the
-    rejection raised below keeps the emitted source well-formed.
-
-    The trailing ``allow_exceptions=false`` argument disables
-    ``parse``'s default throw-on-error behavior so the generated
-    ``main`` is not made throwing by the parse call (which
-    ``clang-tidy``'s ``bugprone-exception-escape`` would reject).  The
-    rendered JSON is always well-formed by construction, so the
-    discarded-error path is unreachable from valid input.
+    Explicit ``array`` and ``object`` factories preserve empty-container
+    intent and avoid the library's brace-initializer ambiguity for nested
+    arrays.  :func:`to_jsonable` keeps temporal, bytes, set and ordered-map
+    normalization identical to the other JSON-value back ends.
     """
-    json_text = format_json_value_text(data=data)
-    if _NLOHMANN_JSON_RAW_TERMINATOR in json_text:
-        msg = (
-            "Cpp(json_type=NLOHMANN_JSON) cannot represent a value whose "
-            "JSON encoding contains the raw-string terminator "
-            f"sequence {_NLOHMANN_JSON_RAW_TERMINATOR!r}."
-        )
-        raise UnrepresentableInputError(msg)
-    return (
-        f'nlohmann::json::parse(R"{_NLOHMANN_JSON_DELIM}'
-        f'({json_text}){_NLOHMANN_JSON_DELIM}", nullptr, false)'
-    )
+    normalized = to_jsonable(data=data)
+    rendered = _render_nlohmann_json_node(value=normalized)
+    if isinstance(normalized, list | dict):
+        return rendered
+    return f"nlohmann::json({rendered})"
 
 
 @beartype
 def _format_cpp_json_call_arg(raw_value: Value, _formatted: str) -> str:
-    """Format a direct call argument as ``nlohmann::json::parse(...)``."""
+    """Format a direct call argument as structural ``nlohmann::json``."""
     return _nlohmann_json_expression(data=raw_value)
 
 
@@ -2061,9 +2092,9 @@ class Cpp(metaclass=LanguageCls):
               e.g. ``"2024-01-15T12:30:00"``.
 
         json_type: When set to ``json_types.NLOHMANN_JSON``, render values
-            through ``nlohmann::json::parse`` over an inline JSON document
+            with structural ``nlohmann::json`` array and object factories
             instead of C++'s narrow ``std::vector`` / ``std::map`` /
-            ``std::unordered_map`` collection types.  Dict keys must be
+            ``std::unordered_map`` collection types. Dict keys must be
             strings so they remain valid JSON object keys.
 
         multiline_raw_string_delimiter_base: Non-empty fallback delimiter
@@ -2718,8 +2749,8 @@ class Cpp(metaclass=LanguageCls):
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
 
-        Under ``json_type`` the rendered data flows through a single
-        ``nlohmann::json::parse`` call.  That is incompatible with the
+        Under ``json_type`` the rendered data becomes a single structural
+        ``nlohmann::json`` expression. That is incompatible with the
         ``RECORD`` and ``TUPLE`` heterogeneous strategies, both of
         which generate type declarations (``struct``s for ``RECORD``,
         ``std::tuple<...>`` aliases for ``TUPLE``) that the json_type
@@ -2735,8 +2766,8 @@ class Cpp(metaclass=LanguageCls):
             strategy_name = self.heterogeneous_strategy.name
             generated = rejected[self.heterogeneous_strategy]
             msg = (
-                "Cpp json_type renders data through "
-                "nlohmann::json::parse(...) and is incompatible with "
+                "Cpp json_type renders data as a structural "
+                "nlohmann::json expression and is incompatible with "
                 f"heterogeneous_strategy={strategy_name}, which generates "
                 f"{generated} declarations. Use "
                 "heterogeneous_strategy=ERROR."
@@ -2828,13 +2859,12 @@ class Cpp(metaclass=LanguageCls):
         """Wrap a C++ declaration in a main function.
 
         Under :attr:`json_type` the body is additionally wrapped in
-        ``try { ... } catch (...) { return 1; }`` so the
-        potentially-throwing ``nlohmann::json::parse`` call cannot make
-        ``main`` itself throwing — clang-tidy's
+        ``try { ... } catch (...) { return 1; }`` so potentially-throwing
+        ``nlohmann::json`` construction cannot make ``main`` itself
+        throwing — clang-tidy's
         ``bugprone-exception-escape`` check rejects an implicitly
-        ``noexcept`` ``main`` that calls a function whose signature
-        permits exceptions, even when the runtime flag
-        ``allow_exceptions=false`` has been passed to suppress them.
+        ``noexcept`` ``main`` that calls a function whose signature permits
+        exceptions.
         """
         content = prepend_body_preamble(
             content=content,
@@ -2953,7 +2983,7 @@ class Cpp(metaclass=LanguageCls):
 
         Under :attr:`json_type` the ``nlohmann/json.hpp`` header replaces
         the default ``<initializer_list>`` include because every emitted
-        expression goes through :func:`nlohmann::json::parse`.
+        expression constructs a ``nlohmann::json`` value.
         """
         if self._json_type_active:
             return _NLOHMANN_JSON_STATIC_PREAMBLE
@@ -2997,7 +3027,9 @@ class Cpp(metaclass=LanguageCls):
         if self._json_type_active:
 
             def _formatter(name: str, _value: str, data: Value) -> str:
-                """Assign a parsed JSON literal to an existing C++ binding."""
+                """Assign a structural JSON value to an existing
+                binding.
+                """
                 expr = _nlohmann_json_expression(data=data)
                 return f"{name} = {expr};"
 
@@ -3487,8 +3519,10 @@ class Cpp(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         return make_overflow_fallback_formatter(
-            base=self.numeric_literal_suffix.wrap_integer_formatter(
-                base=base_int_formatter,
+            base=make_i64_min_safe_formatter(
+                base=self.numeric_literal_suffix.wrap_integer_formatter(
+                    base=base_int_formatter,
+                ),
             ),
             fallback=make_ull_fallback(language_name="C++"),
             min_value=I64_MIN,
@@ -3606,10 +3640,8 @@ class Cpp(metaclass=LanguageCls):
                 data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
-                """Render an ``auto``-deduced ``nlohmann::json``
-                declaration
-                via :func:`nlohmann::json::parse` over the inline JSON
-                text.
+                """Render an ``auto``-deduced structural
+                ``nlohmann::json`` declaration.
 
                 ``auto`` is used in place of the spelled-out
                 ``nlohmann::json`` type so the binding is not analyzed by

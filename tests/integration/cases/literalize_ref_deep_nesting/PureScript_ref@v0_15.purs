@@ -13,5 +13,9 @@ deep = PDict [
     ]
 my_data :: Val
 my_data = PDict [
-    (Tuple "a" (PDict [(Tuple "b" (PDict [(Tuple "c" (deep))]))]))
+    (Tuple "a" (PDict [
+        (Tuple "b" (PDict [
+            (Tuple "c" (deep))
+            ]))
+        ]))
     ]

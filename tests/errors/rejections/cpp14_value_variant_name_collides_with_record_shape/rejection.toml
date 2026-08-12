@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+The C++14 value variant and an externally named record shape are both
+written as type declarations in one file, so they cannot share a name.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Cpp"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "language_version", member = "CPP14" },
+  { kind = "text", kwarg = "heterogeneous_value_variant_name", value = "DynamicValue" },
+  { kind = "record_shape_names", key_sets = [["id"]], names = ["DynamicValue"] },
+]

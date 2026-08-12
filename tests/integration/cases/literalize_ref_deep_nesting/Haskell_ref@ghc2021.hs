@@ -6,7 +6,11 @@ deep = HMap [
     ]
 my_data :: Val
 my_data = HMap [
-    ("a", HMap [("b", HMap [("c", deep)])])
+    ("a", HMap [
+        ("b", HMap [
+            ("c", deep)
+            ])
+        ])
     ]
 main :: IO ()
 main = seq my_data (return ())

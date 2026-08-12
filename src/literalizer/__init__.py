@@ -39,6 +39,7 @@ from literalizer._literalize import (
 )
 from literalizer._parsing import InputFormat
 from literalizer.api import literalize, literalize_call
+from literalizer.exceptions import LiteralizerError
 
 __all__ = [
     "ALL_REF_CASES",
@@ -60,6 +61,7 @@ __all__ = [
     "Language",
     "LanguageCls",
     "LiteralizeResult",
+    "LiteralizerError",
     "ModifierCombination",
     "NewVariable",
     "ObjectCallStyle",

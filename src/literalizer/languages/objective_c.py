@@ -35,6 +35,7 @@ from literalizer._formatters.format_integers import (
     I64_MIN,
     format_integer_hex,
     format_integer_octal_c_style,
+    make_i64_min_safe_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
@@ -134,6 +135,8 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
     ):
         return formatted
     if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):
+        return f"@{formatted}"
+    if formatted.startswith("(") and formatted.endswith(")"):
         return f"@{formatted}"
     return f"@({formatted})"
 
@@ -1049,7 +1052,7 @@ class ObjectiveC(metaclass=LanguageCls):
         signed or unsigned 64-bit integer can hold them.
         """
         return make_overflow_fallback_formatter(
-            base=self.integer_format,
+            base=make_i64_min_safe_formatter(base=self.integer_format),
             fallback=make_ull_fallback(language_name="Objective-C"),
             min_value=I64_MIN,
             max_value=I64_MAX,

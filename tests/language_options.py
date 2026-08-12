@@ -320,6 +320,7 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_json_call_result_binding": (
         lambda lang_cls: lang_cls.supports_json_call_result_binding
     ),
+    "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,
     "supports_multiline_string_literals": (
         lambda lang_cls: lang_cls.supports_multiline_string_literals
     ),

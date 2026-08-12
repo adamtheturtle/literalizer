@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Crystal = "Crystal json_type cannot embed a double quote in a string value: it would break the JSON.parse(%(...)) wrapper."

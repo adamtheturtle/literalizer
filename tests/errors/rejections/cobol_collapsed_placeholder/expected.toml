@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableEmptyDictError]
+"Cobol['{}']" = ""
+
+[UnrepresentableInputError]
+"Cobol['null']" = "Plain COBOL cannot distinguish null from spaces."
+"Cobol['[]']" = "Plain COBOL cannot distinguish an empty container from spaces."
+
+[UnrepresentableStringError]
+"Cobol['{\"e\": \"\"}']" = "COBOL string literals cannot represent an empty string"

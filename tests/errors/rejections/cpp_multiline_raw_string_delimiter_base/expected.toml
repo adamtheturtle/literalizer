@@ -1,0 +1,15 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCppRawStringDelimiterError]
+"Cpp['']" = "Cpp multiline_raw_string_delimiter_base '' is invalid: the fallback base must be non-empty"
+"Cpp['abcdefghijklmnopq']" = "Cpp multiline_raw_string_delimiter_base 'abcdefghijklmnopq' is invalid: raw-string delimiters contain at most 16 characters"
+"Cpp['at@']" = "Cpp multiline_raw_string_delimiter_base 'at@' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['@']"
+"Cpp['back\\\\slash']" = "Cpp multiline_raw_string_delimiter_base 'back\\\\slash' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['\\\\']"
+"Cpp['dollar$']" = "Cpp multiline_raw_string_delimiter_base 'dollar$' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['$']"
+"Cpp['grave`']" = "Cpp multiline_raw_string_delimiter_base 'grave`' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['`']"
+"Cpp['has space']" = "Cpp multiline_raw_string_delimiter_base 'has space' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: [' ']"
+"Cpp['left(']" = "Cpp multiline_raw_string_delimiter_base 'left(' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['(']"
+"Cpp['line\\nbreak']" = "Cpp multiline_raw_string_delimiter_base 'line\\nbreak' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['\\n']"
+"Cpp['non-ascii-£']" = "Cpp multiline_raw_string_delimiter_base 'non-ascii-£' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['£']"
+"Cpp['right)']" = "Cpp multiline_raw_string_delimiter_base 'right)' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: [')']"
+"Cpp['tab\\tcharacter']" = "Cpp multiline_raw_string_delimiter_base 'tab\\tcharacter' is invalid: these characters are not permitted by C++'s raw-string delimiter grammar: ['\\t']"

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Odin['{\"name\": \"a`b\"}']" = "Odin json_type embeds the rendered JSON text inside a backtick-delimited raw string; a literal backtick in a string value or dict key would terminate the literal and yield non-compiling output."
+"Odin['{\"a`b\": 1}']" = "Odin json_type embeds the rendered JSON text inside a backtick-delimited raw string; a literal backtick in a string value or dict key would terminate the literal and yield non-compiling output."

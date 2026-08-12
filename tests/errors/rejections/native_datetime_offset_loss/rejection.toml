@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A native datetime format with no offset in it cannot hold the offset
+an aware input carries, so the value is refused rather than written
+out shifted or truncated -- as a value, and as a mapping key.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["CSharp", "Kotlin", "Rust"]
+
+[call]
+api = "literalize"
+sources = [
+  "value: 2024-01-02 03:04:05 -05:00",
+  "2024-01-02 03:04:05 -05:00: value",
+]
+input_format = "yaml"

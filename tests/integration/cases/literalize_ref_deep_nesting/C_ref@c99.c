@@ -19,7 +19,11 @@ CVal deep = ((CVal){.m = (CKV[]){
     {"_", ((CVal){.s = "_"})},
 }});
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"a", ((CVal){.m = (CKV[]){{"b", ((CVal){.m = (CKV[]){{"c", deep}}})}}})},
+    {"a", ((CVal){.m = (CKV[]){
+        {"b", ((CVal){.m = (CKV[]){
+            {"c", deep},
+        }})},
+    }})},
 }});
     (void)my_data;
     return 0;

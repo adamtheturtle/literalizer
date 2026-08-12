@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+COBOL holds an integer in a PIC S9(18) field, so a 19-digit value is
+refused rather than emitted into a picture too narrow to hold it.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cobol"]
+
+[call]
+api = "literalize"
+sources = ["[9223372036854775807]", "[-9223372036854775808]"]
+input_format = "json"
