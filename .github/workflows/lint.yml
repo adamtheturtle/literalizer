@@ -806,8 +806,8 @@ jobs:
       - name: Lint Perl
         run: |-
           find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl && test -s /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl -c < /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl < /tmp/files-perl
+          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs -c < /tmp/files-perl
+          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs < /tmp/files-perl
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
