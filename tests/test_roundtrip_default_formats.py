@@ -22,4 +22,4 @@ def test_roundtrip_helpers_do_not_override_string_format() -> None:
                 keyword.arg == "string_format" for keyword in node.keywords
             )
         )
-    assert offenders == []
+    assert not offenders
