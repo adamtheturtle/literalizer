@@ -12,7 +12,7 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
-    _VKV'{k: "a", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"x\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}}"}},
+    _VKV'{k: "a", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        // indented\n        _VKV'{k: \"x\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}\n    }"}},
     _VKV'{k: "b", v: _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}}
 };
 end

@@ -90,6 +90,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    InvalidModuleNameError,
     UnrepresentableInputError,
     WrapCombinedInFileNotSupportedError,
 )
@@ -360,6 +361,7 @@ class Erlang(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = True
+    checks_raw_control_dict_keys_separately = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -646,11 +648,10 @@ class Erlang(metaclass=LanguageCls):
             pattern=r"[a-z][A-Za-z0-9_@]*", string=self.module_name
         ):
             return
-        msg = (
-            "Erlang module_name must be an unquoted atom beginning with a "
-            f"lowercase letter, got {self.module_name!r}"
+        raise InvalidModuleNameError(
+            language_name=type(self).__name__,
+            module_name=self.module_name,
         )
-        raise ValueError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

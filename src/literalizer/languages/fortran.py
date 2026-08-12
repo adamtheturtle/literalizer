@@ -79,6 +79,8 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+_FORTRAN_WRAP_COLUMN = 110
+
 
 @beartype
 def _format_fortran_string(value: str) -> str:
@@ -88,7 +90,6 @@ def _format_fortran_string(value: str) -> str:
         quote_escape="''",
         control_char_template="achar({})",
         concat_operator=" // ",
-        escape_backslash=False,
     )(value)
 
 
@@ -214,6 +215,31 @@ def _fortran_comment_pos(line: str) -> int | None:
 
 
 @beartype
+def _wrap_fortran_expression_line(line: str, /) -> list[str]:
+    """Split a long expression line at commas outside string literals."""
+    if line.rstrip().endswith("&"):
+        return [line]
+    remaining = line
+    wrapped: list[str] = []
+    while len(remaining) > _FORTRAN_WRAP_COLUMN and "," in remaining:
+        in_single_quote = False
+        break_at: int | None = None
+        scan = remaining[:_FORTRAN_WRAP_COLUMN].replace("''", "  ")
+        for i, character in enumerate(iterable=scan):
+            if character == "'":
+                in_single_quote = not in_single_quote
+            elif character == "," and not in_single_quote:
+                break_at = i + 1
+        if break_at is None:
+            break
+        split_at = break_at
+        wrapped.append(remaining[:split_at].rstrip())
+        remaining = "& " + remaining[split_at:].lstrip()
+    wrapped.append(remaining)
+    return wrapped
+
+
+@beartype
 def _add_continuation(value: str) -> str:
     """Add Fortran ``&`` line-continuation to non-comment, non-last
     lines.
@@ -224,7 +250,11 @@ def _add_continuation(value: str) -> str:
     comment lines (blank or starting with ``!``) are transparent to the
     continuation mechanism and receive no ``&``.
     """
-    lines = value.splitlines()
+    lines = [
+        wrapped
+        for line in value.splitlines()
+        for wrapped in _wrap_fortran_expression_line(line)
+    ]
     if len(lines) <= 1:
         return value
     result: list[str] = []
@@ -232,7 +262,7 @@ def _add_continuation(value: str) -> str:
         is_last = i == len(lines) - 1
         stripped = line.strip()
         is_pure_comment = not stripped or stripped.startswith("!")
-        if is_last or is_pure_comment:
+        if is_last or is_pure_comment or stripped.endswith("&"):
             result.append(line)
         else:
             pos = _fortran_comment_pos(line=line)
@@ -244,6 +274,14 @@ def _add_continuation(value: str) -> str:
 
 
 @beartype
+def _wrap_fortran_source_lines(value: str, /) -> str:
+    """Wrap each independent source line without joining statements."""
+    return "\n".join(
+        _add_continuation(value=line) for line in value.splitlines()
+    )
+
+
+@beartype
 def _apply_fortran_variable_declaration(
     name: str,
     value: str,
@@ -252,8 +290,8 @@ def _apply_fortran_variable_declaration(
 ) -> str:
     """Format a variable declaration and initialisation."""
     fval = format_entry(data, value)
-    continued = _add_continuation(value=fval)
-    return f"type(fval_t) :: {name}\n{name} = {continued}"
+    assignment = _add_continuation(value=f"{name} = {fval}")
+    return f"type(fval_t) :: {name}\n{assignment}"
 
 
 @beartype
@@ -581,6 +619,7 @@ class Fortran(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
+    checks_raw_control_dict_keys_separately = False
 
     class DateFormats(enum.Enum):
         """Date format options for Fortran."""
@@ -860,6 +899,7 @@ class Fortran(metaclass=LanguageCls):
         holds internal-procedure stubs that go in the ``contains`` section
         after the executable statements in *content*.
         """
+        content = _wrap_fortran_source_lines(content)
         if variable_name:
             content = prepend_body_preamble(
                 content=content,
@@ -874,7 +914,9 @@ class Fortran(metaclass=LanguageCls):
                 f"end program {self.module_name}"
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        stubs_str = "\n".join(body_preamble)
+        stubs_str = "\n".join(
+            _wrap_fortran_source_lines(stub) for stub in body_preamble
+        )
         indented_stubs = textwrap.indent(text=stubs_str, prefix=self.indent)
         return (
             f"program {self.module_name}\n"

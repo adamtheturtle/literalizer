@@ -2578,6 +2578,7 @@ class Rust(metaclass=LanguageCls):
     supports_record_shape_names = True
     record_shape_names_emit_declarations = True
     supports_non_string_dict_keys = True
+    checks_raw_control_dict_keys_separately = False
 
     class DateFormats(enum.Enum):
         """Date format options for Rust."""

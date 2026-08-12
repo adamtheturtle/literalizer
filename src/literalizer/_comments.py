@@ -68,14 +68,6 @@ class _ParsedAfterToken:
     before_next: list[str]
 
 
-@dataclasses.dataclass(frozen=True)
-class _NestedCollectionComments:
-    """Comments from a nested collection that apply to its parent line."""
-
-    inline: str
-    before_next: tuple[str, ...]
-
-
 @beartype
 def _parse_after_token(
     *,
@@ -135,15 +127,6 @@ class _CommentAssociation(Protocol):
     items: Mapping[object, Sequence[CommentToken | None]]
 
 
-@runtime_checkable
-class _CollectionValues(Protocol):
-    """Typed boundary for ruamel.yaml collection value lookup."""
-
-    def __getitem__(self, key: object, /) -> object:
-        """Return a collection value by key or index."""
-        ...  # pylint: disable=unnecessary-ellipsis
-
-
 @beartype
 def _comment_association(
     *,
@@ -153,16 +136,6 @@ def _comment_association(
     ca_descriptor: Any = CommentedBase.__dict__["ca"]
     ca: _CommentAssociation = ca_descriptor.fget(ruamel_data)
     return ca
-
-
-@beartype
-def _collection_value(
-    *,
-    values: _CollectionValues,
-    key: object,
-) -> object:
-    """Return a value through the typed collection lookup protocol."""
-    return values[key]
 
 
 @beartype
@@ -188,62 +161,6 @@ def _collection_targets(
             )
         case _ as unreachable:
             assert_never(unreachable)
-
-
-@beartype
-def _collection_element_value(
-    *,
-    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
-    key: object,
-) -> object:
-    """Return the collection element identified by *key*."""
-    match ruamel_data:
-        case CommentedSet():
-            return key
-        case CommentedMap() | CommentedSeq():
-            return _collection_value(values=ruamel_data, key=key)
-        case _ as unreachable:
-            assert_never(unreachable)
-
-
-@beartype
-def _nested_collection_comments(
-    *,
-    value: CommentedSeq | CommentedMap | CommentedSet,
-) -> _NestedCollectionComments:
-    """Return nested comments that should be attached to a parent item.
-
-    Some YAML shapes attach the meaningful comment to a scalar inside
-    a nested collection even though the literalizer renders that whole
-    nested collection as one parent element line.  In that layout there
-    is no target line for the nested scalar itself, so bubble one inline
-    comment up to the rendered parent element instead of dropping it.
-    ruamel.yaml also stores standalone comments between sequence items
-    on the preceding nested mapping, so bubble those trailing comments
-    up as comments before the next parent element.
-    """
-    comments = extract_yaml_comments(ruamel_data=value)
-    inline = ""
-    for element_comment in reversed(comments.elements):
-        if element_comment.inline:
-            inline = element_comment.inline
-            break
-    return _NestedCollectionComments(
-        inline=inline,
-        before_next=comments.trailing,
-    )
-
-
-@beartype
-def _fallback_nested_collection_comments(
-    *,
-    value: CommentedSeq | CommentedMap | CommentedSet | None,
-    parsed: _ParsedAfterToken,
-) -> _NestedCollectionComments:
-    """Return nested comments only where the parent has no own token."""
-    if value is None or parsed.inline or parsed.before_next:
-        return _NestedCollectionComments(inline="", before_next=())
-    return _nested_collection_comments(value=value)
 
 
 @beartype
@@ -311,28 +228,8 @@ def extract_yaml_comments(
             key=key,
             token_idx=targets.token_idx,
         )
-        element_value = _collection_element_value(
-            ruamel_data=ruamel_data,
-            key=key,
-        )
-        nested_value = (
-            element_value
-            if isinstance(
-                element_value,
-                CommentedSeq | CommentedMap | CommentedSet,
-            )
-            else None
-        )
-        nested_comments = _fallback_nested_collection_comments(
-            value=nested_value,
-            parsed=parsed,
-        )
         inline = parsed.inline
-        if not inline:
-            inline = nested_comments.inline
-        pending_before = parsed.before_next or list(
-            nested_comments.before_next,
-        )
+        pending_before = parsed.before_next
 
         element_map[key] = ElementComments(
             before=tuple(before),
@@ -744,6 +641,7 @@ def apply_collection_comments_to_elements(
     collection_comments: CollectionComments,
     comment_prefix: str,
     comment_suffix: str,
+    line_prefix: str,
 ) -> str:
     """Apply comments to a list of pre-rendered element strings.
 
@@ -768,7 +666,7 @@ def apply_collection_comments_to_elements(
                 text=comment_text,
                 comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
-                line_prefix="",
+                line_prefix=line_prefix,
             )
             for comment_text in ec.before
         )
@@ -791,7 +689,7 @@ def apply_collection_comments_to_elements(
             text=comment_text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
-            line_prefix="",
+            line_prefix=line_prefix,
         )
         for comment_text in collection_comments.trailing
     )

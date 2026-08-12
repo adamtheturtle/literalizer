@@ -42,16 +42,20 @@ struct Value {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, Value>{
-    {"host", Value{"localhost"}},
-    {"port", Value{nullptr}},  // not configured yet
-    {"debug", Value{true}},
+auto my_data = std::map<std::string, std::map<std::string, Value>>{
+    {"server", std::map<std::string, Value>{
+        {"host", Value{"localhost"}},
+        {"port", Value{nullptr}},  // not configured yet
+        {"debug", Value{true}},
+    }},
 };
 (void)my_data;
-my_data = std::map<std::string, Value>{
-    {"host", Value{"localhost"}},
-    {"port", Value{nullptr}},  // not configured yet
-    {"debug", Value{true}},
+my_data = std::map<std::string, std::map<std::string, Value>>{
+    {"server", std::map<std::string, Value>{
+        {"host", Value{"localhost"}},
+        {"port", Value{nullptr}},  // not configured yet
+        {"debug", Value{true}},
+    }},
 };
     (void)my_data;
     return 0;
