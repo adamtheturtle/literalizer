@@ -72,6 +72,7 @@ from literalizer._formatters.type_inference import (
     WideInt,
     record_shape_for_dict,
 )
+from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -402,6 +403,23 @@ def _scala_record_literal(
         closer=")",
         compact_pad="",
     )
+
+
+@dataclasses.dataclass
+class _ScalaWidenedMapNarrowing:
+    """Per-pass cache of the widened fallback maps' narrow value type.
+
+    ``value_type`` holds the single concrete Scala type shared by every
+    scalar inside the maps the ``RECORD`` strategy widened out of the
+    record-shape mapping, or ``None`` when those scalars mix Scala
+    types and the ``Map[String, Any]`` top type is required (issue
+    #3608).  Refreshed by the strategy's ``compute_wrap_ids`` hook,
+    which the shared data checks run before any rendering; the
+    widened-map opener and the record field-type hook read the cached
+    decision within the same pass.
+    """
+
+    value_type: str | None
 
 
 @beartype
@@ -1238,8 +1256,11 @@ class Scala(metaclass=LanguageCls):
         A record-eligible dict with no ``record_name`` was widened out
         of record inference because its nested sibling maps cannot
         share one shape.  Type that field as ``Map[String, Any]`` so the
-        uniform enclosing record survives (#2915).  A set or a genuinely
-        non-record dict (empty or non-string-keyed) still has no precise
+        uniform enclosing record survives (#2915), narrowed to
+        ``Map[String, T]`` when every scalar across the widened maps
+        shares one concrete Scala type ``T`` (issue #3608).  A set or a
+        genuinely non-record dict (empty or non-string-keyed) still has
+        no precise
         component type; per the cross-language decision in #2317, Scala
         widens it to the top type ``Any``.
         """
@@ -1263,7 +1284,7 @@ class Scala(metaclass=LanguageCls):
                     value,
                 )
             case dict() if record_shape_for_dict(value=value) is not None:
-                return "Map[String, Any]"
+                return self._scala_derecordized_map_field_type()
             case list():
                 opener = self.sequence_open(value)
             case bool():
@@ -1327,6 +1348,55 @@ class Scala(metaclass=LanguageCls):
             representable_arity=_scala_tuple_arity_representable,
         )
 
+    def _scala_derecordized_map_field_type(self) -> str:
+        """Return the declared field type for a widened fallback map.
+
+        Spells the concrete value type when every scalar across the
+        widened maps shares one Scala type in the current pass and the
+        ``Map[String, Any]`` top type otherwise (issue #3608).
+        """
+        narrow_value_type = self._derecordized_map_narrowing.value_type
+        if narrow_value_type is not None:
+            return f"Map[String, {narrow_value_type}]"
+        return "Map[String, Any]"
+
+    def _scala_narrow_derecordized_map_value_type(
+        self,
+        *,
+        data: Value,
+        wrap_ids: frozenset[int],
+    ) -> str | None:
+        """Return the single Scala type every widened-map scalar
+        shares.
+
+        Returns ``None`` when the widened maps genuinely mix scalar
+        types (the ``Map[String, Any]`` top type is then required),
+        when there is nothing to widen, or when any widened scalar only
+        has the ``Any`` top type (a ``null`` value).
+        """
+        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        if not scalars:
+            return None
+        scalar_types = {
+            self._scala_record_field_type(
+                RecordFieldType(
+                    value=scalar,
+                    record_name=None,
+                    element_record_name=None,
+                ),
+            )
+            for scalar in scalars
+        }
+        if len(scalar_types) != 1:
+            return None
+        (scalar_type,) = scalar_types
+        return None if scalar_type == "Any" else scalar_type
+
+    @cached_property
+    def _derecordized_map_narrowing(self) -> _ScalaWidenedMapNarrowing:
+        """Per-pass narrow-value-type cache for widened fallback maps."""
+        return _ScalaWidenedMapNarrowing(value_type=None)
+
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble.
@@ -1334,14 +1404,53 @@ class Scala(metaclass=LanguageCls):
         ``TUPLE`` composes ``RECORD``; both reuse
         :attr:`_record_renderer` so a tuple-eligible array that is a
         record field becomes a tuple-typed ``case class`` field.
+
+        The ``RECORD`` strategy's widened fallback maps normally open
+        with ``Map[String, Any](``; when every scalar across those maps
+        shares one concrete Scala type the opener and the declared
+        field type narrow to that type instead (issue #3608), so the
+        opener is deferred to render time through the per-pass
+        narrowing cache refreshed by ``compute_wrap_ids``.
         """
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is cls.RECORD:
-            return build_record_strategy(
+            strategy = build_record_strategy(
                 renderer=self._record_renderer,
                 split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
-                derecordized_map_open="Map[String, Any](",
+                derecordized_map_open=None,
+            )
+            narrowing = self._derecordized_map_narrowing
+            base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
+
+            def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+                """Refresh the narrow-type cache alongside the wrap
+                ids.
+                """
+                wrap_ids = base_compute_wrap_ids(data)
+                narrowing.value_type = (
+                    self._scala_narrow_derecordized_map_value_type(
+                        data=data,
+                        wrap_ids=wrap_ids,
+                    )
+                )
+                return wrap_ids
+
+            def _widened_map_open() -> str:
+                """Return the widened-map opener for the current
+                pass.
+                """
+                if narrowing.value_type is not None:
+                    return f"Map[String, {narrowing.value_type}]("
+                return "Map[String, Any]("
+
+            return dataclasses.replace(
+                strategy,
+                behavior=dataclasses.replace(
+                    strategy.behavior,
+                    compute_wrap_ids=_compute_wrap_ids,
+                    dict_open_for_wrap_ids=_widened_map_open,
+                ),
             )
         if self.heterogeneous_strategy is cls.TUPLE:
             return build_tuple_strategy(

@@ -6,7 +6,7 @@ type Record1 struct {
 type Record0 struct {
 	Name string
 	Input Record1
-	Expected map[string]any
+	Expected map[string]string
 }
 
 func main() {
@@ -17,7 +17,7 @@ my_data := []any{
 			Kind: "create",
 			PrId: "pr_1",
 		},
-		Expected: map[string]any{
+		Expected: map[string]string{
 			"pr_id": "pr_1",
 			"status": "draft",
 		},
@@ -28,7 +28,7 @@ my_data := []any{
 			Kind: "publish",
 			PrId: "pr_1",
 		},
-		Expected: map[string]any{
+		Expected: map[string]string{
 			"error": "invalid_operation",
 		},
 	},
