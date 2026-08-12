@@ -1,0 +1,62 @@
+schema_version = 1
+summary = """
+A string literal whose formatter would emit a raw C0 control byte
+refuses one.  Languages whose formatters escape arbitrary controls are
+covered by the control_strings round-trip capability corpus instead.
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = [
+    "Bash",
+    "C",
+    "CSharp",
+    "Clojure",
+    "Cobol",
+    "CommonLisp",
+    "Cpp",
+    "Crystal",
+    "D",
+    "Dart",
+    "Elixir",
+    "Erlang",
+    "FSharp",
+    "Forth",
+    "Gleam",
+    "Go",
+    "Groovy",
+    "Haxe",
+    "Hcl",
+    "Java",
+    "JavaScript",
+    "Julia",
+    "Kotlin",
+    "Lua",
+    "Mojo",
+    "Nim",
+    "Nix",
+    "Norg",
+    "OCaml",
+    "ObjectiveC",
+    "Occam",
+    "Odin",
+    "Perl",
+    "Php",
+    "PowerShell",
+    "Python",
+    "R",
+    "Racket",
+    "Raku",
+    "Ruby",
+    "Rust",
+    "Scala",
+    "Scheme",
+    "SystemVerilog",
+    "Tcl",
+    "TypeScript",
+    "V",
+    "Wren",
+]
+
+[call]
+api = "literalize"
+sources = ['{"x": "\u0001"}']
+input_format = "json"

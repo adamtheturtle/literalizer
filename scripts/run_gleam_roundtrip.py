@@ -58,7 +58,10 @@ def main() -> None:
     """Round-trip the shared document through the Gleam backend."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
     gleam_path = shutil.which(cmd="gleam") or "gleam"
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Gleam.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         # The primed dir already has `gleam.toml`, `manifest.toml`, and
@@ -90,7 +93,7 @@ def main() -> None:
             label=_LABEL,
             produced_json=result.stdout,
             exclude_keys=(),
-            expected_json=None,
+            expected_json=json_text,
         )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

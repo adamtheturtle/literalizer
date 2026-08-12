@@ -98,7 +98,10 @@ def _build_main(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Elm backend."""
-    program = _build_main(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Elm.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_main(json_text=json_text)
     elm = shutil.which(cmd="elm") or "elm"
     node = shutil.which(cmd="node") or "node"
     roundtrip_common.execute(
@@ -116,7 +119,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files={
             "elm.json": ELM_JSON,
             "run.js": _RUN_JS,

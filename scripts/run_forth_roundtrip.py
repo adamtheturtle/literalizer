@@ -108,8 +108,11 @@ def main() -> None:
     # search path via ``fpath+`` so the prelude's bare
     # ``include ffl/jos.fs`` resolves there.
     ffl_path = os.environ["LITERALIZER_FFL_PATH"]
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Forth.variant_metadata.round_trip_capabilities,
+    )
     program = _build_program(
-        json_text=roundtrip_common.read_input(),
+        json_text=json_text,
         ffl_path=ffl_path,
     )
     gforth = shutil.which(cmd="gforth") or "gforth"
@@ -124,7 +127,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 

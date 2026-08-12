@@ -158,7 +158,10 @@ def _build_check(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the PureScript backend."""
-    program = _build_check(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=PureScript.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_check(json_text=json_text)
     purs = shutil.which(cmd="purs") or "purs"
     node = shutil.which(cmd="node") or "node"
     roundtrip_common.execute(
@@ -183,7 +186,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files={
             "Prelude.purs": PRELUDE_PURS,
             "Prelude.js": PRELUDE_JS,

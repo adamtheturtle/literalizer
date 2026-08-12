@@ -1,11 +1,14 @@
 """Shared pieces for the per-language JSON round-trip checks (#1867).
 
-Every ``run_<lang>_roundtrip.py`` helper literalizes the SAME single
-``roundtrip_input.json`` document to its language, compiles and runs the
-result so it re-emits JSON on stdout, then calls :func:`verify` here to
-assert the emitted JSON parses back to the original value.  Keeping the
-input and the comparison in one module means a new language only has to
-add the language-specific literalize + toolchain glue.
+Every ``run_<lang>_roundtrip.py`` helper literalizes the shared
+``roundtrip_input.json`` document -- extended with the adversarial
+groups from ``roundtrip_capability_input.json`` that its language's
+``variant_metadata.round_trip_capabilities`` declares (#3566) -- to its
+language, compiles and runs the result so it re-emits JSON on stdout,
+then calls :func:`verify` here to assert the emitted JSON parses back
+to the selected input.  Keeping the input and the comparison in one
+module means a new language only has to add the language-specific
+literalize + toolchain glue.
 
 The shared document is deliberately ``null``-free: several backends drop
 null map values or cannot infer the type of a bare ``null``.  Per-value

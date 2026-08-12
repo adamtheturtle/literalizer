@@ -77,6 +77,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
+    RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -649,7 +650,13 @@ class D(metaclass=LanguageCls):
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "d"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
-        round_trip_capabilities=frozenset(),
+        round_trip_capabilities=frozenset(
+            {
+                RoundTripCapability.I64_BOUNDARIES,
+                RoundTripCapability.INTERPOLATION_STRINGS,
+                RoundTripCapability.EMBEDDED_NUL,
+            }
+        ),
         modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
@@ -1606,12 +1613,17 @@ class D(metaclass=LanguageCls):
         below ``long.min`` or above ``ulong.max`` raise
         :class:`UnrepresentableIntegerError` rather than emit a decimal
         literal the compiler rejects.
+
+        ``long.min`` itself needs the named constant: in a
+        ``-9223372036854775808`` literal D types the positive operand
+        as ``ulong`` (it exceeds ``long.max``), so the negation wraps
+        back to positive ``2 ** 63`` instead of the intended value.
         """
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
         return make_overflow_fallback_formatter(
-            base=base,
+            base=lambda value: "long.min" if value == I64_MIN else base(value),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_make_d_ulong_positive_formatter(base=base),
                 language_name="D",

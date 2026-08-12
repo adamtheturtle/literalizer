@@ -76,7 +76,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the R backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=R.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     rscript = shutil.which(cmd="Rscript") or "Rscript"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         script_path = Path(tmpdir_name) / "main.R"
@@ -100,7 +103,7 @@ def main() -> None:
         label=_LABEL,
         produced_json=run_result.stdout,
         exclude_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
     )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

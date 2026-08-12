@@ -86,6 +86,7 @@ from literalizer._language import (
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
+    RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -118,10 +119,13 @@ from literalizer.exceptions import (
     UnrepresentableSpecialFloatError,
 )
 
-# Prevent Crystal from interpreting ``#{…}`` while safely encoding a zero byte.
+# Prevent Crystal from interpreting ``#{…}`` while safely encoding a zero
+# byte.  The zero byte uses ``\u0000`` rather than ``\x00`` because the
+# same formatter feeds ``_format_json_string``, where the escape must
+# also be valid JSON (JSON has no ``\x`` escape).
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("#{", "\\#{"), ("\0", "\\x00")],
+    extra_replacements=[("#{", "\\#{"), ("\0", "\\u0000")],
 )
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -550,7 +554,12 @@ class Crystal(metaclass=LanguageCls):
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "crystal"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
-        round_trip_capabilities=frozenset(),
+        round_trip_capabilities=frozenset(
+            {
+                RoundTripCapability.I64_BOUNDARIES,
+                RoundTripCapability.EMBEDDED_NUL,
+            }
+        ),
         modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,

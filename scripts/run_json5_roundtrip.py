@@ -41,7 +41,10 @@ def _build_document(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the JSON5 backend."""
-    document = _build_document(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Json5.variant_metadata.round_trip_capabilities,
+    )
+    document = _build_document(json_text=json_text)
     parsed: dict[str, object] = json5.loads(
         s=document,
         allow_duplicate_keys=False,
@@ -51,7 +54,7 @@ def main() -> None:
         label=_LABEL,
         produced_json=produced_json,
         exclude_keys=(),
-        expected_json=None,
+        expected_json=json_text,
     )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

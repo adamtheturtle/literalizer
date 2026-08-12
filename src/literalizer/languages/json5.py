@@ -55,6 +55,7 @@ from literalizer._language import (
     LanguageCls,
     ModifierCombination,
     OrderedMapFormatConfig,
+    RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -175,7 +176,14 @@ class Json5(metaclass=LanguageCls):
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "json5"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
-        round_trip_capabilities=frozenset(),
+        round_trip_capabilities=frozenset(
+            {
+                RoundTripCapability.I64_BOUNDARIES,
+                RoundTripCapability.INTERPOLATION_STRINGS,
+                RoundTripCapability.CONTROL_STRINGS,
+                RoundTripCapability.EMBEDDED_NUL,
+            }
+        ),
         modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,

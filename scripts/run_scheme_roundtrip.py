@@ -62,7 +62,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Scheme backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Scheme.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     # Invoke `guile-3.0` directly rather than `guile` because the
     # `Install apt packages` step does not replay the package's
     # `update-alternatives` postinst on cache hit, so `/usr/bin/guile`
@@ -93,7 +96,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=(),
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 

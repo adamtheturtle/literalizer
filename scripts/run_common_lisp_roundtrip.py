@@ -138,11 +138,14 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Common Lisp backend."""
-    json_text = roundtrip_common.trim_keys(
-        json_text=roundtrip_common.read_input(),
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=CommonLisp.variant_metadata.round_trip_capabilities,
+    )
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
-    program = _build_program(json_text=json_text)
+    program = _build_program(json_text=trimmed_json)
     ros = shutil.which(cmd="ros") or "ros"
     roundtrip_common.execute(
         label=_LABEL,
@@ -163,7 +166,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 
