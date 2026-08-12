@@ -2,6 +2,7 @@
 
 import pytest
 
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer._formatters.collection_openers import (
     sequence_surrogate_set_open,
 )
@@ -53,6 +54,24 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     assert cpp14.heterogeneous_behavior.compute_wrap_ids(outer) == frozenset(
         {id(outer)}
     )
+
+
+def test_cpp_record_ordered_map_falls_back_for_distinct_record_types() -> None:
+    """Unlike uniform record lists, distinct list types use the base
+    opener.
+    """
+    language = Cpp(
+        heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+    )
+
+    result = literalize(
+        source=("!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"),
+        input_format=InputFormat.YAML,
+        language=language,
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+    )
+
+    assert "std::vector<std::pair<std::string, std::variant<" in result.code
 
 
 @pytest.mark.parametrize(
