@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "MATLAB struct field names must be valid identifiers."
+exceptions = ["InvalidDictKeyError"]
+languages = ["Matlab"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"": "value"}',
+  '{"1a": "value"}',
+  '{"a b": "value"}',
+  '{"a\u0001b": "value"}',
+]
+input_format = "json"
