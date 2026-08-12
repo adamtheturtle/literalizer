@@ -7,6 +7,10 @@
 * my_data
 @code json
 {
-    "a": {"b": {"c": deep}}
+    "a": {
+        "b": {
+            "c": deep
+        }
+    }
 }
 @end

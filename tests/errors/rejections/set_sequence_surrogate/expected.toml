@@ -1,0 +1,8 @@
+# languages rejecting: 5; languages accepting: 0
+
+[UnrepresentableInputError]
+Cpp = "Cpp cannot preserve native set semantics with the selected set format"
+D = "D cannot preserve native set semantics with the selected set format"
+Haxe = "Haxe cannot preserve native set semantics with the selected set format"
+Nim = "Nim cannot preserve native set semantics with the selected set format"
+Raku = "Raku cannot preserve native set semantics with the selected set format"

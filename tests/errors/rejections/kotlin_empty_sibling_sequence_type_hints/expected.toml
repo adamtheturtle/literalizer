@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Kotlin = "Kotlin cannot represent explicit type hints for sibling sequences that mix empty and non-empty values"

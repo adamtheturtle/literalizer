@@ -15,7 +15,11 @@ pub fn main() void {
         .{ .key = "_", .val = .{ .str = "_" } },
     }};
     const my_data: ZVal = .{ .map = &.{
-        .{ .key = "a", .val = .{ .map = &.{.{ .key = "b", .val = .{ .map = &.{.{ .key = "c", .val = deep }}} }}} },
+        .{ .key = "a", .val = .{ .map = &.{
+            .{ .key = "b", .val = .{ .map = &.{
+                .{ .key = "c", .val = deep },
+            }} },
+        }} },
     }};
     _ = my_data;
 }

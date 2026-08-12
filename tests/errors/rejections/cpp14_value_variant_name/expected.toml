@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+"Cpp['']" = "heterogeneous_value_variant_name '' must be a valid C++ identifier."
+"Cpp['1Value']" = "heterogeneous_value_variant_name '1Value' must be a valid C++ identifier."
+"Cpp['class']" = "heterogeneous_value_variant_name 'class' is a reserved C++ identifier."
+"Cpp['value-name']" = "heterogeneous_value_variant_name 'value-name' must be a valid C++ identifier."

@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+C++14 carries a heterogeneous value in a generated variant type, whose
+name is written into the output as a type name and so must be a C++
+identifier that is not a keyword.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Cpp"]
+values = ["", "1Value", "class", "value-name"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "language_version", member = "CPP14" },
+  { kind = "text", kwarg = "heterogeneous_value_variant_name", value = "{value}" },
+]

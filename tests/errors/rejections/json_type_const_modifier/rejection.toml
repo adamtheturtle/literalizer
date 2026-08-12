@@ -12,7 +12,7 @@ gates = [
 
 [call]
 api = "literalize"
-source = "[1, 2, 3]"
+sources = ["[1, 2, 3]"]
 input_format = "json"
 modifiers = ["CONST"]
 

@@ -1,0 +1,9 @@
+# languages rejecting: 3; languages accepting: 0
+
+[UnrepresentableInputError]
+"CSharp['value: 2024-01-02 03:04:05 -05:00']" = "C# native datetime format cannot preserve UTC offset -1 day, 19:00:00"
+"CSharp['2024-01-02 03:04:05 -05:00: value']" = "C# native datetime format cannot preserve UTC offset -1 day, 19:00:00"
+"Kotlin['value: 2024-01-02 03:04:05 -05:00']" = "Kotlin native datetime format cannot preserve UTC offset -1 day, 19:00:00"
+"Kotlin['2024-01-02 03:04:05 -05:00: value']" = "Kotlin native datetime format cannot preserve UTC offset -1 day, 19:00:00"
+"Rust['value: 2024-01-02 03:04:05 -05:00']" = "Rust native datetime format cannot preserve UTC offset -1 day, 19:00:00"
+"Rust['2024-01-02 03:04:05 -05:00: value']" = "Rust native datetime format cannot preserve UTC offset -1 day, 19:00:00"

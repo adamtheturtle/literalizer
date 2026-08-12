@@ -1,7 +1,8 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json(["48656c6c6f"])json", nullptr, false);
+auto my_data = nlohmann::json::array({"48656c6c6f"});
     (void)my_data;
         return 0;
     } catch (...) {

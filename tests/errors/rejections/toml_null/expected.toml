@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Toml['null']" = "TOML cannot represent null values; remove the null or choose a language with a null literal"
+"Toml['{\"a\": null}']" = "TOML cannot represent null values; remove the null or choose a language with a null literal"
+"Toml['[null, 1]']" = "TOML cannot represent null values; remove the null or choose a language with a null literal"
+"Toml['{\"a\": [{\"b\": null}]}']" = "TOML cannot represent null values; remove the null or choose a language with a null literal"

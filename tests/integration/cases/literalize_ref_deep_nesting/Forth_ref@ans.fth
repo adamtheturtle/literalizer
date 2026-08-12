@@ -5,6 +5,10 @@
 ;
 : my_data
 +obj
-    s\" a" +key +obj s\" b" +key +obj s\" c" +key DEEP -obj -obj
+    s\" a" +key +obj
+        s\" b" +key +obj
+            s\" c" +key DEEP
+         -obj
+     -obj
  -obj
 ;
