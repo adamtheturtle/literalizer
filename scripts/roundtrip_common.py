@@ -71,7 +71,7 @@ def read_input() -> str:
     return INPUT_PATH.read_text(encoding="utf-8")
 
 
-def expected(*, json_text: str | None = None) -> dict[str, object]:
+def expected(*, json_text: str | None) -> dict[str, object]:
     """Return the parsed value the round-trip must reproduce.
 
     The shared ``roundtrip_input.json`` document is a top-level JSON
@@ -87,7 +87,7 @@ def verify(
     label: str,
     produced_json: str,
     exclude_keys: tuple[str, ...],
-    expected_json: str | None = None,
+    expected_json: str | None,
 ) -> None:
     """Compare *produced_json* to :func:`expected`, exiting 1 on mismatch.
 
@@ -181,8 +181,8 @@ def execute(
     program: str,
     steps: Sequence[Step],
     excluded_keys: tuple[str, ...],
-    expected_json: str | None = None,
-    extra_files: Mapping[str, str] | None = None,
+    expected_json: str | None,
+    extra_files: Mapping[str, str] | None,
 ) -> None:
     """Run *program* through *steps* and verify the final stdout.
 

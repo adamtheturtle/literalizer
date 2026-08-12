@@ -53,6 +53,8 @@ def main() -> None:
             ),
         ],
         excluded_keys=(),
+        expected_json=None,
+        extra_files=None,
     )
 
 

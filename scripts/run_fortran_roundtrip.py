@@ -91,6 +91,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
+        expected_json=None,
         extra_files={_FVAL_M_SRC.name: fval_m_text},
     )
 

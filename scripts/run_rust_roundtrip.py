@@ -95,6 +95,7 @@ def main() -> None:
         ],
         excluded_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
+        extra_files=None,
     )
 
 
