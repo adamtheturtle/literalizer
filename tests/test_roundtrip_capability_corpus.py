@@ -46,7 +46,7 @@ def test_capability_adds_only_its_cases(
 
 
 def test_integer_boundaries_are_exact() -> None:
-    """The integer group includes both i64 endpoints and neighbours."""
+    """The integer group includes both i64 endpoints and neighbors."""
     selected = json.loads(
         s=input_for_capabilities(
             capabilities=frozenset({RoundTripCapability.I64_BOUNDARIES}),
