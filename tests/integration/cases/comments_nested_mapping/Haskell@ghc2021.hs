@@ -10,7 +10,10 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("a", HMap [("x", 1)]),
+    ("a", HMap [
+        -- indented
+        ("x", 1)
+        ]),
     ("b", 2)
     ]
 main :: IO ()

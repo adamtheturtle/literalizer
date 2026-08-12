@@ -1,4 +1,11 @@
-$my_data = [ordered]@{
-    "name" = "Alice";
-    "scores" = @{1 = "first"; 2 = "second"}
+$my_data = @{
+    "ordered" = [ordered]@{
+        # ordered entry
+        "name" = "Alice";
+        "scores" = @{
+            # score meaning
+            1 = "first";
+            2 = "second"  # latest score
+        }
+    }
 }

@@ -6,14 +6,20 @@ type Val =
     | FMap of (string * Val) list
 let private _mainDeclaration () =
     let mutable my_data: Val = FMap [
-        ("a", FMap [("x", FInt 1L)]);
+        ("a", FMap [
+            // indented
+            ("x", FInt 1L)
+        ]);
         ("b", FInt 2L)
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FMap [
-        ("a", FMap [("x", FInt 1L)]);
+        ("a", FMap [
+            // indented
+            ("x", FInt 1L)
+        ]);
         ("b", FInt 2L)
     ]
     ignore my_data

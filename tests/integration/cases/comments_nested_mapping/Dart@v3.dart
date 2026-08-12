@@ -1,4 +1,7 @@
 final my_data = <String, dynamic>{
-    "a": <String, int>{"x": 1},
+    "a": <String, int>{
+        // indented
+        "x": 1,
+    },
     "b": 2,
 };

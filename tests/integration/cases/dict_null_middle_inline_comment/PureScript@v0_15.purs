@@ -11,7 +11,9 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "host" (PStr "localhost")),
-    (Tuple "port" (PNull)),  -- not configured yet
-    (Tuple "debug" (PBool true))
+    (Tuple "server" (PDict [
+        (Tuple "host" (PStr "localhost")),
+        (Tuple "port" (PNull)),  -- not configured yet
+        (Tuple "debug" (PBool true))
+        ]))
     ]

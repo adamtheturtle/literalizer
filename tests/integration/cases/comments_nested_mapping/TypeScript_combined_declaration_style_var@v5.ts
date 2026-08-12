@@ -1,9 +1,15 @@
 var my_data = {
-  "a": {"x": 1},
+  "a": {
+    // indented
+    "x": 1,
+  },
   "b": 2,
 };
 my_data = {
-  "a": {"x": 1},
+  "a": {
+    // indented
+    "x": 1,
+  },
   "b": 2,
 };
 export {};

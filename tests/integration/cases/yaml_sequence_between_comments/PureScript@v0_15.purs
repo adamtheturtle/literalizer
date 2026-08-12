@@ -10,7 +10,9 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PDict [(Tuple "item" (PStr "existing"))],
-    -- This comment describes the next item.
+    PDict [
+        (Tuple "item" (PStr "existing"))
+        -- This comment describes the next item.
+        ],
     PDict [(Tuple "item" (PStr "next"))]
     ]

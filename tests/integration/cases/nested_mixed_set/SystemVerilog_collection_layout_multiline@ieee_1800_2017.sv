@@ -13,7 +13,7 @@ module main;
 initial begin
 static _VKV my_data[] = '{
     _VKV'{k: "name", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "Alice"}},
-    _VKV'{k: "tags", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: \"\"},\n        _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"},\n        _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"apple\"}\n    }"}}
+    _VKV'{k: "tags", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"apple\"}}"}}
 };
 end
 endmodule
