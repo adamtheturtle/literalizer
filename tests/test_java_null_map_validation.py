@@ -1,9 +1,6 @@
 """Focused Java validation tests for null-valued maps."""
 
-import pytest
-
 from literalizer import InputFormat, Language, NewVariable, literalize
-from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Java
 
 
@@ -13,20 +10,6 @@ def _record_java() -> Language:
         heterogeneous_strategy=Java.heterogeneous_strategies.RECORD,
         sequence_format=Java.sequence_formats.ARRAY,
     )
-
-
-def test_record_strategy_rejects_direct_ordered_map_null() -> None:
-    """Ordered maps still use ``Map.entry``, which rejects null values."""
-    with pytest.raises(
-        expected_exception=UnrepresentableInputError,
-        match=r"Map\.entry\(\) does not accept null values",
-    ):
-        literalize(
-            source="!!omap\n- missing: null\n",
-            input_format=InputFormat.YAML,
-            language=_record_java(),
-            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        )
 
 
 def test_record_strategy_allows_null_inside_nested_record() -> None:

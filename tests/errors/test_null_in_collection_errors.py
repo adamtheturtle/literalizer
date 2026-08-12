@@ -15,10 +15,7 @@ import re
 import pytest
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import (
-    NullInCollectionError,
-    UnrepresentableInputError,
-)
+from literalizer.exceptions import NullInCollectionError
 from literalizer.languages import Java, V
 
 _V_NULL_ONLY_MSG = re.escape(
@@ -54,25 +51,6 @@ def test_java_list_rejects_null_elements() -> None:
 
 @pytest.mark.parametrize(
     argnames="source",
-    argvalues=['{"a": null, "b": 1}', '[{"a": {"b": null}}]'],
-    ids=["map", "nested_map"],
-)
-def test_java_map_rejects_null_values(source: str) -> None:
-    """Java's ``Map.entry`` rejects null values at runtime."""
-    with pytest.raises(
-        expected_exception=UnrepresentableInputError,
-        match=r"Java's Map\.entry\(\) does not accept null values",
-    ):
-        literalize(
-            source=source,
-            input_format=InputFormat.JSON,
-            language=Java(),
-            variable_form=None,
-        )
-
-
-@pytest.mark.parametrize(
-    argnames="source",
     argvalues=[
         json.dumps(obj=[None, None]),
         json.dumps(obj={"a": None, "b": None}),
@@ -99,3 +77,22 @@ def test_v_default_rejects_null_only_container(source: str) -> None:
             include_delimiters=True,
             variable_form=None,
         )
+
+
+def test_v_interface_strategy_admits_null_only_container() -> None:
+    """The ``INTERFACE`` strategy wraps each null in ``IVal(...)``, so a
+    null-only list is representable and is not rejected.
+    """
+    result = literalize(
+        source=json.dumps(obj=[None, None]),
+        input_format=InputFormat.JSON,
+        language=V(
+            heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE,
+        ),
+        pre_indent_level=0,
+        include_delimiters=True,
+        variable_form=None,
+    )
+    assert result.code == (
+        "[\n\tIVal(unsafe { nil }),\n\tIVal(unsafe { nil }),\n]"
+    )

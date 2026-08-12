@@ -3544,10 +3544,16 @@ class Cpp(metaclass=LanguageCls):
         if self._json_type_active:
             return _NLOHMANN_JSON_ORDERED_MAP_CONFIG
         config = _build_ordered_map_config(type_ctx=self._type_ctx)
-        if not self._record_strategy_active:
+        record_rendering_active = (
+            self._record_strategy_active
+            or self._uses_cpp14_tuple_record_strategy
+        )
+        if not record_rendering_active:
             return config
         maybe_record_name_for_value = (
             self._record_strategy.record_name_for_value
+            if self._record_strategy_active
+            else self._tuple_record_strategy.record_name_for_value
         )
         assert maybe_record_name_for_value is not None  # noqa: S101
         record_name_for_value: Callable[[object], str | None] = (
