@@ -77,6 +77,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnrepresentableInputError,
@@ -2284,7 +2285,7 @@ def _collect_yaml_comment_nodes(
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def _literalize(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
+def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     data: Value,
     language: Language,
@@ -2506,6 +2507,106 @@ def _literalize(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,
         spec=language,
         line_prefix=line_prefix,
     )
+
+
+def _literalize_child_path(
+    *,
+    data: Value,
+    error_type: type[LiteralizerError],
+    language: Language,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+) -> tuple[str | int, ...]:
+    """Locate a renderer error by probing children with the same
+    options.
+    """
+    children: list[tuple[str | int, Value]]
+    match data:
+        case dict():
+            children = [
+                (
+                    key
+                    if isinstance(key, str | int) and not isinstance(key, bool)
+                    else repr(key),
+                    value,
+                )
+                for key, value in data.items()
+            ]
+        case list():
+            children = list(enumerate(iterable=data))
+        case _:
+            return ()
+    for component, child in children:
+        try:
+            _literalize_impl(
+                data=child,
+                language=language,
+                line_prefix="",
+                include_delimiters=True,
+                ref_case=ref_case,
+                ref_values=ref_values,
+                ref_key=ref_key,
+                collection_layout=collection_layout,
+                raw_yaml_data=None,
+            )
+        except error_type:
+            return (
+                component,
+                *_literalize_child_path(
+                    data=child,
+                    error_type=error_type,
+                    language=language,
+                    ref_case=ref_case,
+                    ref_values=ref_values,
+                    ref_key=ref_key,
+                    collection_layout=collection_layout,
+                ),
+            )
+        except LiteralizerError:  # pragma: no cover - defensive probe
+            continue
+    return ()
+
+
+@beartype(conf=BeartypeConf(is_pep484_tower=True))
+def _literalize(
+    *,
+    data: Value,
+    language: Language,
+    line_prefix: str,
+    include_delimiters: bool,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    raw_yaml_data: object | None,
+) -> str:
+    """Render data and attach a path to value-specific renderer errors."""
+    try:
+        return _literalize_impl(
+            data=data,
+            language=language,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            raw_yaml_data=raw_yaml_data,
+        )
+    except LiteralizerError as exc:
+        if exc.path is None:
+            exc.path = _literalize_child_path(
+                data=data,
+                error_type=type(exc),
+                language=language,
+                ref_case=ref_case,
+                ref_values=ref_values,
+                ref_key=ref_key,
+                collection_layout=collection_layout,
+            )
+        raise
 
 
 @beartype

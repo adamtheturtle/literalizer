@@ -8,6 +8,12 @@ Every exception lives in :mod:`literalizer.exceptions`; this page groups them by
 
 All exceptions are importable from :mod:`literalizer.exceptions`, so a name such as ``HeterogeneousScalarCollectionError`` below refers to :class:`literalizer.exceptions.HeterogeneousScalarCollectionError`.
 
+Errors associated with a particular parsed value expose its location as a
+``path`` tuple containing mapping keys and zero-based sequence indexes. Parse
+errors expose one-based ``line`` and ``column`` attributes when the selected
+parser reports them. These structured attributes let callers present their own
+diagnostics without parsing exception messages.
+
 Catch any Literalizer error
 ---------------------------
 

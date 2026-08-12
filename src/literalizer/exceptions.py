@@ -2,9 +2,29 @@
 
 import enum
 
+type InputPath = tuple[str | int, ...]
+
 
 class LiteralizerError(Exception):
-    """Base class for every public error raised by Literalizer."""
+    """Base class for every public error raised by Literalizer.
+
+    ``path`` identifies the value associated with an error, using mapping
+    keys and zero-based sequence indexes. It is ``None`` when an error is
+    not associated with one particular input value.
+    """
+
+    def __init__(
+        self,
+        message: str = "",
+        /,
+        *,
+        path: InputPath | None = None,
+    ) -> None:
+        """Create a Literalizer error with optional input location
+        data.
+        """
+        super().__init__(message)
+        self.path = path
 
 
 class UnsupportedOptionError(LiteralizerError):
@@ -27,8 +47,22 @@ class ParseError(LiteralizerError):
 
     Base class for every input-parsing failure; catch it to handle any
     malformed input uniformly.  To resolve, validate the source against
-    its declared ``input_format``.
+    its declared ``input_format``. ``line`` and ``column`` are one-based
+    parser positions when the underlying parser supplies them.
     """
+
+    def __init__(
+        self,
+        message: str,
+        /,
+        *,
+        line: int | None = None,
+        column: int | None = None,
+    ) -> None:
+        """Create a parse error with optional source coordinates."""
+        super().__init__(message)
+        self.line = line
+        self.column = column
 
 
 class JSONParseError(ParseError):

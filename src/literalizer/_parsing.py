@@ -5,7 +5,8 @@ import datetime
 import enum
 import functools
 import json
-from typing import assert_never
+import re
+from typing import Protocol, assert_never, runtime_checkable
 
 import json5
 import tomlkit
@@ -38,6 +39,28 @@ type YamlCoercible = (
 
 _HIGH_SURROGATE_START = 0xD800
 _LOW_SURROGATE_END = 0xDFFF
+
+
+class _ParserMark(Protocol):
+    """Line and column metadata exposed by parser exceptions."""
+
+    line: int
+    column: int
+
+
+@runtime_checkable
+class _MarkedYamlError(Protocol):
+    """A ruamel exception carrying a problem mark."""
+
+    problem_mark: _ParserMark | None
+
+
+@runtime_checkable
+class _PositionedTomlError(Protocol):
+    """A tomlkit exception carrying its parser cursor."""
+
+    line: int
+    col: int
 
 
 class _DuplicateJSONKeyError(ValueError):
@@ -287,7 +310,11 @@ def _parse_json(*, source: str) -> ParsedInput:
         message = (
             f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
-        raise JSONParseError(message) from exc
+        raise JSONParseError(
+            message,
+            line=exc.lineno,
+            column=exc.colno,
+        ) from exc
     return ParsedPlain(data=data)
 
 
@@ -298,7 +325,15 @@ def _parse_json5(*, source: str) -> ParsedInput:
         data = json5.loads(s=source, allow_duplicate_keys=False)
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
-        raise JSON5ParseError(message) from exc
+        position = re.search(
+            pattern=r"<string>:(?P<line>\d+).* column (?P<column>\d+)",
+            string=str(object=exc),
+        )
+        raise JSON5ParseError(
+            message,
+            line=int(position["line"]) if position is not None else None,
+            column=(int(position["column"]) if position is not None else None),
+        ) from exc
     return ParsedPlain(data=data)
 
 
@@ -372,7 +407,14 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
         except YAMLError as exc:
             message = f"Invalid YAML: {exc}"
-            raise YAMLParseError(message) from exc
+            mark = (
+                exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
+            )
+            raise YAMLParseError(
+                message,
+                line=mark.line + 1 if mark is not None else None,
+                column=mark.column + 1 if mark is not None else None,
+            ) from exc
         data = _unwrap_yaml_data(data=raw_data)
         return ParsedYaml(
             data=data,
@@ -385,7 +427,12 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
     except YAMLError as exc:
         message = f"Invalid YAML: {exc}"
-        raise YAMLParseError(message) from exc
+        mark = exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
+        raise YAMLParseError(
+            message,
+            line=mark.line + 1 if mark is not None else None,
+            column=mark.column + 1 if mark is not None else None,
+        ) from exc
     data = _unwrap_yaml_data(data=plain_data)
     return ParsedYaml(
         data=data,
@@ -426,7 +473,12 @@ def _parse_toml(*, source: str) -> ParsedInput:
         toml_doc = tomlkit.parse(string=source)
     except TOMLKitError as exc:
         message = f"Invalid TOML: {exc}"
-        raise TOMLParseError(message) from exc
+        positioned = exc if isinstance(exc, _PositionedTomlError) else None
+        raise TOMLParseError(
+            message,
+            line=positioned.line if positioned is not None else None,
+            column=positioned.col + 1 if positioned is not None else None,
+        ) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
     return ParsedToml(
         data=_toml_data_to_value(data=unwrapped),

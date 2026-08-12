@@ -17,6 +17,7 @@ from literalizer.exceptions import (
     HeterogeneousSetError,
     HeterogeneousSiblingListsError,
     HeterogeneousSiblingMapsError,
+    LiteralizerError,
     MixedDictKeysError,
     MixedDictShapesError,
     MixedDictValuesError,
@@ -1055,7 +1056,7 @@ def check_empty_sibling_sequence_type_hint_data(
 
 
 @beartype
-def check_data(  # noqa: C901  # pylint: disable=too-complex
+def _check_data(  # noqa: C901  # pylint: disable=too-complex
     *,
     data: Value,
     spec: Language,
@@ -1166,3 +1167,59 @@ def check_data(  # noqa: C901  # pylint: disable=too-complex
                 "represent"
             )
             raise MixedDictValuesError(msg)
+
+
+def _path_key(key: Scalar) -> str | int:
+    """Return a stable public path component for a mapping key."""
+    if isinstance(key, str | int) and not isinstance(key, bool):
+        return key
+    return repr(key)
+
+
+def _locate_error(
+    *,
+    data: Value,
+    spec: Language,
+    error_type: type[LiteralizerError],
+) -> tuple[str | int, ...]:
+    """Return the deepest child that independently raises *error_type*."""
+    children: list[tuple[str | int, Value]]
+    match data:
+        case dict():
+            children = [
+                (_path_key(key=key), value) for key, value in data.items()
+            ]
+        case list():
+            children = list(enumerate(iterable=data))
+        case _:
+            return ()
+    for component, child in children:
+        try:
+            _check_data(data=child, spec=spec)
+        except error_type:
+            return (
+                component,
+                *_locate_error(
+                    data=child,
+                    spec=spec,
+                    error_type=error_type,
+                ),
+            )
+        except LiteralizerError:
+            continue
+    return ()
+
+
+@beartype
+def check_data(*, data: Value, spec: Language) -> None:
+    """Validate data and attach the offending collection's input path."""
+    try:
+        _check_data(data=data, spec=spec)
+    except LiteralizerError as exc:
+        if exc.path is None:  # pragma: no branch - entry lacks a location
+            exc.path = _locate_error(
+                data=data,
+                spec=spec,
+                error_type=type(exc),
+            )
+        raise
