@@ -3,7 +3,11 @@ int main(void) {
 @autoreleasepool {
 id my_data = @[
     @[@"ADD", @"alice", @"hello"],
-    @[@"DEL", @"bob", @"5"],  // removes "world"
+    @[
+        @"DEL",
+        @"bob",
+        @"5",  // removes "world"
+    ],
 ];
     (void)my_data;
 }

@@ -3,13 +3,7 @@ summary = """
 JSON has no syntax for infinity, so a JSON value type built from a JSON
 document cannot carry one.
 """
-# Odin reports this as UnrepresentableInputError where the other six
-# languages raise UnrepresentableSpecialFloatError; tracked in issue
-# #3560, after which this list narrows to the special-float error.
-exceptions = [
-  "UnrepresentableSpecialFloatError",
-  "UnrepresentableInputError",
-]
+exceptions = ["UnrepresentableSpecialFloatError"]
 option = "json_type"
 gates = [{ kind = "spec_field_present", field = "json_type" }]
 
