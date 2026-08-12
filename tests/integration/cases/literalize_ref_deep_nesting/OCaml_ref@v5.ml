@@ -7,7 +7,11 @@ let deep : val_t = OMap [
     ("_", OStr "_")
 ]
 let my_data : val_t = OMap [
-    ("a", OMap [("b", OMap [("c", deep)])])
+    ("a", OMap [
+        ("b", OMap [
+            ("c", deep)
+        ])
+    ])
 ]
 
 end

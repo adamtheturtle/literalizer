@@ -227,9 +227,9 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
             _manifest(
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
-                call='api = "constructor"\nsource = "1"',
+                call='api = "constructor"\nsources = ["1"]',
             ),
-            "requires exactly a source",
+            "requires exactly sources",
         ),
         (
             _manifest(
@@ -237,13 +237,13 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 extra=_NO_EXTRA,
                 call='api = "literalize"\ninput_format = "yaml"',
             ),
-            "requires exactly a source",
+            "requires exactly sources",
         ),
         (
             _manifest(
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
-                call='api = "literalize"\nsource = "1"',
+                call='api = "literalize"\nsources = ["1"]',
             ),
             "requires exactly an input_format",
         ),
@@ -252,7 +252,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
-                    'api = "literalize"\nsource = "1"\n'
+                    'api = "literalize"\nsources = ["1"]\n'
                     'input_format = "json"\ntarget_function = "process"'
                 ),
             ),
@@ -263,7 +263,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
-                    'api = "literalize_call"\nsource = "1"\n'
+                    'api = "literalize_call"\nsources = ["1"]\n'
                     'input_format = "json"\ntarget_function = "process"'
                 ),
             ),
@@ -274,7 +274,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
-                    'api = "literalize_call"\nsource = "1"\n'
+                    'api = "literalize_call"\nsources = ["1"]\n'
                     'input_format = "json"\ntarget_function = "process"\n'
                     'parameter_names = ["x"]\nmodifiers = ["CONST"]'
                 ),
@@ -286,10 +286,21 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
-                    'api = "literalize"\nsource = "1"\ninput_format = "csv"'
+                    'api = "literalize"\nsources = ["1"]\ninput_format = "csv"'
                 ),
             ),
             "Input should be 'json', 'json5', 'toml', 'yaml'",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize"\nsources = ["1", "1"]\n'
+                    'input_format = "json"'
+                ),
+            ),
+            "sources contains a duplicate entry",
         ),
     ],
 )

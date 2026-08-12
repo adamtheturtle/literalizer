@@ -3,6 +3,10 @@ val deep = Map[String, String](
     "_" -> "_",
 )
 val my_data = Map(
-    "a" -> Map("b" -> Map("c" -> deep)),
+    "a" -> Map(
+        "b" -> Map(
+            "c" -> deep,
+        ),
+    ),
 )
 }

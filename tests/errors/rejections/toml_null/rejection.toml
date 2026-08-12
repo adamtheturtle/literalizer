@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+TOML has no null, so a document carrying one is refused wherever it
+sits rather than written out with the null dropped.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Toml"]
+
+[call]
+api = "literalize"
+sources = [
+  "null",
+  '{"a": null}',
+  "[null, 1]",
+  '{"a": [{"b": null}]}',
+]
+input_format = "json"

@@ -1,7 +1,7 @@
 """C++ JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to a C++
-``auto my_data = nlohmann::json::parse(...);`` declaration via
+structural ``auto my_data = nlohmann::json::object(...);`` declaration via
 ``Cpp(json_type=NLOHMANN_JSON)``, wrap it in a tiny ``main`` that writes
 ``my_data.dump()`` to stdout, compile and run it with ``clang++``, and
 hand the emitted JSON to :func:`roundtrip_common.verify`.

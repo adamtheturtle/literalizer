@@ -39,13 +39,16 @@ def _variable_form(
     *,
     call: CallSpec,
     lang_cls: literalizer.LanguageCls,
-) -> literalizer.NewVariable:
+) -> literalizer.NewVariable | None:
     """Return the variable form a rendering case declares its value in.
 
     Modifiers are resolved against the language rather than declared as
     values, so a manifest naming ``CONST`` covers every language whose
-    declarations take one.
+    declarations take one.  A language with no named variables to bind
+    to renders the value on its own, which is the only form it has.
     """
+    if not lang_cls.supports_variable_names:
+        return None
     modifiers = frozenset(
         enum_member_by_name(enum_cls=lang_cls.Modifiers, name=name)
         for name in call.modifiers
@@ -57,7 +60,7 @@ def _variable_form(
 def _run(*, case: RejectionCase, call: CallSpec) -> None:
     """Make the call one case declares.
 
-    ``source``, ``input_format`` and ``target_function`` accompany the
+    A source, ``input_format`` and ``target_function`` accompany the
     APIs that take them, which the manifest's own validation enforces,
     so the seams below only restate that for the type checker.
     """
@@ -66,20 +69,20 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         case "constructor":
             lang_cls(**case.kwargs)
         case "literalize":
-            assert call.source is not None
+            assert case.source is not None
             assert call.input_format is not None
             literalizer.literalize(
-                source=call.source,
+                source=case.source,
                 input_format=call.input_format,
                 language=lang_cls(**case.kwargs),
                 variable_form=_variable_form(call=call, lang_cls=lang_cls),
             )
         case "literalize_call":
-            assert call.source is not None
+            assert case.source is not None
             assert call.input_format is not None
             assert call.target_function is not None
             literalizer.literalize_call(
-                source=call.source,
+                source=case.source,
                 input_format=call.input_format,
                 language=lang_cls(**case.kwargs),
                 target_function=call.target_function,

@@ -49,6 +49,7 @@ optional-dependencies.benchmark = [
 optional-dependencies.dev = [
     "actionlint-py==1.7.12.24",
     "check-manifest==0.51",
+    "clang-tidy==22.1.8",
     "deptry==0.25.1",
     "doc8==2.0.0",
     "doccmd==2026.7.19",
