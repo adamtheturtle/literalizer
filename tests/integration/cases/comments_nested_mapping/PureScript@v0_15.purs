@@ -10,6 +10,9 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "a" (PDict [(Tuple "x" (PInt 1))])),
+    (Tuple "a" (PDict [
+        -- indented
+        (Tuple "x" (PInt 1))
+        ])),
     (Tuple "b" (PInt 2))
     ]

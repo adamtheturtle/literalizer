@@ -33,7 +33,6 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_concat_control
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -88,14 +87,38 @@ _MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 @beartype
+def _format_matlab_string(value: str) -> str:
+    """Preserve backslashes while keeping Octave-compatible delimiters."""
+    control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\\\x00-\x1f])", string=value):
+        if not segment:
+            continue
+        if len(segment) == 1 and (
+            segment == "\\" or ord(segment) < control_char_threshold
+        ):
+            parts.append(f"char({ord(segment)})")
+        else:
+            parts.append(f'"{segment.replace(chr(34), chr(34) * 2)}"')
+    if not parts:
+        return '""'
+    if len(parts) == 1 and parts[0].startswith('"'):
+        return parts[0]
+    placeholders = "%s" * len(parts)
+    return f"sprintf('{placeholders}', {', '.join(parts)})"
+
+
+@beartype
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
 
     Reverses the output of ``format_string_matlab``.  Handles both the
-    simple ``"..."`` form (with ``""`` for embedded double-quotes and
-    ``\\\\`` for literal backslashes) and the ``"..." + char(N) + "..."``
+    simple ``"..."`` form (with ``""`` for embedded double-quotes) and
+    the ``sprintf('%s...', "...", char(N), ...)``
     concatenation form used for control characters.
     """
+    if expr.startswith("sprintf("):
+        expr = expr.partition(", ")[2].removesuffix(")")
     raw: list[str] = []
     for string_seg, char_code in re.findall(
         pattern=r'"((?:[^"]|"")*)"|char\((\d+)\)',
@@ -104,19 +127,34 @@ def _decode_matlab_string_expr(expr: str) -> str:
         if char_code:
             raw.append(chr(int(char_code)))
         else:
-            raw.append(string_seg.replace('""', '"').replace("\\\\", "\\"))
+            raw.append(string_seg.replace('""', '"'))
     return "".join(raw)
 
 
-_matlab_char_key = format_string_concat_control(
-    quote_char="'",
-    quote_escape="''",
-    control_char_template="char({})",
-    concat_operator=", ",
-    escape_backslash=False,
-    multi_open="[",
-    multi_close="]",
-)
+@beartype
+def _matlab_char_key(s: str) -> str:
+    """Build a MATLAB char-array expression for a struct key.
+
+    Single quotes are doubled for valid char-vector literals.  Control
+    characters (code points 0-31) cannot appear literally inside a
+    MATLAB char vector, so they are emitted as ``char(N)`` calls and
+    concatenated with ``[...]``.
+    """
+    control_char_threshold = 32
+    parts: list[str] = []
+    for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
+        if not segment:
+            continue
+        if len(segment) == 1 and ord(segment) < control_char_threshold:
+            parts.append(f"char({ord(segment)})")
+        else:
+            escaped = segment.replace("'", "''")
+            parts.append(f"'{escaped}'")
+    if not parts:
+        return "''"
+    if len(parts) == 1:
+        return parts[0]
+    return "[" + ", ".join(parts) + "]"
 
 
 @beartype
@@ -146,7 +184,7 @@ def _format_matlab_dict_entry(
             "digits, and underscores."
         )
         raise InvalidDictKeyError(msg)
-    key_expr = _matlab_char_key(inner)
+    key_expr = _matlab_char_key(s=inner)
     if formatted_value.startswith("{") and formatted_value.endswith("}"):
         formatted_value = f"{{{formatted_value}}}"
     return f"{key_expr}, {formatted_value}"
@@ -168,7 +206,7 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
 @beartype
 def _containers_map_open(data: dict[Scalar, Value]) -> str:
     """Build the ``containers.Map`` opener with all keys collected."""
-    keys = ", ".join(_matlab_char_key(k) for k in data if isinstance(k, str))
+    keys = ", ".join(_matlab_char_key(s=k) for k in data if isinstance(k, str))
     return f"containers.Map({{{keys}}}, {{"
 
 
@@ -295,6 +333,7 @@ class Matlab(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
+    checks_raw_control_dict_keys_separately = False
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
@@ -822,15 +861,7 @@ class Matlab(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        return format_string_concat_control(
-            quote_char='"',
-            quote_escape='""',
-            control_char_template="char({})",
-            concat_operator=" + ",
-            escape_backslash=True,
-            multi_open="",
-            multi_close="",
-        )
+        return _format_matlab_string
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:

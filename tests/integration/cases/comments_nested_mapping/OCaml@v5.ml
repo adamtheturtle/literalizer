@@ -5,7 +5,10 @@ type val_t =
   | OStr of string
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
-    ("a", OMap [("x", OInt 1)]);
+    ("a", OMap [
+        (* indented *)
+        ("x", OInt 1)
+    ]);
     ("b", OInt 2)
 ]
 
