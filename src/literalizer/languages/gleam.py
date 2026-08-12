@@ -41,7 +41,9 @@ from literalizer._formatters.format_integers import (
     format_integer_octal,
     format_integer_underscore,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_braced_unicode,
+)
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -238,7 +240,7 @@ def _build_gleam_bytes_base64(
 @beartype
 def _apply_gleam_string(value: str, prefix: str) -> str:
     """Format a string with a constructor prefix."""
-    escaped = format_string_backslash(value)
+    escaped = format_string_backslash_nul_braced_unicode(value)
     return f"{prefix}Str({escaped})"
 
 
@@ -535,7 +537,7 @@ _GLEAM_JSON_STRING_OPEN: str = "json.string("
 @beartype
 def _format_gleam_json_string(value: str) -> str:
     """Format a string as a ``json.string("...")`` builder call."""
-    escaped = format_string_backslash(value)
+    escaped = format_string_backslash_nul_braced_unicode(value)
     return f"{_GLEAM_JSON_STRING_OPEN}{escaped})"
 
 
@@ -767,7 +769,7 @@ class Gleam(metaclass=LanguageCls):
     language_id: ClassVar[str] = "gleam"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

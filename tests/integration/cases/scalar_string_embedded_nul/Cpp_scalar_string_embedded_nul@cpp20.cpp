@@ -1,7 +1,7 @@
 #include <initializer_list>
 #include <string>
 int main() {
-const auto* my_data = "aface";
+auto my_data = std::string{""} + '\0' + "x";
     (void)my_data;
     return 0;
 }

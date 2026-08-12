@@ -5,7 +5,7 @@ Languages that can escape it are covered by the string_embedded_nul
 golden axis instead.
 """
 exceptions = ["UnrepresentableStringError"]
-languages = ["Cobol", "R"]
+languages = ["Bash", "Cobol", "Nix", "Norg", "Occam", "R"]
 
 [call]
 api = "literalize"

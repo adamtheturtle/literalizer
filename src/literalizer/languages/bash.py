@@ -33,6 +33,7 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash,
+    reject_nul_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -102,6 +103,16 @@ def _format_string_single(value: str) -> str:
     """
     escaped = value.replace("'", r"'\''")
     return f"'{escaped}'"
+
+
+_format_string_double_safe = reject_nul_string_formatter(
+    format_string_backslash,
+    language_name="Bash",
+)
+_format_string_single_safe = reject_nul_string_formatter(
+    _format_string_single,
+    language_name="Bash",
+)
 
 
 @beartype
@@ -471,12 +482,12 @@ class Bash(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
-        SINGLE = enum.member(value=_format_string_single)
+        DOUBLE = enum.member(value=_format_string_double_safe)
+        SINGLE = enum.member(value=_format_string_single_safe)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

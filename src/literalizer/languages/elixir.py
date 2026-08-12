@@ -99,7 +99,7 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 # Prevent Elixir from interpreting ``#{…}`` as string interpolation.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("#{", "\\#{")],
+    extra_replacements=[("#{", "\\#{"), ("\0", "\\0")],
 )
 
 
@@ -313,7 +313,7 @@ class Elixir(metaclass=LanguageCls):
     language_id: ClassVar[str] = "elixir"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

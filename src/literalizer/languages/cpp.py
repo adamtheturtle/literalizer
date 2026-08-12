@@ -54,7 +54,9 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_octal,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -154,9 +156,10 @@ def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
     segments = value.split(sep="\0")
     if len(segments) == 1:
-        return format_string_backslash(value=value)
+        return format_string_backslash_nul_octal(value=value)
     formatted_segments = [
-        format_string_backslash(value=segment) for segment in segments
+        format_string_backslash_nul_octal(value=segment)
+        for segment in segments
     ]
     return " + '\\0' + ".join(
         [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
@@ -1822,7 +1825,7 @@ def _format_variable_declaration(
     * ``const auto*`` — string literal (``"..."``), required by
       ``readability-qualified-auto``.  Driven by the parsed *data*
       together with the chosen date/datetime ``type_produced``: bytes
-      and strings always render as quoted strings, and dates/datetimes
+      and strings without NULs render as quoted strings, and dates/datetimes
       do so when their format produces a :class:`str`.
     * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
@@ -1859,6 +1862,8 @@ def _renders_as_string_literal(
     other variants render as ``std::chrono`` or numeric expressions.
     """
     match data:
+        case str() if "\0" in data:
+            return False
         case bytes() | str():
             return True
         case datetime.datetime():
@@ -2324,7 +2329,7 @@ class Cpp(metaclass=LanguageCls):
     language_id: ClassVar[str] = "cpp"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=True,
     )
     supports_record_struct_name_prefix = True
@@ -2611,7 +2616,7 @@ class Cpp(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash)
+        DOUBLE = enum.member(value=_format_string_cpp_escaped)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
