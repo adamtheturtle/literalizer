@@ -68,6 +68,7 @@ Lua
 Mixin
 Mojo
 NEL
+NaN
 Nim
 Norg
 Num
@@ -124,7 +125,10 @@ ZKV
 ZVal
 Zig
 accessor
+accessors
+allowlist
 arity
+backend
 backtick
 backticks
 beartype
@@ -147,6 +151,7 @@ elixirc
 enum
 enums
 erlc
+fallbacks
 fmt
 fnull
 formatter
@@ -257,6 +262,7 @@ unicode
 unmapped
 unresolvable
 unterminated
+unzoned
 uv
 val_t
 whitespace
