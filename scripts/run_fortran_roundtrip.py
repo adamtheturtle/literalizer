@@ -78,7 +78,6 @@ def main() -> None:
                 args=[
                     gfortran,
                     "-std=f2008",
-                    "-ffree-line-length-none",
                     _FVAL_M_SRC.name,
                     "main.f90",
                     "-o",

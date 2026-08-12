@@ -7,14 +7,18 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("host", GStr("localhost")),
-    #("port", GNull),  // not configured yet
-    #("debug", GBool(True)),
+    #("server", GDict([
+      #("host", GStr("localhost")),
+      #("port", GNull),  // not configured yet
+      #("debug", GBool(True)),
+    ])),
   ])
   let my_data = GDict([
-    #("host", GStr("localhost")),
-    #("port", GNull),  // not configured yet
-    #("debug", GBool(True)),
+    #("server", GDict([
+      #("host", GStr("localhost")),
+      #("port", GNull),  // not configured yet
+      #("debug", GBool(True)),
+    ])),
   ])
   let _ = my_data
 }

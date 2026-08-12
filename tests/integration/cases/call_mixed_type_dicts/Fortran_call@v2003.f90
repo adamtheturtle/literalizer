@@ -84,7 +84,8 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call run(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_1')), fentry('draft', fbool(.true.))]))
+    call run(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_1')), fentry('draft', &
+    & fbool(.true.))]))
     call run(fmap([fval_t :: fentry('type', fstr('create')), fentry('pr_id', fstr('pr_2'))]))
 contains
     subroutine run(operation)

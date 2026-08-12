@@ -1,4 +1,11 @@
 def my_data = [
-    "name": "Alice",
-    "scores": [1: "first", 2: "second"],
+    "ordered": [
+        // ordered entry
+        "name": "Alice",
+        "scores": [
+            // score meaning
+            1: "first",
+            2: "second",  // latest score
+        ],
+    ],
 ]

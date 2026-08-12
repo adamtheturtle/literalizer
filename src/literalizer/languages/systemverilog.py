@@ -318,6 +318,8 @@ def _format_systemverilog_call_assignment(
 class SystemVerilog(metaclass=LanguageCls):
     """SystemVerilog language specification."""
 
+    stringifies_nested_collections = True
+
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -455,6 +457,7 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
+    checks_raw_control_dict_keys_separately = False
 
     class DateFormats(enum.Enum):
         """Date format options for SystemVerilog."""

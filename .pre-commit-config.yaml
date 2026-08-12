@@ -411,6 +411,7 @@ repos:
         files: (\.(rst|md)$|^\.vale\.ini$)
         additional_dependencies: [*uv_version]
         stages: [pre-commit]
+        groups: [fast]
 
       - id: vale
         name: vale
@@ -420,6 +421,7 @@ repos:
         require_serial: true
         additional_dependencies: [*uv_version]
         stages: [pre-commit]
+        groups: [fast]
 
       - id: doc8
         name: doc8

@@ -281,6 +281,8 @@ def _format_call_variable_declaration(
 class Bash(metaclass=LanguageCls):
     """Bash language specification."""
 
+    stringifies_nested_collections = True
+
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
@@ -356,6 +358,7 @@ class Bash(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = True
+    checks_raw_control_dict_keys_separately = True
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(

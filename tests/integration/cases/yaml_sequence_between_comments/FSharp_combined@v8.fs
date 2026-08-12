@@ -6,16 +6,20 @@ type Val =
     | FMap of (string * Val) list
 let private _mainDeclaration () =
     let mutable my_data: Val = FList [
-        FMap [("item", FStr "existing")];
-        // This comment describes the next item.
+        FMap [
+            ("item", FStr "existing")
+            // This comment describes the next item.
+        ];
         FMap [("item", FStr "next")]
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FList [
-        FMap [("item", FStr "existing")];
-        // This comment describes the next item.
+        FMap [
+            ("item", FStr "existing")
+            // This comment describes the next item.
+        ];
         FMap [("item", FStr "next")]
     ]
     ignore my_data
