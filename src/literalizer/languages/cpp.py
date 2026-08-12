@@ -2013,8 +2013,11 @@ def _render_nlohmann_json_int(value: int) -> str:
 
 
 @beartype
-def _render_nlohmann_json_node(value: JsonValue) -> str:
+def _render_nlohmann_json_node(
+    value: JsonValue, *, indent_level: int | None
+) -> str:
     """Render one normalized JSON node."""
+    child_indent_level = None if indent_level is None else indent_level + 1
     match value:
         case None:
             rendered = "nullptr"
@@ -2027,19 +2030,34 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
         case int():
             rendered = _render_nlohmann_json_int(value=value)
         case list():
-            entries = ", ".join(
-                _render_nlohmann_json_node(value=item) for item in value
+            entries = [
+                _render_nlohmann_json_node(
+                    value=item,
+                    indent_level=child_indent_level,
+                )
+                for item in value
+            ]
+            rendered = _format_nlohmann_json_collection(
+                factory="array",
+                entries=entries,
+                indent_level=indent_level,
             )
-            rendered = f"nlohmann::json::array({{{entries}}})"
         case dict():
             assert all(isinstance(key, str) for key in value)  # noqa: S101
-            object_entries = (
-                "{" + _format_string_cpp_escaped(value=str(object=key)) + ", "
-                f"{_render_nlohmann_json_node(value=item)}}}"
-                for key, item in value.items()
-            )
-            rendered = (
-                f"nlohmann::json::object({{{', '.join(object_entries)}}})"
+            object_entries = []
+            for key, item in value.items():
+                rendered_item = _render_nlohmann_json_node(
+                    value=item, indent_level=child_indent_level
+                )
+                object_entries.append(
+                    "{"
+                    + _format_string_cpp_escaped(value=str(object=key))
+                    + f", {rendered_item}}}"
+                )
+            rendered = _format_nlohmann_json_collection(
+                factory="object",
+                entries=object_entries,
+                indent_level=indent_level,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -2047,7 +2065,23 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
 
 
 @beartype
-def _nlohmann_json_expression(data: Value) -> str:
+def _format_nlohmann_json_collection(
+    *, factory: str, entries: list[str], indent_level: int | None
+) -> str:
+    """Format one JSON factory call compactly or across multiple lines."""
+    if indent_level is None or not entries:
+        return f"nlohmann::json::{factory}({{{', '.join(entries)}}})"
+    entry_indent = "    " * (indent_level + 1)
+    close_indent = "    " * indent_level
+    body = (",\n" + entry_indent).join(entries)
+    return (
+        f"nlohmann::json::{factory}({{\n{entry_indent}{body},\n"
+        f"{close_indent}}})"
+    )
+
+
+@beartype
+def _nlohmann_json_expression(data: Value, *, multiline: bool) -> str:
     """Render *data* as a structural ``nlohmann::json`` expression.
 
     Explicit ``array`` and ``object`` factories preserve empty-container
@@ -2056,16 +2090,32 @@ def _nlohmann_json_expression(data: Value) -> str:
     normalization identical to the other JSON-value back ends.
     """
     normalized = to_jsonable(data=data)
-    rendered = _render_nlohmann_json_node(value=normalized)
+    rendered = _render_nlohmann_json_node(
+        value=normalized, indent_level=0 if multiline else None
+    )
     if isinstance(normalized, list | dict):
         return rendered
     return f"nlohmann::json({rendered})"
 
 
 @beartype
+def _formatted_collection_uses_multiline_layout(*, formatted: str) -> bool:
+    """Detect multiline collection layout from the shared rendering.
+
+    The formatter callback receives the rendered value rather than the public
+    layout enum. Root collections are line-broken even in compact mode, while
+    multiline mode additionally breaks nested collections.
+    """
+    return any(
+        line.rstrip().endswith(("[", "{"))
+        for line in formatted.splitlines()[1:]
+    )
+
+
+@beartype
 def _format_cpp_json_call_arg(raw_value: Value, _formatted: str) -> str:
     """Format a direct call argument as structural ``nlohmann::json``."""
-    return _nlohmann_json_expression(data=raw_value)
+    return _nlohmann_json_expression(data=raw_value, multiline=False)
 
 
 @beartype
@@ -3026,11 +3076,16 @@ class Cpp(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         if self._json_type_active:
 
-            def _formatter(name: str, _value: str, data: Value) -> str:
+            def _formatter(name: str, value: str, data: Value) -> str:
                 """Assign a structural JSON value to an existing
                 binding.
                 """
-                expr = _nlohmann_json_expression(data=data)
+                expr = _nlohmann_json_expression(
+                    data=data,
+                    multiline=_formatted_collection_uses_multiline_layout(
+                        formatted=value
+                    ),
+                )
                 return f"{name} = {expr};"
 
             return _formatter
@@ -3681,7 +3736,7 @@ class Cpp(metaclass=LanguageCls):
 
             def _json_formatter(
                 name: str,
-                _value: str,
+                value: str,
                 data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
@@ -3694,7 +3749,12 @@ class Cpp(metaclass=LanguageCls):
                 considers explicitly-typed local variables); the deduced
                 type is the same.
                 """
-                expr = _nlohmann_json_expression(data=data)
+                expr = _nlohmann_json_expression(
+                    data=data,
+                    multiline=_formatted_collection_uses_multiline_layout(
+                        formatted=value
+                    ),
+                )
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
                 return f"{prefix}auto {name} = {expr};"
 
