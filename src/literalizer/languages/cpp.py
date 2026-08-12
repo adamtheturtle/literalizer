@@ -44,7 +44,6 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
-    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
