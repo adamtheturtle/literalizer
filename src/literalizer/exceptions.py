@@ -3,7 +3,11 @@
 import enum
 
 
-class ParseError(Exception):
+class LiteralizerError(Exception):
+    """Base class for every public error raised by Literalizer."""
+
+
+class ParseError(LiteralizerError):
     """Raised when input cannot be parsed into a data structure.
 
     Base class for every input-parsing failure; catch it to handle any
@@ -44,7 +48,7 @@ class JSON5ParseError(ParseError):
     """
 
 
-class InvalidDictKeyError(Exception):
+class InvalidDictKeyError(LiteralizerError):
     """Raised when a dict key cannot be represented in the target language.
 
     This includes empty-string keys and keys containing characters that
@@ -54,7 +58,7 @@ class InvalidDictKeyError(Exception):
     """
 
 
-class UnrepresentableInputError(Exception):
+class UnrepresentableInputError(LiteralizerError):
     """Raised when an input value cannot be represented in the target
     language.
 
@@ -100,7 +104,7 @@ class UnrepresentableNullError(UnrepresentableInputError):
         self.conflated_value = conflated_value
 
 
-class HeterogeneousCollectionError(Exception):
+class HeterogeneousCollectionError(LiteralizerError):
     """Base class for errors raised when data is incompatible with the
     target language's collection-shape constraints.
 
@@ -227,7 +231,7 @@ class TupleArityNotRepresentableError(HeterogeneousCollectionError):
         self.arity = arity
 
 
-class NullInCollectionError(Exception):
+class NullInCollectionError(LiteralizerError):
     """Raised when a collection contains null elements and the chosen
     format does not support them (e.g. Java's ``List.of()``).
 
@@ -236,7 +240,7 @@ class NullInCollectionError(Exception):
     """
 
 
-class PerElementNotListError(Exception):
+class PerElementNotListError(LiteralizerError):
     """Raised when ``per_element=True`` but the parsed data is not a
     list.
 
@@ -244,7 +248,7 @@ class PerElementNotListError(Exception):
     """
 
 
-class ParameterCountMismatchError(Exception):
+class ParameterCountMismatchError(LiteralizerError):
     """Raised when the number of ``parameter_names`` does not match the
     number of argument values in a function-call row.
 
@@ -261,7 +265,7 @@ class ParameterCountMismatchError(Exception):
         self.got = got
 
 
-class CallsNotSupportedByLanguageError(Exception):
+class CallsNotSupportedByLanguageError(LiteralizerError):
     """Raised when the target language itself has no function call
     syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).
 
@@ -275,7 +279,7 @@ class CallsNotSupportedByLanguageError(Exception):
         self.language_name = language_name
 
 
-class CallsNotSupportedByToolError(Exception):
+class CallsNotSupportedByToolError(LiteralizerError):
     """Raised when literalizer has not yet implemented function call
     rendering for the target language, even though the language itself
     has function call syntax.
@@ -292,7 +296,7 @@ class CallsNotSupportedByToolError(Exception):
         self.language_name = language_name
 
 
-class CallArgNotSupportedError(Exception):
+class CallArgNotSupportedError(LiteralizerError):
     """Raised when a call argument value cannot be expressed as a
     positional argument in the target language's call syntax.
 
@@ -315,7 +319,7 @@ class CallArgNotSupportedError(Exception):
         self.reason = reason
 
 
-class IncompatibleFormatsError(Exception):
+class IncompatibleFormatsError(LiteralizerError):
     """Raised when a combination of format options produces invalid code.
 
     For example, Rust ``CONST`` and ``STATIC`` declaration styles
@@ -326,7 +330,7 @@ class IncompatibleFormatsError(Exception):
     """
 
 
-class InvalidRecordNameError(Exception):
+class InvalidRecordNameError(LiteralizerError):
     """Raised when ``record_struct_name_prefix`` or a value in
     ``record_shape_names`` is not a valid PascalCase identifier, collides
     with a reserved keyword of the target language, collides with
@@ -338,7 +342,7 @@ class InvalidRecordNameError(Exception):
     """
 
 
-class InvalidCppRawStringDelimiterError(ValueError):
+class InvalidCppRawStringDelimiterError(LiteralizerError, ValueError):
     """Raised when C++'s multiline raw-string delimiter base is invalid.
 
     C++ raw-string delimiters are limited to 16 characters from the basic
@@ -358,7 +362,7 @@ class InvalidCppRawStringDelimiterError(ValueError):
         self.reason = reason
 
 
-class ReservedVariableNameError(Exception):
+class ReservedVariableNameError(LiteralizerError):
     """Raised when a ``NewVariable`` name is reserved by the target
     language.
 
@@ -380,7 +384,7 @@ class ReservedVariableNameError(Exception):
         self.variable_name = variable_name
 
 
-class InvalidNewVariableNameError(Exception):
+class InvalidNewVariableNameError(LiteralizerError):
     """Raised when a ``NewVariable`` name is not a syntactically valid
     declaration identifier for the target language.
 
@@ -403,7 +407,7 @@ class InvalidNewVariableNameError(Exception):
         self.variable_name = variable_name
 
 
-class InvalidCallParameterNameError(Exception):
+class InvalidCallParameterNameError(LiteralizerError):
     """Raised when a call parameter is not a target-language
     identifier.
     """
@@ -425,7 +429,7 @@ class InvalidCallParameterNameError(Exception):
         self.reason = reason
 
 
-class InvalidVariableModifierError(Exception):
+class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 
     def __init__(
@@ -445,7 +449,7 @@ class InvalidVariableModifierError(Exception):
         self.modifier = modifier
 
 
-class UnrepresentableIntegerError(Exception):
+class UnrepresentableIntegerError(LiteralizerError):
     """Raised when an integer value exceeds the range the target
     language can represent natively.
 
@@ -460,7 +464,7 @@ class UnrepresentableIntegerError(Exception):
     """
 
 
-class UnrepresentableEmptyDictError(Exception):
+class UnrepresentableEmptyDictError(LiteralizerError):
     """Raised when an empty dict is passed to a target language whose
     runtime cannot distinguish an empty mapping from an empty sequence.
 
@@ -476,7 +480,7 @@ class UnrepresentableEmptyDictError(Exception):
     """
 
 
-class UnrepresentableSpecialFloatError(Exception):
+class UnrepresentableSpecialFloatError(LiteralizerError):
     """Raised when a non-finite float (``inf``, ``-inf``, or ``nan``)
     is passed to a target language whose runtime cannot produce IEEE
     754 special float values.
@@ -489,7 +493,7 @@ class UnrepresentableSpecialFloatError(Exception):
     """
 
 
-class UnsupportedIdentifierCaseError(Exception):
+class UnsupportedIdentifierCaseError(LiteralizerError):
     """Raised when ``literalize`` or ``literalize_call`` is passed a
     ``ref_case`` that is not in the target language's
     ``supported_ref_cases`` -- i.e. one that would not produce a
@@ -508,7 +512,7 @@ class UnsupportedIdentifierCaseError(Exception):
         self.case_name = case_name
 
 
-class DottedCallTargetNotSupportedError(Exception):
+class DottedCallTargetNotSupportedError(LiteralizerError):
     """Raised when ``literalize_call`` is given a dotted
     ``target_function``
     but the target language does not support dotted call expressions.
@@ -527,7 +531,7 @@ class DottedCallTargetNotSupportedError(Exception):
         self.target_function = target_function
 
 
-class ZipValuesLengthMismatchError(Exception):
+class ZipValuesLengthMismatchError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` whose
     parsed top-level elements differ in number from the generated calls.
 
@@ -549,7 +553,7 @@ class ZipValuesLengthMismatchError(Exception):
         self.zip_count = zip_count
 
 
-class ZipValuesWithoutCallTransformError(Exception):
+class ZipValuesWithoutCallTransformError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` but no
     ``call_transform`` to consume the paired values.
 
@@ -569,7 +573,7 @@ class ZipValuesWithoutCallTransformError(Exception):
         )
 
 
-class ZipSourceWithoutInputFormatError(Exception):
+class ZipSourceWithoutInputFormatError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` but no
     ``zip_input_format`` describing how to parse it.
 
@@ -587,7 +591,7 @@ class ZipSourceWithoutInputFormatError(Exception):
         )
 
 
-class CommentSourceLengthMismatchError(Exception):
+class CommentSourceLengthMismatchError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``comment_source``
     whose entry count differs from the number of generated calls.
 
@@ -612,7 +616,7 @@ class CommentSourceLengthMismatchError(Exception):
         self.comment_count = comment_count
 
 
-class CommentSourceMultilineError(Exception):
+class CommentSourceMultilineError(LiteralizerError):
     """Raised when a ``comment_source`` entry contains a newline.
 
     A trailing comment is emitted on the statement's last line; a
@@ -632,7 +636,7 @@ class CommentSourceMultilineError(Exception):
         self.index = index
 
 
-class VariableNameNotSupportedError(Exception):
+class VariableNameNotSupportedError(LiteralizerError):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.
 
@@ -650,7 +654,7 @@ class VariableNameNotSupportedError(Exception):
         self.variable_name = variable_name
 
 
-class WrapInFileWithoutVariableNotSupportedError(Exception):
+class WrapInFileWithoutVariableNotSupportedError(LiteralizerError):
     """Raised when ``literalize`` is called with ``wrap_in_file=True``
     and ``variable_form=None`` for a target language that cannot
     represent a bare value at file-statement scope.
@@ -677,7 +681,7 @@ class WrapInFileWithoutVariableNotSupportedError(Exception):
         self.language_name = language_name
 
 
-class UnsupportedCallShapeError(Exception):
+class UnsupportedCallShapeError(LiteralizerError):
     """Raised when ``literalize_call`` is given a call shape the target
     language cannot represent.
 
@@ -699,7 +703,7 @@ class UnsupportedCallShapeError(Exception):
         self.reason = reason
 
 
-class ExcessiveNestingError(Exception):
+class ExcessiveNestingError(LiteralizerError):
     """Raised when a target language's safe collection nesting limit is
     exceeded.
     """
@@ -717,7 +721,7 @@ class ExcessiveNestingError(Exception):
         self.actual_depth = actual_depth
 
 
-class WrapCombinedInFileNotSupportedError(Exception):
+class WrapCombinedInFileNotSupportedError(LiteralizerError):
     """Raised when a language does not support ``wrap_combined_in_file``.
 
     Languages that raise this error do not support

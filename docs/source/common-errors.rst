@@ -8,6 +8,20 @@ Every exception lives in :mod:`literalizer.exceptions`; this page groups them by
 
 All exceptions are importable from :mod:`literalizer.exceptions`, so a name such as ``HeterogeneousScalarCollectionError`` below refers to :class:`literalizer.exceptions.HeterogeneousScalarCollectionError`.
 
+Catch any Literalizer error
+---------------------------
+
+Every public exception inherits from :class:`literalizer.LiteralizerError`.
+Applications that report any invalid input or configuration uniformly can
+catch that shared base::
+
+   from literalizer import LiteralizerError, literalize
+
+   try:
+       result = literalize(...)
+   except LiteralizerError as error:
+       report(error)
+
 Parsing the input
 ------------------
 
