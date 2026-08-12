@@ -43,7 +43,6 @@ def _build_program(json_text: str) -> str:
     result = roundtrip_common.literalize_new_variable(
         language=Rust(
             json_type=Rust.json_types.SERDE_JSON_VALUE,
-            string_format=Rust.string_formats.MULTILINE,
         ),
         json_text=trimmed_json,
         var_name=_VAR_NAME,

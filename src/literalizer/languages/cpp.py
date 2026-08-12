@@ -5,13 +5,11 @@ import datetime
 import enum
 import functools
 import itertools
-import json
-import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, TypeGuard, assert_never
+from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -29,7 +27,6 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
-    dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -53,7 +50,6 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
-from literalizer._formatters.format_json_value import JsonValue, to_jsonable
 from literalizer._formatters.format_strings import format_string_backslash
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -1938,16 +1934,15 @@ def _cpp_call_stub(
 
 _NLOHMANN_JSON_STATIC_PREAMBLE: tuple[str, ...] = (
     "#include <nlohmann/json.hpp>",
-    "#include <limits>",
 )
 
 _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
-    sequence_open=fixed_open(open_str="["),
-    close="]",
+    sequence_open=fixed_open(open_str="nlohmann::json::array({"),
+    close="})",
     supports_heterogeneity=True,
     single_element_trailing_comma=False,
     supports_trailing_comma=True,
-    empty_sequence="[]",
+    empty_sequence="nlohmann::json::array({})",
     preamble_lines=(),
     format_entry=passthrough_sequence_entry,
     typed_opener_fallback=None,
@@ -1959,9 +1954,11 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
-    close="]",
-    empty_set="[]",
+    set_open=sequence_surrogate_set_open(
+        fixed_open(open_str="nlohmann::json::array({")
+    ),
+    close="})",
+    empty_set="nlohmann::json::array({})",
     preamble_lines=(),
     set_opener_template="",
     supports_heterogeneity=True,
@@ -1970,13 +1967,10 @@ _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
 
 
 _NLOHMANN_JSON_DICT_CONFIG = DictFormatConfig(
-    dict_open=fixed_open(open_str="{"),
-    close="}",
-    format_entry=dict_entry_with_template(
-        template="{key}: {value}",
-        format_value=passthrough_sequence_entry,
-    ),
-    empty_dict="{}",
+    dict_open=fixed_open(open_str="nlohmann::json::object({"),
+    close="})",
+    format_entry=braced_dict_entry(format_value=passthrough_sequence_entry),
+    empty_dict="nlohmann::json::object({})",
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
@@ -1985,137 +1979,32 @@ _NLOHMANN_JSON_DICT_CONFIG = DictFormatConfig(
 
 
 _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
-    ordered_map_open=fixed_open(open_str="{"),
-    close="}",
+    ordered_map_open=fixed_open(open_str="nlohmann::json::object({"),
+    close="})",
     preamble_lines=(),
 )
 
 
 @beartype
-def _render_nlohmann_json_float(value: float) -> str:
-    """Render one normalized JSON floating-point value."""
-    if math.isnan(value):
-        return "std::numeric_limits<double>::quiet_NaN()"
-    if math.isinf(value):
-        sign = "-" if value < 0 else ""
-        return f"{sign}std::numeric_limits<double>::infinity()"
-    return json.dumps(obj=value)
+def _cpp_nlohmann_json_value_expression(value: str, /) -> str:
+    """Wrap *value* in ``nlohmann::json(...)`` unless it is already a
+    structural ``nlohmann::json`` factory expression.
 
-
-@beartype
-def _render_nlohmann_json_int(value: int) -> str:
-    """Render one integer without relying on an out-of-range C++ token."""
-    if value > I64_MAX:
-        return f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
-    if value == I64_MIN:
-        return "nlohmann::json::number_integer_t{(-9223372036854775807LL - 1)}"
-    return json.dumps(obj=value)
-
-
-@beartype
-def _render_nlohmann_json_node(
-    value: JsonValue, *, indent_level: int | None
-) -> str:
-    """Render one normalized JSON node."""
-    child_indent_level = None if indent_level is None else indent_level + 1
-    match value:
-        case None:
-            rendered = "nullptr"
-        case bool():
-            rendered = "true" if value else "false"
-        case str():
-            rendered = _format_string_cpp_escaped(value=value)
-        case float():
-            rendered = _render_nlohmann_json_float(value=value)
-        case int():
-            rendered = _render_nlohmann_json_int(value=value)
-        case list():
-            entries = [
-                _render_nlohmann_json_node(
-                    value=item,
-                    indent_level=child_indent_level,
-                )
-                for item in value
-            ]
-            rendered = _format_nlohmann_json_collection(
-                factory="array",
-                entries=entries,
-                indent_level=indent_level,
-            )
-        case dict():
-            assert all(isinstance(key, str) for key in value)  # noqa: S101
-            object_entries: list[str] = []
-            for key, item in value.items():
-                rendered_item = _render_nlohmann_json_node(
-                    value=item, indent_level=child_indent_level
-                )
-                object_entries.append(
-                    "{"
-                    + _format_string_cpp_escaped(value=str(object=key))
-                    + f", {rendered_item}}}"
-                )
-            rendered = _format_nlohmann_json_collection(
-                factory="object",
-                entries=object_entries,
-                indent_level=indent_level,
-            )
-        case _ as unreachable:
-            assert_never(unreachable)
-    return rendered
-
-
-@beartype
-def _format_nlohmann_json_collection(
-    *, factory: str, entries: list[str], indent_level: int | None
-) -> str:
-    """Format one JSON factory call compactly or across multiple lines."""
-    if indent_level is None or not entries:
-        return f"nlohmann::json::{factory}({{{', '.join(entries)}}})"
-    entry_indent = "    " * (indent_level + 1)
-    close_indent = "    " * indent_level
-    body = (",\n" + entry_indent).join(entries)
-    return (
-        f"nlohmann::json::{factory}({{\n{entry_indent}{body},\n"
-        f"{close_indent}}})"
-    )
-
-
-@beartype
-def _nlohmann_json_expression(data: Value, *, multiline: bool) -> str:
-    """Render *data* as a structural ``nlohmann::json`` expression.
-
-    Explicit ``array`` and ``object`` factories preserve empty-container
-    intent and avoid the library's brace-initializer ambiguity for nested
-    arrays.  :func:`to_jsonable` keeps temporal, bytes, set and ordered-map
-    normalization identical to the other JSON-value back ends.
+    The explicit ``array`` and ``object`` factories in the collection
+    configurations preserve empty-container intent and avoid the
+    library's brace-initializer ambiguity for nested arrays; scalars
+    need the wrapping constructor so a bare declaration still deduces
+    to ``nlohmann::json``.
     """
-    normalized = to_jsonable(data=data)
-    rendered = _render_nlohmann_json_node(
-        value=normalized, indent_level=0 if multiline else None
-    )
-    if isinstance(normalized, list | dict):
-        return rendered
-    return f"nlohmann::json({rendered})"
+    if value.startswith("nlohmann::json"):
+        return value
+    return f"nlohmann::json({value})"
 
 
 @beartype
-def _formatted_collection_uses_multiline_layout(*, formatted: str) -> bool:
-    """Detect multiline collection layout from the shared rendering.
-
-    The formatter callback receives the rendered value rather than the public
-    layout enum. Root collections are line-broken even in compact mode, while
-    multiline mode additionally breaks nested collections.
-    """
-    return any(
-        line.rstrip().endswith(("[", "{"))
-        for line in formatted.splitlines()[1:]
-    )
-
-
-@beartype
-def _format_cpp_json_call_arg(raw_value: Value, _formatted: str) -> str:
+def _format_cpp_json_call_arg(_raw_value: Value, formatted: str) -> str:
     """Format a direct call argument as structural ``nlohmann::json``."""
-    return _nlohmann_json_expression(data=raw_value, multiline=False)
+    return _cpp_nlohmann_json_value_expression(formatted)
 
 
 @beartype
@@ -3022,9 +2911,11 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def null_literal(self) -> str:
-        """Null literal for the active C++ representation."""
-        if self._json_type_active:
-            return "null"
+        """Null literal for the active C++ representation.
+
+        ``nullptr`` constructs a null ``nlohmann::json`` value, so the
+        default literal also serves the structural JSON rendering.
+        """
         return self._default_null_literal
 
     @cached_property
@@ -3076,16 +2967,11 @@ class Cpp(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         if self._json_type_active:
 
-            def _formatter(name: str, value: str, data: Value) -> str:
+            def _formatter(name: str, value: str, _data: Value) -> str:
                 """Assign a structural JSON value to an existing
                 binding.
                 """
-                expr = _nlohmann_json_expression(
-                    data=data,
-                    multiline=_formatted_collection_uses_multiline_layout(
-                        formatted=value
-                    ),
-                )
+                expr = _cpp_nlohmann_json_value_expression(value)
                 return f"{name} = {expr};"
 
             return _formatter
@@ -3737,7 +3623,7 @@ class Cpp(metaclass=LanguageCls):
             def _json_formatter(
                 name: str,
                 value: str,
-                data: Value,
+                _data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Render an ``auto``-deduced structural
@@ -3749,12 +3635,7 @@ class Cpp(metaclass=LanguageCls):
                 considers explicitly-typed local variables); the deduced
                 type is the same.
                 """
-                expr = _nlohmann_json_expression(
-                    data=data,
-                    multiline=_formatted_collection_uses_multiline_layout(
-                        formatted=value
-                    ),
-                )
+                expr = _cpp_nlohmann_json_value_expression(value)
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
                 return f"{prefix}auto {name} = {expr};"
 

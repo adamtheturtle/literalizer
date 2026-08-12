@@ -14,8 +14,8 @@ def test_signed_64_bit_minimum_uses_a_portable_expression() -> None:
     )
 
     assert (
-        "nlohmann::json::number_integer_t{(-9223372036854775807LL - 1)}"
-        in result.code
+        result.code
+        == "auto my_data = nlohmann::json((-9223372036854775807LL - 1));"
     )
 
 
