@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A language whose set format is a sequence underneath would render a
+tagged set as a list, dropping the uniqueness the input states, so the
+value is refused instead.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp", "D", "Haxe", "Nim", "Raku"]
+
+[call]
+api = "literalize"
+sources = ["s: !!set\n  ? a\n  ? b\n"]
+input_format = "yaml"

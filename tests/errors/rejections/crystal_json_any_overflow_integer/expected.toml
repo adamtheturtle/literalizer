@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Crystal = "Crystal json_type cannot represent integer 18446744073709551616: value is outside the signed 64-bit range that JSON::Any exposes."

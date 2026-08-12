@@ -722,6 +722,19 @@ plan = "every_non_default_member"
 name_template = "{lang}_sequence_{format}"
 option = "sequence_format"
 
+# Nested tuple openers exercise tuple syntax specifically.  Restricting this
+# axis to languages that expose that member avoids asking unrelated ARRAY and
+# LIST formats to represent recursive tuple structure.
+[axes.sequence_tuple_nested]
+plan = "fixed_overrides"
+name_template = "{lang}_sequence_tuple"
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "sequence_format", member = "TUPLE" },
+]
+
 [axes.sequence_decl]
 plan = "cross_product"
 name_template = "{lang}_sequence_{format}_{tag}_{secondary}"

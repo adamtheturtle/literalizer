@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A dict key ending in )json closes the R"json(...)json" raw string the
+C++ JSON value type is written into, mid-document.  String values
+carrying a double quote are escaped, so they reach the terminator only
+by ending in )json themselves, which the same check covers.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ['{")json": "x"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "NLOHMANN_JSON" },
+]

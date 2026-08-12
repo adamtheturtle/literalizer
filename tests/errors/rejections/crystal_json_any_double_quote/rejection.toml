@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A double quote in the JSON document would close the Crystal %(...)
+percent literal the JSON value type is written into.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Crystal"]
+
+[call]
+api = "literalize"
+sources = ['{"greeting": "say \"hi\""}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_ANY" },
+]

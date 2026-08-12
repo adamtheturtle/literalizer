@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A set-valued field under the RECORD strategy has no struct field type
+that agrees with the set literal rendered for it, so the value is
+refused rather than emitted as a struct that fails to compile.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ["title: report\ntags: !!set\n  ? apple\n  ? banana\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

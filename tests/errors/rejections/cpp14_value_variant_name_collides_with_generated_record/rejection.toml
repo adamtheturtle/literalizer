@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Record structs C++ generates for itself are named Record0, Record1 and
+so on, so a value variant taking one of those names would shadow a
+declaration the same file may emit.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Cpp"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "language_version", member = "CPP14" },
+  { kind = "text", kwarg = "heterogeneous_value_variant_name", value = "Record0" },
+]

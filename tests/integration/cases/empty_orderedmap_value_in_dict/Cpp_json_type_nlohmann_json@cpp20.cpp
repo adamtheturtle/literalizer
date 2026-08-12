@@ -1,7 +1,8 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json({"a": {}, "b": 1})json", nullptr, false);
+auto my_data = nlohmann::json::object({{"a", nlohmann::json::object({})}, {"b", 1}});
     (void)my_data;
         return 0;
     } catch (...) {

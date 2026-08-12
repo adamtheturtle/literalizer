@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+JsonValue.Create is overloaded on the .NET numeric types, so an
+integer outside the Int64 and UInt64 ranges has no overload to build a
+node from.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["FSharp"]
+
+[call]
+api = "literalize"
+sources = ["-99999999999999999999"]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "SYSTEM_TEXT_JSON_NODE" },
+]

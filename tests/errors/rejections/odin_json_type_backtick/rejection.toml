@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A backtick closes the Odin raw string the JSON document is written
+into, whether it arrives in a string value or in a dict key.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize"
+sources = ['{"name": "a`b"}', '{"a`b": 1}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_VALUE" },
+]

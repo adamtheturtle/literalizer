@@ -9,7 +9,7 @@ languages = ["C"]
 
 [call]
 api = "literalize_call"
-source = "[[[1, 2]]]"
+sources = ["[[[1, 2]]]"]
 input_format = "json"
 target_function = "process"
 parameter_names = ["x"]

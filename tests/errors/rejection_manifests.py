@@ -212,6 +212,11 @@ def _no_names() -> tuple[DeclaredName, ...]:
     return ()
 
 
+def _no_sources() -> tuple[str, ...]:
+    """Return a typed empty source list for the models."""
+    return ()
+
+
 def _no_acceptances() -> tuple[Acceptance, ...]:
     """Return a typed empty acceptance list for the models."""
     return ()
@@ -278,10 +283,18 @@ class CallSpec(  # noqa: NOD001
     frozen=True,
     strict=True,
 ):
-    """The call a rejection manifest provokes its rejection with."""
+    """The call a rejection manifest provokes its rejection with.
+
+    A manifest declaring several sources makes the same call once per
+    source, which is how one refusal shown by inputs that differ only
+    in shape -- a null on its own, in a mapping, in a sequence -- is
+    declared once rather than as a directory apiece.
+    """
 
     api: ApiName
-    source: str | None = None
+    sources: Annotated[tuple[str, ...], Field(strict=False)] = Field(
+        default_factory=_no_sources,
+    )
     input_format: RejectionInputFormat | None = None
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
@@ -299,8 +312,11 @@ class CallSpec(  # noqa: NOD001
     def _validate_api_arguments(self) -> Self:
         """Reject arguments the declared API does not take."""
         renders = self.api != "constructor"
-        if renders != (self.source is not None):
-            msg = f"api = {self.api!r} requires exactly a source"
+        if renders != bool(self.sources):
+            msg = f"api = {self.api!r} requires exactly sources"
+            raise ValueError(msg)
+        if len(self.sources) != len(set(self.sources)):
+            msg = "sources contains a duplicate entry"
             raise ValueError(msg)
         if renders != (self.input_format is not None):
             msg = f"api = {self.api!r} requires exactly an input_format"

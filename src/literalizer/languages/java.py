@@ -1516,6 +1516,8 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self._json_type_active:
+            return self._validate_json_value_keys
         return no_validate_call_arg
 
     @cached_property
