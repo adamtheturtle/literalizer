@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import math
 import re
 import textwrap
 from collections.abc import Callable, Iterable, Sequence
@@ -31,6 +30,7 @@ from literalizer._formatters.format_floats import (
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
+    reject_special_floats,
 )
 from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
@@ -91,7 +91,6 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
-    UnrepresentableSpecialFloatError,
     UnrepresentableStringError,
 )
 
@@ -1655,17 +1654,10 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        finite = self.float_format
-
-        @beartype
-        def _format(value: float) -> str:
-            """Delegate finite values and reject infinities and NaN."""
-            if not math.isfinite(value):
-                msg = f"COBOL cannot represent special float {value!r}."
-                raise UnrepresentableSpecialFloatError(msg)
-            return finite(value)
-
-        return _format
+        return reject_special_floats(
+            format_finite=self.float_format,
+            language_name="COBOL",
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:
