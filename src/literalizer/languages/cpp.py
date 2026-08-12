@@ -3512,7 +3512,46 @@ class Cpp(metaclass=LanguageCls):
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
             return _NLOHMANN_JSON_ORDERED_MAP_CONFIG
-        return _build_ordered_map_config(type_ctx=self._type_ctx)
+        config = _build_ordered_map_config(type_ctx=self._type_ctx)
+        if not self._record_strategy_active:
+            return config
+        maybe_record_name_for_value = (
+            self._record_strategy.record_name_for_value
+        )
+        assert maybe_record_name_for_value is not None  # noqa: S101
+        record_name_for_value: Callable[[object], str | None] = (
+            maybe_record_name_for_value
+        )
+
+        def _record_aware_open(data: dict[Scalar, Value]) -> str:
+            """Type ordered-map values from rendered record lists."""
+            values = list(data.values())
+            if values and all(
+                isinstance(value, list) and _all_record_shaped(value)
+                for value in values
+            ):
+                resolved_names = [
+                    record_name_for_value(value[0])
+                    for value in values
+                    if isinstance(value, list) and value
+                ]
+                if (
+                    resolved_names
+                    and None not in resolved_names
+                    and len(set(resolved_names)) == 1
+                ):
+                    record_name = resolved_names[0]
+                    assert record_name is not None  # noqa: S101
+                    value_type = f"std::vector<{record_name}>"
+                    return (
+                        f"std::vector<std::pair<std::string, {value_type}>>{{"
+                    )
+            return config.ordered_map_open(data)
+
+        return dataclasses.replace(
+            config,
+            ordered_map_open=_record_aware_open,
+        )
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:

@@ -8,7 +8,7 @@
 #include <variant>
 struct Record0 { std::nullptr_t name{}; int id{}; };
 int main() {
-auto my_data = std::vector<std::pair<std::string, std::vector<std::map<std::string, std::variant<std::nullptr_t, int>>>>>{
+auto my_data = std::vector<std::pair<std::string, std::vector<Record0>>>{
     {"outer", std::vector{Record0{.name = nullptr, .id = 1}}},
 };
     (void)my_data;

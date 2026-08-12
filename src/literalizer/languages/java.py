@@ -309,7 +309,7 @@ def _validate_no_null_map_values(data: Value) -> None:
 def _walk_java_ordered_map_values(
     *, data: OrderedMap, walk: Callable[[Value], None]
 ) -> None:
-    """Validate direct ordered-map nulls, then recurse into its values."""
+    """Validate direct ordered-map nulls, then walk through its values."""
     for item in data.values():
         if item is None:
             msg = (
@@ -1458,7 +1458,7 @@ class Java(metaclass=LanguageCls):
             return
         strategies = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is strategies.RECORD:
-            self._validate_record_null_map_values(data)
+            self._validate_record_null_map_values(data=data)
         else:
             _validate_no_null_map_values(data=data)
         formats = type(self.sequence_format)
@@ -1483,9 +1483,8 @@ class Java(metaclass=LanguageCls):
         strategy = self._record_strategy
         compute_record_shapes = strategy.behavior.compute_record_shapes
         record_name_for_value = strategy.record_name_for_value
-        if compute_record_shapes is None or record_name_for_value is None:
-            msg = "Java RECORD strategy is missing record-shape hooks"
-            raise RuntimeError(msg)
+        assert compute_record_shapes is not None  # noqa: S101
+        assert record_name_for_value is not None  # noqa: S101
         compute_record_shapes(data)
 
         @beartype
@@ -1505,14 +1504,14 @@ class Java(metaclass=LanguageCls):
                                 "values; remove the null-valued entry"
                             )
                             raise UnrepresentableInputError(msg)
-                        _walk(item)
+                        _walk(value=item)
                 case list() | set():
                     for item in value:
-                        _walk(item)
+                        _walk(value=item)
                 case _:
                     return
 
-        _walk(data)
+        _walk(value=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
