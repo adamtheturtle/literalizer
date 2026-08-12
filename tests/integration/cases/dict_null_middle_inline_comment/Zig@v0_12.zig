@@ -12,9 +12,11 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
-        .{ .key = "host", .val = .{ .str = "localhost" } },
-        .{ .key = "port", .val = .nil },  // not configured yet
-        .{ .key = "debug", .val = .{ .bool = true } },
+        .{ .key = "server", .val = .{ .map = &.{
+            .{ .key = "host", .val = .{ .str = "localhost" } },
+            .{ .key = "port", .val = .nil },  // not configured yet
+            .{ .key = "debug", .val = .{ .bool = true } },
+        }} },
     }};
     _ = my_data;
 }

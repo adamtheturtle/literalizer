@@ -31,6 +31,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     InvalidCallParameterNameError,
+    InvalidModuleNameError,
     InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
@@ -1020,6 +1021,9 @@ class LanguageCls(type):
     or ``type: ignore``.
     """
 
+    stringifies_nested_collections: bool = False
+    """Whether nested collection syntax becomes string payload data."""
+
     language_id: str
     """Stable, implementation-neutral identifier for this language.
 
@@ -1092,6 +1096,7 @@ class LanguageCls(type):
     supports_call_style: bool
     supports_default_dict_key_type: bool
     supports_non_string_dict_keys: bool
+    checks_raw_control_dict_keys_separately: bool
     supports_default_dict_value_type: bool
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
@@ -1112,6 +1117,13 @@ class LanguageCls(type):
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         instance: Language = super().__call__(*args, **kwargs)
+        if cls.supports_module_name:
+            module_name = vars(instance)["module_name"]
+            if not NewVariableNameSyntax.ASCII.accepts(name=module_name):
+                raise InvalidModuleNameError(
+                    language_name=cls.__name__,
+                    module_name=module_name,
+                )
         return instance
 
 
@@ -2120,6 +2132,14 @@ class Language(Protocol):
     Most languages allow scalar dict keys natively; pure data formats
     whose surface syntax only admits string keys (JSON-family, TOML)
     set this to ``False``.
+    """
+
+    checks_raw_control_dict_keys_separately: bool
+    """Whether dict keys bypass generic formatted-string validation.
+
+    Set this when the back-end either rejects control-bearing keys
+    through a dedicated contract or derives a safe identifier without
+    emitting the formatted string key.
     """
 
     @property

@@ -10,7 +10,9 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("host", EStr "localhost"),
-    ("port", ENull),  -- not configured yet
-    ("debug", EBool True)
+    ("server", EDict [
+        ("host", EStr "localhost"),
+        ("port", ENull),  -- not configured yet
+        ("debug", EBool True)
+        ])
     ]
