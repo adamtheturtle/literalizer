@@ -1,4 +1,4 @@
 userObj = struct(
-    '_', "_"
+    'key', "value"
 );
 my_data = userObj;
