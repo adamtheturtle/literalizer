@@ -394,6 +394,7 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     """
 
     ref_key: str = "$ref"
+    collection_layout: CollectionLayoutName = "compact"
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
 
@@ -421,6 +422,7 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     target_function: str
     parameter_names: StringTuple
     per_element: bool
+    collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``

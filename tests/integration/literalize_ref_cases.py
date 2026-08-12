@@ -262,6 +262,9 @@ def run_literalize_ref_golden_case(
             ref_case=ref_case,
             bound_refs=bound_refs_input or None,
             ref_key=config.ref_key,
+            collection_layout=literalizer.CollectionLayout(
+                value=config.collection_layout
+            ),
         )
     check_golden(
         contents=result.code + "\n",

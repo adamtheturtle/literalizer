@@ -8,7 +8,11 @@ pub fn main() {
     #("_", GStr("_")),
   ])
   let my_data = GDict([
-    #("a", GDict([#("b", GDict([#("c", deep)]))])),
+    #("a", GDict([
+      #("b", GDict([
+        #("c", deep),
+      ])),
+    ])),
   ])
   let _ = my_data
 }

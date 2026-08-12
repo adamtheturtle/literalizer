@@ -4,7 +4,11 @@ fn main() {
         ("_", "_"),
     ]);
     let my_data = HashMap::from([
-        ("a", HashMap::from([("b", HashMap::from([("c", deep)]))])),
+        ("a", HashMap::from([
+            ("b", HashMap::from([
+                ("c", deep),
+            ])),
+        ])),
     ]);
     let _ = my_data;
 }

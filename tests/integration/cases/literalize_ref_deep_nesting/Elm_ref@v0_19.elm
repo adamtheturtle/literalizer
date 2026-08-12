@@ -12,5 +12,9 @@ deep = EDict [
     ]
 my_data : Val
 my_data = EDict [
-    ("a", EDict [("b", EDict [("c", deep)])])
+    ("a", EDict [
+        ("b", EDict [
+            ("c", deep)
+            ])
+        ])
     ]

@@ -4,7 +4,11 @@ procedure Main is
         AEntry ("_", AStr ("_"))
     ];
     my_data : A_Val := AMap'[
-        AEntry ("a", AMap'[AEntry ("b", AMap'[AEntry ("c", deep)])])
+        AEntry ("a", AMap'[
+            AEntry ("b", AMap'[
+                AEntry ("c", deep)
+            ])
+        ])
     ];
 begin
     null;
