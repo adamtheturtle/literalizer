@@ -3,7 +3,6 @@
 import dataclasses
 import datetime
 import enum
-import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -127,7 +126,6 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
-_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_backslash_nul = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", r"\0")],
