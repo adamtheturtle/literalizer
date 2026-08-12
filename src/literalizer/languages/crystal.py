@@ -1100,7 +1100,7 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return self.sequence_format.value.format_entry
+        return self.sequence_format_config.format_entry
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
