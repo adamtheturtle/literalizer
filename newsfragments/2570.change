@@ -1,1 +1,0 @@
-Stop TypeScript call-result variable bindings from deriving type annotations from the input argument row.

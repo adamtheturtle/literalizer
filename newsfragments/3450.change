@@ -1,1 +1,0 @@
-Lua's native date and datetime formats now emit Unix epoch seconds directly instead of calling timezone-dependent ``os.time`` with an unzoned field table.

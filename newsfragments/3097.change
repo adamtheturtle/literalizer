@@ -1,1 +1,0 @@
-Reject language-specific reserved words when they are used as new variable names.

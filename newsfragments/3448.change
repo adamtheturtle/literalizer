@@ -1,1 +1,0 @@
-Fortran and V byte strings now pass hexadecimal and base64 payloads through each language's normal string formatter, keeping quoting and escaping consistent with ordinary strings.

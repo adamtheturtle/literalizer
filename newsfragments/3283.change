@@ -1,1 +1,0 @@
-C++ multiline strings now use an empty raw-string delimiter when safe and short neutral delimiters for collisions, removing ``LITERALIZER`` branding from generated code.

@@ -1,1 +1,0 @@
-Julia hexadecimal, octal, and binary integer formats now wrap literals in ``Int`` and apply a leading sign outside that conversion, preventing unsigned-width inference and negative wraparound.

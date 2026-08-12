@@ -3,6 +3,163 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.12.4
+------------
+
+- Speed up large JSON documents rendered as Rust ``serde_json::Value`` while preserving runtime type checking and generated output.
+
+- Preserve standalone YAML comments between top-level sequence items.
+
+- Stop TypeScript call-result variable bindings from deriving type annotations from the input argument row.
+
+- Render Dhall multi-argument calls as curried function application.
+
+- Escape non-ASCII characters in Perl double-quoted string literals as ``\x{HHHH}``, so the output no longer requires ``use utf8;`` in the surrounding source file.
+
+- Under the Rust ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.
+
+- Under the Go ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.  This ports the Rust field-type split to the shared record strategy behind an opt-in flag; the remaining ``RECORD`` languages follow in later increments.
+
+- Under the Java ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile (``incompatible types: String cannot be converted to int``).  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Java.
+
+- Under the Swift ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Swift as part of issue #2961.
+
+- Under the Zig ``RECORD`` heterogeneous strategy, dict keys that collide with a Zig keyword (for example ``error`` or ``switch``) now render as quoted identifiers (``@"error"``) in both the generated ``struct`` declaration and its literals, so the output compiles instead of failing with ``error: expected '.', found ':'``.  A key that is not identifier-shaped text is escaped the same way.
+
+- Under the Zig ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A record field key that is a Zig keyword (such as ``error``) is now quoted as ``@"error"`` so the generated ``struct`` compiles.  This ports the shared field-type split (issue #2888) to Zig as part of issue #2961.
+
+- Add explicit C++ language-version targets: ``Cpp.version_formats.CPP14``,
+  ``CPP17``, and ``CPP20``.  ``CPP20`` remains the default; callers can select
+  an older target with ``Cpp(language_version=Cpp.version_formats.CPP17)``.
+
+- Under the Kotlin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``data class``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``data class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Kotlin as part of issue #2961.
+
+- Under the Scala ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``case class``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``case class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Scala as part of issue #2961.
+
+- The shared ``RECORD`` renderer now rejects a dict key whose backend field-name mapping is not a lexical identifier before returning target source.  This prevents invalid declarations and literals for keys such as ``a-b``; Zig continues to use its quoted ``@"a-b"`` identifier form consistently.
+
+- Under the C ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to C as part of issue #2961.
+
+- Under the C++ ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to C++ as part of issue #2961.
+
+- Under the Crystal ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Crystal as part of issue #2961.
+
+- Under the D ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to D as part of issue #2961.
+
+- Under the Nim ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``object``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``object`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Nim as part of issue #2961.
+
+- Under the Odin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Odin as part of issue #2961.
+
+- Under the V ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to V as part of issue #2961.
+
+- Handle embedded null bytes without emitting invalid target-language string literals.
+
+- Type an empty Rust map from its non-empty sibling so a list mixing empty and non-empty maps compiles.
+
+- Under V's default strategy, an empty map beside a non-empty map sibling was emitted at the ``map[string]IVal{}`` interface fallback type, which the V compiler rejected because the sibling's concrete value could not coerce to ``IVal``.  The empty map now borrows the sibling's value type (for example ``map[string]int{}``) so the list compiles.
+
+- V and Zig now reject positive integers above ``u64::MAX`` with ``UnrepresentableIntegerError`` instead of emitting overflowing fixed-width literals or union payloads.
+
+- V's default strategy now raises ``NullInCollectionError`` for a non-empty list whose members are all null instead of emitting a ``voidptr`` element list that the V/C back end rejected; select the ``INTERFACE`` or ``RECORD`` heterogeneous strategy to materialize such data.
+
+- V's default strategy now raises ``NullInCollectionError`` for a non-empty map whose values are all null instead of emitting a ``voidptr`` map that the V/C back end rejected; select the ``INTERFACE`` or ``RECORD`` heterogeneous strategy to materialize such data.
+
+- Wrap an empty list or map that sits beside a scalar in a Rust ``TAGGED_ENUM`` sequence, emitting a ``List`` / ``Map`` value-enum variant so the generated source compiles.
+
+- Reject reserved Standard ML ``NewVariable`` names with a clear error.
+
+- Reject reserved Swift ``NewVariable`` names with a clear error.
+
+- Reject reserved JavaScript and TypeScript ``NewVariable`` names with a clear error.
+
+- Reject reserved V ``NewVariable`` names with a clear error.
+
+- Reject reserved Zig ``NewVariable`` names with a clear error.
+
+- Reject language-specific reserved words when they are used as new variable names.
+
+- A Go homogeneous integer collection whose values exceed the signed 64-bit range now opens as ``[]uint64`` / ``map[...]uint64`` with every element formatted for the unsigned element type, so an in-range negative sibling raises ``UnrepresentableIntegerError`` instead of rendering as a signed literal that Go rejects at compile time.
+
+- Emit the Rust TAGGED_ENUM declaration when per-element calls need to widen homogeneous maps in the same argument position.
+
+- Make C++14 explicit heterogeneous literals native-only: fixed scalar sequences use ``std::tuple`` under ``TUPLE`` and object-shaped data uses generated structs.
+
+- Make C++14's default heterogeneous rendering native-only: use tuples and records where possible, retain standard maps for non-identifier keys, and reject shapes that would require ``LiteralizerVariant``.
+
+- Add C++14 heterogeneous ``Value`` carriers with configurable names, usable
+  ``is<T>()`` / ``get<T>()`` accessors, and self-contained generated preambles.
+
+- C++14 heterogeneous value carriers now store rendered string literals as
+  owning ``std::string`` values, so ``is<std::string>()`` and
+  ``get<std::string>()`` match the source data model instead of exposing a
+  decayed ``const char*``.
+
+- C++14 sequences now use a matching external ``record_shape_names`` type under
+  the ``ERROR`` heterogeneous strategy while retaining native ``std::map``
+  element literals.
+
+- Include constructors used only by emitted ref declarations in composed Gleam
+  ``GVal`` preambles.
+
+- Import ``Union`` when explicit Python type hints use the ``typing`` union format.
+
+- Prevent source comments from terminating suffix-delimited target comments.
+
+- Reject unpaired UTF-16 surrogates in parsed strings before rendering target
+  source.
+
+- Add a shared ``StringFormats.MULTILINE`` option for Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, and Lua, preserving exact string values with native multiline syntax and safe escaped fallbacks.
+
+- Expand multiline-string coverage across root, nested, variable, and indented contexts, fixing invalid nested keys, Crystal JSON escapes, and Perl UTF-8 handling uncovered by executable round trips.
+
+- Add a native multiline string format for Swift using collision-free extended delimiters and safe escaped fallbacks.
+
+- Add a native multiline string format for Groovy using non-interpolating triple-single-quoted strings.
+
+- Add native multiline string formats for D and Nim using raw source literals with safe escaped fallbacks.
+
+- Add a native multiline string format for Crystal using non-interpolating percent strings.
+
+- Add a conventional multiline string format for PHP using non-interpolating single-quoted strings and safe fixed-width escaped fallbacks.
+
+- Add a non-interpolating multiline string format for Perl.
+
+- C++ multiline strings now use an empty raw-string delimiter when safe and short neutral delimiters for collisions, removing ``LITERALIZER`` branding from generated code.
+
+- Allow callers to configure the fallback delimiter base for C++ multiline raw-string literals.
+
+- Golden input coverage now lives in validated, versioned ``case.toml``
+  manifests beside each fixture.  The migration also removes the redundant
+  ``simple_sequence`` sequence-variable-name golden cases.
+
+- Fortran and V byte strings now pass hexadecimal and base64 payloads through each language's normal string formatter, keeping quoting and escaping consistent with ordinary strings.
+
+- F# native dates and datetimes now use their generated ``Date`` and ``Datetime`` union constructors instead of culture-dependent string conversions, and those cases are declared only when the selected format uses them.
+
+- Lua's native date and datetime formats now emit Unix epoch seconds directly instead of calling timezone-dependent ``os.time`` with an unzoned field table.
+
+- Perl, Tcl, and SystemVerilog booleans now use representations distinct from integer ``1`` and ``0``: ``JSON::PP`` singletons, Tcl boolean words, and a dedicated SystemVerilog value tag respectively.
+
+- COBOL booleans now use distinct numeric ``1`` and ``0`` values instead of the strings ``"TRUE"`` and ``"FALSE"``, preserving their type distinction from string input.
+
+- Julia hexadecimal, octal, and binary integer formats now wrap literals in ``Int`` and apply a leading sign outside that conversion, preventing unsigned-width inference and negative wraparound.
+
+- Gleam now honors hexadecimal, octal, and binary integer formats for negative values instead of silently falling back to decimal.
+
+- Fixed-point float formatting now increases precision when six decimal places would change the value, preventing small nonzero values such as ``1e-9`` from being emitted as zero.
+
+- MATLAB now rejects dictionary keys that are not valid struct field names instead of emitting code that fails at runtime.
+
+- Raise ``UnrepresentableSpecialFloatError`` consistently when Odin JSON values
+  contain NaN or infinity.
+
+- Add ``LiteralizerError`` as the common base for every public exception so
+  callers can handle all Literalizer failures without maintaining an allowlist.
+
+- Exercise Bash's default string format in its round-trip check.
+
+- ``Cpp(json_type=NLOHMANN_JSON)`` now honors ``collection_layout=CollectionLayout.MULTILINE`` under a variable form: the structural ``nlohmann::json`` factory expressions flow through the shared collection layout machinery instead of always rendering on one line.
+
 2026.08.12.3
 ------------
 

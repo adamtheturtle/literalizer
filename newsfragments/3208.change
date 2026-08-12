@@ -1,1 +1,0 @@
-Import ``Union`` when explicit Python type hints use the ``typing`` union format.

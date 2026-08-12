@@ -1,2 +1,0 @@
-Raise ``UnrepresentableSpecialFloatError`` consistently when Odin JSON values
-contain NaN or infinity.

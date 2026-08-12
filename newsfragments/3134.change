@@ -1,1 +1,0 @@
-Make C++14 explicit heterogeneous literals native-only: fixed scalar sequences use ``std::tuple`` under ``TUPLE`` and object-shaped data uses generated structs.

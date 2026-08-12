@@ -1,1 +1,0 @@
-Expand multiline-string coverage across root, nested, variable, and indented contexts, fixing invalid nested keys, Crystal JSON escapes, and Perl UTF-8 handling uncovered by executable round trips.

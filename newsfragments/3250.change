@@ -1,2 +1,0 @@
-Reject unpaired UTF-16 surrogates in parsed strings before rendering target
-source.
