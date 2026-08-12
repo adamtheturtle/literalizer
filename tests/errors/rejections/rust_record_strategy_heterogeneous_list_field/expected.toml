@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[HeterogeneousScalarCollectionError]
+Rust = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"

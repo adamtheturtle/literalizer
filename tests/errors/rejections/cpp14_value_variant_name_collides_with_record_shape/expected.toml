@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+Cpp = "record_shape_names entry for keys ['id'] maps to 'DynamicValue', which collides with heterogeneous_value_variant_name."

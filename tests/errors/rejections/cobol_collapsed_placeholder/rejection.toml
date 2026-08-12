@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A COBOL data item is a fixed picture, so a value with nothing to put
+in one -- a zero-length literal, a null, an empty container -- is
+refused rather than written as the spaces it would collapse to.
+"""
+exceptions = [
+  "UnrepresentableEmptyDictError",
+  "UnrepresentableInputError",
+  "UnrepresentableStringError",
+]
+languages = ["Cobol"]
+
+[call]
+api = "literalize"
+sources = ['{"e": ""}', "null", "{}", "[]"]
+input_format = "json"

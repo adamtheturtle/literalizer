@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Crystal's JSON::Any#as_i exposes signed 64-bit integers only, so a
+value outside that range has no accessor to read it back.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Crystal"]
+
+[call]
+api = "literalize"
+sources = ["18446744073709551616"]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_ANY" },
+]

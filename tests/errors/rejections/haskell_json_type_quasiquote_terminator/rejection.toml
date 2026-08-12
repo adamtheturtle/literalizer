@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A string value carrying |] closes the aesonQQ quasiquote the Haskell
+JSON value type is written into, mid-document.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize"
+sources = ['{"note": "ends with |] here"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "AESON_VALUE" },
+]
