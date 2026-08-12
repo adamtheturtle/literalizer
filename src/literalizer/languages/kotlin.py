@@ -2124,10 +2124,11 @@ class Kotlin(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
         return make_overflow_fallback_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
-            ),
+            base=lambda value: "Long.MIN_VALUE" if value == I64_MIN else base(value),
             fallback=_format_kotlin_biginteger_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,

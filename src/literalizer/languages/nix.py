@@ -627,8 +627,11 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
+        def format_i64(value: int) -> str:
+            return "(-9223372036854775807 - 1)" if value == I64_MIN else str(value)
+
         return make_overflow_fallback_formatter(
-            base=str,
+            base=format_i64,
             fallback=_format_nix_fromjson_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,
