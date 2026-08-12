@@ -5,6 +5,7 @@ import datetime
 import enum
 import functools
 import itertools
+import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -27,6 +28,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     braced_dict_entry,
+    dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -34,6 +36,7 @@ from literalizer._formatters.format_entries import (
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
+    data_has_special_float,
     format_float_fixed,
     format_float_repr,
     format_float_scientific,
@@ -41,6 +44,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
@@ -131,6 +135,8 @@ from literalizer.exceptions import (
     InvalidCppRawStringDelimiterError,
     InvalidRecordNameError,
     UnrepresentableInputError,
+    UnrepresentableIntegerError,
+    UnrepresentableSpecialFloatError,
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -2007,6 +2013,119 @@ def _format_cpp_json_call_arg(_raw_value: Value, formatted: str) -> str:
     return _cpp_nlohmann_json_value_expression(formatted)
 
 
+# C++ raw-string delimiter wrapping the inline JSON document under
+# ``json_rendering=INLINE_DOCUMENT``.  The lexer terminates the raw
+# string at the first byte sequence ``)json"``; JSON string encoding
+# always escapes ``"`` inside string literals as ``\"``, so the
+# rendered document can only contain the terminator through a string
+# value that ends with ``)json``.  ``validate_spec_for_data`` rejects
+# such inputs before rendering.
+_NLOHMANN_JSON_PARSE_DELIMITER = "json"
+_NLOHMANN_JSON_PARSE_TERMINATOR = f'){_NLOHMANN_JSON_PARSE_DELIMITER}"'
+
+
+_NLOHMANN_INLINE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    sequence_open=fixed_open(open_str="["),
+    close="]",
+    supports_heterogeneity=True,
+    single_element_trailing_comma=False,
+    supports_trailing_comma=False,
+    empty_sequence="[]",
+    preamble_lines=(),
+    format_entry=passthrough_sequence_entry,
+    typed_opener_fallback=None,
+    uses_typed_literal_for_scalars=False,
+    requires_uniform_record_shapes=False,
+    declared_type=None,
+    narrowed_empty_form=None,
+)
+
+
+_NLOHMANN_INLINE_SET_CONFIG = SetFormatConfig(
+    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
+    close="]",
+    empty_set="[]",
+    preamble_lines=(),
+    set_opener_template="",
+    supports_heterogeneity=True,
+    supports_trailing_comma=False,
+)
+
+
+_NLOHMANN_INLINE_DICT_CONFIG = DictFormatConfig(
+    dict_open=fixed_open(open_str="{"),
+    close="}",
+    format_entry=dict_entry_with_separator(
+        separator=": ",
+        format_value=passthrough_sequence_entry,
+    ),
+    empty_dict="{}",
+    preamble_lines=(),
+    narrowed_open=None,
+    supports_trailing_comma=False,
+    narrowed_empty_form=None,
+)
+
+
+_NLOHMANN_INLINE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
+    ordered_map_open=fixed_open(open_str="{"),
+    close="}",
+    preamble_lines=(),
+)
+
+
+@beartype
+def _format_json_document_string(value: str) -> str:
+    """Format a string as a JSON string literal.
+
+    The literal is embedded in a C++ raw string, which applies no
+    escape processing of its own, so JSON's encoding is the only one
+    needed.
+    """
+    return json.dumps(obj=value, ensure_ascii=False)
+
+
+@beartype
+def _format_nlohmann_json_parse_overflow_int(value: int) -> str:
+    """Format an integer outside the signed 64-bit range as a bare
+    JSON number when ``nlohmann::json::parse`` can hold it exactly.
+
+    ``parse`` stores integers above ``I64_MAX`` up to ``U64_MAX`` as
+    ``number_unsigned_t``; anything wider only fits a ``double`` that
+    loses precision, so it is rejected instead.
+    """
+    if 0 < value <= U64_MAX:
+        return str(object=value)
+    msg = (
+        "Cpp json_rendering=INLINE_DOCUMENT cannot represent integer "
+        f"{value}: nlohmann::json::parse stores integers outside "
+        "[-2^63, 2^64 - 1] as doubles that lose precision."
+    )
+    raise UnrepresentableIntegerError(msg)
+
+
+@beartype
+def _cpp_nlohmann_json_parse_expression(value: str, /) -> str:
+    """Wrap a rendered JSON document in ``nlohmann::json::parse``.
+
+    The two-argument default form throws ``json::parse_error`` on
+    malformed input rather than yielding a silently discarded value;
+    the rendered document is always well-formed by construction, and
+    ``wrap_in_file`` already guards ``main`` with ``try``/``catch``
+    under :attr:`Cpp.json_type`.
+    """
+    return (
+        f'nlohmann::json::parse(R"{_NLOHMANN_JSON_PARSE_DELIMITER}'
+        f'({value}){_NLOHMANN_JSON_PARSE_DELIMITER}")'
+    )
+
+
+@beartype
+def _format_cpp_json_inline_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Format a direct call argument as a parsed inline JSON document."""
+    return _cpp_nlohmann_json_parse_expression(formatted)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
@@ -2035,6 +2154,16 @@ class Cpp(metaclass=LanguageCls):
             instead of C++'s narrow ``std::vector`` / ``std::map`` /
             ``std::unordered_map`` collection types. Dict keys must be
             strings so they remain valid JSON object keys.
+
+        json_rendering: When set to ``json_renderings.INLINE_DOCUMENT``,
+            render the :attr:`json_type` value as one inline JSON
+            document handed to ``nlohmann::json::parse`` in a
+            ``R"json(...)json"`` raw string instead of structural
+            ``nlohmann::json`` factory expressions. Readers see the data
+            as JSON, at the cost of the structural form's compile-time
+            validation. Requires :attr:`json_type`; non-finite floats
+            and integers outside ``[-2^63, 2^64 - 1]`` are rejected
+            because a JSON document cannot carry them exactly.
 
         multiline_raw_string_delimiter_base: Non-empty fallback delimiter
             base for ``string_formats.MULTILINE`` raw strings. The empty
@@ -2571,6 +2700,17 @@ class Cpp(metaclass=LanguageCls):
 
     json_types = JsonTypes
 
+    class JsonRenderings(enum.Enum):
+        """Rendering modes for :attr:`json_type` values."""
+
+        INLINE_DOCUMENT = enum.auto()
+        """Render the whole value as one inline JSON document handed to
+        ``nlohmann::json::parse`` in a ``R"json(...)json"`` raw string,
+        instead of structural ``nlohmann::json`` factory expressions.
+        """
+
+    json_renderings = JsonRenderings
+
     module_name_case: ClassVar[IdentifierCase] = IdentifierCase.SNAKE
     identifier_cases: ClassVar[tuple[IdentifierCase, ...]] = (
         IdentifierCase.SNAKE,
@@ -2595,6 +2735,7 @@ class Cpp(metaclass=LanguageCls):
         """Reject ``json_type`` combinations the generator cannot emit."""
         self._validate_multiline_raw_string_delimiter_base()
         self._validate_json_type_spec()
+        self._validate_json_rendering_spec()
         self._validate_record_naming()
 
     def _validate_multiline_raw_string_delimiter_base(self) -> None:
@@ -2713,10 +2854,33 @@ class Cpp(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
 
+    def _validate_json_rendering_spec(self) -> None:
+        """Reject ``json_rendering`` without a JSON value type.
+
+        The option chooses between renderings of a ``nlohmann::json``
+        value, so it has no meaning for the narrow-typed default
+        collections.
+        """
+        if self.json_rendering is not None and self.json_type is None:
+            msg = (
+                "Cpp json_rendering selects how json_type values are "
+                "rendered and requires json_type to be set."
+            )
+            raise IncompatibleFormatsError(msg)
+
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate C++-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
+        if self._json_inline_document_active:
+            if data_has_special_float(data=data):
+                msg = (
+                    "Cpp json_rendering=INLINE_DOCUMENT cannot represent "
+                    "special floats because nlohmann::json::parse accepts "
+                    "only finite numbers."
+                )
+                raise UnrepresentableSpecialFloatError(msg)
+            self._validate_inline_document_strings(data=data)
 
     def _validate_json_value_keys(self, *, data: Value) -> None:
         """Reject non-string object keys for ``nlohmann::json``.
@@ -2738,6 +2902,36 @@ class Cpp(metaclass=LanguageCls):
             case list() | set():
                 for item in data:
                     self._validate_json_value_keys(data=item)
+            case _:
+                return
+
+    def _validate_inline_document_strings(self, *, data: Value) -> None:
+        """Reject strings the inline JSON raw string cannot hold.
+
+        The C++ lexer ends the ``R"json(...)json"`` raw string at the
+        first ``)json"`` byte sequence.  JSON encoding escapes every
+        ``"`` inside a string literal, so the terminator can only be
+        produced by a string value that ends with ``)json``, putting
+        the sequence right before the literal's closing quote.
+        """
+        match data:
+            case str():
+                encoded = json.dumps(obj=data, ensure_ascii=False)
+                if _NLOHMANN_JSON_PARSE_TERMINATOR in encoded:
+                    msg = (
+                        "Cpp json_rendering=INLINE_DOCUMENT cannot "
+                        "represent a string whose JSON encoding contains "
+                        "the raw-string terminator sequence "
+                        f"{_NLOHMANN_JSON_PARSE_TERMINATOR!r}."
+                    )
+                    raise UnrepresentableInputError(msg)
+            case dict():
+                for key, value in data.items():
+                    self._validate_inline_document_strings(data=key)
+                    self._validate_inline_document_strings(data=value)
+            case list() | set():
+                for item in data:
+                    self._validate_inline_document_strings(data=item)
             case _:
                 return
 
@@ -2877,6 +3071,7 @@ class Cpp(metaclass=LanguageCls):
     )
     heterogeneous_value_variant_name: str = "Value"
     json_type: JsonTypes | None = None
+    json_rendering: JsonRenderings | None = None
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
         default_factory=lambda: MappingProxyType(mapping={}),
@@ -2910,12 +3105,22 @@ class Cpp(metaclass=LanguageCls):
         return self.json_type is not None
 
     @cached_property
+    def _json_inline_document_active(self) -> bool:
+        """Return whether ``nlohmann::json`` values render as one
+        inline JSON document handed to ``nlohmann::json::parse``.
+        """
+        return self.json_rendering is self.JsonRenderings.INLINE_DOCUMENT
+
+    @cached_property
     def null_literal(self) -> str:
         """Null literal for the active C++ representation.
 
         ``nullptr`` constructs a null ``nlohmann::json`` value, so the
-        default literal also serves the structural JSON rendering.
+        default literal also serves the structural JSON rendering; the
+        inline JSON document spells JSON's own ``null`` keyword.
         """
+        if self._json_inline_document_active:
+            return "null"
         return self._default_null_literal
 
     @cached_property
@@ -2932,7 +3137,14 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
-        """Format a string value as a quoted literal."""
+        """Format a string value as a quoted literal.
+
+        Under ``json_rendering=INLINE_DOCUMENT`` strings use JSON's own
+        encoding: the document is embedded in a C++ raw string, so the
+        configured C++ string format never applies.
+        """
+        if self._json_inline_document_active:
+            return _format_json_document_string
         if self.string_format is self.string_formats.MULTILINE:
             if self.multiline_raw_string_delimiter_base == "x":
                 return _format_string_multiline
@@ -2966,12 +3178,17 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
+            wrap_json_expression = (
+                _cpp_nlohmann_json_parse_expression
+                if self._json_inline_document_active
+                else _cpp_nlohmann_json_value_expression
+            )
 
             def _formatter(name: str, value: str, _data: Value) -> str:
-                """Assign a structural JSON value to an existing
+                """Assign a ``nlohmann::json`` value to an existing
                 binding.
                 """
-                expr = _cpp_nlohmann_json_value_expression(value)
+                expr = wrap_json_expression(value)
                 return f"{name} = {expr};"
 
             return _formatter
@@ -2980,6 +3197,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
+        if self._json_inline_document_active:
+            return _format_cpp_json_inline_call_arg
         if self._json_type_active:
             return _format_cpp_json_call_arg
         return identity_call_arg
@@ -3343,13 +3562,21 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self._json_inline_document_active:
+            return _NLOHMANN_INLINE_SEQUENCE_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_SEQUENCE_CONFIG
         return self.sequence_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
-        """Configuration for the chosen set format."""
+        """Configuration for the chosen set format.
+
+        The inline JSON document renders a set as a JSON array because
+        JSON has no set type.
+        """
+        if self._json_inline_document_active:
+            return _NLOHMANN_INLINE_SET_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_SET_CONFIG
         return self.set_format.get_config(type_ctx=self._type_ctx)
@@ -3418,7 +3645,13 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
-        """Configuration for trailing-comma behavior."""
+        """Configuration for trailing-comma behavior.
+
+        The inline JSON document never emits trailing commas because
+        the JSON spec rejects them in arrays and objects.
+        """
+        if self._json_inline_document_active:
+            return TrailingCommaConfig(multiline_trailing_comma=False)
         return self.trailing_comma.value
 
     @cached_property
@@ -3455,10 +3688,23 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
+        """Callable that formats an int value as a literal.
+
+        Under ``json_rendering=INLINE_DOCUMENT`` overflow values stay
+        bare JSON numbers: the document reaches the C++ compiler inside
+        a raw string, so the ``ULL``-suffix and ``I64_MIN``-safe forms
+        the structural rendering needs would be invalid JSON tokens.
+        """
         base_int_formatter = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+        if self._json_inline_document_active:
+            return make_overflow_fallback_formatter(
+                base=base_int_formatter,
+                fallback=_format_nlohmann_json_parse_overflow_int,
+                min_value=I64_MIN,
+                max_value=I64_MAX,
+            )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(
                 base=self.numeric_literal_suffix.wrap_integer_formatter(
@@ -3473,6 +3719,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self._json_inline_document_active:
+            return _NLOHMANN_INLINE_DICT_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_DICT_CONFIG
         return self.dict_format.get_config(type_ctx=self._type_ctx)
@@ -3484,7 +3732,13 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
-        """Configuration for ordered-map formatting."""
+        """Configuration for ordered-map formatting.
+
+        The inline JSON document reuses the JSON object form (JSON
+        objects preserve insertion order in the rendered text).
+        """
+        if self._json_inline_document_active:
+            return _NLOHMANN_INLINE_ORDERED_MAP_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_ORDERED_MAP_CONFIG
         config = _build_ordered_map_config(type_ctx=self._type_ctx)
@@ -3536,7 +3790,16 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
-        """Callable that formats one ordered-map entry."""
+        """Callable that formats one ordered-map entry.
+
+        The inline JSON document uses JSON's ``": "`` separator; the
+        structural forms use braced ``{key, value}`` pairs.
+        """
+        if self._json_inline_document_active:
+            return dict_entry_with_separator(
+                separator=": ",
+                format_value=passthrough_sequence_entry,
+            )
         return braced_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
@@ -3619,6 +3882,11 @@ class Cpp(metaclass=LanguageCls):
         :class:`Value` rather than the rendered text.
         """
         if self._json_type_active:
+            wrap_json_expression = (
+                _cpp_nlohmann_json_parse_expression
+                if self._json_inline_document_active
+                else _cpp_nlohmann_json_value_expression
+            )
 
             def _json_formatter(
                 name: str,
@@ -3626,8 +3894,8 @@ class Cpp(metaclass=LanguageCls):
                 _data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
-                """Render an ``auto``-deduced structural
-                ``nlohmann::json`` declaration.
+                """Render an ``auto``-deduced ``nlohmann::json``
+                declaration.
 
                 ``auto`` is used in place of the spelled-out
                 ``nlohmann::json`` type so the binding is not analyzed by
@@ -3635,7 +3903,7 @@ class Cpp(metaclass=LanguageCls):
                 considers explicitly-typed local variables); the deduced
                 type is the same.
                 """
-                expr = _cpp_nlohmann_json_value_expression(value)
+                expr = wrap_json_expression(value)
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
                 return f"{prefix}auto {name} = {expr};"
 

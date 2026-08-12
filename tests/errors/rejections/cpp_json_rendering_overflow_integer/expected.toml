@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Cpp['18446744073709551616']" = "Cpp json_rendering=INLINE_DOCUMENT cannot represent integer 18446744073709551616: nlohmann::json::parse stores integers outside [-2^63, 2^64 - 1] as doubles that lose precision."
+"Cpp['-9223372036854775809']" = "Cpp json_rendering=INLINE_DOCUMENT cannot represent integer -9223372036854775809: nlohmann::json::parse stores integers outside [-2^63, 2^64 - 1] as doubles that lose precision."

@@ -13,4 +13,7 @@ axis = "statement_terminator_style"
 axis = "json_type"
 
 [[call.variants]]
+axis = "json_rendering"
+
+[[call.variants]]
 axis = "heterogeneous_strategy"
