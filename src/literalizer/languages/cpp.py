@@ -44,6 +44,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    U64_MAX,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal_c_style,
@@ -2002,6 +2003,21 @@ def _render_nlohmann_json_float(value: float) -> str:
 
 
 @beartype
+def _render_nlohmann_json_int(value: int) -> str:
+    """Render one integer without relying on an out-of-range C++ token."""
+    if value > U64_MAX or value < I64_MIN:
+        return (
+            "nlohmann::json::number_float_t{"
+            f"{_render_nlohmann_json_float(value=float(str(value)))}}}"
+        )
+    if value > I64_MAX:
+        return f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
+    if value == I64_MIN:
+        return "nlohmann::json::number_integer_t{(-9223372036854775807LL - 1)}"
+    return json.dumps(obj=value)
+
+
+@beartype
 def _render_nlohmann_json_node(value: JsonValue) -> str:
     """Render one normalized JSON node."""
     match value:
@@ -2010,13 +2026,11 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
         case bool():
             rendered = "true" if value else "false"
         case str():
-            rendered = json.dumps(obj=value, ensure_ascii=False)
+            rendered = _format_string_cpp_escaped(value=value)
         case float():
             rendered = _render_nlohmann_json_float(value=value)
-        case int() if value > I64_MAX:
-            rendered = f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
         case int():
-            rendered = json.dumps(obj=value)
+            rendered = _render_nlohmann_json_int(value=value)
         case list():
             entries = ", ".join(
                 _render_nlohmann_json_node(value=item) for item in value
@@ -2024,7 +2038,7 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
             rendered = f"nlohmann::json::array({{{entries}}})"
         case dict():
             object_entries = (
-                "{" + json.dumps(obj=key, ensure_ascii=False) + ", "
+                "{" + _format_string_cpp_escaped(value=key) + ", "
                 f"{_render_nlohmann_json_node(value=item)}}}"
                 for key, item in value.items()
             )
