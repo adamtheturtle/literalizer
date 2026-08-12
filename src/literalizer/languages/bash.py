@@ -123,8 +123,9 @@ def _format_string_single(value: str) -> str:
 def _escape_bash_nested_expression(value: str, /) -> str:
     """Escape Bash source for an outer double-quoted collection value.
 
-    Preserve escapes already protecting expansion characters.  Re-escaping
-    those pairs would leave a literal backslash in the resulting value.
+    Existing escapes protecting expansion characters need another layer of
+    protection so the outer double-quoted parse leaves them intact for the
+    nested expression.
     """
     escaped: list[str] = []
     index = 0
@@ -135,7 +136,7 @@ def _escape_bash_nested_expression(value: str, /) -> str:
             and index + 1 < len(value)
             and value[index + 1] in {"$", "`"}
         ):
-            escaped.append(character + value[index + 1])
+            escaped.append("\\\\" + "\\" + value[index + 1])
             index += 2
             continue
         escaped.append(
