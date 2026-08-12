@@ -2,5 +2,9 @@ const deep = {
   "_": "_",
 };
 const my_data = {
-  "a": {"b": {"c": deep}},
+  "a": {
+    "b": {
+      "c": deep,
+    },
+  },
 };

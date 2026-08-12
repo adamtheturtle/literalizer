@@ -2,5 +2,9 @@ let deep = [
     "_": "_",
 ]
 let my_data = [
-    "a": ["b": ["c": deep]],
+    "a": [
+        "b": [
+            "c": deep,
+        ],
+    ],
 ]

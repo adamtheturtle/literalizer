@@ -90,6 +90,10 @@ program main
         fentry('_', fstr('_')) &
     ])
     my_data = fmap([fval_t :: &
-        fentry('a', fmap([fval_t :: fentry('b', fmap([fval_t :: fentry('c', deep)]))])) &
+        fentry('a', fmap([fval_t :: &
+            fentry('b', fmap([fval_t :: &
+                fentry('c', deep) &
+            ])) &
+        ])) &
     ])
 end program main

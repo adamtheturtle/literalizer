@@ -7,5 +7,9 @@ let deep: Val = FMap [
     ("_", FStr "_")
 ]
 let my_data: Val = FMap [
-    ("a", FMap [("b", FMap [("c", deep)])])
+    ("a", FMap [
+        ("b", FMap [
+            ("c", deep)
+        ])
+    ])
 ]
