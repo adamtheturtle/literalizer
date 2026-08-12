@@ -306,6 +306,21 @@ def _validate_no_null_map_values(data: Value) -> None:
 
 
 @beartype
+def _walk_java_ordered_map_values(
+    *, data: OrderedMap, walk: Callable[[Value], None]
+) -> None:
+    """Validate direct ordered-map nulls, then recurse into its values."""
+    for item in data.values():
+        if item is None:
+            msg = (
+                "Java's Map.entry() does not accept null values; "
+                "remove the null-valued entry"
+            )
+            raise UnrepresentableInputError(msg)
+        walk(item)
+
+
+@beartype
 def _java_box(type_name: str) -> str:
     """Return the boxed wrapper type for a Java primitive, or the type
     itself for reference types.
@@ -1477,7 +1492,7 @@ class Java(metaclass=LanguageCls):
             """Walk nested values and distinguish records from maps."""
             match value:
                 case OrderedMap():
-                    _validate_no_null_map_values(data=value)
+                    _walk_java_ordered_map_values(data=value, walk=_walk)
                 case dict():
                     rendered_as_record = (
                         record_name_for_value(value) is not None
