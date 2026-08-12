@@ -834,8 +834,8 @@ jobs:
           persist-credentials: false
       - name: Install Go-sourced linters
         run: |-
-          go install github.com/google/go-jsonnet/cmd/jsonnet@latest
-          go install github.com/tmccombs/hcl2json@latest
+          go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
+          go install github.com/tmccombs/hcl2json@v0.6.9
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
@@ -1713,8 +1713,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Install clang-tidy
-        run: uv tool install clang-tidy
       # ``cJSON`` fixtures (``C(json_type=CJSON)``) need the cJSON header
       # on the default include path; clang-tidy does not link, so the
       # ``-lcjson`` library itself is irrelevant here.
@@ -1725,7 +1723,7 @@ jobs:
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} uv run --extra=dev clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
     strategy:
@@ -1741,8 +1739,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Install clang-tidy
-        run: uv tool install clang-tidy
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
       # need the single-header library; the Ubuntu package ships
       # ``<nlohmann/json.hpp>`` under the default include path.
@@ -1765,7 +1761,7 @@ jobs:
           done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 uv run --extra=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest
