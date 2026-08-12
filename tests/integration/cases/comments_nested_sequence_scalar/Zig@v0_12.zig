@@ -13,7 +13,11 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .arr = &.{
         .{ .arr = &.{.{ .str = "ADD" }, .{ .str = "alice" }, .{ .str = "hello" }}},
-        .{ .arr = &.{.{ .str = "DEL" }, .{ .str = "bob" }, .{ .str = "5" }}},  // removes "world"
+        .{ .arr = &.{
+            .{ .str = "DEL" },
+            .{ .str = "bob" },
+            .{ .str = "5" },  // removes "world"
+        }},
     }};
     _ = my_data;
 }
