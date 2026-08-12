@@ -1,5 +1,6 @@
 """Tests for intentionally incomplete literal fragments."""
 
+# pylint: disable=import-private-name,protected-access,wrong-spelling-in-comment
 # ruff: noqa: SLF001
 
 from __future__ import annotations
