@@ -37,6 +37,7 @@ from literalizer.exceptions import (
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
     UnrepresentableNullError,
+    UnsupportedOptionError,
 )
 
 
@@ -1026,6 +1027,7 @@ class LanguageCls(type):
     """Whether nested collection syntax becomes string payload data."""
 
     language_id: str
+    __dataclass_fields__: dict[str, dataclasses.Field[Any]]
     """Stable, implementation-neutral identifier for this language.
 
     Consumers that need to name a language without depending on the
@@ -1114,9 +1116,37 @@ class LanguageCls(type):
     the mapped type is not declared by literalizer.
     """
     dict_supports_heterogeneous_values: bool
+    _language_classes: ClassVar[list["LanguageCls"]] = []
+
+    def __new__(
+        mcs,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: dict[str, object],
+        **kwargs: object,
+    ) -> "LanguageCls":
+        """Create and register a language class for option discovery."""
+        created = super().__new__(mcs, name, bases, namespace, **kwargs)
+        mcs._language_classes.append(created)
+        return created
 
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
+        unsupported = kwargs.keys() - cls.__dataclass_fields__.keys()
+        known_options = {
+            field_name
+            for language_cls in LanguageCls._language_classes
+            for field_name in vars(language_cls).get(
+                "__dataclass_fields__",
+                {},
+            )
+        }
+        known_unsupported = unsupported & known_options
+        if known_unsupported:
+            raise UnsupportedOptionError(
+                language_name=cls.__name__,
+                option=min(known_unsupported),
+            )
         instance: Language = super().__call__(*args, **kwargs)
         if cls.supports_record_struct_name_prefix:
             prefix = vars(instance)["record_struct_name_prefix"]
