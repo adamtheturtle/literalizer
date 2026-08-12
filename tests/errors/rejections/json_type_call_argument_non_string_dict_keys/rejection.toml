@@ -9,7 +9,7 @@ gates = [{ kind = "spec_field_present", field = "json_type" }]
 
 [call]
 api = "literalize_call"
-source = "- {1: one}"
+sources = ["- {1: one}"]
 input_format = "yaml"
 target_function = "process"
 parameter_names = ["x"]

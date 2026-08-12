@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A string literal that cannot carry an embedded null byte refuses one.
+Languages that can escape it are covered by the string_embedded_nul
+golden axis instead.
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Cobol", "R"]
+
+[call]
+api = "literalize"
+sources = ['{"x": "\u0000"}']
+input_format = "json"

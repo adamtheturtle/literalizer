@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableStringError]
+Cobol = "COBOL string literals cannot represent NUL"
+R = "R string literals cannot represent NUL"

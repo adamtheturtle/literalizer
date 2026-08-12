@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A #{ sequence in the JSON document would be read as Crystal string
+interpolation rather than as the characters themselves.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Crystal"]
+
+[call]
+api = "literalize"
+sources = ['{"template": "value=#{x}"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_ANY" },
+]
