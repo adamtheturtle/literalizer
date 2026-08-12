@@ -9,7 +9,7 @@ gates = [{ kind = "spec_field_present", field = "json_type" }]
 
 [call]
 api = "literalize"
-source = "[Infinity]"
+sources = ["[Infinity]"]
 input_format = "json5"
 
 [[accepts]]

@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[ExcessiveNestingError]
+Bash = "Bash supports collection nesting only through depth 12; received depth 13"
+SystemVerilog = "SystemVerilog supports collection nesting only through depth 12; received depth 13"
