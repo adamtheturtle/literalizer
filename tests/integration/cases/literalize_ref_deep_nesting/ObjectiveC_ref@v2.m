@@ -5,7 +5,11 @@ id deep = @{
     @"_": @"_",
 };
 id my_data = @{
-    @"a": @{@"b": @{@"c": deep}},
+    @"a": @{
+        @"b": @{
+            @"c": deep,
+        },
+    },
 };
     (void)my_data;
 }

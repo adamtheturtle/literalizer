@@ -4,7 +4,11 @@ defmodule Check do
         "_" => "_",
     }
     my_data = %{
-        "a" => %{"b" => %{"c" => deep}},
+        "a" => %{
+            "b" => %{
+                "c" => deep,
+            },
+        },
     }
     _ = my_data
   end
