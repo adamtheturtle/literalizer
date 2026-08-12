@@ -769,6 +769,13 @@ member_flags = ["string_literals_escape_null_byte"]
 member_name_source = "json_type_variant_name_suffix"
 gates = [{ kind = "spec_field_present", field = "json_type" }]
 
+[axes.scalar_string_embedded_nul]
+plan = "fixed_overrides"
+name_template = "{lang}_scalar_string_embedded_nul"
+gates = [
+  { kind = "capability_flag", flag = "string_literals_escape_null_byte" },
+]
+
 [axes.string_format]
 plan = "every_non_default_member"
 name_template = "{lang}_string_format_{format}"
