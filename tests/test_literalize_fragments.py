@@ -44,6 +44,7 @@ def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
     absent_nested.append("plain")
     absent: list[Value] = [0]
     absent.append(absent_nested)
+    mapping: dict[Scalar, Value] = {"nested": present}
     assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
         value=present, ref_key="$ref"
     )
@@ -51,7 +52,7 @@ def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
         value=absent, ref_key="$ref"
     )
     assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
-        value={"nested": present}, ref_key="$ref"
+        value=mapping, ref_key="$ref"
     )
 
 
