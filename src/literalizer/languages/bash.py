@@ -32,7 +32,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
     reject_nul_string_formatter,
 )
 from literalizer._language import (
@@ -90,6 +89,24 @@ _MAX_STRINGIFIED_COLLECTION_DEPTH = 12
 
 
 @beartype
+def _format_string_double(value: str) -> str:
+    r"""Format a value as an expansion-free Bash double-quoted word.
+
+    Bash does not interpret ``\n`` or ``\t`` inside double quotes, so
+    control characters remain literal.  Characters that retain special
+    meaning inside double quotes are escaped to prevent expansion or
+    command substitution.
+    """
+    escaped = (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("$", "\\$")
+        .replace("`", "\\`")
+    )
+    return f'"{escaped}"'
+
+
+@beartype
 def _format_string_single(value: str) -> str:
     r"""Format a string for Bash single-quoted context.
 
@@ -106,13 +123,43 @@ def _format_string_single(value: str) -> str:
 
 
 _format_string_double_safe = reject_nul_string_formatter(
-    format_string_backslash,
+    _format_string_double,
     language_name="Bash",
 )
 _format_string_single_safe = reject_nul_string_formatter(
     _format_string_single,
     language_name="Bash",
 )
+
+
+@beartype
+def _escape_bash_nested_expression(value: str, /) -> str:
+    """Escape Bash source for an outer double-quoted collection value.
+
+    Existing escapes protecting expansion characters need another layer of
+    protection so the outer double-quoted parse leaves them intact for the
+    nested expression.
+    """
+    escaped: list[str] = []
+    index = 0
+    while index < len(value):
+        character = value[index]
+        if (
+            character == "\\"
+            and index + 1 < len(value)
+            and value[index + 1] in {"$", "`"}
+        ):
+            escaped.append("\\\\" + "\\" + value[index + 1])
+            index += 2
+            continue
+        escaped.append(
+            {"\\": "\\\\", '"': '\\"', "$": "\\$", "`": "\\`"}.get(
+                character,
+                character,
+            )
+        )
+        index += 1
+    return "".join(escaped)
 
 
 @beartype
@@ -124,12 +171,7 @@ def _to_bash_value(item: str) -> str:
     ``(``) is double-quoted with special characters escaped.
     """
     if item.startswith("("):
-        escaped = (
-            item.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("$", "\\$")
-            .replace("`", "\\`")
-        )
+        escaped = _escape_bash_nested_expression(item)
         return f'"{escaped}"'
     return item
 
@@ -138,12 +180,7 @@ def _to_bash_value(item: str) -> str:
 def _format_bash_sequence_entry(original: Value, item: str) -> str:
     """Format a Bash indexed-array element, quoting nested collections."""
     if isinstance(original, (list, dict, set)):
-        escaped = (
-            item.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("$", "\\$")
-            .replace("`", "\\`")
-        )
+        escaped = _escape_bash_nested_expression(item)
         return f'"{escaped}"'
     return item
 
@@ -220,15 +257,16 @@ def _bash_call_stub(
 def _format_variable_declaration(
     name: str,
     value: str,
-    _data: Value,
+    data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    flag = (
-        " -A"
-        if any(line.lstrip().startswith("[") for line in value.splitlines())
-        else ""
+    is_associative_initializer = (
+        isinstance(data, dict)
+        and bool(data)
+        and value.lstrip().startswith("(")
     )
+    flag = " -A" if is_associative_initializer else ""
     return f"declare{flag} {name}={value}"
 
 

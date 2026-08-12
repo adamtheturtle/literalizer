@@ -1,6 +1,6 @@
 declare -A my_data=(
-    ["value"]="([\"\$ref\"]=\"foo\")"
+    ["value"]="([\"\\\$ref\"]=\"foo\")"
 )
 my_data=(
-    ["value"]="([\"\$ref\"]=\"foo\")"
+    ["value"]="([\"\\\$ref\"]=\"foo\")"
 )
