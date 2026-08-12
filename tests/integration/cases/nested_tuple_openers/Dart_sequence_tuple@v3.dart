@@ -1,3 +1,3 @@
-final my_data = <String, List<List<List<List<int>>>>>{
-    "deep": ((((1,),),),),
-};
+final my_data = (
+    (((1,),),),
+);

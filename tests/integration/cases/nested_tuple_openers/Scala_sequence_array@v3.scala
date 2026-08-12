@@ -1,5 +1,5 @@
 object Fixture_nested_tuple_openers_Scala_sequence_array {
-val my_data = Map[String, Array[Array[Array[Array[Int]]]]](
-    "deep" -> Array[Array[Array[Array[Int]]]](Array[Array[Array[Int]]](Array[Array[Int]](Array[Int](1)))),
+val my_data = Array[Array[Array[Array[Int]]]](
+    Array[Array[Array[Int]]](Array[Array[Int]](Array[Int](1))),
 )
 }

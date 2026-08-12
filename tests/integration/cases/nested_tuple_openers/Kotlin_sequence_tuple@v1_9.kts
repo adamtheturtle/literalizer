@@ -1,3 +1,3 @@
-val my_data = mapOf<String, Array<Array<Array<Array<Int>>>>>(
-    "deep" to listOf<Any?>(listOf<Any?>(listOf<Any?>(listOf<Any?>(1)))),
+val my_data = listOf<Any?>(
+    listOf<Any?>(listOf<Any?>(listOf<Any?>(1))),
 )

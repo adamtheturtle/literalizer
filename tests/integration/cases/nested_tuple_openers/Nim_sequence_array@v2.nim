@@ -1,4 +1,4 @@
 import json
-var my_data = %* {
-    "deep": [[[[1]]]]
-}
+var my_data = %* [
+    [[[1]]]
+]

@@ -1,3 +1,3 @@
-let my_data = [
-    "deep": ((((1)))),
-]
+let my_data = (
+    (((1))),
+)
