@@ -34,7 +34,6 @@ def _build_program(json_text: str) -> str:
     """
     result = roundtrip_common.literalize_new_variable(
         language=JavaScript(
-            string_format=JavaScript.string_formats.MULTILINE,
         ),
         json_text=json_text,
         var_name=_VAR_NAME,
