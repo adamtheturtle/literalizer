@@ -33,7 +33,7 @@ def test_literalize_fails_on_yaml_comment_misalignment(
         match=r"zip\(\) argument 2 is longer than argument 1",
     ):
         literalizer.literalize(
-            source="outer:\n  # nested\n  keep: 1\n  drop:\n",
+            source="outer:\n  # nested\n  keep: 1\n  drop: 2\n",
             input_format=literalizer.InputFormat.YAML,
             language=Java(),
             collection_layout=literalizer.CollectionLayout.MULTILINE,
