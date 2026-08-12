@@ -1,10 +1,11 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 auto process(auto...) { return 0; }
 int main() {
     try {
-process(nlohmann::json::parse(R"json("hello")json", nullptr, false));
-process(nlohmann::json::parse(R"json(42)json", nullptr, false));
-process(nlohmann::json::parse(R"json(true)json", nullptr, false));
+process(nlohmann::json("hello"));
+process(nlohmann::json(42));
+process(nlohmann::json(true));
         return 0;
     } catch (...) {
         return 1;
