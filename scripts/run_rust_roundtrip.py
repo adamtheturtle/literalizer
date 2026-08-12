@@ -61,7 +61,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Rust backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Rust.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     rustc = shutil.which(cmd="rustc") or "rustc"
     deps_dir = sys.argv[1]
     serde_json_rlib = sys.argv[2]
@@ -91,6 +94,8 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
+        expected_json=json_text,
+        extra_files=None,
     )
 
 

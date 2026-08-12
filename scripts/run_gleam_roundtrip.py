@@ -90,6 +90,7 @@ def main() -> None:
             label=_LABEL,
             produced_json=result.stdout,
             exclude_keys=(),
+            expected_json=None,
         )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

@@ -690,4 +690,5 @@ whitelines = 1
 
 [tool.no_defaults]
 private_only = true
+per_file_enforcement."scripts/**" = "all"
 per_file_enforcement."tests/**" = "all"

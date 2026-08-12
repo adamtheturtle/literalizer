@@ -116,6 +116,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
+        expected_json=None,
         extra_files={
             "elm.json": ELM_JSON,
             "run.js": _RUN_JS,

@@ -183,6 +183,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
+        expected_json=None,
         extra_files={
             "Prelude.purs": PRELUDE_PURS,
             "Prelude.js": PRELUDE_JS,
