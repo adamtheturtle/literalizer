@@ -1441,7 +1441,9 @@ class Java(metaclass=LanguageCls):
             self._validate_json_value_keys(data)
             return
         strategies = type(self.heterogeneous_strategy)
-        if self.heterogeneous_strategy is not strategies.RECORD:
+        if self.heterogeneous_strategy is strategies.RECORD:
+            self._validate_record_null_map_values(data)
+        else:
             _validate_no_null_map_values(data=data)
         formats = type(self.sequence_format)
         if (
@@ -1457,6 +1459,44 @@ class Java(metaclass=LanguageCls):
                 "Use sequence_format=ARRAY."
             )
             raise IncompatibleFormatsError(msg)
+
+    def _validate_record_null_map_values(self, data: Value) -> None:
+        """Reject nulls in maps that the record strategy leaves as
+        maps.
+        """
+        strategy = self._record_strategy
+        compute_record_shapes = strategy.behavior.compute_record_shapes
+        record_name_for_value = strategy.record_name_for_value
+        if compute_record_shapes is None or record_name_for_value is None:
+            msg = "Java RECORD strategy is missing record-shape hooks"
+            raise RuntimeError(msg)
+        compute_record_shapes(data)
+
+        @beartype
+        def _walk(value: Value) -> None:
+            """Walk nested values and distinguish records from maps."""
+            match value:
+                case OrderedMap():
+                    _validate_no_null_map_values(data=value)
+                case dict():
+                    rendered_as_record = (
+                        record_name_for_value(value) is not None
+                    )
+                    for item in value.values():
+                        if item is None and not rendered_as_record:
+                            msg = (
+                                "Java's Map.entry() does not accept null "
+                                "values; remove the null-valued entry"
+                            )
+                            raise UnrepresentableInputError(msg)
+                        _walk(item)
+                case list() | set():
+                    for item in value:
+                        _walk(item)
+                case _:
+                    return
+
+        _walk(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
