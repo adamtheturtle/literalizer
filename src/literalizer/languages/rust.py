@@ -3596,13 +3596,6 @@ class Rust(metaclass=LanguageCls):
         ``heterogeneous_value_enum_name``, and duplicate target names.
         """
         prefix = self.record_struct_name_prefix
-        if not _PASCAL_CASE_IDENTIFIER.match(string=prefix):
-            msg = (
-                f"record_struct_name_prefix {prefix!r} must be a "
-                f"PascalCase identifier starting with an uppercase "
-                f"letter."
-            )
-            raise InvalidRecordNameError(msg)
         auto_name_pattern = re.compile(
             pattern=rf"^{re.escape(pattern=prefix)}\d+$",
         )
