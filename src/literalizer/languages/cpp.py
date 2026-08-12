@@ -2006,9 +2006,17 @@ def _render_nlohmann_json_float(value: float) -> str:
 def _render_nlohmann_json_int(value: int) -> str:
     """Render one integer without relying on an out-of-range C++ token."""
     if value > U64_MAX or value < I64_MIN:
+        as_float = float(str(value))
+        if not math.isfinite(as_float):
+            msg = (
+                "Cpp(json_type=NLOHMANN_JSON) cannot represent integer "
+                f"{value}: its magnitude exceeds nlohmann::json's finite "
+                "numeric range."
+            )
+            raise UnrepresentableInputError(msg)
         return (
             "nlohmann::json::number_float_t{"
-            f"{_render_nlohmann_json_float(value=float(str(value)))}}}"
+            f"{_render_nlohmann_json_float(value=as_float)}}}"
         )
     if value > I64_MAX:
         return f"nlohmann::json::number_unsigned_t{{{value}ULL}}"
