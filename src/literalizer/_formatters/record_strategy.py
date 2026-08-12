@@ -695,6 +695,26 @@ def _list_element_record_name(
 
 
 @beartype
+def _build_derecordized_map_open(
+    *,
+    open_str: str,
+) -> Callable[[], str]:
+    """Wrap the fixed widened-map opener as an opener provider.
+
+    :attr:`~literalizer._language.HeterogeneousBehavior.dict_open_for_wrap_ids`
+    is a zero-argument provider so a language whose widened opener
+    depends on the data pass can defer the choice; a fixed opener
+    simply closes over its string.
+    """
+
+    def _open() -> str:
+        """Return the fixed widened-map opener."""
+        return open_str
+
+    return _open
+
+
+@beartype
 def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
     renderer: RecordRenderer,
@@ -875,7 +895,11 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         wrap_empty_container=None,
         empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
-        dict_open_for_wrap_ids=derecordized_map_open,
+        dict_open_for_wrap_ids=(
+            None
+            if derecordized_map_open is None
+            else _build_derecordized_map_open(open_str=derecordized_map_open)
+        ),
         widens_nested_maps_by_wrapping_scalars=False,
         widens_unrecordizable_nested_sibling_maps=(
             widen_unrecordizable_nested_sibling_maps

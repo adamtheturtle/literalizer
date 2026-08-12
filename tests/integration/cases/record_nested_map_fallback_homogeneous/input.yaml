@@ -1,0 +1,7 @@
+---
+- name: test_1
+  input: {kind: create, pr_id: pr_1}
+  expected: {pr_id: pr_1, status: draft}
+- name: test_2
+  input: {kind: publish, pr_id: pr_1}
+  expected: {error: invalid_operation}
