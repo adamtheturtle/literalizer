@@ -2044,7 +2044,7 @@ def _render_nlohmann_json_node(
             )
         case dict():
             assert all(isinstance(key, str) for key in value)  # noqa: S101
-            object_entries = []
+            object_entries: list[str] = []
             for key, item in value.items():
                 rendered_item = _render_nlohmann_json_node(
                     value=item, indent_level=child_indent_level
