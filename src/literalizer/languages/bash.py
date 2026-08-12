@@ -244,15 +244,11 @@ def _bash_call_stub(
 def _format_variable_declaration(
     name: str,
     value: str,
-    _data: Value,
+    data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    flag = (
-        " -A"
-        if any(line.lstrip().startswith("[") for line in value.splitlines())
-        else ""
-    )
+    flag = " -A" if isinstance(data, dict) else ""
     return f"declare{flag} {name}={value}"
 
 
