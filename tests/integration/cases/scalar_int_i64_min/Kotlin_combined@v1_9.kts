@@ -1,2 +1,2 @@
-var my_data = -9223372036854775808
-my_data = -9223372036854775808
+var my_data = Long.MIN_VALUE
+my_data = Long.MIN_VALUE

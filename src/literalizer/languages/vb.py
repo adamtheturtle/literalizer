@@ -904,7 +904,9 @@ class VisualBasic(metaclass=LanguageCls):
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
         return make_overflow_fallback_formatter(
-            base=lambda value: "Long.MinValue" if value == I64_MIN else str(value),
+            base=lambda value: (
+                "Long.MinValue" if value == I64_MIN else str(value)
+            ),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_vb_ulong_positive,
                 language_name="VB.NET",

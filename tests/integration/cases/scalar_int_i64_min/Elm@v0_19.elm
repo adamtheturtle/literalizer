@@ -6,4 +6,4 @@ type Val
 
 
 my_data : Val
-my_data = EInt (-9223372036854775808)
+my_data = EInt ((-9223372036854775807 - 1))

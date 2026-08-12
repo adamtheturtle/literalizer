@@ -2129,7 +2129,9 @@ class Kotlin(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         return make_overflow_fallback_formatter(
-            base=lambda value: "Long.MIN_VALUE" if value == I64_MIN else base(value),
+            base=lambda value: (
+                "Long.MIN_VALUE" if value == I64_MIN else base(value)
+            ),
             fallback=_format_kotlin_biginteger_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,

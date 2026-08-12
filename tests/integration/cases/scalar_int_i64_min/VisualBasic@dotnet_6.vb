@@ -1,3 +1,3 @@
 Module Check
-    Dim my_data = -9223372036854775808
+    Dim my_data = Long.MinValue
 End Module

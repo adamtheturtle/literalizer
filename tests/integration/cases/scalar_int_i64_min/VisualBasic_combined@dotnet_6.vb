@@ -1,9 +1,9 @@
 Module Check
     Sub _declaration()
-        Dim my_data = -9223372036854775808
+        Dim my_data = Long.MinValue
     End Sub
     Sub _assignment()
         Dim my_data As Object
-        my_data = -9223372036854775808
+        my_data = Long.MinValue
     End Sub
 End Module

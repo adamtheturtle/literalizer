@@ -1,1 +1,1 @@
-val my_data = -9223372036854775808
+val my_data = Long.MIN_VALUE
