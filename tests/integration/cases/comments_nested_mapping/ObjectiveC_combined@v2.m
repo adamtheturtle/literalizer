@@ -2,12 +2,18 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"a": @{@"x": @1},
+    @"a": @{
+        // indented
+        @"x": @1,
+    },
     @"b": @2,
 };
 (void)my_data;
 my_data = @{
-    @"a": @{@"x": @1},
+    @"a": @{
+        // indented
+        @"x": @1,
+    },
     @"b": @2,
 };
     (void)my_data;

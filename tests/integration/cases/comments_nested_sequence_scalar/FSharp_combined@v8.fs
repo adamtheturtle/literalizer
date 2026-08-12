@@ -6,13 +6,21 @@ type Val =
 let private _mainDeclaration () =
     let mutable my_data: Val = FList [
         FList [FStr "ADD"; FStr "alice"; FStr "hello"];
-        FList [FStr "DEL"; FStr "bob"; FStr "5"]  // removes "world"
+        FList [
+            FStr "DEL";
+            FStr "bob";
+            FStr "5"  // removes "world"
+        ]
     ]
     ignore my_data
 
 let private _mainAssignment () =
     let my_data: Val = FList [
         FList [FStr "ADD"; FStr "alice"; FStr "hello"];
-        FList [FStr "DEL"; FStr "bob"; FStr "5"]  // removes "world"
+        FList [
+            FStr "DEL";
+            FStr "bob";
+            FStr "5"  // removes "world"
+        ]
     ]
     ignore my_data

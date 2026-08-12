@@ -5,6 +5,9 @@ type Val =
     | FStr of string
     | FMap of (string * Val) list
 let my_data: Val = FMap [
-    ("a", FMap [("x", FInt 1L)]);
+    ("a", FMap [
+        // indented
+        ("x", FInt 1L)
+    ]);
     ("b", FInt 2L)
 ]
