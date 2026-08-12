@@ -1,1 +1,0 @@
-Custom language classes now declare a stable ``language_id`` string, and ``VariantMetadata`` carries only renderer capability and option-compatibility facts.  Fields that existed solely to name or host golden fixtures, along with ``empty_container_type_hint_variant_kwargs``, have moved to the test suite's own language metadata files.

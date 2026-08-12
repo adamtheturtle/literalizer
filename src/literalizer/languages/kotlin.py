@@ -60,7 +60,6 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
@@ -795,7 +794,7 @@ def _format_kotlin_json_value(data: Value) -> str:
 def _kotlin_parse_to_json_element_expression(data: Value) -> str:
     """Render ``Json.parseToJsonElement("...")`` for *data*."""
     json_text = _format_kotlin_json_value(data=data)
-    kotlin_literal = format_string_backslash_dollar(value=json_text)
+    kotlin_literal = _format_string_backslash_dollar_nul(value=json_text)
     return f"Json.parseToJsonElement({kotlin_literal})"
 
 
@@ -957,7 +956,7 @@ class Kotlin(metaclass=LanguageCls):
     language_id: ClassVar[str] = "kotlin"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = True
@@ -1235,7 +1234,7 @@ class Kotlin(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        DOUBLE = enum.member(value=_format_string_backslash_dollar_nul)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

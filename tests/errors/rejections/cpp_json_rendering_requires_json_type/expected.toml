@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Cpp = "Cpp json_rendering selects how json_type values are rendered and requires json_type to be set."

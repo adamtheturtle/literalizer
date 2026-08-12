@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidDictKeyError]
+"Matlab['{\"\": \"value\"}']" = "MATLAB does not support the struct field name ''. Field names must start with a letter and contain only letters, digits, and underscores."
+"Matlab['{\"1a\": \"value\"}']" = "MATLAB does not support the struct field name '1a'. Field names must start with a letter and contain only letters, digits, and underscores."
+"Matlab['{\"a b\": \"value\"}']" = "MATLAB does not support the struct field name 'a b'. Field names must start with a letter and contain only letters, digits, and underscores."
+"Matlab['{\"a\\\\u0001b\": \"value\"}']" = "MATLAB does not support the struct field name 'a\\x01b'. Field names must start with a letter and contain only letters, digits, and underscores."

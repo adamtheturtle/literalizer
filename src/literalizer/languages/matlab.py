@@ -81,6 +81,9 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
+from literalizer.exceptions import InvalidDictKeyError
+
+_MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 @beartype
@@ -174,6 +177,13 @@ def _format_matlab_dict_entry(
     expanding them into a struct array.
     """
     inner = _decode_matlab_string_expr(expr=key)
+    if _MATLAB_FIELD_NAME.fullmatch(string=inner) is None:
+        msg = (
+            f"MATLAB does not support the struct field name {inner!r}. "
+            "Field names must start with a letter and contain only letters, "
+            "digits, and underscores."
+        )
+        raise InvalidDictKeyError(msg)
     key_expr = _matlab_char_key(s=inner)
     if formatted_value.startswith("{") and formatted_value.endswith("}"):
         formatted_value = f"{{{formatted_value}}}"
@@ -316,7 +326,7 @@ class Matlab(metaclass=LanguageCls):
     language_id: ClassVar[str] = "matlab"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False

@@ -1532,21 +1532,22 @@ jobs:
       # Groovy ``>= V4``.
       - name: Install Groovy
         run: |-
-          # ``archive.apache.org`` intermittently refuses connections,
-          # and serves what it does serve at a few hundred KB/s. A
-          # wall-clock cap tight enough to catch a hang therefore also
-          # kills a transfer that is merely slow: this download has
-          # timed out twice in one job with 28 MB of the 30 MB
-          # distribution already received. Abort on stalled throughput
-          # instead -- nothing for 30 seconds -- and keep a loose
-          # wall-clock backstop, so a persistent archive failure still
-          # terminates the job without a healthy slow one failing.
-          curl --fail --show-error --silent --location \
+          # ``archive.apache.org`` serves this retired distribution too
+          # slowly for hosted runners. Use a live Apache mirror first and
+          # retain the canonical archive as curl's fallback URL.
+          if ! curl --fail --show-error --silent --location \
             --retry 5 --retry-all-errors --retry-max-time 600 \
             --connect-timeout 15 --max-time 300 \
             --speed-limit 10240 --speed-time 30 \
-            https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
-            --output /tmp/groovy.zip
+            https://repo.huaweicloud.com/apache/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
+            --output /tmp/groovy.zip; then
+            curl --fail --show-error --silent --location \
+              --retry 5 --retry-all-errors --retry-max-time 600 \
+              --connect-timeout 15 --max-time 300 \
+              --speed-limit 10240 --speed-time 30 \
+              https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
+              --output /tmp/groovy.zip
+          fi
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 

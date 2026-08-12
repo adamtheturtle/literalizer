@@ -38,6 +38,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
+    reject_nul_string_formatter,
 )
 from literalizer._language import (
     ALL_REF_CASES,
@@ -145,6 +146,12 @@ def _format_nix_string(value: str) -> str:
     (to prevent ``${...}`` interpolation), then wraps in double quotes.
     """
     return format_string_backslash_dollar(value=value)
+
+
+_format_nix_string_safe = reject_nul_string_formatter(
+    _format_nix_string,
+    language_name="Nix",
+)
 
 
 @beartype
@@ -623,7 +630,7 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return _format_nix_string
+        return _format_nix_string_safe
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

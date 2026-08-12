@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
@@ -97,14 +98,45 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_double = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
         ("#{", r"\#{"),
         ("#@", r"\#@"),
         ("#$", r"\#$"),
+        ("\0", r"\x00"),
     ],
 )
+_format_string_multiline_fallback = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("#{", r"\#{"),
+        ("#@", r"\#@"),
+        ("#$", r"\#$"),
+        ("\0", r"\x00"),
+    ],
+)
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Fall back to an escaped Ruby literal for an embedded null byte."""
+    if "\0" in value:
+        return _format_string_double(value=value)
+    return format_string_backslash_single_minimal(value=value)
+
+
+@beartype
+def _format_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating multiline Ruby literal."""
+    if (
+        "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_string_multiline_fallback(value=value)
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -304,7 +336,7 @@ class Ruby(metaclass=LanguageCls):
     language_id: ClassVar[str] = "ruby"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -522,7 +554,8 @@ class Ruby(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=_format_string_double)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        SINGLE = enum.member(value=_format_string_single)
+        MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

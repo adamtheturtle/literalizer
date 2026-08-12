@@ -3,6 +3,37 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.12.2
+------------
+
+- ``Cpp(json_type=...)`` accepts an opt-in ``json_rendering=Cpp.json_renderings.INLINE_DOCUMENT`` constructor argument that renders the value as one inline JSON document handed to ``nlohmann::json::parse`` in a ``R"json(...)json"`` raw string, honoring ``collection_layout``, instead of the default structural ``nlohmann::json`` factory expressions.
+
+2026.08.12.1
+------------
+
+No significant changes.
+
+2026.08.12
+----------
+
+- Custom language classes now declare a stable ``language_id`` string, and ``VariantMetadata`` carries only renderer capability and option-compatibility facts.  Fields that existed solely to name or host golden fixtures, along with ``empty_container_type_hint_variant_kwargs``, have moved to the test suite's own language metadata files.
+
+- Language classes no longer declare ``non_default_kwargs`` or ``declaration_style_sequence_format_overrides``.  Neither described what a language can render: both named sample values the golden test suite passes in, and both now live in that suite's own per-language metadata instead.  A custom language class no longer has to declare them.  The compatibility rule they sat next to is unaffected, since it was always enforced in production: Rust still rejects a ``CONST`` or ``STATIC`` declaration style combined with the ``VEC`` sequence format.
+
+- Golden variant-axis expansion is now declared in a validated, versioned ``tests/integration/axes.toml`` registry.  Each axis names one of two typed plans and supplies that plan's parameters; the closed vocabulary of gates and overrides is resolved against registries in Python, so an unknown plan, gate kind, option, or name-template placeholder fails when the registry loads.  Fifty-one axes moved off hand-written builders, the irregular tail stays as a registered set of typed builders that a meta-test holds to its current size, and the golden files themselves are unchanged.
+
+- Each ``literalize_call`` golden case now declares the language-variant axes that drive it in its own ``case.toml``, through ``[[call.variants]]`` tables, instead of a central list pairing case directories to builder functions by name.  Axis names resolve against the same closed registry that already gates ordinary variant declarations, so a misspelled name fails when the manifest loads.  The registry gained a ``filtered`` plan, which narrows another axis to the languages a gate admits, replacing the call-only wrappers that filtered a general builder in Python.  The golden files are unchanged.
+
+- The golden variant-axis registry now carries one entry per formatter option.  The ``date_format``, ``datetime_format`` and ``bytes_format`` options each read the value the language constructor took rather than the formatter the language derived from it, so an axis over one of them no longer expands a language default under a non-default variant name.  The eighty-two golden files that re-pinned the Haskell, OCaml and SML default date, datetime and bytes rendering are gone; every other golden file is unchanged.
+
+- The whole-document fast path that Rust's ``json_type`` mode gained is now one shared renderer, parameterized entirely by the existing language hooks rather than re-deriving any language's delimiters, key formatting or scalar dispatch.  Thirteen more languages opt into it: C, C++, Crystal, Elm, Erlang, Gleam, Haskell, Kotlin, OCaml, Odin, PureScript, Scala and Zig, each roughly twice as fast on a large flat record array.  Eligibility is re-checked per call against the configured hooks, so any value the fast path does not model -- a non-JSON scalar, an integer wide enough to swap the collection's integer formatter, an ordered map, a multiline nested layout -- still falls back to the shared renderer, and the rendered output is unchanged everywhere.
+
+- Speed up literalizing large documents.  The preamble phase, which every language pays regardless of its rendering strategy, now walks the parsed document with an explicit stack and stops as soon as it has seen every type it can report, rather than making a recursive call for every node twice over.  Generated output is unchanged.
+
+- R now rejects empty-string dictionary keys by default instead of silently emitting unnamed list elements.
+
+- C++ ``json_type=NLOHMANN_JSON`` now emits native ``nlohmann::json::array`` and ``nlohmann::json::object`` initializers instead of parsing an embedded JSON document at runtime. Empty containers and nested arrays retain their intended JSON types, malformed hand-edits fail during compilation, and values containing the former raw-string terminator are now supported.
+
 2026.08.02
 ----------
 

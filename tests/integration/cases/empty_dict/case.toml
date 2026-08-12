@@ -25,3 +25,7 @@ axis = "language_version_cross_dict_type"
 
 [[variants]]
 axis = "annotation_evaluation"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_empty"

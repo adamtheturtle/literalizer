@@ -45,7 +45,9 @@ from literalizer._formatters.format_json_value import (
     JsonValue,
     to_jsonable,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_octal,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -758,7 +760,7 @@ def _c_json_object_key(key: Scalar, /) -> str:
     narrows its static :data:`~literalizer._types.Scalar` type to
     :class:`str` without a redundant runtime branch.
     """
-    return format_string_backslash(str(object=key))
+    return format_string_backslash_nul_octal(str(object=key))
 
 
 @beartype
@@ -791,7 +793,8 @@ def _c_cjson_scalar_create(
         case float():
             return f"cJSON_CreateNumber({format_float(value)})"
         case str():
-            return f"cJSON_CreateString({format_string_backslash(value)})"
+            literal = format_string_backslash_nul_octal(value)
+            return f"cJSON_CreateString({literal})"
         case None:
             return "cJSON_CreateNull()"
         case _:
@@ -955,7 +958,7 @@ class C(metaclass=LanguageCls):
     language_id: ClassVar[str] = "c"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -1650,7 +1653,7 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul_octal
 
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:

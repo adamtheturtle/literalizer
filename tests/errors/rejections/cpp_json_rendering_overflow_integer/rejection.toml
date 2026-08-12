@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+nlohmann::json::parse stores integers above 2^64 - 1 or below -2^63 as
+doubles that lose precision, where the structural rendering's
+ULL-suffix fallback would have rejected or represented them exactly.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ["18446744073709551616", "-9223372036854775809"]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "NLOHMANN_JSON" },
+  { kind = "option_member", option = "json_rendering", member = "INLINE_DOCUMENT" },
+]

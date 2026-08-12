@@ -1,0 +1,1 @@
+MATLAB now rejects dictionary keys that are not valid struct field names instead of emitting code that fails at runtime.

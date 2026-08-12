@@ -26,9 +26,11 @@ from literalizer._types import ValueInput  # noqa: TC001
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
+    InvalidDictKeyError,
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
+from literalizer.languages import Matlab
 
 from .case_manifests import (
     REF_DEFAULT_OWNER,
@@ -70,6 +72,11 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected ref identifier",
+            unlink=True,
+        ),
+        SkipReason(
+            error=InvalidDictKeyError,
+            reason="cannot represent a dictionary key",
             unlink=True,
         ),
     ),
@@ -217,7 +224,7 @@ def run_literalize_ref_golden_case(
     variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
     try:
         literalizer.literalize(
-            source='{"_": "_"}',
+            source='{"key": "value"}',
             input_format=literalizer.InputFormat.JSON,
             language=spec,
             variable_form=variable_form_obj,
@@ -231,7 +238,10 @@ def run_literalize_ref_golden_case(
     )
     bound_refs_input: dict[str, ValueInput] = {
         raw_name: json.loads(
-            s=config.value_sources.get(raw_name, '{"_": "_"}'),
+            s=config.value_sources.get(
+                raw_name,
+                '{"key": "value"}' if lang_cls is Matlab else '{"_": "_"}',
+            ),
         )
         for raw_name in _collect_ref_names(
             data=raw_data,

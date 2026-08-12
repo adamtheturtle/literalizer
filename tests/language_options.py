@@ -71,6 +71,20 @@ class _HasJsonType(Protocol):
 
 
 @runtime_checkable
+class _HasJsonRendering(Protocol):
+    """A spec exposing a rendering choice for its JSON value type.
+
+    Only languages whose JSON library has both a structural literal
+    form and a parser expose the ``json_rendering`` constructor field,
+    so a ``spec_field_present`` gate selects the languages this reads
+    from.
+    """
+
+    json_rendering: enum.Enum | None
+    json_renderings: type[enum.Enum]
+
+
+@runtime_checkable
 class _HasBytesFormat(Protocol):
     """A spec exposing the configured bytes format."""
 
@@ -146,6 +160,20 @@ def _json_types(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the JSON value types a language offers."""
     assert isinstance(spec, _HasJsonType)  # noqa: S101
     return spec.json_types
+
+
+@beartype
+def _json_rendering(spec: literalizer.Language) -> object:
+    """Return the configured JSON rendering, if any."""
+    assert isinstance(spec, _HasJsonRendering)  # noqa: S101
+    return spec.json_rendering
+
+
+@beartype
+def _json_renderings(spec: literalizer.Language) -> type[enum.Enum]:
+    """Return the JSON renderings a language offers."""
+    assert isinstance(spec, _HasJsonRendering)  # noqa: S101
+    return spec.json_renderings
 
 
 @beartype
@@ -252,6 +280,11 @@ OPTIONS: Mapping[str, Option] = {
         kwarg="integer_width_strategy",
         get_default=lambda spec: spec.integer_width_strategy,
         get_members=lambda spec: spec.integer_width_strategies,
+    ),
+    "json_rendering": Option(
+        kwarg="json_rendering",
+        get_default=_json_rendering,
+        get_members=_json_renderings,
     ),
     "json_type": Option(
         kwarg="json_type",

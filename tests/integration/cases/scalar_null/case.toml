@@ -10,3 +10,7 @@ axis = "declaration_style"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_null"

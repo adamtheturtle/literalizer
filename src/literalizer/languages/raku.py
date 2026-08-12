@@ -105,8 +105,19 @@ _format_string_double = make_backslash_string_formatter(
         ("%", "\\%"),
         ("{", "\\{"),
         ("}", "\\}"),
+        ("\0", "\\0"),
     ],
 )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Use an escaped double-quoted literal when a null byte is
+    present.
+    """
+    if "\0" in value:
+        return _format_string_double(value)
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -312,7 +323,7 @@ class Raku(metaclass=LanguageCls):
     language_id: ClassVar[str] = "raku"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -517,7 +528,7 @@ class Raku(metaclass=LanguageCls):
         """String format options."""
 
         DOUBLE = enum.member(value=_format_string_double)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        SINGLE = enum.member(value=_format_string_single)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

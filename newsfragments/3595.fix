@@ -1,0 +1,1 @@
+``Cpp(json_type=NLOHMANN_JSON)`` now honors ``collection_layout=CollectionLayout.MULTILINE`` under a variable form: the structural ``nlohmann::json`` factory expressions flow through the shared collection layout machinery instead of always rendering on one line.

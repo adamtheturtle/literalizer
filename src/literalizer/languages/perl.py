@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import math
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -94,6 +95,28 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+_TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_perl_string_multiline(value: str) -> str:
+    r"""Format *value* as a non-interpolating multiline Perl literal."""
+    if (
+        "\r" in value
+        or "\0" in value
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
+    ):
+        return _format_perl_string_double(value=value)
+    return format_string_backslash_single_minimal(value=value)
+
+
+@beartype
+def _format_perl_string_single(value: str) -> str:
+    """Fall back to an escaped Perl literal for an embedded null byte."""
+    if "\0" in value:
+        return _format_perl_string_double(value=value)
+    return format_string_backslash_single_minimal(value=value)
 
 
 @beartype
@@ -186,7 +209,10 @@ def _format_perl_string_double(value: str) -> str:
     of source-file encoding.
     """
     base = (
-        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+        format_string_backslash(value)
+        .replace("$", r"\$")
+        .replace("@", r"\@")
+        .replace("\0", r"\x{0}")
     )
     if base.isascii():
         return base
@@ -206,7 +232,10 @@ def _format_perl_string_double_utf8(value: str) -> str:
     author would write in a UTF-8 source file.
     """
     return (
-        format_string_backslash(value).replace("$", r"\$").replace("@", r"\@")
+        format_string_backslash(value)
+        .replace("$", r"\$")
+        .replace("@", r"\@")
+        .replace("\0", r"\x{0}")
     )
 
 
@@ -409,7 +438,7 @@ class Perl(metaclass=LanguageCls):
     language_id: ClassVar[str] = "perl"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -650,7 +679,8 @@ class Perl(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=_format_perl_string_double)
         DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
-        SINGLE = enum.member(value=format_string_backslash_single_minimal)
+        SINGLE = enum.member(value=_format_perl_string_single)
+        MULTILINE = enum.member(value=_format_perl_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

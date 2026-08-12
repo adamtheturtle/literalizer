@@ -363,6 +363,19 @@ plan = "every_non_default_member"
 name_template = "{lang}_integer_width_strategy_{format}"
 option = "integer_width_strategy"
 
+# An opt-in rendering choice for languages whose JSON library has both
+# a structural literal form and a parser (today only C++).  Every
+# variant pins the JSON value type non-default, because the option is
+# rejected without one.
+[axes.json_rendering]
+plan = "every_non_default_member"
+name_template = "{lang}_json_rendering_{format}"
+option = "json_rendering"
+gates = [{ kind = "spec_field_present", field = "json_rendering" }]
+overrides = [
+  { kind = "enum_member", option = "json_type", member = "NLOHMANN_JSON" },
+]
+
 # The settings a language may take are ``None`` -- the narrow rendering
 # with no JSON value type -- together with each member of its
 # ``JsonTypes`` enum.  The JSON-capable languages default to ``None``
@@ -629,6 +642,18 @@ layouts = [
   { layout = "MULTILINE", name_suffix = "_multiline" },
 ]
 
+[axes.record_nested_in_ordered_map]
+plan = "fixed_overrides"
+name_template = "{lang}_record_nested_in_ordered_map"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
+]
+
 [axes.record_nonrecord_dict_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_nonrecord_dict_field"
@@ -766,7 +791,6 @@ name_template = "{lang}_string_embedded_nul_{format}"
 sole_member_name_template = "{lang}_string_embedded_nul"
 option = "string_format"
 include_default = true
-excluded_members = ["MULTILINE"]
 gates = [
   { kind = "capability_flag", flag = "string_literals_escape_null_byte" },
 ]
@@ -782,6 +806,13 @@ include_default = true
 member_flags = ["string_literals_escape_null_byte"]
 member_name_source = "json_type_variant_name_suffix"
 gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[axes.scalar_string_embedded_nul]
+plan = "fixed_overrides"
+name_template = "{lang}_scalar_string_embedded_nul"
+gates = [
+  { kind = "capability_flag", flag = "string_literals_escape_null_byte" },
+]
 
 [axes.string_format]
 plan = "every_non_default_member"

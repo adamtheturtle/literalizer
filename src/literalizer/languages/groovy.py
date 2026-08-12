@@ -36,7 +36,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar,
+    format_string_backslash_dollar_nul_unicode,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -282,7 +282,7 @@ class Groovy(metaclass=LanguageCls):
     language_id: ClassVar[str] = "groovy"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -456,7 +456,7 @@ class Groovy(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar)
+        DOUBLE = enum.member(value=format_string_backslash_dollar_nul_unicode)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

@@ -33,7 +33,9 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_strings import format_string_backslash
+from literalizer._formatters.format_strings import (
+    format_string_backslash_nul_unicode,
+)
 from literalizer._language import (
     ALL_REF_CASES,
     NO_CALL_PARAMETER_LIMIT,
@@ -192,7 +194,7 @@ class Clojure(metaclass=LanguageCls):
     language_id: ClassVar[str] = "clojure"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         modifier_sequence_format_overrides={},
-        string_literals_escape_null_byte=False,
+        string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
@@ -545,7 +547,7 @@ class Clojure(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash
+        return format_string_backslash_nul_unicode
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

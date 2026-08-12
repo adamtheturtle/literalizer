@@ -90,6 +90,23 @@ def build_json_type_variable_form_cases(
     for json_variant in variants_for_axis(axis_key="json_type"):
         spec = json_variant.spec
         assert isinstance(spec, _HasJsonType)  # noqa: S101
+        if json_variant.lang_cls.language_id == "cpp":
+            name = f"{json_variant.name}_variable_multiline"
+            cases.append(
+                VariantCase(
+                    variant_name=name,
+                    variant=dataclasses.replace(
+                        json_variant,
+                        name=name,
+                        collection_layout=(
+                            literalizer.CollectionLayout.MULTILINE
+                        ),
+                    ),
+                    case_dir_name=case_dir_name,
+                    variable_form=wrap_variable_form(),
+                    pre_indent_level=0,
+                )
+            )
         redef_styles = find_redefinition_styles(spec=spec)
         if not redef_styles:
             name = f"{json_variant.name}_existing"

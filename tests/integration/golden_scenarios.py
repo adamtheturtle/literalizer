@@ -607,7 +607,10 @@ def _pre_indent_renderings(
                 collection_layout=literalizer.CollectionLayout.COMPACT,
                 record_null_substitutions=None,
             ),
-            skip=NO_SKIPS,
+            skip=SkipPolicy(
+                reasons=LANGUAGE_SKIP_REASONS,
+                suffix=" at non-zero pre-indent",
+            ),
         )
         for case in build_pre_indent_cases()
         if case.lang_cls is lang_cls

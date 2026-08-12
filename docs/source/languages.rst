@@ -303,8 +303,8 @@ The remaining languages differ only in the emitted form and a few extra constrai
      - Dates / datetimes / times / bytes fold into strings; ``RECORD`` is rejected.
    * - C++
      - ``NLOHMANN_JSON``
-     - ``nlohmann::json::parse(R"json(...)json")`` plus an ``#include <nlohmann/json.hpp>`` preamble line
-     - Targets C++14, C++17, or C++20 through ``language_version`` (C++20 is the default). C++14/17 use positional aggregate initialization, ISO date/datetime strings, and ordinary template parameter packs; C++14's explicit ``TUPLE`` or ``RECORD`` strategies render fixed-shape mixed values with native tuples and generated structs. Input must not encode the raw-string terminator ``)json"``.
+     - ``nlohmann::json::array({...})`` / ``nlohmann::json::object({...})`` factory expressions plus an ``#include <nlohmann/json.hpp>`` preamble line
+     - Targets C++14, C++17, or C++20 through ``language_version`` (C++20 is the default). C++14/17 use positional aggregate initialization, ISO date/datetime strings, and ordinary template parameter packs; C++14's explicit ``TUPLE`` or ``RECORD`` strategies render fixed-shape mixed values with native tuples and generated structs. ``json_rendering=INLINE_DOCUMENT`` opts into an inline parsed JSON document instead (see below).
    * - Gleam
      - ``GLEAM_JSON_JSON``
      - ``json.int`` / ``json.string`` / ``json.preprocessed_array`` / ``json.object`` builders yielding ``gleam/json.Json``
@@ -337,6 +337,36 @@ The remaining languages differ only in the emitted form and a few extra constrai
      - ``CJSON``
      - The same ``cJSON_Create*`` tree built through GnuCOBOL's C ``CALL`` interface across the ``WORKING-STORAGE`` and ``PROCEDURE`` divisions, yielding ``cJSON *``
      - Integers are stored in a ``COMP-2`` (C ``double``) item; values beyond COBOL's widest integer are rejected.
+
+C++ additionally offers a rendering choice for its JSON value type.
+The structural factories above are the default because the compiler validates them, but for data-heavy documents the ``json_rendering=INLINE_DOCUMENT`` constructor argument renders the value as one inline JSON document handed to ``nlohmann::json::parse`` in a raw string, so readers see the data as JSON rather than as nested constructor calls:
+
+.. code-block:: python
+
+   """Render C++ JSON data as an inline parsed document."""
+
+   from literalizer import InputFormat, NewVariable, literalize
+   from literalizer.languages import Cpp
+
+   result = literalize(
+       source='[{"id": "alpha", "size": 1}, {"id": "beta", "size": 2}]',
+       input_format=InputFormat.JSON,
+       language=Cpp(
+           json_type=Cpp.json_types.NLOHMANN_JSON,
+           json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
+       ),
+       variable_form=NewVariable(name="rows", modifiers=frozenset()),
+   )
+
+.. code-block:: cpp
+
+   auto rows = nlohmann::json::parse(R"json([
+       {"id": "alpha", "size": 1},
+       {"id": "beta", "size": 2}
+   ])json");
+
+The option requires ``json_type`` and trades away the structural form's compile-time validation: ``parse`` throws ``json::parse_error`` at runtime instead.
+The rendered document must be valid JSON, so non-finite floats, integers outside ``[-2^63, 2^64 - 1]`` (which ``parse`` would store as doubles that lose precision), and strings whose JSON encoding contains the raw-string terminator sequence ``)json"`` are rejected.
 
 Two cases are unusual enough to keep as prose.
 

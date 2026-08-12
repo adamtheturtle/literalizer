@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+json_rendering chooses between renderings of a nlohmann::json value,
+so it has no meaning without a JSON value type.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Cpp"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "json_rendering", member = "INLINE_DOCUMENT" },
+]
