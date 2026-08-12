@@ -1,6 +1,7 @@
-# languages rejecting: 8; languages accepting: 13
+# languages rejecting: 9; languages accepting: 12
 
 [UnrepresentableSpecialFloatError]
+"Cobol[CJSON]" = "COBOL cannot represent special float nan."
 "Crystal[JSON_ANY]" = "Crystal(json_type=JSON_ANY) cannot represent special floats because JSON.parse accepts only finite numbers."
 "Erlang[OTP_JSON]" = "Erlang cannot represent special float nan."
 "Gleam[GLEAM_JSON_JSON]" = "Gleam cannot represent special float nan on the Erlang target."
