@@ -34,6 +34,7 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
+    make_i64_min_safe_formatter,
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
@@ -628,16 +629,8 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
-
-        def format_i64(value: int) -> str:
-            return (
-                "(-9223372036854775807 - 1)"
-                if value == I64_MIN
-                else str(value)
-            )
-
         return make_overflow_fallback_formatter(
-            base=format_i64,
+            base=make_i64_min_safe_formatter(base=str),
             fallback=_format_nix_fromjson_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,
