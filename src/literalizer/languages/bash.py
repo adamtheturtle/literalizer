@@ -248,7 +248,12 @@ def _format_variable_declaration(
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    flag = " -A" if isinstance(data, dict) else ""
+    is_associative_initializer = (
+        isinstance(data, dict)
+        and bool(data)
+        and value.lstrip().startswith("(")
+    )
+    flag = " -A" if is_associative_initializer else ""
     return f"declare{flag} {name}={value}"
 
 

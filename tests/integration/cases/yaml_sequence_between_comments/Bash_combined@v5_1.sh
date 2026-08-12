@@ -1,4 +1,4 @@
-declare -A my_data=(
+declare my_data=(
     "(
         [\"item\"]=\"existing\"
         # This comment describes the next item.

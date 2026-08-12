@@ -33,3 +33,29 @@ def test_dict_uses_associative_array_declaration() -> None:
     )
 
     assert rendered == 'declare -A my_data=(["key"]="value")'
+
+
+def test_dict_reference_uses_scalar_declaration() -> None:
+    """A mapping reference is an identifier, not an array initializer."""
+    data: dict[Scalar, Value] = {"key": "value"}
+    rendered = Bash().format_variable_declaration(
+        "my_data",
+        "my_var",
+        data,
+        frozenset(),
+    )
+
+    assert rendered == "declare my_data=my_var"
+
+
+def test_empty_dict_uses_untyped_declaration() -> None:
+    """An empty Bash array does not need an associative-array flag."""
+    data: dict[Scalar, Value] = {}
+    rendered = Bash().format_variable_declaration(
+        "my_data",
+        "()",
+        data,
+        frozenset(),
+    )
+
+    assert rendered == "declare my_data=()"
