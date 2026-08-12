@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A call argument goes through the same Odin raw-string rule as a
+declared value, so a backtick in one is refused there too.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize_call"
+sources = ['- "a`b"']
+input_format = "yaml"
+target_function = "process"
+parameter_names = ["x"]
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_VALUE" },
+]

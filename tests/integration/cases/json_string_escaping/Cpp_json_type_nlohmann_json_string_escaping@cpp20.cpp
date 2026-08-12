@@ -1,7 +1,8 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json({"$key": "a\"b\tcé #{world} $ident"})json", nullptr, false);
+auto my_data = nlohmann::json::object({{"$key", "a\"b\tcé #{world} $ident"}});
     (void)my_data;
         return 0;
     } catch (...) {

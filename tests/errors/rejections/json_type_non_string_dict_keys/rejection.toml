@@ -1,7 +1,8 @@
 schema_version = 1
 summary = """
 A JSON value type keys its objects with strings, so a dict with a
-non-string key has no representation under one.
+non-string key has no representation under one, whether that dict is
+the whole document or nested inside it.
 """
 exceptions = ["UnrepresentableInputError"]
 option = "json_type"
@@ -9,5 +10,5 @@ gates = [{ kind = "spec_field_present", field = "json_type" }]
 
 [call]
 api = "literalize"
-source = "{1: one}"
+sources = ["{1: one}", "[{1: one}]"]
 input_format = "yaml"

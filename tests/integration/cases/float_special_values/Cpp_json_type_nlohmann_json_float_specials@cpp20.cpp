@@ -1,8 +1,9 @@
 #include <nlohmann/json.hpp>
+#include <limits>
 #include <cmath>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json([Infinity, -Infinity, NaN])json", nullptr, false);
+auto my_data = nlohmann::json::array({std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()});
     (void)my_data;
         return 0;
     } catch (...) {

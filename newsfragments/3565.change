@@ -1,0 +1,1 @@
+C++ ``json_type=NLOHMANN_JSON`` now emits native ``nlohmann::json::array`` and ``nlohmann::json::object`` initializers instead of parsing an embedded JSON document at runtime. Empty containers and nested arrays retain their intended JSON types, malformed hand-edits fail during compilation, and values containing the former raw-string terminator are now supported.

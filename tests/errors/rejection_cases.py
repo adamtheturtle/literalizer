@@ -38,6 +38,7 @@ class RejectionCase:
     case_id: str
     lang_cls: literalizer.LanguageCls
     kwargs: Mapping[str, object]
+    source: str | None
 
 
 @beartype
@@ -152,6 +153,27 @@ def _case_kwargs(
 
 
 @beartype
+def _case_id(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    parts: tuple[enum.Enum | str | None, ...],
+) -> str:
+    """Return the identifier one case's golden line is keyed by.
+
+    An option member is named and a declared value is quoted: the two
+    read differently in a golden file, and a value that is the empty
+    string is still visible.  A part the case does not vary over is
+    left out rather than written as an empty bracket.
+    """
+    suffixes = [
+        part.name if isinstance(part, enum.Enum) else repr(part)
+        for part in parts
+        if part is not None
+    ]
+    return "".join([lang_cls.__name__, *(f"[{part}]" for part in suffixes)])
+
+
+@beartype
 def _cases_for_languages(
     *,
     manifest: RejectionManifest,
@@ -159,33 +181,32 @@ def _cases_for_languages(
 ) -> tuple[RejectionCase, ...]:
     """Return every case *lang_classes* contribute to *manifest*."""
     values: tuple[str | None, ...] = manifest.values or (None,)
+    sources: tuple[str | None, ...] = manifest.call.sources or (None,)
     cases: list[RejectionCase] = []
     for lang_cls in lang_classes:
         for member in _option_members(manifest=manifest, lang_cls=lang_cls):
             for value in values:
-                # An option member is named, a declared value is quoted:
-                # the two read differently in a golden file, and a value
-                # that is the empty string is still visible.
-                suffixes = [
-                    part.name if isinstance(part, enum.Enum) else repr(part)
-                    for part in (member, value)
-                    if part is not None
-                ]
-                case_id = "".join(
-                    [lang_cls.__name__, *(f"[{part}]" for part in suffixes)]
-                )
-                cases.append(
-                    RejectionCase(
-                        case_id=case_id,
-                        lang_cls=lang_cls,
-                        kwargs=_case_kwargs(
-                            manifest=manifest,
+                for source in sources:
+                    # A single source is the manifest's whole subject,
+                    # so naming it in every case identifier would say
+                    # nothing the manifest does not already say.
+                    named_source = source if len(sources) > 1 else None
+                    cases.append(
+                        RejectionCase(
+                            case_id=_case_id(
+                                lang_cls=lang_cls,
+                                parts=(member, value, named_source),
+                            ),
                             lang_cls=lang_cls,
-                            member=member,
-                            value=value,
-                        ),
+                            source=source,
+                            kwargs=_case_kwargs(
+                                manifest=manifest,
+                                lang_cls=lang_cls,
+                                member=member,
+                                value=value,
+                            ),
+                        )
                     )
-                )
     return tuple(cases)
 
 

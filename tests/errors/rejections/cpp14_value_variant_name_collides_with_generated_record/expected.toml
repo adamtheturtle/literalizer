@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+Cpp = "heterogeneous_value_variant_name 'Record0' collides with the auto-generated 'Record'-prefixed struct names."

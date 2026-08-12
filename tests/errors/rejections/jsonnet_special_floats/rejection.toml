@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+Jsonnet numbers are JSON numbers, so the non-finite floats have no
+literal to be written as and are not substituted with strings.
+"""
+exceptions = ["UnrepresentableSpecialFloatError"]
+languages = ["Jsonnet"]
+
+[call]
+api = "literalize"
+sources = ["- .inf\n", "- -.inf\n", "- .nan\n"]
+input_format = "yaml"
