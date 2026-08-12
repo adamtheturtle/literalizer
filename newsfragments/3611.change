@@ -1,0 +1,1 @@
+Render the D signed 64-bit minimum as ``long.min``: the previous decimal literal typed its positive operand as ``ulong``, so the negation silently wrapped to positive ``2 ** 63`` at runtime.
