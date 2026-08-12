@@ -1,9 +1,12 @@
 #include <nlohmann/json.hpp>
-#include <limits>
 #include <cmath>
 int main() {
     try {
-auto my_data = nlohmann::json::array({std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()});
+auto my_data = nlohmann::json::array({
+    static_cast<double>(INFINITY),
+    -static_cast<double>(INFINITY),
+    static_cast<double>(NAN),
+});
     (void)my_data;
         return 0;
     } catch (...) {
