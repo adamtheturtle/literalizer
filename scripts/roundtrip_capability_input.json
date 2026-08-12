@@ -1,0 +1,21 @@
+{
+  "i64_boundaries": {
+    "i64_min": -9223372036854775808,
+    "i64_min_adjacent": -9223372036854775807,
+    "i64_max_adjacent": 9223372036854775806,
+    "i64_max": 9223372036854775807
+  },
+  "interpolation_strings": {
+    "string_hash_interpolation": "#{x}",
+    "string_braced_dollar_interpolation": "${x}",
+    "string_dollar_interpolation": "$x",
+    "string_backticks": "`x`",
+    "string_at": "@x"
+  },
+  "control_strings": {
+    "string_controls": "\u0001\b\t\n\f\r\u001f"
+  },
+  "embedded_nul": {
+    "string_embedded_nul": "before\u0000after"
+  }
+}

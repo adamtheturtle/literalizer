@@ -22,6 +22,7 @@ of :class:`Step` subprocesses (compile then run, or just run), and hands
 the final stdout to :func:`verify`.
 """
 
+import enum
 import json
 import subprocess
 import sys
@@ -39,6 +40,35 @@ from literalizer import (
 )
 
 INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
+CAPABILITY_INPUT_PATH = (
+    Path(__file__).resolve().parent / "roundtrip_capability_input.json"
+)
+
+
+class RoundTripCapability(enum.StrEnum):
+    """Adversarial corpus groups a target runtime may opt into."""
+
+    I64_BOUNDARIES = "i64_boundaries"
+    INTERPOLATION_STRINGS = "interpolation_strings"
+    CONTROL_STRINGS = "control_strings"
+    EMBEDDED_NUL = "embedded_nul"
+
+
+def input_for_capabilities(
+    capabilities: frozenset[RoundTripCapability],
+) -> str:
+    """Return the base corpus plus only explicitly supported groups."""
+    document: dict[str, object] = json.loads(s=read_input())
+    groups: dict[str, dict[str, object]] = json.loads(
+        s=CAPABILITY_INPUT_PATH.read_text(encoding="utf-8"),
+    )
+    for capability in sorted(capabilities):
+        overlap = document.keys() & groups[capability].keys()
+        if overlap:
+            msg = f"duplicate round-trip corpus keys: {sorted(overlap)!r}"
+            raise ValueError(msg)
+        document.update(groups[capability])
+    return json.dumps(obj=document, ensure_ascii=False, allow_nan=False)
 
 
 def read_input() -> str:
