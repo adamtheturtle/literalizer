@@ -2,8 +2,9 @@
 
 import pytest
 
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages.cpp import _nlohmann_json_expression
+from literalizer.languages import Cpp
 
 
 def test_cpp_json_type_rejects_integer_beyond_finite_numeric_range() -> None:
@@ -12,4 +13,9 @@ def test_cpp_json_type_rejects_integer_beyond_finite_numeric_range() -> None:
         expected_exception=UnrepresentableInputError,
         match="magnitude exceeds nlohmann::json's finite numeric range",
     ):
-        _nlohmann_json_expression(data=10**400)
+        literalize(
+            source=f"{{\"value\": {10**400}}}",
+            input_format=InputFormat.JSON,
+            language=Cpp(json_type=Cpp.json_types.NLOHMANN_JSON),
+            variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+        )

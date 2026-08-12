@@ -2006,7 +2006,7 @@ def _render_nlohmann_json_float(value: float) -> str:
 def _render_nlohmann_json_int(value: int) -> str:
     """Render one integer without relying on an out-of-range C++ token."""
     if value > U64_MAX or value < I64_MIN:
-        as_float = float(str(value))
+        as_float = float(f"{value}")
         if not math.isfinite(as_float):
             msg = (
                 "Cpp(json_type=NLOHMANN_JSON) cannot represent integer "
@@ -2045,6 +2045,7 @@ def _render_nlohmann_json_node(value: JsonValue) -> str:
             )
             rendered = f"nlohmann::json::array({{{entries}}})"
         case dict():
+            assert all(isinstance(key, str) for key in value)  # noqa: S101
             object_entries = (
                 "{" + _format_string_cpp_escaped(value=key) + ", "
                 f"{_render_nlohmann_json_node(value=item)}}}"
