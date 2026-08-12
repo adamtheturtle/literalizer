@@ -3,8 +3,8 @@
 #include <map>
 int main() {
 auto my_data = std::map<std::string, std::string>{
-    {"x", "\000"},
-    {"y", "\0001"},
+    {"x", std::string{""} + '\0' + ""},
+    {"y", std::string{""} + '\0' + "1"},
 };
     (void)my_data;
     return 0;

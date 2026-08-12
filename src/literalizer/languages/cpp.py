@@ -2514,7 +2514,7 @@ class Cpp(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_octal)
+        DOUBLE = enum.member(value=_format_string_cpp_escaped)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

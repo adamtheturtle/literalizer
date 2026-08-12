@@ -98,7 +98,7 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("$", "\\$"), ("\0", "\\0")],
+    extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
 )
 
 
