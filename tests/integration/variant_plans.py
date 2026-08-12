@@ -237,6 +237,7 @@ _SPEC_FIELDS = frozenset(
         "annotation_evaluation",
         "bool_format",
         "empty_dict_key",
+        "json_rendering",
         "json_type",
         "union_format",
     }

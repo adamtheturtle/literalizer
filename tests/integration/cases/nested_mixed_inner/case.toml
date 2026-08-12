@@ -23,3 +23,7 @@ suffix = "_inner"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_nested_mixed"

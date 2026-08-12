@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A string value ending with )json puts the raw-string terminator
+sequence )json" right before the JSON string literal's closing quote,
+ending the R"json(...)json" raw string mid-document.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ['{"note": "ends with )json"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "NLOHMANN_JSON" },
+  { kind = "option_member", option = "json_rendering", member = "INLINE_DOCUMENT" },
+]

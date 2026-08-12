@@ -4,3 +4,7 @@ owner = "variant"
 [[variants]]
 axis = "json_type"
 suffix = "_string_escaping"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_string_escaping"

@@ -22,3 +22,7 @@ axis = "heterogeneous_value_variant_name"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_ordered_map"

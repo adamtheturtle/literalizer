@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableSpecialFloatError]
+"Cpp['[NaN]']" = "Cpp json_rendering=INLINE_DOCUMENT cannot represent special floats because nlohmann::json::parse accepts only finite numbers."
+"Cpp['[Infinity]']" = "Cpp json_rendering=INLINE_DOCUMENT cannot represent special floats because nlohmann::json::parse accepts only finite numbers."

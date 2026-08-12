@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+The structural nlohmann::json factories can spell non-finite floats
+through <cmath> macros, but the inline JSON document is parsed against
+the JSON spec, which has no NaN or Infinity tokens.
+"""
+exceptions = ["UnrepresentableSpecialFloatError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ["[NaN]", "[Infinity]"]
+input_format = "json5"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "NLOHMANN_JSON" },
+  { kind = "option_member", option = "json_rendering", member = "INLINE_DOCUMENT" },
+]

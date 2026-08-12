@@ -363,6 +363,19 @@ plan = "every_non_default_member"
 name_template = "{lang}_integer_width_strategy_{format}"
 option = "integer_width_strategy"
 
+# An opt-in rendering choice for languages whose JSON library has both
+# a structural literal form and a parser (today only C++).  Every
+# variant pins the JSON value type non-default, because the option is
+# rejected without one.
+[axes.json_rendering]
+plan = "every_non_default_member"
+name_template = "{lang}_json_rendering_{format}"
+option = "json_rendering"
+gates = [{ kind = "spec_field_present", field = "json_rendering" }]
+overrides = [
+  { kind = "enum_member", option = "json_type", member = "NLOHMANN_JSON" },
+]
+
 # The settings a language may take are ``None`` -- the narrow rendering
 # with no JSON value type -- together with each member of its
 # ``JsonTypes`` enum.  The JSON-capable languages default to ``None``
