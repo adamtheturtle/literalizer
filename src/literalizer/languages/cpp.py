@@ -1820,7 +1820,7 @@ def _format_variable_declaration(
     * ``const auto*`` — string literal (``"..."``), required by
       ``readability-qualified-auto``.  Driven by the parsed *data*
       together with the chosen date/datetime ``type_produced``: bytes
-      and strings always render as quoted strings, and dates/datetimes
+      and strings without NULs render as quoted strings, and dates/datetimes
       do so when their format produces a :class:`str`.
     * ``auto`` — typed expression (e.g. ``std::vector<int>{...}``).
 
@@ -1857,6 +1857,8 @@ def _renders_as_string_literal(
     other variants render as ``std::chrono`` or numeric expressions.
     """
     match data:
+        case str() if "\0" in data:
+            return False
         case bytes() | str():
             return True
         case datetime.datetime():
