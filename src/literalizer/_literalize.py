@@ -2551,8 +2551,19 @@ def _literalize_child_path(
                 collection_layout=collection_layout,
                 raw_yaml_data=None,
             )
-        except error_type as child_error:
-            return (component, *(child_error.path or ()))
+        except error_type:
+            return (
+                component,
+                *_literalize_child_path(
+                    data=child,
+                    error_type=error_type,
+                    language=language,
+                    ref_case=ref_case,
+                    ref_values=ref_values,
+                    ref_key=ref_key,
+                    collection_layout=collection_layout,
+                ),
+            )
         except LiteralizerError:  # pragma: no cover - defensive probe
             continue
     return ()

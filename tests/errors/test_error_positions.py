@@ -5,15 +5,18 @@ import json
 import pytest
 
 from literalizer import InputFormat, literalize
+from literalizer._language import Language
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     JSON5ParseError,
     JSONParseError,
     ParseError,
     TOMLParseError,
+    UnrepresentableIntegerError,
+    UnrepresentableStringError,
     YAMLParseError,
 )
-from literalizer.languages import Rust
+from literalizer.languages import Bash, PureScript, Rust
 
 
 @pytest.mark.parametrize(
@@ -61,3 +64,29 @@ def test_collection_error_exposes_deep_input_path() -> None:
         )
 
     assert caught.value.path == ("users", 1, "tags")
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "value", "exception_type"),
+    argvalues=[
+        (PureScript(), 2**70, UnrepresentableIntegerError),
+        (Bash(), "a\0b", UnrepresentableStringError),
+    ],
+)
+def test_renderer_error_exposes_deep_input_path(
+    language: Language,
+    value: int | str,
+    exception_type: type[UnrepresentableIntegerError]
+    | type[UnrepresentableStringError],
+) -> None:
+    """A nested renderer failure identifies its deepest scalar value."""
+    data = {"outer": [[value]]}
+
+    with pytest.raises(expected_exception=exception_type) as caught:
+        literalize(
+            source=json.dumps(obj=data),
+            input_format=InputFormat.JSON,
+            language=language,
+        )
+
+    assert caught.value.path == ("outer", 0, 0)
