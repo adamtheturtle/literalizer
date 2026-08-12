@@ -31,6 +31,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     InvalidCallParameterNameError,
+    InvalidModuleNameError,
     InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
@@ -1112,6 +1113,13 @@ class LanguageCls(type):
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         instance: Language = super().__call__(*args, **kwargs)
+        if cls.supports_module_name:
+            module_name = vars(instance)["module_name"]
+            if not NewVariableNameSyntax.ASCII.accepts(name=module_name):
+                raise InvalidModuleNameError(
+                    language_name=cls.__name__,
+                    module_name=module_name,
+                )
         return instance
 
 
