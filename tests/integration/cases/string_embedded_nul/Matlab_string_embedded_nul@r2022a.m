@@ -1,4 +1,4 @@
 my_data = struct(
-    'x', char(0),
-    'y', char(0) + "1"
+    'x', sprintf('%s', char(0)),
+    'y', sprintf('%s%s', char(0), "1")
 );
