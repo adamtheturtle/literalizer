@@ -11,5 +11,9 @@ deep = RDict [
     ]
 my_data : Val
 my_data = RDict [
-    ("a", RDict [("b", RDict [("c", deep)])]),
+    ("a", RDict [
+        ("b", RDict [
+            ("c", deep),
+            ]),
+        ]),
     ]

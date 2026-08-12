@@ -32,7 +32,7 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import I64_MIN, format_integer_hex
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -208,7 +208,9 @@ def _apply_elm_integer_formatter(
     value: int, prefix: str, base: Callable[[int], str]
 ) -> str:
     """Format an integer with a constructor prefix."""
-    formatted = base(value)
+    formatted = (
+        "(-9223372036854775807 - 1)" if value == I64_MIN else base(value)
+    )
     if value < 0:
         return f"{prefix}Int ({formatted})"
     return f"{prefix}Int {formatted}"

@@ -5,6 +5,10 @@ val deep : val_t = SMap [
     ("_", SStr "_")
 ]
 val my_data : val_t = SMap [
-    ("a", SMap [("b", SMap [("c", deep)])])
+    ("a", SMap [
+        ("b", SMap [
+            ("c", deep)
+        ])
+    ])
 ]
 val _ = my_data

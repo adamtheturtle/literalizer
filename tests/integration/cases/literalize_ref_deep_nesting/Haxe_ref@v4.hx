@@ -4,7 +4,11 @@ class Fixture_literalize_ref_deep_nesting_Haxe_ref {
             "_" => "_",
         ] : Map<String, Dynamic>);
         final my_data = ([
-            "a" => (["b" => (["c" => deep] : Map<String, Dynamic>)] : Map<String, Dynamic>),
+            "a" => ([
+                "b" => ([
+                    "c" => deep,
+                ] : Map<String, Dynamic>),
+            ] : Map<String, Dynamic>),
         ] : Map<String, Dynamic>);
     }
 }

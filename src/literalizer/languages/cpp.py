@@ -48,6 +48,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal_c_style,
     format_integer_tick,
+    make_i64_min_safe_formatter,
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
@@ -3523,8 +3524,10 @@ class Cpp(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         return make_overflow_fallback_formatter(
-            base=self.numeric_literal_suffix.wrap_integer_formatter(
-                base=base_int_formatter,
+            base=make_i64_min_safe_formatter(
+                base=self.numeric_literal_suffix.wrap_integer_formatter(
+                    base=base_int_formatter,
+                ),
             ),
             fallback=make_ull_fallback(language_name="C++"),
             min_value=I64_MIN,

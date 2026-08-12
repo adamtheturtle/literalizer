@@ -25,6 +25,7 @@ def test_literalize_rejects_ref_case_collision() -> None:
             input_format=InputFormat.JSON,
             language=Python(),
             ref_case=IdentifierCase.SNAKE,
+            ref_key="$ref",
         )
 
 
@@ -41,4 +42,5 @@ def test_literalize_call_rejects_nested_ref_case_collision() -> None:
             target_function="consume",
             parameter_names=("value",),
             ref_case=IdentifierCase.SNAKE,
+            ref_key="$ref",
         )
