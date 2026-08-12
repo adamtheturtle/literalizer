@@ -905,7 +905,7 @@ class VisualBasic(metaclass=LanguageCls):
         """Format an int value as a literal."""
         return make_overflow_fallback_formatter(
             base=lambda value: (
-                "Long.MinValue" if value == I64_MIN else str(value)
+                "Long.MinValue" if value == I64_MIN else str(object=value)
             ),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_vb_ulong_positive,
