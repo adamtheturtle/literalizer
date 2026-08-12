@@ -1,6 +1,7 @@
 """Golden coverage for unwrapped :class:`LiteralizeResult` prefixes."""
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -25,7 +26,7 @@ _LANGUAGES = (Elm, FSharp, Haskell, PureScript)
 def test_unwrapped_literalize_result_golden(
     *,
     lang_cls: literalizer.LanguageCls,
-    attribute: str,
+    attribute: Literal["code", "bare_code"],
     file_regression: FileRegressionFixture,
 ) -> None:
     """Pin both prefix-composition views for every producing family."""
@@ -39,8 +40,9 @@ def test_unwrapped_literalize_result_golden(
     )
     assert result.body_preamble
     assert result.pre_declaration_comments
+    contents = result.code if attribute == "code" else result.bare_code
     check_golden(
-        contents=getattr(result, attribute) + "\n",
+        contents=contents + "\n",
         extension=spec.extension,
         golden_path=make_golden_path(
             parent=_GOLDEN_DIR,
