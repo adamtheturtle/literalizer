@@ -1347,6 +1347,54 @@ _CPP_RECORD_MAP_VALUE = "LiteralizerRecordValue"
 _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
+@dataclasses.dataclass
+class _CppWidenedMapNarrowing:
+    """Per-pass cache of the widened fallback maps' narrow value type.
+
+    ``value_type`` holds the single concrete C++ type shared by every
+    scalar inside the maps the ``RECORD`` strategy widened out of the
+    record-shape mapping, or ``None`` when those scalars mix C++ types
+    and the ``LiteralizerRecordValue`` alias carrier is required (issue
+    #3605).  Refreshed by the strategy's ``compute_wrap_ids`` hook,
+    which the shared data checks run before any rendering; the alias
+    preamble, the widened-map opener, and the record field-type hook
+    all read the cached decision within the same pass.
+    """
+
+    value_type: str | None
+
+
+@beartype
+def _cpp_narrow_widened_map_value_type(
+    *,
+    data: Value,
+    wrap_ids: frozenset[int],
+    type_ctx: _CppTypeCtx,
+) -> str | None:
+    """Return the single C++ type every widened-map scalar shares.
+
+    Returns ``None`` when the widened maps genuinely mix scalar types
+    (the ``LiteralizerRecordValue`` alias carrier is then required),
+    when there is nothing to widen, or under C++14, whose explicit
+    fallback carrier replaces the record strategy's scalar wrapper with
+    one that also serves heterogeneous containers and call slots and so
+    cannot selectively leave the widened maps' scalars bare.
+    """
+    if type_ctx.variant_type_name != "std::variant":
+        return None
+    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    if not scalars:
+        return None
+    value_type = _compute_element_type_for_items(
+        items=list(scalars),
+        type_ctx=type_ctx,
+        in_mapping_value=True,
+    )
+    if value_type.startswith("std::variant<"):
+        return None
+    return value_type
+
+
 @beartype
 def _cpp_record_field_identifier(
     key: str, /, *, reserved_identifiers: frozenset[str]
@@ -1622,11 +1670,29 @@ def _build_cpp_record_preamble(
         )
         if include_tuple_header and tuple_list_ids:
             headers.append("#include <tuple>")
-        if wrap_ids:
-            value_type = _compute_element_type_for_items(
-                items=list(iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)),
+        if (
+            wrap_ids
+            and _cpp_narrow_widened_map_value_type(
+                data=data,
+                wrap_ids=wrap_ids,
                 type_ctx=type_ctx,
-                in_mapping_value=True,
+            )
+            is None
+        ):
+            # C++14's explicit fallback carrier wraps every widened
+            # scalar in the carrier type, so the alias must name the
+            # carrier even when the widened scalars share one concrete
+            # C++ type.
+            value_type = (
+                type_ctx.variant_type_name
+                if type_ctx.variant_type_name != "std::variant"
+                else _compute_element_type_for_items(
+                    items=list(
+                        iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
+                    ),
+                    type_ctx=type_ctx,
+                    in_mapping_value=True,
+                )
             )
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
         return (*headers, *value_alias, *record_preamble(data))
@@ -3429,7 +3495,11 @@ class Cpp(metaclass=LanguageCls):
         derived structurally from the raw value.
 
         A field whose value is itself a nested record-shaped dict uses
-        that record's generated name.  A field whose value is a list of
+        that record's generated name.  A record-shaped dict left without
+        a name was widened to a plain fallback map; its declared type
+        spells the concrete value type when every widened scalar shares
+        one C++ type and the ``LiteralizerRecordValue`` alias carrier
+        otherwise (issue #3605).  A field whose value is a list of
         record-shaped dicts (one shared shape) is typed
         ``std::vector<RecordN>`` to match the sequence opener's explicit
         element type in C++14 (and its class-template argument deduction
@@ -3457,6 +3527,9 @@ class Cpp(metaclass=LanguageCls):
             and not isinstance(value, OrderedMap)
             and record_shape_for_dict(value=value) is not None
         ):
+            narrow_value_type = self._record_map_narrowing.value_type
+            if narrow_value_type is not None:
+                return f"std::map<std::string, {narrow_value_type}>"
             return _CPP_RECORD_MAP_TYPE
         if isinstance(value, int) and not isinstance(value, bool):
             int_type = _cpp_int_field_type(
@@ -3493,24 +3566,57 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _record_map_narrowing(self) -> _CppWidenedMapNarrowing:
+        """Per-pass narrow-value-type cache for widened fallback maps."""
+        return _CppWidenedMapNarrowing(value_type=None)
+
+    @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
-            derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
+            derecordized_map_open=None,
         )
+        narrowing = self._record_map_narrowing
+        type_ctx = self._type_ctx
+        base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
+
+        def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+            """Refresh the narrow-type cache alongside the wrap ids."""
+            wrap_ids = base_compute_wrap_ids(data)
+            narrowing.value_type = _cpp_narrow_widened_map_value_type(
+                data=data,
+                wrap_ids=wrap_ids,
+                type_ctx=type_ctx,
+            )
+            return wrap_ids
 
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
-            """Construct the shared value variant for a widened map."""
+            """Construct the shared value carrier for a widened map.
+
+            When every widened scalar shares one concrete C++ type the
+            plain map already holds the bare literal, so no carrier
+            construction is needed (issue #3605).
+            """
+            if narrowing.value_type is not None:
+                return formatted
             return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
+
+        def _widened_map_open() -> str:
+            """Return the widened-map opener for the current pass."""
+            if narrowing.value_type is not None:
+                return f"std::map<std::string, {narrowing.value_type}>{{"
+            return f"{_CPP_RECORD_MAP_TYPE}{{"
 
         return dataclasses.replace(
             strategy,
             behavior=dataclasses.replace(
                 strategy.behavior,
+                compute_wrap_ids=_compute_wrap_ids,
                 wrap_scalar=_wrap_scalar,
+                dict_open_for_wrap_ids=_widened_map_open,
                 widens_nested_maps_by_wrapping_scalars=True,
             ),
         )

@@ -942,12 +942,12 @@ def _format_dict_value(
         for k, v in dict_items.items()
     ]
     joined = spec.element_separator.join(pairs)
+    dict_open_for_wrap_ids = spec.heterogeneous_behavior.dict_open_for_wrap_ids
     match open_override:
         case _ if (
-            id(value) in ctx.wrap_ids
-            and spec.heterogeneous_behavior.dict_open_for_wrap_ids is not None
+            id(value) in ctx.wrap_ids and dict_open_for_wrap_ids is not None
         ):
-            opener = spec.heterogeneous_behavior.dict_open_for_wrap_ids
+            opener = dict_open_for_wrap_ids()
         case str():
             opener = open_override
         case _ if id(value) in ctx.dict_open_overrides:
@@ -1854,14 +1854,14 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
     Used for a nested multiline collection.
     """
     spec = ctx.spec
+    dict_open_for_wrap_ids = spec.heterogeneous_behavior.dict_open_for_wrap_ids
     match data:
         case dict() if is_ordered_map:
             opener = spec.ordered_map_format_config.ordered_map_open(data)
         case dict() if (
-            id(data) in ctx.wrap_ids
-            and spec.heterogeneous_behavior.dict_open_for_wrap_ids is not None
+            id(data) in ctx.wrap_ids and dict_open_for_wrap_ids is not None
         ):
-            opener = spec.heterogeneous_behavior.dict_open_for_wrap_ids
+            opener = dict_open_for_wrap_ids()
         case dict() if dict_open_override is not None:
             opener = dict_open_override
         case dict() if id(data) in ctx.dict_open_overrides:

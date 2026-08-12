@@ -1330,13 +1330,117 @@ def _rust_is_derecordized_map(*, value: dict[Scalar, Value]) -> bool:
     )
 
 
+@dataclasses.dataclass
+class _RustWidenedMapNarrowing:
+    """Per-pass cache of the widened fallback maps' narrow value type.
+
+    ``value_type`` holds the single concrete Rust type shared by every
+    scalar inside the maps the ``RECORD`` strategy widened out of the
+    record-shape mapping, or ``None`` when those scalars mix Rust types
+    and the value enum is required (issue #3608).  Refreshed by the
+    strategy's ``compute_wrap_ids`` hook, which the shared data checks
+    run before any rendering; the scalar wrapper reads the cached
+    decision within the same pass.
+    """
+
+    value_type: str | None
+
+
+@beartype
+def _rust_narrow_derecordized_map_value_type(
+    *,
+    data: Value,
+    wrap_ids: frozenset[int],
+    date_type: str,
+    datetime_type: str,
+) -> str | None:
+    """Return the single Rust type every widened-map scalar shares.
+
+    Returns ``None`` when the widened maps genuinely mix scalar types
+    (the value enum is then required), when there is nothing to widen,
+    or when any widened scalar is ``None`` (the payload-free ``Null``
+    variant has no inner type a plain ``HashMap`` value could take).
+    """
+    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    if not scalars:
+        return None
+    inner_types = {
+        _heterogeneous_variant_for_scalar(
+            value=scalar,
+            date_type=date_type,
+            datetime_type=datetime_type,
+        ).inner_type
+        for scalar in scalars
+    }
+    if len(inner_types) != 1:
+        return None
+    (inner_type,) = inner_types
+    return inner_type
+
+
+@beartype
+def _rust_record_wrap_ids_hook(
+    *,
+    params: _StrategyParams,
+    narrowing: _RustWidenedMapNarrowing,
+) -> Callable[[Value], frozenset[int]]:
+    """Return the ``RECORD`` strategy's ``compute_wrap_ids`` hook.
+
+    The hook returns the widened-map ids whose scalars wrap in the
+    value enum (issue #2910) and refreshes *narrowing*, the per-pass
+    narrow-type cache the scalar wrapper reads (issue #3608).
+    """
+
+    def _compute_wrap_ids(data: Value) -> frozenset[int]:
+        """Return the widened-map ids, refreshing the narrow-type
+        cache.
+        """
+        wrap_ids = _rust_derecordized_map_ids(
+            data=data,
+            unify_optional_fields=params.unify_optional_fields,
+        )
+        narrowing.value_type = _rust_narrow_derecordized_map_value_type(
+            data=data,
+            wrap_ids=wrap_ids,
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
+        )
+        return wrap_ids
+
+    return _compute_wrap_ids
+
+
+@beartype
+def _rust_narrowing_scalar_wrapper(
+    *,
+    params: _StrategyParams,
+    narrowing: _RustWidenedMapNarrowing,
+) -> Callable[[Scalar, str], str]:
+    """Return the ``RECORD`` strategy's widened-map scalar wrapper.
+
+    When every widened scalar shares one concrete Rust type the plain
+    ``HashMap`` already holds the bare literal, so no enum construction
+    is needed (issue #3608); otherwise the scalar wraps in the value
+    enum exactly as under ``TAGGED_ENUM``.
+    """
+    base_wrap_scalar = _rust_value_scalar_wrapper(params)
+
+    def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
+        """Construct the value-enum variant for a widened map."""
+        if narrowing.value_type is not None:
+            return formatted
+        return base_wrap_scalar(raw_value, formatted)
+
+    return _wrap_scalar
+
+
 @beartype
 def _rust_record_field_type(
     *,
     value: Value,
     date_type: str,
     datetime_type: str,
-    value_enum_name: str,
+    derecordized_map_value_type: str,
     record_names: "dict[RecordShape, str]",
     shapes_by_id: "Mapping[int, RecordShape]",
     tuple_list_ids: frozenset[int],
@@ -1354,8 +1458,10 @@ def _rust_record_field_type(
     record-eligible dict absent from *shapes_by_id* was widened to a
     plain map (issue #2910): its sibling maps could not share one record
     shape, so it renders as the widened ``HashMap<&'static str,
-    {value_enum_name}>`` whose scalar leaves are wrapped in the value
-    enum.
+    {derecordized_map_value_type}>``.  That value type names the value
+    enum whose variants wrap the widened scalar leaves, or -- when
+    every widened scalar shares one concrete Rust type -- that bare
+    type (issue #3608).
     """
     # An empty-list field has no element type to infer, so it falls
     # back to ``Vec<String>`` (the ``record_sequence`` fixture exercises
@@ -1374,7 +1480,7 @@ def _rust_record_field_type(
                     value=item,
                     date_type=date_type,
                     datetime_type=datetime_type,
-                    value_enum_name=value_enum_name,
+                    derecordized_map_value_type=derecordized_map_value_type,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -1388,7 +1494,7 @@ def _rust_record_field_type(
                     value=item,
                     date_type=date_type,
                     datetime_type=datetime_type,
-                    value_enum_name=value_enum_name,
+                    derecordized_map_value_type=derecordized_map_value_type,
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -1401,7 +1507,7 @@ def _rust_record_field_type(
             if shape is not None and shape in record_names:
                 return record_names[shape]
             if _rust_is_derecordized_map(value=value):
-                return f"HashMap<&'static str, {value_enum_name}>"
+                return f"HashMap<&'static str, {derecordized_map_value_type}>"
             msg = (
                 "Rust cannot represent a non-record dict (empty, "
                 "non-string-keyed, or an ordered map) as a field "
@@ -1970,19 +2076,18 @@ def _record_behavior_impl(
             compact_pad=" ",
         )
 
-    def _compute_wrap_ids(data: Value) -> frozenset[int]:
-        """Return the widened-map ids whose scalars wrap in the value
-        enum (issue #2910).
-        """
-        return _rust_derecordized_map_ids(
-            data=data,
-            unify_optional_fields=params.unify_optional_fields,
-        )
+    narrowing = _RustWidenedMapNarrowing(value_type=None)
 
     return HeterogeneousBehavior(
         skip_scalar_checks=False,
-        compute_wrap_ids=_compute_wrap_ids,
-        wrap_scalar=_rust_value_scalar_wrapper(params),
+        compute_wrap_ids=_rust_record_wrap_ids_hook(
+            params=params,
+            narrowing=narrowing,
+        ),
+        wrap_scalar=_rust_narrowing_scalar_wrapper(
+            params=params,
+            narrowing=narrowing,
+        ),
         wrap_non_scalar=None,
         wrap_empty_container=None,
         empty_container_literal_overrides=no_empty_container_literal_overrides,
@@ -2184,6 +2289,21 @@ def _record_preamble_impl(
             emit_ordered=emit_order,
             emit_seen=emit_seen,
         )
+        # A widened nested sibling map (issue #2910) renders as a
+        # ``HashMap`` whose scalar leaves wrap in the value enum -- or,
+        # when every widened scalar shares one concrete Rust type, as a
+        # plain ``HashMap`` of that bare type with no enum at all
+        # (issue #3608).
+        wrap_ids = _rust_derecordized_map_ids(
+            data=data,
+            unify_optional_fields=params.unify_optional_fields,
+        )
+        narrow_value_type = _rust_narrow_derecordized_map_value_type(
+            data=data,
+            wrap_ids=wrap_ids,
+            date_type=params.date_type,
+            datetime_type=params.datetime_type,
+        )
         struct_blocks: list[str] = []
         for shape in emit_order:
             block: list[str] = [f"struct {record_names[shape]} {{"]
@@ -2193,7 +2313,11 @@ def _record_preamble_impl(
                     value=example,
                     date_type=params.date_type,
                     datetime_type=params.datetime_type,
-                    value_enum_name=params.enum_name,
+                    derecordized_map_value_type=(
+                        narrow_value_type
+                        if narrow_value_type is not None
+                        else params.enum_name
+                    ),
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
@@ -2204,22 +2328,19 @@ def _record_preamble_impl(
                 block.append(f"    {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
-        # A widened nested sibling map (issue #2910) renders as a
-        # ``HashMap`` whose scalar leaves wrap in the value enum, so emit
-        # that enum ahead of the struct declarations that reference it.
-        wrap_ids = _rust_derecordized_map_ids(
-            data=data,
-            unify_optional_fields=params.unify_optional_fields,
-        )
-        enum_lines = _rust_value_enum_lines(
-            scalars=iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
-            enum_name=params.enum_name,
-            date_type=params.date_type,
-            datetime_type=params.datetime_type,
-            include_list_variant=False,
-            include_map_variant=False,
-            list_inner_type=None,
-            map_inner_type=None,
+        enum_lines = (
+            ()
+            if narrow_value_type is not None
+            else _rust_value_enum_lines(
+                scalars=iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
+                enum_name=params.enum_name,
+                date_type=params.date_type,
+                datetime_type=params.datetime_type,
+                include_list_variant=False,
+                include_map_variant=False,
+                list_inner_type=None,
+                map_inner_type=None,
+            )
         )
         enum_block = ("\n".join(enum_lines),) if enum_lines else ()
         return enum_block + tuple(struct_blocks)

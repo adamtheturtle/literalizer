@@ -750,8 +750,13 @@ class HeterogeneousBehavior:
     for a dict whose id appears in ``compute_wrap_ids``.  Go's RECORD
     widening uses this to keep every widened map literal at
     ``map[string]any`` even when all of one map's values happen to share
-    a narrower scalar type (issue #2911).  Other wrapping strategies
-    leave it as ``None`` and retain their normal inferred dict opener.
+    a narrower scalar type (issue #2911).  It is a zero-argument
+    provider rather than a fixed string so a strategy whose widened
+    opener depends on the data pass (C++'s RECORD widening spells the
+    concrete value type when every widened scalar shares one C++ type,
+    issue #3605) can defer the choice to render time.  Other wrapping
+    strategies leave it as ``None`` and retain their normal inferred
+    dict opener.
 
     ``widens_nested_maps_by_wrapping_scalars`` identifies strategies
     whose scalar wrapper also gives sibling nested maps one shared value
@@ -816,7 +821,7 @@ class HeterogeneousBehavior:
     wrap_empty_container: Callable[[Value, str], str] | None
     empty_container_literal_overrides: Callable[[Value], Mapping[int, str]]
     compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]]
-    dict_open_for_wrap_ids: str | None
+    dict_open_for_wrap_ids: Callable[[], str] | None
     widens_nested_maps_by_wrapping_scalars: bool
     widens_unrecordizable_nested_sibling_maps: bool
     render_record_literal: (
