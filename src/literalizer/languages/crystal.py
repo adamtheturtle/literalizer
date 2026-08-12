@@ -899,7 +899,7 @@ class Crystal(metaclass=LanguageCls):
                 raise UnrepresentableSpecialFloatError(msg)
             self._validate_json_any_data(data=data)
 
-    def _validate_json_any_data(self, *, data: Value) -> None:
+    def _validate_json_any_data(self, data: Value) -> None:
         """Recursively validate *data* for ``JSON::Any`` rendering."""
         match data:
             case dict():
@@ -982,6 +982,8 @@ class Crystal(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self._uses_json_any:
+            return self._validate_json_any_data
         return no_validate_call_arg
 
     @cached_property
