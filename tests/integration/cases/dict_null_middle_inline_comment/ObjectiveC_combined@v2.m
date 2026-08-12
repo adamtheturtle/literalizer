@@ -2,15 +2,19 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    @"host": @"localhost",
-    @"port": [NSNull null],  // not configured yet
-    @"debug": @YES,
+    @"server": @{
+        @"host": @"localhost",
+        @"port": [NSNull null],  // not configured yet
+        @"debug": @YES,
+    },
 };
 (void)my_data;
 my_data = @{
-    @"host": @"localhost",
-    @"port": [NSNull null],  // not configured yet
-    @"debug": @YES,
+    @"server": @{
+        @"host": @"localhost",
+        @"port": [NSNull null],  // not configured yet
+        @"debug": @YES,
+    },
 };
     (void)my_data;
 }

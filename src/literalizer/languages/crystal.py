@@ -552,6 +552,7 @@ class Crystal(metaclass=LanguageCls):
     supports_record_shape_names = False
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = True
+    checks_raw_control_dict_keys_separately = False
 
     class DateFormats(enum.Enum):
         """Date format options for Crystal."""

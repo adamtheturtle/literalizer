@@ -12,8 +12,10 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .arr = &.{
-        .{ .map = &.{.{ .key = "item", .val = .{ .str = "existing" } }}},
-        // This comment describes the next item.
+        .{ .map = &.{
+            .{ .key = "item", .val = .{ .str = "existing" } },
+            // This comment describes the next item.
+        }},
         .{ .map = &.{.{ .key = "item", .val = .{ .str = "next" } }}},
     }};
     _ = my_data;

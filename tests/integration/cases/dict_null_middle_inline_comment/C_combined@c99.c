@@ -16,15 +16,19 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"host", ((CVal){.s = "localhost"})},
-    {"port", ((CVal){.s = NULL})},  // not configured yet
-    {"debug", ((CVal){.b = true})},
+    {"server", ((CVal){.m = (CKV[]){
+        {"host", ((CVal){.s = "localhost"})},
+        {"port", ((CVal){.s = NULL})},  // not configured yet
+        {"debug", ((CVal){.b = true})},
+    }})},
 }});
 (void)my_data;
 my_data = ((CVal){.m = (CKV[]){
-    {"host", ((CVal){.s = "localhost"})},
-    {"port", ((CVal){.s = NULL})},  // not configured yet
-    {"debug", ((CVal){.b = true})},
+    {"server", ((CVal){.m = (CKV[]){
+        {"host", ((CVal){.s = "localhost"})},
+        {"port", ((CVal){.s = NULL})},  // not configured yet
+        {"debug", ((CVal){.b = true})},
+    }})},
 }});
     (void)my_data;
     return 0;
