@@ -111,7 +111,6 @@ from literalizer._language import (
     no_data_preamble,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
@@ -1518,7 +1517,10 @@ class Java(metaclass=LanguageCls):
         """Return call-argument validation for this language."""
         if self._json_type_active:
             return self._validate_json_value_keys
-        return no_validate_call_arg
+        strategies = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is strategies.RECORD:
+            return self._validate_record_null_map_values
+        return _validate_no_null_map_values
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:

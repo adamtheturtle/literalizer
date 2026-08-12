@@ -1,6 +1,15 @@
 """Focused Java validation tests for null-valued maps."""
 
-from literalizer import InputFormat, Language, NewVariable, literalize
+import pytest
+
+from literalizer import (
+    InputFormat,
+    Language,
+    NewVariable,
+    literalize,
+    literalize_call,
+)
+from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Java
 
 
@@ -24,6 +33,19 @@ def test_record_strategy_allows_null_inside_nested_record() -> None:
     assert 'Map.entry("outer", new Object[]{new Record0(null, 1)})' in (
         result.code
     )
+
+
+def test_call_argument_rejects_null_map_value() -> None:
+    """Call arguments cannot silently discard null-valued map entries."""
+    with pytest.raises(expected_exception=UnrepresentableInputError):
+        literalize_call(
+            source='{"present": 1, "missing": null}',
+            input_format=InputFormat.JSON,
+            language=Java(),
+            target_function="consume",
+            parameter_names=["value"],
+            per_element=False,
+        )
 
 
 def test_java_terminator_precedes_trailing_comments() -> None:
