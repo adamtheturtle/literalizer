@@ -1,4 +1,11 @@
-let my_data: [String: Any] = [
-    "name": "Alice",
-    "scores": [1: "first", 2: "second"],
+let my_data: [String: [String: Any]] = [
+    "ordered": [
+        // ordered entry
+        "name": "Alice",
+        "scores": [
+            // score meaning
+            1: "first",
+            2: "second",  // latest score
+        ],
+    ],
 ]
