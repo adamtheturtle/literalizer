@@ -9,6 +9,9 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("a", EDict [("x", EInt 1)]),
+    ("a", EDict [
+        -- indented
+        ("x", EInt 1)
+        ]),
     ("b", EInt 2)
     ]

@@ -403,6 +403,19 @@ class InvalidNewVariableNameError(Exception):
         self.variable_name = variable_name
 
 
+class InvalidModuleNameError(Exception):
+    """Raised when a module name is not a safe source identifier."""
+
+    def __init__(self, *, language_name: str, module_name: str) -> None:
+        """Create an ``InvalidModuleNameError``."""
+        super().__init__(
+            f"{language_name} cannot use module_name {module_name!r}: "
+            "it is not a valid identifier"
+        )
+        self.language_name = language_name
+        self.module_name = module_name
+
+
 class InvalidCallParameterNameError(Exception):
     """Raised when a call parameter is not a target-language
     identifier.

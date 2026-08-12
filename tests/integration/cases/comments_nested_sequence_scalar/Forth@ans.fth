@@ -1,4 +1,3 @@
-\ removes "world"
 : my_data
 +arr
     +arr s\" ADD" +str s\" alice" +str s\" hello" +str -arr

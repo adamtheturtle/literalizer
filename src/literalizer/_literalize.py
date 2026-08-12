@@ -42,6 +42,7 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     Language,
+    LanguageCls,
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
@@ -418,6 +419,10 @@ class _RenderContext:
     consumable_ref_names: frozenset[str]
     single_use_ref_names: frozenset[str]
     consume_inhibited_ref_names: frozenset[str]
+    yaml_comment_nodes: Mapping[
+        int, CommentedSeq | CommentedMap | CommentedSet
+    ]
+    yaml_comment_root_id: int | None
 
     def compact(self) -> "_RenderContext":
         """Return this context with compact collection rendering."""
@@ -438,6 +443,8 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            yaml_comment_nodes=self.yaml_comment_nodes,
+            yaml_comment_root_id=self.yaml_comment_root_id,
         )
 
     def with_multiline(
@@ -466,6 +473,8 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            yaml_comment_nodes=self.yaml_comment_nodes,
+            yaml_comment_root_id=self.yaml_comment_root_id,
         )
 
     def with_prefix(self, *, multiline_prefix: str) -> "_RenderContext":
@@ -487,7 +496,24 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            yaml_comment_nodes=self.yaml_comment_nodes,
+            yaml_comment_root_id=self.yaml_comment_root_id,
         )
+
+
+def _nested_collection_context(
+    *, value: Value, ctx: _RenderContext
+) -> _RenderContext:
+    """Keep nested collection payload strings layout-independent."""
+    if not isinstance(value, (dict, list, set)):
+        return ctx
+    language_cls = type(ctx.spec)
+    if not isinstance(language_cls, LanguageCls):
+        msg = "nested collection rendering requires a LanguageCls language"
+        raise TypeError(msg)
+    if not language_cls.stringifies_nested_collections:
+        return ctx
+    return ctx.compact()
 
 
 @beartype
@@ -643,6 +669,14 @@ def _format_ordered_map_value(
     spec = ctx.spec
     guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
+
+    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+        return _format_multiline_collection_value(
+            value=value,
+            ctx=ctx,
+            dict_open_override=None,
+            sequence_open_override=None,
+        )
 
     ordered_map_items: list[tuple[Scalar, Value]] = [
         (k, v)
@@ -844,6 +878,14 @@ def _format_dict_value(
     guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
+    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+        return _format_multiline_collection_value(
+            value=value,
+            ctx=ctx,
+            dict_open_override=open_override,
+            sequence_open_override=None,
+        )
+
     dict_items: dict[Scalar, Value] = {
         k: v
         for k, v in value.items()
@@ -951,10 +993,11 @@ def _format_dict_entry_value(
     *int_formatter* is the map's mixed-magnitude integer widener when
     values inferred :class:`WideInt` or :class:`BeyondI64`.
     """
+    child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
-            ctx=ctx,
+            ctx=child_ctx,
         )
         if tuple_literal is not None:
             return tuple_literal
@@ -962,13 +1005,13 @@ def _format_dict_entry_value(
             value=value,
             sequence_open_override=outer_sequence_override,
             child_sequence_open_overrides=position_overrides,
-            ctx=ctx,
+            ctx=child_ctx,
         )
     return _format_value(
         value=value,
         dict_open_override=None,
         sequence_open_override=None,
-        ctx=ctx,
+        ctx=child_ctx,
         int_formatter=int_formatter,
     )
 
@@ -1518,13 +1561,14 @@ def _format_sequence_child(
             ]
             if non_empty_map_siblings:
                 return narrowed_empty_dict(non_empty_map_siblings)
+    child_ctx = _nested_collection_context(value=child, ctx=ctx)
     return _format_value(
         value=child,
         dict_open_override=dict_open_override,
         sequence_open_override=(
             parent_override if parent_override is not None else sibling_open
         ),
-        ctx=ctx,
+        ctx=child_ctx,
         int_formatter=int_formatter,
     )
 
@@ -1549,6 +1593,14 @@ def _format_list_value(
     """
     spec = ctx.spec
     sequence_cfg = spec.sequence_format_config
+
+    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+        return _format_multiline_collection_value(
+            value=value,
+            ctx=ctx,
+            dict_open_override=None,
+            sequence_open_override=sequence_open_override,
+        )
 
     # When a parent has widened this position's opener, skip the
     # default ``empty_sequence`` literal so the empty list still
@@ -1896,6 +1948,28 @@ def _format_multiline_collection_value(
 
 
 @beartype
+def _nested_yaml_collection_comments(
+    *,
+    value: Value,
+    ctx: _RenderContext,
+) -> CollectionComments | None:
+    """Return comments for a nested YAML collection, when present."""
+    if not ctx.spec.supports_collection_comments:
+        return None
+    if id(value) == ctx.yaml_comment_root_id:
+        return None
+    raw_value = ctx.yaml_comment_nodes.get(id(value))
+    if raw_value is None:
+        return None
+    comments = extract_yaml_comments(ruamel_data=raw_value)
+    if comments.trailing or any(
+        element.before or element.inline for element in comments.elements
+    ):
+        return comments
+    return None
+
+
+@beartype
 def rstrip_lines(text: str) -> str:
     """Remove trailing whitespace from each line."""
     return "\n".join(line.rstrip() for line in text.split(sep="\n"))
@@ -1909,13 +1983,51 @@ def _append_entries(
     body_prefix: str,
     trailing_comma: bool,
     spec: Language,
+    collection_comments: CollectionComments | None,
 ) -> None:
     """Append formatted entries with separators to *lines*."""
     last_idx = len(formatted_entries) - 1
+    rendered_elements: list[str] = []
     for i, entry in enumerate(iterable=formatted_entries):
         add_sep = i < last_idx or trailing_comma
         sep = spec.element_separator.strip() if add_sep else ""
-        lines.append(f"{body_prefix}{rstrip_lines(text=entry)}{sep}")
+        rendered_elements.append(
+            f"{body_prefix}{rstrip_lines(text=entry)}{sep}"
+        )
+    if collection_comments is None:
+        lines.extend(rendered_elements)
+        return
+    comment_cfg = spec.comment_config
+    commented = apply_collection_comments_to_elements(
+        rendered_elements=rendered_elements,
+        collection_comments=collection_comments,
+        comment_prefix=comment_cfg.prefix,
+        comment_suffix=comment_cfg.suffix,
+        line_prefix=body_prefix,
+    )
+    lines.extend(commented.split(sep="\n"))
+
+
+@beartype
+def _filter_collection_comments(
+    *, collection_comments: CollectionComments, keep: Sequence[bool]
+) -> CollectionComments:
+    """Keep comment slots corresponding to rendered collection entries.
+
+    A length mismatch is an internal alignment error and intentionally
+    raises rather than silently assigning comments to different values.
+    """
+    elements = tuple(
+        element
+        for element, keep_element in zip(
+            collection_comments.elements, keep, strict=True
+        )
+        if keep_element
+    )
+    return CollectionComments(
+        elements=elements,
+        trailing=collection_comments.trailing,
+    )
 
 
 @beartype
@@ -1934,14 +2046,29 @@ def _format_collection_lines(
     line_ctx = ctx.with_prefix(multiline_prefix=body_prefix)
     lines: list[str] = []
     parent_id = id(data)
+    collection_comments = _nested_yaml_collection_comments(
+        value=data,
+        ctx=ctx,
+    )
     match data:
         case dict() as dict_data:
             guard_dict_keys_supported(value=dict_data, spec=spec)
+            keep_entries = [
+                not (spec.skip_null_dict_values and value is None)
+                for value in dict_data.values()
+            ]
             entries = [
                 (k, v)
-                for k, v in dict_data.items()
-                if not (spec.skip_null_dict_values and v is None)
+                for (k, v), keep_entry in zip(
+                    dict_data.items(), keep_entries, strict=True
+                )
+                if keep_entry
             ]
+            if collection_comments is not None:
+                collection_comments = _filter_collection_comments(
+                    collection_comments=collection_comments,
+                    keep=keep_entries,
+                )
             sibling_list_values: list[list[Value]] = [
                 v for _, v in entries if isinstance(v, list)
             ]
@@ -2001,6 +2128,7 @@ def _format_collection_lines(
                 body_prefix=body_prefix,
                 trailing_comma=dict_trailing,
                 spec=spec,
+                collection_comments=collection_comments,
             )
         case set() as set_data:
             sorted_items = sorted(
@@ -2040,6 +2168,7 @@ def _format_collection_lines(
                 body_prefix=body_prefix,
                 trailing_comma=set_trailing,
                 spec=spec,
+                collection_comments=collection_comments,
             )
         case list() as list_data:
             seq_trailing = (
@@ -2078,13 +2207,26 @@ def _format_collection_lines(
             # empty sub-list (possible in languages like Forth whose
             # empty-sequence opener and close are both empty) does not
             # leave a dangling indented blank line in the output.
-            formatted_entries = [e for e in formatted_entries if e]
+            keep_entries = [bool(entry) for entry in formatted_entries]
+            formatted_entries = [
+                entry
+                for entry, keep_entry in zip(
+                    formatted_entries, keep_entries, strict=True
+                )
+                if keep_entry
+            ]
+            if collection_comments is not None:
+                collection_comments = _filter_collection_comments(
+                    collection_comments=collection_comments,
+                    keep=keep_entries,
+                )
             _append_entries(
                 formatted_entries=formatted_entries,
                 lines=lines,
                 body_prefix=body_prefix,
                 trailing_comma=seq_trailing,
                 spec=spec,
+                collection_comments=collection_comments,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -2093,8 +2235,56 @@ def _format_collection_lines(
     return lines
 
 
+@beartype
+def _mapping_object_at(
+    *, mapping: Mapping[object, object], key: object
+) -> object:
+    """Return a mapping value with its public boundary type preserved."""
+    return mapping[key]
+
+
+@beartype
+def _sequence_object_at(*, sequence: Sequence[object], index: int) -> object:
+    """Return a sequence value with its public boundary type preserved."""
+    return sequence[index]
+
+
+@beartype
+def _collect_yaml_comment_nodes(
+    *,
+    value: Value,
+    raw_value: object,
+    out: dict[int, CommentedSeq | CommentedMap | CommentedSet],
+) -> None:
+    """Map rendered container identities to their ruamel YAML nodes."""
+    if isinstance(raw_value, CommentedMap) and isinstance(value, dict):
+        out[id(value)] = raw_value
+        typed_raw_map: Mapping[object, object] = raw_value
+        for key, child in value.items():
+            _collect_yaml_comment_nodes(
+                value=child,
+                raw_value=_mapping_object_at(mapping=typed_raw_map, key=key),
+                out=out,
+            )
+        return
+    if isinstance(raw_value, CommentedSeq) and isinstance(value, list):
+        out[id(value)] = raw_value
+        typed_raw_sequence: Sequence[object] = raw_value
+        for index, child in enumerate(iterable=value):
+            _collect_yaml_comment_nodes(
+                value=child,
+                raw_value=_sequence_object_at(
+                    sequence=typed_raw_sequence, index=index
+                ),
+                out=out,
+            )
+        return
+    if isinstance(raw_value, CommentedSet) and isinstance(value, set):
+        out[id(value)] = raw_value
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-return-statements
+def _literalize(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     data: Value,
     language: Language,
@@ -2104,6 +2294,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
     ref_values: Mapping[str, Value] | None,
     ref_key: str,
     collection_layout: CollectionLayout,
+    raw_yaml_data: object | None,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -2139,6 +2330,8 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         ref_key: The key used to identify ref markers in the input.
         collection_layout: Controls layout for collections nested
             inside other collections.
+        raw_yaml_data: The comment-preserving ruamel node corresponding
+            to *data*, or ``None`` for non-YAML/comment-free input.
     """
     _validate_ref_case_is_injective(
         value=data,
@@ -2165,7 +2358,7 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
 
     check_data(data=data, spec=language)
 
-    if not ref_key:
+    if not ref_key and raw_yaml_data is None:
         fast_result = format_document_fast(
             language,
             data=data,
@@ -2175,6 +2368,16 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         )
         if fast_result is not None:
             return fast_result
+
+    yaml_comment_nodes: dict[
+        int, CommentedSeq | CommentedMap | CommentedSet
+    ] = {}
+    if raw_yaml_data is not None:
+        _collect_yaml_comment_nodes(
+            value=data,
+            raw_value=raw_yaml_data,
+            out=yaml_comment_nodes,
+        )
 
     wrap_ids = _compute_wrap_ids(data=data, spec=language)
     tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
@@ -2197,6 +2400,8 @@ def _literalize(  # noqa: C901, PLR0911  # pylint: disable=too-complex,too-many-
         consumable_ref_names=frozenset(),
         single_use_ref_names=frozenset(),
         consume_inhibited_ref_names=frozenset(),
+        yaml_comment_nodes=yaml_comment_nodes,
+        yaml_comment_root_id=id(data) if yaml_comment_nodes else None,
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -2438,6 +2643,11 @@ def literalize_pre_form(
         ref_values=ref_values,
         ref_key=active_ref_key,
         collection_layout=collection_layout,
+        raw_yaml_data=(
+            parsed.raw_data
+            if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve
+            else None
+        ),
     )
 
     comment_line_prefix = (
@@ -2808,6 +3018,7 @@ def _literalize_value_binding(
         ref_values=None,
         ref_key=_DISABLED_REF_KEY,
         collection_layout=CollectionLayout.COMPACT,
+        raw_yaml_data=None,
     )
     wrapped = _apply_variable_wrapper(
         result=result_text,
@@ -3399,6 +3610,8 @@ def _format_single_call_arg(
         consumable_ref_names=consumable_ref_names,
         single_use_ref_names=single_use_ref_names,
         consume_inhibited_ref_names=consume_inhibited_ref_names,
+        yaml_comment_nodes={},
+        yaml_comment_root_id=None,
     )
     formatted = wrap_arg(
         value,
@@ -3897,6 +4110,7 @@ def _render_call_per_element(
             collection_comments=collection_comments,
             comment_prefix=comment_cfg.prefix,
             comment_suffix=comment_cfg.suffix,
+            line_prefix="",
         )
     return "\n".join(rendered_elements)
 
@@ -4672,6 +4886,8 @@ def _render_zip_literal(
         consumable_ref_names=frozenset(),
         single_use_ref_names=frozenset(),
         consume_inhibited_ref_names=frozenset(),
+        yaml_comment_nodes={},
+        yaml_comment_root_id=None,
     )
     return _format_value(
         value=value,

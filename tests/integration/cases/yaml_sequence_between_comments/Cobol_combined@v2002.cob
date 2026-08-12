@@ -3,9 +3,12 @@ PROGRAM-ID. CHECK.
 DATA DIVISION.
 WORKING-STORAGE SECTION.
 01 MY-DATA.
-    05 F-ITEM PIC X(8) VALUE "existing".
-    *> This comment describes the next item.
-    05 F-ITEM-2 PIC X(4) VALUE "next".
+    05 FILLER.
+
+            10 F-ITEM PIC X(8) VALUE "existing".
+            *> This comment describes the next item.
+
+    05 F-ITEM PIC X(4) VALUE "next".
 PROCEDURE DIVISION.
     INITIALIZE MY-DATA.
     STOP RUN.
