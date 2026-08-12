@@ -33,6 +33,7 @@ from literalizer.exceptions import (
     InvalidCallParameterNameError,
     InvalidModuleNameError,
     InvalidNewVariableNameError,
+    InvalidRecordNameError,
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
     UnrepresentableNullError,
@@ -1117,6 +1118,17 @@ class LanguageCls(type):
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         instance: Language = super().__call__(*args, **kwargs)
+        if cls.supports_record_struct_name_prefix:
+            prefix = vars(instance)["record_struct_name_prefix"]
+            if (
+                re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=prefix)
+                is None
+            ):
+                msg = (
+                    f"record_struct_name_prefix {prefix!r} must be a "
+                    "PascalCase identifier starting with an uppercase letter."
+                )
+                raise InvalidRecordNameError(msg)
         if cls.supports_module_name:
             module_name = vars(instance)["module_name"]
             if not NewVariableNameSyntax.ASCII.accepts(name=module_name):
