@@ -944,17 +944,17 @@ def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     )
 
 
-@beartype
-@dataclasses.dataclass(frozen=True, kw_only=True)
 class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Mojo's ordered maps use a list-of-pairs representation."""
 
     @property
     def empty_ordered_map(self) -> str:
         """Render an empty ordered map as an empty list."""
-        return "[]"
+        return "List[Tuple[String, String]]()"
 
 
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
     """Mojo language specification.
 

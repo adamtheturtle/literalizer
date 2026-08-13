@@ -102,7 +102,7 @@ def test_empty_after_filtering_ordered_map_uses_ordered_map_form() -> None:
         language=Mojo(),
     )
 
-    assert result.code == "[]"
+    assert result.code == "List[Tuple[String, String]]()"
 
 
 @pytest.mark.parametrize(
