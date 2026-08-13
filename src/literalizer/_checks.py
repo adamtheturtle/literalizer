@@ -149,9 +149,7 @@ def scalar_type_bucket(*, value: Value) -> type | None: ...
 
 
 @beartype
-def scalar_type_bucket(  # noqa: PLR0911  # pylint: disable=too-complex
-    *, value: Value
-) -> type | None:
+def scalar_type_bucket(*, value: Value) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
 
@@ -160,27 +158,21 @@ def scalar_type_bucket(  # noqa: PLR0911  # pylint: disable=too-complex
     """
     # Check bool before int (bool is a subclass of int), and
     # datetime before date (datetime is a subclass of date).
-    match value:
-        case None:
-            return type(None)
-        case bool():
-            return bool
-        case int():
-            return int
-        case float():
-            return float
-        case str():
-            return str
-        case bytes():
-            return bytes
-        case datetime.datetime():
-            return datetime.datetime
-        case datetime.date():
-            return datetime.date
-        case datetime.time():
-            return datetime.time
-        case _:
-            return None
+    bucket_types = (
+        type(None),
+        bool,
+        int,
+        float,
+        str,
+        bytes,
+        datetime.datetime,
+        datetime.date,
+        datetime.time,
+    )
+    return next(
+        (bucket for bucket in bucket_types if isinstance(value, bucket)),
+        None,
+    )
 
 
 @beartype
