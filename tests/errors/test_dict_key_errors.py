@@ -14,7 +14,7 @@ import pytest
 
 from literalizer import InputFormat, literalize
 from literalizer.exceptions import InvalidDictKeyError
-from literalizer.languages import Dhall, Nix, R
+from literalizer.languages import Dhall, Nix, PowerShell, R
 
 _EMPTY_KEY_DICT: dict[str, str] = {"": "value"}
 _CONTROL_CHAR_KEY_DICT: dict[str, str] = {"\x01": "value"}
@@ -130,4 +130,17 @@ def test_nix_control_char_dict_key_raises(
             language=Nix(),
             pre_indent_level=0,
             include_delimiters=True,
+        )
+
+
+def test_powershell_case_colliding_dict_keys_raise() -> None:
+    """PowerShell hash-table literals compare string keys without case."""
+    with pytest.raises(
+        expected_exception=InvalidDictKeyError,
+        match="collide case-insensitively",
+    ):
+        literalize(
+            source='{"key": 1, "KEY": 2}',
+            input_format=InputFormat.JSON,
+            language=PowerShell(),
         )
