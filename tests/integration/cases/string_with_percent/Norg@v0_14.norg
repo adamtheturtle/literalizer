@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 [
     "100% done",
     "%(name) is here"

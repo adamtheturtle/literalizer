@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "section": {"value": 1}
 }

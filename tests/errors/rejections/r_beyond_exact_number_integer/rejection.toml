@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+R parses integer literals as doubles, so values beyond 2**53 silently
+lose precision (#3634).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["R"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"
