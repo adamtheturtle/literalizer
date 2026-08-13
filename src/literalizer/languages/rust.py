@@ -890,7 +890,10 @@ def _rust_is_scalar(*, value: object) -> bool:
 
 
 @beartype
-def _rust_container_wrap_ids(data: Value, /) -> frozenset[int]:
+def _rust_container_wrap_ids(  # pylint: disable=too-complex
+    data: Value,
+    /,
+) -> frozenset[int]:
     """Return ids needed to wrap scalar-plus-container lists.
 
     A list element position that holds both a scalar and a list/map has
@@ -917,7 +920,7 @@ def _rust_container_wrap_ids(data: Value, /) -> frozenset[int]:
             _mark_subtree(item=child)
 
     def _visit(item: Value) -> None:
-        """Find scalar-plus-container lists and mark their subtrees."""
+        """Find scalar-plus-container lists and mark nested contents."""
         match item:
             case dict():
                 children: list[Value] = list(item.values())
