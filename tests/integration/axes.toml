@@ -460,6 +460,18 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "default_dict_value_type", name_value = true },
 ]
 
+# The round-trip YAML loader retains explicit scalar tags in
+# ``TaggedScalar`` wrappers that must be demoted before rendering.
+[axes.python_yaml_tagged_scalars]
+plan = "fixed_overrides"
+name_template = "{lang}_yaml_tagged_scalars"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+]
+
 # Raw-string delimiter bases: one the language's own manifest names, and
 # two every participating language shares.  The punctuation base pins
 # the characters a delimiter may hold, and the exhausted base is long
