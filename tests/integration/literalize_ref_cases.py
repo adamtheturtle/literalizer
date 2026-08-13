@@ -107,6 +107,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
         for lang_cls in sorted_languages()
+        if not config.languages or lang_cls.__name__ in config.languages
         if config.ref_case_override is None
         or config.ref_case_override in lang_cls.supported_ref_cases
     ]
@@ -123,6 +124,7 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
             owner=REF_DEFAULT_OWNER,
         )
         for lang_cls in sorted_languages()
+        if not config.languages or lang_cls.__name__ in config.languages
     ]
 
 
@@ -248,6 +250,12 @@ def run_literalize_ref_golden_case(
             ref_key=config.ref_key,
         )
     }
+    bound_refs_input.update(
+        {
+            name: json.loads(s=source)
+            for name, source in config.extra_ref_value_sources.items()
+        },
+    )
     with GoldenSkips(
         policy=_REF_SKIPS,
         golden_path=golden_path,
