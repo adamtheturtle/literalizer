@@ -374,17 +374,60 @@ _SCALA_INT32_MIN = -(2**31)
 _SCALA_INT32_MAX = 2**31 - 1
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
+_SCALA_RESERVED_IDENTIFIERS = frozenset(
+    {
+        "abstract",
+        "case",
+        "catch",
+        "class",
+        "def",
+        "do",
+        "else",
+        "extends",
+        "false",
+        "final",
+        "finally",
+        "for",
+        "forSome",
+        "if",
+        "implicit",
+        "import",
+        "lazy",
+        "match",
+        "new",
+        "null",
+        "object",
+        "override",
+        "package",
+        "private",
+        "protected",
+        "return",
+        "sealed",
+        "super",
+        "this",
+        "throw",
+        "trait",
+        "true",
+        "try",
+        "type",
+        "val",
+        "var",
+        "while",
+        "with",
+        "yield",
+    }
+)
 
 
 @beartype
 def _scala_record_field_identifier(key: str, /) -> str:
     """Return the Scala ``case class`` field name for a dict *key*.
 
-    Scala field identifiers are the dict keys verbatim (no case
-    conversion), matching the keyword-argument literal form
-    ``Record0(id = 1, ...)``.
+    Scala field identifiers preserve the dict key's spelling (no case
+    conversion). Reserved words use Scala's backtick identifier syntax,
+    which is valid in both the declaration and the named-argument literal.
     """
-    return key
+    return f"`{key}`" if key in _SCALA_RESERVED_IDENTIFIERS else key
 
 
 @beartype
@@ -513,49 +556,7 @@ class Scala(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "abstract",
-            "case",
-            "catch",
-            "class",
-            "def",
-            "do",
-            "else",
-            "extends",
-            "false",
-            "final",
-            "finally",
-            "for",
-            "forSome",
-            "if",
-            "implicit",
-            "import",
-            "lazy",
-            "match",
-            "new",
-            "null",
-            "object",
-            "override",
-            "package",
-            "private",
-            "protected",
-            "return",
-            "sealed",
-            "super",
-            "this",
-            "throw",
-            "trait",
-            "true",
-            "try",
-            "type",
-            "val",
-            "var",
-            "while",
-            "with",
-            "yield",
-        }
-    )
+    reserved_variable_identifiers: frozenset[str] = _SCALA_RESERVED_IDENTIFIERS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

@@ -5,7 +5,7 @@ so an integer just past that range is refused rather than silently
 rounded (#2713).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["TypeScript"]
+languages = ["JavaScript", "TypeScript"]
 
 [call]
 api = "literalize"

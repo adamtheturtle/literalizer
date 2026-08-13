@@ -1,8 +1,8 @@
 * my_int
-@code json
+@code javascript
 42
 @end
 * my_data
-@code json
+@code javascript
 my_int
 @end

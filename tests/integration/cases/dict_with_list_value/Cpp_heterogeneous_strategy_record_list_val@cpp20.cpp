@@ -7,7 +7,7 @@ struct Record0 { std::string name; std::vector<int> scores; };
 int main() {
 auto my_data = Record0{
     .name = "Alice",
-    .scores = std::vector<int>{
+    .scores = {
         10,
         20,
         30,
