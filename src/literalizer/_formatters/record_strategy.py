@@ -65,7 +65,7 @@ from literalizer.exceptions import UnrepresentableInputError
 _RECORD_FIELD_IDENTIFIER = re.compile(
     pattern=(
         r"^(?:[A-Za-z_][A-Za-z0-9_]*|`[A-Za-z_][A-Za-z0-9_]*`|"
-        r'@"(?:[^"\\]|\\["\\])*")$'
+        r'@"(?:[^"\\]|\\(?:["\\nrt]|x[0-9A-Fa-f]{2}))*")$'
     ),
 )
 

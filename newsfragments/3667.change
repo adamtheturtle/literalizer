@@ -1,1 +1,0 @@
-Preserve backticks around Swift ``RECORD`` initializer labels that are reserved words, including ``inout``, so generated initializers compile.
