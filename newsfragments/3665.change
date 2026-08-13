@@ -1,0 +1,1 @@
+Reject JavaScript integer literals outside the safe ``Number`` range instead of emitting values that silently lose precision when parsed.

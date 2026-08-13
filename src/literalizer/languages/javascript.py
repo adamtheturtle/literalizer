@@ -42,6 +42,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
@@ -890,9 +892,16 @@ class JavaScript(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        """Format safe JavaScript integers and reject inexact literals."""
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=-(2**53 - 1),
+            max_value=2**53 - 1,
+            fallback=raise_for_unrepresentable_int(
+                language_name="JavaScript",
+            ),
         )
 
     @cached_property
