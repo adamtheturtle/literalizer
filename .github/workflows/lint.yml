@@ -1923,6 +1923,15 @@ jobs:
       - name: C++ roundtrip
         if: matrix.shard == 0
         run: uv run python -m scripts.run_cpp_roundtrip
+      # Two documents sharing one record shape, rendered under
+      # `record_map_value_typing=WIDE` and compiled as one translation
+      # unit, so the second's literals type-check against the first's
+      # `struct` (issue 3748). Shard 0 is again only the designated
+      # owner of this shard-independent check.
+      # See `scripts/run_cpp_shared_record.py`.
+      - name: C++ shared record declaration
+        if: matrix.shard == 0
+        run: uv run python -m scripts.run_cpp_shared_record
 
   lint-kotlin:
     runs-on: ubuntu-latest
@@ -2442,6 +2451,12 @@ jobs:
       # resolves. See `scripts/run_go_roundtrip.py`.
       - name: Go roundtrip
         run: uv run python -m scripts.run_go_roundtrip
+      # Two documents sharing one record shape, rendered under
+      # `record_map_value_typing=WIDE` and compiled as one program, so
+      # the second's literals type-check against the first's `struct`
+      # (issue 3748). See `scripts/run_go_shared_record.py`.
+      - name: Go shared record declaration
+        run: uv run python -m scripts.run_go_shared_record
 
   lint-rust:
     runs-on: ubuntu-latest
@@ -2508,6 +2523,12 @@ jobs:
       # See `scripts/run_rust_roundtrip.py`.
       - name: Rust roundtrip
         run: uv run python -m scripts.run_rust_roundtrip "$RUST_DEPS" "$RUST_SERDE_JSON_RLIB"
+      # Two documents sharing one record shape, rendered under
+      # `record_map_value_typing=WIDE` and compiled as one program, so
+      # the second's literals type-check against the first's `struct`
+      # (issue 3748). See `scripts/run_rust_shared_record.py`.
+      - name: Rust shared record declaration
+        run: uv run python -m scripts.run_rust_shared_record
 
   lint-r:
     runs-on: ubuntu-latest
