@@ -304,3 +304,58 @@ def test_all_declared_reserved_names_raise(
                 ),
                 wrap_in_file=True,
             )
+
+
+_RECORD_PREFIX_LANGUAGES = tuple(
+    language_cls
+    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    if language_cls.supports_record_struct_name_prefix
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_RECORD_PREFIX_LANGUAGES,
+    ids=lambda language_cls: language_cls.__name__,
+)
+def test_generated_record_name_is_reserved_for_record_strategy(
+    language_cls: LanguageCls,
+) -> None:
+    """A declaration cannot shadow an auto-generated record type."""
+    prefix = language_cls.__dataclass_fields__[
+        "record_struct_name_prefix"
+    ].default
+    record_strategy = next(
+        strategy
+        for strategy in language_cls.HeterogeneousStrategies
+        if strategy.name == "RECORD"
+    )
+    language = language_cls(heterogeneous_strategy=record_strategy)
+
+    with pytest.raises(expected_exception=ReservedVariableNameError):
+        literalize(
+            source='[{"id": 1}]',
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(
+                name=f"{prefix}0",
+                modifiers=frozenset(),
+            ),
+            wrap_in_file=True,
+        )
+
+
+def test_generated_record_name_is_valid_without_record_strategy() -> None:
+    """The generated-name reservation is specific to RECORD output."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Swift(),
+        variable_form=NewVariable(
+            name="Record0",
+            modifiers=frozenset(),
+        ),
+        wrap_in_file=True,
+    )
+
+    assert "let Record0 = 1" in result.code
