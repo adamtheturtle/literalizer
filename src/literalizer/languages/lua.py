@@ -114,7 +114,8 @@ def _format_string_multiline(value: str) -> str:
         return _format_string_lua_escaped(value=value)
     for level in range(100_000):
         equals = "=" * level
-        if f"]{equals}]" not in value:
+        closer = f"]{equals}]"
+        if f"{value}{closer}".find(closer) == len(value):
             return f"[{equals}[{value}]{equals}]"
     # Reaching this requires every one of 100,000 candidate closers.
     return _format_string_lua_escaped(value=value)  # pragma: no cover
