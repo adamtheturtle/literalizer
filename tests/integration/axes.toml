@@ -981,6 +981,17 @@ gates = [
 ]
 overrides = []
 
+[axes.kotlin_widened_i64_min]
+plan = "fixed_overrides"
+name_template = "{lang}_widened_i64_min"
+gates = [
+  { kind = "metadata_field", field = "language_id", value = "kotlin" },
+  { kind = "enum_member_present", option = "language_version", member = "V1_9" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V1_9" },
+]
+
 [axes.union_format_type_hints]
 plan = "every_non_default_member"
 name_template = "{lang}_union_format_{format}_type_hints_always"
