@@ -557,6 +557,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    languages: list[str] = Field(default_factory=list)
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -589,6 +590,20 @@ class _CaseManifestData(  # noqa: NOD001
             msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
+    def _validate_languages(self) -> None:
+        """Reject unknown or repeated language selectors."""
+        known = {
+            lang_cls.__name__
+            for lang_cls in literalizer.languages.ALL_LANGUAGES
+        }
+        unknown = set(self.languages) - known
+        if unknown:
+            msg = f"unknown languages {sorted(unknown)!r}"
+            raise ValueError(msg)
+        if len(self.languages) != len(set(self.languages)):
+            msg = "languages contains a duplicate entry"
+            raise ValueError(msg)
+
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
@@ -605,6 +620,7 @@ class _CaseManifestData(  # noqa: NOD001
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)
+        self._validate_languages()
         if len(self.roles) != len(set(self.roles)):
             msg = "roles contains a duplicate entry"
             raise ValueError(msg)
@@ -640,6 +656,7 @@ class CaseManifest:
     case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
+    languages: frozenset[str]
     suites: frozenset[SuiteName]
     owner: OwnerName | None
     roles: frozenset[CaseRoleName]
@@ -647,6 +664,14 @@ class CaseManifest:
     variants: tuple[ManifestVariant, ...]
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
+
+
+@beartype
+def manifest_admits_language(
+    *, manifest: CaseManifest, lang_cls: literalizer.LanguageCls
+) -> bool:
+    """Return whether a case selects *lang_cls*."""
+    return not manifest.languages or lang_cls.__name__ in manifest.languages
 
 
 @beartype
@@ -702,6 +727,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
+        languages=frozenset(data.languages),
         suites=frozenset(data.suites),
         owner=data.owner,
         roles=frozenset(data.roles),

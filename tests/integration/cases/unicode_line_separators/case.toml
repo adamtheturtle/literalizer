@@ -1,4 +1,5 @@
 schema_version = 1
+languages = ["Ada", "CSharp", "Elixir", "Erlang", "Fortran"]
 suites = ["base", "combined"]
 
 [[variants]]
