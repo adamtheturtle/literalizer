@@ -600,6 +600,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_empty_dict_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_empty_dict_field"
+gates = [{ kind = "record_variant", variant = "empty_dict_field" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"

@@ -2,4 +2,4 @@ schema_version = 1
 owner = "variant"
 
 [[variants]]
-axis = "record_field_type_split"
+axis = "record_empty_dict_field"
