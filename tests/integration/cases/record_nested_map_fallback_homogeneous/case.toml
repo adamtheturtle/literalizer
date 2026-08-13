@@ -3,3 +3,6 @@ owner = "variant"
 
 [[variants]]
 axis = "record_nested_map_fallback"
+
+[[variants]]
+axis = "record_map_value_typing"

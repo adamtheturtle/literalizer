@@ -4,7 +4,7 @@ schema_version = 1
 fixture_module_name_template = "Fixture_{parent}_{stem}"
 
 [variants]
-record = ["field_type_split"]
+record = ["empty_dict_field", "field_type_split"]
 
 [variants.non_default_kwargs]
 default_set_element_type = "Int32"
