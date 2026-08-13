@@ -153,6 +153,22 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
     assert any(case.variant.lang_cls is Python for case in cases)
 
 
+def test_collection_comment_cases_follow_capability(
+    cases_dir: Path,
+) -> None:
+    """Collection-comment inputs exclude languages that flatten them."""
+    cases = _cases_requiring(
+        cases_dir=cases_dir,
+        capability="collection_comments",
+    )
+
+    assert cases
+    assert all(
+        case.variant.spec.supports_collection_comments for case in cases
+    )
+    assert any(case.variant.lang_cls is Python for case in cases)
+
+
 def test_typed_dict_null_filtering_follows_capability() -> None:
     """Null-filtering variants select typed dict languages explicitly."""
     variants = list(build_typed_dict_null_filtering_variants())

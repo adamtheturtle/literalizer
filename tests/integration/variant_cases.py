@@ -343,6 +343,8 @@ def language_supports_capability(
 ) -> bool:
     """Return whether *lang_cls* provides the named capability."""
     match capability:
+        case "collection_comments":
+            return make_spec(lang_cls=lang_cls).supports_collection_comments
         case "empty_sibling_sequence_type_hints":
             return lang_cls.supports_empty_sibling_sequence_type_hints
         case "special_floats":
