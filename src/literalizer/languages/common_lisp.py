@@ -3,8 +3,9 @@
 import dataclasses
 import datetime
 import enum
+import math
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -81,6 +82,19 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
+
+
+@beartype
+def _format_common_lisp_float(
+    value: float, /, *, base: Callable[[float], str]
+) -> str:
+    """Mark finite literals as double-floats independently of reader state."""
+    formatted = base(value)
+    if not math.isfinite(value):
+        return formatted
+    if "e" in formatted.lower():
+        return formatted.replace("e", "d").replace("E", "d")
+    return f"{formatted}d0"
 
 
 @beartype
@@ -755,7 +769,7 @@ class CommonLisp(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return partial(_format_common_lisp_float, base=self.float_format)
 
     @cached_property
     def comment_config(self) -> CommentConfig:
