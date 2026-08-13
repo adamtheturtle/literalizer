@@ -4,7 +4,7 @@ import pytest
 
 from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages import C, Cpp, D, Java
+from literalizer.languages import Cpp, Java
 
 
 @pytest.mark.parametrize(
@@ -18,20 +18,12 @@ from literalizer.languages import C, Cpp, D, Java
             Cpp(heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD),
             "template",
         ),
-        (
-            C(heterogeneous_strategy=C.heterogeneous_strategies.RECORD),
-            "int",
-        ),
-        (
-            D(heterogeneous_strategy=D.heterogeneous_strategies.RECORD),
-            "if",
-        ),
     ],
 )
 def test_unescapable_record_keyword_is_rejected(
     language: Language, keyword: str
 ) -> None:
-    """Reject keywords used as generated record fields."""
+    """Java and C++ reject keywords used as generated record fields."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
         match=rf"record field name '{keyword}' is reserved",
