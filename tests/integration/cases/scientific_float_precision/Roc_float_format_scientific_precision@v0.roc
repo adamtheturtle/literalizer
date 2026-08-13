@@ -8,5 +8,5 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("pi", RFloat 3.141592653589793),
+    ("value", RFloat 1.2345678901234567),
     ]

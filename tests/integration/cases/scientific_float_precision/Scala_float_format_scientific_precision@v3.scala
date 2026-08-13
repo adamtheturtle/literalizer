@@ -1,5 +1,5 @@
 object Fixture_scientific_float_precision_Scala_float_format_scientific_precision {
 val my_data = Map[String, Double](
-    "pi" -> 3.141592653589793,
+    "value" -> 1.2345678901234567,
 )
 }

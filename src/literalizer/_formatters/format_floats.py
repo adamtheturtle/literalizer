@@ -92,9 +92,7 @@ def format_float_scientific(value: float) -> str:
     mantissa, exponent_part = raw.split(sep="e")
     # Strip trailing zeros but keep at least one decimal digit.
     mantissa = mantissa.rstrip("0")
-    if mantissa in {"", "-"}:
-        mantissa += "0.0"
-    elif "." not in mantissa:
+    if "." not in mantissa:
         mantissa += ".0"
     elif mantissa.endswith("."):
         mantissa += "0"

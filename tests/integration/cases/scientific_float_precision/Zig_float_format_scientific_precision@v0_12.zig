@@ -12,7 +12,7 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
-        .{ .key = "pi", .val = .{ .float = 3.141592653589793 } },
+        .{ .key = "value", .val = .{ .float = 1.2345678901234567 } },
     }};
     _ = my_data;
 }

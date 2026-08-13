@@ -5,7 +5,7 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("pi", GFloat(3.141592653589793)),
+    #("value", GFloat(1.2345678901234567)),
   ])
   let _ = my_data
 }

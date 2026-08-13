@@ -13,7 +13,7 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("pi", 3.141592653589793)
+    ("value", 1.2345678901234567)
     ]
 main :: IO ()
 main = seq my_data (return ())

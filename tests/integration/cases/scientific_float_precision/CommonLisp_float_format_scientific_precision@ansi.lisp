@@ -1,3 +1,3 @@
 (defparameter *my_data* (list
-    (cons "pi" 3.141592653589793)
+    (cons "value" 1.2345678901234567)
 ))

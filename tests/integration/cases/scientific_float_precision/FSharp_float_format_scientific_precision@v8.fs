@@ -5,5 +5,5 @@ type Val =
     | FStr of string
     | FMap of (string * Val) list
 let my_data: Val = FMap [
-    ("pi", FFloat 3.141592653589793)
+    ("value", FFloat 1.2345678901234567)
 ]

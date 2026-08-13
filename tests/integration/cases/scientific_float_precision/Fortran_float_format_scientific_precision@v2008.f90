@@ -85,6 +85,6 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('pi', freal(3.141592653589793_real64)) &
+        fentry('value', freal(1.2345678901234567_real64)) &
     ])
 end program main

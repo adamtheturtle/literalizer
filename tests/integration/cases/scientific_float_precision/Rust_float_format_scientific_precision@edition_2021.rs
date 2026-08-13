@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 fn main() {
     let my_data = HashMap::from([
-        ("pi", 3.141592653589793),
+        ("value", 1.2345678901234567),
     ]);
     let _ = my_data;
 }

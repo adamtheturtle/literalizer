@@ -9,5 +9,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("pi", EFloat 3.141592653589793)
+    ("value", EFloat 1.2345678901234567)
     ]

@@ -2,7 +2,7 @@ package main
 
 func main() {
 my_data := map[string]float64{
-	"pi": 3.141592653589793,
+	"value": 1.2345678901234567,
 }
 _ = my_data
 }

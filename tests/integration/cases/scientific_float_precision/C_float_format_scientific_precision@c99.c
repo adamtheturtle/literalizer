@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"pi", ((CVal){.f = 3.141592653589793})},
+    {"value", ((CVal){.f = 1.2345678901234567})},
 }});
     (void)my_data;
     return 0;

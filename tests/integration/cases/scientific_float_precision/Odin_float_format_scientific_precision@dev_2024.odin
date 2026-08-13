@@ -3,7 +3,7 @@ package main
 
 main :: proc() {
 my_data := map[string]any{
-	"pi" = 3.141592653589793,
+	"value" = 1.2345678901234567,
 }
 _ = my_data
 }

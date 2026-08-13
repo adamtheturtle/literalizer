@@ -1,3 +1,3 @@
 val my_data = mapOf<String, Double>(
-    "pi" to 3.141592653589793,
+    "value" to 1.2345678901234567,
 )

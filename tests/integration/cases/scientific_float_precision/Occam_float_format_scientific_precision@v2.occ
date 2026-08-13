@@ -13,7 +13,7 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "pi"; MOBILE LIT(lit.float; 3.141592653589793(REAL64)))
+        MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.float; 1.2345678901234567(REAL64)))
     ]):
     SEQ
         SKIP
