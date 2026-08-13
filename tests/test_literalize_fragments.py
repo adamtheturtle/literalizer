@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from literalizer import (
     CollectionLayout,
     InputFormat,
@@ -76,6 +78,29 @@ def test_ref_markers_are_opt_in() -> None:
         variable_form=variable_form,
         ref_key="$ref",
     ).code == ('my_data = {\n    "value": foo,\n}')
+
+
+@pytest.mark.parametrize(
+    ("source", "input_format"),
+    [
+        ('{"\\u0024ref": "existing"}', InputFormat.JSON),
+        ('{"\\u0024ref": "existing"}', InputFormat.JSON5),
+        ('"\\x24ref": "existing"\n', InputFormat.YAML),
+    ],
+)
+def test_escaped_ref_marker_keys_are_detected(
+    source: str,
+    input_format: InputFormat,
+) -> None:
+    """Escape spelling does not hide a structurally parsed ref marker."""
+    result = literalize(
+        source=source,
+        input_format=input_format,
+        language=Python(),
+        ref_key="$ref",
+    )
+
+    assert result.code == "existing"
 
 
 def test_ref_markers_preserve_multiline_collection_openers() -> None:
