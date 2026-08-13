@@ -1532,22 +1532,14 @@ jobs:
       # Groovy ``>= V4``.
       - name: Install Groovy
         run: |-
-          # ``archive.apache.org`` serves this retired distribution too
-          # slowly for hosted runners. Use a live Apache mirror first and
-          # retain the canonical archive as curl's fallback URL.
-          if ! curl --fail --show-error --silent --location \
+          # This pinned release has moved off the live mirrors, so fetch it
+          # from Apache's canonical archive. Third-party mirrors do not
+          # consistently preserve retired distribution paths.
+          curl --fail --show-error --silent --location \
             --retry 5 --retry-all-errors --retry-max-time 600 \
-            --connect-timeout 15 --max-time 300 \
-            --speed-limit 10240 --speed-time 30 \
-            https://repo.huaweicloud.com/apache/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
-            --output /tmp/groovy.zip; then
-            curl --fail --show-error --silent --location \
-              --retry 5 --retry-all-errors --retry-max-time 600 \
-              --connect-timeout 15 --max-time 300 \
-              --speed-limit 10240 --speed-time 30 \
-              https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
-              --output /tmp/groovy.zip
-          fi
+            --connect-timeout 15 --max-time 600 \
+            https://archive.apache.org/dist/groovy/4.0.32/distribution/apache-groovy-binary-4.0.32.zip \
+            --output /tmp/groovy.zip
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 

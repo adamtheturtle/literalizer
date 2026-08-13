@@ -3,14 +3,14 @@ class Main {
 var my_data = new String[]{
     """
 first line
-  indented
+\s\sindented
 
 last line""",
     """
 
 leading newline""",
     """
- \t
+\s\t
 leading whitespace""",
     """
 trailing newline

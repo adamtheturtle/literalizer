@@ -39,6 +39,7 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
 type RecordVariantName = Literal[
+    "empty_dict_field",
     "unify_optional_fields",
     "nonrecord_dict_field",
     "keyword_field",
