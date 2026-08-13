@@ -200,6 +200,38 @@ def _resolve_single_type(
 
 
 @beartype
+def _unify_element_types(
+    element_types: set[type | ListType],
+) -> type | ListType | None:
+    """Unify compatible scalar or recursively nested list types."""
+    if all(isinstance(item, ListType) for item in element_types):
+        inner_types: set[type | ListType] = set()
+        for item in element_types:
+            if not isinstance(item, ListType):  # pragma: no cover
+                return None
+            inner = item.inner
+            if not isinstance(inner, (type, ListType)):
+                return None
+            inner_types.add(inner)
+        unified_inner = _unify_element_types(element_types=inner_types)
+        return (
+            ListType(inner=unified_inner)
+            if unified_inner is not None
+            else None
+        )
+    numeric_types = {int, float, WideInt, BeyondI64, MixedNumeric}
+    result: type | None = None
+    if element_types <= numeric_types:
+        if float in element_types or MixedNumeric in element_types:
+            result = MixedNumeric
+        elif BeyondI64 in element_types:
+            result = BeyondI64
+        elif WideInt in element_types:  # pragma: no branch
+            result = WideInt
+    return result
+
+
+@beartype
 def infer_element_type(
     items: list[Value],
 ) -> type | ListType | DictType | None:
@@ -222,9 +254,7 @@ def infer_element_type(
             items=items,
             all_dict_values=collected.dict_values,
         )
-    if element_types == {int, float}:
-        return MixedNumeric
-    return None
+    return _unify_element_types(element_types=element_types)
 
 
 @dataclass(frozen=True)

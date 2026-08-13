@@ -61,6 +61,7 @@ from literalizer._formatters.record_strategy import (
 from literalizer._formatters.type_inference import (
     BeyondI64,
     WideInt,
+    infer_element_type,
     int_widening_tier,
     record_shape_for_dict,
 )
@@ -111,7 +112,6 @@ from literalizer._language import (
     no_data_preamble,
     no_empty_container_literal_overrides,
     no_format_integer_beyond_i64,
-    no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
@@ -977,7 +977,6 @@ class Nim(metaclass=LanguageCls):
               e.g. ``"2024-01-15T12:30:00"``.
     """
 
-    format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
@@ -1867,6 +1866,8 @@ class Nim(metaclass=LanguageCls):
             case list():
                 if not value:
                     return "seq[string]"
+                if infer_element_type(items=value) is WideInt:
+                    return "seq[int64]"
                 return f"seq[{self._nim_value_field_type(value[0])}]"
             case _:
                 msg = (
@@ -2317,6 +2318,14 @@ class Nim(metaclass=LanguageCls):
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
+
+    @cached_property
+    def format_integer_widened(self) -> Callable[[int], str]:
+        """Format every integer as an explicitly typed ``int64``."""
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        return lambda value: f"{base(value)}'i64"
 
     @cached_property
     def comment_config(self) -> CommentConfig:

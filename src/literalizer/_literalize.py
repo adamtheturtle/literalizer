@@ -389,6 +389,84 @@ def _widened_int_formatter(
     return None
 
 
+@beartype
+def _sibling_list_groups(data: Value) -> list[list[list[Value]]]:
+    """Return direct sibling-list families belonging to *data*."""
+    if isinstance(data, dict):
+        return [[value for value in data.values() if isinstance(value, list)]]
+    if not isinstance(data, list):
+        return []
+    groups = [[value for value in data if isinstance(value, list)]]
+    dicts: list[dict[Scalar, Value]] = [
+        value for value in data if isinstance(value, dict)
+    ]
+    keys = {key for value in dicts for key in value}
+    for key in keys:
+        group: list[list[Value]] = []
+        for value in dicts:
+            candidate = value.get(key)
+            if isinstance(candidate, list):
+                group.append(candidate)
+        groups.append(group)
+    return groups
+
+
+@beartype
+def _record_list_int_formatter(
+    *,
+    lists: list[list[Value]],
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+) -> None:
+    """Give compatible sibling lists one pooled integer width."""
+    minimum_siblings = 2
+    if len(lists) < minimum_siblings:
+        return
+    formatter = _widened_int_formatter(
+        items=[item for values in lists for item in values],
+        spec=spec,
+    )
+    if formatter is not None:
+        out.update({id(values): formatter for values in lists})
+
+
+@beartype
+def _accumulate_list_int_formatters(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+) -> None:
+    """Record widened integer formatters below *data*."""
+    for group in _sibling_list_groups(data=data):
+        _record_list_int_formatter(lists=group, spec=spec, out=out)
+    children: Sequence[Value]
+    match data:
+        case dict():
+            children = list(data.values())
+        case list() | set():
+            children = list(data)
+        case _:
+            return
+    for value in children:
+        _accumulate_list_int_formatters(data=value, spec=spec, out=out)
+
+
+@beartype
+def _collect_list_int_formatters(
+    *, data: Value, spec: Language
+) -> dict[int, Callable[[int], str]]:
+    """Return widened integer formatters for sibling inner lists."""
+    if (
+        spec.format_integer_beyond_i64 is None
+        and spec.format_integer_widened is None
+    ):
+        return {}
+    out: dict[int, Callable[[int], str]] = {}
+    _accumulate_list_int_formatters(data=data, spec=spec, out=out)
+    return out
+
+
 _SCALAR_TYPES: Final = (
     str,
     int,
@@ -411,6 +489,7 @@ class _RenderContext:
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
     empty_container_overrides: Mapping[int, str]
+    list_int_formatters: Mapping[int, Callable[[int], str]]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
     expand_refs: bool
@@ -435,6 +514,7 @@ class _RenderContext:
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
             empty_container_overrides=self.empty_container_overrides,
+            list_int_formatters=self.list_int_formatters,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -465,6 +545,7 @@ class _RenderContext:
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
             empty_container_overrides=self.empty_container_overrides,
+            list_int_formatters=self.list_int_formatters,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -488,6 +569,7 @@ class _RenderContext:
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
             empty_container_overrides=self.empty_container_overrides,
+            list_int_formatters=self.list_int_formatters,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
             expand_refs=self.expand_refs,
@@ -1627,7 +1709,9 @@ def _format_list_value(
         spec=spec,
     )
     parent_id = id(value)
-    int_formatter = _widened_int_formatter(items=value, spec=spec)
+    int_formatter = ctx.list_int_formatters.get(
+        id(value)
+    ) or _widened_int_formatter(items=value, spec=spec)
     items = [
         spec.format_sequence_entry(
             v,
@@ -2180,10 +2264,9 @@ def _format_collection_lines(
                 items=list_data,
                 spec=spec,
             )
-            list_int_formatter = _widened_int_formatter(
-                items=list_data,
-                spec=spec,
-            )
+            list_int_formatter = ctx.list_int_formatters.get(
+                id(list_data)
+            ) or _widened_int_formatter(items=list_data, spec=spec)
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
@@ -2390,6 +2473,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             data=data, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(
+            data=data, spec=language
+        ),
+        list_int_formatters=_collect_list_int_formatters(
             data=data, spec=language
         ),
         ref_case=ref_case,
@@ -3761,6 +3847,9 @@ def _format_single_call_arg(
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
         ),
+        list_int_formatters=_collect_list_int_formatters(
+            data=value, spec=language
+        ),
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=True,
@@ -5040,6 +5129,9 @@ def _render_zip_literal(
             data=value, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(
+            data=value, spec=language
+        ),
+        list_int_formatters=_collect_list_int_formatters(
             data=value, spec=language
         ),
         ref_case=None,

@@ -600,6 +600,17 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.nested_list_integer_widening]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_list_integer_widening"
+gates = [
+  { kind = "metadata_field", field = "nested_list_widening", value = "integer_width" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"
