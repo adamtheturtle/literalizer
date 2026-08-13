@@ -10,24 +10,24 @@ int main() {
 auto my_data = std::vector{
     Record0{
         .name = "test_1",
-        .input = std::map<std::string, LiteralizerRecordValue>{
+        .input = {
             {"type", LiteralizerRecordValue{"create"}},
             {"pr_id", LiteralizerRecordValue{"pr_1"}},
             {"draft", LiteralizerRecordValue{true}},
             {"missing", LiteralizerRecordValue{nullptr}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
+        .expected = {
             {"pr_id", LiteralizerRecordValue{"pr_1"}},
             {"status", LiteralizerRecordValue{"draft"}},
         },
     },
     Record0{
         .name = "test_2",
-        .input = std::map<std::string, LiteralizerRecordValue>{
+        .input = {
             {"type", LiteralizerRecordValue{"publish"}},
             {"pr_id", LiteralizerRecordValue{"pr_1"}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
+        .expected = {
             {"error", LiteralizerRecordValue{"invalid_operation"}},
         },
     },

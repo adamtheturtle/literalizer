@@ -1,6 +1,6 @@
 * my_data
-@code json
+@code javascript
 {
-    "key": "it's here"  % a comment%
+    "key": "it's here"  // a comment
 }
 @end

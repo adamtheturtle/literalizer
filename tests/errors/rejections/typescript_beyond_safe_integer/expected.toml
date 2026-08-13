@@ -1,6 +1,8 @@
 # languages rejecting: 2; languages accepting: 0
 
 [UnrepresentableIntegerError]
+"JavaScript['9007199254740992']" = "JavaScript cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
+"JavaScript['-9007199254740992']" = "JavaScript cannot represent integer -9007199254740992 without external arbitrary-precision integer support."
 "TypeScript['9007199254740992']" = "TypeScript cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
 "TypeScript['-9007199254740992']" = "TypeScript cannot represent integer -9007199254740992 without external arbitrary-precision integer support."
 "Wren['9007199254740992']" = "Wren cannot represent integer 9007199254740992 without external arbitrary-precision integer support."

@@ -2,6 +2,7 @@
 
 import base64
 import enum
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -309,7 +310,12 @@ def _format_dict_entry_symbol_style(
 ) -> str:
     """Format a dict entry in symbol style."""
     formatted = format_value(raw_value, formatted_value)
-    return f"{strip_key_quotes(key=key)}: {formatted}"
+    identifier_key = re.fullmatch(
+        pattern=r"""(["'])([A-Za-z_][A-Za-z0-9_]*[!?]?)\1""",
+        string=key,
+    )
+    label = identifier_key.group(2) if identifier_key else key
+    return f"{label}: {formatted}"
 
 
 @beartype
@@ -320,8 +326,9 @@ def dict_entry_symbol_style(
     r"""Return a ``format_dict_entry`` callable that formats entries in
     Ruby symbol style: ``key: value``.
 
-    The key is expected to be a quoted string (e.g. ``"name"``); the
-    surrounding quotes are stripped so the result is ``name: value``.
+    Identifier-shaped quoted keys lose their surrounding quotes, producing
+    ``name: value``. Other keys keep their quotes, producing Ruby's quoted
+    label syntax such as ``"a-b": value``.
 
     *format_value* is applied to the raw value and formatted string
     before embedding.
