@@ -517,9 +517,10 @@ def literalize_yaml_collection(
         body_lines = all_lines
 
     _empty = ElementComments(before=(), inline="")
-    padded = ctx.element_comments + (_empty,) * (
-        len(body_lines) - len(ctx.element_comments)
-    )
+    padded = (
+        ctx.element_comments
+        + (_empty,) * (len(body_lines) - len(ctx.element_comments))
+    )[: len(body_lines)]
 
     result: list[str] = []
     for body_line, element_comment in zip(body_lines, padded, strict=True):
