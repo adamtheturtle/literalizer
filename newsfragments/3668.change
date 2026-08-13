@@ -1,1 +1,0 @@
-Quote Scala keywords used as ``RECORD`` case-class field names so the generated declarations and constructor calls compile.
