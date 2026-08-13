@@ -3819,7 +3819,7 @@ def _format_prefix_call_args(
 
 
 @beartype
-def _format_call_args(
+def _format_call_args(  # pylint: disable=too-complex
     *,
     values: Sequence[Value],
     params: Sequence[str],
