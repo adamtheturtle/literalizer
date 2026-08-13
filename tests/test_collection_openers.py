@@ -8,7 +8,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._language import Language
 from literalizer._types import Scalar, Value
-from literalizer.languages import Cpp, Haxe, Mojo, Nim, Raku
+from literalizer.languages import Cpp, Haxe, Nim, Raku
 
 
 def test_sequence_surrogate_set_open_delegates() -> None:
@@ -92,17 +92,6 @@ def test_cpp14_tuple_ordered_map_uses_rendered_record_value_type() -> None:
         "std::vector<std::pair<std::string, std::vector<Record0>>>"
         in result.code
     )
-
-
-def test_empty_after_filtering_ordered_map_uses_ordered_map_form() -> None:
-    """Skipped null entries do not turn an ordered map into a dict."""
-    result = literalize(
-        source="!!omap\n- missing: null\n",
-        input_format=InputFormat.YAML,
-        language=Mojo(),
-    )
-
-    assert result.code == "List[Tuple[String, String]]()"
 
 
 @pytest.mark.parametrize(

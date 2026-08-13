@@ -403,13 +403,18 @@ def build_variant_cases() -> list[VariantCase]:
     expansions for variable forms, modifiers, and pre-indent coverage.
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
+    manifests = load_case_manifests(cases_dir=_CASES_DIR)
+    languages_by_case = {
+        manifest.case_dir.name: manifest.languages for manifest in manifests
+    }
     entries = [
         (manifest.case_dir.name, manifest_variant)
-        for manifest in load_case_manifests(cases_dir=_CASES_DIR)
+        for manifest in manifests
         for manifest_variant in manifest.variants
     ]
     cases: list[VariantCase] = []
     for case_dir_name, manifest_variant in entries:
+        languages = languages_by_case[case_dir_name]
         if manifest_variant.axis in SPECIAL_VARIANT_AXES:
             continue
         variants = variants_for_axis(axis_key=manifest_variant.axis)
@@ -425,6 +430,7 @@ def build_variant_cases() -> list[VariantCase]:
                 variant=variant,
             )
             for variant in variants
+            if not languages or variant.lang_cls.__name__ in languages
             if all(
                 language_supports_capability(
                     lang_cls=variant.lang_cls,
