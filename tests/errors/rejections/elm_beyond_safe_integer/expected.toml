@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Elm['9007199254740992']" = "Elm cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
+"Elm['-9007199254740992']" = "Elm cannot represent integer -9007199254740992 without external arbitrary-precision integer support."

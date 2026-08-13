@@ -239,6 +239,7 @@ _SPEC_FIELDS = frozenset(
         "empty_dict_key",
         "json_rendering",
         "json_type",
+        "record_map_value_typing",
         "union_format",
     }
 )
