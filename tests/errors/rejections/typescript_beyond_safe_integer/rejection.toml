@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+JavaScript number precision tops out at 2**53 - 1 in either direction,
+so an integer just past that range is refused rather than silently
+rounded (#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["TypeScript"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740992", "-9007199254740992"]
+input_format = "json"

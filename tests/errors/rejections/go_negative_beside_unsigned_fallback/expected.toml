@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+Go = "Go cannot represent negative integer -5 below the signed 64-bit range using an unsigned fallback."

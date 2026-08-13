@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Rust['170141183460469231731687303715884105728']" = "Rust cannot represent integer 170141183460469231731687303715884105728 without external arbitrary-precision integer support."
+"Rust['-170141183460469231731687303715884105729']" = "Rust cannot represent integer -170141183460469231731687303715884105729 without external arbitrary-precision integer support."

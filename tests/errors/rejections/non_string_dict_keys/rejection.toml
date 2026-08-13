@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+YAML preserves native key types, so an int, date, or bool mapping key
+reaches a language whose keys are string-only syntax (JSON-family
+targets) or whose typed-map output would disagree with the literal;
+those languages refuse the key rather than coerce it to a string.
+"""
+exceptions = ["UnrepresentableInputError"]
+gates = [
+  { kind = "capability_flag", flag = "rejects_non_string_dict_keys" },
+]
+
+[call]
+api = "literalize"
+sources = ["1: one\n2: two\n", "2024-01-01: new_year\n", "true: yes\nfalse: no\n"]
+input_format = "yaml"

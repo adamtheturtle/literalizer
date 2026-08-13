@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+The unsigned 64-bit fallback covers values above the signed range, but
+a negative below the signed 64-bit minimum fits neither type, so it is
+refused (#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cpp", "D"]
+
+[call]
+api = "literalize"
+sources = ["-9223372036854775809"]
+input_format = "json"

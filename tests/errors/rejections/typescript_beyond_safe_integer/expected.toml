@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"TypeScript['9007199254740992']" = "TypeScript cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
+"TypeScript['-9007199254740992']" = "TypeScript cannot represent integer -9007199254740992 without external arbitrary-precision integer support."

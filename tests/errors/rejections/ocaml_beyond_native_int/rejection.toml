@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+OCaml reserves one bit of its 64-bit word for runtime tagging, so a
+native int holds at most 2**62 - 1 and a value of 2**62 is refused
+(#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["OCaml"]
+
+[call]
+api = "literalize"
+sources = ["4611686018427387904"]
+input_format = "json"

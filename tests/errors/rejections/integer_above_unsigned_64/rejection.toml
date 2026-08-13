@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+These targets' widest native integer literal is unsigned 64-bit, so a
+value of 2**64 is refused -- alone and as a collection element --
+rather than emitted into a literal the target compiler would truncate
+or reject (#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cpp", "D", "Go", "V", "Zig"]
+
+[call]
+api = "literalize"
+sources = ["18446744073709551616", "[18446744073709551616]"]
+input_format = "json"

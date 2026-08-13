@@ -1,0 +1,25 @@
+schema_version = 1
+summary = """
+A dict whose keys span multiple type families (int and str, or bool
+and int) has no single key type for a homogeneous-keyed target, so the
+dict is rejected wherever it sits: at the root, nested in a list, in a
+dict value, past a homogeneous first element, or past a set sibling.
+"""
+exceptions = [
+  "MixedDictKeysError",
+  "MixedDictShapesError",
+  "UnrepresentableInputError",
+]
+languages = ["Dhall", "Mojo", "Nim", "Rust", "V"]
+
+[call]
+api = "literalize"
+sources = [
+  "1: a\nx: b\n",
+  "true: a\n2: b\n",
+  "- 1: a\n  x: b\n",
+  "outer:\n  1: a\n  x: b\n",
+  "- foo: string\n- 1: a\n  x: b\n",
+  "- !!set\n  ? 1\n  ? 2\n- 1: a\n  x: b\n",
+]
+input_format = "yaml"
