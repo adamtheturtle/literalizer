@@ -502,6 +502,12 @@ class Scala(metaclass=LanguageCls):
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False
+    # The fixture lint compiles every fixture in one ``scala-cli``
+    # invocation, so the ``RECORD`` strategy's generated ``case class``
+    # declarations must live inside the per-fixture ``object`` rather
+    # than at file scope, where a ``case class Record0`` would collide
+    # across cases.
+    wraps_data_dependent_preamble_in_body = True
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1475,13 +1481,19 @@ class Scala(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        The ``RECORD`` strategy's ``case class`` declarations are not
-        emitted here (file scope): Scala compiles every fixture
-        together, so a file-scope ``case class Record0`` would collide
-        across cases.  They are emitted into the per-fixture ``object``
-        body instead; see :attr:`compute_body_preamble`.
+        Under ``HeterogeneousStrategies.RECORD`` this emits one
+        ``case class`` declaration per record shape present in the
+        data, so unwrapped results carry the declarations in
+        :attr:`~literalizer.LiteralizeResult.preamble` like every other
+        ``RECORD``-capable language (issue #3615).  File wrapping still
+        places them inside the per-fixture ``object`` via
+        :attr:`wraps_data_dependent_preamble_in_body`.  When
+        :attr:`json_type` is active the data flows through Circe
+        ``Json`` instead of typed records, so nothing is emitted.
         """
-        return no_data_preamble
+        if self._json_type_active:
+            return no_data_preamble
+        return self._record_strategy.preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -1890,44 +1902,11 @@ class Scala(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map, prefixed
-        with the ``RECORD`` strategy's generated ``case class``
-        declarations.
-
-        Scala compiles every fixture in one invocation, so a
-        file-scope ``case class Record0`` would collide across cases.
-        Emitting the declarations into the body preamble (which
-        :meth:`wrap_in_file` places inside the per-fixture ``object``,
-        ahead of the value) scopes each ``RecordN`` to its own fixture;
-        the declarations precede the scalar body lines so a record type
-        is in scope before its literal.
-        """
-        scalar_body = body_preamble_from_scalars(
+        """Compute body-preamble lines from the scalar map."""
+        return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
         )
-        if self._json_type_active:
-
-            def _compute_circe(
-                types: frozenset[type],
-                data: Value,
-                /,
-            ) -> tuple[str, ...]:
-                """Skip ``case class`` lines under Circe ``Json``."""
-                return scalar_body(types, data)
-
-            return _compute_circe
-        record_preamble = self._record_strategy.preamble
-
-        def _compute(
-            types: frozenset[type],
-            data: Value,
-            /,
-        ) -> tuple[str, ...]:
-            """Record ``case class`` lines precede scalar body lines."""
-            return record_preamble(data) + scalar_body(types, data)
-
-        return _compute
 
     @cached_property
     def call_style_config(self) -> CallStyle:
