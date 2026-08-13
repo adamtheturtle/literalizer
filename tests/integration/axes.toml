@@ -905,6 +905,7 @@ plan = "fixed_overrides"
 name_template = "{lang}_datetime_epoch_far_future"
 gates = [
   { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member_present", option = "language_version", member = "PY39" },
 ]
 overrides = [
   { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
