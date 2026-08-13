@@ -853,6 +853,7 @@ class Cobol(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".cob"
     pygments_name = "cobol"
+    stringifies_nested_collections = False
     supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False

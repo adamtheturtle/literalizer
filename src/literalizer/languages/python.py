@@ -900,6 +900,7 @@ class Python(metaclass=LanguageCls):
 
     extension = ".py"
     pygments_name = "python"
+    stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True

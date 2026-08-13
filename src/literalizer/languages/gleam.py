@@ -709,6 +709,7 @@ class Gleam(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".gleam"
     pygments_name = "gleam"
+    stringifies_nested_collections = False
     supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False

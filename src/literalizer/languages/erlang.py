@@ -319,6 +319,7 @@ class Erlang(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".erl"
     pygments_name = "erlang"
+    stringifies_nested_collections = False
     supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False

@@ -650,6 +650,7 @@ class Roc(metaclass=LanguageCls):
     record_shape_names_emit_declarations = False
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
+    stringifies_nested_collections = False
     supports_special_floats = True
 
     class DateFormats(enum.Enum):
