@@ -59,3 +59,22 @@ def test_literalize_json_rejects_duplicate_keys(source: str) -> None:
             input_format=InputFormat.JSON,
             language=PYTHON,
         )
+
+
+@pytest.mark.parametrize(
+    argnames="constant",
+    argvalues=["NaN", "Infinity", "-Infinity"],
+)
+def test_literalize_json_rejects_nonstandard_constants(
+    constant: str,
+) -> None:
+    """Strict JSON rejects Python's non-standard numeric constants."""
+    with pytest.raises(
+        expected_exception=JSONParseError,
+        match=f"Invalid JSON constant: {constant}",
+    ):
+        literalize(
+            source=f"[{constant}]",
+            input_format=InputFormat.JSON,
+            language=PYTHON,
+        )

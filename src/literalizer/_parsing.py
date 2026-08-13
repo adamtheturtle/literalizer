@@ -295,6 +295,17 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             assert_never(unreachable)
 
 
+class _InvalidJSONConstantError(ValueError):
+    """Raised when strict JSON contains NaN or infinity."""
+
+
+@beartype
+def _reject_json_constant(value: str) -> Value:
+    """Reject Python's non-standard JSON numeric constants."""
+    msg = f"Invalid JSON constant: {value}"
+    raise _InvalidJSONConstantError(msg)
+
+
 @beartype
 def _parse_json(*, source: str) -> ParsedInput:
     """Parse a JSON string into a ``ParsedInput``."""
@@ -302,8 +313,12 @@ def _parse_json(*, source: str) -> ParsedInput:
         data = json.loads(
             s=source,
             object_pairs_hook=_json_object_without_duplicate_keys,
+            parse_constant=_reject_json_constant,
         )
     except _DuplicateJSONKeyError as exc:
+        message = f"Invalid JSON: {exc}"
+        raise JSONParseError(message) from exc
+    except _InvalidJSONConstantError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except json.JSONDecodeError as exc:
