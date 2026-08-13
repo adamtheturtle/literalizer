@@ -33,7 +33,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    I64_MIN,
+    format_integer_hex,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_single_nul_hex,
     make_backslash_string_formatter,
@@ -57,6 +60,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -242,7 +246,13 @@ class Lua(metaclass=LanguageCls):
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "lua"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
-        round_trip_capabilities=frozenset(),
+        round_trip_capabilities=frozenset(
+            {
+                RoundTripCapability.I64_BOUNDARIES,
+                RoundTripCapability.INTERPOLATION_STRINGS,
+                RoundTripCapability.EMBEDDED_NUL,
+            }
+        ),
         modifier_sequence_format_overrides={},
         string_literals_escape_null_byte=True,
         supports_ref_elements_in_tuple_strategy=False,
@@ -796,8 +806,18 @@ class Lua(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format
+        """Callable that formats an int value as a literal.
+
+        The signed 64-bit minimum needs the ``math.mininteger``
+        constant: Lua parses ``-9223372036854775808`` as unary minus on
+        a decimal numeral that overflows the integer range, so the
+        operand converts to a float and the value silently loses
+        integer precision.
+        """
+        base = self.integer_format
+        return lambda value: (
+            "math.mininteger" if value == I64_MIN else base(value)
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:

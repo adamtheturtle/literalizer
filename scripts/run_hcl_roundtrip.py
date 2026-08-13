@@ -58,7 +58,10 @@ def _build_document(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the HCL backend."""
-    document = _build_document(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Hcl.variant_metadata.round_trip_capabilities,
+    )
+    document = _build_document(json_text=json_text)
     hcl2json = shutil.which(cmd="hcl2json") or "hcl2json"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         source_path = Path(tmpdir_name) / "main.hcl"
@@ -84,7 +87,7 @@ def main() -> None:
         label=_LABEL,
         produced_json=produced_json,
         exclude_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
     )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

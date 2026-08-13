@@ -104,7 +104,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Ada backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Ada.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     gprbuild = shutil.which(cmd="gprbuild") or "gprbuild"
     extras = {
         "a_stub.ads": _STUB_ADS_SRC.read_text(encoding="utf-8"),
@@ -126,7 +129,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files=extras,
     )
 

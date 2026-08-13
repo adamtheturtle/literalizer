@@ -1,7 +1,7 @@
 module Fixture_string_embedded_nul_Crystal_string_embedded_nul_multiline
 extend self
 my_data = {
-     %q|x| => "\x00",
-     %q|y| => "\x001",
+     %q|x| => "\u0000",
+     %q|y| => "\u00001",
 }
 end

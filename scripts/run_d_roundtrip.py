@@ -57,7 +57,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the D backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=D.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     dmd = shutil.which(cmd="dmd") or "dmd"
     roundtrip_common.execute(
         label=_LABEL,
@@ -74,7 +77,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 

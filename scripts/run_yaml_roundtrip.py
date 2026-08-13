@@ -45,7 +45,10 @@ def _build_document(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the YAML backend."""
-    document = _build_document(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Yaml.variant_metadata.round_trip_capabilities,
+    )
+    document = _build_document(json_text=json_text)
     parsed: dict[str, object] = yaml.safe_load(  # type: ignore[no-untyped-call]
         stream=document,
     )
@@ -54,7 +57,7 @@ def main() -> None:
         label=_LABEL,
         produced_json=produced_json,
         exclude_keys=(),
-        expected_json=None,
+        expected_json=json_text,
     )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
 

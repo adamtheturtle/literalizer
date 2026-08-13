@@ -62,7 +62,10 @@ def _build_program(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Kotlin backend."""
-    program = _build_program(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Kotlin.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_program(json_text=json_text)
     kotlin = shutil.which(cmd="kotlin") or "kotlin"
     # ``LITERALIZER_LINT_CLASSPATH`` is set by the ``lint-kotlin`` job
     # to ``/tmp/kotlinx-jars/*`` for the per-fixture compile host.  The
@@ -92,7 +95,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 

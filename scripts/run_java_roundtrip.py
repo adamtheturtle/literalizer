@@ -53,7 +53,10 @@ def _build_main(json_text: str) -> str:
 
 def main() -> None:
     """Round-trip the shared document through the Java backend."""
-    program = _build_main(json_text=roundtrip_common.read_input())
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Java.variant_metadata.round_trip_capabilities,
+    )
+    program = _build_main(json_text=json_text)
     javac = shutil.which(cmd="javac") or "javac"
     java = shutil.which(cmd="java") or "java"
     classpath = os.environ["LITERALIZER_LINT_CLASSPATH"] + os.pathsep + "."
@@ -72,7 +75,7 @@ def main() -> None:
             ),
         ],
         excluded_keys=(),
-        expected_json=None,
+        expected_json=json_text,
         extra_files=None,
     )
 
