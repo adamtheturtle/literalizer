@@ -536,6 +536,9 @@ def _run_call_with_declarations(
                     name=declaration_names[ref_name],
                     modifiers=frozenset(),
                 ),
+                collection_layout=literalizer.CollectionLayout(
+                    value=config.collection_layout,
+                ),
             )
             for ref_name, ref_source in config.ref_declarations.items()
         }

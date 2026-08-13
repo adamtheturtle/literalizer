@@ -6,7 +6,6 @@ target_function = "f"
 parameter_names = ["value"]
 per_element = false
 collection_layout = "multiline"
-wrap_in_file = true
 languages = ["Python"]
 
 [call.ref_declarations]
