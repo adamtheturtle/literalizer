@@ -23,6 +23,7 @@ from pydantic import (
 
 import literalizer
 from literalizer._types import ValueInput  # noqa: TC001
+from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input
 from .variant_axis_names import KNOWN_VARIANT_AXES
@@ -592,10 +593,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     def _validate_languages(self) -> None:
         """Reject unknown or repeated language selectors."""
-        known = {
-            lang_cls.__name__
-            for lang_cls in literalizer.languages.ALL_LANGUAGES
-        }
+        known = {lang_cls.__name__ for lang_cls in ALL_LANGUAGES}
         unknown = set(self.languages) - known
         if unknown:
             msg = f"unknown languages {sorted(unknown)!r}"
