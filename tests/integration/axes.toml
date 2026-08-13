@@ -904,6 +904,7 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_widened_i64_min"
 gates = [
+  { kind = "metadata_field", field = "language_id", value = "kotlin" },
   { kind = "enum_member_present", option = "language_version", member = "V1_9" },
 ]
 overrides = [
