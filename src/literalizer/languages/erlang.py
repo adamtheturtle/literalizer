@@ -98,7 +98,12 @@ from literalizer.exceptions import (
 
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", "\\x{0}")],
+    extra_replacements=[
+        ("\0", "\\x{0}"),
+        ("\x85", "\\x{85}"),
+        ("\u2028", "\\x{2028}"),
+        ("\u2029", "\\x{2029}"),
+    ],
 )
 
 

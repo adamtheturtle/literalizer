@@ -129,7 +129,12 @@ from literalizer.exceptions import (
 
 _format_string_backslash_nul = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", r"\0")],
+    extra_replacements=[
+        ("\0", r"\0"),
+        ("\x85", r"\u0085"),
+        ("\u2028", r"\u2028"),
+        ("\u2029", r"\u2029"),
+    ],
 )
 
 
@@ -140,7 +145,7 @@ def _format_string_verbatim(value: str) -> str:
     Backslashes are kept verbatim. Double quotes are doubled per C#
     verbatim-string rules.
     """
-    if "\0" in value:
+    if any(character in value for character in "\0\x85\u2028\u2029"):
         return _format_string_backslash_nul(value=value)
     escaped = value.replace('"', '""')
     return f'@"{escaped}"'
