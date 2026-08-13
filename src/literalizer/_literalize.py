@@ -2800,7 +2800,6 @@ def literalize_pre_form(
     )
     active_ref_key = _active_literalize_ref_key(
         source=source,
-        input_format=input_format,
         data=data,
         ref_key=ref_key,
     )
@@ -3388,7 +3387,6 @@ def _compose_bound_refs(
 def _active_literalize_ref_key(
     *,
     source: str,
-    input_format: InputFormat,
     data: Value,
     ref_key: str,
 ) -> str:
@@ -3397,10 +3395,9 @@ def _active_literalize_ref_key(
         ref_key != "$ref" and ref_key in source
     ):
         return ref_key
-    if (
-        input_format is InputFormat.JSON
-        and "\\" in source
-        and _contains_ref_marker(value=data, ref_key=ref_key)
+    if "\\" in source and _contains_ref_marker(
+        value=data,
+        ref_key=ref_key,
     ):
         return ref_key
     return _DISABLED_REF_KEY
