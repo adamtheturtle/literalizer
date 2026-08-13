@@ -105,7 +105,23 @@ def _needs_annotation(val: Value) -> bool:
 
 
 @beartype
-def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-complex,too-many-branches
+def _add_collection_type(*, val: Value, result: set[type]) -> None:
+    """Add the collection type named by a containing annotation."""
+    match val:
+        case OrderedMap():
+            result.add(OrderedMap)
+        case dict():
+            result.add(dict)
+        case set():
+            result.add(set)
+        case list():
+            result.add(list)
+        case _:
+            pass
+
+
+@beartype
+def _walk_annotated_collections(  # noqa: C901  # pylint: disable=too-complex
     *,
     val: Value,
     result: set[type],
@@ -117,11 +133,13 @@ def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-c
                 result.add(OrderedMap)
                 for v in val.values():
                     _walk_annotated_collections(val=v, result=result)
+                    _add_collection_type(val=v, result=result)
         case dict():
             if _needs_annotation(val=val):
                 result.add(dict)
                 for v in val.values():
                     _walk_annotated_collections(val=v, result=result)
+                    _add_collection_type(val=v, result=result)
         case set():
             if not val:
                 result.add(set)
@@ -130,17 +148,7 @@ def _walk_annotated_collections(  # noqa: C901, PLR0912  # pylint: disable=too-c
                 result.add(list)
                 for v in val:
                     _walk_annotated_collections(val=v, result=result)
-                    match v:
-                        case OrderedMap():
-                            result.add(OrderedMap)
-                        case dict():
-                            result.add(dict)
-                        case set():
-                            result.add(set)
-                        case list():
-                            result.add(list)
-                        case _:
-                            pass
+                    _add_collection_type(val=v, result=result)
         case _:
             pass
 
