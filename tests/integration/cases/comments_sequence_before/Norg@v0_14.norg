@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 [
-    % first%
+    // first
     "a",
-    % second%
+    // second
     "b"
 ]
 @end
