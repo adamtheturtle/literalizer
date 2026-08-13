@@ -14,7 +14,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -90,6 +89,30 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import InvalidDictKeyError
+
+
+@beartype
+def _format_datetime_r(value: datetime.datetime, /) -> str:
+    """Render a datetime with an explicit R parsing format.
+
+    R's default ``as.POSIXct`` formats accept the date prefix of an ISO
+    timestamp and silently discard the remaining time.  Use a space-separated
+    value and an explicit format; normalize aware values to UTC so ``%z`` is
+    portable and preserves the instant.
+    """
+    aware = value.utcoffset() is not None
+    if aware:
+        value = value.astimezone(datetime.UTC)
+    rendered = value.strftime("%Y-%m-%d %H:%M:%S")
+    if value.microsecond:
+        rendered += f".{value.microsecond:06d}"
+    if aware:
+        rendered += "+0000"
+    offset_format = "%z" if aware else ""
+    return (
+        f'as.POSIXct("{rendered}", '
+        f'format = "%Y-%m-%d %H:%M:%OS{offset_format}")'
+    )
 
 
 @beartype
@@ -284,9 +307,7 @@ class R(metaclass=LanguageCls):
         """Datetime formatting options for R."""
 
         R = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='as.POSIXct("{iso}")',
-            ),
+            formatter=_format_datetime_r,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )
