@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Complex YAML sequence mapping keys are rejected as parse errors."
+exceptions = ["YAMLParseError"]
+languages = ["Mojo"]
+
+[call]
+api = "literalize"
+sources = ["? [1, 2]\n: value\n", "# comment\n? [1, 2]\n: value\n"]
+input_format = "yaml"
