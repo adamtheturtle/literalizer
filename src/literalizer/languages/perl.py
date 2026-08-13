@@ -1073,6 +1073,8 @@ class Perl(metaclass=LanguageCls):
 
         def format_numeric_float(value: float) -> str:
             """Force Perl to retain the value's numeric identity."""
+            if value == 0.0 and math.copysign(1.0, value) < 0:
+                return formatter(value)
             if (
                 math.isfinite(value)
                 and abs(value) >= _PERL_NV_EXACT_INTEGER_MAX

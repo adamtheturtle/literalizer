@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "id": 1,
     "label": "She said \"hello\", then waved",
