@@ -1,5 +1,5 @@
 def main():
-    var my_data = Dict[String, String]()
+    var my_data = []
     _ = my_data
-    my_data = Dict[String, String]()
+    my_data = []
     _ = my_data

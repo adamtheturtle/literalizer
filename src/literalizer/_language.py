@@ -319,6 +319,11 @@ class OrderedMapFormatConfig:
     close: str
     preamble_lines: tuple[str, ...]
 
+    @property
+    def empty_ordered_map(self) -> str | None:
+        """Dedicated empty form, or ``None`` to use the dict fallback."""
+        return None
+
 
 @dataclasses.dataclass(frozen=True)
 class TrailingCommaConfig:
