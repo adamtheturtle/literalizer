@@ -1,6 +1,4 @@
-val myVar = mapOf<String, String>(
-    "_" to "_",
-)
-val my_data = mapOf<String, Map<String, String>>(
+val myVar = 1
+val my_data = mapOf<String, Int>(
     "key" to myVar,
 )

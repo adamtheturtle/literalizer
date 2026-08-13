@@ -1,7 +1,5 @@
 import json
-var myVar = %* {
-    "_": "_"
-}
+var myVar = %* 1
 var my_data = %* {
     "key": myVar
 }

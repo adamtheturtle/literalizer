@@ -1,8 +1,6 @@
 * my_var
 @code json
-{
-    "_": "_"
-}
+1
 @end
 * my_data
 @code json
