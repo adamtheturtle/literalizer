@@ -35,8 +35,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
-    I64_MAX,
-    I64_MIN,
     format_integer_hex,
 )
 from literalizer._formatters.format_json_value import format_json_value_text
@@ -263,7 +261,7 @@ def _apply_purescript_integer_formatter(
         if value < 0:
             return f"{prefix}Int ({formatted})"
         return f"{prefix}Int {formatted}"
-    if not I64_MIN <= value <= I64_MAX:
+    if not -(2**53) <= value <= 2**53:
         msg = (
             f"PureScript cannot represent integer {value} without "
             "external arbitrary-precision integer support."
