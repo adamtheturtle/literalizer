@@ -42,6 +42,7 @@ from literalizer.languages import (
     Cobol,
     Dhall,
     Elm,
+    Go,
     Haskell,
     Hcl,
     JavaScript,
@@ -209,6 +210,29 @@ def test_literalize_call_parameter_count_too_many_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["a", "b", "c"],
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("source", "expected", "got"),
+    argvalues=(("[[1, 2, 3]]", 1, 3), ("[[1]]", 2, 1)),
+)
+def test_literalize_call_parameter_count_mismatch_positional_style(
+    source: str,
+    expected: int,
+    got: int,
+) -> None:
+    """Positional styles enforce the same parameter-count contract."""
+    with pytest.raises(
+        expected_exception=ParameterCountMismatchError,
+        match=rf"^Expected {expected} parameters but got {got} values$",
+    ):
+        literalize_call(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Go(),
+            target_function="f",
+            parameter_names=[f"p{i}" for i in range(expected)],
         )
 
 

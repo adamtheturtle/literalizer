@@ -3887,6 +3887,10 @@ def _format_call_args(
             arg_separator=sep,
             parenthesize_each_arg=parenthesize_each_arg,
         ):
+            if len(params) != len(formatted):
+                raise ParameterCountMismatchError(
+                    expected=len(params), got=len(formatted)
+                )
             result = (
                 sep.join(f"({value})" for value in formatted)
                 if parenthesize_each_arg
