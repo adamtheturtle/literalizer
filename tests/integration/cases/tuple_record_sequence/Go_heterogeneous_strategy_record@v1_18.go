@@ -5,7 +5,7 @@ type Record0 struct {
 }
 
 func main() {
-my_data := []any{
+my_data := []Record0{
 	Record0{Call: "send", Args: []any{1, "email", "a@gmail.com", 100}},
 	Record0{Call: "recv", Args: []any{2, "sms", "b@example.com", 200}},
 }

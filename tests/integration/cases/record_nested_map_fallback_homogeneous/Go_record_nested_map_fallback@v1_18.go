@@ -10,7 +10,7 @@ type Record0 struct {
 }
 
 func main() {
-my_data := []any{
+my_data := []Record0{
 	Record0{Name: "test_1", Input: Record1{Kind: "create", PrId: "pr_1"}, Expected: map[string]string{"pr_id": "pr_1", "status": "draft"}},
 	Record0{Name: "test_2", Input: Record1{Kind: "publish", PrId: "pr_1"}, Expected: map[string]string{"error": "invalid_operation"}},
 }

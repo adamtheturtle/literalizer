@@ -3,7 +3,7 @@ record Record1(String kind, String pr_id) {}
 record Record0(String name, Record1 input, java.util.Map<String, Object> expected) {}
 class Main {
     public static void main() {
-var my_data = new Object[]{
+var my_data = new Record0[]{
     new Record0(
         "test_1",
         new Record1(
