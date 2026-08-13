@@ -13,6 +13,7 @@ from literalizer.languages import Bash, Tcl
     argvalues=[
         ("null", InputFormat.JSON),
         ('{"outer": [null]}', InputFormat.JSON),
+        ("? ~\n: 1\n", InputFormat.YAML),
         ("!!set\n? null\n", InputFormat.YAML),
     ],
 )

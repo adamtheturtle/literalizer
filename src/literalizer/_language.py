@@ -2731,7 +2731,8 @@ def reject_nulls(*, data: Value, language_name: str) -> None:
                 conflated_value="the empty string",
             )
         case dict():
-            for value in data.values():
+            for key, value in data.items():
+                reject_nulls(data=key, language_name=language_name)
                 reject_nulls(data=value, language_name=language_name)
         case list() | set():
             for item in data:
