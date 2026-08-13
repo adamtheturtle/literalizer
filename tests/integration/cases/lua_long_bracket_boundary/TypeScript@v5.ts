@@ -1,7 +1,0 @@
-const my_data = [
-  "]",
-  "a]",
-  "a]=",
-  "a]b",
-];
-export {};

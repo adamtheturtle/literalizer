@@ -1,4 +1,5 @@
 schema_version = 1
+languages = ["Lua"]
 suites = ["base"]
 
 [[variants]]

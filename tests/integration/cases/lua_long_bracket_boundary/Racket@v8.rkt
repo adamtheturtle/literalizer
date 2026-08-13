@@ -1,7 +1,0 @@
-#lang racket
-(define my_data (list
-    "]"
-    "a]"
-    "a]="
-    "a]b"
-))
