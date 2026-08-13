@@ -1744,6 +1744,8 @@ class Kotlin(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"List<{request.element_record_name}>"
         return self._kotlin_value_field_type(request.value)
 
     def _kotlin_value_field_type(  # noqa: PLR0911  # pylint: disable=too-complex

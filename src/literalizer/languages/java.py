@@ -1909,6 +1909,8 @@ class Java(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"{request.element_record_name}[]"
         value = request.value
         int_type = self._java_record_int_type
         match value:

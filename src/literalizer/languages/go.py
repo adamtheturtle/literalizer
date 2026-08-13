@@ -963,7 +963,11 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
-    def _go_record_field_type(self, request: RecordFieldType, /) -> str:
+    def _go_record_field_type(  # noqa: PLR0911
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
         """Return the Go struct field type for a record field.
 
         A field whose value is itself a nested record-shaped dict uses
@@ -995,6 +999,8 @@ class Go(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"[]{request.element_record_name}"
         value = request.value
         if (
             isinstance(value, dict)

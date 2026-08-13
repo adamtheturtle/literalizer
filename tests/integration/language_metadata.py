@@ -44,6 +44,7 @@ type RecordVariantName = Literal[
     "keyword_field",
     "quoted_field",
     "field_type_split",
+    "list_field_type_split",
 ]
 type NestedMapWideningName = Literal["none", "default", "uniform_keys"]
 
