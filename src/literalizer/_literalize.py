@@ -4111,7 +4111,9 @@ def _append_trailing_comment(
         comment_suffix=cfg.suffix,
     )
     lines = rendered.split(sep="\n")
-    lines[-1] = f"{lines[-1]}  {cfg.prefix} {escaped_comment}{cfg.suffix}"
+    lines[-1] = (
+        f"{lines[-1]}  {cfg.trailing_prefix} {escaped_comment}{cfg.suffix}"
+    )
     return "\n".join(lines)
 
 

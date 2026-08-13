@@ -641,6 +641,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_empty_dict_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_empty_dict_field"
+gates = [{ kind = "record_variant", variant = "empty_dict_field" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"
@@ -1015,13 +1023,14 @@ overrides = [
   { kind = "enum_member", option = "dict_entry_style", member = "SYMBOL" },
 ]
 
-[axes.datetime_epoch_far_future]
+# The round-trip YAML loader retains explicit scalar tags in
+# ``TaggedScalar`` wrappers that must be demoted before rendering.
+[axes.python_yaml_tagged_scalars]
 plan = "fixed_overrides"
-name_template = "{lang}_datetime_epoch_far_future"
+name_template = "{lang}_yaml_tagged_scalars"
 gates = [
-  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
-  { kind = "enum_member_present", option = "language_version", member = "PY39" },
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
 ]
 overrides = [
-  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member", option = "language_version", member = "PY38" },
 ]
