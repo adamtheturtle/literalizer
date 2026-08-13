@@ -37,11 +37,15 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
+    I64_MIN,
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
     format_integer_octal_c_style,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
@@ -928,8 +932,13 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            fallback=raise_for_unrepresentable_int(language_name="PHP"),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
