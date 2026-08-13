@@ -83,6 +83,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordMapValueTypings,
     RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -433,6 +434,19 @@ class Go(metaclass=LanguageCls):
               time.UTC)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        record_map_value_typing: Value type for a ``RECORD`` strategy
+            field whose map has no record shape of its own and so
+            renders as a plain map.
+
+            * ``record_map_value_typings.NARROW`` — the concrete type
+              every widened scalar in this input shares, e.g.
+              ``map[string]string``, falling back to ``map[string]any``
+              when they span more than one type.  This is the default.
+            * ``record_map_value_typings.WIDE`` — always
+              ``map[string]any``.  Two inputs sharing one record shape
+              then declare the field identically, so one input's
+              literals compile against the other's ``struct``.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -774,6 +788,7 @@ class Go(metaclass=LanguageCls):
     float_formats = FloatFormats
     integer_formats = IntegerFormats
     integer_width_strategies = BareIntegerWidthStrategies
+    record_map_value_typings = RecordMapValueTypings
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -927,6 +942,9 @@ class Go(metaclass=LanguageCls):
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
         default_factory=lambda: MappingProxyType(mapping={}),
         hash=False,
+    )
+    record_map_value_typing: RecordMapValueTypings = (
+        RecordMapValueTypings.NARROW
     )
     # Keep in sync with the `go` directive in the generated go.mod in
     # `.github/workflows/lint.yml`.
@@ -1125,9 +1143,13 @@ class Go(metaclass=LanguageCls):
 
         Returns ``None`` when the widened maps genuinely mix scalar
         types (the ``map[string]any`` top type is then required), when
-        there is nothing to widen, or when any widened scalar only has
-        the ``any`` top type (a ``nil`` value).
+        there is nothing to widen, when any widened scalar only has the
+        ``any`` top type (a ``nil`` value), or when
+        ``record_map_value_typing`` asks for the top type whatever the
+        data holds.
         """
+        if self.record_map_value_typing is RecordMapValueTypings.WIDE:
+            return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         if not scalars:
             return None

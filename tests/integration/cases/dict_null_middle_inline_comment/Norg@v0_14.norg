@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 {
     "server": {
         "host": "localhost",
-        "port": null,  % not configured yet%
+        "port": null,  // not configured yet
         "debug": true
     }
 }
