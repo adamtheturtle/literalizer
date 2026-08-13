@@ -1438,7 +1438,8 @@ def _cpp_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}{{",
         entries=tuple(
-            f".{field.identifier} = {field.formatted}" for field in fields
+            f".{field.identifier} = {_cpp_record_member_value(field)}"
+            for field in fields
         ),
         closer="}",
         compact_pad="",
@@ -1459,10 +1460,24 @@ def _cpp_record_literal_positional(
     """
     return RenderedRecordLiteral(
         head=f"{name}{{",
-        entries=tuple(field.formatted for field in fields),
+        entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
     )
+
+
+@beartype
+def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
+    """Elide a record member's redundant aggregate type prefix.
+
+    The containing aggregate fixes the member's target type, so an
+    initializer beginning with that exact declared type and ``{`` can use
+    C++'s nested braced-initializer form directly.
+    """
+    prefix = f"{field.type_name}{{"
+    if field.formatted.startswith(prefix):
+        return field.formatted.removeprefix(field.type_name)
+    return field.formatted
 
 
 @beartype
