@@ -23,6 +23,7 @@ from pydantic import (
 
 import literalizer
 from literalizer._types import ValueInput  # noqa: TC001
+from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input
 from .variant_axis_names import KNOWN_VARIANT_AXES
@@ -217,6 +218,17 @@ def _to_call_transform(value: object, /) -> object:
 # type is still checked.
 type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
 type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
+_LANGUAGES_BY_NAME = {
+    lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES
+}
+type ManifestLanguage = Annotated[
+    literalizer.LanguageCls,
+    BeforeValidator(_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
+]
+type ManifestLanguages = Annotated[
+    tuple[ManifestLanguage, ...],
+    Field(strict=False),
+]
 type CallTransformTemplate = Annotated[
     InstanceOf[CallTransform], BeforeValidator(_to_call_transform)
 ]
@@ -557,6 +569,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    languages: ManifestLanguages = ()
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -640,6 +653,7 @@ class CaseManifest:
     case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
+    languages: frozenset[str]
     suites: frozenset[SuiteName]
     owner: OwnerName | None
     roles: frozenset[CaseRoleName]
@@ -647,6 +661,14 @@ class CaseManifest:
     variants: tuple[ManifestVariant, ...]
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
+
+
+@beartype
+def manifest_admits_language(
+    *, manifest: CaseManifest, lang_cls: literalizer.LanguageCls
+) -> bool:
+    """Return whether a case selects *lang_cls*."""
+    return not manifest.languages or lang_cls.__name__ in manifest.languages
 
 
 @beartype
@@ -702,6 +724,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
+        languages=frozenset(lang_cls.__name__ for lang_cls in data.languages),
         suites=frozenset(data.suites),
         owner=data.owner,
         roles=frozenset(data.roles),
