@@ -1872,7 +1872,7 @@ class Java(metaclass=LanguageCls):
             dict_key_type="",
         )
 
-    def _java_record_field_type(  # noqa: PLR0911
+    def _java_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
