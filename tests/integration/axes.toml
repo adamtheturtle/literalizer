@@ -945,3 +945,13 @@ gates = [{ kind = "spec_field_present", field = "union_format" }]
 overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
+
+[axes.ruby_symbol_non_identifier_keys]
+plan = "fixed_overrides"
+name_template = "{lang}_symbol_non_identifier_keys"
+gates = [
+  { kind = "enum_member_present", option = "dict_entry_style", member = "SYMBOL" },
+]
+overrides = [
+  { kind = "enum_member", option = "dict_entry_style", member = "SYMBOL" },
+]
