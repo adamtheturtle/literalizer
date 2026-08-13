@@ -312,7 +312,7 @@ def discover_cases(
         case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
-        for lang_cls in sorted_languages():
+        for lang_cls in _selected_languages(manifest=manifest):
             if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
                 continue
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
@@ -381,7 +381,7 @@ def discover_combined_cases(
         case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
-        for lang_cls in sorted_languages():
+        for lang_cls in _selected_languages(manifest=manifest):
             lang_name = lang_cls.__name__
             if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
                 continue
