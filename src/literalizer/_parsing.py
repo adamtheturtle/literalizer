@@ -15,6 +15,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import (
     CommentedOrderedMap,
     CommentedSet,
+    TaggedScalar,
 )
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
@@ -35,6 +36,7 @@ type YamlCoercible = (
     | dict[Scalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
+    | TaggedScalar
 )
 
 _HIGH_SURROGATE_START = 0xD800
@@ -233,36 +235,9 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
 
 
 @beartype
-def _validate_yaml_mapping_keys(*, data: object) -> None:
-    """Reject YAML mappings whose keys are not scalar values."""
-    match data:
-        case dict():
-            for key, value in data.items():  # pyright: ignore[reportUnknownVariableType]
-                if not isinstance(
-                    key,
-                    (
-                        str,
-                        int,
-                        float,
-                        bool,
-                        datetime.date,
-                        datetime.datetime,
-                        datetime.time,
-                        bytes,
-                        type(None),
-                    ),
-                ):
-                    msg = (
-                        "Invalid YAML: mapping keys must be scalar values; "
-                        f"got {type(key).__name__}"  # pyright: ignore[reportUnknownArgumentType]
-                    )
-                    raise YAMLParseError(msg)
-                _validate_yaml_mapping_keys(data=value)  # pyright: ignore[reportUnknownArgumentType]
-        case list() | set():
-            for item in data:  # pyright: ignore[reportUnknownVariableType]
-                _validate_yaml_mapping_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
-        case _:
-            pass
+def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
+    """Unwrap the scalar payload retained for an explicit YAML tag."""
+    return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
 
 @beartype
@@ -290,6 +265,8 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     # stay on its own arm because it is *also* a ``dict`` subclass but
     # represents ``!!omap`` and must become an ``OrderedMap``.
     match data:
+        case TaggedScalar():
+            return _unwrap_yaml_tagged_scalar(value=data)
         case CommentedOrderedMap():
             omap_src: dict[Scalar, YamlCoercible] = dict(data)
             return OrderedMap(

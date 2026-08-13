@@ -111,7 +111,11 @@ def main() -> None:
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Wren.variant_metadata.round_trip_capabilities,
     )
-    program = _build_program(json_text=json_text)
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    program = _build_program(json_text=trimmed_json)
     wren = shutil.which(cmd="wren_cli") or "wren_cli"
     roundtrip_common.execute(
         label=_LABEL,

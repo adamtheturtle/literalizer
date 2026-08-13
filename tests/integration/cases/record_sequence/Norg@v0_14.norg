@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 [
     {"id": 1, "label": "first", "tags": []},
     {"id": 2, "label": "second", "tags": []},

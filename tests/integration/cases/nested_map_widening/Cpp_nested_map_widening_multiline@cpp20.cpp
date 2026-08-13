@@ -8,22 +8,22 @@ struct Record0 { std::map<std::string, LiteralizerRecordValue> input; std::map<s
 int main() {
 auto my_data = std::vector{
     Record0{
-        .input = std::map<std::string, LiteralizerRecordValue>{
+        .input = {
             {"kind", LiteralizerRecordValue{"add"}},
             {"item_id", LiteralizerRecordValue{"item_1"}},
             {"urgent", LiteralizerRecordValue{true}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
+        .expected = {
             {"item_id", LiteralizerRecordValue{"item_1"}},
             {"state", LiteralizerRecordValue{"pending"}},
         },
     },
     Record0{
-        .input = std::map<std::string, LiteralizerRecordValue>{
+        .input = {
             {"kind", LiteralizerRecordValue{"remove"}},
             {"item_id", LiteralizerRecordValue{"item_9"}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
+        .expected = {
             {"error", LiteralizerRecordValue{"not_found"}},
         },
     },
