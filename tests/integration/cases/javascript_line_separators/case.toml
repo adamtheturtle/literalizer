@@ -1,4 +1,5 @@
 schema_version = 1
+languages = ["JavaScript"]
 suites = ["base"]
 
 [[variants]]
