@@ -1,7 +1,7 @@
 my $my_data = {
     's' => 'string',
     'i' => 1,
-    'f' => 1.5,
+    'f' => 1.5e0,
     'b' => True,
     'n' => Nil,
     'd' => Date.new(year => 2024, month => 1, day => 15),
