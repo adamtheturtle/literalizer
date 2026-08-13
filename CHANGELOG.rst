@@ -3,6 +3,17 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.13
+----------
+
+- Require explicit round-trip capability metadata on every language, select each round-trip corpus from that metadata, and opt 45 audited languages into the signed 64-bit boundary, interpolation-sensitive string, control-character, and embedded null groups that each language's compiler or runtime verified.
+
+- Fix the Crystal ``json_type`` rendering of an embedded null byte: the escape is now the JSON-valid ``\u0000`` rather than ``\x00``, so the generated ``JSON.parse`` call no longer rejects the document at runtime.
+
+- Render the D signed 64-bit minimum as ``long.min``: the previous decimal literal typed its positive operand as ``ulong``, so the negation silently wrapped to positive ``2 ** 63`` at runtime.
+
+- Render the Lua signed 64-bit minimum as ``math.mininteger``: the previous decimal literal overflowed Lua's integer range, so the value silently converted to a float at runtime.
+
 2026.08.12.5
 ------------
 

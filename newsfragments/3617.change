@@ -1,1 +1,0 @@
-Render the Lua signed 64-bit minimum as ``math.mininteger``: the previous decimal literal overflowed Lua's integer range, so the value silently converted to a float at runtime.
