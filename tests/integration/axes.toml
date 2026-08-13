@@ -460,6 +460,47 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "default_dict_value_type", name_value = true },
 ]
 
+# A dict annotation's value union can mention a non-empty collection
+# solely because a different value needs annotation.  Exercise the
+# eager Python 3.8 imports for every collection named by that union.
+[axes.python_eager_dict_value_union]
+plan = "fixed_overrides"
+name_template = "{lang}_eager_dict_value_union"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+  { kind = "enum_member_present", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+  { kind = "enum_member", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]
+
+# tomlkit exposes one body entry per dotted-key statement even when
+# several statements collapse into one rendered top-level mapping key.
+[axes.python_toml_dotted_key_comments]
+plan = "fixed_overrides"
+name_template = "{lang}_toml_dotted_key_comments"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+]
+
+# YAML set comments must follow the renderer's ordering of unwrapped
+# scalar values rather than ruamel's wrapper class names.
+[axes.python_yaml_wrapped_set_comments]
+plan = "fixed_overrides"
+name_template = "{lang}_yaml_wrapped_set_comments"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+]
+
 # Raw-string delimiter bases: one the language's own manifest names, and
 # two every participating language shares.  The punctuation base pins
 # the characters a delimiter may hold, and the exhausted base is long
@@ -596,6 +637,14 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_record_field_type_split"
 gates = [{ kind = "record_variant", variant = "field_type_split" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.record_empty_dict_field]
+plan = "fixed_overrides"
+name_template = "{lang}_record_empty_dict_field"
+gates = [{ kind = "record_variant", variant = "empty_dict_field" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
@@ -846,6 +895,14 @@ name_template = "{lang}_string_format_{format}"
 option = "string_format"
 excluded_members = ["MULTILINE"]
 
+[axes.toml_basic_string]
+plan = "fixed_overrides"
+name_template = "{lang}_basic_string"
+gates = [
+  { kind = "enum_member_present", option = "date_format", member = "TOML" },
+]
+overrides = [{ kind = "enum_member", option = "date_format", member = "TOML" }]
+
 # Cover code paths where the chosen string format interacts with the
 # date or datetime format, such as the plain-ISO fallback that only
 # fires when both are non-default.
@@ -916,6 +973,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.nested_empty_map_cousins]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_empty_map_cousins"
+gates = [
+  { kind = "spec_config_field_present", field = "dict_format_config.narrowed_empty_form" },
+]
+overrides = []
+
 [axes.union_format_type_hints]
 plan = "every_non_default_member"
 name_template = "{lang}_union_format_{format}_type_hints_always"
@@ -924,4 +989,48 @@ per_version = true
 gates = [{ kind = "spec_field_present", field = "union_format" }]
 overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]
+
+[axes.zig_v0_12_record]
+plan = "fixed_overrides"
+name_template = "{lang}_v0_12_record"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V0_12" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V0_12" },
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.yaml_v1_2_control_strings]
+plan = "fixed_overrides"
+name_template = "{lang}_v1_2_control_strings"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V1_2" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V1_2" },
+]
+
+[axes.ruby_symbol_non_identifier_keys]
+plan = "fixed_overrides"
+name_template = "{lang}_symbol_non_identifier_keys"
+gates = [
+  { kind = "enum_member_present", option = "dict_entry_style", member = "SYMBOL" },
+]
+overrides = [
+  { kind = "enum_member", option = "dict_entry_style", member = "SYMBOL" },
+]
+
+# The round-trip YAML loader retains explicit scalar tags in
+# ``TaggedScalar`` wrappers that must be demoted before rendering.
+[axes.python_yaml_tagged_scalars]
+plan = "fixed_overrides"
+name_template = "{lang}_yaml_tagged_scalars"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
 ]

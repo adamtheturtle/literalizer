@@ -3,6 +3,39 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.13.1
+------------
+
+- Under the C++ ``RECORD`` heterogeneous strategy, nested sibling maps that fall back to a plain map no longer wrap every value in a ``LiteralizerRecordValue`` alias when all of their scalars share one concrete C++ type.  The maps now render as ``std::map<std::string, T>`` with bare values, and the alias (with its per-value wrappers) is only emitted when the widened scalars genuinely mix types.  On C++14, whose fallback carrier wraps every widened value, the alias now always names the carrier type; it previously named the shared scalar type while the values were still carrier-wrapped, which emitted code that failed to compile.
+
+- Under the Rust, Go, Kotlin, and Scala ``RECORD`` heterogeneous strategies, nested sibling maps that fall back to a widened plain map now narrow to the concrete value type when all of their scalars share one type.  Rust drops the generated single-variant value enum and renders ``HashMap<&'static str, T>`` with bare values, Go renders ``map[string]T``, Kotlin renders ``Map<String, T>`` / ``mapOf<String, T>(...)``, and Scala renders ``Map[String, T]``.  The widened ``any`` / ``Any?`` / ``Any`` / value-enum forms remain for widened maps whose scalars genuinely mix types.
+
+- The Scala ``RECORD`` heterogeneous strategy now returns its generated ``case class`` declarations via ``LiteralizeResult.preamble``, matching every other ``RECORD``-capable language, so ``LiteralizeResult.code`` holds just the record literal and can be spliced into a surrounding collection literal.  Previously the declarations were prepended to ``code``, which produced a syntax error in that embedding.  ``wrap_in_file=True`` output is unchanged: the declarations still land inside the generated ``object``.
+
+- Under the Go, Java, and Kotlin ``RECORD`` heterogeneous strategies, a list whose every element is rendered as one shared record type now uses that type as the list's element type instead of widening: Go renders ``[]RecordN{...}``, Java renders ``new RecordN[]{...}``, and Kotlin renders ``listOf<RecordN>(...)``.  This applies both to a top-level list and to a list-valued record field, and to externally supplied ``record_shape_names`` types.  The widened ``[]any`` / ``Object[]`` / ``listOf<Any?>`` forms remain for lists that mix records with other values.
+
+- Narrow empty nested maps from corresponding maps in sibling records.
+
+- Keep quotes around non-identifier Ruby hash keys in ``SYMBOL`` entry style so keys containing punctuation, spaces, quotes, or no characters remain valid labels.
+
+- Reject JavaScript integer literals outside the safe ``Number`` range instead of emitting values that silently lose precision when parsed.
+
+- Render finite Raku floating-point values with exponent syntax so they evaluate as ``Num`` values and preserve negative zero.
+
+- Preserve backticks around Swift ``RECORD`` initializer labels that are reserved words, including ``inout``, so generated initializers compile.
+
+- Quote Scala keywords used as ``RECORD`` case-class field names so the generated declarations and constructor calls compile.
+
+- Reject TOML integers outside the signed 64-bit range.
+
+- Reject Elm integer literals outside the exact JavaScript safe-integer range.
+
+- Preserve leading spaces in Java multiline string values.
+
+- Use Apache's canonical archive to install the pinned Groovy release in lint CI.
+
+- ``Rust``, ``Go`` and ``Cpp`` accept a ``record_map_value_typing`` constructor argument choosing the value type of a ``RECORD`` strategy field whose dict has no record shape of its own and so renders as a plain map.  The default ``record_map_value_typings.NARROW`` keeps today's behavior, spelling the concrete type every widened scalar in that input shares.  ``record_map_value_typings.WIDE`` always spells the strategy's value carrier instead -- ``HashMap<&'static str, Value>``, ``map[string]any``, or ``std::map<std::string, LiteralizerRecordValue>`` -- so two inputs sharing one record shape declare the field identically and one input's literals compile against the other input's declaration.
+
 2026.08.13
 ----------
 
