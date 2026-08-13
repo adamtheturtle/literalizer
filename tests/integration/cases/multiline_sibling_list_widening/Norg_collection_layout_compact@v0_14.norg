@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "omap_value": {"first": 1},
     "sibling_lists": {"numbers": [1, 2], "strings": ["x", "y"]},
