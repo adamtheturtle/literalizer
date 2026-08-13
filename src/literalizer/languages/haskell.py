@@ -425,6 +425,23 @@ def _format_explicit_dict_entry(
     return f"({clean_key}, {formatted_value})"
 
 
+def _is_haskell_hex_control(character: str) -> bool:
+    """Return whether *character* uses a greedy Haskell hex escape."""
+    return (
+        character <= "\x1f" and character not in "\t\n\r"
+    ) or "\x7f" <= character <= "\x9f"
+
+
+def _format_haskell_string_character(character: str) -> str:
+    """Escape one character for a Haskell string literal."""
+    if "\x7f" <= character <= "\x9f":
+        return f"\\x{ord(character):02x}"
+    return format_string_backslash_control(
+        value=character,
+        control_char_fmt="\\x{:02x}",
+    )[1:-1]
+
+
 @beartype
 def _build_string_formatters(
     *,
@@ -445,26 +462,24 @@ def _build_string_formatters(
     def base_format_string(value: str) -> str:
         r"""Format a Haskell string with ``\x..`` control-char escapes."""
         has_greedy_hex_boundary = any(
-            character <= "\x1f"
-            and character not in "\t\n\r"
+            _is_haskell_hex_control(character=character)
             and following in "0123456789abcdefABCDEF"
             for character, following in itertools.pairwise(value)
         )
-        if not has_greedy_hex_boundary:
+        has_c1_control = any(
+            "\x7f" <= character <= "\x9f" for character in value
+        )
+        if not has_greedy_hex_boundary and not has_c1_control:
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
             )
         pieces: list[str] = []
         for index, char in enumerate(iterable=value):
-            formatted = format_string_backslash_control(
-                value=char,
-                control_char_fmt="\\x{:02x}",
-            )[1:-1]
+            formatted = _format_haskell_string_character(character=char)
             pieces.append(formatted)
-            is_hex_control = char <= "\x1f" and char not in "\t\n\r"
             if (
-                is_hex_control
+                _is_haskell_hex_control(character=char)
                 and index + 1 < len(value)
                 and value[index + 1] in "0123456789abcdefABCDEF"
             ):
