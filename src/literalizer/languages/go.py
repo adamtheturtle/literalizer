@@ -1350,7 +1350,6 @@ class Go(metaclass=LanguageCls):
         record = type(self.heterogeneous_strategy).RECORD
         if self.heterogeneous_strategy is not record:
             return base
-        any_open = f"[]{self.default_sequence_element_type}{{"
         strategy_name_hook = self._record_strategy.record_name_for_value
         assert strategy_name_hook is not None  # noqa: S101
         record_name_for_value = strategy_name_hook
@@ -1365,12 +1364,15 @@ class Go(metaclass=LanguageCls):
                 (name,) = names
                 if name is not None:
                     return f"[]{name}{{"
-            if any(
-                isinstance(item, dict) and not isinstance(item, _ordereddict)
-                for item in items
-            ):
-                return any_open
-            return base(items)
+            return (
+                f"[]{self.default_sequence_element_type}{{"
+                if any(
+                    isinstance(item, dict)
+                    and not isinstance(item, _ordereddict)
+                    for item in items
+                )
+                else base(items)
+            )
 
         return _open
 
