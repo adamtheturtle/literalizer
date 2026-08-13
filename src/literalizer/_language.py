@@ -490,6 +490,36 @@ class BareIntegerWidthStrategies(enum.Enum):
     BARE = enum.auto()
 
 
+class RecordMapValueTypings(enum.Enum):
+    """Carrier types for a ``RECORD`` strategy's widened fallback map.
+
+    A record field whose dict cannot become a record of its own is
+    widened to a plain map.  Languages that spell that map's value type
+    explicitly share this enum, because the choice between the
+    data-derived narrow type and the strategy's value carrier is the
+    same question in each of them.
+    """
+
+    NARROW = enum.auto()
+    """Spell the concrete value type shared by every widened scalar,
+    falling back to the value carrier when they span more than one
+    type.
+
+    The declared type follows the data, so it is the tightest type the
+    input admits and needs no carrier construction around each leaf.
+    """
+
+    WIDE = enum.auto()
+    """Always spell the value carrier, however uniform the widened
+    scalars happen to be in this input.
+
+    Two data files sharing one record shape then declare the field
+    identically, so one file's literals compile against the other
+    file's declaration.  The carrier's own member set stays
+    data-derived.
+    """
+
+
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 

@@ -608,6 +608,32 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+# The value type of a widened fallback map (see
+# ``record_nested_map_fallback`` below) is data-derived by default, so
+# two inputs sharing one record shape can declare one field two ways.
+# ``WIDE`` pins the strategy's value carrier instead, and only the
+# languages that spell that type into an invariant container expose the
+# option (issue #3748).  Run against the homogeneous fallback input,
+# whose scalars all share one type, these lock in the carrier surviving
+# the very uniformity the default narrows on.  Every effective language
+# version and both layouts are covered for the same reasons as the
+# fallback axis itself.
+[axes.record_map_value_typing]
+plan = "every_non_default_member"
+name_template = "{lang}_record_map_value_typing_{format}"
+option = "record_map_value_typing"
+per_version = true
+gates = [
+  { kind = "spec_field_present", field = "record_map_value_typing" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
 # A list of records whose top-level keys are uniform but whose nested
 # map under one key differs in shape (divergent or disjoint key sets)
 # cannot render that nested field as a record: giving the two nested

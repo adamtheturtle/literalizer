@@ -86,6 +86,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordMapValueTypings,
     RenderedRecordLiteral,
     RenderedTupleLiteral,
     RoundTripCapability,
@@ -804,6 +805,7 @@ class _StrategyParams:
     record_prefix: str
     record_shape_names: Mapping[frozenset[str], str]
     unify_optional_fields: bool
+    map_value_typing: RecordMapValueTypings
     empty_container_type_hints: Mapping[EmptyContainerPath, str]
 
 
@@ -1353,14 +1355,19 @@ def _rust_narrow_derecordized_map_value_type(
     wrap_ids: frozenset[int],
     date_type: str,
     datetime_type: str,
+    map_value_typing: RecordMapValueTypings,
 ) -> str | None:
     """Return the single Rust type every widened-map scalar shares.
 
     Returns ``None`` when the widened maps genuinely mix scalar types
     (the value enum is then required), when there is nothing to widen,
-    or when any widened scalar is ``None`` (the payload-free ``Null``
-    variant has no inner type a plain ``HashMap`` value could take).
+    when any widened scalar is ``None`` (the payload-free ``Null``
+    variant has no inner type a plain ``HashMap`` value could take), or
+    when *map_value_typing* asks for the value enum whatever the data
+    holds.
     """
+    if map_value_typing is RecordMapValueTypings.WIDE:
+        return None
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
     if not scalars:
         return None
@@ -1404,6 +1411,7 @@ def _rust_record_wrap_ids_hook(
             wrap_ids=wrap_ids,
             date_type=params.date_type,
             datetime_type=params.datetime_type,
+            map_value_typing=params.map_value_typing,
         )
         return wrap_ids
 
@@ -2303,6 +2311,7 @@ def _record_preamble_impl(
             wrap_ids=wrap_ids,
             date_type=params.date_type,
             datetime_type=params.datetime_type,
+            map_value_typing=params.map_value_typing,
         )
         struct_blocks: list[str] = []
         for shape in emit_order:
@@ -2590,6 +2599,22 @@ class Rust(metaclass=LanguageCls):
         json_type: When set to ``json_types.SERDE_JSON_VALUE``, render
             values through ``serde_json::json!`` instead of Rust's narrow
             collection types.
+
+        record_map_value_typing: Value type for a ``RECORD`` strategy
+            field whose dict has no record shape of its own and so
+            renders as a plain ``HashMap``.
+
+            * ``record_map_value_typings.NARROW`` — the concrete type
+              every widened scalar in this input shares, e.g.
+              ``HashMap<&'static str, &'static str>``, falling back to
+              the generated value ``enum`` when they span more than one
+              type.  This is the default.
+            * ``record_map_value_typings.WIDE`` — always the generated
+              value ``enum``, e.g. ``HashMap<&'static str, Value>``,
+              with each leaf wrapped in its variant.  Two inputs
+              sharing one record shape then declare the field
+              identically, so one input's literals compile against the
+              other's ``struct``.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -3231,6 +3256,7 @@ class Rust(metaclass=LanguageCls):
     float_formats = FloatFormats
     integer_formats = IntegerFormats
     integer_width_strategies = BareIntegerWidthStrategies
+    record_map_value_typings = RecordMapValueTypings
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -3444,6 +3470,9 @@ class Rust(metaclass=LanguageCls):
     of ``[1, {}]``.  The supplied type is emitted as ``<TYPE>::new()``.
     """
     record_unify_optional_fields: bool = False
+    record_map_value_typing: RecordMapValueTypings = (
+        RecordMapValueTypings.NARROW
+    )
     # Keep in sync with the ``--edition`` flag in
     # ``.github/workflows/lint.yml``.
     language_version: VersionFormats = VersionFormats.EDITION_2021
@@ -3543,6 +3572,7 @@ class Rust(metaclass=LanguageCls):
             record_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             unify_optional_fields=self.record_unify_optional_fields,
+            map_value_typing=self.record_map_value_typing,
             empty_container_type_hints=self.empty_container_type_hints,
         )
 
