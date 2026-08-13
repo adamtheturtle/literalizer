@@ -546,7 +546,14 @@ def test_literalize_call_comment_source_length_mismatch_raises() -> None:
         )
 
 
-def test_literalize_call_comment_source_multiline_entry_raises() -> None:
+@pytest.mark.parametrize(
+    argnames="line_break",
+    argvalues=["\n", "\r", "\r\n"],
+    ids=["line-feed", "carriage-return", "crlf"],
+)
+def test_literalize_call_comment_source_multiline_entry_raises(
+    line_break: str,
+) -> None:
     """A ``comment_source`` entry may not span multiple lines."""
     with pytest.raises(
         expected_exception=CommentSourceMultilineError,
@@ -561,7 +568,7 @@ def test_literalize_call_comment_source_multiline_entry_raises() -> None:
             language=Python(),
             target_function="process",
             parameter_names=["value"],
-            comment_source=["fine", "broken\ncomment"],
+            comment_source=["fine", f"broken{line_break}comment"],
         )
 
 
