@@ -704,9 +704,6 @@ class Haxe(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
-    default_set_element_type: str = "Dynamic"
-    default_dict_key_type: str = "String"
-    default_dict_value_type: str = "Dynamic"
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.FINAL
@@ -886,7 +883,7 @@ class Haxe(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         base = self.set_format(
-            default_type=self.default_set_element_type,
+            default_type="Dynamic",
         )
         return dataclasses.replace(
             base,
