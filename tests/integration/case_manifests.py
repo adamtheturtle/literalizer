@@ -420,6 +420,7 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     """
 
     target_function: str
+    languages: StringFrozenSet = Field(default_factory=_empty_name_set)
     parameter_names: StringTuple
     per_element: bool
     collection_layout: CollectionLayoutName = "compact"
