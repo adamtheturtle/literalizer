@@ -3,7 +3,7 @@ class Main {
 var my_data = """
 
 root first line
-  indented
+\s\sindented
 
 root last line
 """;

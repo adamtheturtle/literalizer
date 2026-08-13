@@ -286,6 +286,11 @@ class CommentConfig:
     prefix: str
     suffix: str
 
+    @property
+    def trailing_prefix(self) -> str:
+        """Return the prefix to use for an end-of-line comment."""
+        return self.prefix
+
 
 @dataclasses.dataclass(frozen=True)
 class DictFormatConfig:

@@ -1,11 +1,11 @@
 * my_data
-@code json
+@code javascript
 [
     ["ADD", "alice", "hello"],
     [
         "DEL",
         "bob",
-        "5"  % removes "world"%
+        "5"  // removes "world"
     ]
 ]
 @end

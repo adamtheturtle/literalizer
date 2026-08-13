@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 {
-    % Configuration%
+    // Configuration
     "name": "app",
-    % Port setting%
+    // Port setting
     "port": 3000
 }
 @end

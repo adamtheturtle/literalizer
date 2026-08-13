@@ -257,45 +257,6 @@ def cases_with_non_trivial_dict_keys(
     return frozenset(result)
 
 
-def has_non_ascii_strings(data: CaseData) -> bool:
-    """Return ``True`` if *data* contains a string with a non-ASCII
-    character.
-    """
-    match data:
-        case str():
-            return not data.isascii()
-        case dict():
-            return any(
-                (isinstance(k, str) and not k.isascii())
-                or has_non_ascii_strings(data=v)
-                for k, v in data.items()
-            )
-        case list():
-            return any(has_non_ascii_strings(data=item) for item in data)
-        case set() | frozenset():
-            return any(has_non_ascii_strings(data=item) for item in data)
-        case _:
-            return False
-
-
-@functools.cache
-@beartype
-def cases_with_non_ascii_strings(
-    cases_dir: Path,
-) -> frozenset[str]:
-    """Return case directory names whose input contains a non-ASCII
-    string value that some languages cannot represent in a portable
-    string literal.
-    """
-    result: set[str] = set()
-    for case_dir in cases_dir.iterdir():
-        input_info = case_input(case_dir=case_dir)
-        loaded = load_case_data(input_info=input_info)
-        if has_non_ascii_strings(data=loaded):
-            result.add(case_dir.name)
-    return frozenset(result)
-
-
 def has_special_floats(data: CaseData) -> bool:
     """Return ``True`` if *data* contains a non-finite float (``inf``,
     ``-inf``, or ``nan``).
@@ -341,7 +302,6 @@ def discover_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
-    non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     invalid_matlab_cases = cases_with_invalid_matlab_struct_keys(
         cases_dir=cases_dir
     )
@@ -352,7 +312,6 @@ def discover_cases(
         case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
-        non_ascii_string = case_dir.name in non_ascii_string_cases
         for lang_cls in _selected_languages(manifest=manifest):
             if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
                 continue
@@ -361,11 +320,6 @@ def discover_cases(
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
-                continue
-            if (
-                non_ascii_string
-                and not lang_cls.supports_non_ascii_string_literals
-            ):
                 continue
             cases.append((case_dir.name, lang_cls))
     return cases
@@ -417,7 +371,6 @@ def discover_combined_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
-    non_ascii_string_cases = cases_with_non_ascii_strings(cases_dir=cases_dir)
     invalid_matlab_cases = cases_with_invalid_matlab_struct_keys(
         cases_dir=cases_dir
     )
@@ -428,7 +381,6 @@ def discover_combined_cases(
         case_dir = manifest.case_dir
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
-        non_ascii_string = case_dir.name in non_ascii_string_cases
         for lang_cls in _selected_languages(manifest=manifest):
             lang_name = lang_cls.__name__
             if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
@@ -438,11 +390,6 @@ def discover_combined_cases(
             ):
                 continue
             if special_float and not lang_cls.supports_special_floats:
-                continue
-            if (
-                non_ascii_string
-                and not lang_cls.supports_non_ascii_string_literals
-            ):
                 continue
             spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)

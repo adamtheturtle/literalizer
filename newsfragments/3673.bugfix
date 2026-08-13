@@ -1,0 +1,1 @@
+Escape DEL in TOML basic strings so conforming TOML parsers accept the generated document.
