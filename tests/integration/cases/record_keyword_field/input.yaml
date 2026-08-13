@@ -3,6 +3,7 @@
   error: c
   switch: d
   class: e
+  inout: ee
   int: f
   new: g
   static: h

@@ -96,6 +96,25 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+
+def _raku_num_float_formatter(
+    formatter: Callable[[float], str], /
+) -> Callable[[float], str]:
+    """Force finite float literals to use exponent-based ``Num``
+    syntax.
+    """
+
+    @beartype
+    def _format(value: float) -> str:
+        """Format *value* as a Raku ``Num`` literal."""
+        formatted = formatter(value)
+        if "e" in formatted.lower():
+            return formatted
+        return f"{formatted}e0"
+
+    return _format
+
+
 # Escape Raku variable markers and closure blocks in double-quoted strings.
 _format_string_double = make_backslash_string_formatter(
     quote_char='"',
@@ -469,9 +488,13 @@ class Raku(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(value=_raku_num_float_formatter(format_float_repr))
+        SCIENTIFIC = enum.member(
+            value=_raku_num_float_formatter(format_float_scientific)
+        )
+        FIXED = enum.member(
+            value=_raku_num_float_formatter(format_float_fixed)
+        )
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

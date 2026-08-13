@@ -15,35 +15,35 @@ struct Record9 { std::vector<long long> nums; };
 struct Record0 { Record1 plain; Record2 other; Record3 nested_a; Record5 nested_b; Record7 wrap_a; Record8 wrap_b; Record9 wide; };
 int main() {
 auto my_data = Record0{
-    .plain = Record1{
+    .plain = {
         .status = 1,
     },
-    .other = Record2{
+    .other = {
         .status = "ready",
     },
-    .nested_a = Record3{
-        .inner = Record4{
+    .nested_a = {
+        .inner = {
             .kind = "add",
             .urgent = true,
         },
     },
-    .nested_b = Record5{
-        .inner = Record6{
+    .nested_b = {
+        .inner = {
             .error = "not_found",
         },
     },
-    .wrap_a = Record7{
-        .holder = Record1{
+    .wrap_a = {
+        .holder = {
             .status = 2,
         },
     },
-    .wrap_b = Record8{
-        .holder = Record2{
+    .wrap_b = {
+        .holder = {
             .status = "word",
         },
     },
-    .wide = Record9{
-        .nums = std::vector<long long>{
+    .wide = {
+        .nums = {
             1,
             1099511627776,
         },

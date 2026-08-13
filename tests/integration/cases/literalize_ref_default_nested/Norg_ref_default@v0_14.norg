@@ -1,11 +1,11 @@
 * item_var
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * my_data
-@code json
+@code javascript
 {
     "items": [item_var, {"fallback": "value"}]
 }

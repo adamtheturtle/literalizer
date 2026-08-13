@@ -1,10 +1,10 @@
 * userObj
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * my_data
-@code json
+@code javascript
 userObj
 @end
