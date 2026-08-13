@@ -7,7 +7,7 @@ struct Record0 { std::string title; std::vector<std::string> tags; int priority{
 int main() {
 auto my_data = Record0{
     .title = "report",
-    .tags = std::vector<std::string>{
+    .tags = {
         "draft",
         "urgent",
         "review",

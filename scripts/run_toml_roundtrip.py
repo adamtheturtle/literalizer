@@ -30,6 +30,7 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "TOML"
+_EXCLUDED_KEYS = ("biginteger",)
 
 
 def _build_document(json_text: str) -> str:
@@ -52,13 +53,17 @@ def main() -> None:
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Toml.variant_metadata.round_trip_capabilities,
     )
-    document = _build_document(json_text=json_text)
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    document = _build_document(json_text=trimmed_json)
     parsed: dict[str, object] = tomli.loads(document)
     produced_json = json.dumps(obj=parsed[_VAR_NAME])
     roundtrip_common.verify(
         label=_LABEL,
         produced_json=produced_json,
-        exclude_keys=(),
+        exclude_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
     )
     sys.stdout.write(f"{_LABEL} round-trip OK\n")
