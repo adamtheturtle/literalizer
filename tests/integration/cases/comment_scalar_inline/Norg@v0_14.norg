@@ -1,4 +1,4 @@
 * my_data
-@code json
-42  % note%
+@code javascript
+42  // note
 @end

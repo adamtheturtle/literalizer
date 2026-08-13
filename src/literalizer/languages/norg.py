@@ -102,10 +102,10 @@ class Norg(metaclass=LanguageCls):
     brackets for sequences and sets, curly braces for mappings,
     and ``key: value`` for dict entries.
 
-    Norg comments use the null attached modifier: ``% comment %``.
+    Comments inside the data block use JavaScript line comments.
 
     Variable declarations use a heading followed by a ranged
-    verbatim tag: ``* name`` then ``@code json`` / ``@end``.
+    verbatim tag: ``* name`` then ``@code javascript`` / ``@end``.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -252,8 +252,8 @@ class Norg(metaclass=LanguageCls):
         """Comment style options."""
 
         PERCENT = CommentConfig(
-            prefix="%",
-            suffix="%",
+            prefix="//",
+            suffix="",
         )
 
     class DeclarationStyles(enum.Enum):
@@ -261,7 +261,7 @@ class Norg(metaclass=LanguageCls):
 
         BLOCK = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="* {name}\n@code json\n{value}\n@end",
+                template="* {name}\n@code javascript\n{value}\n@end",
             ),
             supports_redefinition=False,
         )
@@ -284,9 +284,9 @@ class Norg(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="inf",
-        negative_infinity="-inf",
-        nan="nan",
+        positive_infinity="Infinity",
+        negative_infinity="-Infinity",
+        nan="NaN",
     ):
         """Float format options."""
 
@@ -514,7 +514,7 @@ class Norg(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(
-            template="* {name}\n@code json\n{value}\n@end"
+            template="* {name}\n@code javascript\n{value}\n@end"
         )
 
     @cached_property
