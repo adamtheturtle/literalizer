@@ -1,7 +1,14 @@
 : DEEP
-+obj
-    s\" _" +key s\" _" +str
- -obj
++arr
+    +arr
+        1 +int
+        2 +int
+     -arr
+    +arr
+        3 +int
+        4 +int
+     -arr
+ -arr
 ;
 : my_data
 +obj

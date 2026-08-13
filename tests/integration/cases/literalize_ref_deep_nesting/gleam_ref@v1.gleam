@@ -1,11 +1,19 @@
 pub type GVal {
-  GStr(String)
+  GInt(Int)
+  GList(List(GVal))
   GDict(List(#(String, GVal)))
 }
 
 pub fn main() {
-  let deep = GDict([
-    #("_", GStr("_")),
+  let deep = GList([
+    GList([
+      GInt(1),
+      GInt(2),
+    ]),
+    GList([
+      GInt(3),
+      GInt(4),
+    ]),
   ])
   let my_data = GDict([
     #("a", GDict([

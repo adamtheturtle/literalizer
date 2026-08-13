@@ -1,8 +1,15 @@
 use std::collections::HashMap;
 fn main() {
-    let deep = HashMap::from([
-        ("_", "_"),
-    ]);
+    let deep = vec![
+        vec![
+            1,
+            2,
+        ],
+        vec![
+            3,
+            4,
+        ],
+    ];
     let my_data = HashMap::from([
         ("a", HashMap::from([
             ("b", HashMap::from([

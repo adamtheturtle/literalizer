@@ -11,8 +11,9 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
-static _VKV deep[] = '{
-    _VKV'{k: "_", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "_"}}
+static _VVal deep[] = '{
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_INT, i: 4, r: 0.0, s: \"\"}}"}
 };
 static _VKV my_data[] = '{
     _VKV'{k: "a", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"b\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VKV'{k: \\\"c\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"deep\\\"}}}\"}}}"}}

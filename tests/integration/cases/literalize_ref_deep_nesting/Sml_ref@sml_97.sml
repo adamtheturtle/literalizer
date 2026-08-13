@@ -1,8 +1,17 @@
 datatype val_t =
-    SStr of string
+    SInt of LargeInt.int
+  | SStr of string
+  | SList of val_t list
   | SMap of (string * val_t) list
-val deep : val_t = SMap [
-    ("_", SStr "_")
+val deep : val_t = SList [
+    SList [
+        SInt 1,
+        SInt 2
+    ],
+    SList [
+        SInt 3,
+        SInt 4
+    ]
 ]
 val my_data : val_t = SMap [
     ("a", SMap [

@@ -1,6 +1,13 @@
-let deep = {
-  _ = "_";
-}; in
+let deep = [
+  ([
+    1
+    2
+  ])
+  ([
+    3
+    4
+  ])
+]; in
 let my_data = {
   a = {
     b = {

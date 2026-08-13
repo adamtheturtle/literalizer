@@ -1,8 +1,15 @@
 * deep
 @code json
-{
-    "_": "_"
-}
+[
+    [
+        1,
+        2
+    ],
+    [
+        3,
+        4
+    ]
+]
 @end
 * my_data
 @code json

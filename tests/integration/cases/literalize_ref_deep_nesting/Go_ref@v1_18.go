@@ -1,8 +1,15 @@
 package main
 
 func main() {
-Deep := map[string]string{
-	"_": "_",
+Deep := [][]int{
+	[]int{
+		1,
+		2,
+	},
+	[]int{
+		3,
+		4,
+	},
 }
 my_data := map[string]map[string]map[string]map[string]string{
 	"a": map[string]map[string]map[string]string{
