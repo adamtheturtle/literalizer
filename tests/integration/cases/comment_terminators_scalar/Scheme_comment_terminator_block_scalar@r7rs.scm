@@ -1,3 +1,3 @@
-#| inline scalar: */ | # -} *) ) =# ]] %} ]# % #> |#
-(define my_data #| before scalar: */ | # -} *) ) =# ]] %} ]# % #> |#
+#| inline scalar: */ | # -} *) (* ) =# ]] %} ]# % #> |#
+(define my_data #| before scalar: */ | # -} *) (* ) =# ]] %} ]# % #> |#
 "value")

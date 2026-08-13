@@ -2,11 +2,11 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @[
-    /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-    @"first",  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-    /* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    @"first",  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    /* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
     @"second",
-    /* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 ];
     (void)my_data;
 }

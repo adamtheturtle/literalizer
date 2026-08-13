@@ -1,5 +1,5 @@
 * my_data
 @code json
-% before scalar: */ |# -} *) ) =# ]] <U+0025>} ]# <U+0025> #>%
-"value"  % inline scalar: */ |# -} *) ) =# ]] <U+0025>} ]# <U+0025> #>%
+% before scalar: */ |# -} *) (* ) =# ]] <U+0025>} ]# <U+0025> #>%
+"value"  % inline scalar: */ |# -} *) (* ) =# ]] <U+0025>} ]# <U+0025> #>%
 @end
