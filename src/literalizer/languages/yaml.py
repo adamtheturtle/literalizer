@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -680,9 +681,14 @@ class Yaml(metaclass=LanguageCls):
 
         def _format(value: str) -> str:
             """Format a string as a YAML quoted literal."""
-            return format_string_backslash_control(
+            formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
+            )
+            return re.sub(
+                pattern=r"[\x7f-\x9f]",
+                repl=lambda match: f"\\x{ord(match.group()):02x}",
+                string=formatted,
             )
 
         return _format

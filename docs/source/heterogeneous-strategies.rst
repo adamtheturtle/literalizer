@@ -174,6 +174,42 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
    )
    assert default_result.code.startswith("{")
 
+Widened map fields
+^^^^^^^^^^^^^^^^^^
+
+A record field whose dict has no record shape of its own -- sibling dicts under one key with differing key sets, which no single generated type can describe -- is widened to a plain map instead.
+By default that map's value type follows the data: when every scalar inside the widened maps shares one type, the field narrows to that type; otherwise it takes the strategy's value carrier (Rust's generated enum, Go's ``any``, C++'s ``LiteralizerRecordValue`` alias).
+
+That choice is made per input, so two data files sharing one record shape may declare the same field two different ways, and the second file's literals then fail to compile against the first file's declaration.
+:class:`~literalizer.Rust`, :class:`~literalizer.Go` and :class:`~literalizer.Cpp` accept ``record_map_value_typing=WIDE`` to pin the value carrier instead, whatever the data holds:
+
+.. code-block:: python
+
+   """WIDE keeps the value carrier however uniform the data is."""
+
+   from literalizer import InputFormat, literalize
+   from literalizer.languages import Rust
+
+   uniform = (
+       '[{"name": "row_1", "attributes": {"colour": "green", "size": "s"}},'
+       ' {"name": "row_2", "attributes": {"colour": "white"}}]'
+   )
+
+   result = literalize(
+       source=uniform,
+       input_format=InputFormat.JSON,
+       language=Rust(
+           heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
+           record_map_value_typing=Rust.record_map_value_typings.WIDE,
+       ),
+   )
+
+   assert "attributes: HashMap<&'static str, Value>," in result.preamble[2]
+   assert 'Value::Str("green")' in result.code
+
+The carrier's own members stay data-derived, so the generated enum here holds only the variants this input needs.
+The default is ``record_map_value_typings.NARROW``.
+
 ``TUPLE``
 ~~~~~~~~~
 

@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 [
-    "apple",  % inline comment%
-    % before banana%
+    "apple",  // inline comment
+    // before banana
     "banana"
-    % trailing%
+    // trailing
 ]
 @end
