@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Object-variant shape inference preserves an out-of-range integer tier:
+the preamble compares the two table value shapes before formatting
+rejects the integer, so the refusal also covers that comparison path.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ['[{"small": 1}, {"large": 9223372036854775808}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+]

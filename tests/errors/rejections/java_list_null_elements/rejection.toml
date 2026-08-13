@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Java's List.of() throws NullPointerException on a null element, so a
+LIST-format sequence holding one is refused at literalize time rather
+than emitted as a literal that fails at runtime.
+"""
+exceptions = ["NullInCollectionError"]
+languages = ["Java"]
+
+[call]
+api = "literalize"
+sources = ['[1, null, "hello"]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "LIST" },
+]

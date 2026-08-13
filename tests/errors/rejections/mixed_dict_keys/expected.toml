@@ -1,0 +1,37 @@
+# languages rejecting: 5; languages accepting: 0
+
+[MixedDictKeysError]
+"Dhall['1: a\\nx: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Dhall['true: a\\n2: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: bool, int)"
+"Dhall['- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Dhall['outer:\\n  1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Dhall['- !!set\\n  ? 1\\n  ? 2\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Mojo['1: a\\nx: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Mojo['true: a\\n2: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: bool, int)"
+"Mojo['- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Mojo['outer:\\n  1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Mojo['- foo: string\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Mojo['- !!set\\n  ? 1\\n  ? 2\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Nim['1: a\\nx: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Nim['true: a\\n2: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: bool, int)"
+"Nim['- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Nim['outer:\\n  1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Nim['- foo: string\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Rust['1: a\\nx: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Rust['true: a\\n2: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: bool, int)"
+"Rust['- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Rust['outer:\\n  1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Rust['- foo: string\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"Rust['- !!set\\n  ? 1\\n  ? 2\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"V['1: a\\nx: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"V['true: a\\n2: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: bool, int)"
+"V['- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"V['outer:\\n  1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"V['- foo: string\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+"V['- !!set\\n  ? 1\\n  ? 2\\n- 1: a\\n  x: b\\n']" = "Dict contains keys of mixed types that cannot be represented in the target language (found types: int, str)"
+
+[MixedDictShapesError]
+"Dhall['- foo: string\\n- 1: a\\n  x: b\\n']" = "List contains dicts with different key sets that cannot be represented in the target language"
+
+[UnrepresentableInputError]
+"Nim['- !!set\\n  ? 1\\n  ? 2\\n- 1: a\\n  x: b\\n']" = "Nim cannot preserve native set semantics with the selected set format"

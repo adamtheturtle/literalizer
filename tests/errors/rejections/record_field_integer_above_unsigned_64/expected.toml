@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableIntegerError]
+V = "V cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
+Zig = "Zig cannot represent integer 18446744073709551616 above the unsigned 64-bit range."

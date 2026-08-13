@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Lua tables, PHP arrays, R lists, and the aggregate forms of Ada,
+COBOL, Common Lisp, and Scheme cannot distinguish an empty mapping
+from an empty sequence, so an empty dict -- bare, nested in a dict
+value, or inside a list element -- is refused at literalize time
+rather than emitted as a literal that degrades on round-trip.
+"""
+exceptions = ["UnrepresentableEmptyDictError"]
+languages = ["Ada", "Cobol", "CommonLisp", "Lua", "Php", "R", "Scheme"]
+
+[call]
+api = "literalize"
+sources = ["{}", '{"outer": {}}', '[{"k": 1}, {}]']
+input_format = "json"

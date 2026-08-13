@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A collection holding a value beyond int64 opens as []uint64, so an
+in-range negative sibling that renders fine as a scalar cannot be
+represented inside the unsigned element type.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Go"]
+
+[call]
+api = "literalize"
+sources = ["[9223372036854775808, -5]"]
+input_format = "json"

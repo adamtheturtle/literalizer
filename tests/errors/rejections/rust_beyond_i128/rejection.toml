@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Rust's widest native integer type is i128, so a value beyond its range
+in either direction is refused (#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = [
+  "170141183460469231731687303715884105728",
+  "-170141183460469231731687303715884105729",
+]
+input_format = "json"

@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[NullInCollectionError]
+"V['[null, null]']" = "V cannot infer an element type for a collection whose members are all null; remove the nulls or select the INTERFACE or RECORD heterogeneous strategy."
+"V['{\"a\": null, \"b\": null}']" = "V cannot infer an element type for a collection whose members are all null; remove the nulls or select the INTERFACE or RECORD heterogeneous strategy."
+"V['[[null]]']" = "V cannot infer an element type for a collection whose members are all null; remove the nulls or select the INTERFACE or RECORD heterogeneous strategy."
+"V['{\"a\": {\"b\": null}}']" = "V cannot infer an element type for a collection whose members are all null; remove the nulls or select the INTERFACE or RECORD heterogeneous strategy."

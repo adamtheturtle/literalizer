@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+V's default (ERROR) strategy has no element type to infer for a
+non-empty all-null list or map, so it refuses the shape instead of
+emitting a voidptr collection the V/C back end rejects (issues #3017
+and #3018).  The INTERFACE and RECORD strategies wrap each null and
+accept the same inputs.
+"""
+exceptions = ["NullInCollectionError"]
+languages = ["V"]
+
+[call]
+api = "literalize"
+sources = [
+  "[null, null]",
+  '{"a": null, "b": null}',
+  "[[null]]",
+  '{"a": {"b": null}}',
+]
+input_format = "json"

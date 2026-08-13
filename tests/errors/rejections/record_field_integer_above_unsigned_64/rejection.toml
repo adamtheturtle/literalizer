@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A record field literal cannot overflow its inferred u64 field type, so
+a field value of 2**64 is refused under the RECORD strategy (#2713).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["V", "Zig"]
+
+[call]
+api = "literalize"
+sources = ['{"value": 18446744073709551616}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

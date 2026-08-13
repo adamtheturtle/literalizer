@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+Nim = "Nim cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
