@@ -89,7 +89,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableIntegerError,
+)
 
 
 @beartype
@@ -421,6 +424,12 @@ class R(metaclass=LanguageCls):
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
+            if not -(2**53) <= value <= 2**53:
+                msg = (
+                    f"R cannot represent integer {value} without external "
+                    "arbitrary-precision integer support."
+                )
+                raise UnrepresentableIntegerError(msg)
             formatter: Callable[[int], str] = self.value
             return formatter(value)
 

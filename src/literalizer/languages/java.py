@@ -140,6 +140,11 @@ def _format_string_multiline(value: str) -> str:
         repl=lambda match: r"\s" * len(match[0]),
         string=escaped,
     )
+    escaped = re.sub(
+        pattern=r"(?m)^ +",
+        repl=lambda match: r"\s" * len(match[0]),
+        string=escaped,
+    )
     return f'"""\n{escaped}"""'
 
 
