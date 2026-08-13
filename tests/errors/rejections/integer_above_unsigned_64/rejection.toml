@@ -6,7 +6,7 @@ rather than emitted into a literal the target compiler would truncate
 or reject (#2713).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Cpp", "D", "Go", "V", "Zig"]
+languages = ["Cpp", "D", "Go", "Odin", "V", "Zig"]
 
 [call]
 api = "literalize"
