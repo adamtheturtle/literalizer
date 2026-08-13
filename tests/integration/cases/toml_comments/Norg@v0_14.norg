@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 {
-    % before%
-    "answer": 42,  % inline%
+    // before
+    "answer": 42,  // inline
     "plain": "ok"
-    % trailing%
+    // trailing
 }
 @end

@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 [
     999999999999999999,
     -999999999999999999
