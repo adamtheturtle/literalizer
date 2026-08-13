@@ -352,6 +352,9 @@ def _crystal_record_field_identifier(key: str, /) -> str:
     constructor the ``record`` macro generates, so the field names
     appear only in the declaration.
     """
+    if key == "initialize":
+        msg = "Crystal record field name 'initialize' is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
