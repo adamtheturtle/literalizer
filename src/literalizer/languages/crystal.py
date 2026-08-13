@@ -1208,7 +1208,7 @@ class Crystal(metaclass=LanguageCls):
             case list():
                 parts = {self._crystal_type_for_value(item) for item in value}
                 return f"Array({_crystal_union(parts)})"
-            case OrderedMap():
+            case dict() if not value or isinstance(value, OrderedMap):
                 parts = {
                     self._crystal_type_for_value(item)
                     for item in value.values()
@@ -1222,7 +1222,7 @@ class Crystal(metaclass=LanguageCls):
                 )
                 return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
-                # A set or non-record dict field is out of scope for
+                # A set or non-empty non-record dict field is out of scope for
                 # the base ``RECORD`` port (#2317) and is not reached
                 # by any record golden; the ``or`` widens it to ``Nil``.
                 return (
