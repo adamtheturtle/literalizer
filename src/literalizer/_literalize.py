@@ -3119,9 +3119,10 @@ def literalize_bound_refs(
                 ),
             )
         )
-    effective_ref_values: dict[str, Value] = dict(explicit_ref_values or {})
-    for name in ordered_names:
-        effective_ref_values[name] = bound_refs[name]
+    effective_ref_values: dict[str, Value] = {
+        name: bound_refs[name] for name in ordered_names
+    }
+    effective_ref_values.update(explicit_ref_values or {})
     pre_form = literalize_pre_form(
         source=source,
         input_format=input_format,
