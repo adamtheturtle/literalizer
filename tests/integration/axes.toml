@@ -460,6 +460,23 @@ overrides = [
   { kind = "non_default_kwarg", kwarg = "default_dict_value_type", name_value = true },
 ]
 
+# A dict annotation's value union can mention a non-empty collection
+# solely because a different value needs annotation.  Exercise the
+# eager Python 3.8 imports for every collection named by that union.
+[axes.python_eager_dict_value_union]
+plan = "fixed_overrides"
+name_template = "{lang}_eager_dict_value_union"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+  { kind = "enum_member_present", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+  { kind = "enum_member", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]
+
 # tomlkit exposes one body entry per dotted-key statement even when
 # several statements collapse into one rendered top-level mapping key.
 [axes.python_toml_dotted_key_comments]
@@ -976,6 +993,16 @@ gates = [
 overrides = [
   { kind = "enum_member", option = "language_version", member = "V0_12" },
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.yaml_v1_2_control_strings]
+plan = "fixed_overrides"
+name_template = "{lang}_v1_2_control_strings"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V1_2" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V1_2" },
 ]
 
 [axes.ruby_symbol_non_identifier_keys]
