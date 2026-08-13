@@ -415,8 +415,10 @@ def _zig_record_field_identifier(key: str, /) -> str:
     if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_IDENTIFIER.match(
         string=key
     ):
-        escaped = key.replace("\\", "\\\\").replace('"', '\\"')
-        return f'@"{escaped}"'
+        return "@" + format_string_backslash_control(
+            value=key,
+            control_char_fmt="\\x{:02x}",
+        )
     return key
 
 
