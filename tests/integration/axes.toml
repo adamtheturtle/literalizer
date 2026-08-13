@@ -287,6 +287,16 @@ plan = "every_non_default_member"
 name_template = "{lang}_float_format_{format}"
 option = "float_format"
 
+[axes.scientific_float_precision]
+plan = "fixed_overrides"
+name_template = "{lang}_float_format_scientific_precision"
+gates = [
+  { kind = "enum_member_present", option = "float_format", member = "SCIENTIFIC" },
+]
+overrides = [
+  { kind = "enum_member", option = "float_format", member = "SCIENTIFIC" },
+]
+
 [axes.heterogeneous_strategy]
 plan = "every_non_default_member"
 name_template = "{lang}_heterogeneous_strategy_{format}"

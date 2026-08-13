@@ -1,0 +1,9 @@
+#+feature dynamic-literals
+package main
+
+main :: proc() {
+my_data := map[string]any{
+	"pi" = 3.141592653589793,
+}
+_ = my_data
+}
