@@ -5,7 +5,7 @@ a negative below the signed 64-bit minimum fits neither type, so it is
 refused (#2713).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Cpp", "D"]
+languages = ["Cpp", "D", "Odin"]
 
 [call]
 api = "literalize"

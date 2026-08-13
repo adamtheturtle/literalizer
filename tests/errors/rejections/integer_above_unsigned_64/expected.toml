@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 0
+# languages rejecting: 6; languages accepting: 0
 
 [UnrepresentableIntegerError]
 "Cpp['18446744073709551616']" = "C++ cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
@@ -7,6 +7,8 @@
 "D['[18446744073709551616]']" = "D cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
 "Go['18446744073709551616']" = "Go cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
 "Go['[18446744073709551616]']" = "Go cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
+"Odin['18446744073709551616']" = "Odin cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
+"Odin['[18446744073709551616]']" = "Odin cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
 "V['18446744073709551616']" = "V cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
 "V['[18446744073709551616]']" = "V cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
 "Zig['18446744073709551616']" = "Zig cannot represent integer 18446744073709551616 above the unsigned 64-bit range."

@@ -9,22 +9,22 @@ int main() {
 auto my_data = std::vector{
     Record0{
         .name = "test_1",
-        .input = Record1{
+        .input = {
             .kind = "create",
             .pr_id = "pr_1",
         },
-        .expected = std::map<std::string, std::string>{
+        .expected = {
             {"pr_id", "pr_1"},
             {"status", "draft"},
         },
     },
     Record0{
         .name = "test_2",
-        .input = Record1{
+        .input = {
             .kind = "publish",
             .pr_id = "pr_1",
         },
-        .expected = std::map<std::string, std::string>{
+        .expected = {
             {"error", "invalid_operation"},
         },
     },

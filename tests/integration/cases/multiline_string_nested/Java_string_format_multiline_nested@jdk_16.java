@@ -5,7 +5,7 @@ var my_data = Map.ofEntries(
     Map.entry("""
 outer""", new String[][]{new String[]{"""
 nested first line
-  indented
+\s\sindented
 
 nested last line
 """}})
