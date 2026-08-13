@@ -155,6 +155,19 @@ def test_language_specific_new_variable_syntax_raises(
         )
 
 
+@pytest.mark.parametrize(argnames="name", argvalues=["_x", "x-", "x_"])
+def test_cobol_rejects_names_rendered_with_boundary_hyphens(name: str) -> None:
+    """COBOL data names cannot begin or end with a hyphen."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=Cobol(),
+            variable_form=NewVariable(name=name, modifiers=frozenset()),
+            wrap_in_file=True,
+        )
+
+
 @pytest.mark.parametrize(
     argnames=("language_cls", "language_name", "reserved_name"),
     argvalues=[
