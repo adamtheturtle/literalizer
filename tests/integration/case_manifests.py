@@ -398,6 +398,9 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     collection_layout: CollectionLayoutName = "compact"
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
+    explicit_ref_value_sources: dict[str, str] = Field(
+        default_factory=_empty_sources,
+    )
 
 
 class CallCaseSpec(_OwnedCaseSpec, frozen=True):
