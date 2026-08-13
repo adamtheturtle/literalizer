@@ -820,6 +820,14 @@ name_template = "{lang}_string_format_{format}"
 option = "string_format"
 excluded_members = ["MULTILINE"]
 
+[axes.toml_basic_string]
+plan = "fixed_overrides"
+name_template = "{lang}_basic_string"
+gates = [
+  { kind = "enum_member_present", option = "date_format", member = "TOML" },
+]
+overrides = [{ kind = "enum_member", option = "date_format", member = "TOML" }]
+
 # Cover code paths where the chosen string format interacts with the
 # date or datetime format, such as the plain-ISO fallback that only
 # fires when both are non-default.

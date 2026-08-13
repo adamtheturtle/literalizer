@@ -761,10 +761,11 @@ class Toml(metaclass=LanguageCls):
 
         def _format(value: str) -> str:
             """Format a string as a TOML quoted literal."""
-            return format_string_backslash_control(
+            formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\u{:04x}",
             )
+            return formatted.replace("\x7f", "\\u007f")
 
         return _format
 
