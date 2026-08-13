@@ -1,1 +1,1 @@
-(define my_data "\x00;x")
+(define my_data "\x00x")

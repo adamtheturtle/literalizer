@@ -32,7 +32,12 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import I64_MIN, format_integer_hex
+from literalizer._formatters.format_integers import (
+    I64_MIN,
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -1518,16 +1523,23 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
+        """Callable that formats an exactly representable int literal."""
         if self._json_active:
-            return _build_elm_json_int_formatter(
+            base_formatter = _build_elm_json_int_formatter(
                 base=_INT_BASE[self.integer_format.name],
             )
-        if self.constructor_prefix == "E":
-            return self.integer_format
-        return _build_elm_integer_formatter(
-            prefix=self.constructor_prefix,
-            base=_INT_BASE[self.integer_format.name],
+        elif self.constructor_prefix == "E":
+            base_formatter = self.integer_format
+        else:
+            base_formatter = _build_elm_integer_formatter(
+                prefix=self.constructor_prefix,
+                base=_INT_BASE[self.integer_format.name],
+            )
+        return make_overflow_fallback_formatter(
+            base=base_formatter,
+            min_value=-(2**53 - 1),
+            max_value=2**53 - 1,
+            fallback=raise_for_unrepresentable_int(language_name="Elm"),
         )
 
     @cached_property

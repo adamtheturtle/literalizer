@@ -8,20 +8,20 @@ struct Record1 { std::vector<int> numbers; std::vector<std::string> strings; };
 struct Record0 { std::vector<std::pair<std::string, int>> omap_value; Record1 sibling_lists; std::vector<std::string> ref_marker_present; };
 int main() {
 auto my_data = Record0{
-    .omap_value = std::vector<std::pair<std::string, int>>{
+    .omap_value = {
         {"first", 1},
     },
-    .sibling_lists = Record1{
-        .numbers = std::vector<int>{
+    .sibling_lists = {
+        .numbers = {
             1,
             2,
         },
-        .strings = std::vector<std::string>{
+        .strings = {
             "x",
             "y",
         },
     },
-    .ref_marker_present = std::vector<std::string>{
+    .ref_marker_present = {
         "$keep",
         "z",
     },

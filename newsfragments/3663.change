@@ -1,0 +1,1 @@
+Keep quotes around non-identifier Ruby hash keys in ``SYMBOL`` entry style so keys containing punctuation, spaces, quotes, or no characters remain valid labels.

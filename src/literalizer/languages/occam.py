@@ -105,7 +105,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
             return f"MOBILE LIT(lit.int; {formatted})"
         case float():
             return f"MOBILE LIT(lit.float; {formatted}(REAL64))"
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | datetime.date() | datetime.time():
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
             return formatted

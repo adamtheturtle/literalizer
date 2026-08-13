@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+TOML integers are signed 64-bit values, so values just outside that
+range are refused instead of producing documents conforming parsers
+must reject (#3677).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Toml"]
+
+[call]
+api = "literalize"
+sources = ["9223372036854775808", "-9223372036854775809"]
+input_format = "json"
