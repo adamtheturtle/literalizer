@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 [
     {
         "item": "existing"
-        % This comment describes the next item.%
+        // This comment describes the next item.
     },
     {"item": "next"}
 ]

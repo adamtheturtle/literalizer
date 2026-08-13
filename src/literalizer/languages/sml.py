@@ -94,6 +94,8 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
+_ASCII_DELETE_CODE_POINT = 127
+
 
 @beartype
 def _apply_sml_negate_int(value: int, formatter: Callable[[int], str]) -> str:
@@ -467,9 +469,9 @@ class Sml(metaclass=LanguageCls):
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
-    # A portable Standard ML ``string`` is an 8-bit type.  Raw UTF-8 and
-    # ``\uXXXX`` escapes above U+00FF are rejected by the target compiler.
-    supports_non_ascii_string_literals = False
+    # A portable Standard ML ``string`` is an 8-bit type.  Encode non-ASCII
+    # text as decimal escapes for each UTF-8 byte rather than embedding it.
+    supports_non_ascii_string_literals = True
     supports_multiline_string_literals = False
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
@@ -857,9 +859,17 @@ class Sml(metaclass=LanguageCls):
 
         def _format(value: str) -> str:
             """Format a string as an SML quoted literal."""
-            return format_string_backslash_control(
+            formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\{:03d}",
+            )
+            return "".join(
+                (
+                    "".join(f"\\{byte:03d}" for byte in char.encode())
+                    if ord(char) >= _ASCII_DELETE_CODE_POINT
+                    else char
+                )
+                for char in formatted
             )
 
         return _format

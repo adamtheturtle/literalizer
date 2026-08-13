@@ -1,4 +1,4 @@
 * my_data
-@code json
-"hello # world"  % note%
+@code javascript
+"hello # world"  // note
 @end

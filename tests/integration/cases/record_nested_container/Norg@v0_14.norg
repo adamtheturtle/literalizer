@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "title": "report",
     "tags": ["draft", "urgent", "review"],
