@@ -188,6 +188,23 @@ def _surrogate_parse_error(
 
 
 @beartype
+def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
+    """Build the format-specific error for excessively nested input."""
+    detail = "input exceeds the supported nesting depth"
+    match input_format:
+        case InputFormat.JSON:
+            return JSONParseError(f"Invalid JSON: {detail}")
+        case InputFormat.JSON5:
+            return JSON5ParseError(f"Invalid JSON5: {detail}")
+        case InputFormat.YAML:
+            return YAMLParseError(f"Invalid YAML: {detail}")
+        case InputFormat.TOML:
+            return TOMLParseError(f"Invalid TOML: {detail}")
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
 def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
@@ -515,8 +532,11 @@ def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
             surrogate=source_surrogate,
         )
 
-    parsed = _parse_by_format(source=source, input_format=input_format)
-    surrogate = _find_surrogate(data=parsed.data)
+    try:
+        parsed = _parse_by_format(source=source, input_format=input_format)
+        surrogate = _find_surrogate(data=parsed.data)
+    except RecursionError as exc:
+        raise recursion_parse_error(input_format=input_format) from exc
     if surrogate is not None:
         raise _surrogate_parse_error(
             input_format=input_format,
