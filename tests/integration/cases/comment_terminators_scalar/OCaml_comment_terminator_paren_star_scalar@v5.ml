@@ -2,7 +2,7 @@ module Check = struct
 
 type val_t =
   | OStr of string
-let my_data : val_t = OStr (* before scalar: */ |# -} * ) (* ) =# ]] %} ]# % #> *)
-"value"  (* inline scalar: */ |# -} * ) (* ) =# ]] %} ]# % #> *)
+let my_data : val_t = OStr (* before scalar: */ |# -} * ) ( * ) =# ]] %} ]# % #> *)
+"value"  (* inline scalar: */ |# -} * ) ( * ) =# ]] %} ]# % #> *)
 
 end

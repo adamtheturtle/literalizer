@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -585,7 +586,7 @@ class Sml(metaclass=LanguageCls):
 
         PAREN_STAR = CommentConfig(
             prefix="(*",
-            suffix=" *)",
+            suffix=NestingCommentSuffix(object=" *)"),
         )
 
     class DeclarationStyles(enum.Enum):

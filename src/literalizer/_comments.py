@@ -340,7 +340,7 @@ def neutralize_comment_terminator(
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
     if isinstance(comment_suffix, NestingCommentSuffix):
-        opener = terminator[::-1]
+        opener = "(*"
         text = text.replace(opener, " ".join(opener))
     if not terminator or terminator not in text:
         return text
