@@ -150,6 +150,32 @@ def test_mixed_dict_values_set_with_string_raises() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    argnames="yaml_string",
+    argvalues=[
+        "? [1, 2]\n: value\n",
+        "# comment\n? [1, 2]\n: value\n",
+    ],
+    ids=["safe-loader", "round-trip-loader"],
+)
+def test_sequence_mapping_key_raises_yaml_parse_error(
+    yaml_string: str,
+) -> None:
+    """Complex YAML mapping keys raise a public parse error."""
+    with pytest.raises(
+        expected_exception=YAMLParseError,
+        match=(
+            r"^Invalid YAML: mapping keys must be scalar values; "
+            r"got (?:tuple|CommentedKeySeq)$"
+        ),
+    ):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+        )
+
+
 def test_mixed_ordered_map_values_raises() -> None:
     """``!!omap`` with mixed value types raises for Mojo."""
     yaml_string = textwrap.dedent(

@@ -233,6 +233,39 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
 
 
 @beartype
+def _validate_yaml_mapping_keys(*, data: object) -> None:
+    """Reject YAML mappings whose keys are not scalar values."""
+    match data:
+        case dict():
+            for key, value in data.items():  # pyright: ignore[reportUnknownVariableType]
+                if not isinstance(
+                    key,
+                    (
+                        str,
+                        int,
+                        float,
+                        bool,
+                        datetime.date,
+                        datetime.datetime,
+                        datetime.time,
+                        bytes,
+                        type(None),
+                    ),
+                ):
+                    msg = (
+                        "Invalid YAML: mapping keys must be scalar values; "
+                        f"got {type(key).__name__}"  # pyright: ignore[reportUnknownArgumentType]
+                    )
+                    raise YAMLParseError(msg)
+                _validate_yaml_mapping_keys(data=value)  # pyright: ignore[reportUnknownArgumentType]
+        case list() | set():
+            for item in data:  # pyright: ignore[reportUnknownVariableType]
+                _validate_yaml_mapping_keys(data=item)  # pyright: ignore[reportUnknownArgumentType]
+        case _:
+            pass
+
+
+@beartype
 def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
@@ -415,6 +448,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
                 line=mark.line + 1 if mark is not None else None,
                 column=mark.column + 1 if mark is not None else None,
             ) from exc
+        _validate_yaml_mapping_keys(data=raw_data)
         data = _unwrap_yaml_data(data=raw_data)
         return ParsedYaml(
             data=data,
@@ -433,6 +467,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             line=mark.line + 1 if mark is not None else None,
             column=mark.column + 1 if mark is not None else None,
         ) from exc
+    _validate_yaml_mapping_keys(data=plain_data)
     data = _unwrap_yaml_data(data=plain_data)
     return ParsedYaml(
         data=data,
