@@ -928,6 +928,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.nested_empty_map_cousins]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_empty_map_cousins"
+gates = [
+  { kind = "spec_config_field_present", field = "dict_format_config.narrowed_empty_form" },
+]
+overrides = []
+
 [axes.union_format_type_hints]
 plan = "every_non_default_member"
 name_template = "{lang}_union_format_{format}_type_hints_always"
