@@ -1,5 +1,7 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 0
 
 [UnrepresentableIntegerError]
 "TypeScript['9007199254740992']" = "TypeScript cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
 "TypeScript['-9007199254740992']" = "TypeScript cannot represent integer -9007199254740992 without external arbitrary-precision integer support."
+"Wren['9007199254740992']" = "Wren cannot represent integer 9007199254740992 without external arbitrary-precision integer support."
+"Wren['-9007199254740992']" = "Wren cannot represent integer -9007199254740992 without external arbitrary-precision integer support."
