@@ -477,6 +477,18 @@ overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
 
+# tomlkit exposes one body entry per dotted-key statement even when
+# several statements collapse into one rendered top-level mapping key.
+[axes.python_toml_dotted_key_comments]
+plan = "fixed_overrides"
+name_template = "{lang}_toml_dotted_key_comments"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+]
+
 # YAML set comments must follow the renderer's ordering of unwrapped
 # scalar values rather than ruamel's wrapper class names.
 [axes.python_yaml_wrapped_set_comments]
