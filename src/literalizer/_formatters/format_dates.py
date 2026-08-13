@@ -1,7 +1,6 @@
 """Date and datetime formatting functions."""
 
 import datetime
-import math
 from collections.abc import Callable
 
 from beartype import beartype
@@ -99,7 +98,9 @@ def datetime_epoch_seconds(value: datetime.datetime) -> int:
     """Return integer Unix epoch seconds for a datetime."""
     if value.tzinfo is None:
         value = value.replace(tzinfo=datetime.UTC)
-    return math.floor(value.timestamp())
+    utc_value = value.astimezone(tz=datetime.UTC)
+    epoch = datetime.datetime(year=1970, month=1, day=1, tzinfo=datetime.UTC)
+    return (utc_value - epoch) // datetime.timedelta(seconds=1)
 
 
 @beartype

@@ -899,3 +899,13 @@ gates = [{ kind = "spec_field_present", field = "union_format" }]
 overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
+
+[axes.datetime_epoch_far_future]
+plan = "fixed_overrides"
+name_template = "{lang}_datetime_epoch_far_future"
+gates = [
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
