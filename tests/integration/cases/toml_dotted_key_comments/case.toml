@@ -1,0 +1,6 @@
+schema_version = 1
+input = "input.toml"
+owner = "variant"
+
+[[variants]]
+axis = "python_toml_dotted_key_comments"
