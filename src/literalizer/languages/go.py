@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -119,6 +120,66 @@ _GO_I32_MAX = 2**31 - 1
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _is_negative_zero(value: float) -> bool:
+    """Return whether *value* is IEEE negative zero."""
+    return value == 0 and math.copysign(1, value) < 0
+
+
+@beartype
+def _data_has_negative_zero(*, data: Value) -> bool:
+    """Return whether a rendered value contains negative zero."""
+    pending: list[Value] = [data]
+    while pending:
+        value = pending.pop()
+        match value:
+            case float():
+                if _is_negative_zero(value=value):
+                    return True
+            case OrderedMap() | dict():
+                pending.extend(value.values())
+            case list() | set():
+                pending.extend(value)
+            case _:
+                pass
+    return False
+
+
+@beartype
+def _preserve_negative_zero(*, value: float, formatted: str) -> str:
+    """Use a Go runtime expression for IEEE negative zero."""
+    if _is_negative_zero(value=value):
+        return "math.Copysign(0, -1)"
+    return formatted
+
+
+@beartype
+def _format_float_repr(value: float) -> str:
+    """Format a repr-style float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_repr(value=value),
+    )
+
+
+@beartype
+def _format_float_scientific(value: float) -> str:
+    """Format a scientific float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_scientific(value=value),
+    )
+
+
+@beartype
+def _format_float_fixed(value: float) -> str:
+    """Format a fixed float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_fixed(value=value),
+    )
 
 
 @beartype
@@ -618,9 +679,9 @@ class Go(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(value=_format_float_repr)
+        SCIENTIFIC = enum.member(value=_format_float_scientific)
+        FIXED = enum.member(value=_format_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -1145,11 +1206,22 @@ class Go(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        For ``HeterogeneousStrategies.RECORD`` emits one ``struct``
-        declaration per record shape present in the data; otherwise
-        produces no preamble.
+        Imports ``math`` when negative zero needs ``math.Copysign``.
+        Under ``HeterogeneousStrategies.RECORD``, also emits one
+        ``struct`` declaration per record shape present in the data.
         """
-        return self._record_strategy.preamble
+        record_preamble = self._record_strategy.preamble
+
+        def _preamble(data: Value) -> tuple[str, ...]:
+            """Add ``math`` only when negative zero needs it."""
+            math_preamble = (
+                ('import "math"',)
+                if _data_has_negative_zero(data=data)
+                else ()
+            )
+            return math_preamble + record_preamble(data)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
