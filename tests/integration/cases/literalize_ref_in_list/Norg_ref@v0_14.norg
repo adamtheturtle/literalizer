@@ -1,17 +1,17 @@
 * val_x
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * val_y
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * my_data
-@code json
+@code javascript
 [
     val_x,
     val_y

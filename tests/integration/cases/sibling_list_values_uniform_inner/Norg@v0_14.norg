@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "lint": [2, [1]],
     "test": [5, [7]]
