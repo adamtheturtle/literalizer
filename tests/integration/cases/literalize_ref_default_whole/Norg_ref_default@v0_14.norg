@@ -1,10 +1,10 @@
 * my_var
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * my_data
-@code json
+@code javascript
 my_var
 @end
