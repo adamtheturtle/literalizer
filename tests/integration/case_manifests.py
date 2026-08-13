@@ -394,6 +394,7 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     """
 
     ref_key: str = "$ref"
+    languages: StringFrozenSet = Field(default_factory=_empty_name_set)
     collection_layout: CollectionLayoutName = "compact"
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
