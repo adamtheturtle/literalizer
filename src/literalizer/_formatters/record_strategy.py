@@ -83,11 +83,13 @@ class RecordLiteralField:
     """One resolved field of a generated record literal.
 
     ``formatted`` is the already-formatted field value produced by the
-    normal value formatter.
+    normal value formatter.  ``type_name`` is the exact declared member
+    type resolved through :attr:`RecordRenderer.field_type`.
     """
 
     identifier: str
     formatted: str
+    type_name: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -851,6 +853,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             RecordLiteralField(
                 identifier=renderer.field_identifier(key),
                 formatted=fields[key],
+                type_name=renderer.field_type(
+                    _field_type_request(field_value=value[key]),
+                ),
             )
             for key in shape.keys
         ]
