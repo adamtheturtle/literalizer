@@ -7,7 +7,7 @@ struct Record1 { int a{}; std::string b; std::nullptr_t c{}; };
 struct Record0 { Record1 outer; };
 int main() {
 auto my_data = Record0{
-    .outer = Record1{
+    .outer = {
         .a = 1,
         .b = "x",
         .c = nullptr,

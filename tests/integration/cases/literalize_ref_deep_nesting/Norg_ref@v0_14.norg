@@ -1,18 +1,11 @@
 * deep
-@code json
-[
-    [
-        1,
-        2
-    ],
-    [
-        3,
-        4
-    ]
-]
+@code javascript
+{
+    "_": "_"
+}
 @end
 * my_data
-@code json
+@code javascript
 {
     "a": {
         "b": {
