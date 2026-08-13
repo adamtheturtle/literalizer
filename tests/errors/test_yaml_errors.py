@@ -210,3 +210,20 @@ def test_raises_for_heterogeneous_set() -> None:
             include_delimiters=True,
             variable_form=None,
         )
+
+
+def test_date_and_datetime_set_raises() -> None:
+    """A set mixing YAML dates and datetimes is heterogeneous."""
+    yaml_string = textwrap.dedent(
+        text="""\
+        --- !!set
+        ? 2020-01-05
+        ? 2020-01-05T10:00:00
+    """,
+    )
+    with pytest.raises(expected_exception=HeterogeneousCollectionError):
+        literalize(
+            source=yaml_string,
+            input_format=InputFormat.YAML,
+            language=MOJO,
+        )

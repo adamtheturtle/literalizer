@@ -149,7 +149,9 @@ def scalar_type_bucket(*, value: Value) -> type | None: ...
 
 
 @beartype
-def scalar_type_bucket(*, value: Value) -> type | None:  # noqa: PLR0911
+def scalar_type_bucket(  # noqa: PLR0911  # pylint: disable=too-complex
+    *, value: Value
+) -> type | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
 
@@ -171,6 +173,8 @@ def scalar_type_bucket(*, value: Value) -> type | None:  # noqa: PLR0911
             return str
         case bytes():
             return bytes
+        case datetime.datetime():
+            return datetime.datetime
         case datetime.date():
             return datetime.date
         case datetime.time():
