@@ -954,6 +954,17 @@ def _format_dict_value(
             opener = ctx.dict_open_overrides[id(value)]
         case _ if not ctx.ref_key:
             opener = dict_cfg.dict_open(dict_items)
+        case _ if not ctx.expand_refs:
+            inferred = _resolve_refs_for_inference(
+                value=value,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+            opener = dict_cfg.dict_open(
+                inferred
+                if isinstance(inferred, dict) and inferred
+                else dict_items
+            )
         case _:
             open_items = dict_items
             if any(
@@ -1668,6 +1679,15 @@ def _format_list_value(
             opener = sequence_open_override
         case _ if not ctx.ref_key:
             opener = spec.sequence_open(value)
+        case _ if not ctx.expand_refs:
+            inferred = _resolve_refs_for_inference(
+                value=value,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+            opener = spec.sequence_open(
+                inferred if isinstance(inferred, list) and inferred else value
+            )
         case _:
             open_value = [
                 v
@@ -1841,7 +1861,7 @@ def _wrap_body(
 
 
 @beartype
-def _collection_open_for_multiline_value(  # pylint: disable=too-complex
+def _collection_open_for_multiline_value(  # noqa: C901  # pylint: disable=too-complex
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
     is_ordered_map: bool,
@@ -1868,6 +1888,15 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = ctx.dict_open_overrides[id(data)]
         case dict() if not ctx.ref_key:
             opener = spec.dict_format_config.dict_open(data)
+        case dict() if not ctx.expand_refs:
+            inferred = _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+            opener = spec.dict_format_config.dict_open(
+                inferred if isinstance(inferred, dict) and inferred else data
+            )
         case dict():
             dict_open_items = {
                 k: v
@@ -1887,6 +1916,15 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = sequence_open_override
         case _ if not ctx.ref_key:
             opener = spec.sequence_open(data)
+        case _ if not ctx.expand_refs:
+            inferred = _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+            opener = spec.sequence_open(
+                inferred if isinstance(inferred, list) and inferred else data
+            )
         case _:
             sequence_open_items = [
                 v

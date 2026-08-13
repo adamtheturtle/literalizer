@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-var MyVar = new Dictionary<string, string> {
-    ["_"] = "_"
-};
-var my_data = new Dictionary<string, object> {
+var MyVar = 1;
+var my_data = new Dictionary<string, int> {
     ["key"] = MyVar
 };
