@@ -204,11 +204,12 @@ def _unify_element_types(
     element_types: set[type | ListType],
 ) -> type | ListType | None:
     """Unify compatible scalar or recursively nested list types."""
-    if all(isinstance(item, ListType) for item in element_types):
+    list_types = {
+        item for item in element_types if isinstance(item, ListType)
+    }
+    if len(list_types) == len(element_types):
         inner_types: set[type | ListType] = set()
-        for item in element_types:
-            if not isinstance(item, ListType):  # pragma: no cover
-                return None
+        for item in list_types:
             inner = item.inner
             if not isinstance(inner, (type, ListType)):
                 return None
