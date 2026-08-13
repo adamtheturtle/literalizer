@@ -12,7 +12,7 @@ auto my_data = Record0{
     .f = 1.5,
     .b = true,
     .n = nullptr,
-    .d = std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},
+    .d = {std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},
     .dt = "2024-01-15T12:00:00",
     .by = "48656c6c6f",
 };
