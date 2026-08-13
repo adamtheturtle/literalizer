@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -89,6 +90,42 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+
+@beartype
+def _preserve_negative_zero(*, value: float, formatted: str) -> str:
+    """Force Groovy to parse negative zero as a ``Double``."""
+    if value == 0 and math.copysign(1, value) < 0:
+        return f"{formatted}d"
+    return formatted
+
+
+@beartype
+def _format_float_repr(value: float) -> str:
+    """Format a repr-style float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_repr(value=value),
+    )
+
+
+@beartype
+def _format_float_scientific(value: float) -> str:
+    """Format a scientific float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_scientific(value=value),
+    )
+
+
+@beartype
+def _format_float_fixed(value: float) -> str:
+    """Format a fixed float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_fixed(value=value),
+    )
+
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -439,9 +476,9 @@ class Groovy(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(value=_format_float_repr)
+        SCIENTIFIC = enum.member(value=_format_float_scientific)
+        FIXED = enum.member(value=_format_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
