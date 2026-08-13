@@ -589,7 +589,79 @@ def _empty_container_literal_overrides(
     """Return language-specific literal replacements for empty
     containers.
     """
-    return spec.heterogeneous_behavior.empty_container_literal_overrides(data)
+    overrides = dict(
+        spec.heterogeneous_behavior.empty_container_literal_overrides(data)
+    )
+    narrowed_empty_dict = spec.dict_format_config.narrowed_empty_form
+    if narrowed_empty_dict is not None:
+        _accumulate_cousin_empty_dict_overrides(
+            value=data,
+            narrowed_empty_dict=narrowed_empty_dict,
+            out=overrides,
+        )
+    return overrides
+
+
+@beartype
+def _accumulate_cousin_empty_dict_overrides(
+    *,
+    value: Value,
+    narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
+    out: dict[int, str],
+) -> None:
+    """Type empty maps from the same field in sibling dictionaries.
+
+    For ``[{"m": {"x": 1}}, {"m": {}}]``, the maps under ``m`` are
+    cousins rather than immediate siblings in the rendering walk.  Group
+    values by key across sibling dictionaries so the empty cousin can
+    borrow the non-empty cousin's inferred value type.
+    """
+    if isinstance(value, list):
+        sibling_dicts = [
+            item
+            for item in value
+            if isinstance(item, dict) and not isinstance(item, OrderedMap)
+        ]
+        keys = {key for sibling in sibling_dicts for key in sibling}
+        for key in keys:
+            cousins = [
+                sibling[key] for sibling in sibling_dicts if key in sibling
+            ]
+            empty_maps = [
+                cousin
+                for cousin in cousins
+                if isinstance(cousin, dict)
+                and not isinstance(cousin, OrderedMap)
+                and not cousin
+            ]
+            non_empty_maps = [
+                cousin
+                for cousin in cousins
+                if isinstance(cousin, dict)
+                and not isinstance(cousin, OrderedMap)
+                and cousin
+            ]
+            if (
+                empty_maps
+                and non_empty_maps
+                and len(empty_maps) + len(non_empty_maps) == len(cousins)
+            ):
+                replacement = narrowed_empty_dict(non_empty_maps)
+                for empty_map in empty_maps:
+                    out.setdefault(id(empty_map), replacement)
+        for child in value:
+            _accumulate_cousin_empty_dict_overrides(
+                value=child,
+                narrowed_empty_dict=narrowed_empty_dict,
+                out=out,
+            )
+    elif isinstance(value, dict):
+        for child in value.values():
+            _accumulate_cousin_empty_dict_overrides(
+                value=child,
+                narrowed_empty_dict=narrowed_empty_dict,
+                out=out,
+            )
 
 
 @beartype
@@ -4039,7 +4111,9 @@ def _append_trailing_comment(
         comment_suffix=cfg.suffix,
     )
     lines = rendered.split(sep="\n")
-    lines[-1] = f"{lines[-1]}  {cfg.prefix} {escaped_comment}{cfg.suffix}"
+    lines[-1] = (
+        f"{lines[-1]}  {cfg.trailing_prefix} {escaped_comment}{cfg.suffix}"
+    )
     return "\n".join(lines)
 
 
