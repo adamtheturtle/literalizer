@@ -3,7 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -124,6 +125,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidRecordNameError,
     UnrepresentableInputError,
 )
 
@@ -480,13 +482,7 @@ def _csharp_call_stub(
 # the value formatter uses, which has a back-reference to here).
 _CSHARP_I32_MIN = -(2**31)
 _CSHARP_I32_MAX = 2**31 - 1
-
-# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
-# names (no ``record_shape_names``), so the shared renderer always gets
-# an empty custom-name mapping.
-_CSHARP_NO_RECORD_SHAPE_NAMES: MappingProxyType[frozenset[str], str] = (
-    MappingProxyType(mapping={})
-)
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
@@ -780,8 +776,8 @@ class CSharp(metaclass=LanguageCls):
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
-    supports_record_shape_names = False
-    record_shape_names_emit_declarations = False
+    supports_record_shape_names = True
+    record_shape_names_emit_declarations = True
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
 
@@ -1161,6 +1157,34 @@ class CSharp(metaclass=LanguageCls):
                 "sequence_format",
                 formats.ARRAY,
             )
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate custom C# record names before rendering."""
+        auto_name_pattern = re.compile(pattern=r"^Record\d+$")
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase C# "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated 'Record'-prefixed record names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    "record_shape_names maps multiple key-sets to "
+                    f"{name!r}; record names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1377,6 +1401,10 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     json_type: JsonTypes | None = None
     # Keep in sync with the `LanguageVersion` passed to the C# lint host
     # in `scripts/lint-csharp/Program.cs`.
@@ -1568,7 +1596,7 @@ class CSharp(metaclass=LanguageCls):
         """C# syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix="Record",
-            record_shape_names=_CSHARP_NO_RECORD_SHAPE_NAMES,
+            record_shape_names=self.record_shape_names,
             field_identifier=_csharp_record_field_identifier,
             field_type=self._csharp_record_field_type,
             render_declaration=_csharp_render_record_declaration,

@@ -14,7 +14,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -89,7 +88,34 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableIntegerError,
+)
+
+
+@beartype
+def _format_datetime_r(value: datetime.datetime, /) -> str:
+    """Render a datetime with an explicit R parsing format.
+
+    R's default ``as.POSIXct`` formats accept the date prefix of an ISO
+    timestamp and silently discard the remaining time.  Use a space-separated
+    value and an explicit format; normalize aware values to UTC so ``%z`` is
+    portable and preserves the instant.
+    """
+    aware = value.utcoffset() is not None
+    if aware:
+        value = value.astimezone(tz=datetime.UTC)
+    rendered = value.strftime(format="%Y-%m-%d %H:%M:%S")
+    if value.microsecond:
+        rendered += f".{value.microsecond:06d}"
+    if aware:
+        rendered += "+0000"
+    offset_format = "%z" if aware else ""
+    return (
+        f'as.POSIXct("{rendered}", '
+        f'format = "%Y-%m-%d %H:%M:%OS{offset_format}")'
+    )
 
 
 @beartype
@@ -284,9 +310,7 @@ class R(metaclass=LanguageCls):
         """Datetime formatting options for R."""
 
         R = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='as.POSIXct("{iso}")',
-            ),
+            formatter=_format_datetime_r,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )
@@ -421,6 +445,12 @@ class R(metaclass=LanguageCls):
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
+            if not -(2**53) <= value <= 2**53:
+                msg = (
+                    f"R cannot represent integer {value} without external "
+                    "arbitrary-precision integer support."
+                )
+                raise UnrepresentableIntegerError(msg)
             formatter: Callable[[int], str] = self.value
             return formatter(value)
 
