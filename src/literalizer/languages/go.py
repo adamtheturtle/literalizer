@@ -1294,9 +1294,13 @@ class Go(metaclass=LanguageCls):
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
-        Under the ``RECORD`` strategy a list whose elements are
-        record-shaped dicts is rendered as ``[]any{ RecordN{...}, ... }``
-        (the elements format as struct literals, not as the
+        Under the ``RECORD`` strategy a list whose every element is
+        rendered as one shared record type opens as
+        ``[]RecordN{ RecordN{...}, ... }`` -- the struct literals all
+        share that element type, so the slice spells it instead of
+        widening.  A list that merely contains record-shaped dicts
+        (mixed with other values, or left as maps) still opens as
+        ``[]any{`` (the elements format as struct literals, not as the
         ``map[string]...`` the typed opener would otherwise infer).
         """
         base = typed_collection_open(
@@ -1310,9 +1314,20 @@ class Go(metaclass=LanguageCls):
         if self.heterogeneous_strategy is not record:
             return base
         any_open = f"[]{self.default_sequence_element_type}{{"
+        strategy_name_hook = self._record_strategy.record_name_for_value
+        assert strategy_name_hook is not None  # noqa: S101
+        record_name_for_value = strategy_name_hook
 
         def _open(items: list[Value], /) -> str:
-            """Use ``[]any{`` for lists of record-shaped dicts."""
+            """Use the shared record element type when every item is
+            rendered as one record, else ``[]any{`` for lists holding
+            record-shaped dicts.
+            """
+            names = {record_name_for_value(item) for item in items}
+            if len(names) == 1:
+                (name,) = names
+                if name is not None:
+                    return f"[]{name}{{"
             if any(
                 isinstance(item, dict) and not isinstance(item, _ordereddict)
                 for item in items

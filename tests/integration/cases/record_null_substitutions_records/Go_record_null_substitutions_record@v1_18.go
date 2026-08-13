@@ -6,7 +6,7 @@ type Record0 struct {
 }
 
 func main() {
-my_data := []any{
+my_data := []Record0{
 	Record0{DueDate: -1, ParentId: -1, Assignee: ""},
 	Record0{DueDate: 10, ParentId: 20, Assignee: "alice"},
 }

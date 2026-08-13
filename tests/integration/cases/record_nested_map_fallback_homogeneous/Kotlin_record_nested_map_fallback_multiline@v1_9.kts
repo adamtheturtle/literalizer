@@ -1,6 +1,6 @@
 data class Record1(val kind: String, val pr_id: String)
 data class Record0(val name: String, val input: Record1, val expected: Map<String, String>)
-val my_data = listOf<Any?>(
+val my_data = listOf<Record0>(
     Record0(
         name = "test_1",
         input = Record1(

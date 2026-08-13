@@ -6,7 +6,7 @@ type Record0 struct {
 }
 
 func main() {
-my_data := []any{
+my_data := []Record0{
 	Record0{
 		Name: "test_1",
 		Input: map[string]any{

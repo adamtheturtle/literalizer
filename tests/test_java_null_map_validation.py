@@ -30,7 +30,7 @@ def test_record_strategy_allows_null_inside_nested_record() -> None:
         variable_form=NewVariable(name="my_data", modifiers=frozenset()),
     )
 
-    assert 'Map.entry("outer", new Object[]{new Record0(null, 1)})' in (
+    assert 'Map.entry("outer", new Record0[]{new Record0(null, 1)})' in (
         result.code
     )
 

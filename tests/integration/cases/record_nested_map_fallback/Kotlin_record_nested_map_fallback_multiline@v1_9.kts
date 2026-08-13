@@ -1,5 +1,5 @@
 data class Record0(val name: String, val input: Map<String, Any?>, val expected: Map<String, Any?>)
-val my_data = listOf<Any?>(
+val my_data = listOf<Record0>(
     Record0(
         name = "test_1",
         input = mapOf<String, Any?>(

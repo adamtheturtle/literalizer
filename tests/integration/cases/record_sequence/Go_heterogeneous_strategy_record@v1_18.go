@@ -6,7 +6,7 @@ type Record0 struct {
 }
 
 func main() {
-my_data := []any{
+my_data := []Record0{
 	Record0{Id: 1, Label: "first", Tags: []any{}},
 	Record0{Id: 2, Label: "second", Tags: []any{}},
 	Record0{Id: 3, Label: "third", Tags: []any{}},

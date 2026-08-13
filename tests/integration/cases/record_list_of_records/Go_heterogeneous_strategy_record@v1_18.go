@@ -5,13 +5,13 @@ type Record1 struct {
 }
 type Record0 struct {
 	Name string
-	Items []any
+	Items []Record1
 }
 
 func main() {
 my_data := Record0{
 	Name: "box",
-	Items: []any{
+	Items: []Record1{
 		Record1{
 			Id: 1,
 			Label: "first",

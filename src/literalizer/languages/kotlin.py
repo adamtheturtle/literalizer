@@ -2063,8 +2063,12 @@ class Kotlin(metaclass=LanguageCls):
         """Callable that returns the opening delimiter for a sequence.
 
         Under any record-rendering strategy (``RECORD``, or ``TUPLE``
-        which composes it) a list whose elements are record-shaped
-        dicts opens as ``listOf<Any?>(`` (the elements format as
+        which composes it) a list whose every element is rendered as
+        one shared record type opens as ``listOf<RecordN>(`` -- the
+        record literals all share that element type, so the list spells
+        it instead of widening.  A list that merely contains
+        record-shaped dicts (mixed with other values, or left as maps)
+        still opens as ``listOf<Any?>(`` (the elements format as
         ``RecordN(...)`` literals, not the ``Map<...>`` the typed
         opener would otherwise infer).
         """
@@ -2087,9 +2091,20 @@ class Kotlin(metaclass=LanguageCls):
         if self.heterogeneous_behavior.render_record_literal is None:
             return base
         any_open = "listOf<Any?>("
+        strategy_name_hook = self._record_strategy.record_name_for_value
+        assert strategy_name_hook is not None  # noqa: S101
+        record_name_for_value = strategy_name_hook
 
         def _open(items: list[Value], /) -> str:
-            """Use ``listOf<Any?>(`` for lists of record-shaped dicts."""
+            """Use the shared record element type when every item is
+            rendered as one record, else ``listOf<Any?>(`` for lists
+            holding record-shaped dicts.
+            """
+            names = {record_name_for_value(item) for item in items}
+            if len(names) == 1:
+                (name,) = names
+                if name is not None:
+                    return f"listOf<{name}>("
             if any(
                 isinstance(item, dict) and not isinstance(item, OrderedMap)
                 for item in items

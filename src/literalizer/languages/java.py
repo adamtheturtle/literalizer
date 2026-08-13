@@ -2110,7 +2110,14 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
+        """Callable that returns the opening delimiter for a sequence.
+
+        Under ``HeterogeneousStrategies.RECORD`` a list whose every
+        element is rendered as one shared record type opens as
+        ``new RecordN[]{`` -- the record literals all share that
+        element type, so the array spells it instead of falling back to
+        ``new Object[]{``.
+        """
         if self._json_type_active:
             return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
         fmt = self.sequence_format.value
@@ -2136,10 +2143,29 @@ class Java(metaclass=LanguageCls):
             narrow_dict_values=False,
             dict_key_type="",
         )
-        return typed_collection_open(
+        base = typed_collection_open(
             type_to_opener=openers.seq,
             fallback=fmt.typed_opener_fallback,
         )
+        strategies = type(self.heterogeneous_strategy)
+        if self.heterogeneous_strategy is not strategies.RECORD:
+            return base
+        strategy_name_hook = self._record_strategy.record_name_for_value
+        assert strategy_name_hook is not None  # noqa: S101
+        record_name_for_value = strategy_name_hook
+
+        def _open(items: list[Value], /) -> str:
+            """Use the shared record element type when every item is
+            rendered as one record, else the typed array opener.
+            """
+            names = {record_name_for_value(item) for item in items}
+            if len(names) == 1:
+                (name,) = names
+                if name is not None:
+                    return f"new {name}[]{{"
+            return base(items)
+
+        return _open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
