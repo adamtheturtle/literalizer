@@ -660,7 +660,8 @@ def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
         case IdentifierCase.CAMEL:
             return humps.camelize(str_or_iter=snake)
         case IdentifierCase.PASCAL:
-            return humps.pascalize(str_or_iter=snake)
+            camel = humps.camelize(str_or_iter=snake)
+            return camel[:1].upper() + camel[1:]
         case IdentifierCase.UPPER_SNAKE:
             return snake.upper()
         case IdentifierCase.KEBAB:
