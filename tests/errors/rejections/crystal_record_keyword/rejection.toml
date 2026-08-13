@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Crystal record fields cannot use the generated initialize method name."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Crystal"]
+
+[call]
+api = "literalize"
+sources = ['[{"initialize": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
