@@ -904,6 +904,6 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_special_float_dict_key"
 gates = [
-  { kind = "capability_flag", flag = "supports_non_string_dict_keys" },
+  { kind = "capability_flag", flag = "supports_special_float_dict_keys" },
 ]
 overrides = []

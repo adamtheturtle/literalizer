@@ -359,6 +359,12 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_non_string_dict_keys": (
         lambda lang_cls: lang_cls.supports_non_string_dict_keys
     ),
+    "supports_special_float_dict_keys": (
+        lambda lang_cls: (
+            lang_cls.supports_non_string_dict_keys
+            and lang_cls.language_id not in {"groovy", "lua", "rust"}
+        )
+    ),
     "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,
     "supports_multiline_string_literals": (
         lambda lang_cls: lang_cls.supports_multiline_string_literals
