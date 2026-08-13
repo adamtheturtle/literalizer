@@ -899,3 +899,13 @@ gates = [{ kind = "spec_field_present", field = "union_format" }]
 overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
+
+[axes.yaml_v1_2_control_strings]
+plan = "fixed_overrides"
+name_template = "{lang}_v1_2_control_strings"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V1_2" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V1_2" },
+]
