@@ -1,0 +1,1 @@
+Reject Wren integers outside the exactly representable range of its double-backed ``Num`` type.

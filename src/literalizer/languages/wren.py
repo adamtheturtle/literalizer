@@ -31,7 +31,11 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
@@ -816,8 +820,15 @@ class Wren(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format
+        """Format an integer that Wren's double-backed ``Num``
+        preserves.
+        """
+        return make_overflow_fallback_formatter(
+            base=self.integer_format,
+            min_value=-(2**53 - 1),
+            max_value=2**53 - 1,
+            fallback=raise_for_unrepresentable_int(language_name="Wren"),
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:
