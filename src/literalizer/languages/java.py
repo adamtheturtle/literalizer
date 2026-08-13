@@ -1877,7 +1877,7 @@ class Java(metaclass=LanguageCls):
             dict_key_type="",
         )
 
-    def _java_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
+    def _java_record_field_type(
         self,
         request: RecordFieldType,
         /,
@@ -1912,22 +1912,15 @@ class Java(metaclass=LanguageCls):
         still has no precise component type; per the cross-language
         decision in #2317, Java folds it into the ``Object`` top type.
         """
-        if request.record_name is not None:
-            return request.record_name
-        if request.element_record_name is not None:
-            return f"{request.element_record_name}[]"
+        nested_type = request.record_name or (
+            f"{request.element_record_name}[]"
+            if request.element_record_name is not None
+            else None
+        )
+        if nested_type is not None:
+            return nested_type
         value = request.value
-        int_type = self._java_record_int_type
         match value:
-            case bool():
-                return "boolean"
-            case int() if not I64_MIN <= value <= I64_MAX:
-                return "BigInteger"
-            case int():
-                in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
-                return "long" if int_type == "int" and not in_i32 else int_type
-            case datetime.datetime():
-                return self._java_record_datetime_type(value)
             case OrderedMap():
                 field_type = "java.util.ArrayList"
             case dict() if record_shape_for_dict(value=value) is not None:
@@ -1936,10 +1929,26 @@ class Java(metaclass=LanguageCls):
                 opener = self.sequence_open(value)
                 field_type = opener.removeprefix("new ").removesuffix("{")
             case _:
-                return self._java_record_scalar_resolver(type(value)) or (
-                    "Object"
-                )
+                return self._java_record_noncollection_field_type(value)
         return field_type
+
+    def _java_record_noncollection_field_type(self, value: Value, /) -> str:
+        """Return a record type for a scalar or unsupported collection."""
+        match value:
+            case bool():
+                return "boolean"
+            case int() if not I64_MIN <= value <= I64_MAX:
+                return "BigInteger"
+            case int():
+                int_type = self._java_record_int_type
+                in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
+                return "long" if int_type == "int" and not in_i32 else int_type
+            case datetime.datetime():
+                return self._java_record_datetime_type(value)
+            case _:
+                return (
+                    self._java_record_scalar_resolver(type(value)) or "Object"
+                )
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
