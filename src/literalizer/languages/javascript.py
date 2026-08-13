@@ -103,10 +103,32 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _escape_es2015_string_line_separators(value: str) -> str:
+    """Escape line terminators forbidden in ES2015 string literals."""
+    return value.replace("\u2028", r"\u2028").replace("\u2029", r"\u2029")
+
+
+@beartype
+def _format_string_double(value: str) -> str:
+    """Format an ES2015-compatible double-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=format_string_backslash_nul_hex(value=value)
+    )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Format an ES2015-compatible single-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=format_string_backslash_single_nul_hex(value=value)
+    )
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating template literal."""
     if "\r" in value:
-        return format_string_backslash_nul_hex(value=value)
+        return _format_string_double(value=value)
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -527,8 +549,8 @@ class JavaScript(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
-        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
+        SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
