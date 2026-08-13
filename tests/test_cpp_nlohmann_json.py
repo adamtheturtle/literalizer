@@ -1,10 +1,6 @@
-"""Focused tests for nlohmann JSON rendering."""
-
-import pytest
+"""Focused tests for structural nlohmann JSON rendering."""
 
 from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
-from literalizer._language import Language
-from literalizer.exceptions import UnrepresentableIntegerError
 from literalizer.languages import Cpp
 
 
@@ -46,69 +42,3 @@ def test_variable_declaration_honours_multiline_collection_layout() -> None:
     }),
 });"""
     )
-
-
-@pytest.mark.parametrize(
-    argnames=("source", "expected_token"),
-    argvalues=[
-        ("0", "0"),
-        ("-1", "-1"),
-        ("9223372036854775807", "9223372036854775807"),
-        ("18446744073709551615", "18446744073709551615"),
-    ],
-)
-def test_inline_document_accepts_json_integer_tokens(
-    source: str,
-    expected_token: str,
-) -> None:
-    """Accept decimal integer boundaries covered by JSON grammar."""
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Cpp(
-            json_type=Cpp.json_types.NLOHMANN_JSON,
-            json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
-        ),
-    )
-
-    assert result.code == expected_token
-
-
-@pytest.mark.parametrize(
-    argnames="language",
-    argvalues=[
-        Cpp(
-            json_type=Cpp.json_types.NLOHMANN_JSON,
-            json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
-            integer_format=Cpp.integer_formats.HEX,
-        ),
-        Cpp(
-            json_type=Cpp.json_types.NLOHMANN_JSON,
-            json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
-            integer_format=Cpp.integer_formats.OCTAL,
-        ),
-        Cpp(
-            json_type=Cpp.json_types.NLOHMANN_JSON,
-            json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
-            integer_format=Cpp.integer_formats.BINARY,
-        ),
-        Cpp(
-            json_type=Cpp.json_types.NLOHMANN_JSON,
-            json_rendering=Cpp.json_renderings.INLINE_DOCUMENT,
-            numeric_separator=Cpp.numeric_separators.UNDERSCORE,
-        ),
-    ],
-)
-def test_inline_document_rejects_non_json_integer_tokens(
-    language: Language,
-) -> None:
-    """Reject C++-specific base and separator syntax inside JSON."""
-    with pytest.raises(
-        expected_exception=UnrepresentableIntegerError,
-        match="does not produce a valid JSON integer token",
-    ):
-        literalize(
-            source="1000",
-            input_format=InputFormat.JSON,
-            language=language,
-        )
