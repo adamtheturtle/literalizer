@@ -218,6 +218,17 @@ def _to_call_transform(value: object, /) -> object:
 # type is still checked.
 type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
 type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
+_LANGUAGES_BY_NAME = {
+    lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES
+}
+type ManifestLanguage = Annotated[
+    literalizer.LanguageCls,
+    BeforeValidator(_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
+]
+type ManifestLanguages = Annotated[
+    tuple[ManifestLanguage, ...],
+    Field(strict=False),
+]
 type CallTransformTemplate = Annotated[
     InstanceOf[CallTransform], BeforeValidator(_to_call_transform)
 ]
@@ -562,7 +573,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
-    languages: list[str] = Field(default_factory=list)
+    languages: ManifestLanguages = ()
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -595,17 +606,6 @@ class _CaseManifestData(  # noqa: NOD001
             msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
-    def _validate_languages(self) -> None:
-        """Reject unknown or repeated language selectors."""
-        known = {lang_cls.__name__ for lang_cls in ALL_LANGUAGES}
-        unknown = set(self.languages) - known
-        if unknown:
-            msg = f"unknown languages {sorted(unknown)!r}"
-            raise ValueError(msg)
-        if len(self.languages) != len(set(self.languages)):
-            msg = "languages contains a duplicate entry"
-            raise ValueError(msg)
-
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
@@ -622,7 +622,6 @@ class _CaseManifestData(  # noqa: NOD001
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)
-        self._validate_languages()
         if len(self.roles) != len(set(self.roles)):
             msg = "roles contains a duplicate entry"
             raise ValueError(msg)
@@ -729,7 +728,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
-        languages=frozenset(data.languages),
+        languages=frozenset(lang_cls.__name__ for lang_cls in data.languages),
         suites=frozenset(data.suites),
         owner=data.owner,
         roles=frozenset(data.roles),
