@@ -1,0 +1,1 @@
+Escape DEL and non-ASCII UTF-8 bytes in SML strings so MLton accepts the source without changing its byte values.
