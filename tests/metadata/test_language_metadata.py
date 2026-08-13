@@ -27,6 +27,14 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
     )
 ]
 
+
+def test_all_languages_support_non_ascii_string_literals() -> None:
+    """Every backend now represents non-ASCII text in string literals."""
+    assert all(
+        cls.supports_non_ascii_string_literals for cls in _SORTED_LANGUAGES
+    )
+
+
 _LANGUAGE_OWNED_METADATA = frozenset(
     {
         "language_id",
