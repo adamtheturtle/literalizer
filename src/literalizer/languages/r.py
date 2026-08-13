@@ -102,8 +102,8 @@ def _format_datetime_r(value: datetime.datetime, /) -> str:
     """
     aware = value.utcoffset() is not None
     if aware:
-        value = value.astimezone(datetime.UTC)
-    rendered = value.strftime("%Y-%m-%d %H:%M:%S")
+        value = value.astimezone(tz=datetime.UTC)
+    rendered = value.strftime(format="%Y-%m-%d %H:%M:%S")
     if value.microsecond:
         rendered += f".{value.microsecond:06d}"
     if aware:
