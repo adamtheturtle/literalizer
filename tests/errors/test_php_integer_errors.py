@@ -7,8 +7,14 @@ from literalizer.exceptions import UnrepresentableIntegerError
 from literalizer.languages import Php
 
 
-@pytest.mark.parametrize("value", [I64_MIN - 1, I64_MAX + 1])
-@pytest.mark.parametrize("integer_format", list(Php.IntegerFormats))
+@pytest.mark.parametrize(
+    argnames="value",
+    argvalues=[I64_MIN - 1, I64_MAX + 1],
+)
+@pytest.mark.parametrize(
+    argnames="integer_format",
+    argvalues=list(Php.IntegerFormats),
+)
 def test_php_rejects_integers_outside_runtime_range(
     value: int,
     integer_format: Php.IntegerFormats,
@@ -19,7 +25,10 @@ def test_php_rejects_integers_outside_runtime_range(
         language.format_integer(value)
 
 
-@pytest.mark.parametrize("value", [I64_MIN, I64_MAX])
+@pytest.mark.parametrize(
+    argnames="value",
+    argvalues=[I64_MIN, I64_MAX],
+)
 def test_php_accepts_signed_64_bit_boundaries(value: int) -> None:
     """The platform integer boundaries remain representable."""
     assert Php().format_integer(value)
