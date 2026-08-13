@@ -47,6 +47,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
@@ -1511,9 +1513,18 @@ class Odin(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
+        """Format an int within Odin's signed or unsigned 64-bit range."""
+        base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
+        )
+        return make_overflow_fallback_formatter(
+            base=base,
+            fallback=make_unsigned_overflow_fallback(
+                format_positive=lambda value: f"u64({base(value)})",
+                language_name="Odin",
+            ),
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
 
     @cached_property
