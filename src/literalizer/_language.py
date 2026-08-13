@@ -1041,6 +1041,20 @@ class LanguageCls(type):
     stringifies_nested_collections: bool = False
     """Whether nested collection syntax becomes string payload data."""
 
+    wraps_data_dependent_preamble_in_body: bool
+    """Whether file wrapping places the data-dependent preamble inside
+    the wrapped body (ahead of the body preamble) instead of at file
+    scope.
+
+    Unwrapped results are unaffected: the entries stay in
+    :attr:`~literalizer.LiteralizeResult.preamble` so callers embedding
+    :attr:`~literalizer.LiteralizeResult.code` receive the declarations
+    separately.  Scala opts in because its generated ``case class``
+    declarations must live inside the per-fixture ``object`` -- the
+    fixture lint compiles every fixture in one ``scala-cli`` invocation,
+    so a file-scope ``case class Record0`` would collide across cases.
+    """
+
     language_id: str
     __dataclass_fields__: dict[str, dataclasses.Field[Any]]
     """Stable, implementation-neutral identifier for this language.

@@ -2852,6 +2852,49 @@ def _substitute_record_nulls(
     return data
 
 
+@dataclasses.dataclass(frozen=True)
+class _ScopedWrapPreamble:
+    """Preamble entries split by wrap-mode placement."""
+
+    file_scope: tuple[str, ...]
+    """Entries prepended to the wrapped file at file scope."""
+
+    body: tuple[str, ...]
+    """Entries placed inside the wrapped body, ahead of the body
+    preamble.
+    """
+
+
+@beartype
+def _scope_preamble_for_wrap(
+    *,
+    language: Language,
+    preamble: tuple[str, ...],
+    data_dependent_entries: tuple[str, ...],
+) -> _ScopedWrapPreamble:
+    """Split *preamble* by wrap-mode placement.
+
+    Languages that set
+    :attr:`~literalizer._language.LanguageCls.wraps_data_dependent_preamble_in_body`
+    need their data-dependent preamble entries (Scala's generated
+    ``case class`` declarations) inside the wrapped body rather than at
+    file scope; everything stays at file scope for the rest.
+    """
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):
+        msg = "preamble scoping requires a LanguageCls language"
+        raise TypeError(msg)
+    if not language_cls.wraps_data_dependent_preamble_in_body:
+        return _ScopedWrapPreamble(file_scope=preamble, body=())
+    body_entries = set(data_dependent_entries)
+    return _ScopedWrapPreamble(
+        file_scope=tuple(
+            entry for entry in preamble if entry not in body_entries
+        ),
+        body=tuple(entry for entry in preamble if entry in body_entries),
+    )
+
+
 @beartype
 def literalize_apply_form(
     *,
@@ -2911,13 +2954,18 @@ def literalize_apply_form(
         content = result
         if pre_decl:
             content = "\n".join(pre_decl) + "\n" + content
+        scoped = _scope_preamble_for_wrap(
+            language=language,
+            preamble=preamble,
+            data_dependent_entries=data_dependent_preamble,
+        )
         wrapped = language.wrap_in_file(
             content=content,
             variable_name=variable_name or "",
-            body_preamble=computed.body,
+            body_preamble=scoped.body + computed.body,
         )
-        if preamble:
-            wrapped = "\n".join(preamble) + "\n" + wrapped
+        if scoped.file_scope:
+            wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
             preamble=(),
@@ -2986,7 +3034,13 @@ def literalize_both_forms(
         variable_form=ExistingVariable(name=variable_form.name),
         wrap_in_file=False,
     )
+    scoped = _scope_preamble_for_wrap(
+        language=language,
+        preamble=declaration.preamble,
+        data_dependent_entries=declaration.data_dependent_preamble,
+    )
     decl_preamble = (
+        *scoped.body,
         *declaration.body_preamble,
         *declaration.pre_declaration_comments,
     )
@@ -2996,8 +3050,8 @@ def literalize_both_forms(
         variable_name=variable_form.name,
         body_preamble=decl_preamble,
     )
-    if declaration.preamble:
-        wrapped = "\n".join(declaration.preamble) + "\n" + wrapped
+    if scoped.file_scope:
+        wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,
         preamble=(),
@@ -3201,11 +3255,6 @@ def _compose_bound_refs(
     sequenced_content = language.sequence_binding_declarations(
         declarations=binding_bare_codes
     )
-    wrapped = language.wrap_in_file(
-        content=sequenced_content,
-        variable_name=composition.main_variable_name,
-        body_preamble=unified_body_preamble,
-    )
     # Each declaration emitted its data-dependent block (e.g. Gleam's
     # ``pub type GVal {...}``) from *its own* data alone, so the
     # per-declaration blocks disagree on which constructors they
@@ -3238,8 +3287,18 @@ def _compose_bound_refs(
     all_preamble = deduplicate_preamble_entries(
         entries=declaration_preamble + main_result.preamble
     )
-    if all_preamble:
-        wrapped = "\n".join(all_preamble) + "\n" + wrapped
+    scoped = _scope_preamble_for_wrap(
+        language=language,
+        preamble=all_preamble,
+        data_dependent_entries=main_result.data_dependent_preamble,
+    )
+    wrapped = language.wrap_in_file(
+        content=sequenced_content,
+        variable_name=composition.main_variable_name,
+        body_preamble=scoped.body + unified_body_preamble,
+    )
+    if scoped.file_scope:
+        wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,
         preamble=(),
@@ -4839,6 +4898,11 @@ def _wrap_call_result_in_file(
             parameter_names=parameter_names,
             call_transform=call_transform,
         )
+    scoped = _scope_preamble_for_wrap(
+        language=language,
+        preamble=preamble,
+        data_dependent_entries=data_dependent_preamble,
+    )
     wrapped = _wrap_call_in_file(
         language=language,
         result=result,
@@ -4847,8 +4911,8 @@ def _wrap_call_result_in_file(
         parameter_names=parameter_names,
         arg_values=arg_values,
         call_transform=call_transform,
-        preamble=preamble,
-        computed_body=computed_body,
+        preamble=scoped.file_scope,
+        computed_body=scoped.body + computed_body,
     )
     return LiteralizeResult(
         declaration_code=wrapped,
@@ -5399,11 +5463,6 @@ def _literalize_call_with_declarations(
     unified_body_preamble = language.compute_body_preamble(
         union_types, combined_source_data
     )
-    wrapped = language.wrap_calls_with_declarations(
-        declarations=tuple(d.bare_code for d in declarations),
-        calls=call.bare_code,
-        body_preamble=unified_body_preamble + extra_body_preamble,
-    )
     # Each declaration emitted its data-dependent block (e.g. Gleam's
     # ``pub type GVal {...}``) from *its own* data alone, so the
     # per-declaration blocks disagree on which constructors they
@@ -5474,8 +5533,28 @@ def _literalize_call_with_declarations(
             + extra_preamble
         )
     )
-    if all_preamble:
-        wrapped = "\n".join(all_preamble) + "\n" + wrapped
+    scoped = _scope_preamble_for_wrap(
+        language=language,
+        preamble=all_preamble,
+        data_dependent_entries=(
+            tuple(
+                entry
+                for d in declarations
+                for entry in d.data_dependent_preamble
+            )
+            + call.data_dependent_preamble
+            + unified_data_dependent_preamble
+        ),
+    )
+    wrapped = language.wrap_calls_with_declarations(
+        declarations=tuple(d.bare_code for d in declarations),
+        calls=call.bare_code,
+        body_preamble=(
+            scoped.body + unified_body_preamble + extra_body_preamble
+        ),
+    )
+    if scoped.file_scope:
+        wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,
         preamble=(),

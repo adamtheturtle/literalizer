@@ -39,6 +39,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "reserved_variable_identifiers",
         "reserved_variable_identifiers_case_sensitive",
         "variant_metadata",
+        "wraps_data_dependent_preamble_in_body",
     }
 )
 
