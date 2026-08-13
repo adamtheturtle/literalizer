@@ -6,12 +6,12 @@
 struct Record0 { std::vector<int> scores; std::vector<std::variant<int, std::string>> args; };
 int main() {
 auto my_data = Record0{
-    .scores = std::vector<int>{
+    .scores = {
         10,
         20,
         30,
     },
-    .args = std::vector<std::variant<int, std::string>>{
+    .args = {
         1,
         "email",
         "a@gmail.com",

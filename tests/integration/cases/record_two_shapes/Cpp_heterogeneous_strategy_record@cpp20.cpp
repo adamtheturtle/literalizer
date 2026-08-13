@@ -6,11 +6,11 @@ struct Record2 { int retries{}; int timeout{}; };
 struct Record0 { Record1 metrics; Record2 flags; };
 int main() {
 auto my_data = Record0{
-    .metrics = Record1{
+    .metrics = {
         .count = 100,
         .rate = 50,
     },
-    .flags = Record2{
+    .flags = {
         .retries = 3,
         .timeout = 30,
     },

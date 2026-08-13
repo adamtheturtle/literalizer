@@ -1,5 +1,6 @@
-# languages rejecting: 2; languages accepting: 0
+# languages rejecting: 3; languages accepting: 0
 
 [UnrepresentableIntegerError]
 Cpp = "C++ cannot represent negative integer -9223372036854775809 below the signed 64-bit range using an unsigned fallback."
 D = "D cannot represent negative integer -9223372036854775809 below the signed 64-bit range using an unsigned fallback."
+Odin = "Odin cannot represent negative integer -9223372036854775809 below the signed 64-bit range using an unsigned fallback."

@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 [
     true,
     "hi",

@@ -418,6 +418,14 @@ def _format_swift_typed_declaration(
 _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
 )
+_SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS = frozenset({"`inout`"})
+
+
+def _swift_record_argument_label(identifier: str, /) -> str:
+    """Return a valid initializer label for a record field identifier."""
+    if identifier in _SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS:
+        return identifier
+    return identifier.strip("`")
 
 
 @beartype
@@ -427,8 +435,7 @@ def _swift_record_field_identifier(
     """Return the Swift ``struct`` member name for a dict *key*.
 
     Swift property identifiers preserve the dict keys (no case conversion),
-    escaping reserved words with backticks in declarations. Swift permits
-    keywords as argument labels, so the literal renderer removes them there.
+    escaping reserved words with backticks in declarations.
     """
     return f"`{key}`" if key in reserved_identifiers else key
 
@@ -451,7 +458,8 @@ def _swift_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}(",
         entries=tuple(
-            f"{field.identifier.strip('`')}: {field.formatted}"
+            f"{_swift_record_argument_label(field.identifier)}: "
+            f"{field.formatted}"
             for field in fields
         ),
         closer=")",

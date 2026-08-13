@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+PureScript's JavaScript-backed Number can represent 2**53 exactly, but
+the next integer in either direction is rounded (#3636).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["PureScript"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"

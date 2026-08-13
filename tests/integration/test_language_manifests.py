@@ -43,7 +43,7 @@ def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
         ),
         (
             'schema_version = 1\n[variants]\nrecord = ["made_up"]\n',
-            "Input should be 'unify_optional_fields'",
+            "Input should be 'empty_dict_field'",
         ),
         (
             (
