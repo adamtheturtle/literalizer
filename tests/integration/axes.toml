@@ -983,6 +983,18 @@ overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
 
+[axes.zig_v0_12_record]
+plan = "fixed_overrides"
+name_template = "{lang}_v0_12_record"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V0_12" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V0_12" },
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.yaml_v1_2_control_strings]
 plan = "fixed_overrides"
 name_template = "{lang}_v1_2_control_strings"
