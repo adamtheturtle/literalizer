@@ -899,3 +899,11 @@ gates = [{ kind = "spec_field_present", field = "union_format" }]
 overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
+
+[axes.special_float_dict_key]
+plan = "fixed_overrides"
+name_template = "{lang}_special_float_dict_key"
+gates = [
+  { kind = "capability_flag", flag = "supports_non_string_dict_keys" },
+]
+overrides = []

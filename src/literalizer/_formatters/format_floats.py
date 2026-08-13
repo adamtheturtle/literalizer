@@ -43,6 +43,7 @@ def data_has_special_float(*, data: Value) -> bool:
                 if not math.isfinite(value):
                     return True
             case OrderedMap() | dict():
+                pending.extend(value.keys())
                 pending.extend(value.values())
             case list() | set():
                 pending.extend(value)
