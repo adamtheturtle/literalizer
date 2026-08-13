@@ -1,9 +1,7 @@
 Imports System.Collections.Generic
 Module Check
-    Dim RefX = New Dictionary(Of String, Object) From {
-        {"_", "_"}
-    }
-    Dim my_data = New Object() {
+    Dim RefX = 3
+    Dim my_data = New Integer() {
         RefX,
         1,
         2

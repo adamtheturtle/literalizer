@@ -1,8 +1,6 @@
 * ref_x
 @code json
-{
-    "_": "_"
-}
+3
 @end
 * my_data
 @code json

@@ -1,10 +1,8 @@
 package main
 
 func main() {
-RefX := map[string]string{
-	"_": "_",
-}
-my_data := []any{
+RefX := 3
+my_data := []int{
 	RefX,
 	1,
 	2,

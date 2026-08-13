@@ -1,7 +1,5 @@
-final refX = <String, String>{
-    "_": "_",
-};
-final my_data = [
+final refX = 3;
+final my_data = <int>[
     refX,
     1,
     2,

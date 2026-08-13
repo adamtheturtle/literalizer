@@ -86,9 +86,7 @@ program main
     implicit none
     type(fval_t) :: ref_x
     type(fval_t) :: my_data
-    ref_x = fmap([fval_t :: &
-        fentry('_', fstr('_')) &
-    ])
+    ref_x = fint(3_int64)
     my_data = flist([fval_t :: &
         ref_x, &
         fint(1_int64), &

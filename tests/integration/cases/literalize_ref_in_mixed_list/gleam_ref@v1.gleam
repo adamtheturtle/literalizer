@@ -1,14 +1,10 @@
 pub type GVal {
   GInt(Int)
-  GStr(String)
   GList(List(GVal))
-  GDict(List(#(String, GVal)))
 }
 
 pub fn main() {
-  let ref_x = GDict([
-    #("_", GStr("_")),
-  ])
+  let ref_x = GInt(3)
   let my_data = GList([
     ref_x,
     GInt(1),
