@@ -1496,7 +1496,7 @@ class CSharp(metaclass=LanguageCls):
             dict_key_type="",
         )
 
-    def _csharp_record_field_type(  # noqa: PLR0911
+    def _csharp_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
