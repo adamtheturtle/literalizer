@@ -1,7 +1,5 @@
-val refX = mapOf<String, String>(
-    "_" to "_",
-)
-val my_data = listOf<Any?>(
+val refX = 3
+val my_data = intArrayOf(
     refX,
     1,
     2,

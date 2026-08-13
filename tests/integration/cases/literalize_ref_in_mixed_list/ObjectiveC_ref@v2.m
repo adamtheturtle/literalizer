@@ -1,9 +1,7 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id refX = @{
-    @"_": @"_",
-};
+id refX = @3;
 id my_data = @[
     refX,
     @1,

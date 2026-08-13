@@ -2357,7 +2357,12 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             )
             return f"{line_prefix}{identifier}"
 
-    check_data(data=data, spec=language)
+    inference_data = _resolve_refs_for_inference(
+        value=data,
+        ref_values=ref_values,
+        ref_key=ref_key,
+    )
+    check_data(data=inference_data, spec=language)
 
     if not ref_key and raw_yaml_data is None:
         fast_result = format_document_fast(
@@ -2503,7 +2508,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     return _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
-        data=data,
+        data=(
+            inference_data
+            if isinstance(inference_data, (list, dict, set))
+            else data
+        ),
         spec=language,
         line_prefix=line_prefix,
     )
@@ -3412,6 +3421,26 @@ def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value:
             if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
         }
     return value
+
+
+@beartype
+def _resolve_refs_for_inference(
+    *,
+    value: Value,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> Value:
+    """Resolve known refs and remove unknown refs for type inference."""
+    if ref_key == _DISABLED_REF_KEY:
+        return value
+    if ref_values:
+        resolved = _resolve_ref_for_preamble(
+            value=value,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        return resolved.value if resolved.include else []
+    return _strip_refs_from_value(value=value, ref_key=ref_key)
 
 
 @dataclasses.dataclass(frozen=True)

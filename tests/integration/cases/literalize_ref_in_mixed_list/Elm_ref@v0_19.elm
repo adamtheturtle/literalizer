@@ -3,15 +3,11 @@ module Check exposing (..)
 
 type Val
     = EInt Int
-    | EStr String
     | EList (List Val)
-    | EDict (List ( String, Val ))
 
 
 refX : Val
-refX = EDict [
-    ("_", EStr "_")
-    ]
+refX = EInt 3
 my_data : Val
 my_data = EList [
     refX,

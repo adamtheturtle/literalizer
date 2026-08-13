@@ -2,3 +2,6 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
+
+[ref.value_sources]
+ref_x = "3"
