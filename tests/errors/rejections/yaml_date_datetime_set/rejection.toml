@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "A YAML set mixing dates and datetimes is heterogeneous."
+exceptions = ["HeterogeneousCollectionError"]
+languages = ["Mojo"]
+
+[call]
+api = "literalize"
+sources = ["--- !!set\n? 2020-01-05\n? 2020-01-05T10:00:00\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "date_format", member = "ISO" },
+  { kind = "option_member", option = "datetime_format", member = "ISO" },
+  { kind = "option_member", option = "bytes_format", member = "HEX" },
+  { kind = "option_member", option = "sequence_format", member = "LIST" },
+]
