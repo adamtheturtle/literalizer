@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+Elm Int precision tops out at 2**53 - 1 in either direction, so an
+integer just past that range is refused rather than silently rounded
+(#3683).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Elm"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740992", "-9007199254740992"]
+input_format = "json"
