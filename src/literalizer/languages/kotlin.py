@@ -2271,8 +2271,11 @@ class Kotlin(metaclass=LanguageCls):
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+        suffixed = make_long_suffix_formatter(base=base)
         return make_overflow_fallback_formatter(
-            base=make_long_suffix_formatter(base=base),
+            base=lambda value: (
+                "Long.MIN_VALUE" if value == I64_MIN else suffixed(value)
+            ),
             fallback=_format_kotlin_biginteger_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,

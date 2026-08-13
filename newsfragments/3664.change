@@ -1,0 +1,1 @@
+Render Kotlin's minimum signed 64-bit integer as ``Long.MIN_VALUE`` inside widened collections instead of emitting the out-of-range literal ``-9223372036854775808L``.
