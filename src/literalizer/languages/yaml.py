@@ -116,6 +116,7 @@ class Yaml(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".yaml"
     pygments_name = "yaml"
+    stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = False
     supports_no_variable_wrap_in_file = True

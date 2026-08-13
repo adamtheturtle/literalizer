@@ -241,6 +241,7 @@ class Haxe(metaclass=LanguageCls):
     validate_spec_for_data = no_validate_spec_for_data
     extension = ".hx"
     pygments_name = "haxe"
+    stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = False

@@ -429,6 +429,7 @@ class TypeScript(metaclass=LanguageCls):
     leading_preamble = no_leading_preamble
     extension = ".ts"
     pygments_name = "typescript"
+    stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
