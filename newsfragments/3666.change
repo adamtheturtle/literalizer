@@ -1,1 +1,0 @@
-Render finite Raku floating-point values with exponent syntax so they evaluate as ``Num`` values and preserve negative zero.
