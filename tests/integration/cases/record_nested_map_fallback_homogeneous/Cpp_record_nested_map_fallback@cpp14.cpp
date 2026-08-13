@@ -47,8 +47,8 @@ struct Record1 { std::string kind; std::string pr_id; };
 struct Record0 { std::string name; Record1 input; std::map<std::string, LiteralizerRecordValue> expected; };
 int main() {
 auto my_data = std::vector<Record0>{
-    Record0{"test_1", Record1{"create", "pr_1"}, std::map<std::string, LiteralizerRecordValue>{{"pr_id", Value{"pr_1"}}, {"status", Value{"draft"}}}},
-    Record0{"test_2", Record1{"publish", "pr_1"}, std::map<std::string, LiteralizerRecordValue>{{"error", Value{"invalid_operation"}}}},
+    Record0{"test_1", {"create", "pr_1"}, {{"pr_id", Value{"pr_1"}}, {"status", Value{"draft"}}}},
+    Record0{"test_2", {"publish", "pr_1"}, {{"error", Value{"invalid_operation"}}}},
 };
     (void)my_data;
     return 0;
