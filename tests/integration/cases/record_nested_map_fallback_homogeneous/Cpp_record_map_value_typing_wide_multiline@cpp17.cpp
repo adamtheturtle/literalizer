@@ -10,22 +10,22 @@ int main() {
 auto my_data = std::vector{
     Record0{
         "test_1",
-        Record1{
+        {
             "create",
             "pr_1",
         },
-        std::map<std::string, LiteralizerRecordValue>{
+        {
             {"pr_id", LiteralizerRecordValue{"pr_1"}},
             {"status", LiteralizerRecordValue{"draft"}},
         },
     },
     Record0{
         "test_2",
-        Record1{
+        {
             "publish",
             "pr_1",
         },
-        std::map<std::string, LiteralizerRecordValue>{
+        {
             {"error", LiteralizerRecordValue{"invalid_operation"}},
         },
     },
