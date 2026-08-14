@@ -6,7 +6,7 @@ enum Value {
 fn main() {
     let my_data = vec![
         Value::I32(1),
-        Value::Map(<HashMap<String, String>>::new()),
+        Value::Map(HashMap::new()),
     ];
     let _ = my_data;
 }

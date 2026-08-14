@@ -1010,6 +1010,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.special_float_dict_key]
+plan = "fixed_overrides"
+name_template = "{lang}_special_float_dict_key"
+gates = [
+  { kind = "capability_flag", flag = "supports_special_float_dict_keys" },
+]
+overrides = []
+
 [axes.datetime_epoch_far_future]
 plan = "fixed_overrides"
 name_template = "{lang}_datetime_epoch_far_future"

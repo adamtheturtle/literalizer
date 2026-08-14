@@ -53,6 +53,10 @@ repos:
         stages: [pre-commit]
         groups: [fast]
       - id: check-yaml
+        # The special-float-key capability case intentionally uses a NaN
+        # mapping key. It is valid YAML and accepted by our YAML parsers, but
+        # check-yaml's parser rejects non-finite mapping keys.
+        exclude: ^tests/integration/cases/special_float_dict_key/
         priority: 92
         stages: [pre-commit]
         groups: [fast]

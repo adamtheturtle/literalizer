@@ -99,18 +99,31 @@ class RoundTripCapability(enum.StrEnum):
 
 
 @beartype
+def _is_reserved_identifier(
+    *,
+    case_sensitive: bool,
+    name: str,
+    reserved_identifiers: frozenset[str],
+) -> bool:
+    """Return whether *name* occurs in *reserved_identifiers*."""
+    if case_sensitive:
+        return name in reserved_identifiers
+    folded_name = name.casefold()
+    return any(
+        folded_name == reserved_name.casefold()
+        for reserved_name in reserved_identifiers
+    )
+
+
+@beartype
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* cannot be used for a new variable declaration."""
     language_name = language.__class__.__name__
-    if language.reserved_variable_identifiers_case_sensitive:
-        is_reserved = name in language.reserved_variable_identifiers
-    else:
-        folded_name = name.casefold()
-        is_reserved = any(
-            folded_name == reserved_name.casefold()
-            for reserved_name in language.reserved_variable_identifiers
-        )
-    if is_reserved:
+    if _is_reserved_identifier(
+        case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+        name=name,
+        reserved_identifiers=language.reserved_variable_identifiers,
+    ):
         raise ReservedVariableNameError(
             language_name=language_name,
             variable_name=name,
@@ -345,6 +358,11 @@ class OrderedMapFormatConfig:
     ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str
     preamble_lines: tuple[str, ...]
+
+    @property
+    def empty_ordered_map(self) -> str | None:
+        """Dedicated empty form, or ``None`` to use the dict fallback."""
+        return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1167,6 +1185,7 @@ class LanguageCls(type):
     reserved_identifiers: frozenset[str]
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
+    reserved_module_identifiers: frozenset[str] = frozenset()
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
     )
@@ -1248,7 +1267,13 @@ class LanguageCls(type):
                 raise InvalidRecordNameError(msg)
         if cls.supports_module_name:
             module_name = vars(instance)["module_name"]
-            if not NewVariableNameSyntax.ASCII.accepts(name=module_name):
+            if not NewVariableNameSyntax.ASCII.accepts(
+                name=module_name
+            ) or _is_reserved_identifier(
+                case_sensitive=instance.reserved_variable_identifiers_case_sensitive,
+                name=module_name,
+                reserved_identifiers=cls.reserved_module_identifiers,
+            ):
                 raise InvalidModuleNameError(
                     language_name=cls.__name__,
                     module_name=module_name,

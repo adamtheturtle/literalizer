@@ -6,6 +6,7 @@ import enum
 import functools
 import json
 import re
+from collections.abc import Iterable
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -20,6 +21,7 @@ from ruamel.yaml.comments import (
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.toml_document import TOMLDocument
+from typing_extensions import TypeIs
 
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -240,6 +242,67 @@ def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
     return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
 
+def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
+    """Return whether a value is a dictionary with object-typed
+    contents.
+    """
+    return isinstance(value, dict)
+
+
+def _is_object_sequence(
+    value: object,
+    /,
+) -> TypeIs[list[object] | set[object]]:
+    """Return whether a value is a list or set with object-typed
+    contents.
+    """
+    return isinstance(value, (list, set))
+
+
+def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
+    """Return whether *value* is an object-typed ruamel YAML set."""
+    return isinstance(value, CommentedSet)
+
+
+def _validate_yaml_mapping_key(*, key: object) -> None:
+    """Reject one non-scalar YAML mapping or set key."""
+    if isinstance(
+        key,
+        (
+            str,
+            int,
+            float,
+            bool,
+            datetime.date,
+            datetime.datetime,
+            datetime.time,
+            bytes,
+            type(None),
+        ),
+    ):
+        return
+    msg = (
+        "Invalid YAML: mapping keys must be scalar values; "
+        f"got {type(key).__name__}"
+    )
+    raise YAMLParseError(msg)
+
+
+@beartype
+def _validate_yaml_mapping_keys(*, data: object) -> None:
+    """Reject YAML mappings whose keys are not scalar values."""
+    if _is_object_dict(data):
+        for key, value in data.items():
+            _validate_yaml_mapping_key(key=key)
+            _validate_yaml_mapping_keys(data=value)
+    elif _is_object_commented_set(data):
+        for key in data:
+            _validate_yaml_mapping_key(key=key)
+    elif _is_object_sequence(data):
+        for item in data:
+            _validate_yaml_mapping_keys(data=item)
+
+
 @beartype
 def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
@@ -440,6 +503,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
                 line=mark.line + 1 if mark is not None else None,
                 column=mark.column + 1 if mark is not None else None,
             ) from exc
+        _validate_yaml_mapping_keys(data=raw_data)
         data = _unwrap_yaml_data(data=raw_data)
         return ParsedYaml(
             data=data,
@@ -458,6 +522,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             line=mark.line + 1 if mark is not None else None,
             column=mark.column + 1 if mark is not None else None,
         ) from exc
+    _validate_yaml_mapping_keys(data=plain_data)
     data = _unwrap_yaml_data(data=plain_data)
     return ParsedYaml(
         data=data,

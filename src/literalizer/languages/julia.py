@@ -228,6 +228,7 @@ class Julia(metaclass=LanguageCls):
             "elseif",
             "end",
             "export",
+            "false",
             "finally",
             "for",
             "function",
@@ -242,6 +243,7 @@ class Julia(metaclass=LanguageCls):
             "return",
             "struct",
             "try",
+            "true",
             "using",
             "while",
         }

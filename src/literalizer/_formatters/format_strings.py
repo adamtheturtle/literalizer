@@ -191,10 +191,10 @@ def format_string_concat_control(
     concatenates parts with a language-specific operator.
 
     Text segments are wrapped in *quote_char* with embedded quotes
-    escaped to *quote_escape*.  Control characters (code points 0-31)
-    are emitted using *control_char_template* (which receives the code
-    point as a positional format argument) and joined with
-    *concat_operator*.
+    escaped to *quote_escape*. C0 controls and Unicode line separators
+    are emitted using *control_char_template*. Unicode separators are
+    expanded to their UTF-8 bytes so byte-oriented string types preserve
+    the source value.
 
     Example::
 
@@ -235,11 +235,18 @@ def _apply_concat_control(
     """Format a string with control character concatenation."""
     control_char_threshold = 32
     parts: list[str] = []
-    for segment in re.split(pattern=r"([\x00-\x1f])", string=value):
+    for segment in re.split(
+        pattern=r"([\x00-\x1f\x85\u2028\u2029])", string=value
+    ):
         if not segment:
             continue
         if len(segment) == 1 and ord(segment) < control_char_threshold:
             parts.append(control_char_template.format(ord(segment)))
+        elif segment in "\x85\u2028\u2029":
+            parts.extend(
+                control_char_template.format(byte)
+                for byte in segment.encode(encoding="utf-8")
+            )
         else:
             escaped = segment.replace(quote_char, quote_escape)
             parts.append(f"{quote_char}{escaped}{quote_char}")
