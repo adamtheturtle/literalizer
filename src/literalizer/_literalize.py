@@ -59,6 +59,7 @@ from literalizer._parsing import (
     ParsedToml,
     ParsedYaml,
     parse_input,
+    recursion_parse_error,
 )
 from literalizer._preamble import (
     compute_preamble,
@@ -2856,7 +2857,7 @@ class _PreFormState:
 
 
 @beartype
-def literalize_pre_form(
+def _literalize_pre_form_impl(
     *,
     source: str,
     input_format: InputFormat,
@@ -2957,6 +2958,38 @@ def literalize_pre_form(
         resolved=resolved,
         line_prefix=line_prefix,
     )
+
+
+@beartype
+def literalize_pre_form(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+    record_null_substitutions: Mapping[str, Value] | None,
+    collection_layout: CollectionLayout,
+) -> _PreFormState:
+    """Run pre-form rendering with typed recursion failures."""
+    try:
+        return _literalize_pre_form_impl(
+            source=source,
+            input_format=input_format,
+            language=language,
+            pre_indent_level=pre_indent_level,
+            include_delimiters=include_delimiters,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            record_null_substitutions=record_null_substitutions,
+            collection_layout=collection_layout,
+        )
+    except RecursionError as exc:
+        raise recursion_parse_error(input_format=input_format) from exc
 
 
 @beartype
