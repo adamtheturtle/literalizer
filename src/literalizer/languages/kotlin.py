@@ -1744,6 +1744,8 @@ class Kotlin(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
+        if request.element_record_name is not None:
+            return f"List<{request.element_record_name}>"
         return self._kotlin_value_field_type(request.value)
 
     def _kotlin_value_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
@@ -2099,7 +2101,6 @@ class Kotlin(metaclass=LanguageCls):
         # record-rendering strategies in step.
         if self.heterogeneous_behavior.render_record_literal is None:
             return base
-        any_open = "listOf<Any?>("
         strategy_name_hook = self._record_strategy.record_name_for_value
         assert strategy_name_hook is not None  # noqa: S101
         record_name_for_value = strategy_name_hook
@@ -2114,12 +2115,14 @@ class Kotlin(metaclass=LanguageCls):
                 (name,) = names
                 if name is not None:
                     return f"listOf<{name}>("
-            if any(
-                isinstance(item, dict) and not isinstance(item, OrderedMap)
-                for item in items
-            ):
-                return any_open
-            return base(items)
+            return (
+                "listOf<Any?>("
+                if any(
+                    isinstance(item, dict) and not isinstance(item, OrderedMap)
+                    for item in items
+                )
+                else base(items)
+            )
 
         return _open
 
