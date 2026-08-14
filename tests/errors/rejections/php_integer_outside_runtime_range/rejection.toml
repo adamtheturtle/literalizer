@@ -1,0 +1,10 @@
+schema_version = 1
+summary = "PHP integer literals must remain integer-typed at runtime."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Php"]
+option = "integer_format"
+
+[call]
+api = "literalize"
+sources = ["-9223372036854775809", "9223372036854775808"]
+input_format = "json"

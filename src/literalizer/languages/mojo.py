@@ -944,6 +944,15 @@ def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     )
 
 
+class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Ordered maps in Mojo use a list-of-pairs representation."""
+
+    @property
+    def empty_ordered_map(self) -> str:
+        """Render an empty ordered map as an empty list."""
+        return "List[Tuple[String, String]]()"
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
@@ -986,12 +995,15 @@ class Mojo(metaclass=LanguageCls):
             "False",
             "None",
             "True",
+            "Self",
+            "alias",
             "and",
             "as",
             "assert",
             "async",
             "await",
             "break",
+            "borrowed",
             "class",
             "continue",
             "def",
@@ -1006,17 +1018,23 @@ class Mojo(metaclass=LanguageCls):
             "if",
             "import",
             "in",
+            "inout",
             "is",
             "let",
             "not",
             "or",
+            "owned",
             "pass",
             "raise",
             "return",
+            "raises",
+            "ref",
             "struct",
+            "trait",
             "try",
             "while",
             "with",
+            "var",
             "yield",
         }
     )
@@ -1735,7 +1753,7 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _MojoOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="["),
             close="]",
             preamble_lines=(),

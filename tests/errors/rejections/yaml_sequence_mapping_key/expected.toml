@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+"Mojo['? [1, 2]\\n: value\\n']" = "Invalid YAML: mapping keys must be scalar values; got tuple"
+"Mojo['# comment\\n? [1, 2]\\n: value\\n']" = "Invalid YAML: mapping keys must be scalar values; got CommentedKeySeq"

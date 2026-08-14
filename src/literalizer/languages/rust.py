@@ -881,53 +881,49 @@ def _rust_is_empty_container(*, value: Value) -> bool:
 
 
 @beartype
-def _rust_empty_container_wrap_ids(data: Value, /) -> frozenset[int]:
-    """Return ids of lists mixing scalars with empty containers.
+def _rust_is_scalar(*, value: object) -> bool:
+    """Return whether *value* is a scalar rather than a ref/container."""
+    return value is None or isinstance(
+        value,
+        (str, int, float, datetime.date, datetime.time, bytes),
+    )
 
-    A list element position that holds both a scalar and an empty
-    list/map has no single Rust element type, so the ``TAGGED_ENUM``
-    strategy wraps every element in the value enum: scalars through their
-    scalar variant and each empty container through a ``List`` / ``Map``
-    variant (issue #3028).  A list that also holds a *non-empty*
-    container is left untouched -- wrapping its populated elements is a
-    broader, separate concern -- so only pure scalar-plus-empty lists are
-    marked.
 
-    Only lists are marked.  A dict whose values mix a scalar with a
-    container is already a documented rejection
-    (:class:`~literalizer.exceptions.MixedDictValuesError`); the walk
-    still descends dicts so a list nested inside one is reached.
-    """
+@beartype
+def _rust_mark_container_subtree(*, item: Value, ids: set[int]) -> None:
+    """Mark each list/map whose children must become enum values."""
+    if not isinstance(item, (list, dict)):
+        return
+    ids.add(id(item))
+    children = item.values() if isinstance(item, dict) else item
+    for child in children:
+        _rust_mark_container_subtree(item=child, ids=ids)
+
+
+@beartype
+def _rust_visit_container_wrap_ids(*, item: Value, ids: set[int]) -> None:
+    """Find scalar-plus-container lists and mark nested contents."""
+    if not isinstance(item, (list, dict)):
+        return
+    children: list[Value] = list(
+        item.values() if isinstance(item, dict) else item
+    )
+    for child in children:
+        _rust_visit_container_wrap_ids(item=child, ids=ids)
+    if not isinstance(item, list):
+        return
+    has_scalar = any(_rust_is_scalar(value=child) for child in children)
+    has_container = any(isinstance(child, (list, dict)) for child in children)
+    has_set = any(isinstance(child, set) for child in children)
+    if has_scalar and has_container and not has_set:
+        _rust_mark_container_subtree(item=item, ids=ids)
+
+
+@beartype
+def _rust_container_wrap_ids(data: Value, /) -> frozenset[int]:
+    """Return ids needed to wrap scalar-plus-container lists."""
     ids: set[int] = set()
-
-    def _visit(item: Value) -> None:
-        """Mark *item* when it is a scalar-plus-empty-container list."""
-        match item:
-            case dict():
-                children: list[Value] = list(item.values())
-            case list():
-                children = list(item)
-            case _:
-                return
-        for child in children:
-            _visit(item=child)
-        if not isinstance(item, list):
-            return
-        has_scalar = any(
-            not isinstance(child, (list, dict, set)) for child in children
-        )
-        has_empty = any(
-            _rust_is_empty_container(value=child) for child in children
-        )
-        has_populated_container = any(
-            isinstance(child, (list, dict, set))
-            and not _rust_is_empty_container(value=child)
-            for child in children
-        )
-        if has_scalar and has_empty and not has_populated_container:
-            ids.add(id(item))
-
-    _visit(item=data)
+    _rust_visit_container_wrap_ids(item=data, ids=ids)
     return frozenset(ids)
 
 
@@ -936,35 +932,37 @@ def _tagged_enum_wrap_ids(data: Value, /) -> frozenset[int]:
     """Return every container id the ``TAGGED_ENUM`` strategy wraps.
 
     Unions the shared heterogeneous-scalar and sibling-map collectors
-    with the Rust-specific scalar-plus-empty-container collector so the
+    with the Rust-specific scalar-plus-container collector so the
     behavior and preamble agree on which children are wrapped.
     """
     return (
         collect_heterogeneous_container_ids(data=data)
         | collect_sibling_map_wrap_ids(data=data)
-        | _rust_empty_container_wrap_ids(data)
+        | _rust_container_wrap_ids(data)
     )
 
 
 @beartype
-def _rust_wrapped_empty_container_kinds(
+def _rust_wrapped_container_kinds(
     *,
     data: Value,
     wrap_ids: frozenset[int],
-) -> tuple[bool, bool]:
-    """Return ``(has_empty_list, has_empty_map)`` for wrapped children.
+) -> tuple[bool, bool, bool, bool]:
+    """Return wrapped and populated list/map-kind flags.
 
-    Mirrors :func:`iter_wrapped_scalars`: an empty list/map whose
-    immediate container id appears in *wrap_ids* renders as a ``List`` /
+    Mirrors :func:`iter_wrapped_scalars`: a list/map whose immediate
+    container id appears in *wrap_ids* renders as a ``List`` /
     ``Map`` variant of the value enum, so the enum declaration must
     carry that variant.
     """
     has_list = False
     has_map = False
+    has_populated_list = False
+    has_populated_map = False
 
     def _visit(item: Value) -> None:
         """Record which empty-container kinds *item* wraps."""
-        nonlocal has_list, has_map
+        nonlocal has_list, has_map, has_populated_list, has_populated_map
         match item:
             case dict():
                 children: list[Value] = list(item.values())
@@ -974,28 +972,29 @@ def _rust_wrapped_empty_container_kinds(
                 return
         parent_wrapped = id(item) in wrap_ids
         for child in children:
-            if parent_wrapped and _rust_is_empty_container(value=child):
+            if parent_wrapped and isinstance(child, (list, dict)):
                 match child:
                     case list():
                         has_list = True
+                        has_populated_list = has_populated_list or bool(child)
                     case _:
                         has_map = True
+                        has_populated_map = has_populated_map or bool(child)
             _visit(item=child)
 
     _visit(item=data)
-    return (has_list, has_map)
+    return (has_list, has_map, has_populated_list, has_populated_map)
 
 
 @beartype
-def _rust_empty_container_wrapper(
+def _rust_container_wrapper(
     params: _StrategyParams,
     /,
 ) -> Callable[[Value, str], str]:
-    """Return a callable wrapping an empty container in the value enum.
+    """Return a callable wrapping a container in the value enum.
 
-    Invoked only for the scalar-plus-empty-container mix (issue #3028),
-    so the input is always an empty list or empty map.  The formatted
-    empty-collection literal carries its own element type (e.g.
+    For an empty collection, the formatted literal carries its own
+    element type (e.g.
     ``Vec::<String>::new()``), which the enum variant's type would
     reject, so a bare ``vec![]`` / ``HashMap::new()`` is emitted instead
     and inferred against the variant's ``Vec<Value>`` /
@@ -1003,21 +1002,17 @@ def _rust_empty_container_wrapper(
     """
 
     def _wrap(raw_value: Value, formatted_value: str) -> str:
-        """Wrap an empty container as ``{enum_name}::{List,Map}(...)``."""
+        """Wrap a container as ``{enum_name}::{List,Map}(...)``."""
         match raw_value:
             case list():
-                payload = (
-                    formatted_value
-                    if formatted_value.startswith("<")
-                    else "vec![]"
-                )
+                payload = formatted_value
+                if not raw_value:
+                    payload = "vec![]"
                 return f"{params.enum_name}::List({payload})"
             case _:
-                payload = (
-                    formatted_value
-                    if formatted_value.startswith("<")
-                    else "HashMap::new()"
-                )
+                payload = formatted_value
+                if not raw_value:
+                    payload = "HashMap::new()"
                 return f"{params.enum_name}::Map({payload})"
 
     return _wrap
@@ -1124,7 +1119,7 @@ def _build_tagged_enum_behavior(
         compute_wrap_ids=_compute,
         wrap_scalar=_rust_value_scalar_wrapper(params),
         wrap_non_scalar=None,
-        wrap_empty_container=_rust_empty_container_wrapper(params),
+        wrap_empty_container=_rust_container_wrapper(params),
         empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
         dict_open_for_wrap_ids=None,
@@ -1153,8 +1148,8 @@ def _rust_value_enum_lines(
 
     One variant per distinct scalar family present, in first-seen order,
     followed by a ``List(Vec<{enum}>)`` and/or
-    ``Map(HashMap<&'static str, {enum}>)`` variant when an empty list /
-    map is wrapped alongside the scalars (issue #3028).  Returns an empty
+    ``Map(HashMap<&'static str, {enum}>)`` variant when a list/map is
+    wrapped alongside the scalars. Returns an empty
     list when no variant is needed.  Shared by the ``TAGGED_ENUM``
     preamble and the ``RECORD`` preamble's sibling-map widening (issue
     #2910), which wraps scalar leaves in the same enum and never wraps
@@ -1215,15 +1210,28 @@ def _build_tagged_enum_preamble(
             if isinstance(data, CallPreambleData)
             else (data,)
         )
-        wrap_ids = frozenset(
-            wrap_id
-            for value in (
-                data.argument_slots
-                if isinstance(data, CallPreambleData)
-                else values
+        if isinstance(data, CallPreambleData):
+            # Argument slots are artificial lists used only to infer
+            # cross-call scalar/map widening. A scalar and a container in
+            # the same parameter slot are never siblings in one rendered
+            # Rust collection, so apply scalar-plus-container wrapping only
+            # inside the real argument values.
+            slot_wrap_ids = frozenset(
+                wrap_id
+                for slot in data.argument_slots
+                for wrap_id in (
+                    collect_heterogeneous_container_ids(data=slot)
+                    | collect_sibling_map_wrap_ids(data=slot)
+                )
             )
-            for wrap_id in _tagged_enum_wrap_ids(value)
-        )
+            value_wrap_ids = frozenset(
+                wrap_id
+                for value in values
+                for wrap_id in _tagged_enum_wrap_ids(value)
+            )
+            wrap_ids = slot_wrap_ids | value_wrap_ids
+        else:
+            wrap_ids = _tagged_enum_wrap_ids(data)
         if not wrap_ids:
             return ()
         scalars = tuple(
@@ -1236,15 +1244,19 @@ def _build_tagged_enum_preamble(
         )
         has_list = False
         has_map = False
+        has_populated_list = False
+        has_populated_map = False
         for value in values:
-            value_has_list, value_has_map = (
-                _rust_wrapped_empty_container_kinds(
-                    data=value,
-                    wrap_ids=wrap_ids,
-                )
-            )
+            (
+                value_has_list,
+                value_has_map,
+                value_has_populated_list,
+                value_has_populated_map,
+            ) = _rust_wrapped_container_kinds(data=value, wrap_ids=wrap_ids)
             has_list = has_list or value_has_list
             has_map = has_map or value_has_map
+            has_populated_list = has_populated_list or value_has_populated_list
+            has_populated_map = has_populated_map or value_has_populated_map
         hinted_types = [
             _rust_empty_container_hint_types(
                 data=value,
@@ -1257,6 +1269,10 @@ def _build_tagged_enum_preamble(
         for list_types, map_types in hinted_types:
             list_hint_types.update(list_types)
             map_hint_types.update(map_types)
+        if has_populated_list:
+            list_hint_types.clear()
+        if has_populated_map:
+            map_hint_types.clear()
         if len(list_hint_types) > 1:
             msg = (
                 "TAGGED_ENUM can use only one concrete empty-list type per "

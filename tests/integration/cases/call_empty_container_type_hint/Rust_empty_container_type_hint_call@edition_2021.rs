@@ -5,5 +5,5 @@ enum Value {
 }
 fn main() {
     fn process<A, B>(_values: A, _count: B) {}
-    process(vec![Value::I32(1), Value::Map(<HashMap<String, String>>::new())], 42);
+    process(vec![Value::I32(1), Value::Map(HashMap::new())], 42);
 }
