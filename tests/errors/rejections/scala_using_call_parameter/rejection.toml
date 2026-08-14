@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Scala using clauses make using invalid as a generated call parameter."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Scala"]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["using"]
