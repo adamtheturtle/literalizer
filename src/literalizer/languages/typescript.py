@@ -372,6 +372,7 @@ _TS_TUPLE_BEHAVIOR = HeterogeneousBehavior(
     compute_record_shapes=None,
     render_tuple_literal=_render_ts_tuple,
     compute_tuple_list_ids=_ts_tuple_list_ids,
+    alias_record_ids=None,
 )
 """``TUPLE`` strategy behavior: render a fixed-length heterogeneous
 scalar array (a dict value or the document root, all elements scalar,

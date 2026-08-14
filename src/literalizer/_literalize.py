@@ -2658,6 +2658,8 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     ref_key: str,
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
+    validate_data: bool,
+    record_context_data: Value | None,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -2695,6 +2697,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             inside other collections.
         raw_yaml_data: The comment-preserving ruamel node corresponding
             to *data*, or ``None`` for non-YAML/comment-free input.
+        validate_data: Whether to run the data checks before rendering.
+            Bound-ref declarations set this false after validating their
+            shared record-shape context.
+        record_context_data: Composition-wide data used to restore shared
+            inference caches after calculating declaration-local wrap IDs.
     """
     _validate_ref_case_is_injective(
         value=data,
@@ -2724,7 +2731,8 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ref_values=ref_values,
         ref_key=ref_key,
     )
-    check_data(data=inference_data, spec=language)
+    if validate_data:
+        check_data(data=inference_data, spec=language)
 
     if not ref_key and raw_yaml_data is None:
         fast_result = format_document_fast(
@@ -2753,10 +2761,18 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ref_values=ref_values,
         ref_key=ref_key,
     )
+    alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+    if alias_record_ids is not None:
+        alias_record_ids(inference_id_map)
     wrap_ids = _source_container_ids(
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
         id_map=inference_id_map,
     )
+    if record_context_data is not None:
+        # Computing the declaration-local wrap IDs above may update a
+        # language's type-inference cache. Restore the composition-wide
+        # record context before any opener or field type reads that cache.
+        check_data(data=record_context_data, spec=language)
     tuple_list_ids = _source_container_ids(
         inferred_ids=_compute_tuple_list_ids(
             data=inference_data, spec=language
@@ -2956,6 +2972,8 @@ def _literalize_child_path(
                 ref_key=ref_key,
                 collection_layout=collection_layout,
                 raw_yaml_data=None,
+                validate_data=True,
+                record_context_data=None,
             )
         except error_type:
             return (
@@ -2987,6 +3005,8 @@ def _literalize(
     ref_key: str,
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
+    validate_data: bool,
+    record_context_data: Value | None,
 ) -> str:
     """Render data and attach a path to value-specific renderer errors."""
     try:
@@ -3000,6 +3020,8 @@ def _literalize(
             ref_key=ref_key,
             collection_layout=collection_layout,
             raw_yaml_data=raw_yaml_data,
+            validate_data=validate_data,
+            record_context_data=record_context_data,
         )
     except LiteralizerError as exc:
         if exc.path is None:
@@ -3154,6 +3176,8 @@ def _literalize_pre_form_impl(
             if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve
             else None
         ),
+        record_context_data=None,
+        validate_data=True,
     )
 
     comment_line_prefix = (
@@ -3542,21 +3566,6 @@ def literalize_bound_refs(
     Haskell ``seq name``) is preserved.
     """
     ordered_names = list(bound_refs)
-    decl_results: list[LiteralizeResult] = []
-    for name in ordered_names:
-        converted_name = (
-            ref_case.convert(name=name) if ref_case is not None else name
-        )
-        decl_results.append(
-            _literalize_value_binding(
-                value=bound_refs[name],
-                language=language,
-                variable_form=NewVariable(
-                    name=converted_name, modifiers=frozenset()
-                ),
-                collection_layout=collection_layout,
-            )
-        )
     effective_ref_values: dict[str, Value] = {
         name: bound_refs[name] for name in ordered_names
     }
@@ -3579,6 +3588,22 @@ def literalize_bound_refs(
         variable_form=variable_form,
         wrap_in_file=False,
     )
+    decl_results: list[LiteralizeResult] = []
+    for name in ordered_names:
+        converted_name = (
+            ref_case.convert(name=name) if ref_case is not None else name
+        )
+        decl_results.append(
+            _literalize_value_binding(
+                value=bound_refs[name],
+                language=language,
+                variable_form=NewVariable(
+                    name=converted_name, modifiers=frozenset()
+                ),
+                collection_layout=collection_layout,
+                record_context_data=pre_form.data_for_preamble,
+            )
+        )
     composition = _BoundRefComposition(
         declarations=tuple(decl_results),
         main_result=main_result,
@@ -3597,6 +3622,7 @@ def _literalize_value_binding(
     language: Language,
     variable_form: NewVariable,
     collection_layout: CollectionLayout,
+    record_context_data: Value | None,
 ) -> LiteralizeResult:
     """Render *value* as a variable binding without file wrapping.
 
@@ -3614,6 +3640,8 @@ def _literalize_value_binding(
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         raw_yaml_data=None,
+        validate_data=record_context_data is None,
+        record_context_data=record_context_data,
     )
     wrapped = _apply_variable_wrapper(
         result=result_text,
@@ -3710,19 +3738,20 @@ def _compose_bound_refs(
     # declaration's ``source_data``.  Drop those reproduced
     # per-declaration blocks and let first-seen duplicate removal
     # collapse the shared single-line entries (imports, package lines).
-    # Unlike the previous "drop any entry containing a newline"
-    # heuristic, a multi-line declaration-only block that the main
-    # binding does not reproduce is preserved.
-    dropped_declaration_blocks: set[str] = set()
-    for d in decl_results:
-        dropped_declaration_blocks.update(
-            language.data_dependent_preamble(d.source_data)
-        )
+    # Keep a declaration-local data entry only when recomputing over the
+    # entire composition reproduces it.  This retains shared imports while
+    # dropping one-line and multi-line declarations whose generated names
+    # or field types conflict with the main binding's canonical preamble.
+    unified_data_dependent_preamble = language.data_dependent_preamble(
+        combined_source_data
+    )
+    unified_data_dependent_entries = set(unified_data_dependent_preamble)
     declaration_preamble = tuple(
         entry
         for d in decl_results
         for entry in d.preamble
-        if entry not in dropped_declaration_blocks or "\n" not in entry
+        if entry not in d.data_dependent_preamble
+        or entry in unified_data_dependent_entries
     )
     all_preamble = deduplicate_preamble_entries(
         entries=declaration_preamble + main_result.preamble
@@ -3730,7 +3759,12 @@ def _compose_bound_refs(
     scoped = _scope_preamble_for_wrap(
         language=language,
         preamble=all_preamble,
-        data_dependent_entries=main_result.data_dependent_preamble,
+        data_dependent_entries=deduplicate_preamble_entries(
+            entries=(
+                main_result.data_dependent_preamble
+                + unified_data_dependent_preamble
+            )
+        ),
     )
     wrapped = language.wrap_in_file(
         content=sequenced_content,
@@ -5292,6 +5326,7 @@ def _compose_call_with_bound_ref_declarations(
                 modifiers=frozenset(),
             ),
             collection_layout=collection_layout,
+            record_context_data=None,
         )
         for name, value in bound_refs.items()
     ]

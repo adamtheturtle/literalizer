@@ -1129,6 +1129,7 @@ def _build_tagged_enum_behavior(
         compute_record_shapes=None,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
+        alias_record_ids=None,
     )
 
 
@@ -2151,6 +2152,7 @@ def _record_behavior_impl(
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
+        alias_record_ids=None,
     )
 
 

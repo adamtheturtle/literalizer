@@ -36,6 +36,7 @@ shape's key-set).
 """
 
 import dataclasses
+import functools
 import re
 from collections import Counter
 from collections.abc import Callable, Hashable, Mapping, Sequence
@@ -717,6 +718,52 @@ def _build_derecordized_map_open(
 
 
 @beartype
+def _accumulate_field_requests(
+    *,
+    value: Value,
+    shapes_by_id: Mapping[int, RecordShape],
+    request_by_shape: dict[RecordShape, dict[str, RecordFieldType]],
+    field_type_request: Callable[[Value], RecordFieldType],
+) -> None:
+    """Seed declaration types during a metadata-only shape pass."""
+    if isinstance(value, dict):
+        shape = shapes_by_id.get(id(value))
+        if shape is not None and shape not in request_by_shape:
+            request_by_shape[shape] = {
+                key: field_type_request(value[key]) for key in shape.keys
+            }
+        for child in value.values():
+            _accumulate_field_requests(
+                value=child,
+                shapes_by_id=shapes_by_id,
+                request_by_shape=request_by_shape,
+                field_type_request=field_type_request,
+            )
+    elif isinstance(value, list):
+        for child in value:
+            _accumulate_field_requests(
+                value=child,
+                shapes_by_id=shapes_by_id,
+                request_by_shape=request_by_shape,
+                field_type_request=field_type_request,
+            )
+
+
+def _alias_record_ids(
+    id_map: Mapping[int, int],
+    *,
+    id_to_shape: dict[int, RecordShape],
+) -> None:
+    """Make source containers reuse shapes inferred from resolved refs."""
+    id_to_shape.update(
+        {
+            source_id: id_to_shape[inferred_id]
+            for inferred_id, source_id in id_map.items()
+            if inferred_id in id_to_shape
+        }
+    )
+
+
 def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
     renderer: RecordRenderer,
@@ -810,6 +857,13 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             emit_ordered=emit_order_cache,
             emit_seen=set(),
         )
+
+        _accumulate_field_requests(
+            value=data,
+            shapes_by_id=shapes_by_id,
+            request_by_shape=request_by_shape,
+            field_type_request=_field_type_request,
+        )
         return shapes_by_id
 
     def _field_type_request(field_value: Value) -> RecordFieldType:
@@ -853,11 +907,13 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         if id(value) not in id_to_shape:
             return None
         shape = id_to_shape[id(value)]
-        if shape not in request_by_shape:
-            request_by_shape[shape] = {
+        request_by_shape.setdefault(
+            shape,
+            {
                 key: _field_type_request(field_value=value[key])
                 for key in shape.keys
-            }
+            },
+        )
         literal_fields = [
             RecordLiteralField(
                 identifier=renderer.field_identifier(key),
@@ -922,6 +978,10 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
+        alias_record_ids=functools.partial(
+            _alias_record_ids,
+            id_to_shape=id_to_shape,
+        ),
     )
 
     def _preamble(data: Value, /) -> tuple[str, ...]:

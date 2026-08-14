@@ -1307,6 +1307,7 @@ _CPP_TUPLE_BEHAVIOR = HeterogeneousBehavior(
     compute_record_shapes=None,
     render_tuple_literal=_render_cpp_tuple,
     compute_tuple_list_ids=_cpp_tuple_list_ids,
+    alias_record_ids=None,
 )
 """``TUPLE`` strategy behavior: render fixed-length heterogeneous
 scalar arrays as ``std::make_tuple`` literals.
