@@ -2018,7 +2018,7 @@ def _sequence_open_for_ref_inference(
 
 
 @beartype
-def _collection_open_for_multiline_value(  # pylint: disable=too-complex
+def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
     is_ordered_map: bool,
@@ -2043,17 +2043,8 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = dict_open_override
         case dict() if id(data) in ctx.dict_open_overrides:
             opener = ctx.dict_open_overrides[id(data)]
-        case dict() if not ctx.ref_key or not ctx.expand_refs:
-            opener = _dict_open_for_ref_inference(data=data, ctx=ctx)
         case dict():
-            dict_open_items = {
-                k: v
-                for k, v in data.items()
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            }
-            opener = spec.dict_format_config.dict_open(dict_open_items or data)
+            opener = _dict_open_for_ref_inference(data=data, ctx=ctx)
         case set():
             sorted_set: list[Value] = sorted(
                 data,
@@ -2062,17 +2053,8 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = spec.set_format_config.set_open(sorted_set)
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
-        case _ if not ctx.ref_key or not ctx.expand_refs:
-            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
         case _:
-            sequence_open_items = [
-                v
-                for v in data
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            ]
-            opener = spec.sequence_open(sequence_open_items or data)
+            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
     return opener
 
 
@@ -2498,19 +2480,17 @@ def _source_list_children_for_inference(
     children: list[Value] = []
     for child in source:
         if ref_values:
-            resolved = _resolve_ref_for_preamble(
+            include = _resolve_ref_for_preamble(
                 value=child,
                 ref_values=ref_values,
                 ref_key=ref_key,
+            ).include
+        else:
+            include = (
+                _extract_call_arg_ref_name(value=child, ref_key=ref_key)
+                is None
             )
-            if not resolved.include:
-                continue
-        elif (
-            _extract_call_arg_ref_name(value=child, ref_key=ref_key)
-            is not None
-        ):
-            continue
-        children.append(child)
+        children.extend({True: (child,), False: ()}[include])
     return children
 
 
