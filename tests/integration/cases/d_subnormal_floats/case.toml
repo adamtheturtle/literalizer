@@ -1,0 +1,6 @@
+schema_version = 1
+languages = ["D"]
+suites = ["base"]
+
+[[variants]]
+axis = "float_format"

@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -82,6 +83,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordMapValueTypings,
     RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -119,6 +121,66 @@ _GO_I32_MAX = 2**31 - 1
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _is_negative_zero(value: float) -> bool:
+    """Return whether *value* is IEEE negative zero."""
+    return value == 0 and math.copysign(1, value) < 0
+
+
+@beartype
+def _data_has_negative_zero(*, data: Value) -> bool:
+    """Return whether a rendered value contains negative zero."""
+    pending: list[Value] = [data]
+    while pending:
+        value = pending.pop()
+        match value:
+            case float():
+                if _is_negative_zero(value=value):
+                    return True
+            case OrderedMap() | dict():
+                pending.extend(value.values())
+            case list() | set():
+                pending.extend(value)
+            case _:
+                pass
+    return False
+
+
+@beartype
+def _preserve_negative_zero(*, value: float, formatted: str) -> str:
+    """Use a Go runtime expression for IEEE negative zero."""
+    if _is_negative_zero(value=value):
+        return "math.Copysign(0, -1)"
+    return formatted
+
+
+@beartype
+def _format_float_repr(value: float) -> str:
+    """Format a repr-style float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_repr(value=value),
+    )
+
+
+@beartype
+def _format_float_scientific(value: float) -> str:
+    """Format a scientific float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_scientific(value=value),
+    )
+
+
+@beartype
+def _format_float_fixed(value: float) -> str:
+    """Format a fixed float without losing negative zero."""
+    return _preserve_negative_zero(
+        value=value,
+        formatted=format_float_fixed(value=value),
+    )
 
 
 @beartype
@@ -372,6 +434,19 @@ class Go(metaclass=LanguageCls):
               time.UTC)``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        record_map_value_typing: Value type for a ``RECORD`` strategy
+            field whose map has no record shape of its own and so
+            renders as a plain map.
+
+            * ``record_map_value_typings.NARROW`` — the concrete type
+              every widened scalar in this input shares, e.g.
+              ``map[string]string``, falling back to ``map[string]any``
+              when they span more than one type.  This is the default.
+            * ``record_map_value_typings.WIDE`` — always
+              ``map[string]any``.  Two inputs sharing one record shape
+              then declare the field identically, so one input's
+              literals compile against the other's ``struct``.
     """
 
     format_integer_widened = no_format_integer_widened
@@ -618,9 +693,9 @@ class Go(metaclass=LanguageCls):
     ):
         """Float format options."""
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = enum.member(value=_format_float_repr)
+        SCIENTIFIC = enum.member(value=_format_float_scientific)
+        FIXED = enum.member(value=_format_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
@@ -713,6 +788,7 @@ class Go(metaclass=LanguageCls):
     float_formats = FloatFormats
     integer_formats = IntegerFormats
     integer_width_strategies = BareIntegerWidthStrategies
+    record_map_value_typings = RecordMapValueTypings
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -867,6 +943,9 @@ class Go(metaclass=LanguageCls):
         default_factory=lambda: MappingProxyType(mapping={}),
         hash=False,
     )
+    record_map_value_typing: RecordMapValueTypings = (
+        RecordMapValueTypings.NARROW
+    )
     # Keep in sync with the `go` directive in the generated go.mod in
     # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_18
@@ -945,7 +1024,11 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
-    def _go_record_field_type(self, request: RecordFieldType, /) -> str:
+    def _go_record_field_type(
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
         """Return the Go struct field type for a record field.
 
         A field whose value is itself a nested record-shaped dict uses
@@ -975,8 +1058,13 @@ class Go(metaclass=LanguageCls):
         ``any`` (documented best effort), which the rendered literal
         still assigns into.
         """
-        if request.record_name is not None:
-            return request.record_name
+        nested_type = request.record_name or (
+            f"[]{request.element_record_name}"
+            if request.element_record_name is not None
+            else None
+        )
+        if nested_type is not None:
+            return nested_type
         value = request.value
         if (
             isinstance(value, dict)
@@ -1064,9 +1152,13 @@ class Go(metaclass=LanguageCls):
 
         Returns ``None`` when the widened maps genuinely mix scalar
         types (the ``map[string]any`` top type is then required), when
-        there is nothing to widen, or when any widened scalar only has
-        the ``any`` top type (a ``nil`` value).
+        there is nothing to widen, when any widened scalar only has the
+        ``any`` top type (a ``nil`` value), or when
+        ``record_map_value_typing`` asks for the top type whatever the
+        data holds.
         """
+        if self.record_map_value_typing is RecordMapValueTypings.WIDE:
+            return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         if not scalars:
             return None
@@ -1145,11 +1237,22 @@ class Go(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        For ``HeterogeneousStrategies.RECORD`` emits one ``struct``
-        declaration per record shape present in the data; otherwise
-        produces no preamble.
+        Imports ``math`` when negative zero needs ``math.Copysign``.
+        Under ``HeterogeneousStrategies.RECORD``, also emits one
+        ``struct`` declaration per record shape present in the data.
         """
-        return self._record_strategy.preamble
+        record_preamble = self._record_strategy.preamble
+
+        def _preamble(data: Value) -> tuple[str, ...]:
+            """Add ``math`` only when negative zero needs it."""
+            math_preamble = (
+                ('import "math"',)
+                if _data_has_negative_zero(data=data)
+                else ()
+            )
+            return math_preamble + record_preamble(data)
+
+        return _preamble
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -1322,7 +1425,6 @@ class Go(metaclass=LanguageCls):
         record = type(self.heterogeneous_strategy).RECORD
         if self.heterogeneous_strategy is not record:
             return base
-        any_open = f"[]{self.default_sequence_element_type}{{"
         strategy_name_hook = self._record_strategy.record_name_for_value
         assert strategy_name_hook is not None  # noqa: S101
         record_name_for_value = strategy_name_hook
@@ -1337,12 +1439,15 @@ class Go(metaclass=LanguageCls):
                 (name,) = names
                 if name is not None:
                     return f"[]{name}{{"
-            if any(
-                isinstance(item, dict) and not isinstance(item, _ordereddict)
-                for item in items
-            ):
-                return any_open
-            return base(items)
+            return (
+                f"[]{self.default_sequence_element_type}{{"
+                if any(
+                    isinstance(item, dict)
+                    and not isinstance(item, _ordereddict)
+                    for item in items
+                )
+                else base(items)
+            )
 
         return _open
 

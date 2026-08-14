@@ -55,6 +55,11 @@ class NewVariableNameSyntax(enum.Enum):
     ASCII_KEBAB = enum.auto()
     """An ASCII identifier that may contain hyphens after its start."""
 
+    ASCII_KEBAB_LETTER_BOUNDED = enum.auto()
+    """An ASCII kebab identifier beginning and ending with a letter or
+    digit.
+    """
+
     LOWER_ASCII = enum.auto()
     """An ASCII identifier beginning with a lowercase letter or underscore."""
 
@@ -71,6 +76,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[A-Za-z_][A-Za-z0-9_]*"
             case NewVariableNameSyntax.ASCII_KEBAB:
                 pattern = r"[A-Za-z_][A-Za-z0-9_-]*"
+            case NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED:
+                pattern = r"[A-Za-z](?:[A-Za-z0-9_-]*[A-Za-z0-9])?"
             case NewVariableNameSyntax.LOWER_ASCII:
                 pattern = r"[a-z_][A-Za-z0-9_]*"
             case NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX:
@@ -112,6 +119,21 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "NewVariable validation requires a LanguageCls language"
         raise TypeError(msg)
+    if language_cls.supports_record_struct_name_prefix:
+        strategy = vars(language).get("heterogeneous_strategy")
+        prefix = vars(language)["record_struct_name_prefix"]
+        if (
+            isinstance(strategy, enum.Enum)
+            and strategy.name == "RECORD"
+            and re.fullmatch(
+                pattern=rf"{re.escape(pattern=prefix)}\d+",
+                string=name,
+            )
+        ):
+            raise ReservedVariableNameError(
+                language_name=language_name,
+                variable_name=name,
+            )
     syntax = language_cls.new_variable_name_syntax
     if not syntax.accepts(name=name):
         raise InvalidNewVariableNameError(
@@ -285,6 +307,11 @@ class CommentConfig:
 
     prefix: str
     suffix: str
+
+    @property
+    def trailing_prefix(self) -> str:
+        """Return the prefix to use for an end-of-line comment."""
+        return self.prefix
 
 
 @dataclasses.dataclass(frozen=True)
@@ -490,6 +517,36 @@ class BareIntegerWidthStrategies(enum.Enum):
     BARE = enum.auto()
 
 
+class RecordMapValueTypings(enum.Enum):
+    """Carrier types for a ``RECORD`` strategy's widened fallback map.
+
+    A record field whose dict cannot become a record of its own is
+    widened to a plain map.  Languages that spell that map's value type
+    explicitly share this enum, because the choice between the
+    data-derived narrow type and the strategy's value carrier is the
+    same question in each of them.
+    """
+
+    NARROW = enum.auto()
+    """Spell the concrete value type shared by every widened scalar,
+    falling back to the value carrier when they span more than one
+    type.
+
+    The declared type follows the data, so it is the tightest type the
+    input admits and needs no carrier construction around each leaf.
+    """
+
+    WIDE = enum.auto()
+    """Always spell the value carrier, however uniform the widened
+    scalars happen to be in this input.
+
+    Two data files sharing one record shape then declare the field
+    identically, so one file's literals compile against the other
+    file's declaration.  The carrier's own member set stays
+    data-derived.
+    """
+
+
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -630,7 +687,8 @@ def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
         case IdentifierCase.CAMEL:
             return humps.camelize(str_or_iter=snake)
         case IdentifierCase.PASCAL:
-            return humps.pascalize(str_or_iter=snake)
+            camel = humps.camelize(str_or_iter=snake)
+            return camel[:1].upper() + camel[1:]
         case IdentifierCase.UPPER_SNAKE:
             return snake.upper()
         case IdentifierCase.KEBAB:
@@ -2701,7 +2759,8 @@ def reject_nulls(*, data: Value, language_name: str) -> None:
                 conflated_value="the empty string",
             )
         case dict():
-            for value in data.values():
+            for key, value in data.items():
+                reject_nulls(data=key, language_name=language_name)
                 reject_nulls(data=value, language_name=language_name)
         case list() | set():
             for item in data:

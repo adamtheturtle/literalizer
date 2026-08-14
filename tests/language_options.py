@@ -85,6 +85,20 @@ class _HasJsonRendering(Protocol):
 
 
 @runtime_checkable
+class _HasRecordMapValueTyping(Protocol):
+    """A spec exposing a widened record-map value-type choice.
+
+    Only languages whose ``RECORD`` strategy spells that map's value
+    type explicitly expose the ``record_map_value_typing`` constructor
+    field, so a ``spec_field_present`` gate selects the languages this
+    reads from.
+    """
+
+    record_map_value_typing: enum.Enum
+    record_map_value_typings: type[enum.Enum]
+
+
+@runtime_checkable
 class _HasBytesFormat(Protocol):
     """A spec exposing the configured bytes format."""
 
@@ -174,6 +188,22 @@ def _json_renderings(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the JSON renderings a language offers."""
     assert isinstance(spec, _HasJsonRendering)  # noqa: S101
     return spec.json_renderings
+
+
+@beartype
+def _record_map_value_typing(spec: literalizer.Language) -> object:
+    """Return the configured widened record-map value typing."""
+    assert isinstance(spec, _HasRecordMapValueTyping)  # noqa: S101
+    return spec.record_map_value_typing
+
+
+@beartype
+def _record_map_value_typings(
+    spec: literalizer.Language,
+) -> type[enum.Enum]:
+    """Return the widened record-map value types a language offers."""
+    assert isinstance(spec, _HasRecordMapValueTyping)  # noqa: S101
+    return spec.record_map_value_typings
 
 
 @beartype
@@ -311,6 +341,11 @@ OPTIONS: Mapping[str, Option] = {
         get_default=lambda spec: spec.numeric_style,
         get_members=lambda spec: spec.numeric_styles,
     ),
+    "record_map_value_typing": Option(
+        kwarg="record_map_value_typing",
+        get_default=_record_map_value_typing,
+        get_members=_record_map_value_typings,
+    ),
     "sequence_format": Option(
         kwarg="sequence_format",
         get_default=lambda spec: spec.sequence_format,
@@ -357,6 +392,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         lambda lang_cls: not lang_cls.supports_non_string_dict_keys
     ),
     "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,
+    "supports_widened_integer_formatter": (
+        lambda lang_cls: lang_cls().format_integer_widened is not None
+    ),
     "supports_multiline_string_literals": (
         lambda lang_cls: lang_cls.supports_multiline_string_literals
     ),

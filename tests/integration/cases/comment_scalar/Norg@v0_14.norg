@@ -1,5 +1,5 @@
 * my_data
-@code json
-% note%
+@code javascript
+// note
 42
 @end

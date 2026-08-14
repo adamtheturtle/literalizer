@@ -13,7 +13,7 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "times"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT ["09:30:00", "17:45:00", "23:59:59"]))
+        MOBILE LIT(lit.pair; MOBILE []BYTE "times"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "09:30:00"), MOBILE LIT(lit.str; MOBILE []BYTE "17:45:00"), MOBILE LIT(lit.str; MOBILE []BYTE "23:59:59")]))
     ]):
     SEQ
         SKIP

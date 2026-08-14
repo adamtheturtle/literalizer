@@ -99,6 +99,7 @@ from literalizer._language import (
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RecordMapValueTypings,
     RenderedRecordLiteral,
     RenderedTupleLiteral,
     RoundTripCapability,
@@ -143,6 +144,7 @@ from literalizer.exceptions import (
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_JSON_INTEGER_TOKEN = re.compile(pattern=r"-?(?:0|[1-9][0-9]*)\Z")
 _CPP_RAW_STRING_DELIMITER_MAX_LENGTH = 16
 _CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
     "abcdefghijklmnopqrstuvwxyz"
@@ -1370,16 +1372,21 @@ def _cpp_narrow_widened_map_value_type(
     data: Value,
     wrap_ids: frozenset[int],
     type_ctx: _CppTypeCtx,
+    map_value_typing: RecordMapValueTypings,
 ) -> str | None:
     """Return the single C++ type every widened-map scalar shares.
 
     Returns ``None`` when the widened maps genuinely mix scalar types
     (the ``LiteralizerRecordValue`` alias carrier is then required),
-    when there is nothing to widen, or under C++14, whose explicit
-    fallback carrier replaces the record strategy's scalar wrapper with
-    one that also serves heterogeneous containers and call slots and so
-    cannot selectively leave the widened maps' scalars bare.
+    when there is nothing to widen, when *map_value_typing* asks for
+    the alias carrier whatever the data holds, or under C++14, whose
+    explicit fallback carrier replaces the record strategy's scalar
+    wrapper with one that also serves heterogeneous containers and call
+    slots and so cannot selectively leave the widened maps' scalars
+    bare.
     """
+    if map_value_typing is RecordMapValueTypings.WIDE:
+        return None
     if type_ctx.variant_type_name != "std::variant":
         return None
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
@@ -1432,7 +1439,8 @@ def _cpp_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}{{",
         entries=tuple(
-            f".{field.identifier} = {field.formatted}" for field in fields
+            f".{field.identifier} = {_cpp_record_member_value(field)}"
+            for field in fields
         ),
         closer="}",
         compact_pad="",
@@ -1453,10 +1461,24 @@ def _cpp_record_literal_positional(
     """
     return RenderedRecordLiteral(
         head=f"{name}{{",
-        entries=tuple(field.formatted for field in fields),
+        entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
     )
+
+
+@beartype
+def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
+    """Elide a record member's redundant aggregate type prefix.
+
+    The containing aggregate fixes the member's target type, so an
+    initializer beginning with that exact declared type and ``{`` can use
+    C++'s nested braced-initializer form directly.
+    """
+    prefix = f"{field.type_name}{{"
+    if field.formatted.startswith(prefix):
+        return field.formatted.removeprefix(field.type_name)
+    return field.formatted
 
 
 @beartype
@@ -1615,6 +1637,7 @@ def _build_cpp_record_preamble(
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
     native_only: bool,
+    map_value_typing: RecordMapValueTypings,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
 
@@ -1676,6 +1699,7 @@ def _build_cpp_record_preamble(
                 data=data,
                 wrap_ids=wrap_ids,
                 type_ctx=type_ctx,
+                map_value_typing=map_value_typing,
             )
             is None
         ):
@@ -2177,6 +2201,19 @@ def _format_nlohmann_json_parse_overflow_int(value: int) -> str:
 
 
 @beartype
+def _validate_json_integer_token(value: int, token: str) -> str:
+    """Return *token* when it is an integer in JSON number grammar."""
+    if _JSON_INTEGER_TOKEN.fullmatch(string=token) is not None:
+        return token
+    msg = (
+        "Cpp json_rendering=INLINE_DOCUMENT cannot render integer "
+        f"{value} as {token!r}: the selected integer format does not "
+        "produce a valid JSON integer token."
+    )
+    raise UnrepresentableIntegerError(msg)
+
+
+@beartype
 def _cpp_nlohmann_json_parse_expression(value: str, /) -> str:
     """Wrap a rendered JSON document in ``nlohmann::json::parse``.
 
@@ -2236,6 +2273,23 @@ class Cpp(metaclass=LanguageCls):
             validation. Requires :attr:`json_type`; non-finite floats
             and integers outside ``[-2^63, 2^64 - 1]`` are rejected
             because a JSON document cannot carry them exactly.
+
+        record_map_value_typing: Value type for a ``RECORD`` strategy
+            field whose map has no record shape of its own and so
+            renders as a plain ``std::map``.
+
+            * ``record_map_value_typings.NARROW`` — the concrete type
+              every widened scalar in this input shares, e.g.
+              ``std::map<std::string, std::string>``, falling back to
+              the generated ``LiteralizerRecordValue`` alias when they
+              span more than one type.  This is the default.
+            * ``record_map_value_typings.WIDE`` — always the
+              ``LiteralizerRecordValue`` alias, with each leaf wrapped
+              in it.  Two inputs sharing one record shape then declare
+              the field identically, so one input's literals compile
+              against the other's ``struct``.  C++14 renders this way
+              whatever the setting, because its explicit fallback
+              carrier wraps every widened scalar already.
 
         multiline_raw_string_delimiter_base: Non-empty fallback delimiter
             base for ``string_formats.MULTILINE`` raw strings. The empty
@@ -3042,6 +3096,7 @@ class Cpp(metaclass=LanguageCls):
     float_formats = FloatFormats
     integer_formats = IntegerFormats
     integer_width_strategies = BareIntegerWidthStrategies
+    record_map_value_typings = RecordMapValueTypings
     numeric_literal_suffixes = NumericLiteralSuffixes
     numeric_separators = NumericSeparators
     numeric_styles = NumericStyles
@@ -3157,6 +3212,9 @@ class Cpp(metaclass=LanguageCls):
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
         default_factory=lambda: MappingProxyType(mapping={}),
         hash=False,
+    )
+    record_map_value_typing: RecordMapValueTypings = (
+        RecordMapValueTypings.NARROW
     )
     multiline_raw_string_delimiter_base: str = "x"
     # C++20 is the default checked by CI (see ``.github/workflows/lint.yml``).
@@ -3592,6 +3650,7 @@ class Cpp(metaclass=LanguageCls):
                 data=data,
                 wrap_ids=wrap_ids,
                 type_ctx=type_ctx,
+                map_value_typing=self.record_map_value_typing,
             )
             return wrap_ids
 
@@ -3820,8 +3879,18 @@ class Cpp(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         if self._json_inline_document_active:
+
+            def format_json_integer(value: int) -> str:
+                """Format and validate an integer for the JSON
+                document.
+                """
+                return _validate_json_integer_token(
+                    value=value,
+                    token=base_int_formatter(value),
+                )
+
             return make_overflow_fallback_formatter(
-                base=base_int_formatter,
+                base=format_json_integer,
                 fallback=_format_nlohmann_json_parse_overflow_int,
                 min_value=I64_MIN,
                 max_value=I64_MAX,
@@ -3943,6 +4012,7 @@ class Cpp(metaclass=LanguageCls):
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
+                map_value_typing=self.record_map_value_typing,
             )
         if self._uses_cpp14_tuple_record_strategy:
             return _build_cpp_record_preamble(
@@ -3954,6 +4024,7 @@ class Cpp(metaclass=LanguageCls):
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
+                map_value_typing=self.record_map_value_typing,
             )
         if self._tuple_strategy_active:
             return _build_tuple_preamble(type_ctx=self._type_ctx)
