@@ -4040,6 +4040,20 @@ def _format_single_call_arg(
 
 
 @beartype
+def _validate_call_parameter_count(
+    *,
+    params: Sequence[str],
+    formatted: Sequence[str],
+) -> None:
+    """Require one rendered call value for every declared parameter."""
+    if len(params) != len(formatted):
+        raise ParameterCountMismatchError(
+            expected=len(params),
+            got=len(formatted),
+        )
+
+
+@beartype
 def _format_prefix_call_args(
     *,
     formatted: list[str],
@@ -4054,10 +4068,7 @@ def _format_prefix_call_args(
     """
     if not kw_prefix:
         return sep.join(formatted)
-    if len(params) != len(formatted):
-        raise ParameterCountMismatchError(
-            expected=len(params), got=len(formatted)
-        )
+    _validate_call_parameter_count(params=params, formatted=formatted)
     return sep.join(
         f"{kw_prefix}{name}{sep}{val}"
         for name, val in zip(params, formatted, strict=True)
@@ -4133,26 +4144,30 @@ def _format_call_args(
             arg_separator=sep,
             parenthesize_each_arg=parenthesize_each_arg,
         ):
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             result = (
                 sep.join(f"({value})" for value in formatted)
                 if parenthesize_each_arg
                 else f"({sep.join(formatted)})"
             )
         case KeywordCallStyle(separator=kw_sep):
-            if len(params) != len(formatted):
-                raise ParameterCountMismatchError(
-                    expected=len(params), got=len(formatted)
-                )
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             inner = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
             result = f"({inner})"
         case ObjectCallStyle(separator=kw_sep):
-            if len(params) != len(formatted):
-                raise ParameterCountMismatchError(
-                    expected=len(params), got=len(formatted)
-                )
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             named = ", ".join(
                 f"{name}{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)

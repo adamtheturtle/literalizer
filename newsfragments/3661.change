@@ -1,0 +1,1 @@
+Compute datetime epoch seconds with exact ``timedelta`` arithmetic so far-future microseconds cannot round into the following second.
