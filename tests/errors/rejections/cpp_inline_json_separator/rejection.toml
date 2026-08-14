@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Inline JSON documents reject C++ numeric separators."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ["1000"]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "NLOHMANN_JSON" },
+  { kind = "option_member", option = "json_rendering", member = "INLINE_DOCUMENT" },
+  { kind = "option_member", option = "numeric_separator", member = "UNDERSCORE" },
+]

@@ -1,2 +1,2 @@
-(defparameter *my_data* 3.14)
-(setf *my_data* 3.14)
+(defparameter *my_data* 3.14d0)
+(setf *my_data* 3.14d0)

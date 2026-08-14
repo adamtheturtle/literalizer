@@ -7,7 +7,7 @@ struct Record0 { std::string call; std::vector<std::variant<int, std::string, bo
 int main() {
 auto my_data = Record0{
     .call = "send",
-    .args = std::vector<std::variant<int, std::string, bool>>{
+    .args = {
         1,
         "email",
         true,

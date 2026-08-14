@@ -42,6 +42,8 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
     format_integer_underscore,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
@@ -103,10 +105,32 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _escape_es2015_string_line_separators(value: str) -> str:
+    """Escape line terminators forbidden in ES2015 string literals."""
+    return value.replace("\u2028", r"\u2028").replace("\u2029", r"\u2029")
+
+
+@beartype
+def _format_string_double(value: str) -> str:
+    """Format an ES2015-compatible double-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=format_string_backslash_nul_hex(value=value)
+    )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Format an ES2015-compatible single-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=format_string_backslash_single_nul_hex(value=value)
+    )
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating template literal."""
     if "\r" in value:
-        return format_string_backslash_nul_hex(value=value)
+        return _format_string_double(value=value)
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -527,8 +551,8 @@ class JavaScript(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
-        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
+        SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
@@ -890,9 +914,16 @@ class JavaScript(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format.get_formatter(
-            numeric_separator=self.numeric_separator,
+        """Format safe JavaScript integers and reject inexact literals."""
+        return make_overflow_fallback_formatter(
+            base=self.integer_format.get_formatter(
+                numeric_separator=self.numeric_separator,
+            ),
+            min_value=-(2**53 - 1),
+            max_value=2**53 - 1,
+            fallback=raise_for_unrepresentable_int(
+                language_name="JavaScript",
+            ),
         )
 
     @cached_property

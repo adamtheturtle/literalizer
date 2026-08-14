@@ -1,7 +1,7 @@
 schema_version = 1
 
 [variants]
-record = ["field_type_split", "keyword_field"]
+record = ["field_type_split", "keyword_field", "list_field_type_split"]
 nested_map_widening = "default"
 
 [variants.non_default_kwargs]

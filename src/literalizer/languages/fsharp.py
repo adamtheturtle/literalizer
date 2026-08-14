@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -715,7 +716,7 @@ class FSharp(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="(*",
-            suffix=" *)",
+            suffix=NestingCommentSuffix(object=" *)"),
         )
 
     class DeclarationStyles(enum.Enum):

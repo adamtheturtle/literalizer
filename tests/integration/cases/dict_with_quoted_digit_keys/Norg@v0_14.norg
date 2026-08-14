@@ -1,5 +1,5 @@
 * my_data
-@code json
+@code javascript
 {
     "0a": "first",
     "1b": "second"
