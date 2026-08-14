@@ -1031,28 +1031,8 @@ def _format_dict_value(
             opener = open_override
         case _ if id(value) in ctx.dict_open_overrides:
             opener = ctx.dict_open_overrides[id(value)]
-        case _ if not ctx.ref_key:
-            opener = dict_cfg.dict_open(dict_items)
-        case _ if not ctx.expand_refs:
-            inferred = _resolve_refs_for_inference(
-                value=value,
-                ref_values=ctx.ref_values,
-                ref_key=ctx.ref_key,
-            )
-            opener = dict_cfg.dict_open(
-                inferred
-                if isinstance(inferred, dict) and inferred
-                else dict_items
-            )
         case _:
-            open_items = {
-                k: v
-                for k, v in dict_items.items()
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            }
-            opener = dict_cfg.dict_open(open_items or dict_items)
+            opener = _dict_open_for_ref_inference(data=dict_items, ctx=ctx)
     return opener + joined + dict_cfg.close
 
 
@@ -1796,26 +1776,8 @@ def _format_list_value(
     match sequence_open_override:
         case str():
             opener = sequence_open_override
-        case _ if not ctx.ref_key:
-            opener = spec.sequence_open(value)
-        case _ if not ctx.expand_refs:
-            inferred = _resolve_refs_for_inference(
-                value=value,
-                ref_values=ctx.ref_values,
-                ref_key=ctx.ref_key,
-            )
-            opener = spec.sequence_open(
-                inferred if isinstance(inferred, list) and inferred else value
-            )
         case _:
-            open_value = [
-                v
-                for v in value
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            ]
-            opener = spec.sequence_open(open_value or value)
+            opener = _sequence_open_for_ref_inference(data=value, ctx=ctx)
     return f"{opener}{joined}{sequence_cfg.close}"
 
 
@@ -1980,15 +1942,37 @@ def _wrap_body(
 
 
 @beartype
+def _strip_direct_refs_for_opener(
+    *, value: list[Value] | dict[Scalar, Value], ref_key: str
+) -> list[Value] | dict[Scalar, Value]:
+    """Remove direct ref-marker children before opener inference."""
+    if isinstance(value, list):
+        return [
+            child
+            for child in value
+            if _extract_call_arg_ref_name(value=child, ref_key=ref_key) is None
+        ]
+    return {
+        key: child
+        for key, child in value.items()
+        if _extract_call_arg_ref_name(value=child, ref_key=ref_key) is None
+    }
+
+
+@beartype
 def _dict_open_for_ref_inference(
     *, data: dict[Scalar, Value], ctx: _RenderContext
 ) -> str:
     """Return the dictionary opener using resolved refs when needed."""
     inferred = (
-        _resolve_refs_for_inference(
-            value=data,
-            ref_values=ctx.ref_values,
-            ref_key=ctx.ref_key,
+        (
+            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
+            if ctx.expand_refs
+            else _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
         )
         if ctx.ref_key
         else data
@@ -2004,10 +1988,14 @@ def _sequence_open_for_ref_inference(
 ) -> str:
     """Return the sequence opener using resolved refs when needed."""
     inferred = (
-        _resolve_refs_for_inference(
-            value=data,
-            ref_values=ctx.ref_values,
-            ref_key=ctx.ref_key,
+        (
+            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
+            if ctx.expand_refs
+            else _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
         )
         if ctx.ref_key
         else data
