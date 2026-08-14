@@ -4223,7 +4223,7 @@ def _resolve_comment_literals(
             comment_count=len(comments),
         )
     for index, comment in enumerate(iterable=comments):
-        if "\n" in comment:
+        if "\n" in comment or "\r" in comment:
             raise CommentSourceMultilineError(index=index)
     return comments
 
