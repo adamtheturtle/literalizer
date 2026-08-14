@@ -1,7 +1,6 @@
 """Date and datetime formatting functions."""
 
 import datetime
-import math
 from collections.abc import Callable
 
 from beartype import beartype
@@ -97,9 +96,14 @@ def format_time_vb(value: datetime.time) -> str:
 @beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
     """Return integer Unix epoch seconds for a datetime."""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=datetime.UTC)
-    return math.floor(value.timestamp())
+    offset = value.utcoffset() or datetime.timedelta()
+    elapsed = datetime.timedelta(
+        days=value.toordinal()
+        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        seconds=value.hour * 3600 + value.minute * 60 + value.second,
+        microseconds=value.microsecond,
+    )
+    return (elapsed - offset) // datetime.timedelta(seconds=1)
 
 
 @beartype
