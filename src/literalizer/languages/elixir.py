@@ -100,7 +100,13 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 # Prevent Elixir from interpreting ``#{…}`` as string interpolation.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("#{", "\\#{"), ("\0", "\\0")],
+    extra_replacements=[
+        ("#{", "\\#{"),
+        ("\0", "\\0"),
+        ("\x85", "\\u0085"),
+        ("\u2028", "\\u2028"),
+        ("\u2029", "\\u2029"),
+    ],
 )
 
 
