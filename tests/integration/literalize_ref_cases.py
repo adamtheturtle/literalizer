@@ -269,6 +269,11 @@ def run_literalize_ref_golden_case(
             wrap_in_file=True,
             ref_case=ref_case,
             bound_refs=bound_refs_input or None,
+            ref_values={
+                name: json.loads(s=source)
+                for name, source in config.explicit_ref_value_sources.items()
+            }
+            or None,
             ref_key=config.ref_key,
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout

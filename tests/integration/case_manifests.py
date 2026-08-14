@@ -34,6 +34,7 @@ type VariableFormName = Literal["new", "existing", "both"]
 type CollectionLayoutName = Literal["compact", "multiline"]
 type SuiteName = Literal["base", "combined"]
 type VariantCapabilityName = Literal[
+    "collection_comments",
     "empty_sibling_sequence_type_hints",
     "special_floats",
 ]
@@ -411,6 +412,9 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     extra_ref_value_sources: dict[str, str] = Field(
+        default_factory=_empty_sources,
+    )
+    explicit_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
 

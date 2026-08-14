@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONParseError]
+"Python['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Python['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Python['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"

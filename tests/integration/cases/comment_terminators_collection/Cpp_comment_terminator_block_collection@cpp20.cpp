@@ -3,11 +3,11 @@
 #include <vector>
 int main() {
 auto my_data = std::vector<std::string>{
-    /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-    "first",  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-    /* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    "first",  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    /* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
     "second",
-    /* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 };
     (void)my_data;
     return 0;
