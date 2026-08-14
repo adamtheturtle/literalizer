@@ -1,9 +1,9 @@
 * my_var
-@code json
+@code javascript
 1
 @end
 * my_data
-@code json
+@code javascript
 {
     "key": my_var
 }

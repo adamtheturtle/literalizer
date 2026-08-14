@@ -1,9 +1,9 @@
 * ref_x
-@code json
+@code javascript
 3
 @end
 * my_data
-@code json
+@code javascript
 [
     ref_x,
     1,
