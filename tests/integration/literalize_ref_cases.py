@@ -223,6 +223,13 @@ def run_literalize_ref_golden_case(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    if config.heterogeneous_strategy is not None:
+        spec = dataclasses.replace(
+            spec,
+            heterogeneous_strategy=lang_cls.HeterogeneousStrategies[
+                config.heterogeneous_strategy
+            ],
+        )
     variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
     try:
         literalizer.literalize(

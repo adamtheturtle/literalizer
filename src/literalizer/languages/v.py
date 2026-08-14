@@ -294,6 +294,7 @@ def _build_v_interface_behavior() -> HeterogeneousBehavior:
         compute_record_shapes=None,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
+        alias_record_ids=None,
     )
 
 

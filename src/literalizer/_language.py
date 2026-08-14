@@ -866,6 +866,10 @@ class HeterogeneousBehavior:
     ``render_record_literal``: a behavior either sets both (RECORD)
     or neither.
 
+    ``alias_record_ids`` maps container identities from a ref-resolved
+    inference tree back to the source containers rendered afterward, so
+    both trees reuse the same generated record shapes and names.
+
     ``render_tuple_literal`` renders a fixed-length heterogeneous
     scalar array as a native tuple given the raw list and its
     pre-formatted elements, returning a :class:`RenderedTupleLiteral`
@@ -916,6 +920,7 @@ class HeterogeneousBehavior:
         | None
     )
     compute_tuple_list_ids: Callable[[Value], frozenset[int]] | None
+    alias_record_ids: Callable[[Mapping[int, int]], None] | None
 
 
 @beartype
@@ -964,6 +969,7 @@ NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
     compute_record_shapes=None,
     render_tuple_literal=None,
     compute_tuple_list_ids=None,
+    alias_record_ids=None,
 )
 """Shared behavior for languages that do not wrap heterogeneous scalar
 values.
