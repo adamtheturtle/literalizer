@@ -219,15 +219,22 @@ def _unify_element_types(
             else None
         )
     numeric_types = {int, float, WideInt, BeyondI64, MixedNumeric}
-    result: type | None = None
-    if element_types <= numeric_types:
-        if float in element_types or MixedNumeric in element_types:
-            result = MixedNumeric
-        elif BeyondI64 in element_types:
-            result = BeyondI64
-        elif WideInt in element_types:  # pragma: no branch
-            result = WideInt
-    return result
+    if element_types and element_types <= numeric_types:
+        rank: dict[type | ListType, int] = {
+            int: 0,
+            WideInt: 1,
+            BeyondI64: 2,
+            float: 3,
+            MixedNumeric: 3,
+        }
+        result_by_rank: dict[int, type | None] = {
+            0: None,
+            1: WideInt,
+            2: BeyondI64,
+            3: MixedNumeric,
+        }
+        return result_by_rank[max(rank[item] for item in element_types)]
+    return None
 
 
 @beartype
