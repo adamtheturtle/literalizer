@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+C# record declarations share file scope with the generated Check wrapper,
+so an external record shape cannot use that name.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["CSharp"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["id", "name"]], names = ["Check"] },
+]

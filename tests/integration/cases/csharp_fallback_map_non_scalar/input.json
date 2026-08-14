@@ -1,0 +1,4 @@
+[
+  {"name": "one", "payload": {"scalar": 1, "items": [2, 3]}},
+  {"name": "two", "payload": {"other": 2}}
+]

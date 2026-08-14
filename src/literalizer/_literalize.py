@@ -7,7 +7,12 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
+from ruamel.yaml.comments import (
+    CommentedMap,
+    CommentedSeq,
+    CommentedSet,
+    TaggedScalar,
+)
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
@@ -2497,13 +2502,15 @@ def _mapping_object_at(
     *, mapping: Mapping[object, object], key: object
 ) -> object:
     """Return a mapping value with its public boundary type preserved."""
-    try:
-        return mapping[key]
-    except KeyError:
-        for raw_key, value in mapping.items():
-            if getattr(raw_key, "value", raw_key) == key:
-                return value
-        raise
+    normalized = {
+        (
+            str(object=raw_key)
+            if isinstance(raw_key, TaggedScalar)
+            else raw_key
+        ): value
+        for raw_key, value in mapping.items()
+    }
+    return normalized[key]
 
 
 @beartype
