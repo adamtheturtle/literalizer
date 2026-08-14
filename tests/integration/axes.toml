@@ -675,6 +675,16 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.scala3_record_keyword_fields]
+plan = "fixed_overrides"
+name_template = "{lang}_scala3_record_keyword_fields"
+gates = [
+  { kind = "metadata_field", field = "language_id", value = "scala" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 # The value type of a widened fallback map (see
 # ``record_nested_map_fallback`` below) is data-derived by default, so
 # two inputs sharing one record shape can declare one field two ways.
