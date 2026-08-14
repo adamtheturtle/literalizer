@@ -171,13 +171,10 @@ def _find_surrogate(*, data: Value) -> str | None:
 
 
 @beartype
-def _surrogate_parse_error(
-    *,
-    input_format: InputFormat,
-    surrogate: str,
+def _format_parse_error(
+    *, input_format: InputFormat, detail: str
 ) -> ParseError:
-    """Build the format-specific error for an invalid surrogate."""
-    detail = f"input contains unpaired UTF-16 surrogate U+{ord(surrogate):04X}"
+    """Build a format-specific parse error with exhaustive dispatch."""
     match input_format:
         case InputFormat.JSON:
             return JSONParseError(f"Invalid JSON: {detail}")
@@ -189,6 +186,30 @@ def _surrogate_parse_error(
             return TOMLParseError(f"Invalid TOML: {detail}")
         case _ as unreachable:
             assert_never(unreachable)
+
+
+@beartype
+def _surrogate_parse_error(
+    *,
+    input_format: InputFormat,
+    surrogate: str,
+) -> ParseError:
+    """Build the format-specific error for an invalid surrogate."""
+    return _format_parse_error(
+        input_format=input_format,
+        detail=(
+            f"input contains unpaired UTF-16 surrogate U+{ord(surrogate):04X}"
+        ),
+    )
+
+
+@beartype
+def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
+    """Build the format-specific error for excessively nested input."""
+    return _format_parse_error(
+        input_format=input_format,
+        detail="input exceeds the supported nesting depth",
+    )
 
 
 @beartype
@@ -605,8 +626,11 @@ def parse_input(*, source: str, input_format: InputFormat) -> ParsedInput:
             surrogate=source_surrogate,
         )
 
-    parsed = _parse_by_format(source=source, input_format=input_format)
-    surrogate = _find_surrogate(data=parsed.data)
+    try:
+        parsed = _parse_by_format(source=source, input_format=input_format)
+        surrogate = _find_surrogate(data=parsed.data)
+    except RecursionError as exc:
+        raise recursion_parse_error(input_format=input_format) from exc
     if surrogate is not None:
         raise _surrogate_parse_error(
             input_format=input_format,

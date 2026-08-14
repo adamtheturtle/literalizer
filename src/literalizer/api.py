@@ -29,7 +29,10 @@ from literalizer._literalize import (
     literalize_pre_form,
     materialize_value_input,
 )
-from literalizer._parsing import InputFormat, parse_input
+from literalizer._parsing import (
+    InputFormat,
+    parse_input,
+)
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     InvalidVariableModifierError,

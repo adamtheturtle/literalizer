@@ -2,15 +2,11 @@ module [my_data]
 
 Val : [
     RInt I128,
-    RStr Str,
     RList (List Val),
-    RDict (List (Str, Val)),
 ]
 
 ref_x : Val
-ref_x = RDict [
-    ("_", RStr "_"),
-    ]
+ref_x = RInt 3i128
 my_data : Val
 my_data = RList [
     ref_x,

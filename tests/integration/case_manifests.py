@@ -411,6 +411,9 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     collection_layout: CollectionLayoutName = "compact"
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
+    extra_ref_value_sources: dict[str, str] = Field(
+        default_factory=_empty_sources,
+    )
     explicit_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
@@ -435,6 +438,8 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     same case to :func:`literalize_call` so the declaration site and the
     call site agree on identifier spelling.
     """
+
+    languages: StringFrozenSet = Field(default_factory=_empty_name_set)
 
     target_function: str
     parameter_names: StringTuple

@@ -756,6 +756,8 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     name_by_shape: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
     request_by_shape: dict[RecordShape, dict[str, RecordFieldType]] = {}
+    emit_order_cache: list[RecordShape] = []
+    preamble_by_value: dict[str, tuple[str, ...]] = {}
 
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data*, assign names in document order, and reset the
@@ -787,6 +789,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         name_by_shape.clear()
         id_to_shape.clear()
         request_by_shape.clear()
+        emit_order_cache.clear()
         id_to_shape.update(shapes_by_id)
         ordered = _ordered_record_shapes(
             data=data,
@@ -800,6 +803,12 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
                 record_shape_names=renderer.record_shape_names,
                 reject_split_key_sets=split_conflicting_field_types,
             ),
+        )
+        _accumulate_emit_order(
+            data=data,
+            shapes_by_id=shapes_by_id,
+            emit_ordered=emit_order_cache,
+            emit_seen=set(),
         )
         return shapes_by_id
 
@@ -920,24 +929,12 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         order, typing each field from its first-seen
         :class:`RecordFieldType` request.
 
-        Emit order is read from the shared ``id_to_shape`` cache
-        (populated by ``_compute_shapes`` during data checking) rather
-        than recomputed, so it reflects any field-type refinement; the
-        raw shapes would miss the split ``_FieldVariantRecordShape``
-        entries the literal rendering and naming are keyed by.
+        Cache each completed block by value so bound-ref composition can
+        replay an earlier declaration without reading a later render's
+        shared shape caches.
         """
-        if not id_to_shape:
-            return ()
-        emit_order: list[RecordShape] = []
-        emit_seen: set[RecordShape] = set()
-        _accumulate_emit_order(
-            data=data,
-            shapes_by_id=id_to_shape,
-            emit_ordered=emit_order,
-            emit_seen=emit_seen,
-        )
         blocks: list[str] = []
-        for shape in emit_order:
+        for shape in emit_order_cache:
             if (
                 renderer.suppress_custom_name_declarations
                 and frozenset(shape.keys) in renderer.record_shape_names
@@ -954,7 +951,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             blocks.append(
                 renderer.render_declaration(name_by_shape[shape], fields),
             )
-        return tuple(blocks)
+        return preamble_by_value.setdefault(repr(data), tuple(blocks))
 
     return RecordStrategy(
         behavior=behavior,

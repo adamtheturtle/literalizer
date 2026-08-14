@@ -172,6 +172,7 @@ def _empty_container_type_hints(
 
 
 _METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
+    "language_id": lambda metadata: metadata.language_id,
     "empty_container_type_hint_heterogeneous_strategy": (
         _empty_container_type_hint_strategy
     ),
