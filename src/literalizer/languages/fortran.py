@@ -86,12 +86,15 @@ _FORTRAN_WRAP_COLUMN = 110
 @beartype
 def _format_fortran_string(value: str) -> str:
     """Format a string with Fortran quoting and control escapes."""
-    return format_string_concat_control(
+    formatted = format_string_concat_control(
         quote_char="'",
         quote_escape="''",
         control_char_template="achar({})",
         concat_operator=" // ",
     )(value)
+    if len(formatted) > _FORTRAN_WRAP_COLUMN:
+        return formatted.replace(" // ", " // &\n& ")
+    return formatted
 
 
 @beartype
