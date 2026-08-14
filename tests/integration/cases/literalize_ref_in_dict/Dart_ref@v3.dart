@@ -1,6 +1,4 @@
-final myVar = <String, String>{
-    "_": "_",
-};
-final my_data = <String, Map<String, String>>{
+final myVar = 1;
+final my_data = <String, int>{
     "key": myVar,
 };

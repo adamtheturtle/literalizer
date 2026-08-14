@@ -15,9 +15,7 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal ref_x = ((CVal){.m = (CKV[]){
-    {"_", ((CVal){.s = "_"})},
-}});
+CVal ref_x = ((CVal){.i = 3});
 CVal my_data = ((CVal){.a = (CVal[]){
     ref_x,
     ((CVal){.i = 1}),

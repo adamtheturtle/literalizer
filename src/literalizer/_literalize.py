@@ -1030,24 +1030,8 @@ def _format_dict_value(
             opener = open_override
         case _ if id(value) in ctx.dict_open_overrides:
             opener = ctx.dict_open_overrides[id(value)]
-        case _ if not ctx.ref_key:
-            opener = dict_cfg.dict_open(dict_items)
         case _:
-            open_items = dict_items
-            if any(
-                isinstance(v, dict)
-                and _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is not None
-                for v in dict_items.values()
-            ):
-                open_items = {
-                    k: v
-                    for k, v in dict_items.items()
-                    if not isinstance(v, dict)
-                    or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                    is None
-                }
-            opener = dict_cfg.dict_open(open_items or dict_items)
+            opener = _dict_open_for_ref_inference(data=dict_items, ctx=ctx)
     return opener + joined + dict_cfg.close
 
 
@@ -1791,17 +1775,8 @@ def _format_list_value(
     match sequence_open_override:
         case str():
             opener = sequence_open_override
-        case _ if not ctx.ref_key:
-            opener = spec.sequence_open(value)
         case _:
-            open_value = [
-                v
-                for v in value
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            ]
-            opener = spec.sequence_open(open_value or value)
+            opener = _sequence_open_for_ref_inference(data=value, ctx=ctx)
     return f"{opener}{joined}{sequence_cfg.close}"
 
 
@@ -1966,7 +1941,71 @@ def _wrap_body(
 
 
 @beartype
-def _collection_open_for_multiline_value(  # pylint: disable=too-complex
+def _strip_direct_refs_for_opener(
+    *, value: list[Value] | dict[Scalar, Value], ref_key: str
+) -> list[Value] | dict[Scalar, Value]:
+    """Remove direct ref-marker children before opener inference."""
+    if isinstance(value, list):
+        return [
+            child
+            for child in value
+            if _extract_call_arg_ref_name(value=child, ref_key=ref_key) is None
+        ]
+    return {
+        key: child
+        for key, child in value.items()
+        if _extract_call_arg_ref_name(value=child, ref_key=ref_key) is None
+    }
+
+
+@beartype
+def _dict_open_for_ref_inference(
+    *, data: dict[Scalar, Value], ctx: _RenderContext
+) -> str:
+    """Return the dictionary opener using resolved refs when needed."""
+    inferred = (
+        (
+            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
+            if ctx.expand_refs
+            else _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+        )
+        if ctx.ref_key
+        else data
+    )
+    return ctx.spec.dict_format_config.dict_open(
+        inferred if isinstance(inferred, dict) and inferred else data
+    )
+
+
+@beartype
+def _sequence_open_for_ref_inference(
+    *, data: list[Value], ctx: _RenderContext
+) -> str:
+    """Return the sequence opener using resolved refs when needed."""
+    inferred = (
+        (
+            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
+            if ctx.expand_refs
+            else _resolve_refs_for_inference(
+                value=data,
+                ref_values=ctx.ref_values,
+                ref_key=ctx.ref_key,
+            )
+        )
+        if ctx.ref_key
+        else data
+    )
+    return ctx.spec.sequence_open(
+        inferred if isinstance(inferred, list) and inferred else data
+    )
+
+
+@beartype
+def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
     is_ordered_map: bool,
@@ -1991,17 +2030,8 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = dict_open_override
         case dict() if id(data) in ctx.dict_open_overrides:
             opener = ctx.dict_open_overrides[id(data)]
-        case dict() if not ctx.ref_key:
-            opener = spec.dict_format_config.dict_open(data)
         case dict():
-            dict_open_items = {
-                k: v
-                for k, v in data.items()
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            }
-            opener = spec.dict_format_config.dict_open(dict_open_items or data)
+            opener = _dict_open_for_ref_inference(data=data, ctx=ctx)
         case set():
             sorted_set: list[Value] = sorted(
                 data,
@@ -2010,17 +2040,8 @@ def _collection_open_for_multiline_value(  # pylint: disable=too-complex
             opener = spec.set_format_config.set_open(sorted_set)
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
-        case _ if not ctx.ref_key:
-            opener = spec.sequence_open(data)
         case _:
-            sequence_open_items = [
-                v
-                for v in data
-                if not isinstance(v, dict)
-                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is None
-            ]
-            opener = spec.sequence_open(sequence_open_items or data)
+            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
     return opener
 
 
@@ -2436,6 +2457,93 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
 
 
+def _source_list_children_for_inference(
+    *,
+    source: list[Value],
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> list[Value]:
+    """Return source children retained during reference inference."""
+    children: list[Value] = []
+    for child in source:
+        if ref_values:
+            include = _resolve_ref_for_preamble(
+                value=child,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            ).include
+        else:
+            include = (
+                _extract_call_arg_ref_name(value=child, ref_key=ref_key)
+                is None
+            )
+        children.extend({True: (child,), False: ()}[include])
+    return children
+
+
+def _inference_to_source_container_ids(
+    *,
+    source: Value,
+    inferred: Value,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> dict[int, int]:
+    """Map inferred container ids back to corresponding source ids."""
+    id_map: dict[int, int] = {}
+
+    def _visit(*, source_item: Value, inferred_item: Value) -> None:
+        """Record corresponding containers and traverse their peers."""
+        if not isinstance(source_item, (dict, list, set)) or not isinstance(
+            inferred_item, (dict, list, set)
+        ):
+            return
+        id_map[id(inferred_item)] = id(source_item)
+        if isinstance(source_item, list) and isinstance(inferred_item, list):
+            source_children = _source_list_children_for_inference(
+                source=source_item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            for source_child, inferred_child in zip(
+                source_children, inferred_item, strict=False
+            ):
+                _visit(
+                    source_item=source_child,
+                    inferred_item=inferred_child,
+                )
+        elif isinstance(source_item, dict) and isinstance(inferred_item, dict):
+            for key in source_item.keys() & inferred_item.keys():
+                _visit(
+                    source_item=source_item[key],
+                    inferred_item=inferred_item[key],
+                )
+
+    _visit(source_item=source, inferred_item=inferred)
+    return id_map
+
+
+def _source_container_ids(
+    *, inferred_ids: frozenset[int], id_map: Mapping[int, int]
+) -> frozenset[int]:
+    """Translate inferred container ids to ids used while rendering."""
+    return frozenset(
+        id_map[inferred_id]
+        for inferred_id in inferred_ids
+        if inferred_id in id_map
+    )
+
+
+def _source_container_id_mapping[T](
+    *, inferred_mapping: Mapping[int, T], id_map: Mapping[int, int]
+) -> dict[int, T]:
+    """Translate an inferred id-keyed mapping for source rendering."""
+    return {
+        id_map[inferred_id]: value
+        for inferred_id, value in inferred_mapping.items()
+        if inferred_id in id_map
+    }
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
@@ -2509,7 +2617,12 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             )
             return f"{line_prefix}{identifier}"
 
-    check_data(data=data, spec=language)
+    inference_data = _resolve_refs_for_inference(
+        value=data,
+        ref_values=ref_values,
+        ref_key=ref_key,
+    )
+    check_data(data=inference_data, spec=language)
 
     if not ref_key and raw_yaml_data is None:
         fast_result = format_document_fast(
@@ -2532,20 +2645,43 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             out=yaml_comment_nodes,
         )
 
-    wrap_ids = _compute_wrap_ids(data=data, spec=language)
-    tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
+    inference_id_map = _inference_to_source_container_ids(
+        source=data,
+        inferred=inference_data,
+        ref_values=ref_values,
+        ref_key=ref_key,
+    )
+    wrap_ids = _source_container_ids(
+        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
+        id_map=inference_id_map,
+    )
+    tuple_list_ids = _source_container_ids(
+        inferred_ids=_compute_tuple_list_ids(
+            data=inference_data, spec=language
+        ),
+        id_map=inference_id_map,
+    )
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
-        dict_open_overrides=_collect_dict_open_overrides(
-            data=data, spec=language
+        dict_open_overrides=_source_container_id_mapping(
+            inferred_mapping=_collect_dict_open_overrides(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
-        dict_int_formatters=_collect_dict_int_formatters(
-            data=data, spec=language
+        dict_int_formatters=_source_container_id_mapping(
+            inferred_mapping=_collect_dict_int_formatters(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
-        empty_container_overrides=_empty_container_literal_overrides(
-            data=data, spec=language
+        empty_container_overrides=_source_container_id_mapping(
+            inferred_mapping=_empty_container_literal_overrides(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
         ref_case=ref_case,
         ref_values=ref_values,
@@ -2658,7 +2794,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     return _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
-        data=data,
+        data=(
+            inference_data
+            if isinstance(inference_data, (list, dict, set))
+            else data
+        ),
         spec=language,
         line_prefix=line_prefix,
     )
@@ -3469,7 +3609,7 @@ def _compose_bound_refs(
         entry
         for d in decl_results
         for entry in d.preamble
-        if entry not in dropped_declaration_blocks
+        if entry not in dropped_declaration_blocks or "\n" not in entry
     )
     all_preamble = deduplicate_preamble_entries(
         entries=declaration_preamble + main_result.preamble
@@ -3597,6 +3737,26 @@ def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value:
             if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
         }
     return value
+
+
+@beartype
+def _resolve_refs_for_inference(
+    *,
+    value: Value,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> Value:
+    """Resolve known refs and remove unknown refs for type inference."""
+    if ref_key == _DISABLED_REF_KEY:
+        return value
+    if ref_values:
+        resolved = _resolve_ref_for_preamble(
+            value=value,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        return resolved.value if resolved.include else []
+    return _strip_refs_from_value(value=value, ref_key=ref_key)
 
 
 @dataclasses.dataclass(frozen=True)

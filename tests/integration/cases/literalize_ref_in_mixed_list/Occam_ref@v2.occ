@@ -12,9 +12,7 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC main ()
-    VAL MOBILE LIT REF_X IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "_"; MOBILE LIT(lit.str; MOBILE []BYTE "_"))
-    ]):
+    VAL MOBILE LIT REF_X IS 3:
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         REF_X,
         MOBILE LIT(lit.int; 1),

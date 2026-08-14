@@ -1,8 +1,6 @@
 * my_var
 @code javascript
-{
-    "_": "_"
-}
+1
 @end
 * my_data
 @code javascript

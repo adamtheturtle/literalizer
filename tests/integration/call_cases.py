@@ -306,6 +306,8 @@ def discover_call_cases() -> list[CallCase]:
         for lang_cls in sorted_languages():
             if len(lang_cls.CallStyles) == 0:
                 continue
+            if config.languages and lang_cls.__name__ not in config.languages:
+                continue
             if (
                 config.requires_heterogeneous_dict_values
                 and not lang_cls.dict_supports_heterogeneous_values

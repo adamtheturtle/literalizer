@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using System;
-var RefX = new Dictionary<string, string> {
-    ["_"] = "_"
-};
+var RefX = 3;
 var my_data = (
     RefX,
     1,

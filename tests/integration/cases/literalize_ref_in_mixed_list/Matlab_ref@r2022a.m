@@ -1,6 +1,4 @@
-refX = struct(
-    'key', "value"
-);
+refX = 3;
 my_data = {
     refX,
     1,
