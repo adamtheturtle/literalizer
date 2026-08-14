@@ -106,6 +106,26 @@ _UNSAFE_MULTILINE_CONTROL = re.compile(pattern=r"[\x00-\x08\x0b-\x1f]")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
+def _php_integer_formatter(
+    *, base: Callable[[int], str]
+) -> Callable[[int], str]:
+    """Preserve PHP's signed minimum without a positive overflow
+    operand.
+    """
+    checked = make_overflow_fallback_formatter(
+        base=base,
+        fallback=raise_for_unrepresentable_int(language_name="PHP"),
+        min_value=I64_MIN,
+        max_value=I64_MAX,
+    )
+
+    def _format(value: int) -> str:
+        """Format one PHP integer."""
+        return "PHP_INT_MIN" if value == I64_MIN else checked(value)
+
+    return _format
+
+
 @beartype
 def _format_string_multiline_fallback(value: str) -> str:
     r"""Format *value* as an interpolation-safe escaped PHP string."""
@@ -932,13 +952,10 @@ class Php(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        return make_overflow_fallback_formatter(
+        return _php_integer_formatter(
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
             ),
-            fallback=raise_for_unrepresentable_int(language_name="PHP"),
-            min_value=I64_MIN,
-            max_value=I64_MAX,
         )
 
     @cached_property
