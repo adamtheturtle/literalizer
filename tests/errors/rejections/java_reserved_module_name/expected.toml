@@ -3,3 +3,6 @@
 [InvalidModuleNameError]
 "Java['_']" = "Java cannot use module_name '_': it is not a valid identifier"
 "Java['int']" = "Java cannot use module_name 'int': it is not a valid identifier"
+"Java['record']" = "Java cannot use module_name 'record': it is not a valid identifier"
+"Java['var']" = "Java cannot use module_name 'var': it is not a valid identifier"
+"Java['yield']" = "Java cannot use module_name 'yield': it is not a valid identifier"
