@@ -945,7 +945,7 @@ def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
 
 
 class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
-    """Mojo's ordered maps use a list-of-pairs representation."""
+    """Ordered maps in Mojo use a list-of-pairs representation."""
 
     @property
     def empty_ordered_map(self) -> str:
