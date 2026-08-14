@@ -410,6 +410,7 @@ class _RenderContext:
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
+    dict_int_formatters: Mapping[int, Callable[[int], str]]
     empty_container_overrides: Mapping[int, str]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
@@ -434,6 +435,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -464,6 +466,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -487,6 +490,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -983,10 +987,12 @@ def _format_dict_value(
         list_values=sibling_list_values,
         spec=spec,
     )
-    map_int_formatter = _widened_int_formatter(
-        items=list(dict_items.values()),
-        spec=spec,
-    )
+    map_int_formatter = ctx.dict_int_formatters.get(id(value))
+    if map_int_formatter is None:
+        map_int_formatter = _widened_int_formatter(
+            items=list(dict_items.values()),
+            spec=spec,
+        )
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
@@ -1220,6 +1226,53 @@ def _collect_dict_open_overrides(
     if _dict_widening_applies(spec=spec):
         _accumulate_dict_open_overrides(data=data, spec=spec, out=out)
     return out
+
+
+@beartype
+def _collect_dict_int_formatters(
+    *, data: Value, spec: Language
+) -> Mapping[int, Callable[[int], str]]:
+    """Return widened integer formatters for sibling map value slots."""
+    out: dict[int, Callable[[int], str]] = {}
+    _accumulate_dict_int_formatters(data=data, spec=spec, out=out)
+    return out
+
+
+@beartype
+def _accumulate_dict_int_formatters(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+) -> None:
+    """Widen integer leaves consistently across sibling nested maps."""
+    match data:
+        case OrderedMap():
+            children = list(data.values())
+        case dict():
+            children = list(data.values())
+        case list():
+            children = list(data)
+        case _:
+            return
+    sibling_maps = [
+        child
+        for child in children
+        if isinstance(child, dict) and not isinstance(child, OrderedMap)
+    ]
+    min_maps_for_widening = 2
+    if len(sibling_maps) >= min_maps_for_widening:
+        formatter = _widened_int_formatter(
+            items=[
+                item for sibling in sibling_maps for item in sibling.values()
+            ],
+            spec=spec,
+        )
+        if formatter is not None:
+            for sibling in sibling_maps:
+                out.setdefault(id(sibling), formatter)
+    for child in children:
+        _accumulate_dict_int_formatters(data=child, spec=spec, out=out)
 
 
 @beartype
@@ -2153,10 +2206,12 @@ def _format_collection_lines(
                 list_values=sibling_list_values,
                 spec=spec,
             )
-            map_int_formatter = _widened_int_formatter(
-                items=[v for _, v in entries],
-                spec=spec,
-            )
+            map_int_formatter = ctx.dict_int_formatters.get(id(dict_data))
+            if map_int_formatter is None:
+                map_int_formatter = _widened_int_formatter(
+                    items=[v for _, v in entries],
+                    spec=spec,
+                )
             formatted_entries: list[str] = []
             for k, v in entries:
                 formatted_key: str = _format_value(
@@ -2459,6 +2514,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
         dict_open_overrides=_collect_dict_open_overrides(
+            data=data, spec=language
+        ),
+        dict_int_formatters=_collect_dict_int_formatters(
             data=data, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(
@@ -3828,6 +3886,9 @@ def _format_single_call_arg(
         # already reconcile sibling dict types across slots via
         # ``_compute_call_slot_overrides``, so this map stays empty here.
         dict_open_overrides={},
+        dict_int_formatters=_collect_dict_int_formatters(
+            data=value, spec=language
+        ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
         ),
@@ -5109,6 +5170,9 @@ def _render_zip_literal(
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
+            data=value, spec=language
+        ),
+        dict_int_formatters=_collect_dict_int_formatters(
             data=value, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(
