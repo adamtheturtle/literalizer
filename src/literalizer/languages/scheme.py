@@ -93,7 +93,7 @@ from literalizer.exceptions import (
 
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", "\\x00")],
+    extra_replacements=[("\0", "\\x00;")],
 )
 
 # Format definitions used while ``json_type=GUILE_JSON`` is active.
