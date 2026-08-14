@@ -75,7 +75,6 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -561,7 +560,7 @@ class PowerShell(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
-        return no_validate_call_arg
+        return _reject_case_colliding_dict_keys
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:

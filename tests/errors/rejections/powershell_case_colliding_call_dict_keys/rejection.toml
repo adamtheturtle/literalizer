@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "PowerShell call arguments reject case-colliding hash-table keys."
+exceptions = ["InvalidDictKeyError"]
+languages = ["PowerShell"]
+
+[call]
+api = "literalize_call"
+sources = ['[{"key": 1, "KEY": 2}]']
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
