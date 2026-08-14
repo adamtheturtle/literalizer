@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Lua['-9223372036854775809']" = "Lua cannot represent -9223372036854775809 as a hexadecimal integer"
+"Lua['9223372036854775808']" = "Lua cannot represent 9223372036854775808 as a hexadecimal integer"
+"Lua['18446744073709551616']" = "Lua cannot represent 18446744073709551616 as a hexadecimal integer"
+"Lua['18446744073709551621']" = "Lua cannot represent 18446744073709551621 as a hexadecimal integer"

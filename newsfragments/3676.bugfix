@@ -1,0 +1,1 @@
+Reject variable names that collide with auto-generated record type names under the ``RECORD`` heterogeneous strategy.

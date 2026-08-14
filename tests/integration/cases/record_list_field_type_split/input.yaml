@@ -1,0 +1,8 @@
+!!omap
+- left:
+    entries:
+      - kind: add
+        urgent: true
+- right:
+    entries:
+      - error: not_found
