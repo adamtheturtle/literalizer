@@ -659,6 +659,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_list_field_type_split]
+plan = "fixed_overrides"
+name_template = "{lang}_record_list_field_type_split"
+gates = [{ kind = "record_variant", variant = "list_field_type_split" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"
