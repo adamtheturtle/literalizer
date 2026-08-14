@@ -65,6 +65,7 @@ from literalizer._parsing import (
     ParsedYaml,
     parse_input,
     recursion_parse_error,
+    unwrap_yaml_scalar,
 )
 from literalizer._preamble import (
     compute_preamble,
@@ -2504,7 +2505,7 @@ def _mapping_object_at(
     """Return a mapping value with its public boundary type preserved."""
     normalized = {
         (
-            str(object=raw_key)
+            unwrap_yaml_scalar(value=raw_key)
             if isinstance(raw_key, TaggedScalar)
             else raw_key
         ): value

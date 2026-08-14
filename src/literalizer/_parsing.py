@@ -213,7 +213,7 @@ def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
 
 
 @beartype
-def _unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
+def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -359,7 +359,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             return OrderedMap(
                 [
                     (
-                        _unwrap_yaml_scalar(value=k),
+                        unwrap_yaml_scalar(value=k),
                         _unwrap_yaml_data(data=v),
                     )
                     for k, v in omap_src.items()
@@ -367,7 +367,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             )
         case dict():
             unwrapped: dict[Scalar, Value] = {
-                _unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
+                unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
                 for k, v in data.items()
             }
             return unwrapped
@@ -375,7 +375,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             return [_unwrap_yaml_data(data=item) for item in data]
         case CommentedSet():
             members: set[Scalar | TaggedScalar] = set(data)
-            return {_unwrap_yaml_scalar(value=item) for item in members}
+            return {unwrap_yaml_scalar(value=item) for item in members}
         case (
             bool()
             | int()
@@ -387,7 +387,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             | bytes()
             | None
         ):
-            return _unwrap_yaml_scalar(value=data)
+            return unwrap_yaml_scalar(value=data)
         case _ as unreachable:
             assert_never(unreachable)
 

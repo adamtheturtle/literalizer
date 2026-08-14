@@ -18,7 +18,7 @@ from tomlkit.items import Comment, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
 from literalizer._parsing import (
-    _unwrap_yaml_scalar,  # pyright: ignore[reportPrivateUsage]
+    unwrap_yaml_scalar,
 )
 
 
@@ -58,7 +58,7 @@ def _yaml_set_sort_key(value: object) -> tuple[str, str]:
             | TaggedScalar()
             | None
         ):
-            unwrapped = _unwrap_yaml_scalar(value=value)
+            unwrapped = unwrap_yaml_scalar(value=value)
             return type(unwrapped).__name__, repr(unwrapped)
         case _:  # pragma: no cover - CommentedSet only accepts scalars
             return type(value).__name__, repr(value)
