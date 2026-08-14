@@ -15,8 +15,8 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-/* inline scalar: * / |# -} *) ) =# ]] %} ]# % #> */
-CVal my_data = ((CVal){.s = /* before scalar: * / |# -} *) ) =# ]] %} ]# % #> */
+/* inline scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */
+CVal my_data = ((CVal){.s = /* before scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */
 "value"});
     (void)my_data;
     return 0;

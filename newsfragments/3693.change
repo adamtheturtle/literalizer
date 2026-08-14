@@ -1,0 +1,1 @@
+Preserve Go negative zero with ``math.Copysign`` instead of an unsigned-zero constant.

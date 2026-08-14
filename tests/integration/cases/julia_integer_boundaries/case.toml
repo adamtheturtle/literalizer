@@ -1,0 +1,6 @@
+schema_version = 1
+languages = ["Julia"]
+suites = ["base"]
+
+[[variants]]
+axis = "integer_format"

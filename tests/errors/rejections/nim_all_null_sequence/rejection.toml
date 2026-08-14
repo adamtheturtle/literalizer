@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Nim cannot infer the element type of an all-null native sequence."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ["[null, null]"]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
