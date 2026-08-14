@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
@@ -110,6 +111,14 @@ from literalizer.exceptions import (
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_d_float(value: float, /, *, base: Callable[[float], str]) -> str:
+    """Format subnormal doubles as exact hexadecimal literals."""
+    if isinstance(value, float) and 0 < abs(value) < sys.float_info.min:
+        return value.hex()
+    return base(value)
 
 
 @beartype
@@ -1611,7 +1620,7 @@ class D(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return partial(_format_d_float, base=self.float_format)
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
