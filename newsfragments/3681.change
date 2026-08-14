@@ -1,0 +1,1 @@
+Reject C and D keywords used as ``RECORD`` field names.
