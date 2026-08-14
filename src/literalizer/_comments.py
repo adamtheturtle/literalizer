@@ -27,8 +27,17 @@ class QuoteSensitiveCommentSuffix(str):
     __slots__ = ()
 
 
-class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
+class NestingCommentSuffix(str):
     """Mark a comment form whose opener starts a nested comment."""
+
+    __slots__ = ()
+
+
+class QuoteSensitiveNestingCommentSuffix(
+    QuoteSensitiveCommentSuffix,
+    NestingCommentSuffix,
+):
+    """Mark a nesting comment form whose lexer also parses quotes."""
 
     __slots__ = ()
 

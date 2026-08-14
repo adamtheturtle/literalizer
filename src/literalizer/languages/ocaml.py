@@ -10,7 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._comments import NestingCommentSuffix
+from literalizer._comments import QuoteSensitiveNestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -575,7 +575,7 @@ class OCaml(metaclass=LanguageCls):
 
         PAREN_STAR = CommentConfig(
             prefix="(*",
-            suffix=NestingCommentSuffix(object=" *)"),
+            suffix=QuoteSensitiveNestingCommentSuffix(object=" *)"),
         )
 
     class DeclarationStyles(enum.Enum):
