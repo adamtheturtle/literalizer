@@ -1,5 +1,12 @@
 deep <- list(
-    "_" = "_"
+    list(
+        "one",
+        "two"
+    ),
+    list(
+        "three",
+        "four"
+    )
 )
 my_data <- list(
     "a" = list(

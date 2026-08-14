@@ -1,12 +1,19 @@
 package main
 
 func main() {
-Deep := map[string]string{
-	"_": "_",
+Deep := [][]string{
+	[]string{
+		"one",
+		"two",
+	},
+	[]string{
+		"three",
+		"four",
+	},
 }
-my_data := map[string]map[string]map[string]map[string]string{
-	"a": map[string]map[string]map[string]string{
-		"b": map[string]map[string]string{
+my_data := map[string]map[string]map[string][][]string{
+	"a": map[string]map[string][][]string{
+		"b": map[string][][]string{
 			"c": Deep,
 		},
 	},

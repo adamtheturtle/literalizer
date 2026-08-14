@@ -86,8 +86,15 @@ program main
     implicit none
     type(fval_t) :: deep
     type(fval_t) :: my_data
-    deep = fmap([fval_t :: &
-        fentry('_', fstr('_')) &
+    deep = flist([fval_t :: &
+        flist([fval_t :: &
+            fstr('one'), &
+            fstr('two') &
+        ]), &
+        flist([fval_t :: &
+            fstr('three'), &
+            fstr('four') &
+        ]) &
     ])
     my_data = fmap([fval_t :: &
         fentry('a', fmap([fval_t :: &

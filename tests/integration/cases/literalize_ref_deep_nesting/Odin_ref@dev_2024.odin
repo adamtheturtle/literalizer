@@ -2,8 +2,15 @@
 package main
 
 main :: proc() {
-deep := map[string]any{
-	"_" = "_",
+deep := [dynamic]any{
+	[dynamic]any{
+		"one",
+		"two",
+	},
+	[dynamic]any{
+		"three",
+		"four",
+	},
 }
 my_data := map[string]any{
 	"a" = map[string]any{

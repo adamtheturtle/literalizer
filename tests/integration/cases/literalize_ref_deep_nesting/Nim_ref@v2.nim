@@ -1,7 +1,14 @@
 import json
-var deep = %* {
-    "_": "_"
-}
+var deep = %* [
+    [
+        "one",
+        "two"
+    ],
+    [
+        "three",
+        "four"
+    ]
+]
 var my_data = %* {
     "a": {
         "b": {

@@ -3,3 +3,6 @@ owner = "literalize-ref"
 
 [ref]
 collection_layout = "multiline"
+
+[ref.value_sources]
+deep = '[["one", "two"], ["three", "four"]]'

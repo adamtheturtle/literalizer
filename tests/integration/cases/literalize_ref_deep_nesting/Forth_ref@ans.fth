@@ -1,7 +1,14 @@
 : DEEP
-+obj
-    s\" _" +key s\" _" +str
- -obj
++arr
+    +arr
+        s\" one" +str
+        s\" two" +str
+     -arr
+    +arr
+        s\" three" +str
+        s\" four" +str
+     -arr
+ -arr
 ;
 : my_data
 +obj

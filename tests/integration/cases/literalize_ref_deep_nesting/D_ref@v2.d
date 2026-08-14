@@ -1,7 +1,14 @@
 import std.json;
 void main() {
 auto deep = JSONValue([
-    "_": JSONValue("_"),
+    JSONValue([
+        JSONValue("one"),
+        JSONValue("two"),
+    ]),
+    JSONValue([
+        JSONValue("three"),
+        JSONValue("four"),
+    ]),
 ]);
 auto my_data = JSONValue([
     "a": JSONValue([

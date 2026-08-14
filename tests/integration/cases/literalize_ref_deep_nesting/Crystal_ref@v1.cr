@@ -1,8 +1,15 @@
 module Fixture_literalize_ref_deep_nesting_Crystal_ref
 extend self
-deep = {
-    "_" => "_",
-}
+deep = [
+    [
+        "one",
+        "two",
+    ],
+    [
+        "three",
+        "four",
+    ],
+]
 my_data = {
     "a" => {
         "b" => {

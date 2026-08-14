@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "f"
+parameter_names = ["value"]
+per_element = false
+collection_layout = "multiline"
+languages = ["Python"]
+
+[call.ref_declarations]
+x = "[[1, 2], [3, 4]]"

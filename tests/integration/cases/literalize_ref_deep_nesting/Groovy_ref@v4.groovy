@@ -1,5 +1,12 @@
 def deep = [
-    "_": "_",
+    [
+        "one",
+        "two",
+    ],
+    [
+        "three",
+        "four",
+    ],
 ]
 def my_data = [
     "a": [
