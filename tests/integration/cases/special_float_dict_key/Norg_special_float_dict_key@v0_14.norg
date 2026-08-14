@@ -1,6 +1,6 @@
 * my_data
-@code json
+@code javascript
 {
-    nan: 1
+    NaN: 1
 }
 @end
