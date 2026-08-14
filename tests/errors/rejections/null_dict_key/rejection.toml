@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Languages without null literals reject null dictionary keys."
+exceptions = ["UnrepresentableNullError"]
+languages = ["Bash", "Tcl"]
+
+[call]
+api = "literalize"
+sources = ["? ~\n: 1\n"]
+input_format = "yaml"

@@ -1,0 +1,1 @@
+Avoid invalid Lua long-bracket strings when the value ends in a delimiter prefix.

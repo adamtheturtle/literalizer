@@ -1,5 +1,5 @@
 module Fixture_literalize_ref_in_mixed_list_Haskell_ref where
-data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
+data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
     _ + _ = error "not implemented"
@@ -9,9 +9,7 @@ instance Num Val where
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
 refX :: Val
-refX = HMap [
-    ("_", HStr "_")
-    ]
+refX = 3
 my_data :: Val
 my_data = HList [
     refX,

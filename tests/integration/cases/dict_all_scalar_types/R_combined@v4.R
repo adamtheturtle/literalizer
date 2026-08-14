@@ -5,7 +5,7 @@ my_data <- list(
     "b" = TRUE,
     "n" = NULL,
     "d" = as.Date("2024-01-15"),
-    "dt" = as.POSIXct("2024-01-15T12:00:00"),
+    "dt" = as.POSIXct("2024-01-15 12:00:00", format = "%Y-%m-%d %H:%M:%OS"),
     "by" = "48656c6c6f"
 )
 my_data <- list(
@@ -15,6 +15,6 @@ my_data <- list(
     "b" = TRUE,
     "n" = NULL,
     "d" = as.Date("2024-01-15"),
-    "dt" = as.POSIXct("2024-01-15T12:00:00"),
+    "dt" = as.POSIXct("2024-01-15 12:00:00", format = "%Y-%m-%d %H:%M:%OS"),
     "by" = "48656c6c6f"
 )

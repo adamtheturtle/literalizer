@@ -1,6 +1,4 @@
-let refX = [
-    "_": "_",
-]
+let refX = 3
 let my_data: [Any] = [
     refX,
     1,

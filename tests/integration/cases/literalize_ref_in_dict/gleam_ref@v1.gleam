@@ -1,12 +1,10 @@
 pub type GVal {
-  GStr(String)
+  GInt(Int)
   GDict(List(#(String, GVal)))
 }
 
 pub fn main() {
-  let my_var = GDict([
-    #("_", GStr("_")),
-  ])
+  let my_var = GInt(1)
   let my_data = GDict([
     #("key", my_var),
   ])

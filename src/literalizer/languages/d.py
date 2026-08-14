@@ -4,8 +4,9 @@ import dataclasses
 import datetime
 import enum
 import re
+import sys
 from collections.abc import Callable, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
 
@@ -110,6 +111,14 @@ from literalizer.exceptions import (
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@beartype
+def _format_d_float(value: float, /, *, base: Callable[[float], str]) -> str:
+    """Format subnormal doubles as exact hexadecimal literals."""
+    if isinstance(value, float) and 0 < abs(value) < sys.float_info.min:
+        return value.hex()
+    return base(value)
 
 
 @beartype
@@ -282,13 +291,18 @@ _D_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
 
 
 @beartype
-def _d_record_field_identifier(key: str, /) -> str:
+def _d_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the D ``struct`` member name for a dict *key*.
 
     D member identifiers are the dict keys verbatim (no case
     conversion), matching the positional struct-constructor literal
     ``Record0(value, ...)``.
     """
+    if key in reserved_identifiers:
+        msg = f"D record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1278,7 +1292,10 @@ class D(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_D_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_d_record_field_identifier,
+            field_identifier=partial(
+                _d_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._d_record_field_type,
             render_declaration=_d_render_record_declaration,
             render_literal=_d_record_literal,
@@ -1603,7 +1620,7 @@ class D(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+        return partial(_format_d_float, base=self.float_format)
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

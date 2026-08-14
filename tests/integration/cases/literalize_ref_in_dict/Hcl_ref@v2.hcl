@@ -1,6 +1,4 @@
-my_var = {
-    "_" = "_",
-}
+my_var = 1
 my_data = {
     "key" = my_var,
 }

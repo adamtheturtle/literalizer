@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "Lua hexadecimal integers outside signed 64-bit range wrap and are rejected."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Lua"]
+
+[call]
+api = "literalize"
+sources = [
+  "-9223372036854775809",
+  "9223372036854775808",
+  "18446744073709551616",
+  "18446744073709551621",
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "integer_format", member = "HEX" },
+]

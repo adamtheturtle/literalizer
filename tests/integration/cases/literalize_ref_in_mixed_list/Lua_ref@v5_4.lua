@@ -1,6 +1,4 @@
-local ref_x = {
-    ["_"] = "_",
-}
+local ref_x = 3
 local my_data = {
     ref_x,
     1,

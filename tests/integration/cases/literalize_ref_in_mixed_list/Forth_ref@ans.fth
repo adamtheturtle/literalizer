@@ -1,8 +1,4 @@
-: REF_X
-+obj
-    s\" _" +key s\" _" +str
- -obj
-;
+: REF_X 3 +int ;
 : my_data
 +arr
     REF_X
