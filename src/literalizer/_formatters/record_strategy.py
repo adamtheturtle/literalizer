@@ -907,11 +907,13 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         if id(value) not in id_to_shape:
             return None
         shape = id_to_shape[id(value)]
-        if shape not in request_by_shape:
-            request_by_shape[shape] = {
+        request_by_shape.setdefault(
+            shape,
+            {
                 key: _field_type_request(field_value=value[key])
                 for key in shape.keys
-            }
+            },
+        )
         literal_fields = [
             RecordLiteralField(
                 identifier=renderer.field_identifier(key),
