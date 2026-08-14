@@ -17,12 +17,12 @@ struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal deep = ((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){
-        ((CVal){.i = 1}),
-        ((CVal){.i = 2}),
+        ((CVal){.s = "one"}),
+        ((CVal){.s = "two"}),
     }}),
     ((CVal){.a = (CVal[]){
-        ((CVal){.i = 3}),
-        ((CVal){.i = 4}),
+        ((CVal){.s = "three"}),
+        ((CVal){.s = "four"}),
     }}),
 }});
 CVal my_data = ((CVal){.m = (CKV[]){

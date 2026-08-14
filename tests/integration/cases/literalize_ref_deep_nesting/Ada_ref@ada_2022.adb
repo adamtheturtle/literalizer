@@ -2,12 +2,12 @@ with A_Stub; use A_Stub;
 procedure Main is
     deep : A_Val := AList'[
         AList'[
-            AInt (1),
-            AInt (2)
+            AStr ("one"),
+            AStr ("two")
         ],
         AList'[
-            AInt (3),
-            AInt (4)
+            AStr ("three"),
+            AStr ("four")
         ]
     ];
     my_data : A_Val := AMap'[

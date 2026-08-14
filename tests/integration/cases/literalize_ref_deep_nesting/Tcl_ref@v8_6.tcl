@@ -1,11 +1,11 @@
 set deep [list \
     [list \
-        1 \
-        2 \
+        "one" \
+        "two" \
     ] \
     [list \
-        3 \
-        4 \
+        "three" \
+        "four" \
     ] \
 ]
 set my_data [dict create \

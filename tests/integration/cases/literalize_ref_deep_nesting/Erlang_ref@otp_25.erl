@@ -3,12 +3,12 @@
 x() ->
     Deep = [
         [
-            1,
-            2
+            "one",
+            "two"
         ],
         [
-            3,
-            4
+            "three",
+            "four"
         ]
     ],
     My_data = #{

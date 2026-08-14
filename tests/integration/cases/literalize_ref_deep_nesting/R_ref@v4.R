@@ -1,11 +1,11 @@
 deep <- list(
     list(
-        1,
-        2
+        "one",
+        "two"
     ),
     list(
-        3,
-        4
+        "three",
+        "four"
     )
 )
 my_data <- list(

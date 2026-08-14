@@ -3,8 +3,7 @@ module Check where
 
 data Tuple a b = Tuple a b
 data Val
-    = PInt Int
-    | PStr String
+    = PStr String
     | PList (Array Val)
     | PDict (Array (Tuple String Val))
 
@@ -12,12 +11,12 @@ data Val
 deep :: Val
 deep = PList [
     PList [
-        PInt 1,
-        PInt 2
+        PStr "one",
+        PStr "two"
         ],
     PList [
-        PInt 3,
-        PInt 4
+        PStr "three",
+        PStr "four"
         ]
     ]
 my_data :: Val

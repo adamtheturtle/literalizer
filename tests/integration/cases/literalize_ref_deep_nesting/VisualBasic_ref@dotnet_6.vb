@@ -1,13 +1,13 @@
 Imports System.Collections.Generic
 Module Check
-    Dim Deep = New Integer()() {
-        New Integer() {
-            1,
-            2
+    Dim Deep = New String()() {
+        New String() {
+            "one",
+            "two"
         },
-        New Integer() {
-            3,
-            4
+        New String() {
+            "three",
+            "four"
         }
     }
     Dim my_data = New Dictionary(Of String, Object) From {

@@ -2,12 +2,12 @@ use std::collections::HashMap;
 fn main() {
     let deep = vec![
         vec![
-            1,
-            2,
+            "one",
+            "two",
         ],
         vec![
-            3,
-            4,
+            "three",
+            "four",
         ],
     ];
     let my_data = HashMap::from([

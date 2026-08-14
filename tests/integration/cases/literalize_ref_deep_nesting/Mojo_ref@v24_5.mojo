@@ -1,12 +1,12 @@
 def main():
     var deep = [
         [
-            1,
-            2,
+            "one",
+            "two",
         ],
         [
-            3,
-            4,
+            "three",
+            "four",
         ],
     ]
     var my_data = {

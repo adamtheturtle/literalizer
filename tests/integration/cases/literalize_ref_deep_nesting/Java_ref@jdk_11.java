@@ -1,14 +1,14 @@
 import java.util.Map;
 class Main {
     public static void main() {
-var deep = new int[][]{
-    new int[]{
-        1,
-        2
+var deep = new String[][]{
+    new String[]{
+        "one",
+        "two"
     },
-    new int[]{
-        3,
-        4
+    new String[]{
+        "three",
+        "four"
     }
 };
 var my_data = Map.ofEntries(

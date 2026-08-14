@@ -1,16 +1,16 @@
-final deep = <List<int>>[
-    <int>[
-        1,
-        2,
+final deep = <List<String>>[
+    <String>[
+        "one",
+        "two",
     ],
-    <int>[
-        3,
-        4,
+    <String>[
+        "three",
+        "four",
     ],
 ];
-final my_data = <String, Map<String, Map<String, List<List<int>>>>>{
-    "a": <String, Map<String, List<List<int>>>>{
-        "b": <String, List<List<int>>>{
+final my_data = <String, Map<String, Map<String, List<List<String>>>>>{
+    "a": <String, Map<String, List<List<String>>>>{
+        "b": <String, List<List<String>>>{
             "c": deep,
         },
     },

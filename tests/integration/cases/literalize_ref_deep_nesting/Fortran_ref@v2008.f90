@@ -87,12 +87,12 @@ program main
     type(fval_t) :: my_data
     deep = flist([fval_t :: &
         flist([fval_t :: &
-            fint(1_int64), &
-            fint(2_int64) &
+            fstr('one'), &
+            fstr('two') &
         ]), &
         flist([fval_t :: &
-            fint(3_int64), &
-            fint(4_int64) &
+            fstr('three'), &
+            fstr('four') &
         ]) &
     ])
     my_data = fmap([fval_t :: &

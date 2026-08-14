@@ -1,6 +1,6 @@
 declare deep=(
-    "(1 2)"
-    "(3 4)"
+    "(\"one\" \"two\")"
+    "(\"three\" \"four\")"
 )
 declare -A my_data=(
     ["a"]="([\"b\"]=\"([\\\"c\\\"]=deep)\")"

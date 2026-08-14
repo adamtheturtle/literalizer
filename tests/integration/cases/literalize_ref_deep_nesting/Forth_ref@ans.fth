@@ -1,12 +1,12 @@
 : DEEP
 +arr
     +arr
-        1 +int
-        2 +int
+        s\" one" +str
+        s\" two" +str
      -arr
     +arr
-        3 +int
-        4 +int
+        s\" three" +str
+        s\" four" +str
      -arr
  -arr
 ;

@@ -1,11 +1,11 @@
 $Deep = @(
     ,@(
-        1;
-        2
+        "one";
+        "two"
     );
     ,@(
-        3;
-        4
+        "three";
+        "four"
     )
 )
 $my_data = @{

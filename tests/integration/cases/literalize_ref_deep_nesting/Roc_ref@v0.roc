@@ -1,7 +1,6 @@
 module [my_data]
 
 Val : [
-    RInt I128,
     RStr Str,
     RList (List Val),
     RDict (List (Str, Val)),
@@ -10,12 +9,12 @@ Val : [
 deep : Val
 deep = RList [
     RList [
-        RInt 1i128,
-        RInt 2i128,
+        RStr "one",
+        RStr "two",
         ],
     RList [
-        RInt 3i128,
-        RInt 4i128,
+        RStr "three",
+        RStr "four",
         ],
     ]
 my_data : Val

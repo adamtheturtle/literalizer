@@ -1,11 +1,11 @@
 const deep = [
   [
-    1,
-    2,
+    "one",
+    "two",
   ],
   [
-    3,
-    4,
+    "three",
+    "four",
   ],
 ];
 const my_data = {

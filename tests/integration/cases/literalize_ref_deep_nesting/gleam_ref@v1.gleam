@@ -1,5 +1,5 @@
 pub type GVal {
-  GInt(Int)
+  GStr(String)
   GList(List(GVal))
   GDict(List(#(String, GVal)))
 }
@@ -7,12 +7,12 @@ pub type GVal {
 pub fn main() {
   let deep = GList([
     GList([
-      GInt(1),
-      GInt(2),
+      GStr("one"),
+      GStr("two"),
     ]),
     GList([
-      GInt(3),
-      GInt(4),
+      GStr("three"),
+      GStr("four"),
     ]),
   ])
   let my_data = GDict([

@@ -1,17 +1,17 @@
 object Fixture_literalize_ref_deep_nesting_Scala_ref {
-val deep = List[List[Int]](
-    List[Int](
-        1,
-        2,
+val deep = List[List[String]](
+    List[String](
+        "one",
+        "two",
     ),
-    List[Int](
-        3,
-        4,
+    List[String](
+        "three",
+        "four",
     ),
 )
 val my_data = Map(
     "a" -> Map(
-        "b" -> Map[String, List[List[Int]]](
+        "b" -> Map[String, List[List[String]]](
             "c" -> deep,
         ),
     ),

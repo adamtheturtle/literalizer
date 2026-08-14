@@ -2,8 +2,7 @@ module Check exposing (..)
 
 
 type Val
-    = EInt Int
-    | EStr String
+    = EStr String
     | EList (List Val)
     | EDict (List ( String, Val ))
 
@@ -11,12 +10,12 @@ type Val
 deep : Val
 deep = EList [
     EList [
-        EInt 1,
-        EInt 2
+        EStr "one",
+        EStr "two"
         ],
     EList [
-        EInt 3,
-        EInt 4
+        EStr "three",
+        EStr "four"
         ]
     ]
 my_data : Val

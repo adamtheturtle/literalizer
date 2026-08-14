@@ -2,12 +2,12 @@ import std.json;
 void main() {
 auto deep = JSONValue([
     JSONValue([
-        JSONValue(1),
-        JSONValue(2),
+        JSONValue("one"),
+        JSONValue("two"),
     ]),
     JSONValue([
-        JSONValue(3),
-        JSONValue(4),
+        JSONValue("three"),
+        JSONValue("four"),
     ]),
 ]);
 auto my_data = JSONValue([

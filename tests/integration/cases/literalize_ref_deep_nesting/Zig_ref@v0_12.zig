@@ -13,12 +13,12 @@ const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const deep: ZVal = .{ .arr = &.{
         .{ .arr = &.{
-            .{ .int = 1 },
-            .{ .int = 2 },
+            .{ .str = "one" },
+            .{ .str = "two" },
         }},
         .{ .arr = &.{
-            .{ .int = 3 },
-            .{ .int = 4 },
+            .{ .str = "three" },
+            .{ .str = "four" },
         }},
     }};
     const my_data: ZVal = .{ .map = &.{

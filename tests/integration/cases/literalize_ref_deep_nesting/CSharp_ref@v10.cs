@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 var Deep = (
     (
-        1,
-        2
+        "one",
+        "two"
     ),
     (
-        3,
-        4
+        "three",
+        "four"
     )
 );
 var my_data = new Dictionary<string, object> {

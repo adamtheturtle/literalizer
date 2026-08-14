@@ -1,16 +1,16 @@
 val deep = arrayOf(
-    intArrayOf(
-        1,
-        2,
+    arrayOf(
+        "one",
+        "two",
     ),
-    intArrayOf(
-        3,
-        4,
+    arrayOf(
+        "three",
+        "four",
     ),
 )
-val my_data = mapOf<String, Map<String, Map<String, Array<Array<Int>>>>>(
-    "a" to mapOf<String, Map<String, Array<Array<Int>>>>(
-        "b" to mapOf<String, Array<Array<Int>>>(
+val my_data = mapOf<String, Map<String, Map<String, Array<Array<String>>>>>(
+    "a" to mapOf<String, Map<String, Array<Array<String>>>>(
+        "b" to mapOf<String, Array<Array<String>>>(
             "c" to deep,
         ),
     ),

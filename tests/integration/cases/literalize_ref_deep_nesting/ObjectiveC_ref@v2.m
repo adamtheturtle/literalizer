@@ -3,12 +3,12 @@ int main(void) {
 @autoreleasepool {
 id deep = @[
     @[
-        @1,
-        @2,
+        @"one",
+        @"two",
     ],
     @[
-        @3,
-        @4,
+        @"three",
+        @"four",
     ],
 ];
 id my_data = @{

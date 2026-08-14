@@ -4,12 +4,12 @@ package main
 main :: proc() {
 deep := [dynamic]any{
 	[dynamic]any{
-		1,
-		2,
+		"one",
+		"two",
 	},
 	[dynamic]any{
-		3,
-		4,
+		"three",
+		"four",
 	},
 }
 my_data := map[string]any{

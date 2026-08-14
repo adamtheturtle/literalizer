@@ -2,12 +2,12 @@ module Fixture_literalize_ref_deep_nesting_Crystal_ref
 extend self
 deep = [
     [
-        1,
-        2,
+        "one",
+        "two",
     ],
     [
-        3,
-        4,
+        "three",
+        "four",
     ],
 ]
 my_data = {

@@ -2,12 +2,12 @@ class Fixture_literalize_ref_deep_nesting_Haxe_ref {
     public static function main() {
         final deep = ([
             ([
-                1,
-                2,
+                "one",
+                "two",
             ] : Array<Dynamic>),
             ([
-                3,
-                4,
+                "three",
+                "four",
             ] : Array<Dynamic>),
         ] : Array<Dynamic>);
         final my_data = ([
