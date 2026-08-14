@@ -1515,7 +1515,7 @@ class Nim(metaclass=LanguageCls):
         guard.
         """
         if (
-            self._uses_native_nim_collections
+            self._uses_record
             and isinstance(data, list)
             and data
             and all(item is None for item in data)
