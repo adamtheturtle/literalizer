@@ -1024,7 +1024,11 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
-    def _go_record_field_type(self, request: RecordFieldType, /) -> str:
+    def _go_record_field_type(
+        self,
+        request: RecordFieldType,
+        /,
+    ) -> str:
         """Return the Go struct field type for a record field.
 
         A field whose value is itself a nested record-shaped dict uses
@@ -1054,8 +1058,13 @@ class Go(metaclass=LanguageCls):
         ``any`` (documented best effort), which the rendered literal
         still assigns into.
         """
-        if request.record_name is not None:
-            return request.record_name
+        nested_type = request.record_name or (
+            f"[]{request.element_record_name}"
+            if request.element_record_name is not None
+            else None
+        )
+        if nested_type is not None:
+            return nested_type
         value = request.value
         if (
             isinstance(value, dict)
@@ -1416,7 +1425,6 @@ class Go(metaclass=LanguageCls):
         record = type(self.heterogeneous_strategy).RECORD
         if self.heterogeneous_strategy is not record:
             return base
-        any_open = f"[]{self.default_sequence_element_type}{{"
         strategy_name_hook = self._record_strategy.record_name_for_value
         assert strategy_name_hook is not None  # noqa: S101
         record_name_for_value = strategy_name_hook
@@ -1431,12 +1439,15 @@ class Go(metaclass=LanguageCls):
                 (name,) = names
                 if name is not None:
                     return f"[]{name}{{"
-            if any(
-                isinstance(item, dict) and not isinstance(item, _ordereddict)
-                for item in items
-            ):
-                return any_open
-            return base(items)
+            return (
+                f"[]{self.default_sequence_element_type}{{"
+                if any(
+                    isinstance(item, dict)
+                    and not isinstance(item, _ordereddict)
+                    for item in items
+                )
+                else base(items)
+            )
 
         return _open
 

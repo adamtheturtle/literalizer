@@ -5,6 +5,6 @@ data Val
     = PStr String
 
 
-{- before scalar: */ |# - } *) ) =# ]] %} ]# % #> -}
+{- before scalar: */ |# - } *) (* ) =# ]] %} ]# % #> -}
 my_data :: Val
-my_data = PStr "value"  {- inline scalar: */ |# - } *) ) =# ]] %} ]# % #> -}
+my_data = PStr "value"  {- inline scalar: */ |# - } *) (* ) =# ]] %} ]# % #> -}

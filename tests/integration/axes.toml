@@ -659,6 +659,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_list_field_type_split]
+plan = "fixed_overrides"
+name_template = "{lang}_record_list_field_type_split"
+gates = [{ kind = "record_variant", variant = "list_field_type_split" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"
@@ -988,6 +996,14 @@ plan = "fixed_overrides"
 name_template = "{lang}_nested_empty_map_cousins"
 gates = [
   { kind = "spec_config_field_present", field = "dict_format_config.narrowed_empty_form" },
+]
+overrides = []
+
+[axes.nested_map_mixed_int_widths]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_map_mixed_int_widths"
+gates = [
+  { kind = "capability_flag", flag = "supports_widened_integer_formatter" },
 ]
 overrides = []
 

@@ -11,8 +11,8 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
-/* inline scalar: * / |# -} *) ) =# ]] %} ]# % #> */
-static _VVal my_data = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: /* before scalar: * / |# -} *) ) =# ]] %} ]# % #> */
+/* inline scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */
+static _VVal my_data = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: /* before scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */
 "value"};
 end
 endmodule
