@@ -12,10 +12,9 @@ follows the same template as ``run_typescript_roundtrip.py``: a single
 ``.py`` file, no separate serializer source, because ``JSON.stringify``
 is in the JavaScript standard library.
 
-The shared input's ``biginteger`` field is excluded from the comparison:
-the literalizer emits a plain numeric literal, which JavaScript stores
-as an IEEE-754 double, so the original 26-digit integer cannot survive
-the round-trip even with a custom serializer.
+The shared input's ``biginteger`` field is excluded before literalization:
+JavaScript cannot represent it as a safe ``Number`` and the backend rejects
+it rather than emitting a lossy numeric literal.
 """
 
 import shutil
@@ -51,7 +50,11 @@ def main() -> None:
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=JavaScript.variant_metadata.round_trip_capabilities,
     )
-    program = _build_program(json_text=json_text)
+    trimmed_json = roundtrip_common.trim_keys(
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    program = _build_program(json_text=trimmed_json)
     node = shutil.which(cmd="node") or "node"
     roundtrip_common.execute(
         label=_LABEL,

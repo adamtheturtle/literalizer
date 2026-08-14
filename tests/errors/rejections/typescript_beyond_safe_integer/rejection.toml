@@ -1,11 +1,11 @@
 schema_version = 1
 summary = """
-JavaScript number precision tops out at 2**53 - 1 in either direction,
-so an integer just past that range is refused rather than silently
-rounded (#2713).
+JavaScript and Wren number precision tops out at 2**53 - 1 in either
+direction, so an integer just past that range is refused rather than
+silently rounded (#2713, #3675).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["TypeScript"]
+languages = ["JavaScript", "TypeScript", "Wren"]
 
 [call]
 api = "literalize"

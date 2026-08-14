@@ -39,11 +39,13 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
 type RecordVariantName = Literal[
+    "empty_dict_field",
     "unify_optional_fields",
     "nonrecord_dict_field",
     "keyword_field",
     "quoted_field",
     "field_type_split",
+    "list_field_type_split",
 ]
 type NestedMapWideningName = Literal["none", "default", "uniform_keys"]
 

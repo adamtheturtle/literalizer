@@ -8,9 +8,9 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    {- before first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    PStr "first",  {- inline first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    {- before second: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- before first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    PStr "first",  {- inline first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    {- before second: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     PStr "second"
-    {- trailing: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- trailing: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     ]

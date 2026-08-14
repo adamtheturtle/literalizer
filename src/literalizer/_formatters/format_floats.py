@@ -86,11 +86,15 @@ def format_float_scientific(value: float) -> str:
     compact, but a trailing ``.0`` is preserved to keep the value
     recognizable as a float.
     """
-    raw = f"{value:e}"
+    if value == 0:
+        return repr(value)
+    raw = format(Decimal(value=repr(value)), "e")
     mantissa, exponent_part = raw.split(sep="e")
     # Strip trailing zeros but keep at least one decimal digit.
     mantissa = mantissa.rstrip("0")
-    if mantissa.endswith("."):
+    if "." not in mantissa:
+        mantissa += ".0"
+    elif mantissa.endswith("."):
         mantissa += "0"
     exponent_value = int(exponent_part)
     if exponent_value == 0:

@@ -1,6 +1,7 @@
 """YAML and TOML comment extraction and formatting."""
 
 import dataclasses
+import datetime
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, assert_never, runtime_checkable
 
@@ -15,9 +16,19 @@ from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import Comment, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
+from literalizer._parsing import (
+    _unwrap_yaml_scalar,  # pyright: ignore[reportPrivateUsage]
+)
+
 
 class QuoteSensitiveCommentSuffix(str):
     """Mark a comment form whose lexer parses quotes inside comments."""
+
+    __slots__ = ()
+
+
+class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
+    """Mark a comment form whose opener starts a nested comment."""
 
     __slots__ = ()
 
@@ -28,6 +39,27 @@ class ElementComments:
 
     before: tuple[str, ...]
     inline: str
+
+
+@beartype
+def _yaml_set_sort_key(value: object) -> tuple[str, str]:
+    """Return the rendering sort key for a wrapped YAML set member."""
+    match value:
+        case (
+            bool()
+            | int()
+            | float()
+            | str()
+            | datetime.datetime()
+            | datetime.date()
+            | datetime.time()
+            | bytes()
+            | None
+        ):
+            unwrapped = _unwrap_yaml_scalar(value=value)
+            return type(unwrapped).__name__, repr(unwrapped)
+        case _:  # pragma: no cover - CommentedSet only accepts scalars
+            return type(value).__name__, repr(value)
 
 
 @beartype
@@ -241,7 +273,7 @@ def extract_yaml_comments(
     if isinstance(ruamel_data, CommentedSet):
         output_keys: list[object] = sorted(
             targets.keys,
-            key=lambda v: (type(v).__name__, repr(v)),
+            key=_yaml_set_sort_key,
         )
     else:
         output_keys = targets.keys
@@ -333,6 +365,9 @@ def neutralize_comment_terminator(
     if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
+    if isinstance(comment_suffix, NestingCommentSuffix):
+        opener = "(*"
+        text = text.replace(opener, " ".join(opener))
     if not terminator or terminator not in text:
         return text
     replacement = (
@@ -517,9 +552,10 @@ def literalize_yaml_collection(
         body_lines = all_lines
 
     _empty = ElementComments(before=(), inline="")
-    padded = ctx.element_comments + (_empty,) * (
-        len(body_lines) - len(ctx.element_comments)
-    )
+    padded = (
+        ctx.element_comments
+        + (_empty,) * (len(body_lines) - len(ctx.element_comments))
+    )[: len(body_lines)]
 
     result: list[str] = []
     for body_line, element_comment in zip(body_lines, padded, strict=True):

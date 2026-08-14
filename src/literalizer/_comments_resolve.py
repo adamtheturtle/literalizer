@@ -1,6 +1,7 @@
 """Resolve YAML and TOML comments and apply them to literalized output."""
 
 import dataclasses
+from collections.abc import Mapping
 from io import StringIO
 
 from beartype import beartype
@@ -17,6 +18,12 @@ from literalizer._comments import (
 )
 from literalizer._language import Language
 from literalizer._parsing import get_yaml
+
+
+@beartype
+def _all_mapping_values_null(*, data: Mapping[object, object]) -> bool:
+    """Return whether every mapping value is null."""
+    return all(value is None for value in data.values())
 
 
 @beartype
@@ -75,8 +82,19 @@ def _resolve_collection_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     include_delimiters: bool,
+    structurally_applied: bool,
 ) -> ResolvedComments:
     """Resolve pre-extracted collection comments."""
+    if language.supports_collection_comments and structurally_applied:
+        # Collection comments are applied while the renderer still has
+        # structural element boundaries.  Reapplying them here would have
+        # to infer those boundaries from rendered lines, which is ambiguous
+        # when a top-level element is itself multiline.
+        return ResolvedComments(
+            result=base,
+            pending=None,
+            pending_scalar_before=(),
+        )
     if not language.supports_collection_comments:
         return ResolvedComments(
             result=base,
@@ -130,6 +148,11 @@ def _resolve_yaml_collection_comments(
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
+        structurally_applied=not (
+            language.skip_null_dict_values
+            and isinstance(ruamel_data, CommentedMap)
+            and _all_mapping_values_null(data=ruamel_data)
+        ),
     )
 
 
@@ -167,6 +190,7 @@ def resolve_yaml_comments(
                 comment_suffix=comment_suffix,
                 comment_line_prefix=comment_line_prefix,
                 include_delimiters=include_delimiters,
+                structurally_applied=True,
             )
         case CommentedSeq() | CommentedMap():
             return _resolve_yaml_collection_comments(
@@ -221,4 +245,5 @@ def resolve_toml_comments(
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
         include_delimiters=include_delimiters,
+        structurally_applied=False,
     )

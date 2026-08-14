@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "nested_map_mixed_int_widths"
+
+[[variants]]
+axis = "nested_map_mixed_int_widths"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }

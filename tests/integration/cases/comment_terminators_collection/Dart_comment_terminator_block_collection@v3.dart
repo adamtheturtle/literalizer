@@ -1,7 +1,7 @@
 final my_data = <String>[
-    /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-    "first",  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-    /* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    "first",  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    /* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
     "second",
-    /* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 ];
