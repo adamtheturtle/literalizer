@@ -1,0 +1,1 @@
+Escape control characters in Zig quoted record field identifiers so generated declarations and literals remain valid tokens.

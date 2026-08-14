@@ -8,9 +8,9 @@ type Val
 
 my_data : Val
 my_data = EList [
-    {- before first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    EStr "first",  {- inline first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    {- before second: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- before first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    EStr "first",  {- inline first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    {- before second: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     EStr "second"
-    {- trailing: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- trailing: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     ]

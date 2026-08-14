@@ -1333,6 +1333,34 @@ def _rust_is_derecordized_map(*, value: dict[Scalar, Value]) -> bool:
     )
 
 
+@beartype
+def _raise_for_derecordized_map_container_values(
+    *, data: Value, widened_ids: frozenset[int]
+) -> None:
+    """Reject widened maps whose scalar enum cannot hold a value."""
+    match data:
+        case dict():
+            if id(data) in widened_ids and any(
+                isinstance(value, (dict, list, set)) for value in data.values()
+            ):
+                msg = (
+                    "Rust cannot widen divergent record maps whose values "
+                    "contain containers"
+                )
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _raise_for_derecordized_map_container_values(
+                    data=value, widened_ids=widened_ids
+                )
+        case list() | set():
+            for value in data:
+                _raise_for_derecordized_map_container_values(
+                    data=value, widened_ids=widened_ids
+                )
+        case _:
+            return
+
+
 @dataclasses.dataclass
 class _RustWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.
@@ -3816,6 +3844,17 @@ class Rust(metaclass=LanguageCls):
         """Validate Rust-specific data/format combinations."""
         if self._json_type_active:
             self._validate_json_value_keys(data)
+        if (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        ):
+            widened_ids = _rust_derecordized_map_ids(
+                data=data,
+                unify_optional_fields=self.record_unify_optional_fields,
+            )
+            _raise_for_derecordized_map_container_values(
+                data=data, widened_ids=widened_ids
+            )
         if (
             not self._json_type_active
             and self.datetime_format.value.type_produced is datetime.datetime
