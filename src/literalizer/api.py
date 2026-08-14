@@ -29,7 +29,11 @@ from literalizer._literalize import (
     literalize_pre_form,
     materialize_value_input,
 )
-from literalizer._parsing import InputFormat, parse_input
+from literalizer._parsing import (
+    InputFormat,
+    parse_input,
+    recursion_parse_error,
+)
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     InvalidVariableModifierError,
@@ -587,22 +591,25 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
-    return literalize_call_parsed(
-        parsed=parse_input(source=source, input_format=input_format),
-        language=language,
-        target_function=target_function,
-        parameter_names=parameter_names,
-        call_transform=call_transform,
-        zip_source=zip_source,
-        zip_input_format=zip_input_format,
-        comment_source=comment_source,
-        per_element=per_element,
-        wrap_in_file=wrap_in_file,
-        ref_case=ref_case,
-        consumable_refs=consumable_refs,
-        ref_values=ref_values,
-        bound_refs=bound_refs,
-        ref_key=effective_ref_key,
-        collection_layout=collection_layout,
-        variable_form=variable_form,
-    )
+    try:
+        return literalize_call_parsed(
+            parsed=parse_input(source=source, input_format=input_format),
+            language=language,
+            target_function=target_function,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
+            zip_source=zip_source,
+            zip_input_format=zip_input_format,
+            comment_source=comment_source,
+            per_element=per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=ref_case,
+            consumable_refs=consumable_refs,
+            ref_values=ref_values,
+            bound_refs=bound_refs,
+            ref_key=effective_ref_key,
+            collection_layout=collection_layout,
+            variable_form=variable_form,
+        )
+    except RecursionError as exc:
+        raise recursion_parse_error(input_format=input_format) from exc
