@@ -68,7 +68,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 '[[variants]]\naxis = "date"\n'
                 'requires = ["teleportation"]\n'
             ),
-            "Input should be 'empty_sibling_sequence_type_hints'",
+            "Input should be 'collection_comments'",
         ),
         (
             (

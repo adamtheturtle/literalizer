@@ -13,6 +13,7 @@ from typing_extensions import TypeIs
 from literalizer._checks import check_data
 from literalizer._comments import (
     CollectionComments,
+    ElementComments,
     apply_collection_comments_to_elements,
     extract_yaml_comments,
     neutralize_comment_terminator,
@@ -747,7 +748,7 @@ def _format_ordered_map_value(
     guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -955,7 +956,7 @@ def _format_dict_value(
     guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -1720,7 +1721,7 @@ def _format_list_value(
     spec = ctx.spec
     sequence_cfg = spec.sequence_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -2074,15 +2075,13 @@ def _format_multiline_collection_value(
 
 
 @beartype
-def _nested_yaml_collection_comments(
+def _yaml_collection_comments(
     *,
     value: Value,
     ctx: _RenderContext,
 ) -> CollectionComments | None:
-    """Return comments for a nested YAML collection, when present."""
+    """Return comments for a YAML collection, when present."""
     if not ctx.spec.supports_collection_comments:
-        return None
-    if id(value) == ctx.yaml_comment_root_id:
         return None
     raw_value = ctx.yaml_comment_nodes.get(id(value))
     if raw_value is None:
@@ -2136,23 +2135,48 @@ def _append_entries(
 
 @beartype
 def _filter_collection_comments(
-    *, collection_comments: CollectionComments, keep: Sequence[bool]
+    *,
+    collection_comments: CollectionComments,
+    keep: Sequence[bool],
+    redistribute: bool,
 ) -> CollectionComments:
     """Keep comment slots corresponding to rendered collection entries.
 
     A length mismatch is an internal alignment error and intentionally
     raises rather than silently assigning comments to different values.
     """
-    elements = tuple(
-        element
-        for element, keep_element in zip(
-            collection_comments.elements, keep, strict=True
+    if not redistribute:
+        return CollectionComments(
+            elements=tuple(
+                element
+                for element, keep_element in zip(
+                    collection_comments.elements, keep, strict=True
+                )
+                if keep_element
+            ),
+            trailing=collection_comments.trailing,
         )
-        if keep_element
-    )
+
+    pending: list[str] = []
+    elements: list[ElementComments] = []
+    for element, keep_element in zip(
+        collection_comments.elements, keep, strict=True
+    ):
+        if not keep_element:
+            pending.extend(element.before)
+            if element.inline:
+                pending.append(element.inline)
+            continue
+        elements.append(
+            dataclasses.replace(
+                element,
+                before=(*pending, *element.before),
+            )
+        )
+        pending = []
     return CollectionComments(
-        elements=elements,
-        trailing=collection_comments.trailing,
+        elements=tuple(elements),
+        trailing=(*pending, *collection_comments.trailing),
     )
 
 
@@ -2172,7 +2196,7 @@ def _format_collection_lines(
     line_ctx = ctx.with_prefix(multiline_prefix=body_prefix)
     lines: list[str] = []
     parent_id = id(data)
-    collection_comments = _nested_yaml_collection_comments(
+    collection_comments = _yaml_collection_comments(
         value=data,
         ctx=ctx,
     )
@@ -2194,6 +2218,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
+                    redistribute=id(data) == ctx.yaml_comment_root_id,
                 )
             sibling_list_values: list[list[Value]] = [
                 v for _, v in entries if isinstance(v, list)
@@ -2347,6 +2372,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
+                    redistribute=id(data) == ctx.yaml_comment_root_id,
                 )
             _append_entries(
                 formatted_entries=formatted_entries,

@@ -34,6 +34,7 @@ type VariableFormName = Literal["new", "existing", "both"]
 type CollectionLayoutName = Literal["compact", "multiline"]
 type SuiteName = Literal["base", "combined"]
 type VariantCapabilityName = Literal[
+    "collection_comments",
     "empty_sibling_sequence_type_hints",
     "special_floats",
 ]
