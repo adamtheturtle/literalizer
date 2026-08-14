@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Java wrapper classes reject reserved identifiers."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Java"]
+values = ["_", "int"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]
