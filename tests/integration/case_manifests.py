@@ -436,8 +436,9 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     call site agree on identifier spelling.
     """
 
-    target_function: str
     languages: StringFrozenSet = Field(default_factory=_empty_name_set)
+
+    target_function: str
     parameter_names: StringTuple
     per_element: bool
     collection_layout: CollectionLayoutName = "compact"

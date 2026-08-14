@@ -1,10 +1,10 @@
 schema_version = 1
-languages = ["Haskell"]
 owner = "literalize-call"
 
 # Keep ref_values non-empty while an unknown marker is stripped from a
 # nested list during type inference.
 [call]
+languages = ["Haskell"]
 target_function = "process"
 parameter_names = ["data"]
 per_element = false
