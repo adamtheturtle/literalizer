@@ -2488,33 +2488,64 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
 
 
+def _source_list_children_for_inference(
+    *,
+    source: list[Value],
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> list[Value]:
+    """Return source children retained during reference inference."""
+    children: list[Value] = []
+    for child in source:
+        if ref_values:
+            resolved = _resolve_ref_for_preamble(
+                value=child,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            if not resolved.include:
+                continue
+        elif (
+            _extract_call_arg_ref_name(value=child, ref_key=ref_key)
+            is not None
+        ):
+            continue
+        children.append(child)
+    return children
+
+
 def _inference_to_source_container_ids(
-    *, source: Value, inferred: Value
+    *,
+    source: Value,
+    inferred: Value,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
 ) -> dict[int, int]:
     """Map inferred container ids back to corresponding source ids."""
     id_map: dict[int, int] = {}
 
     def _visit(*, source_item: Value, inferred_item: Value) -> None:
-        """Record corresponding containers and recurse through peers."""
+        """Record corresponding containers and traverse their peers."""
         if not isinstance(source_item, (dict, list, set)) or not isinstance(
             inferred_item, (dict, list, set)
         ):
             return
         id_map[id(inferred_item)] = id(source_item)
         if isinstance(source_item, list) and isinstance(inferred_item, list):
+            source_children = _source_list_children_for_inference(
+                source=source_item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
             for source_child, inferred_child in zip(
-                source_item, inferred_item, strict=True
+                source_children, inferred_item, strict=False
             ):
                 _visit(
                     source_item=source_child,
                     inferred_item=inferred_child,
                 )
-        elif (
-            isinstance(source_item, dict)
-            and isinstance(inferred_item, dict)
-            and source_item.keys() == inferred_item.keys()
-        ):
-            for key in source_item:
+        elif isinstance(source_item, dict) and isinstance(inferred_item, dict):
+            for key in source_item.keys() & inferred_item.keys():
                 _visit(
                     source_item=source_item[key],
                     inferred_item=inferred_item[key],
@@ -2648,7 +2679,10 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         )
 
     inference_id_map = _inference_to_source_container_ids(
-        source=data, inferred=inference_data
+        source=data,
+        inferred=inference_data,
+        ref_values=ref_values,
+        ref_key=ref_key,
     )
     wrap_ids = _source_container_ids(
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
