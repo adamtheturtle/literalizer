@@ -34,6 +34,7 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
+    I64_MAX,
     I64_MIN,
     format_integer_hex,
 )
@@ -91,12 +92,22 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableIntegerError
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_lua_escaped = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00")],
 )
+
+
+@beartype
+def _format_lua_hex(value: int) -> str:
+    """Render hexadecimal only within the signed Lua integer range."""
+    if not I64_MIN <= value <= I64_MAX:
+        msg = f"Lua cannot represent {value} as a hexadecimal integer"
+        raise UnrepresentableIntegerError(msg)
+    return format_integer_hex(value=value)
 
 
 @beartype
@@ -408,7 +419,7 @@ class Lua(metaclass=LanguageCls):
         """Integer format options."""
 
         DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        HEX = enum.member(value=_format_lua_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
