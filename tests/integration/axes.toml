@@ -1115,9 +1115,3 @@ overrides = [
 [axes.python_yaml_tagged_scalars]
 plan = "fixed_overrides"
 name_template = "{lang}_yaml_tagged_scalars"
-gates = [
-  { kind = "enum_member_present", option = "language_version", member = "PY38" },
-]
-overrides = [
-  { kind = "enum_member", option = "language_version", member = "PY38" },
-]

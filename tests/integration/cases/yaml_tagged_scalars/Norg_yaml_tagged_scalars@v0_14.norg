@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "explicit_string": "5",
+    "six": "explicitly tagged key"
+}
+@end
