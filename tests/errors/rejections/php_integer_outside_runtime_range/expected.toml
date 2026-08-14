@@ -1,0 +1,13 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Php[DECIMAL]['-9223372036854775809']" = "PHP cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Php[DECIMAL]['9223372036854775808']" = "PHP cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Php[HEX]['-9223372036854775809']" = "PHP cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Php[HEX]['9223372036854775808']" = "PHP cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Php[OCTAL]['-9223372036854775809']" = "PHP cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Php[OCTAL]['9223372036854775808']" = "PHP cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Php[OCTAL_C_STYLE]['-9223372036854775809']" = "PHP cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Php[OCTAL_C_STYLE]['9223372036854775808']" = "PHP cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Php[BINARY]['-9223372036854775809']" = "PHP cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Php[BINARY]['9223372036854775808']" = "PHP cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
