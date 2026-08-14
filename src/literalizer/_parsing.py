@@ -169,13 +169,10 @@ def _find_surrogate(*, data: Value) -> str | None:
 
 
 @beartype
-def _surrogate_parse_error(
-    *,
-    input_format: InputFormat,
-    surrogate: str,
+def _format_parse_error(
+    *, input_format: InputFormat, detail: str
 ) -> ParseError:
-    """Build the format-specific error for an invalid surrogate."""
-    detail = f"input contains unpaired UTF-16 surrogate U+{ord(surrogate):04X}"
+    """Build a format-specific parse error with exhaustive dispatch."""
     match input_format:
         case InputFormat.JSON:
             return JSONParseError(f"Invalid JSON: {detail}")
@@ -190,17 +187,27 @@ def _surrogate_parse_error(
 
 
 @beartype
+def _surrogate_parse_error(
+    *,
+    input_format: InputFormat,
+    surrogate: str,
+) -> ParseError:
+    """Build the format-specific error for an invalid surrogate."""
+    return _format_parse_error(
+        input_format=input_format,
+        detail=(
+            f"input contains unpaired UTF-16 surrogate U+{ord(surrogate):04X}"
+        ),
+    )
+
+
+@beartype
 def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
     """Build the format-specific error for excessively nested input."""
-    detail = "input exceeds the supported nesting depth"
-    error_by_format: dict[InputFormat, tuple[type[ParseError], str]] = {
-        InputFormat.JSON: (JSONParseError, "JSON"),
-        InputFormat.JSON5: (JSON5ParseError, "JSON5"),
-        InputFormat.YAML: (YAMLParseError, "YAML"),
-        InputFormat.TOML: (TOMLParseError, "TOML"),
-    }
-    error_type, label = error_by_format[input_format]
-    return error_type(f"Invalid {label}: {detail}")
+    return _format_parse_error(
+        input_format=input_format,
+        detail="input exceeds the supported nesting depth",
+    )
 
 
 @beartype
