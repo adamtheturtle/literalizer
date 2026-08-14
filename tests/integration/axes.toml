@@ -287,6 +287,16 @@ plan = "every_non_default_member"
 name_template = "{lang}_float_format_{format}"
 option = "float_format"
 
+[axes.scientific_float_precision]
+plan = "fixed_overrides"
+name_template = "{lang}_float_format_scientific_precision"
+gates = [
+  { kind = "enum_member_present", option = "float_format", member = "SCIENTIFIC" },
+]
+overrides = [
+  { kind = "enum_member", option = "float_format", member = "SCIENTIFIC" },
+]
+
 [axes.heterogeneous_strategy]
 plan = "every_non_default_member"
 name_template = "{lang}_heterogeneous_strategy_{format}"
@@ -649,6 +659,14 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_list_field_type_split]
+plan = "fixed_overrides"
+name_template = "{lang}_record_list_field_type_split"
+gates = [{ kind = "record_variant", variant = "list_field_type_split" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.record_keyword_field]
 plan = "fixed_overrides"
 name_template = "{lang}_record_keyword_field"
@@ -978,6 +996,14 @@ plan = "fixed_overrides"
 name_template = "{lang}_nested_empty_map_cousins"
 gates = [
   { kind = "spec_config_field_present", field = "dict_format_config.narrowed_empty_form" },
+]
+overrides = []
+
+[axes.nested_map_mixed_int_widths]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_map_mixed_int_widths"
+gates = [
+  { kind = "capability_flag", flag = "supports_widened_integer_formatter" },
 ]
 overrides = []
 

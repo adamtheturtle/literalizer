@@ -4,7 +4,7 @@ import pytest
 
 from literalizer import LanguageCls
 from literalizer.exceptions import UnsupportedOptionError
-from literalizer.languages import Cpp, Python
+from literalizer.languages import Cpp, Haxe, Python
 
 
 @pytest.mark.parametrize(
@@ -14,6 +14,9 @@ from literalizer.languages import Cpp, Python
         (Cpp, "annotation_evaluation", None),
         (Python, "multiline_raw_string_delimiter_base", "tag"),
         (Python, "heterogeneous_value_enum_name", "Value"),
+        (Haxe, "default_set_element_type", "String"),
+        (Haxe, "default_dict_key_type", "Int"),
+        (Haxe, "default_dict_value_type", "String"),
     ],
 )
 def test_known_unsupported_option_raises_typed_error(
