@@ -2,11 +2,11 @@ package main
 
 func main() {
 my_data := []string{
-	/* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-	"first",  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-	/* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+	/* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+	"first",  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+	/* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
 	"second",
-	/* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+	/* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 }
 _ = my_data
 }
