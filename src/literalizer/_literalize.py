@@ -536,8 +536,8 @@ def _maybe_wrap_child(
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_scalar`
     and non-scalar children (ref markers, containers) through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_non_scalar`.
-    A behavior that wraps only scalars still wraps an *empty* container
-    child through
+    A behavior that wraps only scalars can still wrap a container child
+    through
     :attr:`~literalizer._language.HeterogeneousBehavior.wrap_empty_container`
     (Rust's ``TAGGED_ENUM``, issue #3028).
     """
@@ -555,11 +555,9 @@ def _maybe_wrap_child(
         return wrap_non_scalar(raw_value, formatted_value)
     wrap_empty_container = behavior.wrap_empty_container
     if wrap_empty_container is not None and parent_id in ctx.wrap_ids:
-        # ``compute_wrap_ids`` only marks a container's non-scalar child
-        # for ``wrap_empty_container`` when that child is an empty list or
-        # map (Rust's scalar-plus-empty-container list, issue #3028), so
-        # the wrapper always receives an empty collection to render as a
-        # payload-free ``List`` / ``Map`` variant.
+        # Rust uses this hook for list/map variants alongside wrapped
+        # scalars; populated descendants are recursively marked so their
+        # children match the enum payload type.
         return wrap_empty_container(raw_value, formatted_value)
     return formatted_value
 
