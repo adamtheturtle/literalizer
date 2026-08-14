@@ -1,3 +1,4 @@
 # first dotted key
 a.b = 1
+# second dotted key
 a.c = 2
