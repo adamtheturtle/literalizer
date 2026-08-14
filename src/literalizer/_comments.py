@@ -552,9 +552,32 @@ def literalize_yaml_collection(
         body_lines = all_lines
 
     _empty = ElementComments(before=(), inline="")
+    element_comments = ctx.element_comments
+    if body_lines and len(element_comments) > len(body_lines):
+        retained = element_comments[: len(body_lines) - 1]
+        collapsed = element_comments[len(body_lines) - 1 :]
+        collapsed_before = tuple(
+            comment
+            for index, element in enumerate(iterable=collapsed)
+            for comment in (
+                *element.before,
+                *(
+                    (element.inline,)
+                    if element.inline and index < len(collapsed) - 1
+                    else ()
+                ),
+            )
+        )
+        element_comments = (
+            *retained,
+            ElementComments(
+                before=collapsed_before,
+                inline=collapsed[-1].inline,
+            ),
+        )
     padded = (
-        ctx.element_comments
-        + (_empty,) * (len(body_lines) - len(ctx.element_comments))
+        element_comments
+        + (_empty,) * (len(body_lines) - len(element_comments))
     )[: len(body_lines)]
 
     result: list[str] = []
