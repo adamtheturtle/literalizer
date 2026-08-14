@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "special_float_dict_key"
