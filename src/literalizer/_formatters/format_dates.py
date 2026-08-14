@@ -96,11 +96,14 @@ def format_time_vb(value: datetime.time) -> str:
 @beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
     """Return integer Unix epoch seconds for a datetime."""
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=datetime.UTC)
-    utc_value = value.astimezone(tz=datetime.UTC)
-    epoch = datetime.datetime(year=1970, month=1, day=1, tzinfo=datetime.UTC)
-    return (utc_value - epoch) // datetime.timedelta(seconds=1)
+    offset = value.utcoffset() or datetime.timedelta()
+    elapsed = datetime.timedelta(
+        days=value.toordinal()
+        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        seconds=value.hour * 3600 + value.minute * 60 + value.second,
+        microseconds=value.microsecond,
+    )
+    return (elapsed - offset) // datetime.timedelta(seconds=1)
 
 
 @beartype
