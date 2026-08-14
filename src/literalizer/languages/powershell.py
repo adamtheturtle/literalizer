@@ -76,11 +76,35 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import InvalidDictKeyError
+
+
+@beartype
+def _reject_case_colliding_dict_keys(data: Value) -> None:
+    """Reject keys that PowerShell hash tables compare as duplicates."""
+    match data:
+        case dict():
+            seen: dict[str, str] = {}
+            for key, value in data.items():
+                if isinstance(key, str):
+                    folded_key = key.casefold()
+                    if folded_key in seen:
+                        msg = (
+                            f"PowerShell dict keys {seen[folded_key]!r} and "
+                            f"{key!r} collide case-insensitively."
+                        )
+                        raise InvalidDictKeyError(msg)
+                    seen[folded_key] = key
+                _reject_case_colliding_dict_keys(data=value)
+        case list() | set():
+            for item in data:
+                _reject_case_colliding_dict_keys(data=item)
+        case _:
+            return
 
 
 @beartype
@@ -529,7 +553,10 @@ class PowerShell(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject case-insensitively colliding hash-table keys."""
+        _reject_case_colliding_dict_keys(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

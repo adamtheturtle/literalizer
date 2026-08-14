@@ -72,7 +72,10 @@ def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
         lang_cls
         for lang_cls in sorted_languages()
         if lang_cls.new_variable_name_syntax
-        is NewVariableNameSyntax.ASCII_KEBAB
+        in {
+            NewVariableNameSyntax.ASCII_KEBAB,
+            NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED,
+        }
     )
 
 

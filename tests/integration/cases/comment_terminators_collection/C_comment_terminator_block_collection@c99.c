@@ -16,11 +16,11 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
-    /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-    ((CVal){.s = "first"}),  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-    /* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    ((CVal){.s = "first"}),  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    /* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
     ((CVal){.s = "second"}),
-    /* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 }});
     (void)my_data;
     return 0;
