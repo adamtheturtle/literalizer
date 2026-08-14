@@ -32,7 +32,6 @@ from literalizer._literalize import (
 from literalizer._parsing import (
     InputFormat,
     parse_input,
-    recursion_parse_error,
 )
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
@@ -591,12 +590,8 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
-    try:
-        parsed = parse_input(source=source, input_format=input_format)
-    except RecursionError as exc:
-        raise recursion_parse_error(input_format=input_format) from exc
     return literalize_call_parsed(
-        parsed=parsed,
+        parsed=parse_input(source=source, input_format=input_format),
         language=language,
         target_function=target_function,
         parameter_names=parameter_names,
