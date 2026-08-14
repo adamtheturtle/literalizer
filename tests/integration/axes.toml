@@ -999,6 +999,17 @@ gates = [
 ]
 overrides = []
 
+[axes.nested_list_integer_widening]
+plan = "fixed_overrides"
+name_template = "{lang}_nested_list_integer_widening"
+gates = [
+  { kind = "metadata_field", field = "nested_list_widening", value = "integer_width" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.kotlin_widened_i64_min]
 plan = "fixed_overrides"
 name_template = "{lang}_widened_i64_min"

@@ -48,6 +48,7 @@ type RecordVariantName = Literal[
     "list_field_type_split",
 ]
 type NestedMapWideningName = Literal["none", "default", "uniform_keys"]
+type NestedListWideningName = Literal["none", "integer_width"]
 
 
 class LanguageMetadataError(ValueError):
@@ -134,6 +135,9 @@ class VariantPolicy(  # noqa: NOD001
 
     nested_map_widening: NestedMapWideningName = "none"
     """Which nested-map widening input this language renders, if any."""
+
+    nested_list_widening: NestedListWideningName = "none"
+    """Which nested-list widening input this language renders, if any."""
 
     record_language_version: str | None = None
     """``VersionFormats`` member name the record variants select."""

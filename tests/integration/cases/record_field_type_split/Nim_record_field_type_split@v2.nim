@@ -18,7 +18,7 @@ type Record7 = object
 type Record8 = object
     holder: Record2
 type Record9 = object
-    nums: seq[int]
+    nums: seq[int64]
 type Record0 = object
     plain: Record1
     other: Record2
@@ -57,8 +57,8 @@ var my_data = Record0(
     ),
     wide: Record9(
         nums: @[
-            1,
-            1099511627776
+            1'i64,
+            1099511627776'i64
         ]
     )
 )

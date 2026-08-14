@@ -189,6 +189,9 @@ _METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
     "nested_map_widening": (
         lambda metadata: metadata.variants.nested_map_widening
     ),
+    "nested_list_widening": (
+        lambda metadata: metadata.variants.nested_list_widening
+    ),
 }
 
 # Language-metadata fields a plan may put in a variant name.
