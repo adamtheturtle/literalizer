@@ -2659,6 +2659,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
     validate_data: bool,
+    record_context_data: Value | None,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -2699,6 +2700,8 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         validate_data: Whether to run the data checks before rendering.
             Bound-ref declarations set this false after validating their
             shared record-shape context.
+        record_context_data: Composition-wide data used to restore shared
+            inference caches after calculating declaration-local wrap IDs.
     """
     _validate_ref_case_is_injective(
         value=data,
@@ -2765,6 +2768,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
         id_map=inference_id_map,
     )
+    if record_context_data is not None:
+        # Computing the declaration-local wrap IDs above may update a
+        # language's type-inference cache. Restore the composition-wide
+        # record context before any opener or field type reads that cache.
+        check_data(data=record_context_data, spec=language)
     tuple_list_ids = _source_container_ids(
         inferred_ids=_compute_tuple_list_ids(
             data=inference_data, spec=language
@@ -2965,6 +2973,7 @@ def _literalize_child_path(
                 collection_layout=collection_layout,
                 raw_yaml_data=None,
                 validate_data=True,
+                record_context_data=None,
             )
         except error_type:
             return (
@@ -2997,6 +3006,7 @@ def _literalize(
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
     validate_data: bool,
+    record_context_data: Value | None,
 ) -> str:
     """Render data and attach a path to value-specific renderer errors."""
     try:
@@ -3011,6 +3021,7 @@ def _literalize(
             collection_layout=collection_layout,
             raw_yaml_data=raw_yaml_data,
             validate_data=validate_data,
+            record_context_data=record_context_data,
         )
     except LiteralizerError as exc:
         if exc.path is None:
@@ -3165,6 +3176,7 @@ def _literalize_pre_form_impl(
             if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve
             else None
         ),
+        record_context_data=None,
         validate_data=True,
     )
 
@@ -3618,8 +3630,6 @@ def _literalize_value_binding(
     value (a bound ref's materialized value), so it carries no source
     comments and needs no parsing.
     """
-    if record_context_data is not None:
-        check_data(data=record_context_data, spec=language)
     result_text = _literalize(
         data=value,
         language=language,
@@ -3631,6 +3641,7 @@ def _literalize_value_binding(
         collection_layout=collection_layout,
         raw_yaml_data=None,
         validate_data=record_context_data is None,
+        record_context_data=record_context_data,
     )
     wrapped = _apply_variable_wrapper(
         result=result_text,
