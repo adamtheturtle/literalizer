@@ -3605,7 +3605,7 @@ def _compose_bound_refs(
         entry
         for d in decl_results
         for entry in d.preamble
-        if entry not in dropped_declaration_blocks
+        if entry not in dropped_declaration_blocks or "\n" not in entry
     )
     all_preamble = deduplicate_preamble_entries(
         entries=declaration_preamble + main_result.preamble
