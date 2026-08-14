@@ -38,7 +38,7 @@ shape's key-set).
 import dataclasses
 import re
 from collections import Counter
-from collections.abc import Callable, Hashable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 
 from beartype import beartype
 
@@ -716,6 +716,33 @@ def _build_derecordized_map_open(
     return _open
 
 
+def _record_dicts(data: Value, /) -> Iterator[dict[Scalar, Value]]:
+    """Yield every dictionary nested in *data*."""
+    if isinstance(data, dict):
+        yield data
+        for child in data.values():
+            yield from _record_dicts(child)
+    elif isinstance(data, list):
+        for child in data:
+            yield from _record_dicts(child)
+
+
+def _populate_record_requests(
+    *,
+    data: Value,
+    id_to_shape: Mapping[int, RecordShape],
+    request_by_shape: dict[RecordShape, dict[str, RecordFieldType]],
+    field_type_request: Callable[[Value], RecordFieldType],
+) -> None:
+    """Populate field requests for every record in *data*."""
+    for record in _record_dicts(data):
+        shape = id_to_shape.get(id(record))
+        if shape is not None and shape not in request_by_shape:
+            request_by_shape[shape] = {
+                key: field_type_request(record[key]) for key in shape.keys
+            }
+
+
 @beartype
 def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
@@ -923,19 +950,21 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         compute_tuple_list_ids=None,
     )
 
-    def _preamble(_data: Value, /) -> tuple[str, ...]:
+    def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build one declaration block per record shape, in dependency
         order, typing each field from its first-seen
         :class:`RecordFieldType` request.
 
-        Emit order is read from the shared cache populated by
-        ``_compute_shapes`` during data checking.  Besides preserving
-        field-type refinement, this keeps declaration discovery tied to
-        the rendered objects when preamble inference has resolved refs
-        into a copied tree with different object identities.
+        Recompute the caches from *data* so replaying this hook for a
+        bound-ref declaration returns that declaration's own block.
         """
-        if not id_to_shape:
-            return ()
+        _compute_shapes(data=data)
+        _populate_record_requests(
+            data=data,
+            id_to_shape=id_to_shape,
+            request_by_shape=request_by_shape,
+            field_type_request=_field_type_request,
+        )
         blocks: list[str] = []
         for shape in emit_order_cache:
             if (
