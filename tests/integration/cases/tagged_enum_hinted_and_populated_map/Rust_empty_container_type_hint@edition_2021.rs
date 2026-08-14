@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 enum Value {
     I32(i32),
-    Map(HashMap<String, String>),
+    Map(HashMap<&'static str, Value>),
 }
 fn main() {
     let my_data = vec![
         Value::I32(1),
         Value::Map(HashMap::new()),
+        Value::Map(HashMap::from([("x", Value::I32(2))])),
     ];
     let _ = my_data;
 }

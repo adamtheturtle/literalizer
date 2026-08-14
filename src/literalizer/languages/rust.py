@@ -914,7 +914,8 @@ def _rust_visit_container_wrap_ids(*, item: Value, ids: set[int]) -> None:
         return
     has_scalar = any(_rust_is_scalar(value=child) for child in children)
     has_container = any(isinstance(child, (list, dict)) for child in children)
-    if has_scalar and has_container:
+    has_set = any(isinstance(child, set) for child in children)
+    if has_scalar and has_container and not has_set:
         _rust_mark_container_subtree(item=item, ids=ids)
 
 
@@ -946,8 +947,8 @@ def _rust_wrapped_container_kinds(
     *,
     data: Value,
     wrap_ids: frozenset[int],
-) -> tuple[bool, bool]:
-    """Return ``(has_list, has_map)`` for wrapped container children.
+) -> tuple[bool, bool, bool, bool]:
+    """Return wrapped and populated list/map-kind flags.
 
     Mirrors :func:`iter_wrapped_scalars`: a list/map whose immediate
     container id appears in *wrap_ids* renders as a ``List`` /
@@ -956,10 +957,12 @@ def _rust_wrapped_container_kinds(
     """
     has_list = False
     has_map = False
+    has_populated_list = False
+    has_populated_map = False
 
     def _visit(item: Value) -> None:
         """Record which empty-container kinds *item* wraps."""
-        nonlocal has_list, has_map
+        nonlocal has_list, has_map, has_populated_list, has_populated_map
         match item:
             case dict():
                 children: list[Value] = list(item.values())
@@ -973,12 +976,14 @@ def _rust_wrapped_container_kinds(
                 match child:
                     case list():
                         has_list = True
+                        has_populated_list = has_populated_list or bool(child)
                     case _:
                         has_map = True
+                        has_populated_map = has_populated_map or bool(child)
             _visit(item=child)
 
     _visit(item=data)
-    return (has_list, has_map)
+    return (has_list, has_map, has_populated_list, has_populated_map)
 
 
 @beartype
@@ -1001,12 +1006,12 @@ def _rust_container_wrapper(
         match raw_value:
             case list():
                 payload = formatted_value
-                if not raw_value and not formatted_value.startswith("<"):
+                if not raw_value:
                     payload = "vec![]"
                 return f"{params.enum_name}::List({payload})"
             case _:
                 payload = formatted_value
-                if not raw_value and not formatted_value.startswith("<"):
+                if not raw_value:
                     payload = "HashMap::new()"
                 return f"{params.enum_name}::Map({payload})"
 
@@ -1239,13 +1244,19 @@ def _build_tagged_enum_preamble(
         )
         has_list = False
         has_map = False
+        has_populated_list = False
+        has_populated_map = False
         for value in values:
-            value_has_list, value_has_map = _rust_wrapped_container_kinds(
-                data=value,
-                wrap_ids=wrap_ids,
-            )
+            (
+                value_has_list,
+                value_has_map,
+                value_has_populated_list,
+                value_has_populated_map,
+            ) = _rust_wrapped_container_kinds(data=value, wrap_ids=wrap_ids)
             has_list = has_list or value_has_list
             has_map = has_map or value_has_map
+            has_populated_list = has_populated_list or value_has_populated_list
+            has_populated_map = has_populated_map or value_has_populated_map
         hinted_types = [
             _rust_empty_container_hint_types(
                 data=value,
@@ -1258,6 +1269,10 @@ def _build_tagged_enum_preamble(
         for list_types, map_types in hinted_types:
             list_hint_types.update(list_types)
             map_hint_types.update(map_types)
+        if has_populated_list:
+            list_hint_types.clear()
+        if has_populated_map:
+            map_hint_types.clear()
         if len(list_hint_types) > 1:
             msg = (
                 "TAGGED_ENUM can use only one concrete empty-list type per "
