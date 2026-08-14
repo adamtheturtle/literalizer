@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Positional Go calls require one value per parameter."
+exceptions = ["ParameterCountMismatchError"]
+languages = ["Go"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2, 3]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["p0"]

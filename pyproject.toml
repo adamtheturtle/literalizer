@@ -59,7 +59,7 @@ optional-dependencies.dev = [
     "mypy[faster-cache]==2.3.0",
     "mypy-strict-kwargs==2026.7.19.1",
     "no-defaults==2.1.0",
-    "prek==0.4.12",
+    "prek==0.4.13",
     "pydantic==2.13.4",
     "pydocstringformatter==1.0.0",
     "pygments==2.20.0",
@@ -107,7 +107,7 @@ optional-dependencies.dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.65",
+    "ty==0.0.70",
     "types-pygments==2.20.0.20260728",
     "vale==3.13.0.0",
     "vulture==2.16",
