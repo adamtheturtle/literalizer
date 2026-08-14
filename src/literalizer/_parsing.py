@@ -193,17 +193,14 @@ def _surrogate_parse_error(
 def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
     """Build the format-specific error for excessively nested input."""
     detail = "input exceeds the supported nesting depth"
-    match input_format:
-        case InputFormat.JSON:
-            return JSONParseError(f"Invalid JSON: {detail}")
-        case InputFormat.JSON5:
-            return JSON5ParseError(f"Invalid JSON5: {detail}")
-        case InputFormat.YAML:
-            return YAMLParseError(f"Invalid YAML: {detail}")
-        case InputFormat.TOML:
-            return TOMLParseError(f"Invalid TOML: {detail}")
-        case _ as unreachable:
-            assert_never(unreachable)
+    error_by_format: dict[InputFormat, tuple[type[ParseError], str]] = {
+        InputFormat.JSON: (JSONParseError, "JSON"),
+        InputFormat.JSON5: (JSON5ParseError, "JSON5"),
+        InputFormat.YAML: (YAMLParseError, "YAML"),
+        InputFormat.TOML: (TOMLParseError, "TOML"),
+    }
+    error_type, label = error_by_format[input_format]
+    return error_type(f"Invalid {label}: {detail}")
 
 
 @beartype
