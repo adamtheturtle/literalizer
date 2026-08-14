@@ -2497,7 +2497,13 @@ def _mapping_object_at(
     *, mapping: Mapping[object, object], key: object
 ) -> object:
     """Return a mapping value with its public boundary type preserved."""
-    return mapping[key]
+    try:
+        return mapping[key]
+    except KeyError:
+        for raw_key, value in mapping.items():
+            if getattr(raw_key, "value", raw_key) == key:
+                return value
+        raise
 
 
 @beartype
@@ -4749,7 +4755,7 @@ def _render_call_per_element(
         return apply_collection_comments_to_elements(
             rendered_elements=rendered_elements,
             collection_comments=collection_comments,
-            comment_prefix=comment_cfg.prefix,
+            comment_prefix=comment_cfg.trailing_prefix,
             comment_suffix=comment_cfg.suffix,
             line_prefix="",
         )

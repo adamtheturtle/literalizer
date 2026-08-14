@@ -1,0 +1,1 @@
+Explicitly tagged YAML scalar keys and set members are now unwrapped like tagged values.

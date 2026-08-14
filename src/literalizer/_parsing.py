@@ -35,7 +35,7 @@ from literalizer.exceptions import (
 type YamlCoercible = (
     Scalar
     | list[YamlCoercible]
-    | dict[Scalar, YamlCoercible]
+    | dict[Scalar | TaggedScalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
     | TaggedScalar
@@ -213,7 +213,7 @@ def recursion_parse_error(*, input_format: InputFormat) -> ParseError:
 
 
 @beartype
-def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
+def _unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
     """Convert a *ruamel.yaml* scalar wrapper to its plain Python type.
 
     The round-trip loader returns subclasses (``ScalarInt``, ``HexInt``,
@@ -231,6 +231,8 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
     # and ``date``) because match arms test class membership in order.
     # ``ruamel`` always returns its own ``TimeStamp`` subclass for
     # datetimes, so we always reconstruct.
+    if isinstance(value, TaggedScalar):
+        value = _unwrap_yaml_tagged_scalar(value=value)
     match value:
         case bool():
             return bool(value)
@@ -298,6 +300,7 @@ def _validate_yaml_mapping_key(*, key: object) -> None:
             datetime.datetime,
             datetime.time,
             bytes,
+            TaggedScalar,
             type(None),
         ),
     ):
@@ -352,7 +355,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
         case TaggedScalar():
             return _unwrap_yaml_tagged_scalar(value=data)
         case CommentedOrderedMap():
-            omap_src: dict[Scalar, YamlCoercible] = dict(data)
+            omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
             return OrderedMap(
                 [
                     (
@@ -371,7 +374,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
         case list():
             return [_unwrap_yaml_data(data=item) for item in data]
         case CommentedSet():
-            members: set[Scalar] = set(data)
+            members: set[Scalar | TaggedScalar] = set(data)
             return {_unwrap_yaml_scalar(value=item) for item in members}
         case (
             bool()

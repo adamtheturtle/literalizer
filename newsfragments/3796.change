@@ -1,0 +1,1 @@
+C# record shape names now reject collisions with the generated outer ``Check`` class.
