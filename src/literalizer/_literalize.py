@@ -2577,6 +2577,25 @@ def _source_container_id_mapping[T](
     }
 
 
+def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
+    """Return identities of containers that are empty in source data."""
+    ids: set[int] = set()
+
+    def _visit(item: Value, /) -> None:
+        """Collect empty containers and traverse populated peers."""
+        if isinstance(item, (dict, list, set)) and not item:
+            ids.add(id(item))
+        if isinstance(item, dict):
+            for child in item.values():
+                _visit(child)
+        elif isinstance(item, list):
+            for child in item:
+                _visit(child)
+
+    _visit(value)
+    return frozenset(ids)
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
@@ -2694,6 +2713,13 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ),
         id_map=inference_id_map,
     )
+    inferred_empty_overrides = _source_container_id_mapping(
+        inferred_mapping=_empty_container_literal_overrides(
+            data=inference_data, spec=language
+        ),
+        id_map=inference_id_map,
+    )
+    source_empty_ids = _empty_source_container_ids(data)
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
@@ -2710,12 +2736,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             ),
             id_map=inference_id_map,
         ),
-        empty_container_overrides=_source_container_id_mapping(
-            inferred_mapping=_empty_container_literal_overrides(
-                data=inference_data, spec=language
-            ),
-            id_map=inference_id_map,
-        ),
+        empty_container_overrides={
+            container_id: literal
+            for container_id, literal in inferred_empty_overrides.items()
+            if container_id in source_empty_ids
+        },
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=False,
