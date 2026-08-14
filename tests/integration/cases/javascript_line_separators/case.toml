@@ -1,0 +1,6 @@
+schema_version = 1
+languages = ["JavaScript"]
+suites = ["base"]
+
+[[variants]]
+axis = "string_format"

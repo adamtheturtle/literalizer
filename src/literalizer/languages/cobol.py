@@ -824,7 +824,7 @@ class Cobol(metaclass=LanguageCls):
     """
 
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
-        NewVariableNameSyntax.ASCII_KEBAB
+        NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED
     )
 
     #: :attr:`~literalizer.FileSection.name` of the declarations region a
