@@ -6,6 +6,7 @@ import enum
 import functools
 import json
 import re
+from collections.abc import Iterable
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -258,31 +259,45 @@ def _is_object_sequence(
     return isinstance(value, (list, set))
 
 
+def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
+    """Return whether *value* is an object-typed ruamel YAML set."""
+    return isinstance(value, CommentedSet)
+
+
+def _validate_yaml_mapping_key(*, key: object) -> None:
+    """Reject one non-scalar YAML mapping or set key."""
+    if isinstance(
+        key,
+        (
+            str,
+            int,
+            float,
+            bool,
+            datetime.date,
+            datetime.datetime,
+            datetime.time,
+            bytes,
+            type(None),
+        ),
+    ):
+        return
+    msg = (
+        "Invalid YAML: mapping keys must be scalar values; "
+        f"got {type(key).__name__}"
+    )
+    raise YAMLParseError(msg)
+
+
 @beartype
 def _validate_yaml_mapping_keys(*, data: object) -> None:
     """Reject YAML mappings whose keys are not scalar values."""
     if _is_object_dict(data):
         for key, value in data.items():
-            if not isinstance(
-                key,
-                (
-                    str,
-                    int,
-                    float,
-                    bool,
-                    datetime.date,
-                    datetime.datetime,
-                    datetime.time,
-                    bytes,
-                    type(None),
-                ),
-            ):
-                msg = (
-                    "Invalid YAML: mapping keys must be scalar values; "
-                    f"got {type(key).__name__}"
-                )
-                raise YAMLParseError(msg)
+            _validate_yaml_mapping_key(key=key)
             _validate_yaml_mapping_keys(data=value)
+    elif _is_object_commented_set(data):
+        for key in data:
+            _validate_yaml_mapping_key(key=key)
     elif _is_object_sequence(data):
         for item in data:
             _validate_yaml_mapping_keys(data=item)
