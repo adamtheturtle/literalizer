@@ -11,6 +11,7 @@ from ruamel.yaml.comments import (
     CommentedMap,
     CommentedSeq,
     CommentedSet,
+    TaggedScalar,
 )
 from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import Comment, Table, Whitespace
@@ -54,6 +55,7 @@ def _yaml_set_sort_key(value: object) -> tuple[str, str]:
             | datetime.date()
             | datetime.time()
             | bytes()
+            | TaggedScalar()
             | None
         ):
             unwrapped = _unwrap_yaml_scalar(value=value)
