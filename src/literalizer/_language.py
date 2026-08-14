@@ -55,6 +55,11 @@ class NewVariableNameSyntax(enum.Enum):
     ASCII_KEBAB = enum.auto()
     """An ASCII identifier that may contain hyphens after its start."""
 
+    ASCII_KEBAB_LETTER_BOUNDED = enum.auto()
+    """An ASCII kebab identifier beginning and ending with a letter or
+    digit.
+    """
+
     LOWER_ASCII = enum.auto()
     """An ASCII identifier beginning with a lowercase letter or underscore."""
 
@@ -71,6 +76,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[A-Za-z_][A-Za-z0-9_]*"
             case NewVariableNameSyntax.ASCII_KEBAB:
                 pattern = r"[A-Za-z_][A-Za-z0-9_-]*"
+            case NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED:
+                pattern = r"[A-Za-z](?:[A-Za-z0-9_-]*[A-Za-z0-9])?"
             case NewVariableNameSyntax.LOWER_ASCII:
                 pattern = r"[a-z_][A-Za-z0-9_]*"
             case NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX:
