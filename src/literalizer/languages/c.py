@@ -260,13 +260,18 @@ def _make_format_c_entry_record(
 
 
 @beartype
-def _c_record_field_identifier(key: str, /) -> str:
+def _c_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the C ``struct`` member name for a dict *key*.
 
     C member identifiers are the dict keys verbatim (no case
     conversion), matching the designated-initializer literal form
     ``(struct Record0){.id = 1, ...}``.
     """
+    if key in reserved_identifiers:
+        msg = f"C record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1472,7 +1477,10 @@ class C(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=_C_RECORD_PREFIX,
             record_shape_names=_C_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_c_record_field_identifier,
+            field_identifier=partial(
+                _c_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._c_record_field_type,
             render_declaration=_c_render_record_declaration,
             render_literal=_c_record_literal,

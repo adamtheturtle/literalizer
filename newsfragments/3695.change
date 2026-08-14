@@ -1,0 +1,1 @@
+Preserve Groovy negative zero as a double-precision value with its sign bit intact.

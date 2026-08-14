@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["V"]
+
+[ref.value_sources]
+x = "[1, 2]"
+
+[ref.explicit_ref_value_sources]
+x = "1"

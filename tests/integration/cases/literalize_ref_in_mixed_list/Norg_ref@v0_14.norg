@@ -1,11 +1,11 @@
 * ref_x
-@code json
+@code javascript
 {
     "_": "_"
 }
 @end
 * my_data
-@code json
+@code javascript
 [
     ref_x,
     1,

@@ -15,6 +15,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import (
     CommentedOrderedMap,
     CommentedSet,
+    TaggedScalar,
 )
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
@@ -35,6 +36,7 @@ type YamlCoercible = (
     | dict[Scalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
+    | TaggedScalar
 )
 
 _HIGH_SURROGATE_START = 0xD800
@@ -250,6 +252,12 @@ def _unwrap_yaml_scalar(*, value: Scalar) -> Scalar:
 
 
 @beartype
+def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
+    """Unwrap the scalar payload retained for an explicit YAML tag."""
+    return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+
+
+@beartype
 def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
@@ -274,6 +282,8 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     # stay on its own arm because it is *also* a ``dict`` subclass but
     # represents ``!!omap`` and must become an ``OrderedMap``.
     match data:
+        case TaggedScalar():
+            return _unwrap_yaml_tagged_scalar(value=data)
         case CommentedOrderedMap():
             omap_src: dict[Scalar, YamlCoercible] = dict(data)
             return OrderedMap(
@@ -312,6 +322,17 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             assert_never(unreachable)
 
 
+class _InvalidJSONConstantError(ValueError):
+    """Raised when strict JSON contains NaN or infinity."""
+
+
+@beartype
+def _reject_json_constant(value: str) -> Value:
+    """Reject Python's non-standard JSON numeric constants."""
+    msg = f"Invalid JSON constant: {value}"
+    raise _InvalidJSONConstantError(msg)
+
+
 @beartype
 def _parse_json(*, source: str) -> ParsedInput:
     """Parse a JSON string into a ``ParsedInput``."""
@@ -319,8 +340,12 @@ def _parse_json(*, source: str) -> ParsedInput:
         data = json.loads(
             s=source,
             object_pairs_hook=_json_object_without_duplicate_keys,
+            parse_constant=_reject_json_constant,
         )
     except _DuplicateJSONKeyError as exc:
+        message = f"Invalid JSON: {exc}"
+        raise JSONParseError(message) from exc
+    except _InvalidJSONConstantError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except json.JSONDecodeError as exc:

@@ -1,7 +1,7 @@
 sub process(*@a, *%kw) {}
 my $my_int = 1;
 my $my_bool = True;
-my $my_float = 3.14;
+my $my_float = 3.14e0;
 my $my_list = [
     1,
     2,

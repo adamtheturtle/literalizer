@@ -1,6 +1,7 @@
-# languages rejecting: 6; languages accepting: 0
+# languages rejecting: 7; languages accepting: 0
 
 [InvalidRecordNameError]
+CSharp = "record_shape_names maps multiple key-sets to 'Entry'; record names must be unique."
 Cpp = "record_shape_names maps multiple key-sets to 'Entry'; externally declared type names must be unique."
 Go = "record_shape_names maps multiple key-sets to 'Entry'; struct names must be unique."
 Java = "record_shape_names maps multiple key-sets to 'Entry'; record names must be unique."
