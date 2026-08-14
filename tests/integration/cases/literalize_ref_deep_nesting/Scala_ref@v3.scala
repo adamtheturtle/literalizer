@@ -11,7 +11,7 @@ val deep = List[List[Int]](
 )
 val my_data = Map(
     "a" -> Map(
-        "b" -> Map(
+        "b" -> Map[String, List[List[Int]]](
             "c" -> deep,
         ),
     ),

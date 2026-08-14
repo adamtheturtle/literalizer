@@ -13,9 +13,9 @@ auto deep = std::vector<std::vector<int>>{
         4,
     },
 };
-auto my_data = std::map<std::string, std::map<std::string, std::map<std::string, std::map<std::string, std::string>>>>{
-    {"a", std::map<std::string, std::map<std::string, std::map<std::string, std::string>>>{
-        {"b", std::map<std::string, std::map<std::string, std::string>>{
+auto my_data = std::map<std::string, std::map<std::string, std::map<std::string, std::vector<std::vector<int>>>>>{
+    {"a", std::map<std::string, std::map<std::string, std::vector<std::vector<int>>>>{
+        {"b", std::map<std::string, std::vector<std::vector<int>>>{
             {"c", std::move(deep)},
         }},
     }},

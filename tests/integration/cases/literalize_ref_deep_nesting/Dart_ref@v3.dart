@@ -8,9 +8,9 @@ final deep = <List<int>>[
         4,
     ],
 ];
-final my_data = <String, Map<String, Map<String, Map<String, String>>>>{
-    "a": <String, Map<String, Map<String, String>>>{
-        "b": <String, Map<String, String>>{
+final my_data = <String, Map<String, Map<String, List<List<int>>>>>{
+    "a": <String, Map<String, List<List<int>>>>{
+        "b": <String, List<List<int>>>{
             "c": deep,
         },
     },

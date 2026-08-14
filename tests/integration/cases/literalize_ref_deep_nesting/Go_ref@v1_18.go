@@ -11,9 +11,9 @@ Deep := [][]int{
 		4,
 	},
 }
-my_data := map[string]map[string]map[string]map[string]string{
-	"a": map[string]map[string]map[string]string{
-		"b": map[string]map[string]string{
+my_data := map[string]map[string]map[string][][]int{
+	"a": map[string]map[string][][]int{
+		"b": map[string][][]int{
 			"c": Deep,
 		},
 	},
