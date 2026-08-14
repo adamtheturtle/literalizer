@@ -1,0 +1,10 @@
+* a_b_c
+@code javascript
+{
+    "_": "_"
+}
+@end
+* my_data
+@code javascript
+a_b_c
+@end

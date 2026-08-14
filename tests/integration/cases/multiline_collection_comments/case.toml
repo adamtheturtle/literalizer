@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "collection_layout"
+requires = ["collection_comments"]
