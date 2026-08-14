@@ -179,6 +179,15 @@ def validate_call_parameter_names(
                 reason="it is duplicated",
             )
         seen.add(comparison_name)
+        parameter_only_reserved = {
+            "Scala": frozenset({"using"}),
+        }.get(language_name, frozenset())
+        if name in parameter_only_reserved:
+            raise InvalidCallParameterNameError(
+                language_name=language_name,
+                parameter_name=name,
+                reason="it is reserved in a call parameter list",
+            )
         if reject_reserved:
             if language.reserved_variable_identifiers_case_sensitive:
                 reserved = name in language.reserved_variable_identifiers
