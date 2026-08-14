@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -84,14 +85,35 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
     InvalidDictKeyError,
+    UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
+
+
+@beartype
+def _reject_nan(data: Value) -> None:
+    """Reject NaN, which Nix cannot construct without an evaluation
+    error.
+    """
+    match data:
+        case float() if math.isnan(data):
+            msg = "Nix cannot represent NaN without an evaluation error."
+            raise UnrepresentableSpecialFloatError(msg)
+        case dict():
+            for key, value in data.items():
+                _reject_nan(data=key)
+                _reject_nan(data=value)
+        case list() | set():
+            for item in data:
+                _reject_nan(data=item)
+        case _:
+            return
+
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_'-]*$")
 
@@ -222,7 +244,7 @@ class Nix(metaclass=LanguageCls):
     extension = ".nix"
     pygments_name = "nix"
     stringifies_nested_collections = False
-    supports_special_floats = True
+    supports_special_floats = False
     supports_variable_names = True
     supports_no_variable_wrap_in_file = True
     wraps_data_dependent_preamble_in_body = False
@@ -512,7 +534,10 @@ class Nix(metaclass=LanguageCls):
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject NaN while retaining valid infinity expressions."""
+        _reject_nan(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

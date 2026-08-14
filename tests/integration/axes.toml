@@ -1007,6 +1007,17 @@ gates = [
 ]
 overrides = []
 
+[axes.datetime_epoch_far_future]
+plan = "fixed_overrides"
+name_template = "{lang}_datetime_epoch_far_future"
+gates = [
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member_present", option = "language_version", member = "PY39" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
+
 [axes.nested_map_mixed_int_widths]
 plan = "fixed_overrides"
 name_template = "{lang}_nested_map_mixed_int_widths"
