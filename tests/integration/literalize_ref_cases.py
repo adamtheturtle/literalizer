@@ -250,6 +250,12 @@ def run_literalize_ref_golden_case(
             ref_key=config.ref_key,
         )
     }
+    bound_refs_input.update(
+        {
+            name: json.loads(s=source)
+            for name, source in config.extra_ref_value_sources.items()
+        },
+    )
     with GoldenSkips(
         policy=_REF_SKIPS,
         golden_path=golden_path,
