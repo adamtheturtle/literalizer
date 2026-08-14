@@ -1,3 +1,3 @@
 <?php
-$my_data = -9223372036854775808;
-$my_data = -9223372036854775808;
+$my_data = PHP_INT_MIN;
+$my_data = PHP_INT_MIN;
