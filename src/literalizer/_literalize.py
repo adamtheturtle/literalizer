@@ -2544,6 +2544,25 @@ def _source_container_id_mapping[T](
     }
 
 
+def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
+    """Return identities of containers that are empty in source data."""
+    ids: set[int] = set()
+
+    def _visit(item: Value, /) -> None:
+        """Collect empty containers and traverse populated peers."""
+        if isinstance(item, (dict, list, set)) and not item:
+            ids.add(id(item))
+        if isinstance(item, dict):
+            for child in item.values():
+                _visit(child)
+        elif isinstance(item, list):
+            for child in item:
+                _visit(child)
+
+    _visit(value)
+    return frozenset(ids)
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
@@ -2661,6 +2680,13 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ),
         id_map=inference_id_map,
     )
+    inferred_empty_overrides = _source_container_id_mapping(
+        inferred_mapping=_empty_container_literal_overrides(
+            data=inference_data, spec=language
+        ),
+        id_map=inference_id_map,
+    )
+    source_empty_ids = _empty_source_container_ids(data)
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
@@ -2677,12 +2703,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             ),
             id_map=inference_id_map,
         ),
-        empty_container_overrides=_source_container_id_mapping(
-            inferred_mapping=_empty_container_literal_overrides(
-                data=inference_data, spec=language
-            ),
-            id_map=inference_id_map,
-        ),
+        empty_container_overrides={
+            container_id: literal
+            for container_id, literal in inferred_empty_overrides.items()
+            if container_id in source_empty_ids
+        },
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=False,
@@ -3443,6 +3468,7 @@ def literalize_bound_refs(
                 variable_form=NewVariable(
                     name=converted_name, modifiers=frozenset()
                 ),
+                collection_layout=collection_layout,
             )
         )
     effective_ref_values: dict[str, Value] = {
@@ -3484,6 +3510,7 @@ def _literalize_value_binding(
     value: Value,
     language: Language,
     variable_form: NewVariable,
+    collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Render *value* as a variable binding without file wrapping.
 
@@ -3499,7 +3526,7 @@ def _literalize_value_binding(
         ref_case=None,
         ref_values=None,
         ref_key=_DISABLED_REF_KEY,
-        collection_layout=CollectionLayout.COMPACT,
+        collection_layout=collection_layout,
         raw_yaml_data=None,
     )
     wrapped = _apply_variable_wrapper(
@@ -5127,6 +5154,7 @@ def _compose_call_with_bound_ref_declarations(
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
     call_transform: Callable[[CallContext], str] | None,
+    collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Emit a binding for each bound ref before the calls.
 
@@ -5174,6 +5202,7 @@ def _compose_call_with_bound_ref_declarations(
                 ),
                 modifiers=frozenset(),
             ),
+            collection_layout=collection_layout,
         )
         for name, value in bound_refs.items()
     ]
@@ -5214,6 +5243,7 @@ def _wrap_call_result_in_file(
     parameter_names: Sequence[str],
     arg_values: Sequence[Value],
     call_transform: Callable[[CallContext], str] | None,
+    collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Assemble a ``wrap_in_file=True`` ``literalize_call`` result.
 
@@ -5262,6 +5292,7 @@ def _wrap_call_result_in_file(
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,
             call_transform=call_transform,
+            collection_layout=collection_layout,
         )
     scoped = _scope_preamble_for_wrap(
         language=language,
@@ -5726,6 +5757,7 @@ def literalize_call_parsed(
             parameter_names=parameter_names,
             arg_values=arg_values,
             call_transform=call_transform,
+            collection_layout=collection_layout,
         )
 
     return LiteralizeResult(

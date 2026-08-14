@@ -1,9 +1,16 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id deep = @{
-    @"_": @"_",
-};
+id deep = @[
+    @[
+        @"one",
+        @"two",
+    ],
+    @[
+        @"three",
+        @"four",
+    ],
+];
 id my_data = @{
     @"a": @{
         @"b": @{

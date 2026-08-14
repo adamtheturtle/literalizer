@@ -1,5 +1,12 @@
 let deep = [
-    "_": "_",
+    [
+        "one",
+        "two",
+    ],
+    [
+        "three",
+        "four",
+    ],
 ]
 let my_data = [
     "a": [

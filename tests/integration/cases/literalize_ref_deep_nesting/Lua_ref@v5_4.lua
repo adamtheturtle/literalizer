@@ -1,5 +1,12 @@
 local deep = {
-    ["_"] = "_",
+    {
+        "one",
+        "two",
+    },
+    {
+        "three",
+        "four",
+    },
 }
 local my_data = {
     ["a"] = {

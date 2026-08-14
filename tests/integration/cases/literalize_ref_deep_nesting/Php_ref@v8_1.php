@@ -1,6 +1,13 @@
 <?php
 $deep = [
-    "_" => "_",
+    [
+        "one",
+        "two",
+    ],
+    [
+        "three",
+        "four",
+    ],
 ];
 $my_data = [
     "a" => [

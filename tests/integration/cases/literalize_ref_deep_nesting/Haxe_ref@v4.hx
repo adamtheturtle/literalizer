@@ -1,8 +1,15 @@
 class Fixture_literalize_ref_deep_nesting_Haxe_ref {
     public static function main() {
         final deep = ([
-            "_" => "_",
-        ] : Map<String, Dynamic>);
+            ([
+                "one",
+                "two",
+            ] : Array<Dynamic>),
+            ([
+                "three",
+                "four",
+            ] : Array<Dynamic>),
+        ] : Array<Dynamic>);
         final my_data = ([
             "a" => ([
                 "b" => ([

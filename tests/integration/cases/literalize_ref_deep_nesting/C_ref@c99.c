@@ -15,8 +15,15 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal deep = ((CVal){.m = (CKV[]){
-    {"_", ((CVal){.s = "_"})},
+CVal deep = ((CVal){.a = (CVal[]){
+    ((CVal){.a = (CVal[]){
+        ((CVal){.s = "one"}),
+        ((CVal){.s = "two"}),
+    }}),
+    ((CVal){.a = (CVal[]){
+        ((CVal){.s = "three"}),
+        ((CVal){.s = "four"}),
+    }}),
 }});
 CVal my_data = ((CVal){.m = (CKV[]){
     {"a", ((CVal){.m = (CKV[]){

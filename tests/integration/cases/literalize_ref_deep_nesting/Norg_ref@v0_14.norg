@@ -1,8 +1,15 @@
 * deep
 @code javascript
-{
-    "_": "_"
-}
+[
+    [
+        "one",
+        "two"
+    ],
+    [
+        "three",
+        "four"
+    ]
+]
 @end
 * my_data
 @code javascript

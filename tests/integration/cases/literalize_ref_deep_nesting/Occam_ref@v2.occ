@@ -12,8 +12,15 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC main ()
-    VAL MOBILE LIT DEEP IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "_"; MOBILE LIT(lit.str; MOBILE []BYTE "_"))
+    VAL MOBILE LIT DEEP IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+            MOBILE LIT(lit.str; MOBILE []BYTE "one"),
+            MOBILE LIT(lit.str; MOBILE []BYTE "two")
+        ]),
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+            MOBILE LIT(lit.str; MOBILE []BYTE "three"),
+            MOBILE LIT(lit.str; MOBILE []BYTE "four")
+        ])
     ]):
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.pair; MOBILE []BYTE "a"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
