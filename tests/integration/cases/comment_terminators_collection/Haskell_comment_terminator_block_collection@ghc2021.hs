@@ -2,11 +2,11 @@ module Fixture_comment_terminators_collection_Haskell_comment_terminator_block_c
 data Val = HStr String | HList [Val]
 my_data :: Val
 my_data = HList [
-    {- before first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    HStr "first",  {- inline first: */ |# - } *) ) =# ]] %} ]# % #> -}
-    {- before second: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- before first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    HStr "first",  {- inline first: */ |# - } *) (* ) =# ]] %} ]# % #> -}
+    {- before second: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     HStr "second"
-    {- trailing: */ |# - } *) ) =# ]] %} ]# % #> -}
+    {- trailing: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     ]
 main :: IO ()
 main = seq my_data (return ())

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+Cpp = "Cpp json_rendering=INLINE_DOCUMENT cannot render integer 1000 as \"1'000\": the selected integer format does not produce a valid JSON integer token."

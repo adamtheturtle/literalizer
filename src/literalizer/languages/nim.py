@@ -115,7 +115,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -1506,7 +1505,26 @@ class Nim(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject a native sequence containing only ``nil``.
+
+        Nim cannot infer an element type for a top-level ``@[nil, ...]``
+        expression.  JSON-backed rendering supplies ``JsonNode`` instead,
+        while record fields receive an explicit ``seq[pointer]`` type from
+        the record renderer, so only a top-level native sequence needs this
+        guard.
+        """
+        if (
+            self._uses_native_nim_collections
+            and isinstance(data, list)
+            and data
+            and all(item is None for item in data)
+        ):
+            msg = (
+                "Nim cannot infer an element type for a native sequence "
+                "containing only null values"
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

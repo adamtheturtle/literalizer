@@ -1,13 +1,13 @@
 * my_data
-@code json
+@code javascript
 {
     "ordered": {
-        % ordered entry%
+        // ordered entry
         "name": "Alice",
         "scores": {
-            % score meaning%
+            // score meaning
             1: "first",
-            2: "second"  % latest score%
+            2: "second"  // latest score
         }
     }
 }

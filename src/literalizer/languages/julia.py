@@ -105,6 +105,8 @@ _format_string = make_backslash_string_formatter(
 @beartype
 def _format_julia_signed_base(value: int, base: Callable[[int], str]) -> str:
     """Render a Julia base literal as a signed machine integer."""
+    if abs(value) >= 1 << 63:
+        return f"{value}"
     sign = "-" if value < 0 else ""
     return f"{sign}Int({base(abs(value))})"
 

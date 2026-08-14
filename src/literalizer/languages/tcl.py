@@ -81,6 +81,17 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 
+
+@dataclasses.dataclass(frozen=True)
+class _TclCommentConfig(CommentConfig):
+    """Tcl comment syntax including its command-position prefix."""
+
+    @property
+    def trailing_prefix(self) -> str:
+        """Return the command separator followed by the Tcl comment prefix."""
+        return ";#"
+
+
 # Prevent Tcl variable and command substitution inside string literals.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
@@ -334,7 +345,7 @@ class Tcl(metaclass=LanguageCls):
     class CommentFormats(enum.Enum):
         """Comment style options."""
 
-        HASH = CommentConfig(
+        HASH = _TclCommentConfig(
             prefix="#",
             suffix="",
         )

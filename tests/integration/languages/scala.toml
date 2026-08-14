@@ -4,4 +4,4 @@ schema_version = 1
 fixture_module_name_template = "Fixture_{parent}_{stem}"
 
 [variants]
-record = ["field_type_split"]
+record = ["field_type_split", "keyword_field"]

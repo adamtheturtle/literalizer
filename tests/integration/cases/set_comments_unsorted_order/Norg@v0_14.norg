@@ -1,9 +1,9 @@
 * my_data
-@code json
+@code javascript
 [
-    % before apple%
+    // before apple
     "apple",
-    "banana"  % banana inline%
-    % trailing%
+    "banana"  // banana inline
+    // trailing
 ]
 @end
