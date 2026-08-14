@@ -81,20 +81,42 @@ from literalizer._language import (
 from literalizer._types import Value
 
 _FORTRAN_WRAP_COLUMN = 110
+_FORTRAN_STRING_CHUNK_LENGTH = 105
 
 
 @beartype
-def _format_fortran_string(value: str) -> str:
-    """Format a string with Fortran quoting and control escapes."""
-    formatted = format_string_concat_control(
+def _format_fortran_string_unwrapped(value: str) -> str:
+    """Format one string fragment without source-line wrapping."""
+    return format_string_concat_control(
         quote_char="'",
         quote_escape="''",
         control_char_template="achar({})",
         concat_operator=" // ",
     )(value)
-    if len(formatted) > _FORTRAN_WRAP_COLUMN:
-        return formatted.replace(" // ", " // &\n& ")
-    return formatted
+
+
+@beartype
+def _format_fortran_string(value: str) -> str:
+    """Format a string with Fortran quoting and control escapes."""
+    formatted = _format_fortran_string_unwrapped(value=value)
+    if len(formatted) <= _FORTRAN_STRING_CHUNK_LENGTH:
+        return formatted
+
+    chunks: list[str] = []
+    chunk = ""
+    for character in value:
+        candidate = chunk + character
+        if (
+            chunk
+            and len(_format_fortran_string_unwrapped(value=candidate))
+            > _FORTRAN_STRING_CHUNK_LENGTH
+        ):
+            chunks.append(_format_fortran_string_unwrapped(value=chunk))
+            chunk = character
+        else:
+            chunk = candidate
+    chunks.append(_format_fortran_string_unwrapped(value=chunk))
+    return " // &\n& ".join(chunks)
 
 
 @beartype

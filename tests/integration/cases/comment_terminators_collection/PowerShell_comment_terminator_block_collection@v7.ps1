@@ -1,7 +1,7 @@
 $my_data = @(
-    <# before first: */ |# -} *) ) =# ]] %} ]# % # > #>
-    "first";  <# inline first: */ |# -} *) ) =# ]] %} ]# % # > #>
-    <# before second: */ |# -} *) ) =# ]] %} ]# % # > #>
+    <# before first: */ |# -} *) (* ) =# ]] %} ]# % # > #>
+    "first";  <# inline first: */ |# -} *) (* ) =# ]] %} ]# % # > #>
+    <# before second: */ |# -} *) (* ) =# ]] %} ]# % # > #>
     "second"
-    <# trailing: */ |# -} *) ) =# ]] %} ]# % # > #>
+    <# trailing: */ |# -} *) (* ) =# ]] %} ]# % # > #>
 )

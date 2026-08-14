@@ -3,7 +3,8 @@
 import dataclasses
 import datetime
 import enum
-from collections.abc import Callable, Sequence
+import re
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar
@@ -70,6 +71,7 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
+from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -121,9 +123,10 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidRecordNameError,
     UnrepresentableInputError,
 )
 
@@ -485,13 +488,7 @@ def _csharp_call_stub(
 # the value formatter uses, which has a back-reference to here).
 _CSHARP_I32_MIN = -(2**31)
 _CSHARP_I32_MAX = 2**31 - 1
-
-# The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
-# names (no ``record_shape_names``), so the shared renderer always gets
-# an empty custom-name mapping.
-_CSHARP_NO_RECORD_SHAPE_NAMES: MappingProxyType[frozenset[str], str] = (
-    MappingProxyType(mapping={})
-)
+_PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
@@ -574,12 +571,11 @@ def _csharp_int_field_type(*, value: int) -> str:
     return "long"
 
 
-@beartype
-def _csharp_record_dict_field_type(value: dict[Scalar, Value], /) -> str:
-    """Return the component type for a dict not rendered as a record."""
-    if record_shape_for_dict(value=value) is not None:
-        return "Dictionary<string, object>"
-    return "object"
+@dataclasses.dataclass
+class _CSharpWidenedMapNarrowing:
+    """Per-pass concrete value type for widened record fallback maps."""
+
+    value_type: str | None
 
 
 @beartype
@@ -785,8 +781,8 @@ class CSharp(metaclass=LanguageCls):
         supports_ref_elements_in_tuple_strategy=False,
     )
     supports_record_struct_name_prefix = False
-    supports_record_shape_names = False
-    record_shape_names_emit_declarations = False
+    supports_record_shape_names = True
+    record_shape_names_emit_declarations = True
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
 
@@ -1166,6 +1162,34 @@ class CSharp(metaclass=LanguageCls):
                 "sequence_format",
                 formats.ARRAY,
             )
+        self._validate_record_naming()
+
+    def _validate_record_naming(self) -> None:
+        """Validate custom C# record names before rendering."""
+        auto_name_pattern = re.compile(pattern=r"^Record\d+$")
+        seen_names: set[str] = set()
+        for keys, name in self.record_shape_names.items():
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which is not a PascalCase C# "
+                    f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if auto_name_pattern.match(string=name):
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which collides with the "
+                    f"auto-generated 'Record'-prefixed record names."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in seen_names:
+                msg = (
+                    "record_shape_names maps multiple key-sets to "
+                    f"{name!r}; record names must be unique."
+                )
+                raise InvalidRecordNameError(msg)
+            seen_names.add(name)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1382,6 +1406,10 @@ class CSharp(metaclass=LanguageCls):
     heterogeneous_strategy: HeterogeneousStrategies = (
         HeterogeneousStrategies.ERROR
     )
+    record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
+        default_factory=lambda: MappingProxyType(mapping={}),
+        hash=False,
+    )
     json_type: JsonTypes | None = None
     # Keep in sync with the `LanguageVersion` passed to the C# lint host
     # in `scripts/lint-csharp/Program.cs`.
@@ -1501,7 +1529,7 @@ class CSharp(metaclass=LanguageCls):
             dict_key_type="",
         )
 
-    def _csharp_record_field_type(  # noqa: PLR0911
+    def _csharp_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
         request: RecordFieldType,
         /,
@@ -1558,7 +1586,9 @@ class CSharp(metaclass=LanguageCls):
                     value,
                 )
             case dict():
-                return _csharp_record_dict_field_type(value)
+                if record_shape_for_dict(value=value) is not None:
+                    return self._csharp_derecordized_map_field_type()
+                return "object"
             case list():
                 opener = self.sequence_open(value)
             case _:
@@ -1573,7 +1603,7 @@ class CSharp(metaclass=LanguageCls):
         """C# syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
             name_prefix="Record",
-            record_shape_names=_CSHARP_NO_RECORD_SHAPE_NAMES,
+            record_shape_names=self.record_shape_names,
             field_identifier=_csharp_record_field_identifier,
             field_type=self._csharp_record_field_type,
             render_declaration=_csharp_render_record_declaration,
@@ -1584,12 +1614,72 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=False,
             widen_unrecordizable_nested_sibling_maps=True,
-            derecordized_map_open="new Dictionary<string, object> {",
+            derecordized_map_open=None,
         )
+        narrowing = self._derecordized_map_narrowing
+        base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
+
+        def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+            """Refresh the widened-map value type for this render pass."""
+            wrap_ids = base_compute_wrap_ids(data)
+            narrowing.value_type = self._csharp_narrow_derecordized_map_type(
+                data=data,
+                wrap_ids=wrap_ids,
+            )
+            return wrap_ids
+
+        def _widened_map_open() -> str:
+            """Return the fallback-map opener for the current pass."""
+            value_type = narrowing.value_type or "object"
+            return f"new Dictionary<string, {value_type}> {{"
+
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior,
+                compute_wrap_ids=_compute_wrap_ids,
+                dict_open_for_wrap_ids=_widened_map_open,
+            ),
+        )
+
+    def _csharp_derecordized_map_field_type(self) -> str:
+        """Return the component type for a widened fallback map."""
+        value_type = self._derecordized_map_narrowing.value_type or "object"
+        return f"Dictionary<string, {value_type}>"
+
+    def _csharp_narrow_derecordized_map_type(
+        self,
+        *,
+        data: Value,
+        wrap_ids: frozenset[int],
+    ) -> str | None:
+        """Return the one concrete type shared by widened-map scalars."""
+        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        if not scalars:
+            return None
+        scalar_types = {
+            self._csharp_record_field_type(
+                RecordFieldType(
+                    value=scalar,
+                    record_name=None,
+                    element_record_name=None,
+                ),
+            )
+            for scalar in scalars
+        }
+        if len(scalar_types) != 1:
+            return None
+        (scalar_type,) = scalar_types
+        return None if scalar_type == "object" else scalar_type
+
+    @cached_property
+    def _derecordized_map_narrowing(self) -> _CSharpWidenedMapNarrowing:
+        """Cache the fallback-map value type within one render pass."""
+        return _CSharpWidenedMapNarrowing(value_type=None)
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:

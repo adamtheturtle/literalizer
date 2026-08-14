@@ -85,36 +85,16 @@ subroutine main_declaration()
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fstr('a' // &
-    & achar(194) // &
-    & achar(133) // &
-    & 'b' // &
-    & achar(226) // &
-    & achar(128) // &
-    & achar(168) // &
-    & 'c' // &
-    & achar(226) // &
-    & achar(128) // &
-    & achar(169) // &
-    & 'd')
+    my_data = fstr('a' // achar(194) // achar(133) // 'b' // achar(226) // achar(128) // achar(168) // 'c' // &
+    & achar(226) // achar(128) // achar(169) // 'd')
 end subroutine main_declaration
 
 subroutine main_assignment()
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fstr('a' // &
-    & achar(194) // &
-    & achar(133) // &
-    & 'b' // &
-    & achar(226) // &
-    & achar(128) // &
-    & achar(168) // &
-    & 'c' // &
-    & achar(226) // &
-    & achar(128) // &
-    & achar(169) // &
-    & 'd')
+    my_data = fstr('a' // achar(194) // achar(133) // 'b' // achar(226) // achar(128) // achar(168) // 'c' // &
+    & achar(226) // achar(128) // achar(169) // 'd')
 end subroutine main_assignment
 
 program main

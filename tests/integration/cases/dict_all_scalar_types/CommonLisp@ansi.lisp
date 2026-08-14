@@ -1,7 +1,7 @@
 (defparameter *my_data* (list
     (cons "s" "string")
     (cons "i" 1)
-    (cons "f" 1.5)
+    (cons "f" 1.5d0)
     (cons "b" t)
     (cons "n" nil)
     (cons "d" "2024-01-15")

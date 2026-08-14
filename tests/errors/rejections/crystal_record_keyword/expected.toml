@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Crystal = "Crystal record field name 'initialize' is reserved"

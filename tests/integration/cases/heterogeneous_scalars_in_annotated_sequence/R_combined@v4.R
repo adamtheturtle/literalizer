@@ -3,7 +3,7 @@ my_data <- list(
     1.5,
     NULL,
     as.Date("2020-01-01"),
-    as.POSIXct("2020-01-01T00:00:00+00:00"),
+    as.POSIXct("2020-01-01 00:00:00+0000", format = "%Y-%m-%d %H:%M:%OS%z"),
     list()
 )
 my_data <- list(
@@ -11,6 +11,6 @@ my_data <- list(
     1.5,
     NULL,
     as.Date("2020-01-01"),
-    as.POSIXct("2020-01-01T00:00:00+00:00"),
+    as.POSIXct("2020-01-01 00:00:00+0000", format = "%Y-%m-%d %H:%M:%OS%z"),
     list()
 )
