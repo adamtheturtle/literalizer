@@ -144,6 +144,7 @@ from literalizer.exceptions import (
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_JSON_INTEGER_TOKEN = re.compile(pattern=r"-?(?:0|[1-9][0-9]*)\Z")
 _CPP_RAW_STRING_DELIMITER_MAX_LENGTH = 16
 _CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
     "abcdefghijklmnopqrstuvwxyz"
@@ -1438,7 +1439,8 @@ def _cpp_record_literal(
     return RenderedRecordLiteral(
         head=f"{name}{{",
         entries=tuple(
-            f".{field.identifier} = {field.formatted}" for field in fields
+            f".{field.identifier} = {_cpp_record_member_value(field)}"
+            for field in fields
         ),
         closer="}",
         compact_pad="",
@@ -1459,10 +1461,24 @@ def _cpp_record_literal_positional(
     """
     return RenderedRecordLiteral(
         head=f"{name}{{",
-        entries=tuple(field.formatted for field in fields),
+        entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
     )
+
+
+@beartype
+def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
+    """Elide a record member's redundant aggregate type prefix.
+
+    The containing aggregate fixes the member's target type, so an
+    initializer beginning with that exact declared type and ``{`` can use
+    C++'s nested braced-initializer form directly.
+    """
+    prefix = f"{field.type_name}{{"
+    if field.formatted.startswith(prefix):
+        return field.formatted.removeprefix(field.type_name)
+    return field.formatted
 
 
 @beartype
@@ -2180,6 +2196,19 @@ def _format_nlohmann_json_parse_overflow_int(value: int) -> str:
         "Cpp json_rendering=INLINE_DOCUMENT cannot represent integer "
         f"{value}: nlohmann::json::parse stores integers outside "
         "[-2^63, 2^64 - 1] as doubles that lose precision."
+    )
+    raise UnrepresentableIntegerError(msg)
+
+
+@beartype
+def _validate_json_integer_token(value: int, token: str) -> str:
+    """Return *token* when it is an integer in JSON number grammar."""
+    if _JSON_INTEGER_TOKEN.fullmatch(string=token) is not None:
+        return token
+    msg = (
+        "Cpp json_rendering=INLINE_DOCUMENT cannot render integer "
+        f"{value} as {token!r}: the selected integer format does not "
+        "produce a valid JSON integer token."
     )
     raise UnrepresentableIntegerError(msg)
 
@@ -3850,8 +3879,18 @@ class Cpp(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         if self._json_inline_document_active:
+
+            def format_json_integer(value: int) -> str:
+                """Format and validate an integer for the JSON
+                document.
+                """
+                return _validate_json_integer_token(
+                    value=value,
+                    token=base_int_formatter(value),
+                )
+
             return make_overflow_fallback_formatter(
-                base=base_int_formatter,
+                base=format_json_integer,
                 fallback=_format_nlohmann_json_parse_overflow_int,
                 min_value=I64_MIN,
                 max_value=I64_MAX,

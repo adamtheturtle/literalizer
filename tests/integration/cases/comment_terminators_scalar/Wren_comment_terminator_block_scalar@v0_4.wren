@@ -1,2 +1,2 @@
-/* before scalar: * / |# -} *) ) =# ]] %} ]# % #> */
-var my_data = "value"  /* inline scalar: * / |# -} *) ) =# ]] %} ]# % #> */
+/* before scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */
+var my_data = "value"  /* inline scalar: * / |# -} *) (* ) =# ]] %} ]# % #> */

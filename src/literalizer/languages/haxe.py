@@ -209,6 +209,14 @@ _HAXE_RESERVED: frozenset[str] = frozenset(
 
 
 @beartype
+def _format_haxe_hex(value: int) -> str:
+    """Use hexadecimal only where Haxe preserves a signed ``Int``."""
+    if value < -(1 << 31) or value >= 1 << 31:
+        return f"{value}"
+    return format_integer_hex(value=value)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Haxe(metaclass=LanguageCls):
     """Haxe language specification.
@@ -488,7 +496,7 @@ class Haxe(metaclass=LanguageCls):
         """Integer format options."""
 
         DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        HEX = enum.member(value=_format_haxe_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
@@ -704,9 +712,6 @@ class Haxe(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
     set_format: SetFormats = SetFormats.SET
-    default_set_element_type: str = "Dynamic"
-    default_dict_key_type: str = "String"
-    default_dict_value_type: str = "Dynamic"
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.FINAL
@@ -886,7 +891,7 @@ class Haxe(metaclass=LanguageCls):
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         base = self.set_format(
-            default_type=self.default_set_element_type,
+            default_type="Dynamic",
         )
         return dataclasses.replace(
             base,

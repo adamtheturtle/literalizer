@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 record Record1(string Kind, string PrId);
-record Record0(string Name, Record1 Input, Dictionary<string, object> Expected);
+record Record0(string Name, Record1 Input, Dictionary<string, string> Expected);
 class Check {
     public static void Main() {
 var my_data = new[] {
@@ -10,7 +10,7 @@ var my_data = new[] {
             "create",
             "pr_1"
         ),
-        new Dictionary<string, object> {
+        new Dictionary<string, string> {
             ["pr_id"] = "pr_1",
             ["status"] = "draft"
         }
@@ -21,7 +21,7 @@ var my_data = new[] {
             "publish",
             "pr_1"
         ),
-        new Dictionary<string, object> {
+        new Dictionary<string, string> {
             ["error"] = "invalid_operation"
         }
     )
