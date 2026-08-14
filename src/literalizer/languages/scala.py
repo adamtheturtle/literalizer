@@ -582,7 +582,9 @@ class Scala(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    # ``using`` is a soft keyword for ordinary local names, but at the
+    # start of a parameter or argument list it introduces a context clause.
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset({"using"})
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
