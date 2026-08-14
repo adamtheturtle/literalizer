@@ -890,56 +890,39 @@ def _rust_is_scalar(*, value: object) -> bool:
 
 
 @beartype
-def _rust_container_wrap_ids(  # pylint: disable=too-complex
-    data: Value,
-    /,
-) -> frozenset[int]:
-    """Return ids needed to wrap scalar-plus-container lists.
+def _rust_mark_container_subtree(*, item: Value, ids: set[int]) -> None:
+    """Mark each list/map whose children must become enum values."""
+    if not isinstance(item, (list, dict)):
+        return
+    ids.add(id(item))
+    children = item.values() if isinstance(item, dict) else item
+    for child in children:
+        _rust_mark_container_subtree(item=child, ids=ids)
 
-    A list element position that holds both a scalar and a list/map has
-    no single Rust element type, so the ``TAGGED_ENUM``
-    strategy wraps every element in the value enum: scalars through their
-    scalar variant and each container through a ``List`` / ``Map``
-    variant. Populated containers are marked recursively so their own
-    children become enum values matching the variant's payload type.
 
-    Only lists are marked.  A dict whose values mix a scalar with a
-    container is already a documented rejection
-    (:class:`~literalizer.exceptions.MixedDictValuesError`); the walk
-    still descends dicts so a list nested inside one is reached.
-    """
+@beartype
+def _rust_visit_container_wrap_ids(*, item: Value, ids: set[int]) -> None:
+    """Find scalar-plus-container lists and mark nested contents."""
+    if not isinstance(item, (list, dict)):
+        return
+    children: list[Value] = list(
+        item.values() if isinstance(item, dict) else item
+    )
+    for child in children:
+        _rust_visit_container_wrap_ids(item=child, ids=ids)
+    if not isinstance(item, list):
+        return
+    has_scalar = any(_rust_is_scalar(value=child) for child in children)
+    has_container = any(isinstance(child, (list, dict)) for child in children)
+    if has_scalar and has_container:
+        _rust_mark_container_subtree(item=item, ids=ids)
+
+
+@beartype
+def _rust_container_wrap_ids(data: Value, /) -> frozenset[int]:
+    """Return ids needed to wrap scalar-plus-container lists."""
     ids: set[int] = set()
-
-    def _mark_subtree(item: Value) -> None:
-        """Mark each list/map whose children must become enum values."""
-        if not isinstance(item, (list, dict)):
-            return
-        ids.add(id(item))
-        children = item.values() if isinstance(item, dict) else item
-        for child in children:
-            _mark_subtree(item=child)
-
-    def _visit(item: Value) -> None:
-        """Find scalar-plus-container lists and mark nested contents."""
-        match item:
-            case dict():
-                children: list[Value] = list(item.values())
-            case list():
-                children = list(item)
-            case _:
-                return
-        for child in children:
-            _visit(item=child)
-        if not isinstance(item, list):
-            return
-        has_scalar = any(_rust_is_scalar(value=child) for child in children)
-        has_container = any(
-            isinstance(child, (list, dict)) for child in children
-        )
-        if has_scalar and has_container:
-            _mark_subtree(item=item)
-
-    _visit(item=data)
+    _rust_visit_container_wrap_ids(item=data, ids=ids)
     return frozenset(ids)
 
 
