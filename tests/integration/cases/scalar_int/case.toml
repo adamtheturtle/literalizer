@@ -9,6 +9,9 @@ axis = "declaration_style"
 axis = "integer_format"
 
 [[variants]]
+axis = "json_rendering"
+
+[[variants]]
 axis = "numeric_literal_suffix"
 
 [[variants]]

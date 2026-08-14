@@ -6,7 +6,7 @@ val my_data : val_t = SList [
     SList [
         SStr "DEL",
         SStr "bob",
-        SStr "5"  (* removes "world" *)
+        SStr "5"  (* removes world *)
     ]
 ]
 val _ = my_data

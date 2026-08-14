@@ -13,6 +13,7 @@ from typing_extensions import TypeIs
 from literalizer._checks import check_data
 from literalizer._comments import (
     CollectionComments,
+    ElementComments,
     apply_collection_comments_to_elements,
     extract_yaml_comments,
     neutralize_comment_terminator,
@@ -410,6 +411,7 @@ class _RenderContext:
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
+    dict_int_formatters: Mapping[int, Callable[[int], str]]
     empty_container_overrides: Mapping[int, str]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
@@ -434,6 +436,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -464,6 +467,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -487,6 +491,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             ref_case=self.ref_case,
             ref_values=self.ref_values,
@@ -589,7 +594,79 @@ def _empty_container_literal_overrides(
     """Return language-specific literal replacements for empty
     containers.
     """
-    return spec.heterogeneous_behavior.empty_container_literal_overrides(data)
+    overrides = dict(
+        spec.heterogeneous_behavior.empty_container_literal_overrides(data)
+    )
+    narrowed_empty_dict = spec.dict_format_config.narrowed_empty_form
+    if narrowed_empty_dict is not None:
+        _accumulate_cousin_empty_dict_overrides(
+            value=data,
+            narrowed_empty_dict=narrowed_empty_dict,
+            out=overrides,
+        )
+    return overrides
+
+
+@beartype
+def _accumulate_cousin_empty_dict_overrides(
+    *,
+    value: Value,
+    narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
+    out: dict[int, str],
+) -> None:
+    """Type empty maps from the same field in sibling dictionaries.
+
+    For ``[{"m": {"x": 1}}, {"m": {}}]``, the maps under ``m`` are
+    cousins rather than immediate siblings in the rendering walk.  Group
+    values by key across sibling dictionaries so the empty cousin can
+    borrow the non-empty cousin's inferred value type.
+    """
+    if isinstance(value, list):
+        sibling_dicts = [
+            item
+            for item in value
+            if isinstance(item, dict) and not isinstance(item, OrderedMap)
+        ]
+        keys = {key for sibling in sibling_dicts for key in sibling}
+        for key in keys:
+            cousins = [
+                sibling[key] for sibling in sibling_dicts if key in sibling
+            ]
+            empty_maps = [
+                cousin
+                for cousin in cousins
+                if isinstance(cousin, dict)
+                and not isinstance(cousin, OrderedMap)
+                and not cousin
+            ]
+            non_empty_maps = [
+                cousin
+                for cousin in cousins
+                if isinstance(cousin, dict)
+                and not isinstance(cousin, OrderedMap)
+                and cousin
+            ]
+            if (
+                empty_maps
+                and non_empty_maps
+                and len(empty_maps) + len(non_empty_maps) == len(cousins)
+            ):
+                replacement = narrowed_empty_dict(non_empty_maps)
+                for empty_map in empty_maps:
+                    out.setdefault(id(empty_map), replacement)
+        for child in value:
+            _accumulate_cousin_empty_dict_overrides(
+                value=child,
+                narrowed_empty_dict=narrowed_empty_dict,
+                out=out,
+            )
+    elif isinstance(value, dict):
+        for child in value.values():
+            _accumulate_cousin_empty_dict_overrides(
+                value=child,
+                narrowed_empty_dict=narrowed_empty_dict,
+                out=out,
+            )
 
 
 @beartype
@@ -671,7 +748,7 @@ def _format_ordered_map_value(
     guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -879,7 +956,7 @@ def _format_dict_value(
     guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -911,10 +988,12 @@ def _format_dict_value(
         list_values=sibling_list_values,
         spec=spec,
     )
-    map_int_formatter = _widened_int_formatter(
-        items=list(dict_items.values()),
-        spec=spec,
-    )
+    map_int_formatter = ctx.dict_int_formatters.get(id(value))
+    if map_int_formatter is None:
+        map_int_formatter = _widened_int_formatter(
+            items=list(dict_items.values()),
+            spec=spec,
+        )
     pairs = [
         _build_dict_entry(
             key_str=_format_value(
@@ -1148,6 +1227,53 @@ def _collect_dict_open_overrides(
     if _dict_widening_applies(spec=spec):
         _accumulate_dict_open_overrides(data=data, spec=spec, out=out)
     return out
+
+
+@beartype
+def _collect_dict_int_formatters(
+    *, data: Value, spec: Language
+) -> Mapping[int, Callable[[int], str]]:
+    """Return widened integer formatters for sibling map value slots."""
+    out: dict[int, Callable[[int], str]] = {}
+    _accumulate_dict_int_formatters(data=data, spec=spec, out=out)
+    return out
+
+
+@beartype
+def _accumulate_dict_int_formatters(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+) -> None:
+    """Widen integer leaves consistently across sibling nested maps."""
+    match data:
+        case OrderedMap():
+            children = list(data.values())
+        case dict():
+            children = list(data.values())
+        case list():
+            children = list(data)
+        case _:
+            return
+    sibling_maps = [
+        child
+        for child in children
+        if isinstance(child, dict) and not isinstance(child, OrderedMap)
+    ]
+    min_maps_for_widening = 2
+    if len(sibling_maps) >= min_maps_for_widening:
+        formatter = _widened_int_formatter(
+            items=[
+                item for sibling in sibling_maps for item in sibling.values()
+            ],
+            spec=spec,
+        )
+        if formatter is not None:
+            for sibling in sibling_maps:
+                out.setdefault(id(sibling), formatter)
+    for child in children:
+        _accumulate_dict_int_formatters(data=child, spec=spec, out=out)
 
 
 @beartype
@@ -1595,7 +1721,7 @@ def _format_list_value(
     spec = ctx.spec
     sequence_cfg = spec.sequence_format_config
 
-    if _nested_yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -1949,15 +2075,13 @@ def _format_multiline_collection_value(
 
 
 @beartype
-def _nested_yaml_collection_comments(
+def _yaml_collection_comments(
     *,
     value: Value,
     ctx: _RenderContext,
 ) -> CollectionComments | None:
-    """Return comments for a nested YAML collection, when present."""
+    """Return comments for a YAML collection, when present."""
     if not ctx.spec.supports_collection_comments:
-        return None
-    if id(value) == ctx.yaml_comment_root_id:
         return None
     raw_value = ctx.yaml_comment_nodes.get(id(value))
     if raw_value is None:
@@ -2011,23 +2135,48 @@ def _append_entries(
 
 @beartype
 def _filter_collection_comments(
-    *, collection_comments: CollectionComments, keep: Sequence[bool]
+    *,
+    collection_comments: CollectionComments,
+    keep: Sequence[bool],
+    redistribute: bool,
 ) -> CollectionComments:
     """Keep comment slots corresponding to rendered collection entries.
 
     A length mismatch is an internal alignment error and intentionally
     raises rather than silently assigning comments to different values.
     """
-    elements = tuple(
-        element
-        for element, keep_element in zip(
-            collection_comments.elements, keep, strict=True
+    if not redistribute:
+        return CollectionComments(
+            elements=tuple(
+                element
+                for element, keep_element in zip(
+                    collection_comments.elements, keep, strict=True
+                )
+                if keep_element
+            ),
+            trailing=collection_comments.trailing,
         )
-        if keep_element
-    )
+
+    pending: list[str] = []
+    elements: list[ElementComments] = []
+    for element, keep_element in zip(
+        collection_comments.elements, keep, strict=True
+    ):
+        if not keep_element:
+            pending.extend(element.before)
+            if element.inline:
+                pending.append(element.inline)
+            continue
+        elements.append(
+            dataclasses.replace(
+                element,
+                before=(*pending, *element.before),
+            )
+        )
+        pending = []
     return CollectionComments(
-        elements=elements,
-        trailing=collection_comments.trailing,
+        elements=tuple(elements),
+        trailing=(*pending, *collection_comments.trailing),
     )
 
 
@@ -2047,7 +2196,7 @@ def _format_collection_lines(
     line_ctx = ctx.with_prefix(multiline_prefix=body_prefix)
     lines: list[str] = []
     parent_id = id(data)
-    collection_comments = _nested_yaml_collection_comments(
+    collection_comments = _yaml_collection_comments(
         value=data,
         ctx=ctx,
     )
@@ -2069,6 +2218,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
+                    redistribute=id(data) == ctx.yaml_comment_root_id,
                 )
             sibling_list_values: list[list[Value]] = [
                 v for _, v in entries if isinstance(v, list)
@@ -2081,10 +2231,12 @@ def _format_collection_lines(
                 list_values=sibling_list_values,
                 spec=spec,
             )
-            map_int_formatter = _widened_int_formatter(
-                items=[v for _, v in entries],
-                spec=spec,
-            )
+            map_int_formatter = ctx.dict_int_formatters.get(id(dict_data))
+            if map_int_formatter is None:
+                map_int_formatter = _widened_int_formatter(
+                    items=[v for _, v in entries],
+                    spec=spec,
+                )
             formatted_entries: list[str] = []
             for k, v in entries:
                 formatted_key: str = _format_value(
@@ -2220,6 +2372,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
+                    redistribute=id(data) == ctx.yaml_comment_root_id,
                 )
             _append_entries(
                 formatted_entries=formatted_entries,
@@ -2387,6 +2540,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
         dict_open_overrides=_collect_dict_open_overrides(
+            data=data, spec=language
+        ),
+        dict_int_formatters=_collect_dict_int_formatters(
             data=data, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(
@@ -2728,7 +2884,6 @@ def literalize_pre_form(
     )
     active_ref_key = _active_literalize_ref_key(
         source=source,
-        input_format=input_format,
         data=data,
         ref_key=ref_key,
     )
@@ -3119,9 +3274,10 @@ def literalize_bound_refs(
                 ),
             )
         )
-    effective_ref_values: dict[str, Value] = dict(explicit_ref_values or {})
-    for name in ordered_names:
-        effective_ref_values[name] = bound_refs[name]
+    effective_ref_values: dict[str, Value] = {
+        name: bound_refs[name] for name in ordered_names
+    }
+    effective_ref_values.update(explicit_ref_values or {})
     pre_form = literalize_pre_form(
         source=source,
         input_format=input_format,
@@ -3316,7 +3472,6 @@ def _compose_bound_refs(
 def _active_literalize_ref_key(
     *,
     source: str,
-    input_format: InputFormat,
     data: Value,
     ref_key: str,
 ) -> str:
@@ -3325,10 +3480,9 @@ def _active_literalize_ref_key(
         ref_key != "$ref" and ref_key in source
     ):
         return ref_key
-    if (
-        input_format is InputFormat.JSON
-        and "\\" in source
-        and _contains_ref_marker(value=data, ref_key=ref_key)
+    if "\\" in source and _contains_ref_marker(
+        value=data,
+        ref_key=ref_key,
     ):
         return ref_key
     return _DISABLED_REF_KEY
@@ -3758,6 +3912,9 @@ def _format_single_call_arg(
         # already reconcile sibling dict types across slots via
         # ``_compute_call_slot_overrides``, so this map stays empty here.
         dict_open_overrides={},
+        dict_int_formatters=_collect_dict_int_formatters(
+            data=value, spec=language
+        ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
         ),
@@ -4039,7 +4196,9 @@ def _append_trailing_comment(
         comment_suffix=cfg.suffix,
     )
     lines = rendered.split(sep="\n")
-    lines[-1] = f"{lines[-1]}  {cfg.prefix} {escaped_comment}{cfg.suffix}"
+    lines[-1] = (
+        f"{lines[-1]}  {cfg.trailing_prefix} {escaped_comment}{cfg.suffix}"
+    )
     return "\n".join(lines)
 
 
@@ -5037,6 +5196,9 @@ def _render_zip_literal(
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
+            data=value, spec=language
+        ),
+        dict_int_formatters=_collect_dict_int_formatters(
             data=value, spec=language
         ),
         empty_container_overrides=_empty_container_literal_overrides(

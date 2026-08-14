@@ -2,5 +2,5 @@
     (cons "name" "Alice")
     (cons "age" 30)
     (cons "active" t)
-    (cons "score" 4.5)
+    (cons "score" 4.5d0)
 ))

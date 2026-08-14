@@ -12,11 +12,11 @@ typedef struct {
 module main;
 initial begin
 static _VVal my_data[] = '{
-    /* before first: * / |# -} *) ) =# ]] %} ]# % #> */
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "first"},  /* inline first: * / |# -} *) ) =# ]] %} ]# % #> */
-    /* before second: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "first"},  /* inline first: * / |# -} *) (* ) =# ]] %} ]# % #> */
+    /* before second: * / |# -} *) (* ) =# ]] %} ]# % #> */
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "second"}
-    /* trailing: * / |# -} *) ) =# ]] %} ]# % #> */
+    /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 };
 end
 endmodule

@@ -5,6 +5,6 @@ type Val
     = EStr String
 
 
-{- before scalar: */ |# - } *) ) =# ]] %} ]# % #> -}
+{- before scalar: */ |# - } *) (* ) =# ]] %} ]# % #> -}
 my_data : Val
-my_data = EStr "value"  {- inline scalar: */ |# - } *) ) =# ]] %} ]# % #> -}
+my_data = EStr "value"  {- inline scalar: */ |# - } *) (* ) =# ]] %} ]# % #> -}
