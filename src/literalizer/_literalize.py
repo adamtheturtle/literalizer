@@ -7,7 +7,12 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
 from beartype import BeartypeConf, beartype
-from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
+from ruamel.yaml.comments import (
+    CommentedMap,
+    CommentedSeq,
+    CommentedSet,
+    TaggedScalar,
+)
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
@@ -60,6 +65,7 @@ from literalizer._parsing import (
     ParsedYaml,
     parse_input,
     recursion_parse_error,
+    unwrap_yaml_scalar,
 )
 from literalizer._preamble import (
     compute_preamble,
@@ -2497,7 +2503,15 @@ def _mapping_object_at(
     *, mapping: Mapping[object, object], key: object
 ) -> object:
     """Return a mapping value with its public boundary type preserved."""
-    return mapping[key]
+    normalized = {
+        (
+            unwrap_yaml_scalar(value=raw_key)
+            if isinstance(raw_key, TaggedScalar)
+            else raw_key
+        ): value
+        for raw_key, value in mapping.items()
+    }
+    return normalized[key]
 
 
 @beartype
@@ -4783,7 +4797,7 @@ def _render_call_per_element(
         return apply_collection_comments_to_elements(
             rendered_elements=rendered_elements,
             collection_comments=collection_comments,
-            comment_prefix=comment_cfg.prefix,
+            comment_prefix=comment_cfg.trailing_prefix,
             comment_suffix=comment_cfg.suffix,
             line_prefix="",
         )

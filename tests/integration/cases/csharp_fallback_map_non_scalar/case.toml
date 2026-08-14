@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "csharp_fallback_map_non_scalar"

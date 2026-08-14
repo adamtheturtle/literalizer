@@ -1183,6 +1183,13 @@ class CSharp(metaclass=LanguageCls):
                     f"auto-generated 'Record'-prefixed record names."
                 )
                 raise InvalidRecordNameError(msg)
+            if name == "Check":
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    "maps to 'Check', which collides with the generated "
+                    "outer wrapper class."
+                )
+                raise InvalidRecordNameError(msg)
             if name in seen_names:
                 msg = (
                     "record_shape_names maps multiple key-sets to "
@@ -1658,6 +1665,29 @@ class CSharp(metaclass=LanguageCls):
         wrap_ids: frozenset[int],
     ) -> str | None:
         """Return the one concrete type shared by widened-map scalars."""
+
+        def contains_wrapped_non_scalar(value: Value) -> bool:
+            """Return whether a widened map contains a collection
+            value.
+            """
+            if isinstance(value, dict):
+                if id(value) in wrap_ids and any(
+                    isinstance(child, (dict, list, set))
+                    for child in value.values()
+                ):
+                    return True
+                return any(
+                    contains_wrapped_non_scalar(value=child)
+                    for child in value.values()
+                )
+            if isinstance(value, (list, set)):
+                return any(
+                    contains_wrapped_non_scalar(value=child) for child in value
+                )
+            return False
+
+        if contains_wrapped_non_scalar(value=data):
+            return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         if not scalars:
             return None

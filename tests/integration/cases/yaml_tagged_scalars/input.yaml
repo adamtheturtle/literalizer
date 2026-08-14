@@ -1,1 +1,2 @@
 explicit_string: !!str 5
+!!str 6: explicitly tagged key
