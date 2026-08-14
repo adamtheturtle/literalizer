@@ -1045,20 +1045,13 @@ def _format_dict_value(
                 else dict_items
             )
         case _:
-            open_items = dict_items
-            if any(
-                isinstance(v, dict)
-                and _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                is not None
-                for v in dict_items.values()
-            ):
-                open_items = {
-                    k: v
-                    for k, v in dict_items.items()
-                    if not isinstance(v, dict)
-                    or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
-                    is None
-                }
+            open_items = {
+                k: v
+                for k, v in dict_items.items()
+                if not isinstance(v, dict)
+                or _extract_call_arg_ref_name(value=v, ref_key=ctx.ref_key)
+                is None
+            }
             opener = dict_cfg.dict_open(open_items or dict_items)
     return opener + joined + dict_cfg.close
 
@@ -2495,6 +2488,64 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
 
 
+def _inference_to_source_container_ids(
+    *, source: Value, inferred: Value
+) -> dict[int, int]:
+    """Map inferred container ids back to corresponding source ids."""
+    id_map: dict[int, int] = {}
+
+    def _visit(*, source_item: Value, inferred_item: Value) -> None:
+        """Record corresponding containers and recurse through peers."""
+        if not isinstance(source_item, (dict, list, set)) or not isinstance(
+            inferred_item, (dict, list, set)
+        ):
+            return
+        id_map[id(inferred_item)] = id(source_item)
+        if isinstance(source_item, list) and isinstance(inferred_item, list):
+            for source_child, inferred_child in zip(
+                source_item, inferred_item, strict=True
+            ):
+                _visit(
+                    source_item=source_child,
+                    inferred_item=inferred_child,
+                )
+        elif (
+            isinstance(source_item, dict)
+            and isinstance(inferred_item, dict)
+            and source_item.keys() == inferred_item.keys()
+        ):
+            for key in source_item:
+                _visit(
+                    source_item=source_item[key],
+                    inferred_item=inferred_item[key],
+                )
+
+    _visit(source_item=source, inferred_item=inferred)
+    return id_map
+
+
+def _source_container_ids(
+    *, inferred_ids: frozenset[int], id_map: Mapping[int, int]
+) -> frozenset[int]:
+    """Translate inferred container ids to ids used while rendering."""
+    return frozenset(
+        id_map[inferred_id]
+        for inferred_id in inferred_ids
+        if inferred_id in id_map
+    )
+
+
+def _source_container_id_mapping[T](
+    *, inferred_mapping: Mapping[int, T], id_map: Mapping[int, int]
+) -> dict[int, T]:
+    """Translate an inferred id-keyed mapping for source rendering."""
+    return {
+        id_map[inferred_id]: value
+        for inferred_id, value in inferred_mapping.items()
+        if inferred_id in id_map
+    }
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
@@ -2596,20 +2647,40 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             out=yaml_comment_nodes,
         )
 
-    wrap_ids = _compute_wrap_ids(data=data, spec=language)
-    tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
+    inference_id_map = _inference_to_source_container_ids(
+        source=data, inferred=inference_data
+    )
+    wrap_ids = _source_container_ids(
+        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
+        id_map=inference_id_map,
+    )
+    tuple_list_ids = _source_container_ids(
+        inferred_ids=_compute_tuple_list_ids(
+            data=inference_data, spec=language
+        ),
+        id_map=inference_id_map,
+    )
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
-        dict_open_overrides=_collect_dict_open_overrides(
-            data=data, spec=language
+        dict_open_overrides=_source_container_id_mapping(
+            inferred_mapping=_collect_dict_open_overrides(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
-        dict_int_formatters=_collect_dict_int_formatters(
-            data=data, spec=language
+        dict_int_formatters=_source_container_id_mapping(
+            inferred_mapping=_collect_dict_int_formatters(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
-        empty_container_overrides=_empty_container_literal_overrides(
-            data=data, spec=language
+        empty_container_overrides=_source_container_id_mapping(
+            inferred_mapping=_empty_container_literal_overrides(
+                data=inference_data, spec=language
+            ),
+            id_map=inference_id_map,
         ),
         ref_case=ref_case,
         ref_values=ref_values,
