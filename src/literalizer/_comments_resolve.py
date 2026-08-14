@@ -151,6 +151,7 @@ def _resolve_yaml_collection_comments(
         structurally_applied=not (
             language.skip_null_dict_values
             and isinstance(ruamel_data, CommentedMap)
+            and bool(ruamel_data)
             and _all_mapping_values_null(data=ruamel_data)
         ),
     )
@@ -190,7 +191,7 @@ def resolve_yaml_comments(
                 comment_suffix=comment_suffix,
                 comment_line_prefix=comment_line_prefix,
                 include_delimiters=include_delimiters,
-                structurally_applied=True,
+                structurally_applied=bool(raw_data),
             )
         case CommentedSeq() | CommentedMap():
             return _resolve_yaml_collection_comments(
