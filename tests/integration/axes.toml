@@ -676,6 +676,8 @@ overrides = [
 ]
 
 [axes.scala3_record_keyword_fields]
+# Scala 3 soft-keyword field syntax is a language-specific grammar case,
+# rather than a cross-language rendering capability.
 plan = "fixed_overrides"
 name_template = "{lang}_scala3_record_keyword_fields"
 gates = [
@@ -1024,7 +1026,7 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_widened_i64_min"
 gates = [
-  { kind = "metadata_field", field = "language_id", value = "kotlin" },
+  { kind = "capability_flag", flag = "supports_widened_integer_formatter" },
   { kind = "enum_member_present", option = "language_version", member = "V1_9" },
 ]
 overrides = [
@@ -1032,6 +1034,8 @@ overrides = [
 ]
 
 [axes.csharp_fallback_map_non_scalar]
+# This locks in C#'s System.Text.Json fallback syntax for nested non-scalars;
+# no cross-language capability denotes that language-specific spelling.
 plan = "fixed_overrides"
 name_template = "{lang}_fallback_map_non_scalar"
 gates = [
