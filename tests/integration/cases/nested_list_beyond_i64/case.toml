@@ -1,4 +1,5 @@
 schema_version = 1
-languages = ["Nim", "V"]
-languages_reason = "Nim and V widen a nested list by integer width; that becomes a metadata gate (#3819)."
+gates = [
+  { kind = "metadata_field", field = "nested_list_widening", value = "integer_width" },
+]
 suites = ["base"]
