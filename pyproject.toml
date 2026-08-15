@@ -430,6 +430,7 @@ ignore_names = [
     "_validate_call_variants",
     "_validate_consistency",
     "_validate_known_axis",
+    "_validate_language_selection",
     "_validate_pairing",
     "_validate_requirements",
     "_validate_selection",

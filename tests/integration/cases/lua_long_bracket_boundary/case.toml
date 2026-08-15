@@ -1,5 +1,6 @@
 schema_version = 1
 languages = ["Lua"]
+languages_reason = "Lua alone closes a long string with the ]] delimiter this input runs up against."
 suites = ["base"]
 
 [[variants]]

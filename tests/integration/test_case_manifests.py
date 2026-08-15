@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import literalizer
+import literalizer.languages
 
 from .case_manifests import (
     CASE_ROLE_NAMES,
@@ -20,6 +21,8 @@ from .case_manifests import (
     case_input,
     case_manifests_by_name,
     load_case_manifest,
+    load_case_manifests,
+    manifest_admits_language,
     variable_form_for_context,
 )
 from .variant_cases import build_variant_cases, validate_unique_variant_targets
@@ -276,6 +279,75 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             ),
             "Extra inputs are not permitted",
         ),
+        (
+            'schema_version = 1\nsuites = ["base"]\nlanguages = ["Python"]\n',
+            "languages and languages_reason require each other",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'languages_reason = "sampled"\n'
+            ),
+            "languages and languages_reason require each other",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'languages = ["Python"]\nlanguages_reason = "sampled"\n'
+                'gates = [{ kind = "capability_flag", '
+                'flag = "supports_comments" }]\n'
+            ),
+            "declare either languages or gates, not both",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'gates = [{ kind = "vibes", name = "x" }]\n'
+            ),
+            "does not match any of the expected tags",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'gates = [{ kind = "capability_flag", '
+                'flag = "supports_vibes" }]\n'
+            ),
+            "gates: unknown capability flag 'supports_vibes'",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'gates = [{ kind = "enum_member_present", option = "vibe", '
+                'member = "RECORD" }]\n'
+            ),
+            "gates: unknown option 'vibe'",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref"\n'
+                "[ref]\n"
+                'languages = ["Python"]\n'
+            ),
+            "languages and languages_reason require each other",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'languages = ["Python"]\n'
+            ),
+            "languages and languages_reason require each other",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                'languages = ["Pythonic"]\nlanguages_reason = "sampled"\n'
+            ),
+            "Input should be",
+        ),
     ],
 )
 def test_invalid_manifest_is_actionable(
@@ -459,6 +531,84 @@ def test_ref_table_is_loaded(tmp_path: Path) -> None:
     assert ref.ref_key == "$ref"
     assert ref.ref_case_override == literalizer.IdentifierCase.CAMEL
     assert ref.value_sources == {"my_int": "42"}
+
+
+def test_gates_select_the_languages_declaring_the_property(
+    tmp_path: Path,
+) -> None:
+    """A gated case renders under the languages the property admits."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'suites = ["base"]\n'
+            'gates = [{ kind = "metadata_field", '
+            'field = "nested_list_widening", value = "integer_width" }]\n'
+        ),
+        input_name="input.yaml",
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    selected = [
+        lang_cls.__name__
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+    ]
+    assert sorted(selected) == ["Nim", "V"]
+
+
+def test_an_ungated_case_selects_every_language(tmp_path: Path) -> None:
+    """A case narrowing nothing renders under every language."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest='schema_version = 1\nsuites = ["base"]\n',
+        input_name="input.yaml",
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    assert all(
+        manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+    )
+
+
+def test_named_languages_select_themselves(tmp_path: Path) -> None:
+    """A case naming its languages renders under exactly those."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'suites = ["base"]\n'
+            'languages = ["Python"]\n'
+            'languages_reason = "Sampled: one language shows this."\n'
+        ),
+        input_name="input.yaml",
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    selected = [
+        lang_cls.__name__
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+    ]
+    assert selected == ["Python"]
+
+
+def test_every_named_language_set_records_its_reason(cases_dir: Path) -> None:
+    """No case narrows to named languages without saying why.
+
+    A narrowing that follows from a language property is a ``gates``
+    entry; one that does not names its languages and says which it is,
+    so a pin and a deliberate one-language sample stay distinguishable
+    rather than reading alike.
+    """
+    unexplained = sorted(
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        for selection in (
+            manifest.selection,
+            *(table for table in (manifest.call, manifest.ref) if table),
+        )
+        if selection.languages and selection.languages_reason is None
+    )
+    assert unexplained == []
 
 
 def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:

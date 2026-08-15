@@ -5,6 +5,7 @@ owner = "literalize-call"
 # nested list during type inference.
 [call]
 languages = ["Haskell"]
+languages_reason = "Sampled: one language is enough to show an unknown ref marker stripped from a nested list."
 target_function = "process"
 parameter_names = ["data"]
 per_element = false

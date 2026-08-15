@@ -1,5 +1,6 @@
 schema_version = 1
 languages = ["D"]
+languages_reason = "Found in D; whether subnormal float rendering is D-specific is undecided (#3821)."
 suites = ["base"]
 
 [[variants]]

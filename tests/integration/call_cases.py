@@ -304,7 +304,7 @@ def discover_call_cases() -> list[CallCase]:
     cases: list[CallCase] = []
     for config in default_call_case_specs():
         for lang_cls in sorted_languages():
-            if config.languages and lang_cls.__name__ not in config.languages:
+            if not config.admits_language(lang_cls=lang_cls):
                 continue
             if len(lang_cls.CallStyles) == 0:
                 continue

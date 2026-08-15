@@ -144,6 +144,33 @@ identifier case (``snake``, ``camel``, ``pascal``, ``upper_snake``, or
 ``supported_ref_cases`` excludes it.  Each ``[ref.value_sources]`` entry maps
 a ref name to a JSON source that seeds the bound value for that ref.
 
+A case renders under every language unless it narrows.  ``gates`` names the
+property the narrowing follows from, in the same vocabulary the variant axes
+and the rejection manifests use, so a language that later gains that property
+is covered without editing the manifest:
+
+.. code-block:: toml
+
+   schema_version = 1
+   suites = ["base"]
+   gates = [{ kind = "metadata_field", field = "nested_list_widening", value = "integer_width" }]
+
+A narrowing no property expresses -- a syntax quirk one language has, or a
+deliberate one-language sample of a rendering that does not vary -- names its
+languages instead and says in ``languages_reason`` which of the two it is:
+
+.. code-block:: toml
+
+   schema_version = 1
+   suites = ["base"]
+   languages = ["Lua"]
+   languages_reason = "Lua alone closes a long string with the ]] delimiter this input runs up against."
+
+``languages`` and ``languages_reason`` require each other, and a case naming
+both ``languages`` and ``gates`` states its narrowing twice and is rejected.
+The ``[call]`` and ``[ref]`` tables narrow the languages they render under the
+same way.
+
 Non-default inputs can be explicit with ``input = "input.toml"``.  Supported
 variant context fields are ``variable_form`` (``new``, ``existing``, or
 ``both``), ``collection_layout``, ``pre_indent_level``, and
