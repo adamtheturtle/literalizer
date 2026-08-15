@@ -220,6 +220,31 @@ def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
     return spec.bytes_formats
 
 
+_LINE_SEPARATOR = "\u2028"
+_PARAGRAPH_SEPARATOR = "\u2029"
+
+
+@beartype
+def _escapes_unicode_line_separators(
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Return whether string literals escape U+2028 and U+2029.
+
+    A language that emits either separator raw renders the bytes the
+    input held, so a case covering the escape has nothing to observe
+    there.  The answer comes from the default string formatter rather
+    than a declared flag, so a language that gains or loses the escape
+    joins or leaves that case on its own.
+    """
+    formatted = lang_cls().format_string(
+        f"a{_LINE_SEPARATOR}b{_PARAGRAPH_SEPARATOR}c"
+    )
+    return (
+        _LINE_SEPARATOR not in formatted
+        and _PARAGRAPH_SEPARATOR not in formatted
+    )
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Option:
     """One configurable formatter option a plan can select values from.
@@ -423,5 +448,8 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         lambda lang_cls: (
             lang_cls.variant_metadata.string_literals_escape_null_byte
         )
+    ),
+    "string_literals_escape_unicode_line_separators": (
+        _escapes_unicode_line_separators
     ),
 }

@@ -85,5 +85,6 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fstr('a' // achar(194) // achar(133) // 'b' // achar(226) // achar(128) // achar(168) // 'c' // &
-    & achar(226) // achar(128) // achar(169) // 'd')
+    & achar(226) // achar(128) // achar(169) // 'd' // achar(13) // achar(226) // achar(128) // achar(168) // &
+    & 'e')
 end program main
