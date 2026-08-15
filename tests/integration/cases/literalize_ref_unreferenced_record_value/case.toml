@@ -1,13 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-gates = [
-  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
-]
+languages = ["Kotlin"]
+languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
 
 [ref]
-gates = [
-  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
-]
+languages = ["Kotlin"]
+languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
 
 [ref.extra_ref_value_sources]
 other = '"true"'

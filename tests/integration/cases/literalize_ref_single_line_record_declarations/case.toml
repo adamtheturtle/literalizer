@@ -1,9 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-gates = [{ kind = "record_variant", variant = "field_type_split" }]
+languages = ["Scala"]
+languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
 
 [ref]
-gates = [{ kind = "record_variant", variant = "field_type_split" }]
+languages = ["Scala"]
+languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]
