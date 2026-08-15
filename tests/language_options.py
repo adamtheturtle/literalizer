@@ -23,6 +23,7 @@ from typing import Protocol, runtime_checkable
 from beartype import beartype
 
 import literalizer
+from tests.integration.language_metadata import language_metadata
 
 
 @runtime_checkable
@@ -420,7 +421,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         lambda lang_cls: (
             lang_cls.supports_non_string_dict_keys
             and lang_cls.supports_special_floats
-            and lang_cls.language_id not in {"groovy", "lua", "rust"}
+            and language_metadata(
+                language_id=lang_cls.language_id
+            ).variants.supports_special_float_dict_keys
         )
     ),
     "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,

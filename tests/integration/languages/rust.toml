@@ -1,6 +1,7 @@
 schema_version = 1
 
 [variants]
+supports_special_float_dict_keys = false
 record = ["field_type_split", "keyword_field", "unify_optional_fields"]
 
 [variants.empty_container_type_hint]

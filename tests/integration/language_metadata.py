@@ -139,6 +139,9 @@ class VariantPolicy(  # noqa: NOD001
     nested_list_widening: NestedListWideningName = "none"
     """Which nested-list widening input this language renders, if any."""
 
+    supports_special_float_dict_keys: bool = True
+    """Whether NaN and infinity are usable as keys in golden maps."""
+
     record_language_version: str | None = None
     """``VersionFormats`` member name the record variants select."""
 

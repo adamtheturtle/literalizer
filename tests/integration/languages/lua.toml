@@ -1,1 +1,4 @@
 schema_version = 1
+
+[variants]
+supports_special_float_dict_keys = false
