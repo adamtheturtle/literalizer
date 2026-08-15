@@ -1,4 +1,4 @@
 schema_version = 1
 languages = ["Haskell"]
-languages_reason = "Found in Haskell; whether C1 control escaping is Haskell-specific is undecided (#3823)."
+languages_reason = "Haskell-specific: hexadecimal escapes consume following digits, so `\\&` must terminate each escape before the adjacent character."
 suites = ["base", "combined"]
