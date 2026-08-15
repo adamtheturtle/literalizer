@@ -1,9 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
 languages = ["Kotlin"]
+languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
 
 [ref]
 languages = ["Kotlin"]
+languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
 
 [ref.extra_ref_value_sources]
 other = '"true"'

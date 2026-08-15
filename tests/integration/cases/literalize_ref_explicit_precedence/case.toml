@@ -3,6 +3,7 @@ owner = "literalize-ref"
 
 [ref]
 languages = ["V"]
+languages_reason = "Sampled: one language is enough to show an explicit ref value taking precedence over an inferred one."
 
 [ref.value_sources]
 x = "[1, 2]"

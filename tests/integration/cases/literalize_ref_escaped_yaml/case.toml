@@ -3,3 +3,4 @@ owner = "literalize-ref"
 
 [ref]
 languages = ["Python"]
+languages_reason = "Sampled: one language is enough to show a ref key spelled with a YAML escape."

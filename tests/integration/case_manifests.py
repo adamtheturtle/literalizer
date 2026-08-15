@@ -8,7 +8,7 @@ import string
 import tomllib
 from collections.abc import Callable, Mapping  # noqa: TC003
 from pathlib import Path  # noqa: TC003
-from typing import Annotated, Literal, get_args
+from typing import Annotated, Literal, Self, get_args
 
 from beartype import beartype
 from pydantic import (
@@ -26,6 +26,9 @@ from literalizer._types import ValueInput  # noqa: TC001
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input
+from .language_metadata import language_metadata
+from .language_specs import make_spec
+from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
 from .variant_axis_names import KNOWN_VARIANT_AXES
 
 MANIFEST_NAME = "case.toml"
@@ -302,6 +305,60 @@ class ManifestVariant(  # noqa: NOD001
         return self
 
 
+# Defaults stand in for omitted keys, as above.
+class LanguageSelection(  # noqa: NOD001
+    BaseModel,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """How one manifest table narrows the languages it renders under.
+
+    ``gates`` names the property the narrowing follows from, so a case
+    that a language qualifies for by gaining that property picks it up
+    without being edited.  ``languages`` names the languages outright,
+    for a narrowing no property expresses -- a syntax quirk only one
+    language has, or a deliberate one-language sample of a rendering
+    that does not vary -- and pairs with ``languages_reason``, which
+    says which of those it is.  Naming both would state the same
+    narrowing twice, so a table declares at most one.
+
+    A gate reads the language default spec: a case selects languages,
+    where a variant axis selects the specs its overrides build.
+    """
+
+    languages: ManifestLanguages = ()
+    languages_reason: Annotated[str, Field(min_length=1)] | None = None
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
+
+    @model_validator(mode="after")
+    def _validate_language_selection(self) -> Self:
+        """Reject a narrowing stated twice, or stated without a
+        reason.
+        """
+        if self.languages and self.gates:
+            msg = "declare either languages or gates, not both"
+            raise ValueError(msg)
+        if bool(self.languages) != (self.languages_reason is not None):
+            msg = "languages and languages_reason require each other"
+            raise ValueError(msg)
+        validate_gate_names(subject="gates", gates=self.gates)
+        return self
+
+    @beartype
+    def admits_language(self, *, lang_cls: literalizer.LanguageCls) -> bool:
+        """Return whether this narrowing selects *lang_cls*."""
+        if self.languages:
+            return lang_cls in self.languages
+        return gates_admit(
+            gates=self.gates,
+            lang_cls=lang_cls,
+            metadata=language_metadata(language_id=lang_cls.language_id),
+            spec=make_spec(lang_cls=lang_cls),
+        )
+
+
 def _empty_variants() -> list[ManifestVariant]:
     """Return a typed empty variant list for the validation model."""
     return []
@@ -389,7 +446,7 @@ class _OwnedCaseSpec(
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
-class RefCaseSpec(_OwnedCaseSpec, frozen=True):
+class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     """Everything a case declares about driving a ``$ref`` golden.
 
     When *value_sources* is supplied, each entry maps a
@@ -407,7 +464,6 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     """
 
     ref_key: str = "$ref"
-    languages: StringFrozenSet = Field(default_factory=_empty_name_set)
     collection_layout: CollectionLayoutName = "compact"
     heterogeneous_strategy: str | None = None
     ref_case_override: RefIdentifierCase | None = None
@@ -420,7 +476,7 @@ class RefCaseSpec(_OwnedCaseSpec, frozen=True):
     )
 
 
-class CallCaseSpec(_OwnedCaseSpec, frozen=True):
+class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     """Everything a case declares about driving ``literalize_call``.
 
     A manifest spells enum- and type-valued arguments as strings, which
@@ -439,8 +495,6 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
     same case to :func:`literalize_call` so the declaration site and the
     call site agree on identifier spelling.
     """
-
-    languages: StringFrozenSet = Field(default_factory=_empty_name_set)
 
     target_function: str
     parameter_names: StringTuple
@@ -569,18 +623,14 @@ class CallCaseSpec(_OwnedCaseSpec, frozen=True):
 
 
 # Defaults stand in for omitted keys, as above.
-class _CaseManifestData(  # noqa: NOD001
-    BaseModel,
-    arbitrary_types_allowed=True,
-    extra="forbid",
+class _CaseManifestData(
+    LanguageSelection,
     frozen=True,
-    strict=True,
 ):
     """Strict representation of the data read directly from TOML."""
 
     schema_version: Literal[1]
     input: str | None = None
-    languages: ManifestLanguages = ()
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -664,7 +714,7 @@ class CaseManifest:
     case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
-    languages: frozenset[str]
+    selection: LanguageSelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
     roles: frozenset[CaseRoleName]
@@ -679,7 +729,7 @@ def manifest_admits_language(
     *, manifest: CaseManifest, lang_cls: literalizer.LanguageCls
 ) -> bool:
     """Return whether a case selects *lang_cls*."""
-    return not manifest.languages or lang_cls.__name__ in manifest.languages
+    return manifest.selection.admits_language(lang_cls=lang_cls)
 
 
 @beartype
@@ -735,7 +785,11 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
-        languages=frozenset(lang_cls.__name__ for lang_cls in data.languages),
+        selection=LanguageSelection(
+            languages=data.languages,
+            languages_reason=data.languages_reason,
+            gates=data.gates,
+        ),
         suites=frozenset(data.suites),
         owner=data.owner,
         roles=frozenset(data.roles),

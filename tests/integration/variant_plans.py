@@ -43,20 +43,20 @@ from pydantic import BaseModel, Field, ValidationError
 import literalizer
 from literalizer.exceptions import IncompatibleFormatsError
 from tests.enum_members import enum_member_by_name
-from tests.language_gates import (
-    CapabilityFlagGate,
-    EnumMemberPresentGate,
-    SpecFieldPresentGate,
-    language_gate_admits,
-)
-from tests.language_options import CAPABILITY_FLAGS, OPTIONS
+from tests.language_options import OPTIONS
 
-from .language_metadata import (
-    LanguageMetadata,
-    RecordVariantName,
-    language_metadata,
-)
+from .language_metadata import LanguageMetadata, language_metadata
 from .language_specs import make_spec, sorted_languages
+from .suite_gates import (
+    BEHAVIOR_FLAGS,
+    METADATA_FIELDS,
+    BehaviorFlagGate,
+    SuiteGate,
+    SuiteGateError,
+    gate_admits,
+    no_gates,
+    validate_gate_names,
+)
 from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
 from .variant_types import Variant
 
@@ -107,24 +107,6 @@ def _escapes_null_byte(member: enum.Enum) -> bool:
     return member.string_literals_escape_null_byte
 
 
-@beartype
-def _widens_nested_maps_by_wrapping_scalars(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy wraps sibling maps' scalar leaves."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_nested_maps_by_wrapping_scalars
-
-
-@beartype
-def _widens_unrecordizable_nested_sibling_maps(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy widens nested maps no record fits."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_unrecordizable_nested_sibling_maps
-
-
 # Facts about one member of an option enum.  Every other registry here
 # decides whether a language participates in an axis; these decide which
 # of that language's members do, for an axis whose subject is a property
@@ -148,19 +130,6 @@ _MEMBER_NAME_SOURCES: Mapping[
 
 
 @beartype
-def _empty_container_type_hint_strategy(
-    metadata: LanguageMetadata,
-) -> str | None:
-    """Return the strategy the empty-container hints are declared
-    under.
-    """
-    settings = metadata.variants.empty_container_type_hint
-    if settings is None:
-        return None
-    return settings.heterogeneous_strategy
-
-
-@beartype
 def _empty_container_type_hints(
     metadata: LanguageMetadata,
 ) -> Mapping[object, object] | None:
@@ -171,46 +140,10 @@ def _empty_container_type_hints(
     return {tuple(entry.path): entry.hint for entry in settings.type_hints}
 
 
-_METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
-    "language_id": lambda metadata: metadata.language_id,
-    "empty_container_type_hint_heterogeneous_strategy": (
-        _empty_container_type_hint_strategy
-    ),
-    "heterogeneous_value_variant_name_language_version": (
-        lambda metadata: (
-            metadata.variants.heterogeneous_value_variant_name_language_version
-        )
-    ),
-    "heterogeneous_value_variant_name_strategy": (
-        lambda metadata: (
-            metadata.variants.heterogeneous_value_variant_name_strategy
-        )
-    ),
-    "nested_map_widening": (
-        lambda metadata: metadata.variants.nested_map_widening
-    ),
-    "nested_list_widening": (
-        lambda metadata: metadata.variants.nested_list_widening
-    ),
-}
-
 # Language-metadata fields a plan may put in a variant name.
 _NAME_METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str]] = {
     "collection_layout_category": (
         lambda metadata: metadata.golden.collection_layout_category
-    ),
-}
-
-# Rendering behaviors a strategy either has or has not.  A gate reads
-# one from the spec an axis's overrides select, and an override picks
-# the option member whose spec has it; the flag is named here once so
-# neither spells it itself.
-_BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
-    "widens_nested_maps_by_wrapping_scalars": (
-        _widens_nested_maps_by_wrapping_scalars
-    ),
-    "widens_unrecordizable_nested_sibling_maps": (
-        _widens_unrecordizable_nested_sibling_maps
     ),
 }
 
@@ -225,116 +158,12 @@ _METADATA_TABLES: Mapping[
     "empty_container_type_hints": _empty_container_type_hints,
 }
 
-# Optional fields on a spec's nested format configuration, which a
-# language either declares a value for or leaves unset.
-_SPEC_CONFIG_FIELDS: Mapping[str, Callable[[literalizer.Language], object]] = {
-    "dict_format_config.narrowed_empty_form": (
-        lambda spec: spec.dict_format_config.narrowed_empty_form
-    ),
-}
-
-# Optional spec fields a gate may test for.  A language that cannot
-# configure the option omits the constructor field entirely, so field
-# presence is the capability test.
-_SPEC_FIELDS = frozenset(
-    {
-        "annotation_evaluation",
-        "bool_format",
-        "empty_dict_key",
-        "json_rendering",
-        "json_type",
-        "record_map_value_typing",
-        "union_format",
-    }
-)
-
 _LANG_PLACEHOLDER = "lang"
 _CATEGORY_PLACEHOLDER = "category"
 _FORMAT_PLACEHOLDER = "format"
 _VALUE_PLACEHOLDER = "value"
 _TAG_PLACEHOLDER = "tag"
 _SECONDARY_PLACEHOLDER = "secondary"
-
-
-class _RecordVariantGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages that opt into a focused record variant."""
-
-    kind: Literal["record_variant"]
-    variant: RecordVariantName
-
-
-class _NonDefaultKwargGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages that declare a sample constructor value."""
-
-    kind: Literal["non_default_kwarg"]
-    kwarg: Annotated[str, Field(min_length=1)]
-
-
-class _MetadataFieldGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages whose metadata field holds a given value."""
-
-    kind: Literal["metadata_field"]
-    field: Annotated[str, Field(min_length=1)]
-    value: Annotated[str, Field(min_length=1)]
-
-
-class _SpecConfigFieldPresentGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages whose spec configuration sets an optional
-    field.
-    """
-
-    kind: Literal["spec_config_field_present"]
-    field: Annotated[str, Field(min_length=1)]
-
-
-class _BehaviorFlagGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Admit languages whose selected strategy sets a behavior flag.
-
-    Unlike every other gate, this one reads the spec an axis's
-    overrides build rather than the language default, because the
-    behavior it tests belongs to the strategy those overrides select.
-    """
-
-    kind: Literal["behavior_flag"]
-    flag: Annotated[str, Field(min_length=1)]
-
-
-type _Gate = Annotated[
-    CapabilityFlagGate
-    | _RecordVariantGate
-    | _NonDefaultKwargGate
-    | SpecFieldPresentGate
-    | EnumMemberPresentGate
-    | _MetadataFieldGate
-    | _SpecConfigFieldPresentGate
-    | _BehaviorFlagGate,
-    Field(discriminator="kind"),
-]
 
 
 # A field default here is what a declared axis means by leaving the
@@ -456,11 +285,6 @@ type _Override = Annotated[
 ]
 
 
-def _no_gates() -> list[_Gate]:
-    """Return a typed empty gate list for the models."""
-    return []
-
-
 def _no_overrides() -> list[_Override]:
     """Return a typed empty override list for the models."""
     return []
@@ -532,7 +356,7 @@ class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[_Gate] = Field(default_factory=_no_gates)
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
@@ -564,7 +388,7 @@ class _FixedOverridesPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[_Gate] = Field(default_factory=_no_gates)
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
@@ -604,7 +428,7 @@ class _KwargValuesPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[_Gate] = Field(default_factory=_no_gates)
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
@@ -659,7 +483,7 @@ class _CrossProductPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[_Gate] = Field(default_factory=_no_gates)
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
     overrides: list[_Override] = Field(default_factory=_no_overrides)
 
 
@@ -680,7 +504,7 @@ class _FilteredPlan(  # noqa: NOD001
 
     plan: Literal["filtered"]
     base: Annotated[str, Field(min_length=1)]
-    gates: list[_Gate] = Field(default_factory=_no_gates)
+    gates: list[SuiteGate] = Field(default_factory=no_gates)
 
 
 type _ExpandedAxis = (
@@ -746,10 +570,13 @@ def _validate_options(
     *,
     axis_key: str,
     axis: _ExpandedAxis,
-    gate_options: Sequence[str],
 ) -> None:
-    """Check every formatter option an axis names."""
-    options = list(gate_options)
+    """Check every formatter option an axis names.
+
+    A gate naming an option is checked with the rest of the gates, so
+    only the options a plan and its overrides name are collected here.
+    """
+    options = list[str]()
     options.extend(
         override.option
         for override in axis.overrides
@@ -780,43 +607,12 @@ def _validate_options(
 
 
 @beartype
-def _validate_gates(*, axis_key: str, gates: Sequence[_Gate]) -> list[str]:
-    """Check every gate an axis declares, returning the options they
-    name.
-    """
-    for gate in gates:
-        match gate:
-            case CapabilityFlagGate() if gate.flag not in CAPABILITY_FLAGS:
-                msg = (
-                    f"axis {axis_key!r}: unknown capability flag {gate.flag!r}"
-                )
-                raise AxisPlanError(msg)
-            case SpecFieldPresentGate() if gate.field not in _SPEC_FIELDS:
-                msg = f"axis {axis_key!r}: unknown spec field {gate.field!r}"
-                raise AxisPlanError(msg)
-            case _MetadataFieldGate() if gate.field not in _METADATA_FIELDS:
-                msg = (
-                    f"axis {axis_key!r}: unknown metadata field {gate.field!r}"
-                )
-                raise AxisPlanError(msg)
-            case _SpecConfigFieldPresentGate() if (
-                gate.field not in _SPEC_CONFIG_FIELDS
-            ):
-                msg = (
-                    f"axis {axis_key!r}: unknown spec config field "
-                    f"{gate.field!r}"
-                )
-                raise AxisPlanError(msg)
-            case _BehaviorFlagGate() if gate.flag not in _BEHAVIOR_FLAGS:
-                msg = f"axis {axis_key!r}: unknown behavior flag {gate.flag!r}"
-                raise AxisPlanError(msg)
-            case _:
-                continue
-    return [
-        gate.option
-        for gate in gates
-        if isinstance(gate, EnumMemberPresentGate)
-    ]
+def _validate_gates(*, axis_key: str, gates: Sequence[SuiteGate]) -> None:
+    """Check every gate an axis declares against the shared registry."""
+    try:
+        validate_gate_names(subject=f"axis {axis_key!r}", gates=gates)
+    except SuiteGateError as exc:
+        raise AxisPlanError(str(object=exc)) from exc
 
 
 @beartype
@@ -846,11 +642,8 @@ def _validate_member_names(
 @beartype
 def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
     """Check every name an axis uses against its closed registry."""
-    _validate_options(
-        axis_key=axis_key,
-        axis=axis,
-        gate_options=_validate_gates(axis_key=axis_key, gates=axis.gates),
-    )
+    _validate_gates(axis_key=axis_key, gates=axis.gates)
+    _validate_options(axis_key=axis_key, axis=axis)
     if (
         isinstance(axis, _CrossProductPlan)
         and axis.primary is not None
@@ -880,7 +673,7 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
     for override in axis.overrides:
         if (
             isinstance(override, _MetadataEnumMemberOverride)
-            and override.field not in _METADATA_FIELDS
+            and override.field not in METADATA_FIELDS
         ):
             msg = (
                 f"axis {axis_key!r}: unknown metadata field {override.field!r}"
@@ -896,7 +689,7 @@ def _validate_names(*, axis_key: str, axis: _ExpandedAxis) -> None:
             raise AxisPlanError(msg)
         if (
             isinstance(override, _BehaviorFlagMemberOverride)
-            and override.flag not in _BEHAVIOR_FLAGS
+            and override.flag not in BEHAVIOR_FLAGS
         ):
             msg = f"axis {axis_key!r}: unknown behavior flag {override.flag!r}"
             raise AxisPlanError(msg)
@@ -1273,46 +1066,6 @@ class _MemberExpansion:
 
 
 @beartype
-def _gate_admits(
-    *,
-    gate: _Gate,
-    lang_cls: literalizer.LanguageCls,
-    metadata: LanguageMetadata,
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether *gate* admits a language to its axis.
-
-    *spec* is the language default for every gate but
-    :class:`_BehaviorFlagGate`, which reads the spec built from the
-    axis's overrides.
-    """
-    match gate:
-        case (
-            CapabilityFlagGate()
-            | SpecFieldPresentGate()
-            | EnumMemberPresentGate()
-        ):
-            admits = language_gate_admits(
-                gate=gate,
-                lang_cls=lang_cls,
-                spec=spec,
-            )
-        case _RecordVariantGate():
-            admits = gate.variant in metadata.record_variants
-        case _NonDefaultKwargGate():
-            admits = gate.kwarg in metadata.non_default_kwargs
-        case _MetadataFieldGate():
-            admits = _METADATA_FIELDS[gate.field](metadata) == gate.value
-        case _SpecConfigFieldPresentGate():
-            admits = _SPEC_CONFIG_FIELDS[gate.field](spec) is not None
-        case _BehaviorFlagGate():
-            admits = _BEHAVIOR_FLAGS[gate.flag](spec)
-        case _ as unreachable:
-            assert_never(unreachable)
-    return admits
-
-
-@beartype
 def _sample_kwarg(
     *,
     axis_key: str,
@@ -1340,7 +1093,7 @@ def _metadata_member(
 ) -> Mapping[str, object]:
     """Resolve the option member a language's metadata names."""
     option = OPTIONS[override.option]
-    declared = _METADATA_FIELDS[override.field](metadata)
+    declared = METADATA_FIELDS[override.field](metadata)
     if declared is None:
         if override.optional:
             return {}
@@ -1383,7 +1136,7 @@ def _behavior_flag_member(
 ) -> enum.Enum | None:
     """Return the option member whose spec sets a behavior flag."""
     option = OPTIONS[override.option]
-    has_flag = _BEHAVIOR_FLAGS[override.flag]
+    has_flag = BEHAVIOR_FLAGS[override.flag]
     for member in option.get_members(default_spec):
         spec = make_spec(lang_cls=lang_cls, **{option.kwarg: member})
         if has_flag(spec):
@@ -1927,7 +1680,7 @@ def _admitted_overrides(
     *,
     axis_key: str,
     overrides: Sequence[_Override],
-    gates: Sequence[_Gate],
+    gates: Sequence[SuiteGate],
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
@@ -1940,15 +1693,15 @@ def _admitted_overrides(
     what those overrides selected.
     """
     admits = functools.partial(
-        _gate_admits,
+        gate_admits,
         lang_cls=lang_cls,
         metadata=metadata,
     )
     behavior_gates = [
-        gate for gate in gates if isinstance(gate, _BehaviorFlagGate)
+        gate for gate in gates if isinstance(gate, BehaviorFlagGate)
     ]
     language_gates = [
-        gate for gate in gates if not isinstance(gate, _BehaviorFlagGate)
+        gate for gate in gates if not isinstance(gate, BehaviorFlagGate)
     ]
     if not all(
         admits(gate=gate, spec=default_spec) for gate in language_gates
@@ -2109,7 +1862,7 @@ def _filtered_variants(
         variant
         for variant in base
         if all(
-            _gate_admits(
+            gate_admits(
                 gate=gate,
                 lang_cls=variant.lang_cls,
                 metadata=language_metadata(

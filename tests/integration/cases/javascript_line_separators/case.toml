@@ -1,5 +1,6 @@
 schema_version = 1
 languages = ["JavaScript"]
+languages_reason = "Found in JavaScript; this case merges with unicode_line_separators, whose languages are then derived (#3820)."
 suites = ["base"]
 
 [[variants]]

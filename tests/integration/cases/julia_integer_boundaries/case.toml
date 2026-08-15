@@ -1,5 +1,6 @@
 schema_version = 1
 languages = ["Julia"]
+languages_reason = "Found in Julia; whether the integer boundary is Julia-specific is undecided (#3822)."
 suites = ["base"]
 
 [[variants]]
