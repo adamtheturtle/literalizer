@@ -1,11 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
 languages = ["Kotlin"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
 
 [ref]
 languages = ["Kotlin"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
 
 [ref.extra_ref_value_sources]
 other = '"true"'
