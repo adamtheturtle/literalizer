@@ -1,6 +1,7 @@
 schema_version = 1
-languages = ["Ada", "CSharp", "Elixir", "Erlang", "Fortran"]
-languages_reason = "Found in these languages; the case merges with javascript_line_separators, whose languages are then derived (#3820)."
+gates = [
+  { kind = "capability_flag", flag = "string_literals_escape_unicode_line_separators" },
+]
 suites = ["base", "combined"]
 
 [[variants]]
