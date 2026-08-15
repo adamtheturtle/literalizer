@@ -1,11 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Scala"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+gates = [{ kind = "record_variant", variant = "field_type_split" }]
 
 [ref]
-languages = ["Scala"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+gates = [{ kind = "record_variant", variant = "field_type_split" }]
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]

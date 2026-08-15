@@ -1,11 +1,13 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Kotlin"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
 
 [ref]
-languages = ["Kotlin"]
-languages_reason = "Pinned until the capability behind the record-shaped ref cases is stated as a gate (#3824)."
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
 
 [ref.extra_ref_value_sources]
 other = '"true"'
