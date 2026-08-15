@@ -7,7 +7,7 @@ parameter_names = ["value"]
 per_element = false
 collection_layout = "multiline"
 languages = ["Python"]
-languages_reason = "Sampled: one language is enough to show a bound ref rendered under the multiline layout."
+languages_reason = "Sampled: Python is an arbitrary representative for multiline bound-ref layout."
 
 [call.ref_declarations]
 x = "[[1, 2], [3, 4]]"
