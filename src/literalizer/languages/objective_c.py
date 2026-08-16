@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_seconds,
     datetime_iso_formatter,
     format_datetime_epoch,
+    format_datetime_epoch_fractional,
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -98,7 +99,7 @@ def _format_date_objc(value: datetime.date) -> str:
 @beartype
 def _format_datetime_objc(value: datetime.datetime) -> str:
     """Format a datetime as an ``NSDate`` preserving its instant."""
-    seconds = datetime_epoch_seconds(value=value)
+    seconds = format_datetime_epoch_fractional(value=value)
     return f"[NSDate dateWithTimeIntervalSince1970:{seconds}]"
 
 

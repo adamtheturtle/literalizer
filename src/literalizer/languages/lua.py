@@ -18,6 +18,7 @@ from literalizer._formatters.format_dates import (
     datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
+    format_datetime_epoch_fractional,
     format_datetime_iso,
     format_time_iso,
 )
@@ -176,7 +177,7 @@ def _format_date_lua(value: datetime.date) -> str:
 @beartype
 def _format_datetime_lua(value: datetime.datetime) -> str:
     """Format a datetime as deterministic Unix epoch seconds."""
-    return str(object=datetime_epoch_seconds(value=value))
+    return format_datetime_epoch_fractional(value=value)
 
 
 @beartype

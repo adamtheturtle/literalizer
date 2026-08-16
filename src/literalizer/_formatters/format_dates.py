@@ -132,7 +132,13 @@ def format_time_vb(value: datetime.time) -> str:
 
 @beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
-    """Return integer Unix epoch seconds for a datetime."""
+    """Return exact integer Unix epoch seconds for a datetime."""
+    if value.microsecond:
+        msg = (
+            "integer Unix epoch seconds cannot preserve fractional "
+            f"datetime precision: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
     offset = value.utcoffset() or datetime.timedelta()
     elapsed = datetime.timedelta(
         days=value.toordinal()
@@ -141,6 +147,27 @@ def datetime_epoch_seconds(value: datetime.datetime) -> int:
         microseconds=value.microsecond,
     )
     return (elapsed - offset) // datetime.timedelta(seconds=1)
+
+
+@beartype
+def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
+    """Format exact Unix epoch seconds, retaining a fractional part."""
+    offset = value.utcoffset() or datetime.timedelta()
+    elapsed = datetime.timedelta(
+        days=value.toordinal()
+        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        seconds=value.hour * 3600 + value.minute * 60 + value.second,
+        microseconds=value.microsecond,
+    )
+    total_microseconds = (elapsed - offset) // datetime.timedelta(
+        microseconds=1
+    )
+    sign = "-" if total_microseconds < 0 else ""
+    seconds, microseconds = divmod(abs(total_microseconds), 1_000_000)
+    if not microseconds:
+        return f"{sign}{seconds}"
+    fraction = f"{microseconds:06d}".rstrip("0")
+    return f"{sign}{seconds}.{fraction}"
 
 
 @beartype

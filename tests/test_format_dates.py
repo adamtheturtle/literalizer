@@ -4,7 +4,11 @@ import datetime
 
 import pytest
 
-from literalizer._formatters.format_dates import format_datetime_javascript
+from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
+    format_datetime_epoch_fractional,
+    format_datetime_javascript,
+)
 from literalizer.exceptions import UnrepresentableInputError
 
 
@@ -45,3 +49,41 @@ def test_javascript_datetime_rejects_sub_millisecond_precision() -> None:
 
     with pytest.raises(UnrepresentableInputError, match="sub-millisecond"):
         format_datetime_javascript(value)
+
+
+def test_integer_epoch_rejects_fractional_seconds() -> None:
+    """Integer epoch formats must not floor fractional seconds."""
+    value = datetime.datetime(1970, 1, 1, microsecond=1, tzinfo=datetime.UTC)
+
+    with pytest.raises(UnrepresentableInputError, match="fractional"):
+        datetime_epoch_seconds(value)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (
+            datetime.datetime(1970, 1, 1, microsecond=1, tzinfo=datetime.UTC),
+            "0.000001",
+        ),
+        (
+            datetime.datetime(
+                1969,
+                12,
+                31,
+                23,
+                59,
+                59,
+                500000,
+                tzinfo=datetime.UTC,
+            ),
+            "-0.5",
+        ),
+        (datetime.datetime(1970, 1, 1, second=1, tzinfo=datetime.UTC), "1"),
+    ],
+)
+def test_fractional_epoch_is_exact(
+    value: datetime.datetime, expected: str
+) -> None:
+    """Fractional epoch literals preserve both sign and microseconds."""
+    assert format_datetime_epoch_fractional(value) == expected
