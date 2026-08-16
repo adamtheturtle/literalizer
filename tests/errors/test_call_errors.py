@@ -169,6 +169,7 @@ def test_literalize_call_reserved_parameter_name_raises() -> None:
         "bad-name",
         "1f",
         "class",
+        "class.obj",
         "obj.class",
     ],
 )

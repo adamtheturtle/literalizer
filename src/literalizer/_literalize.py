@@ -5123,14 +5123,14 @@ def _validate_call_target(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
-    for index, part in enumerate(iterable=target_function_parts):
+    for part in target_function_parts:
         if not language_cls.new_variable_name_syntax.accepts(name=part):
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
                 target_function=target_function,
                 reason=f"component {part!r} is not a valid identifier",
             )
-        if index == 0 and part in language.reserved_variable_identifiers:
+        if part in language.reserved_identifiers:
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
                 target_function=target_function,
@@ -5211,12 +5211,6 @@ def _validate_call_preconditions(
                 "style whose language-native wrapper cannot be built "
                 "from a context-aware transform"
             ),
-        )
-    if target_function_parts[-1] in language.reserved_identifiers:
-        raise InvalidCallTargetError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-            reason="its final component is a reserved call identifier",
         )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
         raise DottedCallTargetNotSupportedError(
