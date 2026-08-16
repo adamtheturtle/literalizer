@@ -9,6 +9,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_stringified_dict_key_collisions
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -507,6 +508,7 @@ class Tcl(metaclass=LanguageCls):
     def validate_spec_for_data(data: Value) -> None:
         """Reject null, which Tcl conflates with the empty string."""
         reject_nulls(data=data, language_name="Tcl")
+        reject_stringified_dict_key_collisions(data=data, language_name="Tcl")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

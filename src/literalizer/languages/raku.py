@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_stringified_dict_key_collisions
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -90,7 +91,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
@@ -648,7 +648,13 @@ class Raku(metaclass=LanguageCls):
     )
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = ALL_REF_CASES
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject mapping keys that collapse in Raku hashes."""
+        reject_stringified_dict_key_collisions(
+            data=data,
+            language_name="Raku",
+        )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

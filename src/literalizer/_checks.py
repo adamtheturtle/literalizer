@@ -124,6 +124,40 @@ def reject_aware_datetimes(
                 continue
 
 
+@beartype
+def reject_stringified_dict_key_collisions(
+    *, data: Value, language_name: str
+) -> None:
+    """Reject distinct mapping keys that stringify to the same key."""
+    match data:
+        case dict():
+            normalized: dict[str, Scalar] = {}
+            for key, value in data.items():
+                rendered_key = str(object=key)
+                previous = normalized.get(rendered_key)
+                if rendered_key in normalized and type(previous) is not type(
+                    key
+                ):
+                    msg = (
+                        f"{language_name} stringifies distinct dict keys "
+                        f"{previous!r} and {key!r} as {rendered_key!r}"
+                    )
+                    raise MixedDictKeysError(msg)
+                normalized[rendered_key] = key
+                reject_stringified_dict_key_collisions(
+                    data=value,
+                    language_name=language_name,
+                )
+        case list() | set():
+            for value in data:
+                reject_stringified_dict_key_collisions(
+                    data=value,
+                    language_name=language_name,
+                )
+        case _:
+            return
+
+
 def _contains_set(data: Value, /) -> bool:
     """Return whether *data* contains a set at any depth."""
     match data:
