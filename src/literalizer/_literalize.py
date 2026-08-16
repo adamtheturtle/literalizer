@@ -86,6 +86,7 @@ from literalizer.exceptions import (
     CommentSourceMultilineError,
     CommentSourceNulError,
     DottedCallTargetNotSupportedError,
+    ExistingVariableNotSelfContainedError,
     InvalidCallTargetError,
     LiteralizerError,
     ParameterCountMismatchError,
@@ -3423,6 +3424,31 @@ def literalize_apply_form(
     comments, computes the preamble, and optionally wraps the output
     in a complete file.
     """
+    if wrap_in_file and isinstance(variable_form, ExistingVariable):
+        assignment = _apply_variable_wrapper(
+            result=pre_form.result,
+            language=language,
+            data=pre_form.data,
+            variable_form=variable_form,
+            line_prefix=pre_form.line_prefix,
+            is_call_binding=False,
+        )
+        declaration = _apply_variable_wrapper(
+            result=pre_form.result,
+            language=language,
+            data=pre_form.data,
+            variable_form=NewVariable(
+                name=variable_form.name,
+                modifiers=frozenset(),
+            ),
+            line_prefix=pre_form.line_prefix,
+            is_call_binding=False,
+        )
+        if assignment != declaration:
+            raise ExistingVariableNotSelfContainedError(
+                language_name=type(language).__name__
+            )
+
     result = _apply_variable_wrapper(
         result=pre_form.result,
         language=language,

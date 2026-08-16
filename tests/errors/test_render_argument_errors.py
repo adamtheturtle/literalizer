@@ -3,8 +3,21 @@
 import pytest
 
 from literalizer import ExistingVariable, InputFormat, NewVariable, literalize
-from literalizer.exceptions import InvalidRenderArgumentError
-from literalizer.languages import Python
+from literalizer._language import Language
+from literalizer.exceptions import (
+    ExistingVariableNotSelfContainedError,
+    InvalidRenderArgumentError,
+)
+from literalizer.languages import (
+    Cpp,
+    CSharp,
+    Go,
+    Java,
+    Kotlin,
+    Python,
+    Rust,
+    Swift,
+)
 
 
 def test_negative_pre_indent_level_is_rejected() -> None:
@@ -45,3 +58,37 @@ def test_delimiter_stripped_variable_binding_is_rejected(
             include_delimiters=False,
             variable_form=variable_form,
         )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Java(), Cpp(), CSharp(), Go(), Rust(), Swift(), Kotlin()],
+)
+def test_existing_variable_complete_file_requires_declaration(
+    language: Language,
+) -> None:
+    """A complete typed wrapper cannot assign an undeclared variable."""
+    with pytest.raises(
+        expected_exception=ExistingVariableNotSelfContainedError,
+        match="assignment has no prior declaration",
+    ):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=ExistingVariable(name="x"),
+            wrap_in_file=True,
+        )
+
+
+def test_self_declaring_existing_variable_file_remains_supported() -> None:
+    """Python's assignment form is identical to its declaration form."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Python(),
+        variable_form=ExistingVariable(name="x"),
+        wrap_in_file=True,
+    )
+
+    assert "x = 1" in result.code

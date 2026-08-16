@@ -555,6 +555,18 @@ class DelimiterlessVariableError(InvalidRenderArgumentError):
         )
 
 
+class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
+    """Raised when a complete file would assign an undeclared name."""
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``ExistingVariableNotSelfContainedError``."""
+        super().__init__(
+            f"{language_name} cannot combine ExistingVariable with "
+            "wrap_in_file=True because the assignment has no prior declaration"
+        )
+        self.language_name = language_name
+
+
 class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 
