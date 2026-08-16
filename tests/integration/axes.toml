@@ -943,6 +943,16 @@ name_template = "{lang}_bom_{format}"
 option = "string_format"
 include_default = true
 
+[axes.erlang_noncharacter_string]
+plan = "fixed_overrides"
+name_template = "{lang}_noncharacter_string"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "OTP_25" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "OTP_25" },
+]
+
 [axes.toml_basic_string]
 plan = "fixed_overrides"
 name_template = "{lang}_basic_string"

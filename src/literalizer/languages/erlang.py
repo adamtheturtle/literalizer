@@ -96,7 +96,7 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
-_format_string = make_backslash_string_formatter(
+_format_quoted_string = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
         ("\0", "\\x{0}"),
@@ -105,6 +105,16 @@ _format_string = make_backslash_string_formatter(
         ("\u2029", "\\x{2029}"),
     ],
 )
+
+
+@beartype
+def _format_string(value: str) -> str:
+    """Format an Erlang charlist without illegal noncharacter tokens."""
+    if "\ufffe" in value or "\uffff" in value:
+        return (
+            f"[{', '.join(str(object=ord(character)) for character in value)}]"
+        )
+    return _format_quoted_string(value=value)
 
 
 @beartype
@@ -133,7 +143,10 @@ def _wrap_utf8_binary(quoted: str) -> str:
 @beartype
 def _format_string_otp_json(value: str) -> str:
     """Format a string as an Erlang UTF-8 binary literal."""
-    return _wrap_utf8_binary(quoted=_format_string(value))
+    if "\ufffe" in value or "\uffff" in value:
+        segments = ", ".join(f"{ord(character)}/utf8" for character in value)
+        return f"<<{segments}>>"
+    return _wrap_utf8_binary(quoted=_format_quoted_string(value=value))
 
 
 @beartype
