@@ -51,6 +51,7 @@ from literalizer.languages import (
     Jsonnet,
     Mojo,
     Nix,
+    Occam,
     Python,
     Racket,
     SystemVerilog,
@@ -58,6 +59,7 @@ from literalizer.languages import (
     VisualBasic,
     Wren,
     Yaml,
+    Zig,
 )
 
 
@@ -165,18 +167,21 @@ def test_literalize_call_reserved_parameter_name_raises() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames="language",
+    argnames=("language", "parameter_name"),
     argvalues=[
-        CSharp(),
-        Haxe(),
-        Mojo(),
-        SystemVerilog(),
-        VisualBasic(),
-        Wren(),
+        (CSharp(), "class"),
+        (Haxe(), "class"),
+        (Mojo(), "class"),
+        (Occam(), "if"),
+        (SystemVerilog(), "class"),
+        (VisualBasic(), "class"),
+        (Wren(), "class"),
+        (Zig(), "if"),
     ],
 )
 def test_wrapped_positional_stub_rejects_reserved_parameter(
     language: Language,
+    parameter_name: str,
 ) -> None:
     """A positional call's wrapper still declares named parameters."""
     with pytest.raises(expected_exception=InvalidCallParameterNameError):
@@ -185,7 +190,7 @@ def test_wrapped_positional_stub_rejects_reserved_parameter(
             input_format=InputFormat.JSON,
             language=language,
             target_function="f",
-            parameter_names=("class",),
+            parameter_names=(parameter_name,),
             wrap_in_file=True,
         )
 
