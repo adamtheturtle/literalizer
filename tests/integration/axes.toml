@@ -937,6 +937,12 @@ name_template = "{lang}_string_format_{format}"
 option = "string_format"
 excluded_members = ["MULTILINE"]
 
+[axes.go_bom_string]
+plan = "every_non_default_member"
+name_template = "{lang}_bom_{format}"
+option = "string_format"
+include_default = true
+
 [axes.toml_basic_string]
 plan = "fixed_overrides"
 name_template = "{lang}_basic_string"

@@ -52,7 +52,7 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_hex,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -122,6 +122,11 @@ _GO_I32_MAX = 2**31 - 1
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
+_format_string_go = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x00"), ("\ufeff", "\\uFEFF")],
+)
+
 
 @beartype
 def _is_negative_zero(value: float) -> bool:
@@ -190,9 +195,10 @@ def _format_string_multiline(value: str) -> str:
         "`" in value
         or "\r" in value
         or "\0" in value
+        or "\ufeff" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
-        return format_string_backslash_nul_hex(value=value)
+        return _format_string_go(value=value)
     return f"`{value}`"
 
 
@@ -756,7 +762,7 @@ class Go(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        DOUBLE = enum.member(value=_format_string_go)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:

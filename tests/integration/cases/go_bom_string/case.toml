@@ -1,0 +1,8 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go forbids a literal BOM except at the start of a source file."
+
+[[variants]]
+axis = "go_bom_string"
