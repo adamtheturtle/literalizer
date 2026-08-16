@@ -1,1 +1,0 @@
-Detect special floating-point values in dictionary keys when deciding whether generated output needs a special-float preamble.

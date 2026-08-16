@@ -3,6 +3,73 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.16
+----------
+
+- Declare Crystal RECORD empty-map fields with their rendered hash type.
+
+- Widen integer leaves consistently across sibling nested maps.
+
+- Preserve full round-trip precision in scientific float literals.
+
+- Compute datetime epoch seconds with exact ``timedelta`` arithmetic so far-future microseconds cannot round into the following second.
+
+- Detect special floating-point values in dictionary keys when deciding whether generated output needs a special-float preamble.
+
+- Render Kotlin's minimum signed 64-bit integer as ``Long.MIN_VALUE`` inside widened collections instead of emitting the out-of-range literal ``-9223372036854775808L``.
+
+- Escape control characters in Zig quoted record field identifiers so generated declarations and literals remain valid tokens.
+
+- Escape Unicode line separators in Ada, C#, Elixir, Erlang, and Fortran strings.
+
+- Mark finite Common Lisp floating-point literals as double-floats.
+
+- Emit D subnormal doubles as exact hexadecimal floating-point literals.
+
+- Reject C and D keywords used as ``RECORD`` field names.
+
+- Reject ``initialize`` as a Crystal ``RECORD`` field name.
+
+- Split long Fortran character constants across continuation lines.
+
+- Avoid invalid Lua long-bracket strings when the value ends in a delimiter prefix.
+
+- Reject Lua hexadecimal integers outside its signed 64-bit range.
+
+- Fall back to decimal for Haxe hexadecimal integers outside the signed 32-bit range.
+
+- Escape DEL and C1 control characters in Haskell string literals.
+
+- Avoid overflowing Julia ``Int`` when formatting base literals at the signed 64-bit boundary.
+
+- Reject Julia and Mojo reserved words as variable names.
+
+- Preserve Go negative zero with ``math.Copysign`` instead of an unsigned-zero constant.
+
+- Preserve Groovy negative zero as a double-precision value with its sign bit intact.
+
+- Escape Unicode line and paragraph separators in JavaScript ES2015 quoted strings.
+
+- Reject C++ integer formats that would emit invalid tokens in inline JSON documents.
+
+- C# widened fallback maps now retain ``object`` values when they contain non-scalar children.
+
+- R aware datetimes now explicitly retain the UTC timezone after parsing.
+
+- C# record shape names now reject collisions with the generated outer ``Check`` class.
+
+- Explicitly tagged YAML scalar keys and set members are now unwrapped like tagged values.
+
+- Per-element YAML call comments now use each language's trailing comment prefix.
+
+- Comments on collapsed TOML dotted keys are now retained in rendered output.
+
+- Quote Scala 3 hard and soft keywords used as generated record fields.
+
+- Terminate Scheme R7RS NUL escapes before following characters.
+
+- Avoid conflicting generated record declarations when composing bound references.
+
 2026.08.13.1
 ------------
 

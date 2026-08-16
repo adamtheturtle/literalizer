@@ -1,1 +1,0 @@
-Fall back to decimal for Haxe hexadecimal integers outside the signed 32-bit range.

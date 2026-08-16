@@ -1,1 +1,0 @@
-Avoid overflowing Julia ``Int`` when formatting base literals at the signed 64-bit boundary.

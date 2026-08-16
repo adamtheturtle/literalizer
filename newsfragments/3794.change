@@ -1,1 +1,0 @@
-C# widened fallback maps now retain ``object`` values when they contain non-scalar children.

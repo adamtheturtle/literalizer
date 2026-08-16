@@ -1,1 +1,0 @@
-Escape DEL and C1 control characters in Haskell string literals.

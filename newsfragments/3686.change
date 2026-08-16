@@ -1,1 +1,0 @@
-Reject Lua hexadecimal integers outside its signed 64-bit range.

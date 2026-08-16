@@ -1,1 +1,0 @@
-Reject C++ integer formats that would emit invalid tokens in inline JSON documents.
