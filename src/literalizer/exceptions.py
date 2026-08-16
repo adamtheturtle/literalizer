@@ -535,6 +535,28 @@ class InvalidRenderArgumentError(LiteralizerError, ValueError):
     """Base class for invalid rendering-option combinations."""
 
 
+class InvalidValueInputError(InvalidRenderArgumentError):
+    """Raised when a supplemental Python value is cyclic or too deep."""
+
+    def __init__(self, *, argument_name: str) -> None:
+        """Create an ``InvalidValueInputError``."""
+        super().__init__(
+            f"{argument_name} must contain an acyclic, finitely nested value"
+        )
+        self.argument_name = argument_name
+
+
+class BoundRefOutputCollisionError(InvalidRenderArgumentError):
+    """Raised when a bound ref would re-declare the output binding."""
+
+    def __init__(self, *, name: str) -> None:
+        """Create a ``BoundRefOutputCollisionError``."""
+        super().__init__(
+            f"bound_refs name {name!r} collides with the output variable"
+        )
+        self.name = name
+
+
 class InvalidPreIndentLevelError(InvalidRenderArgumentError):
     """Raised when ``pre_indent_level`` is negative."""
 

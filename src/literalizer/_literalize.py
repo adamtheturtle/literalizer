@@ -89,6 +89,7 @@ from literalizer.exceptions import (
     DottedCallTargetNotSupportedError,
     ExistingVariableNotSelfContainedError,
     InvalidCallTargetError,
+    InvalidValueInputError,
     LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -3354,7 +3355,10 @@ def _substitute_record_nulls(
         is_record = record_shape_for_dict(value=data) is not None
         return {
             key: (
-                materialize_value_input(value=substitutions[key])
+                materialize_value_input(
+                    value=substitutions[key],
+                    argument_name="record_null_substitutions",
+                )
                 if is_record
                 and isinstance(key, str)
                 and item is None
@@ -5644,19 +5648,43 @@ def _wrap_call_result_in_file(
 
 
 @beartype
-def materialize_value_input(*, value: ValueInput) -> Value:
+def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
     ``Mapping`` with concrete ``list`` / ``dict`` instances.
     """
-    if _is_value_mapping(value):
-        return {
-            key: materialize_value_input(value=item)
-            for key, item in value.items()
-        }
-    if _is_value_sequence(value):
-        return [materialize_value_input(value=item) for item in value]
-    return value
+    active: set[int] = set()
+
+    def materialize(item: ValueInput) -> Value:
+        """Materialize one node while tracking its active ancestors."""
+        if _is_value_mapping(item):
+            mapping = item
+            sequence: Sequence[ValueInput] | None = None
+        elif _is_value_sequence(item):
+            mapping = None
+            sequence = item
+        else:
+            return item
+        identity = id(item)
+        if identity in active:
+            raise InvalidValueInputError(argument_name=argument_name)
+        active.add(identity)
+        try:
+            if mapping is not None:
+                return {
+                    key: materialize(item=child)
+                    for key, child in mapping.items()
+                }
+            if sequence is None:  # pragma: no cover - narrowed above
+                raise InvalidValueInputError(argument_name=argument_name)
+            return [materialize(item=child) for child in sequence]
+        finally:
+            active.remove(identity)
+
+    try:
+        return materialize(item=value)
+    except RecursionError as exc:
+        raise InvalidValueInputError(argument_name=argument_name) from exc
 
 
 @beartype
@@ -5966,11 +5994,17 @@ def literalize_call_parsed(
     target_function = language.format_call_target(target_function_parts)
 
     explicit_ref_values: dict[str, Value] = {
-        name: materialize_value_input(value=value)
+        name: materialize_value_input(
+            value=value,
+            argument_name="ref_values",
+        )
         for name, value in (ref_values or {}).items()
     }
     materialized_bound_refs: dict[str, Value] = {
-        name: materialize_value_input(value=value)
+        name: materialize_value_input(
+            value=value,
+            argument_name="bound_refs",
+        )
         for name, value in (bound_refs or {}).items()
     }
     # ``bound_refs`` entries double as ``ref_values`` so a name need not

@@ -1,6 +1,4 @@
 import java.time.Instant;
 class Main {
-protected Instant[] my_data = new Object[]{
-    Instant.parse("2024-01-15T12:30:00Z")
-};
+protected Instant my_data = Instant.parse("2024-01-15T12:30:00Z");
 }

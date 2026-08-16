@@ -87,7 +87,10 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    UnrepresentableStringError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -681,6 +684,14 @@ class Yaml(metaclass=LanguageCls):
 
         def _format(value: str) -> str:
             """Format a string as a YAML quoted literal."""
+            if "\ufffe" in value or "\uffff" in value:
+                raise UnrepresentableStringError(
+                    language_name="Yaml",
+                    character_name=(
+                        "the YAML-forbidden Unicode noncharacters "
+                        "U+FFFE and U+FFFF"
+                    ),
+                )
             formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",

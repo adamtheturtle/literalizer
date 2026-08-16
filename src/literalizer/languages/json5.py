@@ -700,9 +700,13 @@ class Json5(metaclass=LanguageCls):
 
         def _format(value: str) -> str:
             """Format a string as a JSON5 quoted literal."""
-            return format_string_backslash_control(
-                value=value,
-                control_char_fmt="\\u{:04x}",
+            return (
+                format_string_backslash_control(
+                    value=value,
+                    control_char_fmt="\\u{:04x}",
+                )
+                .replace("\u2028", r"\u2028")
+                .replace("\u2029", r"\u2029")
             )
 
         return _format

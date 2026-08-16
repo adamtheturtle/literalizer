@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "YAML forbids the Unicode noncharacters U+FFFE and U+FFFF."
+exceptions = ["UnrepresentableStringError"]
+languages = ["Yaml"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"value":"\ufffe"}',
+  '{"value":"\uffff"}',
+]
+input_format = "json"
