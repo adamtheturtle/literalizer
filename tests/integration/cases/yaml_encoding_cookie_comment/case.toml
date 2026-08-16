@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "python_yaml_encoding_cookie_comment"

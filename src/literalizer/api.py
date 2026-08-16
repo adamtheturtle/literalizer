@@ -22,6 +22,7 @@ from literalizer._literalize import (
     LiteralizeResult,
     NewVariable,
     VariableForm,
+    disabled_ref_key,
     literalize_apply_form,
     literalize_both_forms,
     literalize_bound_refs,
@@ -35,6 +36,8 @@ from literalizer._parsing import (
 )
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
+    DelimiterlessVariableError,
+    InvalidPreIndentLevelError,
     InvalidVariableModifierError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
@@ -207,11 +210,15 @@ def literalize(
             to ``False`` (i.e. it cannot represent a bare value at
             file-statement scope).
     """
-    effective_ref_key = ref_key or ""
+    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,
     )
+    if pre_indent_level < 0:
+        raise InvalidPreIndentLevelError
+    if not include_delimiters and variable_form is not None:
+        raise DelimiterlessVariableError
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
@@ -422,7 +429,9 @@ def literalize_call(
             call -- or
             :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
             is raised; an entry containing a newline raises
-            :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+            :class:`~literalizer.exceptions.CommentSourceMultilineError`,
+            and an entry containing a null byte raises
+            :class:`~literalizer.exceptions.CommentSourceNulError`.
             A trailing comment is only safe where each generated call
             is a self-contained line; languages that assemble the call
             sequence into a single clause/list/expression (so a
@@ -572,7 +581,13 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
-    effective_ref_key = ref_key or ""
+    if isinstance(parameter_names, str):
+        msg = "parameter_names must be a sequence of strings, not a string"
+        raise TypeError(msg)
+    if isinstance(comment_source, str):
+        msg = "comment_source must be a sequence of strings, not a string"
+        raise TypeError(msg)
+    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,

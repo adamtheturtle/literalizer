@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import textwrap
+from collections import Counter
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -137,6 +138,17 @@ def _elixir_param(name: str) -> str:
 
 
 @beartype
+def _elixir_params(params: Sequence[str]) -> tuple[str, ...]:
+    """Return distinct ignored-variable names for stub parameters."""
+    ignored = tuple(_elixir_param(name=param) for param in params)
+    counts = Counter(ignored)
+    return tuple(
+        f"{name}_{index}" if counts[name] > 1 else name
+        for index, name in enumerate(iterable=ignored)
+    )
+
+
+@beartype
 def _elixir_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -151,7 +163,7 @@ def _elixir_call_stub(
     variable binding is returned (the module stubs are preamble).
     """
     if len(parts) == 1:
-        param_list = ", ".join(_elixir_param(name=p) for p in params)
+        param_list = ", ".join(_elixir_params(params=params))
         return (f"def {parts[0]}({param_list}), do: nil",)
     root = parts[0]
     root_module = root.capitalize() + "Type_"
@@ -177,7 +189,7 @@ def _elixir_call_preamble_stub(
     root = parts[0]
     method = parts[-1]
     fields = list(parts[1:-1])
-    param_list = ", ".join(_elixir_param(name=p) for p in params)
+    param_list = ", ".join(_elixir_params(params=params))
     if not fields:
         root_module = root.capitalize() + "Type_"
         sig = f"{method}({param_list}), do: nil"

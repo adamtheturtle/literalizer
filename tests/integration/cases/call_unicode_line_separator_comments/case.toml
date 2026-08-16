@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+wrap_in_file = true
+comment_source = ["note\u2028still commented\u2029done"]
+languages = ["JavaScript", "TypeScript"]
+languages_reason = "ECMAScript treats U+2028 and U+2029 as source line terminators."

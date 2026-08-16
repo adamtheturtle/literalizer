@@ -3,7 +3,7 @@ collection-shape constraints.
 """
 
 import datetime
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, overload
 
 from beartype import beartype
@@ -22,6 +22,7 @@ from literalizer.exceptions import (
     MixedDictShapesError,
     MixedDictValuesError,
     MixedListValuesError,
+    TargetScalarCollisionError,
     UnrepresentableInputError,
     UnrepresentableStringError,
 )
@@ -30,6 +31,65 @@ if TYPE_CHECKING:
     from literalizer._formatters.type_inference import RecordShape
 
 _C0_UPPER_BOUND = 0x20
+
+
+def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
+    """Return the target expression that determines scalar identity."""
+    match value:
+        case None:
+            result = spec.null_literal
+        case bool():
+            result = spec.true_literal if value else spec.false_literal
+        case int():
+            result = spec.format_integer(value)
+        case float():
+            result = spec.format_float(value)
+        case str():
+            result = spec.format_string(value)
+        case bytes():
+            result = spec.format_bytes(value)
+        case datetime.datetime():
+            result = spec.format_datetime(value)
+        case datetime.time():
+            result = spec.format_time(value)
+        case _:
+            result = spec.format_date(value)
+    return result
+
+
+def _check_scalar_collection_identity(
+    *, values: Iterable[Scalar], spec: Language
+) -> None:
+    """Reject a collision within one scalar-keyed collection."""
+    rendered_values: dict[str, Scalar] = {}
+    for value in values:
+        rendered = _format_scalar_identity(value=value, spec=spec)
+        if rendered in rendered_values:
+            raise TargetScalarCollisionError(
+                language_name=type(spec).__name__,
+                first=rendered_values[rendered],
+                second=value,
+                rendered=rendered,
+            )
+        rendered_values[rendered] = value
+
+
+def _check_scalar_identity_collisions(*, data: Value, spec: Language) -> None:
+    """Reject distinct set members or mapping keys rendered
+    identically.
+    """
+    match data:
+        case dict():
+            _check_scalar_collection_identity(values=data.keys(), spec=spec)
+            for value in data.values():
+                _check_scalar_identity_collisions(data=value, spec=spec)
+        case set():
+            _check_scalar_collection_identity(values=data, spec=spec)
+        case list():
+            for value in data:
+                _check_scalar_identity_collisions(data=value, spec=spec)
+        case _:
+            return
 
 
 def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
@@ -122,6 +182,40 @@ def reject_aware_datetimes(
                 stack.extend(value)
             case _:
                 continue
+
+
+@beartype
+def reject_stringified_dict_key_collisions(
+    *, data: Value, language_name: str
+) -> None:
+    """Reject distinct mapping keys that convert to the same string."""
+    match data:
+        case dict():
+            normalized: dict[str, Scalar] = {}
+            for key, value in data.items():
+                rendered_key = str(object=key)
+                previous = normalized.get(rendered_key)
+                if rendered_key in normalized and type(previous) is not type(
+                    key
+                ):
+                    msg = (
+                        f"{language_name} stringifies distinct dict keys "
+                        f"{previous!r} and {key!r} as {rendered_key!r}"
+                    )
+                    raise MixedDictKeysError(msg)
+                normalized[rendered_key] = key
+                reject_stringified_dict_key_collisions(
+                    data=value,
+                    language_name=language_name,
+                )
+        case list() | set():
+            for value in data:
+                reject_stringified_dict_key_collisions(
+                    data=value,
+                    language_name=language_name,
+                )
+        case _:
+            return
 
 
 def _contains_set(data: Value, /) -> bool:
@@ -1066,6 +1160,7 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
     formats.
     """
     _check_raw_control_characters(data=data, spec=spec)
+    _check_scalar_identity_collisions(data=data, spec=spec)
     if not spec.set_format_config.preserves_set_semantics and _contains_set(
         data
     ):

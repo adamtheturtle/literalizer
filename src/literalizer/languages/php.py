@@ -15,8 +15,6 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
-    date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -101,9 +99,49 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableInputError
+
+
+@beartype
+def _format_date_php(value: datetime.date) -> str:
+    """Format a date at a deterministic UTC midnight."""
+    return f'new DateTime("{value.isoformat()}", new DateTimeZone("UTC"))'
+
+
+@beartype
+def _format_datetime_php(value: datetime.datetime) -> str:
+    """Format a datetime without consulting PHP's default time zone."""
+    iso = value.isoformat()
+    if value.utcoffset() is None:
+        return f'new DateTime("{iso}", new DateTimeZone("UTC"))'
+    return f'new DateTime("{iso}")'
+
 
 _UNSAFE_MULTILINE_CONTROL = re.compile(pattern=r"[\x00-\x08\x0b-\x1f]")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
+
+
+def _reject_numeric_string_keys(data: Value) -> None:
+    """Reject mapping keys that PHP arrays coerce from strings to integers."""
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if (
+                    isinstance(key, str)
+                    and _INTEGER_STRING_KEY.fullmatch(string=key) is not None
+                ):
+                    msg = (
+                        "PHP arrays coerce numeric string mapping key "
+                        f"{key!r} "
+                        "to an integer key"
+                    )
+                    raise UnrepresentableInputError(msg)
+                stack.append(child)
+        elif isinstance(value, list | set):
+            stack.extend(value)
 
 
 def _php_integer_formatter(
@@ -149,8 +187,8 @@ def _format_string_multiline(value: str) -> str:
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Fall back to an escaped PHP literal for an embedded null byte."""
-    if "\0" in value:
+    """Fall back when a single-quoted source literal is not exact."""
+    if "\0" in value or "\r" in value:
         return format_string_backslash_dollar_nul_hex(value=value)
     return format_string_backslash_single_minimal(value=value)
 
@@ -377,7 +415,7 @@ class Php(metaclass=LanguageCls):
         """Date format options for Php."""
 
         PHP = DateFormatConfig(
-            formatter=date_iso_formatter(template='new DateTime("{iso}")'),
+            formatter=_format_date_php,
             preamble_lines=(),
             type_produced=datetime.date,
         )
@@ -393,9 +431,7 @@ class Php(metaclass=LanguageCls):
         """Datetime format options for Php."""
 
         PHP = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='new DateTime("{iso}")',
-            ),
+            formatter=_format_datetime_php,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )
@@ -672,8 +708,9 @@ class Php(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject inputs containing an empty mapping on PHP."""
+        """Reject mapping shapes that PHP arrays cannot preserve."""
         reject_empty_dicts(data=data, language_name="PHP")
+        _reject_numeric_string_keys(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

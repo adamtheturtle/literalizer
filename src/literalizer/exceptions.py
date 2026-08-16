@@ -119,6 +119,30 @@ class UnrepresentableInputError(LiteralizerError):
     """
 
 
+class TargetScalarCollisionError(UnrepresentableInputError):
+    """Raised when distinct collection scalars render identically.
+
+    Set members and mapping keys must retain distinct target identities.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        first: object,
+        second: object,
+        rendered: str,
+    ) -> None:
+        """Create a ``TargetScalarCollisionError``."""
+        super().__init__(
+            f"{language_name} renders distinct collection scalars "
+            f"{first!r} and {second!r} identically as {rendered!r}"
+        )
+        self.first = first
+        self.second = second
+        self.rendered = rendered
+
+
 class UnrepresentableStringError(UnrepresentableInputError):
     """Raised when a string contains a character the target language
     cannot represent in a string literal.
@@ -491,6 +515,58 @@ class InvalidCallParameterNameError(LiteralizerError):
         self.reason = reason
 
 
+class InvalidCallTargetError(LiteralizerError):
+    """Raised when a call target is not a valid target-language name."""
+
+    def __init__(
+        self, *, language_name: str, target_function: str, reason: str
+    ) -> None:
+        """Create an ``InvalidCallTargetError``."""
+        super().__init__(
+            f"{language_name} cannot use call target "
+            f"{target_function!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.target_function = target_function
+        self.reason = reason
+
+
+class InvalidRenderArgumentError(LiteralizerError, ValueError):
+    """Base class for invalid rendering-option combinations."""
+
+
+class InvalidPreIndentLevelError(InvalidRenderArgumentError):
+    """Raised when ``pre_indent_level`` is negative."""
+
+    def __init__(self) -> None:
+        """Create an ``InvalidPreIndentLevelError``."""
+        super().__init__(
+            "pre_indent_level must be greater than or equal to zero"
+        )
+
+
+class DelimiterlessVariableError(InvalidRenderArgumentError):
+    """Raised when a delimiter-less collection is bound as one value."""
+
+    def __init__(self) -> None:
+        """Create a ``DelimiterlessVariableError``."""
+        super().__init__(
+            "include_delimiters=False cannot be combined with variable_form"
+        )
+
+
+class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
+    """Raised when a complete file would assign an undeclared name."""
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create an ``ExistingVariableNotSelfContainedError``."""
+        super().__init__(
+            f"{language_name} cannot combine ExistingVariable with "
+            "wrap_in_file=True because the assignment has no prior declaration"
+        )
+        self.language_name = language_name
+
+
 class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 
@@ -694,6 +770,22 @@ class CommentSourceMultilineError(LiteralizerError):
         super().__init__(
             f"comment_source entry at index {index} contains a newline; "
             "trailing comments must be single-line"
+        )
+        self.index = index
+
+
+class CommentSourceNulError(LiteralizerError):
+    """Raised when a ``comment_source`` entry contains a null byte.
+
+    Source-code tool chains commonly reject null bytes even inside comments.
+    To resolve, remove or replace the null character.
+    """
+
+    def __init__(self, *, index: int) -> None:
+        """Create a ``CommentSourceNulError``."""
+        super().__init__(
+            f"comment_source entry at index {index} contains a NUL byte; "
+            "source comments cannot contain NUL"
         )
         self.index = index
 

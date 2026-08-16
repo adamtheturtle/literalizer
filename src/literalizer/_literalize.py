@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
@@ -84,7 +85,10 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
+    CommentSourceNulError,
     DottedCallTargetNotSupportedError,
+    ExistingVariableNotSelfContainedError,
+    InvalidCallTargetError,
     LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -117,7 +121,44 @@ class _SupportsCallVariableWrapInFile(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-_DISABLED_REF_KEY = ""
+@runtime_checkable
+class _HasCallWrapperEntrypoint(Protocol):
+    """A language whose complete-file call wrapper declares an
+    entry point.
+    """
+
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the identifier reserved by the generated wrapper."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _RequiresUniqueDottedCallParts(Protocol):
+    """A language whose dotted-call helpers are named from path
+    segments.
+    """
+
+    @property
+    def dotted_call_stub_requires_unique_parts(self) -> bool:
+        """Return whether repeated path segments collide in the
+        scaffold.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+class _DisabledRefKey(str):
+    """Identity sentinel distinct from an explicitly enabled empty key."""
+
+    __slots__ = ()
+
+
+_DISABLED_REF_KEY = _DisabledRefKey()
+
+
+def disabled_ref_key() -> str:
+    """Return the internal marker for disabled reference detection."""
+    return _DISABLED_REF_KEY
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1909,7 +1950,7 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
     converted to that case first.
     """
     spec = ctx.spec
-    if ctx.ref_key and isinstance(value, dict):
+    if ctx.ref_key is not _DISABLED_REF_KEY and isinstance(value, dict):
         raw_ref_name = _extract_call_arg_ref_name(
             value=value, ref_key=ctx.ref_key
         )
@@ -2063,7 +2104,7 @@ def _dict_open_for_ref_inference(
                 ref_key=ctx.ref_key,
             )
         )
-        if ctx.ref_key
+        if ctx.ref_key is not _DISABLED_REF_KEY
         else data
     )
     return ctx.spec.dict_format_config.dict_open(
@@ -2086,7 +2127,7 @@ def _sequence_open_for_ref_inference(
                 ref_key=ctx.ref_key,
             )
         )
-        if ctx.ref_key
+        if ctx.ref_key is not _DISABLED_REF_KEY
         else data
     )
     return ctx.spec.sequence_open(
@@ -2722,7 +2763,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ref_key=ref_key,
         ref_case=ref_case,
     )
-    if ref_key and isinstance(data, dict):
+    if ref_key is not _DISABLED_REF_KEY and isinstance(data, dict):
         raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if raw_ref_name is not None:
             ref_name = _validated_ref_name(
@@ -2748,7 +2789,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     if validate_data:
         check_data(data=inference_data, spec=language)
 
-    if not ref_key and raw_yaml_data is None:
+    if ref_key is _DISABLED_REF_KEY and raw_yaml_data is None:
         fast_result = format_document_fast(
             language,
             data=data,
@@ -3384,6 +3425,31 @@ def literalize_apply_form(
     comments, computes the preamble, and optionally wraps the output
     in a complete file.
     """
+    if wrap_in_file and isinstance(variable_form, ExistingVariable):
+        assignment = _apply_variable_wrapper(
+            result=pre_form.result,
+            language=language,
+            data=pre_form.data,
+            variable_form=variable_form,
+            line_prefix=pre_form.line_prefix,
+            is_call_binding=False,
+        )
+        declaration = _apply_variable_wrapper(
+            result=pre_form.result,
+            language=language,
+            data=pre_form.data,
+            variable_form=NewVariable(
+                name=variable_form.name,
+                modifiers=frozenset(),
+            ),
+            line_prefix=pre_form.line_prefix,
+            is_call_binding=False,
+        )
+        if assignment != declaration:
+            raise ExistingVariableNotSelfContainedError(
+                language_name=type(language).__name__
+            )
+
     result = _apply_variable_wrapper(
         result=pre_form.result,
         language=language,
@@ -3828,7 +3894,11 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     In :func:`literalize_call` such markers render as the bare
     identifier instead of being formatted as a literal value.
     """
-    if not ref_key or not isinstance(value, dict) or len(value) != 1:
+    if (
+        ref_key is _DISABLED_REF_KEY
+        or not isinstance(value, dict)
+        or len(value) != 1
+    ):
         return None
     ref_value = value.get(ref_key)
     if not isinstance(ref_value, str):
@@ -3908,7 +3978,7 @@ def _resolve_refs_for_inference(
     ref_key: str,
 ) -> Value:
     """Resolve known refs and remove unknown refs for type inference."""
-    if ref_key == _DISABLED_REF_KEY:
+    if ref_key is _DISABLED_REF_KEY:
         return value
     if ref_values:
         resolved = _resolve_ref_for_preamble(
@@ -4435,7 +4505,8 @@ def _format_call_args(
                 formatted=formatted,
             )
             named = ", ".join(
-                f"{name}{kw_sep}{val}"
+                f"{f'[{name!r}]' if name in style.computed_names else name}"
+                f"{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
             result = f"({{ {named} }})"
@@ -4595,6 +4666,8 @@ def _resolve_comment_literals(
     for index, comment in enumerate(iterable=comments):
         if "\n" in comment or "\r" in comment:
             raise CommentSourceMultilineError(index=index)
+        if "\0" in comment:
+            raise CommentSourceNulError(index=index)
     return comments
 
 
@@ -5090,6 +5163,107 @@ def _validate_call_variable_form(
 
 
 @beartype
+def _validate_call_target(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Raise when a dotted call target contains an unsafe component."""
+    if not target_function or any(not part for part in target_function_parts):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it must contain non-empty dotted components",
+        )
+    is_constructor_target = any(
+        language.format_constructor_target(candidate) == target_function
+        for candidate in re.findall(
+            pattern=r"[^\W\d]\w*", string=target_function
+        )
+    )
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-target validation requires a LanguageCls language"
+        raise TypeError(msg)
+    for part in target_function_parts:
+        if not language_cls.new_variable_name_syntax.accepts(name=part):
+            if is_constructor_target:
+                return
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=f"component {part!r} is not a valid identifier",
+            )
+        if part in language.reserved_identifiers:
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=f"component {part!r} is a reserved identifier",
+            )
+
+
+@beartype
+def _validate_wrapped_call_scaffold(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+    arg_values: Sequence[Value],
+    ref_case: IdentifierCase | None,
+    bound_ref_names: Sequence[str],
+) -> None:
+    """Reject call inputs that collide with or empty a file scaffold."""
+    if not arg_values:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "wrap_in_file requires at least one generated call; "
+                "the per-element input is empty"
+            ),
+        )
+    if (
+        len(target_function_parts) == 1
+        and isinstance(language, _HasCallWrapperEntrypoint)
+        and target_function == language.call_wrapper_entrypoint_name
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it collides with the generated file entrypoint",
+        )
+    if (
+        isinstance(language, _RequiresUniqueDottedCallParts)
+        and language.dotted_call_stub_requires_unique_parts
+        and len(set(target_function_parts)) != len(target_function_parts)
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason=(
+                "repeated components collide with generated dotted-call "
+                "helper declarations"
+            ),
+        )
+    converted_bound_ref_names = {
+        ref_case.convert(name=name) if ref_case is not None else name
+        for name in bound_ref_names
+    }
+    colliding_names = converted_bound_ref_names.intersection(
+        target_function_parts
+    )
+    if colliding_names:
+        collision = min(colliding_names)
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"bound ref {collision!r} collides with the generated "
+                "call-target scaffold"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -5102,6 +5276,8 @@ def _validate_call_preconditions(
     call_transform: Callable[[CallContext], str] | None,
     style: CallStyle,
     variable_form: NewVariable | ExistingVariable | None,
+    wrap_in_file: bool,
+    bound_ref_names: Sequence[str],
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs.
 
@@ -5115,8 +5291,22 @@ def _validate_call_preconditions(
     validate_call_parameter_names(
         language=language,
         names=parameter_names,
-        reject_reserved=isinstance(style, KeywordCallStyle),
+        reject_reserved=(isinstance(style, KeywordCallStyle) or wrap_in_file),
     )
+    _validate_call_target(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+    )
+    if wrap_in_file:
+        _validate_wrapped_call_scaffold(
+            language=language,
+            target_function=target_function,
+            target_function_parts=target_function_parts,
+            arg_values=arg_values,
+            ref_case=ref_case,
+            bound_ref_names=bound_ref_names,
+        )
     if variable_form is not None:
         _validate_call_variable_form(
             language=language,
@@ -5156,14 +5346,6 @@ def _validate_call_preconditions(
                 "language uses a prefix, postfix, or command call "
                 "style whose language-native wrapper cannot be built "
                 "from a context-aware transform"
-            ),
-        )
-    if target_function_parts[-1] in language.reserved_identifiers:
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                f"target_function {target_function!r} ends in a reserved "
-                f"identifier of this language"
             ),
         )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
@@ -5748,6 +5930,8 @@ def literalize_call_parsed(
         call_transform=call_transform,
         style=style,
         variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+        bound_ref_names=tuple((bound_refs or {}).keys()),
     )
     if (
         isinstance(style, DottedCommandCallStyle)

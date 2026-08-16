@@ -15,11 +15,11 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
-    date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
+    format_date_javascript,
     format_datetime_epoch,
     format_datetime_iso,
+    format_datetime_javascript,
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -170,8 +170,8 @@ class JavaScript(metaclass=LanguageCls):
     Args:
         date_format: How to format :class:`datetime.date` values.
 
-            * ``date_formats.JS`` — ``new Date(...)`` call,
-              e.g. ``new Date("2024-01-15")``.
+            * ``date_formats.JS`` — local-midnight ``new Date(...)`` call,
+              e.g. ``new Date(2024, 0, 15)``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
@@ -302,9 +302,7 @@ class JavaScript(metaclass=LanguageCls):
         """Date formatting options for JavaScript."""
 
         JS = DateFormatConfig(
-            formatter=date_iso_formatter(
-                template='new Date("{iso}")',
-            ),
+            formatter=format_date_javascript,
             preamble_lines=(),
             type_produced=datetime.date,
         )
@@ -320,9 +318,7 @@ class JavaScript(metaclass=LanguageCls):
         """Datetime formatting options for JavaScript."""
 
         JS = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='new Date("{iso}")',
-            ),
+            formatter=format_datetime_javascript,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )
@@ -596,7 +592,9 @@ class JavaScript(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """JavaScript call style options."""
 
-        OBJECT = ObjectCallStyle(separator=": ")
+        OBJECT = ObjectCallStyle(
+            separator=": ", computed_names=frozenset({"__proto__"})
+        )
         POSITIONAL = PositionalCallStyle(
             arg_separator=", ", parenthesize_each_arg=False
         )

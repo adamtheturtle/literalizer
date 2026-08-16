@@ -2,11 +2,13 @@
 
 import dataclasses
 import datetime
+import decimal
 import enum
 import functools
 import json
+import math
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -20,6 +22,8 @@ from ruamel.yaml.comments import (
 )
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
+from tomlkit.items import Float as TomlFloat
+from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
@@ -53,10 +57,17 @@ class _ParserMark(Protocol):
 
 
 @runtime_checkable
-class _MarkedYamlError(Protocol):
-    """A ruamel exception carrying a problem mark."""
+class _YamlScalarToken(Protocol):
+    """Plain scalar token data exposed by the ruamel scanner."""
 
-    problem_mark: _ParserMark | None
+    value: str
+    style: str | None
+
+
+class _YamlScalarNode(Protocol):
+    """Scalar node value exposed to a ruamel constructor."""
+
+    value: str
 
 
 @runtime_checkable
@@ -396,6 +407,55 @@ class _InvalidJSONConstantError(ValueError):
     """Raised when strict JSON contains NaN or infinity."""
 
 
+class _FiniteFloatRangeError(ValueError):
+    """Raised when a finite token cannot survive binary64 conversion."""
+
+
+def _parse_finite_float(value: str) -> float:
+    """Convert *value* without silent overflow or underflow."""
+    normalized = value.replace("_", "")
+    try:
+        exact = decimal.Decimal(value=normalized)
+        converted = float(normalized)
+    except (decimal.InvalidOperation, ValueError):  # pragma: no cover
+        return float(normalized)
+    if exact.is_finite() and (
+        math.isinf(converted) or (converted == 0 and exact != 0)
+    ):
+        msg = f"finite numeric token {value!r} is outside binary64 range"
+        raise _FiniteFloatRangeError(msg)
+    return converted
+
+
+def _parse_integer_preserving_negative_zero(value: str) -> int | float:
+    """Parse an integer token while retaining negative zero's sign."""
+    return -0.0 if value == "-0" else int(value)
+
+
+def _validate_yaml_float_tokens(*, source: str) -> None:
+    """Check plain YAML numeric tokens before their value is rounded."""
+    if "e" not in source.lower():
+        return
+    tokens: Iterable[object] = get_yaml().scan(  # pyright: ignore[reportUnknownMemberType]
+        stream=source
+    )
+    for token in tokens:
+        if not isinstance(token, _YamlScalarToken) or token.style is not None:
+            continue
+        value = token.value
+        if (
+            re.fullmatch(
+                pattern=(
+                    r"[-+]?(?:[0-9][0-9_]*)(?:\.[0-9_]*)?"
+                    r"[eE][-+]?[0-9][0-9_]*"
+                ),
+                string=value,
+            )
+            is not None
+        ):
+            _parse_finite_float(value=value)
+
+
 @beartype
 def _reject_json_constant(value: str) -> Value:
     """Reject Python's non-standard JSON numeric constants."""
@@ -411,11 +471,16 @@ def _parse_json(*, source: str) -> ParsedInput:
             s=source,
             object_pairs_hook=_json_object_without_duplicate_keys,
             parse_constant=_reject_json_constant,
+            parse_float=_parse_finite_float,
+            parse_int=_parse_integer_preserving_negative_zero,
         )
     except _DuplicateJSONKeyError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except _InvalidJSONConstantError as exc:
+        message = f"Invalid JSON: {exc}"
+        raise JSONParseError(message) from exc
+    except _FiniteFloatRangeError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except json.JSONDecodeError as exc:
@@ -434,7 +499,12 @@ def _parse_json(*, source: str) -> ParsedInput:
 def _parse_json5(*, source: str) -> ParsedInput:
     """Parse a JSON5 string into a ``ParsedInput``."""
     try:
-        data = json5.loads(s=source, allow_duplicate_keys=False)
+        data = json5.loads(
+            s=source,
+            allow_duplicate_keys=False,
+            parse_float=_parse_finite_float,
+            parse_int=_parse_integer_preserving_negative_zero,
+        )
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
         position = re.search(
@@ -449,6 +519,26 @@ def _parse_json5(*, source: str) -> ParsedInput:
     return ParsedPlain(data=data)
 
 
+def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
+    """Teach a ruamel loader to retain signed integer zero as ``-0.0``."""
+    tag = "tag:yaml.org,2002:int"
+    constructor = ruamel_yaml.constructor
+    original: Callable[[object, _YamlScalarNode], object] = (
+        constructor.yaml_constructors[tag]
+    )
+
+    def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
+        """Construct a YAML integer while preserving signed zero."""
+        if re.fullmatch(pattern=r"-0(?:_?0)*", string=node.value) is not None:
+            return -0.0
+        return original(constructor_obj, node)
+
+    constructor.add_constructor(
+        tag=tag,
+        constructor=_construct,
+    )
+
+
 @functools.cache
 @beartype
 def get_yaml() -> YAML:
@@ -461,7 +551,9 @@ def get_yaml() -> YAML:
     for concurrent use within a single instance, so ``literalize`` is
     not safe to call from multiple threads.
     """
-    return YAML()
+    ruamel_yaml = YAML()
+    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
+    return ruamel_yaml
 
 
 @functools.cache
@@ -476,7 +568,9 @@ def _get_safe_yaml() -> YAML:
     explicit tags, merge keys), the data parsed by the safe loader is
     structurally identical to the demoted round-trip data.
     """
-    return YAML(typ="safe", pure=False)
+    ruamel_yaml = YAML(typ="safe", pure=False)
+    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
+    return ruamel_yaml
 
 
 @beartype
@@ -487,7 +581,8 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
     constructs that either carry metadata the safe loader drops
     (``#`` comments) or resolve differently between the two loaders
     (explicit ``!``/``!!`` tags such as ``!!omap``/``!!set``,
-    anchors/aliases, and merge keys).  The checks are intentionally
+    anchors/aliases, merge keys, and ``=`` plain scalars that the safe
+    loader resolves as a legacy value tag).  The checks are intentionally
     conservative text-presence checks — a ``#`` inside a quoted string
     still forces the slow path, which is correct but slightly
     pessimistic.
@@ -498,6 +593,7 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
         or "&" in source
         or "*" in source
         or "<<" in source
+        or "=" in source
     )
 
 
@@ -512,16 +608,19 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     (round-trip) loader so the same parse can later feed comment
     extraction without a second pass through the YAML source.
     """
+    try:
+        _validate_yaml_float_tokens(source=source)
+    except _FiniteFloatRangeError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     if _yaml_needs_roundtrip(source=source):
         ruamel_yaml = get_yaml()
         try:
             # https://sourceforge.net/p/ruamel-yaml/tickets/564/
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-        except YAMLError as exc:
+        except (YAMLError, ValueError, IndexError) as exc:
             message = f"Invalid YAML: {exc}"
-            mark = (
-                exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
-            )
+            mark: _ParserMark | None = vars(exc).get("problem_mark")
             raise YAMLParseError(
                 message,
                 line=mark.line + 1 if mark is not None else None,
@@ -538,9 +637,9 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     safe_yaml = _get_safe_yaml()
     try:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-    except YAMLError as exc:
+    except (YAMLError, ValueError, IndexError) as exc:
         message = f"Invalid YAML: {exc}"
-        mark = exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
+        mark = vars(exc).get("problem_mark")
         raise YAMLParseError(
             message,
             line=mark.line + 1 if mark is not None else None,
@@ -556,6 +655,51 @@ def _parse_yaml(*, source: str) -> ParsedInput:
 
 
 type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
+
+
+def _validate_toml_float_tokens(*, data: object) -> None:
+    """Check TOML float tokens before unwrapping discards their
+    spelling.
+    """
+    if isinstance(data, TomlFloat):
+        _parse_finite_float(value=data.as_string())
+    elif isinstance(data, Mapping):
+        for value in data.values():  # pyright: ignore[reportUnknownVariableType]
+            _validate_toml_float_tokens(
+                data=value  # pyright: ignore[reportUnknownArgumentType]
+            )
+    elif isinstance(data, list):
+        for value in data:  # pyright: ignore[reportUnknownVariableType]
+            _validate_toml_float_tokens(
+                data=value  # pyright: ignore[reportUnknownArgumentType]
+            )
+
+
+def _preserve_toml_negative_zero(
+    *, data: _TomlData, raw_data: object
+) -> _TomlData:
+    """Rebuild TOML data with signed integer zero represented as a
+    float.
+    """
+    if isinstance(raw_data, TomlInteger) and raw_data.as_string() == "-0":
+        return -0.0
+    if isinstance(data, dict) and isinstance(raw_data, Mapping):
+        return {
+            key: _preserve_toml_negative_zero(
+                data=value,
+                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for key, value in data.items()
+        }
+    if isinstance(data, list) and isinstance(raw_data, list):
+        return [
+            _preserve_toml_negative_zero(
+                data=value,
+                raw_data=raw_data[index],  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for index, value in enumerate(iterable=data)
+        ]
+    return data
 
 
 @beartype
@@ -593,7 +737,16 @@ def _parse_toml(*, source: str) -> ParsedInput:
             line=positioned.line if positioned is not None else None,
             column=positioned.col + 1 if positioned is not None else None,
         ) from exc
+    try:
+        _validate_toml_float_tokens(data=toml_doc)
+    except _FiniteFloatRangeError as exc:
+        message = f"Invalid TOML: {exc}"
+        raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
+    unwrapped = _preserve_toml_negative_zero(
+        data=unwrapped,
+        raw_data=toml_doc,
+    )
     return ParsedToml(
         data=_toml_data_to_value(data=unwrapped),
         toml_doc=toml_doc,

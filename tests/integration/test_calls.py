@@ -26,7 +26,7 @@ from .call_cases import (
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
-from .language_specs import make_spec
+from .language_specs import make_golden_path, make_spec
 
 
 def test_select_call_input_root_rejects_non_table_root(
@@ -156,6 +156,13 @@ def test_call_golden_file(
                         file_regression=file_regression,
                         version=version_format,
                     )
+                make_golden_path(
+                    parent=cases_dir / config.case_dir_name,
+                    name=f"{lang_cls.__name__}_call",
+                    extension=lang_cls.extension,
+                    lang_cls=lang_cls,
+                    version=version_format,
+                ).unlink(missing_ok=True)
                 continue
             run_call_golden_case(
                 config=config,

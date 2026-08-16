@@ -6,7 +6,7 @@ my_data = {
   "b" => true,
   "n" => nil,
   "d" => Date.new(2024, 1, 15),
-  "dt" => Time.new(2024, 1, 15, 12, 0, 0),
+  "dt" => Time.utc(2024, 1, 15, 12, 0, 0),
   "by" => "48656c6c6f",
 }
 my_data = {
@@ -16,6 +16,6 @@ my_data = {
   "b" => true,
   "n" => nil,
   "d" => Date.new(2024, 1, 15),
-  "dt" => Time.new(2024, 1, 15, 12, 0, 0),
+  "dt" => Time.utc(2024, 1, 15, 12, 0, 0),
   "by" => "48656c6c6f",
 }

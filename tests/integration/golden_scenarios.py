@@ -25,6 +25,7 @@ from beartype import beartype
 import literalizer
 from literalizer._types import ValueInput
 from literalizer.exceptions import (
+    ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     NullInCollectionError,
@@ -103,6 +104,11 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
 )
 
 VARIANT_SKIP_REASONS: SkipReasons = (
+    SkipReason(
+        error=ExistingVariableNotSelfContainedError,
+        reason="complete file cannot contain an undeclared existing variable",
+        unlink=True,
+    ),
     SkipReason(
         error=UnrepresentableIntegerError,
         reason="cannot represent integer in this input",

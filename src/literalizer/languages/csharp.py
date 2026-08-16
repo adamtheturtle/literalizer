@@ -1118,7 +1118,7 @@ class CSharp(metaclass=LanguageCls):
             and self.datetime_format.value.type_produced is datetime.datetime
         ):
             reject_aware_datetimes(
-                data=data, language_name="C#", allow_utc_offset=True
+                data=data, language_name="C#", allow_utc_offset=False
             )
 
     def _validate_json_value_keys(self, data: Value, /) -> None:
@@ -1352,6 +1352,11 @@ class CSharp(metaclass=LanguageCls):
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
+
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entry-point name."""
+        return "Main"
 
     def wrap_combined_in_file(
         self,

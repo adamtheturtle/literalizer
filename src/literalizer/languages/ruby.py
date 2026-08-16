@@ -122,8 +122,8 @@ _format_string_multiline_fallback = make_backslash_string_formatter(
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Fall back to an escaped Ruby literal for an embedded null byte."""
-    if "\0" in value:
+    """Fall back when a single-quoted source literal is not exact."""
+    if "\0" in value or "\r" in value:
         return _format_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
@@ -199,15 +199,18 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
 
     UTC-aware datetimes use ``Time.utc``. Datetimes with a non-UTC
     offset use ``Time.new`` with the offset string. Naive datetimes use
-    ``Time.new`` without an offset.
+    ``Time.utc`` so the host time zone cannot affect the result.
     """
+    second = str(object=value.second)
+    if value.microsecond:
+        second += f" + Rational({value.microsecond}, 1000000)"
     args = (
         f"{value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second}"
+        f"{value.hour}, {value.minute}, {second}"
     )
     offset = value.utcoffset()
     if offset is None:
-        return f"Time.new({args})"
+        return f"Time.utc({args})"
     if not offset:
         return f"Time.utc({args})"
     total_seconds = int(offset.total_seconds())

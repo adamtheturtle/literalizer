@@ -17,15 +17,17 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import validate_call_parameter_names
+from literalizer._language import Language, validate_call_parameter_names
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
+    CommentSourceNulError,
     DottedCallTargetNotSupportedError,
     InvalidCallParameterNameError,
+    InvalidCallTargetError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
@@ -39,18 +41,37 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Ada,
     Bash,
+    C,
     Cobol,
+    Cpp,
+    CSharp,
+    Dart,
     Dhall,
     Elm,
+    Erlang,
+    Go,
     Haskell,
+    Haxe,
     Hcl,
+    Java,
     JavaScript,
     Jsonnet,
+    Kotlin,
+    Mojo,
     Nix,
+    Occam,
+    PureScript,
     Python,
     Racket,
+    Rust,
+    Scala,
+    Swift,
+    SystemVerilog,
     Tcl,
+    VisualBasic,
+    Wren,
     Yaml,
+    Zig,
 )
 
 
@@ -104,6 +125,31 @@ def test_literalize_call_per_element_non_list_raises() -> None:
         )
 
 
+def test_literalize_call_rejects_bare_parameter_names_string() -> None:
+    """Container-valued call arguments must not split bare strings."""
+    with pytest.raises(expected_exception=TypeError, match="parameter_names"):
+        literalize_call(
+            source="[[1, 2], [3, 4]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names="ab",
+        )
+
+
+def test_literalize_call_rejects_bare_comment_source_string() -> None:
+    """A bare comment source must not split into one comment per character."""
+    with pytest.raises(expected_exception=TypeError, match="comment_source"):
+        literalize_call(
+            source="[[1, 2], [3, 4]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("a", "b"),
+            comment_source="ok",
+        )
+
+
 def test_literalize_call_parameter_count_too_few_raises() -> None:
     """Literalize_call raises when fewer parameter_names than values."""
     with pytest.raises(
@@ -154,6 +200,62 @@ def test_literalize_call_reserved_parameter_name_raises() -> None:
             language=Python(),
             target_function="f",
             parameter_names=("class",),
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "parameter_name"),
+    argvalues=[
+        (CSharp(), "class"),
+        (Haxe(), "class"),
+        (Mojo(), "class"),
+        (Occam(), "if"),
+        (SystemVerilog(), "class"),
+        (VisualBasic(), "class"),
+        (Wren(), "class"),
+        (Zig(), "if"),
+    ],
+)
+def test_wrapped_positional_stub_rejects_reserved_parameter(
+    language: Language,
+    parameter_name: str,
+) -> None:
+    """A positional call's wrapper still declares named parameters."""
+    with pytest.raises(expected_exception=InvalidCallParameterNameError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="f",
+            parameter_names=(parameter_name,),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="target_function",
+    argvalues=[
+        "",
+        ".",
+        "f.",
+        ".f",
+        "f..g",
+        "bad-name",
+        "1f",
+        "class",
+        "class.obj",
+        "obj.class",
+    ],
+)
+def test_literalize_call_invalid_target_raises(target_function: str) -> None:
+    """Every dotted call component must be a valid non-reserved name."""
+    with pytest.raises(expected_exception=InvalidCallTargetError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function=target_function,
+            parameter_names=("x",),
         )
 
 
@@ -565,6 +667,23 @@ def test_literalize_call_comment_source_multiline_entry_raises() -> None:
         )
 
 
+def test_literalize_call_comment_source_nul_entry_raises() -> None:
+    """A trailing comment may not inject a null byte into generated source."""
+    with pytest.raises(
+        expected_exception=CommentSourceNulError,
+        match="entry at index 0 contains a NUL byte",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["x"],
+            comment_source=["before\0after"],
+            wrap_in_file=True,
+        )
+
+
 def test_literalize_call_comment_source_unsupported_language_raises() -> None:
     """A non-empty ``comment_source`` is rejected for a language whose
     call-sequence form cannot carry a trailing comment.
@@ -877,4 +996,105 @@ def test_literalize_call_bound_refs_with_variable_form_raises() -> None:
             wrap_in_file=True,
             bound_refs={"my_list": [1, 2, 3]},
             variable_form=NewVariable(name="result", modifiers=frozenset()),
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="ref_case",
+    argvalues=[None, IdentifierCase.SNAKE],
+)
+def test_wrapped_call_rejects_bound_ref_target_collision(
+    ref_case: IdentifierCase | None,
+) -> None:
+    """A bound-ref declaration must not shadow the generated call stub."""
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match="bound ref 'f' collides with the generated call-target scaffold",
+    ):
+        literalize_call(
+            source='[[{"$ref": "f"}]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("value",),
+            bound_refs={"F" if ref_case is not None else "f": 1},
+            ref_case=ref_case,
+            ref_key="$ref",
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "target_function"),
+    argvalues=[
+        (C(), "Module"),
+        (Cpp(), "Module"),
+        (CSharp(), "Main"),
+        (Dart(), "main"),
+        (Go(), "main"),
+        (Java(), "module"),
+    ],
+)
+def test_wrapped_call_rejects_entrypoint_target_collision(
+    language: Language,
+    target_function: str,
+) -> None:
+    """A call stub must not reuse its complete-file entry-point name."""
+    with pytest.raises(
+        expected_exception=InvalidCallTargetError,
+        match="collides with the generated file entrypoint",
+    ):
+        literalize_call(
+            source="[[]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function=target_function,
+            parameter_names=(),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Elm(), Erlang(), Hcl(), PureScript()],
+)
+def test_wrapped_call_rejects_empty_per_element_input(
+    language: Language,
+) -> None:
+    """A complete-file wrapper must not contain an incomplete empty
+    body.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match="the per-element input is empty",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="process",
+            parameter_names=("value",),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Go(), Java(), Kotlin(), Rust(), Scala(), Swift()],
+)
+def test_wrapped_call_rejects_repeated_static_helper_parts(
+    language: Language,
+) -> None:
+    """Repeated dotted parts must not declare duplicate helper types."""
+    with pytest.raises(
+        expected_exception=InvalidCallTargetError,
+        match="repeated components collide with generated dotted-call",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="app.app.f",
+            parameter_names=("value",),
+            wrap_in_file=True,
         )

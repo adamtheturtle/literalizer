@@ -5,6 +5,8 @@ from collections.abc import Callable
 
 from beartype import beartype
 
+from literalizer.exceptions import UnrepresentableInputError
+
 
 @beartype
 def format_date_iso(value: datetime.date) -> str:
@@ -13,6 +15,41 @@ def format_date_iso(value: datetime.date) -> str:
     Example: ``datetime.date(2024, 1, 15)`` -> ``"2024-01-15"``.
     """
     return f'"{value.isoformat()}"'
+
+
+@beartype
+def format_date_javascript(value: datetime.date) -> str:
+    """Format a date as a JavaScript local-midnight ``Date``.
+
+    The numeric constructor uses local calendar components. Its month is
+    zero-based, unlike :class:`datetime.date`.
+    """
+    return f"new Date({value.year}, {value.month - 1}, {value.day})"
+
+
+@beartype
+def format_datetime_javascript(value: datetime.datetime) -> str:
+    """Format an exactly representable JavaScript ``Date``.
+
+    Naive values use the numeric constructor so their calendar components do
+    not get parsed as an environment-dependent instant. Aware values retain
+    their explicit ISO offset. JavaScript ``Date`` has millisecond precision.
+    """
+    if value.microsecond % 1000:
+        msg = (
+            "JavaScript Date cannot preserve sub-millisecond datetime "
+            f"precision: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
+    if value.utcoffset() is not None:
+        return f'new Date("{value.isoformat(timespec="milliseconds")}")'
+    args = (
+        f"{value.year}, {value.month - 1}, {value.day}, {value.hour}, "
+        f"{value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        args += f", {value.microsecond // 1000}"
+    return f"new Date({args})"
 
 
 @beartype
@@ -95,7 +132,13 @@ def format_time_vb(value: datetime.time) -> str:
 
 @beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
-    """Return integer Unix epoch seconds for a datetime."""
+    """Return exact integer Unix epoch seconds for a datetime."""
+    if value.microsecond:
+        msg = (
+            "integer Unix epoch seconds cannot preserve fractional "
+            f"datetime precision: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
     offset = value.utcoffset() or datetime.timedelta()
     elapsed = datetime.timedelta(
         days=value.toordinal()
@@ -104,6 +147,27 @@ def datetime_epoch_seconds(value: datetime.datetime) -> int:
         microseconds=value.microsecond,
     )
     return (elapsed - offset) // datetime.timedelta(seconds=1)
+
+
+@beartype
+def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
+    """Format exact Unix epoch seconds, retaining a fractional part."""
+    offset = value.utcoffset() or datetime.timedelta()
+    elapsed = datetime.timedelta(
+        days=value.toordinal()
+        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        seconds=value.hour * 3600 + value.minute * 60 + value.second,
+        microseconds=value.microsecond,
+    )
+    total_microseconds = (elapsed - offset) // datetime.timedelta(
+        microseconds=1
+    )
+    sign = "-" if total_microseconds < 0 else ""
+    seconds, microseconds = divmod(abs(total_microseconds), 1_000_000)
+    if not microseconds:
+        return f"{sign}{seconds}"
+    fraction = f"{microseconds:06d}".rstrip("0")
+    return f"{sign}{seconds}.{fraction}"
 
 
 @beartype
@@ -169,6 +233,18 @@ def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
     """Format a datetime using a year/month/day/hour/minute/second
     template.
     """
+    if value.microsecond:
+        msg = (
+            "whole-second native datetime format cannot preserve "
+            f"microseconds: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
+    if value.utcoffset() is not None:
+        msg = (
+            "timezone-naive native datetime format cannot preserve "
+            f"timezone awareness: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
     return template.format(
         year=value.year,
         month=value.month,

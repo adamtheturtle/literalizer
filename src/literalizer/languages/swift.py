@@ -11,6 +11,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -106,22 +107,56 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import TargetScalarCollisionError
 
 _CONTROL_CHAR_THRESHOLD = 32
+
+
+def _reject_date_midnight_collisions(data: Value) -> None:
+    """Reject Swift ``Date`` keys that can denote the same instant."""
+    match data:
+        case dict() | set():
+            values = data.keys() if isinstance(data, dict) else data
+            dates = {
+                (scalar.year, scalar.month, scalar.day): scalar
+                for scalar in values
+                if isinstance(scalar, datetime.date)
+                and not isinstance(scalar, datetime.datetime)
+            }
+            for scalar in values:
+                if (
+                    isinstance(scalar, datetime.datetime)
+                    and scalar.time().replace(tzinfo=None) == datetime.time()
+                    and (scalar.year, scalar.month, scalar.day) in dates
+                ):
+                    raise TargetScalarCollisionError(
+                        language_name="Swift",
+                        first=dates[(scalar.year, scalar.month, scalar.day)],
+                        second=scalar,
+                        rendered="the same Date instant",
+                    )
+            children = data.values() if isinstance(data, dict) else ()
+            for child in children:
+                _reject_date_midnight_collisions(data=child)
+        case list():
+            for value in data:
+                _reject_date_midnight_collisions(data=value)
+        case _:
+            return
 
 
 @beartype
 def _format_string_escaped(value: str) -> str:
     r"""Format *value* as an escaped Swift string literal."""
-    return format_string_backslash_control(
+    formatted = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:x}}}",
     )
+    return formatted.replace("\x7f", "\\u{7f}")
 
 
 @beartype
@@ -134,7 +169,8 @@ def _format_string_multiline(value: str) -> str:
     cannot add indentation to the value.
     """
     has_unsafe_control = any(
-        ord(char) < _CONTROL_CHAR_THRESHOLD and char not in "\n\t"
+        (ord(char) < _CONTROL_CHAR_THRESHOLD or char == "\x7f")
+        and char not in "\n\t"
         for char in value
     )
     has_trailing_line_whitespace = any(
@@ -155,6 +191,7 @@ def _format_date_swift(value: datetime.date) -> str:
     return (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
+        "timeZone: TimeZone(secondsFromGMT: 0)!, "
         f"year: {value.year}, month: {value.month}, day: {value.day}"
         ").date!"
     )
@@ -583,6 +620,7 @@ class Swift(metaclass=LanguageCls):
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_requires_unique_parts = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -743,7 +781,7 @@ class Swift(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="/*",
-            suffix=" */",
+            suffix=NestingCommentSuffix(object=" */"),
         )
 
     class DeclarationStyles(enum.Enum):
@@ -1055,7 +1093,10 @@ class Swift(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject target-induced collisions between temporal keys."""
+        _reject_date_midnight_collisions(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

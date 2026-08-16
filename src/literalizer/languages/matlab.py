@@ -193,14 +193,14 @@ def _format_matlab_dict_entry(
 @beartype
 def _format_datetime_matlab(value: datetime.datetime) -> str:
     """Format a datetime as a MATLAB ``datetime`` expression."""
-    parts = (
-        f"datetime({value.year}, {value.month}, {value.day}, "
-        f"{value.hour}, {value.minute}, {value.second}"
-    )
+    seconds = str(object=value.second)
     if value.microsecond:
-        millisecond = value.microsecond / 1000
-        parts += f", {millisecond}"
-    return parts + ")"
+        fraction = f"{value.microsecond:06d}".rstrip("0")
+        seconds += f".{fraction}"
+    return (
+        f"datetime({value.year}, {value.month}, {value.day}, "
+        f"{value.hour}, {value.minute}, {seconds})"
+    )
 
 
 @beartype

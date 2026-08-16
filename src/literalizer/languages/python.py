@@ -12,6 +12,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._comments import EncodingCookieSafeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -908,7 +909,6 @@ class Python(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -950,6 +950,9 @@ class Python(metaclass=LanguageCls):
             "with",
             "yield",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -1235,7 +1238,7 @@ class Python(metaclass=LanguageCls):
         """Comment style options."""
 
         HASH = CommentConfig(
-            prefix="#",
+            prefix=EncodingCookieSafeCommentPrefix(object="#"),
             suffix="",
         )
 

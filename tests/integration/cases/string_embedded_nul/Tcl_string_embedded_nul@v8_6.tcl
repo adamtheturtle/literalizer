@@ -1,4 +1,4 @@
 set my_data [dict create \
-    "x" "\x00" \
-    "y" "\x001" \
+    "x" "\u0000" \
+    "y" "\u00001" \
 ]

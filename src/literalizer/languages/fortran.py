@@ -503,7 +503,7 @@ class Fortran(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
-    module_name: str = "Module"
+    module_name: str = "Literalizer"
 
     leading_preamble = no_leading_preamble
     extension = ".f90"

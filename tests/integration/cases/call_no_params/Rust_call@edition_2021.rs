@@ -1,5 +1,5 @@
 fn main() {
-    fn process<>() {}
+    fn process() {}
     process();
     process();
 }

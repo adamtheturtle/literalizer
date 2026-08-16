@@ -511,6 +511,18 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "PY38" },
 ]
 
+# A preserved first-line comment must not be parsed as Python's source
+# encoding declaration and change the decoding of the generated file.
+[axes.python_yaml_encoding_cookie_comment]
+plan = "fixed_overrides"
+name_template = "{lang}_yaml_encoding_cookie_comment"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+]
+
 # Raw-string delimiter bases: one the language's own manifest names, and
 # two every participating language shares.  The punctuation base pins
 # the characters a delimiter may hold, and the exhausted base is long
@@ -924,6 +936,38 @@ plan = "every_non_default_member"
 name_template = "{lang}_string_format_{format}"
 option = "string_format"
 excluded_members = ["MULTILINE"]
+
+[axes.go_bom_string]
+plan = "every_non_default_member"
+name_template = "{lang}_bom_{format}"
+option = "string_format"
+include_default = true
+
+[axes.erlang_noncharacter_string]
+plan = "fixed_overrides"
+name_template = "{lang}_noncharacter_string"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "OTP_25" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "OTP_25" },
+]
+
+[axes.swift_del_string]
+plan = "every_non_default_member"
+name_template = "{lang}_del_{format}"
+option = "string_format"
+include_default = true
+
+[axes.tcl_next_line_string]
+plan = "fixed_overrides"
+name_template = "{lang}_next_line_string"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V8_6" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V8_6" },
+]
 
 [axes.toml_basic_string]
 plan = "fixed_overrides"

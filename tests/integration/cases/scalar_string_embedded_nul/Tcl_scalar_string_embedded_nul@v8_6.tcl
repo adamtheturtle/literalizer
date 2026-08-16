@@ -1,1 +1,1 @@
-set my_data "\x00x"
+set my_data "\u0000x"

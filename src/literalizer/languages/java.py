@@ -117,6 +117,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidModuleNameError,
     InvalidRecordNameError,
     NullInCollectionError,
     UnrepresentableInputError,
@@ -306,6 +307,27 @@ def _validate_no_null_map_values(data: Value) -> None:
         case list() | set():
             for value in data:
                 _validate_no_null_map_values(data=value)
+        case _:
+            return
+
+
+@beartype
+def _validate_no_null_collection_keys(data: Value) -> None:
+    """Reject null keys and set members unsupported by Java factories."""
+    match data:
+        case dict():
+            if None in data:
+                msg = "Java's Map.entry() does not accept null keys"
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _validate_no_null_collection_keys(data=value)
+        case set():
+            if None in data:
+                msg = "Java's Set.of() does not accept null elements"
+                raise UnrepresentableInputError(msg)
+        case list():
+            for value in data:
+                _validate_no_null_collection_keys(data=value)
         case _:
             return
 
@@ -849,7 +871,6 @@ class Java(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -909,11 +930,15 @@ class Java(metaclass=LanguageCls):
             "while",
         }
     )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+    )
     reserved_module_identifiers: ClassVar[frozenset[str]] = (
         reserved_variable_identifiers | {"record", "var", "yield"}
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_requires_unique_parts = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -1356,6 +1381,12 @@ class Java(metaclass=LanguageCls):
         )
         if requires_jdk_16 and self.language_version is not jdk_16:
             object.__setattr__(self, "language_version", jdk_16)
+        method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
+        if method_name in self.reserved_variable_identifiers:
+            raise InvalidModuleNameError(
+                language_name=type(self).__name__,
+                module_name=self.module_name,
+            )
         self._validate_record_naming()
         self._validate_json_type_spec()
 
@@ -1473,6 +1504,7 @@ class Java(metaclass=LanguageCls):
         if self._json_type_active:
             self._validate_json_value_keys(data)
             return
+        _validate_no_null_collection_keys(data=data)
         strategies = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is strategies.RECORD:
             self._validate_record_null_map_values(data=data)
@@ -1653,6 +1685,11 @@ class Java(metaclass=LanguageCls):
         )
 
     call_styles = CallStyles
+
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entry-point name."""
+        return IdentifierCase.CAMEL.convert(name=self.module_name)
 
     def wrap_in_file(
         self,

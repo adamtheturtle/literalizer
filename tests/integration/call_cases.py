@@ -36,6 +36,8 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
     HeterogeneousCollectionError,
+    InvalidCallParameterNameError,
+    InvalidCallTargetError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
@@ -250,7 +252,36 @@ def _expected_call_shape_exception(
     )
     if variable_form_exc is not None:
         return variable_form_exc
+    styles = list(lang_cls.CallStyles)
+    effective_style = (
+        next(
+            style
+            for style in styles
+            if isinstance(style.value, config.call_style_type)
+        )
+        if config.call_style_type is not None
+        else styles[0]
+    )
+    bound_refs_wrap = bool(
+        config.ref_declarations
+        and not config.unknown_ref_names
+        and config.call_transform is None
+        and not config.transform_stub_names
+        and config.variable_form is None
+    )
+    rejects_reserved_parameters = (
+        config.wrap_in_file
+        or bound_refs_wrap
+        or isinstance(effective_style.value, literalizer.KeywordCallStyle)
+    )
+    if rejects_reserved_parameters and any(
+        name in lang_cls.reserved_variable_identifiers
+        for name in config.parameter_names
+    ):
+        return InvalidCallParameterNameError
     innermost_target_function = config.target_function.split(sep=".")[-1]
+    if innermost_target_function in lang_cls.reserved_identifiers:
+        return InvalidCallTargetError
     unsupported_signals = (
         parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
         parameter_count > max_params,
@@ -260,7 +291,6 @@ def _expected_call_shape_exception(
         and not lang_cls.call_returns_expression,
         config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls,
-        innermost_target_function in lang_cls.reserved_identifiers,
         _call_transform_style_unsupported(lang_cls=lang_cls, config=config),
     )
     if any(unsupported_signals):

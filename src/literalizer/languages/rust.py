@@ -13,6 +13,7 @@ from typing import ClassVar, assert_never
 from beartype import beartype
 
 from literalizer._checks import reject_aware_datetimes
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -131,6 +132,28 @@ _format_string_backslash_nul = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", r"\0")],
 )
+
+
+def _reject_float_collection_keys(data: Value) -> None:
+    """Reject floats requiring unavailable Rust
+    equality, hashing, and ordering traits.
+    """
+    match data:
+        case dict():
+            if any(isinstance(key, float) for key in data):
+                msg = "Rust map formats cannot use float keys"
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _reject_float_collection_keys(data=value)
+        case set():
+            if any(isinstance(value, float) for value in data):
+                msg = "Rust set formats cannot use float members"
+                raise UnrepresentableInputError(msg)
+        case list():
+            for value in data:
+                _reject_float_collection_keys(data=value)
+        case _:
+            return
 
 
 def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
@@ -2556,16 +2579,18 @@ def _rust_call_stub(
     # Use generic type parameters so any argument type is accepted.
     type_vars = [_rust_type_var(index=i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
+    generic_clause = f"<{generic_decl}>" if generic_decl else ""
     if len(parts) == 1:
         param_list = ", ".join(
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
         )
-        return (f"fn {parts[0]}<{generic_decl}>({param_list}) {{}}",)
+        return (f"fn {parts[0]}{generic_clause}({param_list}) {{}}",)
     root = parts[0]
     method = parts[-1]
     param_list = ", ".join(
         f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
     )
+    method_param_list = f"&self, {param_list}" if param_list else "&self"
     fields = parts[1:-1]
     if not fields:
         type_name = f"{root.title()}Type_"
@@ -2573,8 +2598,8 @@ def _rust_call_stub(
             f"struct {type_name};",
             (
                 f"impl {type_name} {{"
-                f" fn {method}<{generic_decl}>"
-                f"(&self, {param_list}) {{}} }}"
+                f" fn {method}{generic_clause}"
+                f"({method_param_list}) {{}} }}"
             ),
             f"let {root} = {type_name};",
         )
@@ -2583,8 +2608,8 @@ def _rust_call_stub(
     lines.append(f"struct {inner_type};")
     lines.append(
         f"impl {inner_type} {{"
-        f" fn {method}<{generic_decl}>"
-        f"(&self, {param_list}) {{}} }}"
+        f" fn {method}{generic_clause}"
+        f"({method_param_list}) {{}} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -2742,6 +2767,7 @@ class Rust(metaclass=LanguageCls):
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_requires_unique_parts = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -2950,7 +2976,7 @@ class Rust(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="/*",
-            suffix=" */",
+            suffix=NestingCommentSuffix(object=" */"),
         )
 
     class DeclarationStyles(enum.Enum):
@@ -3859,6 +3885,7 @@ class Rust(metaclass=LanguageCls):
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
+        _reject_float_collection_keys(data=data)
         if self._json_type_active:
             self._validate_json_value_keys(data)
         if (

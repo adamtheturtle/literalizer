@@ -1,8 +1,8 @@
 let my_data = new Set([
-  new Date("2024-01-15"),
-  new Date("2024-06-01"),
+  new Date(2024, 0, 15),
+  new Date(2024, 5, 1),
 ]);
 my_data = new Set([
-  new Date("2024-01-15"),
-  new Date("2024-06-01"),
+  new Date(2024, 0, 15),
+  new Date(2024, 5, 1),
 ]);

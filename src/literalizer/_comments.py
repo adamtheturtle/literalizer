@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, assert_never, runtime_checkable
 
@@ -28,10 +29,33 @@ class QuoteSensitiveCommentSuffix(str):
     __slots__ = ()
 
 
+class EncodingCookieSafeCommentPrefix(str):
+    """Mark comments that must not become Python encoding declarations."""
+
+    __slots__ = ()
+
+
+_PYTHON_ENCODING_COOKIE = re.compile(
+    pattern=(
+        r"(?P<label>coding)(?P<separator>[:=])"
+        r"(?P<encoding>[ \t]*[-_.a-zA-Z0-9]+)"
+    ),
+)
+
+
 class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
     """Mark a comment form whose opener starts a nested comment."""
 
     __slots__ = ()
+
+    @property
+    def opener(self) -> str:
+        """Return the opening delimiter paired with this suffix."""
+        return {
+            "*)": "(*",
+            "*/": "/*",
+            "-}": "{-",
+        }[self.strip()]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -341,10 +365,21 @@ def _format_comment(
 ) -> str:
     """Format a single comment line."""
     if text:
+        if isinstance(comment_prefix, EncodingCookieSafeCommentPrefix):
+            text = _PYTHON_ENCODING_COOKIE.sub(
+                repl=r"\g<label> \g<separator>\g<encoding>",
+                string=text,
+                count=1,
+            )
         escaped = neutralize_comment_terminator(
             text=text,
             comment_suffix=comment_suffix,
         )
+        if not comment_suffix and escaped.endswith("\\"):
+            # A final backslash can splice the following physical line in
+            # C-family source processing (and continues lines in several
+            # shells).
+            escaped += " "
         return f"{line_prefix}{comment_prefix} {escaped}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
 
@@ -364,11 +399,12 @@ def neutralize_comment_terminator(
     ``<U+0029>``). Line-comment formats have an empty suffix and leave
     the source text unchanged.
     """
+    text = text.replace("\u2028", "<U+2028>").replace("\u2029", "<U+2029>")
     if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
     if isinstance(comment_suffix, NestingCommentSuffix):
-        opener = "(*"
+        opener = comment_suffix.opener
         text = text.replace(opener, " ".join(opener))
     if not terminator or terminator not in text:
         return text

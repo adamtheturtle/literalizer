@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
@@ -589,6 +590,7 @@ class Scala(metaclass=LanguageCls):
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_requires_unique_parts = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -786,7 +788,7 @@ class Scala(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="/*",
-            suffix=" */",
+            suffix=NestingCommentSuffix(object=" */"),
         )
 
     class DeclarationStyles(enum.Enum):

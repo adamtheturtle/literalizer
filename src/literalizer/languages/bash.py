@@ -9,7 +9,10 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._checks import guard_collection_nesting_depth
+from literalizer._checks import (
+    guard_collection_nesting_depth,
+    reject_stringified_dict_key_collisions,
+)
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -206,6 +209,7 @@ def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
         maximum_depth=_MAX_STRINGIFIED_COLLECTION_DEPTH,
     )
     _bash_validate_dict_keys(data=data)
+    reject_stringified_dict_key_collisions(data=data, language_name="Bash")
 
 
 @beartype
