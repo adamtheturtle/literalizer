@@ -101,9 +101,33 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableInputError
 
 _UNSAFE_MULTILINE_CONTROL = re.compile(pattern=r"[\x00-\x08\x0b-\x1f]")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+_INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
+
+
+def _reject_numeric_string_keys(data: Value) -> None:
+    """Reject mapping keys that PHP arrays coerce from strings to ints."""
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if (
+                    isinstance(key, str)
+                    and _INTEGER_STRING_KEY.fullmatch(string=key) is not None
+                ):
+                    msg = (
+                        "PHP arrays coerce numeric string mapping key "
+                        f"{key!r} "
+                        "to an integer key"
+                    )
+                    raise UnrepresentableInputError(msg)
+                stack.append(child)
+        elif isinstance(value, list | set):
+            stack.extend(value)
 
 
 def _php_integer_formatter(
@@ -672,8 +696,9 @@ class Php(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject inputs containing an empty mapping on PHP."""
+        """Reject mapping shapes that PHP arrays cannot preserve."""
         reject_empty_dicts(data=data, language_name="PHP")
+        _reject_numeric_string_keys(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
