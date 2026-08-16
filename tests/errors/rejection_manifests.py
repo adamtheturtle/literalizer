@@ -30,7 +30,6 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
-from typing_extensions import TypeIs
 
 import literalizer
 from literalizer import exceptions as literalizer_exceptions
@@ -56,16 +55,11 @@ type ApiName = Literal["literalize", "literalize_call", "constructor"]
 type VariableFormName = Literal["new", "existing"]
 
 
-def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
-    """Narrow a dynamically typed table for strict type checkers."""
-    return isinstance(value, dict)
-
-
-def _bound_refs_items(value: object) -> object:
+def _bound_refs_items(
+    value: dict[object, object], /
+) -> tuple[tuple[object, object], ...]:
     """Make a TOML inline table usable as a frozen model key."""
-    if _is_object_dict(value):
-        return tuple(value.items())
-    return value
+    return tuple(value.items())
 
 
 type BoundRefs = Annotated[

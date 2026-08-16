@@ -132,7 +132,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
                 bound_refs=dict(call.bound_refs) or None,
                 comment_source=call.comment_source,
             )
-        case _ as unreachable_call:
+        case _ as unreachable_call:  # pragma: no cover
             assert_never(unreachable_call)
 
 
