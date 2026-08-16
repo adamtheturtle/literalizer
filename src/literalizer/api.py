@@ -6,6 +6,7 @@ package root as :func:`literalizer.literalize` and
 :func:`literalizer.literalize_call`.
 """
 
+import dataclasses
 from collections.abc import Callable, Mapping, Sequence
 
 from beartype import beartype
@@ -36,6 +37,7 @@ from literalizer._parsing import (
 )
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
+    BoundRefOutputCollisionError,
     DelimiterlessVariableError,
     InvalidPreIndentLevelError,
     InvalidVariableModifierError,
@@ -44,6 +46,24 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+
+
+def _fresh_language(language: Language) -> Language:
+    """Return a spec with fresh per-render cached formatter state."""
+    return dataclasses.replace(language)
+
+
+def _validate_bound_ref_output_name(
+    *,
+    variable_form: VariableForm | None,
+    bound_ref_names: Mapping[str, object],
+) -> None:
+    """Reject a bound ref that would re-declare the output binding."""
+    if (
+        isinstance(variable_form, NewVariable | BothVariableForms)
+        and variable_form.name in bound_ref_names
+    ):
+        raise BoundRefOutputCollisionError(name=variable_form.name)
 
 
 def _validate_variable_modifiers(
@@ -210,6 +230,7 @@ def literalize(
             to ``False`` (i.e. it cannot represent a bare value at
             file-statement scope).
     """
+    language = _fresh_language(language=language)
     effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
@@ -226,7 +247,10 @@ def literalize(
         )
     explicit_ref_values: dict[str, Value] = (
         {
-            name: materialize_value_input(value=value)
+            name: materialize_value_input(
+                value=value,
+                argument_name="ref_values",
+            )
             for name, value in ref_values.items()
         }
         if ref_values is not None
@@ -234,7 +258,10 @@ def literalize(
     )
     materialized_bound_refs: dict[str, Value] = (
         {
-            name: materialize_value_input(value=value)
+            name: materialize_value_input(
+                value=value,
+                argument_name="bound_refs",
+            )
             for name, value in bound_refs.items()
         }
         if bound_refs is not None
@@ -242,7 +269,10 @@ def literalize(
     )
     materialized_record_null_substitutions: Mapping[str, Value] | None = (
         {
-            name: materialize_value_input(value=value)
+            name: materialize_value_input(
+                value=value,
+                argument_name="record_null_substitutions",
+            )
             for name, value in record_null_substitutions.items()
         }
         if record_null_substitutions is not None
@@ -254,6 +284,10 @@ def literalize(
     combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
     materialized_ref_values: Mapping[str, Value] | None = (
         combined_ref_values or None
+    )
+    _validate_bound_ref_output_name(
+        variable_form=variable_form,
+        bound_ref_names=materialized_bound_refs,
     )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
@@ -581,6 +615,7 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
+    language = _fresh_language(language=language)
     if isinstance(parameter_names, str):
         msg = "parameter_names must be a sequence of strings, not a string"
         raise TypeError(msg)
@@ -591,6 +626,10 @@ def literalize_call(
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,
+    )
+    _validate_bound_ref_output_name(
+        variable_form=variable_form,
+        bound_ref_names=bound_refs or {},
     )
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent

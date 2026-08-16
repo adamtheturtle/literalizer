@@ -6,3 +6,6 @@ languages_reason = "The Erlang lexer rejects literal U+FFFE and U+FFFF source ch
 
 [[variants]]
 axis = "erlang_noncharacter_string"
+
+[[variants]]
+axis = "erlang_otp_json_noncharacter_string"

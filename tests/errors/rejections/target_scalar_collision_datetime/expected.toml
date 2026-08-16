@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TargetScalarCollisionError]
+JavaScript = "JavaScript renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"

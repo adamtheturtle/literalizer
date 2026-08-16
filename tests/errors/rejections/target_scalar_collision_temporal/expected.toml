@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TargetScalarCollisionError]
+Swift = "Swift renders distinct collection scalars datetime.date(2024, 1, 1) and datetime.datetime(2024, 1, 1, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) identically as 'the same Date instant'"

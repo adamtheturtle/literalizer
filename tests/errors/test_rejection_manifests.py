@@ -67,7 +67,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 '"IncompatibleFormatsError"',
                 '"NoSuchError"',
             ),
-            "Input should be 'CallArgNotSupportedError'",
+            "Input should be 'BoundRefOutputCollisionError'",
         ),
         (
             _manifest(

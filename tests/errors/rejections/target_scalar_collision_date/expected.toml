@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TargetScalarCollisionError]
+JavaScript = "JavaScript renders distinct collection scalars datetime.date(2024, 1, 1) and '2024-01-01' identically as '\"2024-01-01\"'"

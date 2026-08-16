@@ -4,10 +4,10 @@ import dataclasses
 import datetime
 import decimal
 import enum
-import functools
 import json
 import math
 import re
+import threading
 from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
@@ -539,27 +539,37 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
     )
 
 
-@functools.cache
+class _YamlParserCache(threading.local):
+    """One pair of mutable ruamel parsers per calling thread."""
+
+    round_trip: YAML | None = None
+    safe: YAML | None = None
+
+
+_YAML_PARSERS = _YamlParserCache()
+
+
 @beartype
 def get_yaml() -> YAML:
-    """Return the cached round-trip ``YAML`` instance.
+    """Return this thread's cached round-trip ``YAML`` instance.
 
     The round-trip loader is used everywhere so a single parse covers
     both data extraction and comment metadata.  Constructing ``YAML()``
-    globs the package directory for plug-ins on every call; caching
-    avoids that cost on every parse.  ``ruamel`` parsers are not safe
-    for concurrent use within a single instance, so ``literalize`` is
-    not safe to call from multiple threads.
+    globs the package directory for plug-ins on every call. A thread-local
+    cache avoids that cost without sharing mutable parser state between
+    concurrent calls.
     """
-    ruamel_yaml = YAML()
-    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
-    return ruamel_yaml
+    cached = _YAML_PARSERS.round_trip
+    if cached is None:
+        cached = YAML()
+        _configure_negative_zero_yaml_constructor(ruamel_yaml=cached)
+        _YAML_PARSERS.round_trip = cached
+    return cached
 
 
-@functools.cache
 @beartype
 def _get_safe_yaml() -> YAML:
-    """Return the cached safe (C-backed when available) ``YAML`` instance.
+    """Return this thread's safe (C-backed) ``YAML`` instance.
 
     Used for the comment-free fast path in :func:`_parse_yaml`: the
     round-trip loader is pure Python and ~8x slower than the safe
@@ -568,9 +578,12 @@ def _get_safe_yaml() -> YAML:
     explicit tags, merge keys), the data parsed by the safe loader is
     structurally identical to the demoted round-trip data.
     """
-    ruamel_yaml = YAML(typ="safe", pure=False)
-    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
-    return ruamel_yaml
+    cached = _YAML_PARSERS.safe
+    if cached is None:
+        cached = YAML(typ="safe", pure=False)
+        _configure_negative_zero_yaml_constructor(ruamel_yaml=cached)
+        _YAML_PARSERS.safe = cached
+    return cached
 
 
 @beartype

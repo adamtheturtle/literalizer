@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Distinct datetime and integer collection scalars must remain distinct after rendering."
+exceptions = ["TargetScalarCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = [
+  "1970-01-01T00:00:01Z: temporal\n1: integer\n",
+]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "datetime_format", member = "EPOCH" },
+]
