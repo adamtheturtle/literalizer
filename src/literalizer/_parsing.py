@@ -2,11 +2,13 @@
 
 import dataclasses
 import datetime
+import decimal
 import enum
 import functools
 import json
+import math
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -20,6 +22,7 @@ from ruamel.yaml.comments import (
 )
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
+from tomlkit.items import Float as TomlFloat
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
@@ -50,6 +53,14 @@ class _ParserMark(Protocol):
 
     line: int
     column: int
+
+
+@runtime_checkable
+class _YamlScalarToken(Protocol):
+    """Plain scalar token data exposed by the ruamel scanner."""
+
+    value: str
+    style: str | None
 
 
 @runtime_checkable
@@ -396,6 +407,50 @@ class _InvalidJSONConstantError(ValueError):
     """Raised when strict JSON contains NaN or infinity."""
 
 
+class _FiniteFloatRangeError(ValueError):
+    """Raised when a finite token cannot survive binary64 conversion."""
+
+
+def _parse_finite_float(value: str) -> float:
+    """Convert *value* without silently overflowing or underflowing."""
+    normalized = value.replace("_", "")
+    try:
+        exact = decimal.Decimal(value=normalized)
+        converted = float(normalized)
+    except (decimal.InvalidOperation, ValueError):
+        return float(normalized)
+    if exact.is_finite() and (
+        math.isinf(converted) or (converted == 0 and exact != 0)
+    ):
+        msg = f"finite numeric token {value!r} is outside binary64 range"
+        raise _FiniteFloatRangeError(msg)
+    return converted
+
+
+def _validate_yaml_float_tokens(*, source: str) -> None:
+    """Check plain YAML numeric tokens before their value is rounded."""
+    if "e" not in source.lower():
+        return
+    tokens: Iterable[object] = get_yaml().scan(  # pyright: ignore[reportUnknownMemberType]
+        stream=source
+    )
+    for token in tokens:
+        if not isinstance(token, _YamlScalarToken) or token.style is not None:
+            continue
+        value = token.value
+        if (
+            re.fullmatch(
+                pattern=(
+                    r"[-+]?(?:[0-9][0-9_]*)(?:\.[0-9_]*)?"
+                    r"[eE][-+]?[0-9][0-9_]*"
+                ),
+                string=value,
+            )
+            is not None
+        ):
+            _parse_finite_float(value=value)
+
+
 @beartype
 def _reject_json_constant(value: str) -> Value:
     """Reject Python's non-standard JSON numeric constants."""
@@ -411,11 +466,15 @@ def _parse_json(*, source: str) -> ParsedInput:
             s=source,
             object_pairs_hook=_json_object_without_duplicate_keys,
             parse_constant=_reject_json_constant,
+            parse_float=_parse_finite_float,
         )
     except _DuplicateJSONKeyError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except _InvalidJSONConstantError as exc:
+        message = f"Invalid JSON: {exc}"
+        raise JSONParseError(message) from exc
+    except _FiniteFloatRangeError as exc:
         message = f"Invalid JSON: {exc}"
         raise JSONParseError(message) from exc
     except json.JSONDecodeError as exc:
@@ -434,7 +493,11 @@ def _parse_json(*, source: str) -> ParsedInput:
 def _parse_json5(*, source: str) -> ParsedInput:
     """Parse a JSON5 string into a ``ParsedInput``."""
     try:
-        data = json5.loads(s=source, allow_duplicate_keys=False)
+        data = json5.loads(
+            s=source,
+            allow_duplicate_keys=False,
+            parse_float=_parse_finite_float,
+        )
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
         position = re.search(
@@ -514,6 +577,11 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     (round-trip) loader so the same parse can later feed comment
     extraction without a second pass through the YAML source.
     """
+    try:
+        _validate_yaml_float_tokens(source=source)
+    except _FiniteFloatRangeError as exc:
+        message = f"Invalid YAML: {exc}"
+        raise YAMLParseError(message) from exc
     if _yaml_needs_roundtrip(source=source):
         ruamel_yaml = get_yaml()
         try:
@@ -560,6 +628,24 @@ def _parse_yaml(*, source: str) -> ParsedInput:
 type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
 
 
+def _validate_toml_float_tokens(*, data: object) -> None:
+    """Check TOML float tokens before unwrapping discards their
+    spelling.
+    """
+    if isinstance(data, TomlFloat):
+        _parse_finite_float(value=data.as_string())
+    elif isinstance(data, Mapping):
+        for value in data.values():  # pyright: ignore[reportUnknownVariableType]
+            _validate_toml_float_tokens(
+                data=value  # pyright: ignore[reportUnknownArgumentType]
+            )
+    elif isinstance(data, list):
+        for value in data:  # pyright: ignore[reportUnknownVariableType]
+            _validate_toml_float_tokens(
+                data=value  # pyright: ignore[reportUnknownArgumentType]
+            )
+
+
 @beartype
 def _toml_data_to_value(*, data: _TomlData) -> Value:
     """Re-shape ``tomlkit`` output as a ``Value``.
@@ -595,6 +681,11 @@ def _parse_toml(*, source: str) -> ParsedInput:
             line=positioned.line if positioned is not None else None,
             column=positioned.col + 1 if positioned is not None else None,
         ) from exc
+    try:
+        _validate_toml_float_tokens(data=toml_doc)
+    except _FiniteFloatRangeError as exc:
+        message = f"Invalid TOML: {exc}"
+        raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
     return ParsedToml(
         data=_toml_data_to_value(data=unwrapped),
