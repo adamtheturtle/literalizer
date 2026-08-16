@@ -73,6 +73,22 @@ def test_parse_yaml_invalid_roundtrip_path_raises() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    argnames="source",
+    argvalues=["x: +_\n", "x: +_\n# force roundtrip path\n"],
+)
+def test_malformed_underscored_yaml_numeric_is_wrapped(source: str) -> None:
+    """Scalar-constructor failures must use the public YAML error type."""
+    with pytest.raises(expected_exception=YAMLParseError) as exc_info:
+        literalize(
+            source=source,
+            input_format=InputFormat.YAML,
+            language=PYTHON,
+        )
+
+    assert isinstance(exc_info.value.__cause__, (ValueError, IndexError))
+
+
 def test_yaml_plain_equals_scalar_is_independent_of_comments() -> None:
     """The safe path must not reinterpret ``=`` as a legacy value tag."""
     without_comment = parse_input(

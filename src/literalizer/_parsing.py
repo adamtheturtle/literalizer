@@ -519,7 +519,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         try:
             # https://sourceforge.net/p/ruamel-yaml/tickets/564/
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-        except YAMLError as exc:
+        except (YAMLError, ValueError, IndexError) as exc:
             message = f"Invalid YAML: {exc}"
             mark = (
                 exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
@@ -540,7 +540,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     safe_yaml = _get_safe_yaml()
     try:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-    except YAMLError as exc:
+    except (YAMLError, ValueError, IndexError) as exc:
         message = f"Invalid YAML: {exc}"
         mark = exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
         raise YAMLParseError(
