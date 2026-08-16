@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Java call arguments reject null-valued native map entries."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Java"]
+
+[call]
+api = "literalize_call"
+sources = ['{"present": 1, "missing": null}']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
