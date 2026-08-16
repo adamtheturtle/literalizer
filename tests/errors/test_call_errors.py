@@ -943,3 +943,28 @@ def test_literalize_call_bound_refs_with_variable_form_raises() -> None:
             bound_refs={"my_list": [1, 2, 3]},
             variable_form=NewVariable(name="result", modifiers=frozenset()),
         )
+
+
+@pytest.mark.parametrize(
+    argnames="ref_case",
+    argvalues=[None, IdentifierCase.SNAKE],
+)
+def test_wrapped_call_rejects_bound_ref_target_collision(
+    ref_case: IdentifierCase | None,
+) -> None:
+    """A bound-ref declaration must not shadow the generated call stub."""
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match="bound ref 'f' collides with the generated call-target scaffold",
+    ):
+        literalize_call(
+            source='[[{"$ref": "f"}]]',
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="f",
+            parameter_names=("value",),
+            bound_refs={"F" if ref_case is not None else "f": 1},
+            ref_case=ref_case,
+            ref_key="$ref",
+            wrap_in_file=True,
+        )

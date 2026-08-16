@@ -5152,6 +5152,7 @@ def _validate_call_preconditions(
     style: CallStyle,
     variable_form: NewVariable | ExistingVariable | None,
     wrap_in_file: bool,
+    bound_ref_names: Sequence[str],
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs.
 
@@ -5172,6 +5173,23 @@ def _validate_call_preconditions(
         target_function=target_function,
         target_function_parts=target_function_parts,
     )
+    if wrap_in_file:
+        converted_bound_ref_names = {
+            ref_case.convert(name=name) if ref_case is not None else name
+            for name in bound_ref_names
+        }
+        colliding_names = converted_bound_ref_names.intersection(
+            target_function_parts
+        )
+        if colliding_names:
+            collision = min(colliding_names)
+            raise UnsupportedCallShapeError(
+                language_name=type(language).__name__,
+                reason=(
+                    f"bound ref {collision!r} collides with the generated "
+                    "call-target scaffold"
+                ),
+            )
     if variable_form is not None:
         _validate_call_variable_form(
             language=language,
@@ -5796,6 +5814,7 @@ def literalize_call_parsed(
         style=style,
         variable_form=variable_form,
         wrap_in_file=wrap_in_file,
+        bound_ref_names=tuple((bound_refs or {}).keys()),
     )
     if (
         isinstance(style, DottedCommandCallStyle)
