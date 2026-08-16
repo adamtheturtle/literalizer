@@ -84,6 +84,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
+    CommentSourceNulError,
     DottedCallTargetNotSupportedError,
     InvalidCallTargetError,
     LiteralizerError,
@@ -4638,6 +4639,8 @@ def _resolve_comment_literals(
     for index, comment in enumerate(iterable=comments):
         if "\n" in comment or "\r" in comment:
             raise CommentSourceMultilineError(index=index)
+        if "\0" in comment:
+            raise CommentSourceNulError(index=index)
     return comments
 
 

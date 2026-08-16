@@ -738,6 +738,22 @@ class CommentSourceMultilineError(LiteralizerError):
         self.index = index
 
 
+class CommentSourceNulError(LiteralizerError):
+    """Raised when a ``comment_source`` entry contains a NUL byte.
+
+    Source-code toolchains commonly reject NUL even inside comments.
+    To resolve, remove or replace the NUL character.
+    """
+
+    def __init__(self, *, index: int) -> None:
+        """Create a ``CommentSourceNulError``."""
+        super().__init__(
+            f"comment_source entry at index {index} contains a NUL byte; "
+            "source comments cannot contain NUL"
+        )
+        self.index = index
+
+
 class VariableNameNotSupportedError(LiteralizerError):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.

@@ -429,7 +429,9 @@ def literalize_call(
             call -- or
             :class:`~literalizer.exceptions.CommentSourceLengthMismatchError`
             is raised; an entry containing a newline raises
-            :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+            :class:`~literalizer.exceptions.CommentSourceMultilineError`,
+            and an entry containing NUL raises
+            :class:`~literalizer.exceptions.CommentSourceNulError`.
             A trailing comment is only safe where each generated call
             is a self-contained line; languages that assemble the call
             sequence into a single clause/list/expression (so a

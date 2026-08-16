@@ -24,6 +24,7 @@ from literalizer.exceptions import (
     CallsNotSupportedByToolError,
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
+    CommentSourceNulError,
     DottedCallTargetNotSupportedError,
     InvalidCallParameterNameError,
     InvalidCallTargetError,
@@ -663,6 +664,23 @@ def test_literalize_call_comment_source_multiline_entry_raises() -> None:
             target_function="process",
             parameter_names=["value"],
             comment_source=["fine", "broken\ncomment"],
+        )
+
+
+def test_literalize_call_comment_source_nul_entry_raises() -> None:
+    """A trailing comment may not inject NUL into generated source."""
+    with pytest.raises(
+        expected_exception=CommentSourceNulError,
+        match="entry at index 0 contains a NUL byte",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["x"],
+            comment_source=["before\0after"],
+            wrap_in_file=True,
         )
 
 
