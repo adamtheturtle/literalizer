@@ -191,7 +191,7 @@ def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:
         "{a: 1}",
         "!!set {1, 2}",
         "2024-01-15",
-        "2024-01-15T12:30:00Z",
+        "2024-01-15T12:30:00",
     ],
     ids=["list", "dict", "set", "date", "datetime"],
 )
