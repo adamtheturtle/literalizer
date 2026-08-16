@@ -119,6 +119,30 @@ class UnrepresentableInputError(LiteralizerError):
     """
 
 
+class TargetScalarCollisionError(UnrepresentableInputError):
+    """Raised when distinct collection scalars render identically.
+
+    Set members and mapping keys must retain distinct target identities.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        first: object,
+        second: object,
+        rendered: str,
+    ) -> None:
+        """Create a ``TargetScalarCollisionError``."""
+        super().__init__(
+            f"{language_name} renders distinct collection scalars "
+            f"{first!r} and {second!r} identically as {rendered!r}"
+        )
+        self.first = first
+        self.second = second
+        self.rendered = rendered
+
+
 class UnrepresentableStringError(UnrepresentableInputError):
     """Raised when a string contains a character the target language
     cannot represent in a string literal.
