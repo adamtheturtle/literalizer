@@ -1202,6 +1202,7 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
     )
@@ -1283,12 +1284,20 @@ class LanguageCls(type):
                 raise InvalidRecordNameError(msg)
         if cls.supports_module_name:
             module_name = vars(instance)["module_name"]
-            if not NewVariableNameSyntax.ASCII.accepts(
-                name=module_name
-            ) or _is_reserved_identifier(
-                case_sensitive=instance.reserved_variable_identifiers_case_sensitive,
-                name=module_name,
-                reserved_identifiers=cls.reserved_module_identifiers,
+            if (
+                not NewVariableNameSyntax.ASCII.accepts(name=module_name)
+                or (
+                    cls.module_name_must_start_uppercase
+                    and not module_name[0].isupper()
+                )
+                or _is_reserved_identifier(
+                    case_sensitive=instance.reserved_variable_identifiers_case_sensitive,
+                    name=module_name,
+                    reserved_identifiers=(
+                        cls.reserved_module_identifiers
+                        | instance.reserved_variable_identifiers
+                    ),
+                )
             ):
                 raise InvalidModuleNameError(
                     language_name=cls.__name__,

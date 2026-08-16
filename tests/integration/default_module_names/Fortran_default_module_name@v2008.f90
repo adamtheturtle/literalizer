@@ -80,9 +80,9 @@ contains
     v%items(1) = u
   end function fentry
 end module fval_m
-program Module
+program Literalizer
     use fval_m
     implicit none
     type(fval_t) :: my_data
     my_data = fint(1_int64)
-end program Module
+end program Literalizer

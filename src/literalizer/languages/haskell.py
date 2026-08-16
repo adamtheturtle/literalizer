@@ -1379,6 +1379,7 @@ class Haskell(metaclass=LanguageCls):
     supports_multi_param_call_wrapper_stub = True
     supports_dict_literal_as_free_expression = True
     supports_module_name = True
+    module_name_must_start_uppercase = True
     supports_empty_dict_key = False
     supports_call_style = True
     supports_default_dict_key_type = False
