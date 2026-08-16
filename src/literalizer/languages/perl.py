@@ -114,8 +114,8 @@ def _format_perl_string_multiline(value: str) -> str:
 
 @beartype
 def _format_perl_string_single(value: str) -> str:
-    """Fall back to an escaped Perl literal for an embedded null byte."""
-    if "\0" in value:
+    """Fall back when a single-quoted source literal is not exact."""
+    if "\0" in value or "\r" in value:
         return _format_perl_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 

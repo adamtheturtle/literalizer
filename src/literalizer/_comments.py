@@ -345,6 +345,10 @@ def _format_comment(
             text=text,
             comment_suffix=comment_suffix,
         )
+        if not comment_suffix and escaped.endswith("\\"):
+            # A final backslash can splice the following physical line in
+            # C-family preprocessing (and continues lines in several shells).
+            escaped += " "
         return f"{line_prefix}{comment_prefix} {escaped}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
 

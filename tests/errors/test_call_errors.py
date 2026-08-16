@@ -26,6 +26,7 @@ from literalizer.exceptions import (
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
     InvalidCallParameterNameError,
+    InvalidCallTargetError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
@@ -154,6 +155,32 @@ def test_literalize_call_reserved_parameter_name_raises() -> None:
             language=Python(),
             target_function="f",
             parameter_names=("class",),
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="target_function",
+    argvalues=[
+        "",
+        ".",
+        "f.",
+        ".f",
+        "f..g",
+        "bad-name",
+        "1f",
+        "class",
+        "obj.class",
+    ],
+)
+def test_literalize_call_invalid_target_raises(target_function: str) -> None:
+    """Every dotted call component must be a valid non-reserved name."""
+    with pytest.raises(expected_exception=InvalidCallTargetError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function=target_function,
+            parameter_names=("x",),
         )
 
 

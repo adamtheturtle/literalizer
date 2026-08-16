@@ -85,6 +85,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     DottedCallTargetNotSupportedError,
+    InvalidCallTargetError,
     LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
@@ -5090,6 +5091,39 @@ def _validate_call_variable_form(
 
 
 @beartype
+def _validate_call_target(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Raise when a dotted call target contains an unsafe component."""
+    if not target_function or any(not part for part in target_function_parts):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it must contain non-empty dotted components",
+        )
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-target validation requires a LanguageCls language"
+        raise TypeError(msg)
+    for index, part in enumerate(iterable=target_function_parts):
+        if not language_cls.new_variable_name_syntax.accepts(name=part):
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=f"component {part!r} is not a valid identifier",
+            )
+        if index == 0 and part in language.reserved_variable_identifiers:
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=f"component {part!r} is a reserved identifier",
+            )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -5116,6 +5150,11 @@ def _validate_call_preconditions(
         language=language,
         names=parameter_names,
         reject_reserved=isinstance(style, KeywordCallStyle),
+    )
+    _validate_call_target(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
     )
     if variable_form is not None:
         _validate_call_variable_form(
@@ -5159,12 +5198,10 @@ def _validate_call_preconditions(
             ),
         )
     if target_function_parts[-1] in language.reserved_identifiers:
-        raise UnsupportedCallShapeError(
+        raise InvalidCallTargetError(
             language_name=type(language).__name__,
-            reason=(
-                f"target_function {target_function!r} ends in a reserved "
-                f"identifier of this language"
-            ),
+            target_function=target_function,
+            reason="its final component is a reserved call identifier",
         )
     if len(target_function_parts) > 1 and not language.supports_dotted_calls:
         raise DottedCallTargetNotSupportedError(

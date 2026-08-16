@@ -122,8 +122,8 @@ _format_string_multiline_fallback = make_backslash_string_formatter(
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Fall back to an escaped Ruby literal for an embedded null byte."""
-    if "\0" in value:
+    """Fall back when a single-quoted source literal is not exact."""
+    if "\0" in value or "\r" in value:
         return _format_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 

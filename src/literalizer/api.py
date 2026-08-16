@@ -35,6 +35,8 @@ from literalizer._parsing import (
 )
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
+    DelimiterlessVariableError,
+    InvalidPreIndentLevelError,
     InvalidVariableModifierError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
@@ -212,6 +214,10 @@ def literalize(
         language=language,
         variable_form=variable_form,
     )
+    if pre_indent_level < 0:
+        raise InvalidPreIndentLevelError
+    if not include_delimiters and variable_form is not None:
+        raise DelimiterlessVariableError
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,

@@ -491,6 +491,46 @@ class InvalidCallParameterNameError(LiteralizerError):
         self.reason = reason
 
 
+class InvalidCallTargetError(LiteralizerError):
+    """Raised when a call target is not a valid target-language name."""
+
+    def __init__(
+        self, *, language_name: str, target_function: str, reason: str
+    ) -> None:
+        """Create an ``InvalidCallTargetError``."""
+        super().__init__(
+            f"{language_name} cannot use call target "
+            f"{target_function!r}: {reason}"
+        )
+        self.language_name = language_name
+        self.target_function = target_function
+        self.reason = reason
+
+
+class InvalidRenderArgumentError(LiteralizerError, ValueError):
+    """Base class for invalid rendering-option combinations."""
+
+
+class InvalidPreIndentLevelError(InvalidRenderArgumentError):
+    """Raised when ``pre_indent_level`` is negative."""
+
+    def __init__(self) -> None:
+        """Create an ``InvalidPreIndentLevelError``."""
+        super().__init__(
+            "pre_indent_level must be greater than or equal to zero"
+        )
+
+
+class DelimiterlessVariableError(InvalidRenderArgumentError):
+    """Raised when a delimiterless collection is bound as one value."""
+
+    def __init__(self) -> None:
+        """Create a ``DelimiterlessVariableError``."""
+        super().__init__(
+            "include_delimiters=False cannot be combined with variable_form"
+        )
+
+
 class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 

@@ -2,7 +2,7 @@ schema_version = 1
 summary = "Java wrapper classes reject reserved identifiers."
 exceptions = ["InvalidModuleNameError"]
 languages = ["Java"]
-values = ["_", "int", "record", "var", "yield"]
+values = ["Class", "Public", "Return", "_", "int", "record", "var", "yield"]
 
 [call]
 api = "constructor"

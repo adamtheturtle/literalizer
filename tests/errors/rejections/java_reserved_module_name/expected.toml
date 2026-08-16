@@ -1,6 +1,9 @@
 # languages rejecting: 1; languages accepting: 0
 
 [InvalidModuleNameError]
+"Java['Class']" = "Java cannot use module_name 'Class': it is not a valid identifier"
+"Java['Public']" = "Java cannot use module_name 'Public': it is not a valid identifier"
+"Java['Return']" = "Java cannot use module_name 'Return': it is not a valid identifier"
 "Java['_']" = "Java cannot use module_name '_': it is not a valid identifier"
 "Java['int']" = "Java cannot use module_name 'int': it is not a valid identifier"
 "Java['record']" = "Java cannot use module_name 'record': it is not a valid identifier"

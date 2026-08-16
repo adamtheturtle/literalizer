@@ -99,7 +99,7 @@ _format_string = make_backslash_string_formatter(
         ("$", "\\$"),
         ("[", "\\["),
         ("]", "\\]"),
-        ("\0", "\\x00"),
+        ("\0", "\\u0000"),
     ],
 )
 

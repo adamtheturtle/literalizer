@@ -117,6 +117,7 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    InvalidModuleNameError,
     InvalidRecordNameError,
     NullInCollectionError,
     UnrepresentableInputError,
@@ -849,7 +850,6 @@ class Java(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -908,6 +908,9 @@ class Java(metaclass=LanguageCls):
             "volatile",
             "while",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     reserved_module_identifiers: ClassVar[frozenset[str]] = (
         reserved_variable_identifiers | {"record", "var", "yield"}
@@ -1356,6 +1359,12 @@ class Java(metaclass=LanguageCls):
         )
         if requires_jdk_16 and self.language_version is not jdk_16:
             object.__setattr__(self, "language_version", jdk_16)
+        method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
+        if method_name in self.reserved_variable_identifiers:
+            raise InvalidModuleNameError(
+                language_name=type(self).__name__,
+                module_name=self.module_name,
+            )
         self._validate_record_naming()
         self._validate_json_type_spec()
 
