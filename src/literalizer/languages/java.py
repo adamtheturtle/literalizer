@@ -312,6 +312,27 @@ def _validate_no_null_map_values(data: Value) -> None:
 
 
 @beartype
+def _validate_no_null_collection_keys(data: Value) -> None:
+    """Reject null keys and set members unsupported by Java factories."""
+    match data:
+        case dict():
+            if None in data:
+                msg = "Java's Map.entry() does not accept null keys"
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _validate_no_null_collection_keys(data=value)
+        case set():
+            if None in data:
+                msg = "Java's Set.of() does not accept null elements"
+                raise UnrepresentableInputError(msg)
+        case list():
+            for value in data:
+                _validate_no_null_collection_keys(data=value)
+        case _:
+            return
+
+
+@beartype
 def _walk_java_ordered_map_values(
     *, data: OrderedMap, walk: Callable[[Value], None]
 ) -> None:
@@ -1483,6 +1504,7 @@ class Java(metaclass=LanguageCls):
         if self._json_type_active:
             self._validate_json_value_keys(data)
             return
+        _validate_no_null_collection_keys(data=data)
         strategies = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is strategies.RECORD:
             self._validate_record_null_map_values(data=data)

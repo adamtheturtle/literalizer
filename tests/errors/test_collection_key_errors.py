@@ -5,7 +5,7 @@ import pytest
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
 from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages import Lua, Rust
+from literalizer.languages import Java, Lua, Rust
 
 
 @pytest.mark.parametrize(
@@ -19,6 +19,8 @@ from literalizer.languages import Lua, Rust
             Rust(),
             "Rust set formats cannot use float members",
         ),
+        ("null: value\n", Java(), "Map.entry.*null keys"),
+        ("!!set\n? null\n", Java(), "Set.of.*null elements"),
     ],
 )
 def test_unrepresentable_collection_key_raises(
