@@ -4,7 +4,7 @@ final my_data = <String, dynamic>{
     "f": 1.5,
     "b": true,
     "n": null,
-    "d": DateTime.parse("2024-01-15"),
-    "dt": DateTime.parse("2024-01-15T12:00:00"),
+    "d": DateTime.utc(2024, 1, 15),
+    "dt": DateTime.utc(2024, 1, 15, 12, 0, 0),
     "by": "48656c6c6f",
 };

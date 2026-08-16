@@ -19,8 +19,6 @@ from literalizer._formatters.collection_openers import (
     typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
-    date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -103,6 +101,28 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     WrapCombinedInFileNotSupportedError,
 )
+
+
+@beartype
+def _format_date_dart(value: datetime.date) -> str:
+    """Format a date as a deterministic UTC ``DateTime``."""
+    return f"DateTime.utc({value.year}, {value.month}, {value.day})"
+
+
+@beartype
+def _format_datetime_dart(value: datetime.datetime) -> str:
+    """Format a datetime without consulting the runtime time zone."""
+    if value.utcoffset() is not None:
+        return f'DateTime.parse("{value.isoformat()}")'
+    args = (
+        f"{value.year}, {value.month}, {value.day}, {value.hour}, "
+        f"{value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        milliseconds, microseconds = divmod(value.microsecond, 1000)
+        args += f", {milliseconds}, {microseconds}"
+    return f"DateTime.utc({args})"
+
 
 # Dart interpolates ``$`` in both single- and double-quoted strings.
 _format_string_single = make_backslash_string_formatter(
@@ -546,9 +566,7 @@ class Dart(metaclass=LanguageCls):
         """Date formatting options for Dart."""
 
         DART = DateFormatConfig(
-            formatter=date_iso_formatter(
-                template='DateTime.parse("{iso}")',
-            ),
+            formatter=_format_date_dart,
             preamble_lines=(),
             type_produced=datetime.date,
         )
@@ -564,9 +582,7 @@ class Dart(metaclass=LanguageCls):
         """Datetime formatting options for Dart."""
 
         DART = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='DateTime.parse("{iso}")',
-            ),
+            formatter=_format_datetime_dart,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )

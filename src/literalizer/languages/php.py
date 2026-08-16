@@ -15,8 +15,6 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
-    date_iso_formatter,
-    datetime_iso_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -102,6 +100,22 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import UnrepresentableInputError
+
+
+@beartype
+def _format_date_php(value: datetime.date) -> str:
+    """Format a date at a deterministic UTC midnight."""
+    return f'new DateTime("{value.isoformat()}", new DateTimeZone("UTC"))'
+
+
+@beartype
+def _format_datetime_php(value: datetime.datetime) -> str:
+    """Format a datetime without consulting PHP's default time zone."""
+    iso = value.isoformat()
+    if value.utcoffset() is None:
+        return f'new DateTime("{iso}", new DateTimeZone("UTC"))'
+    return f'new DateTime("{iso}")'
+
 
 _UNSAFE_MULTILINE_CONTROL = re.compile(pattern=r"[\x00-\x08\x0b-\x1f]")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -401,7 +415,7 @@ class Php(metaclass=LanguageCls):
         """Date format options for Php."""
 
         PHP = DateFormatConfig(
-            formatter=date_iso_formatter(template='new DateTime("{iso}")'),
+            formatter=_format_date_php,
             preamble_lines=(),
             type_produced=datetime.date,
         )
@@ -417,9 +431,7 @@ class Php(metaclass=LanguageCls):
         """Datetime format options for Php."""
 
         PHP = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='new DateTime("{iso}")',
-            ),
+            formatter=_format_datetime_php,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )
