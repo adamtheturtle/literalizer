@@ -16,6 +16,16 @@ def format_date_iso(value: datetime.date) -> str:
 
 
 @beartype
+def format_date_javascript(value: datetime.date) -> str:
+    """Format a date as a JavaScript local-midnight ``Date``.
+
+    The numeric constructor uses local calendar components. Its month is
+    zero-based, unlike :class:`datetime.date`.
+    """
+    return f"new Date({value.year}, {value.month - 1}, {value.day})"
+
+
+@beartype
 def format_datetime_iso(value: datetime.datetime) -> str:
     """Format a datetime as an ISO 8601 quoted string literal.
 
