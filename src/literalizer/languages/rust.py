@@ -134,6 +134,28 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 )
 
 
+def _reject_float_collection_keys(data: Value) -> None:
+    """Reject floats requiring unavailable Rust
+    ``Eq``/``Hash``/``Ord``.
+    """
+    match data:
+        case dict():
+            if any(isinstance(key, float) for key in data):
+                msg = "Rust map formats cannot use float keys"
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _reject_float_collection_keys(data=value)
+        case set():
+            if any(isinstance(value, float) for value in data):
+                msg = "Rust set formats cannot use float members"
+                raise UnrepresentableInputError(msg)
+        case list():
+            for value in data:
+                _reject_float_collection_keys(data=value)
+        case _:
+            return
+
+
 def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
     """Indent Rust code lines without changing multiline raw contents."""
     raw_hashes: str | None = None
@@ -3863,6 +3885,7 @@ class Rust(metaclass=LanguageCls):
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
+        _reject_float_collection_keys(data=data)
         if self._json_type_active:
             self._validate_json_value_keys(data)
         if (

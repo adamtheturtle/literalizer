@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -92,13 +93,39 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import UnrepresentableIntegerError
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    UnrepresentableIntegerError,
+)
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_lua_escaped = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00")],
 )
+
+
+def _reject_nan_table_keys(data: Value) -> None:
+    """Reject NaN where Lua would use it as a table index."""
+    match data:
+        case dict():
+            if any(isinstance(key, float) and math.isnan(key) for key in data):
+                msg = "Lua cannot use NaN as a mapping key"
+                raise UnrepresentableInputError(msg)
+            for value in data.values():
+                _reject_nan_table_keys(data=value)
+        case set():
+            if any(
+                isinstance(value, float) and math.isnan(value)
+                for value in data
+            ):
+                msg = "Lua cannot use NaN as a set member table key"
+                raise UnrepresentableInputError(msg)
+        case list():
+            for value in data:
+                _reject_nan_table_keys(data=value)
+        case _:
+            return
 
 
 @beartype
@@ -544,8 +571,9 @@ class Lua(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject inputs containing an empty mapping on Lua."""
+        """Reject mapping shapes that Lua tables cannot represent."""
         reject_empty_dicts(data=data, language_name="Lua")
+        _reject_nan_table_keys(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
