@@ -487,7 +487,8 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
     constructs that either carry metadata the safe loader drops
     (``#`` comments) or resolve differently between the two loaders
     (explicit ``!``/``!!`` tags such as ``!!omap``/``!!set``,
-    anchors/aliases, and merge keys).  The checks are intentionally
+    anchors/aliases, merge keys, and ``=`` plain scalars that the safe
+    loader resolves as a legacy value tag).  The checks are intentionally
     conservative text-presence checks — a ``#`` inside a quoted string
     still forces the slow path, which is correct but slightly
     pessimistic.
@@ -498,6 +499,7 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
         or "&" in source
         or "*" in source
         or "<<" in source
+        or "=" in source
     )
 
 
