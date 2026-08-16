@@ -668,7 +668,7 @@ def test_literalize_call_comment_source_multiline_entry_raises() -> None:
 
 
 def test_literalize_call_comment_source_nul_entry_raises() -> None:
-    """A trailing comment may not inject NUL into generated source."""
+    """A trailing comment may not inject a null byte into generated source."""
     with pytest.raises(
         expected_exception=CommentSourceNulError,
         match="entry at index 0 contains a NUL byte",
@@ -1039,7 +1039,7 @@ def test_wrapped_call_rejects_entrypoint_target_collision(
     language: Language,
     target_function: str,
 ) -> None:
-    """A call stub must not reuse its complete-file entrypoint name."""
+    """A call stub must not reuse its complete-file entry-point name."""
     with pytest.raises(
         expected_exception=InvalidCallTargetError,
         match="collides with the generated file entrypoint",

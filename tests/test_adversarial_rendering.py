@@ -31,7 +31,7 @@ def test_single_quoted_crlf_uses_escaped_fallback(
 
 
 def test_tcl_nul_escape_does_not_consume_following_hex_digits() -> None:
-    """Tcl's variable-width hex escape must not swallow ``after``."""
+    """A variable-width Tcl hex escape must not swallow ``after``."""
     result = literalize(
         source=json.dumps(obj={"x": "before\0after"}),
         input_format=InputFormat.JSON,

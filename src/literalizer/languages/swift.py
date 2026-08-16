@@ -124,7 +124,8 @@ def _reject_date_midnight_collisions(data: Value) -> None:
             dates = {
                 (scalar.year, scalar.month, scalar.day): scalar
                 for scalar in values
-                if type(scalar) is datetime.date
+                if isinstance(scalar, datetime.date)
+                and not isinstance(scalar, datetime.datetime)
             }
             for scalar in values:
                 if (

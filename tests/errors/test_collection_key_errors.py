@@ -28,7 +28,7 @@ def test_unrepresentable_collection_key_raises(
     language: Language,
     message: str,
 ) -> None:
-    """Backends must reject values invalid as native collection keys."""
+    """Back ends must reject values invalid as native collection keys."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
         match=message,
