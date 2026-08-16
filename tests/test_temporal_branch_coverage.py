@@ -2,11 +2,19 @@
 
 import datetime
 
-from literalizer._checks import _format_scalar_identity
+from literalizer._checks import (  # pyright: ignore[reportPrivateUsage]
+    _format_scalar_identity,
+)
 from literalizer.languages import Python
-from literalizer.languages.csharp import _csharp_scalar_type
-from literalizer.languages.erlang import _format_string_otp_json
-from literalizer.languages.occam import _format_occam_entry
+from literalizer.languages.csharp import (  # pyright: ignore[reportPrivateUsage]
+    _csharp_scalar_type,
+)
+from literalizer.languages.erlang import (  # pyright: ignore[reportPrivateUsage]
+    _format_string_otp_json,
+)
+from literalizer.languages.occam import (  # pyright: ignore[reportPrivateUsage]
+    _format_occam_entry,
+)
 
 
 def test_scalar_identity_formats_null_and_time() -> None:
