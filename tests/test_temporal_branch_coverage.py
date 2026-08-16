@@ -2,18 +2,18 @@
 
 import datetime
 
-from literalizer._checks import (  # pyright: ignore[reportPrivateUsage]
-    _format_scalar_identity,
+from literalizer._checks import (
+    _format_scalar_identity,  # pyright: ignore[reportPrivateUsage]
 )
 from literalizer.languages import Python
-from literalizer.languages.csharp import (  # pyright: ignore[reportPrivateUsage]
-    _csharp_scalar_type,
+from literalizer.languages.csharp import (
+    _csharp_scalar_type,  # pyright: ignore[reportPrivateUsage]
 )
-from literalizer.languages.erlang import (  # pyright: ignore[reportPrivateUsage]
-    _format_string_otp_json,
+from literalizer.languages.erlang import (
+    _format_string_otp_json,  # pyright: ignore[reportPrivateUsage]
 )
-from literalizer.languages.occam import (  # pyright: ignore[reportPrivateUsage]
-    _format_occam_entry,
+from literalizer.languages.occam import (
+    _format_occam_entry,  # pyright: ignore[reportPrivateUsage]
 )
 
 
