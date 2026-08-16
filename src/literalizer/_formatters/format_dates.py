@@ -233,6 +233,18 @@ def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
     """Format a datetime using a year/month/day/hour/minute/second
     template.
     """
+    if value.microsecond:
+        msg = (
+            "whole-second native datetime format cannot preserve "
+            f"microseconds: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
+    if value.utcoffset() is not None:
+        msg = (
+            "timezone-naive native datetime format cannot preserve "
+            f"timezone awareness: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
     return template.format(
         year=value.year,
         month=value.month,

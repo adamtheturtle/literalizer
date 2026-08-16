@@ -6,6 +6,7 @@ import pytest
 
 from literalizer._formatters.format_dates import (
     datetime_epoch_seconds,
+    datetime_ymdhms_formatter,
     format_datetime_epoch_fractional,
     format_datetime_javascript,
 )
@@ -87,3 +88,26 @@ def test_fractional_epoch_is_exact(
 ) -> None:
     """Fractional epoch literals preserve both sign and microseconds."""
     assert format_datetime_epoch_fractional(value) == expected
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        datetime.datetime(  # noqa: DTZ001 - intentionally naive input
+            2024, 1, 15, microsecond=1
+        ),
+        datetime.datetime(2024, 1, 15, tzinfo=datetime.UTC),
+    ],
+)
+def test_whole_second_naive_formatter_rejects_lossy_datetimes(
+    value: datetime.datetime,
+) -> None:
+    """A whole-second naive constructor rejects precision or awareness."""
+    formatter = datetime_ymdhms_formatter(
+        template=(
+            "DateTime({year}, {month}, {day}, {hour}, {minute}, {second})"
+        )
+    )
+
+    with pytest.raises(UnrepresentableInputError, match="cannot preserve"):
+        formatter(value)
