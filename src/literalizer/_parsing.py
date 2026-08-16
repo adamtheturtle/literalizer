@@ -8,7 +8,7 @@ import functools
 import json
 import math
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -23,6 +23,7 @@ from ruamel.yaml.comments import (
 from ruamel.yaml.error import YAMLError
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Float as TomlFloat
+from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
@@ -61,6 +62,12 @@ class _YamlScalarToken(Protocol):
 
     value: str
     style: str | None
+
+
+class _YamlScalarNode(Protocol):
+    """Scalar node value exposed to a ruamel constructor."""
+
+    value: str
 
 
 @runtime_checkable
@@ -427,6 +434,11 @@ def _parse_finite_float(value: str) -> float:
     return converted
 
 
+def _parse_integer_preserving_negative_zero(value: str) -> int | float:
+    """Parse an integer token while retaining negative zero's sign."""
+    return -0.0 if value == "-0" else int(value)
+
+
 def _validate_yaml_float_tokens(*, source: str) -> None:
     """Check plain YAML numeric tokens before their value is rounded."""
     if "e" not in source.lower():
@@ -467,6 +479,7 @@ def _parse_json(*, source: str) -> ParsedInput:
             object_pairs_hook=_json_object_without_duplicate_keys,
             parse_constant=_reject_json_constant,
             parse_float=_parse_finite_float,
+            parse_int=_parse_integer_preserving_negative_zero,
         )
     except _DuplicateJSONKeyError as exc:
         message = f"Invalid JSON: {exc}"
@@ -497,6 +510,7 @@ def _parse_json5(*, source: str) -> ParsedInput:
             s=source,
             allow_duplicate_keys=False,
             parse_float=_parse_finite_float,
+            parse_int=_parse_integer_preserving_negative_zero,
         )
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
@@ -512,6 +526,26 @@ def _parse_json5(*, source: str) -> ParsedInput:
     return ParsedPlain(data=data)
 
 
+def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
+    """Teach a ruamel loader to retain signed integer zero as ``-0.0``."""
+    tag = "tag:yaml.org,2002:int"
+    constructor = ruamel_yaml.constructor
+    original: Callable[[object, _YamlScalarNode], object] = (
+        constructor.yaml_constructors[tag]
+    )
+
+    def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
+        """Construct a YAML integer while preserving signed zero."""
+        if re.fullmatch(pattern=r"-0(?:_?0)*", string=node.value) is not None:
+            return -0.0
+        return original(constructor_obj, node)
+
+    constructor.add_constructor(
+        tag=tag,
+        constructor=_construct,
+    )
+
+
 @functools.cache
 @beartype
 def get_yaml() -> YAML:
@@ -524,7 +558,9 @@ def get_yaml() -> YAML:
     for concurrent use within a single instance, so ``literalize`` is
     not safe to call from multiple threads.
     """
-    return YAML()
+    ruamel_yaml = YAML()
+    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
+    return ruamel_yaml
 
 
 @functools.cache
@@ -539,7 +575,9 @@ def _get_safe_yaml() -> YAML:
     explicit tags, merge keys), the data parsed by the safe loader is
     structurally identical to the demoted round-trip data.
     """
-    return YAML(typ="safe", pure=False)
+    ruamel_yaml = YAML(typ="safe", pure=False)
+    _configure_negative_zero_yaml_constructor(ruamel_yaml=ruamel_yaml)
+    return ruamel_yaml
 
 
 @beartype
@@ -646,6 +684,33 @@ def _validate_toml_float_tokens(*, data: object) -> None:
             )
 
 
+def _preserve_toml_negative_zero(
+    *, data: _TomlData, raw_data: object
+) -> _TomlData:
+    """Rebuild TOML data with signed integer zero represented as a
+    float.
+    """
+    if isinstance(raw_data, TomlInteger) and raw_data.as_string() == "-0":
+        return -0.0
+    if isinstance(data, dict) and isinstance(raw_data, Mapping):
+        return {
+            key: _preserve_toml_negative_zero(
+                data=value,
+                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for key, value in data.items()
+        }
+    if isinstance(data, list) and isinstance(raw_data, list):
+        return [
+            _preserve_toml_negative_zero(
+                data=value,
+                raw_data=raw_data[index],  # pyright: ignore[reportUnknownArgumentType]
+            )
+            for index, value in enumerate(iterable=data)
+        ]
+    return data
+
+
 @beartype
 def _toml_data_to_value(*, data: _TomlData) -> Value:
     """Re-shape ``tomlkit`` output as a ``Value``.
@@ -687,6 +752,10 @@ def _parse_toml(*, source: str) -> ParsedInput:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
     unwrapped: _TomlData = toml_doc.unwrap()
+    unwrapped = _preserve_toml_negative_zero(
+        data=unwrapped,
+        raw_data=toml_doc,
+    )
     return ParsedToml(
         data=_toml_data_to_value(data=unwrapped),
         toml_doc=toml_doc,
