@@ -398,6 +398,7 @@ def neutralize_comment_terminator(
     ``<U+0029>``). Line-comment formats have an empty suffix and leave
     the source text unchanged.
     """
+    text = text.replace("\u2028", "<U+2028>").replace("\u2029", "<U+2029>")
     if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
