@@ -118,7 +118,18 @@ class _SupportsCallVariableWrapInFile(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
-_DISABLED_REF_KEY = ""
+class _DisabledRefKey(str):
+    """Identity sentinel distinct from an explicitly enabled empty key."""
+
+    __slots__ = ()
+
+
+_DISABLED_REF_KEY = _DisabledRefKey()
+
+
+def disabled_ref_key() -> str:
+    """Return the internal marker for disabled reference detection."""
+    return _DISABLED_REF_KEY
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1910,7 +1921,7 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
     converted to that case first.
     """
     spec = ctx.spec
-    if ctx.ref_key and isinstance(value, dict):
+    if ctx.ref_key is not _DISABLED_REF_KEY and isinstance(value, dict):
         raw_ref_name = _extract_call_arg_ref_name(
             value=value, ref_key=ctx.ref_key
         )
@@ -2064,7 +2075,7 @@ def _dict_open_for_ref_inference(
                 ref_key=ctx.ref_key,
             )
         )
-        if ctx.ref_key
+        if ctx.ref_key is not _DISABLED_REF_KEY
         else data
     )
     return ctx.spec.dict_format_config.dict_open(
@@ -2087,7 +2098,7 @@ def _sequence_open_for_ref_inference(
                 ref_key=ctx.ref_key,
             )
         )
-        if ctx.ref_key
+        if ctx.ref_key is not _DISABLED_REF_KEY
         else data
     )
     return ctx.spec.sequence_open(
@@ -2723,7 +2734,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ref_key=ref_key,
         ref_case=ref_case,
     )
-    if ref_key and isinstance(data, dict):
+    if ref_key is not _DISABLED_REF_KEY and isinstance(data, dict):
         raw_ref_name = _extract_call_arg_ref_name(value=data, ref_key=ref_key)
         if raw_ref_name is not None:
             ref_name = _validated_ref_name(
@@ -2749,7 +2760,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     if validate_data:
         check_data(data=inference_data, spec=language)
 
-    if not ref_key and raw_yaml_data is None:
+    if ref_key is _DISABLED_REF_KEY and raw_yaml_data is None:
         fast_result = format_document_fast(
             language,
             data=data,
@@ -3829,7 +3840,11 @@ def _extract_call_arg_ref_name(*, value: Value, ref_key: str) -> str | None:
     In :func:`literalize_call` such markers render as the bare
     identifier instead of being formatted as a literal value.
     """
-    if not ref_key or not isinstance(value, dict) or len(value) != 1:
+    if (
+        ref_key is _DISABLED_REF_KEY
+        or not isinstance(value, dict)
+        or len(value) != 1
+    ):
         return None
     ref_value = value.get(ref_key)
     if not isinstance(ref_value, str):
@@ -3909,7 +3924,7 @@ def _resolve_refs_for_inference(
     ref_key: str,
 ) -> Value:
     """Resolve known refs and remove unknown refs for type inference."""
-    if ref_key == _DISABLED_REF_KEY:
+    if ref_key is _DISABLED_REF_KEY:
         return value
     if ref_values:
         resolved = _resolve_ref_for_preamble(

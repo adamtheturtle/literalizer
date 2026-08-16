@@ -22,6 +22,7 @@ from literalizer._literalize import (
     LiteralizeResult,
     NewVariable,
     VariableForm,
+    disabled_ref_key,
     literalize_apply_form,
     literalize_both_forms,
     literalize_bound_refs,
@@ -209,7 +210,7 @@ def literalize(
             to ``False`` (i.e. it cannot represent a bare value at
             file-statement scope).
     """
-    effective_ref_key = ref_key or ""
+    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,
@@ -578,7 +579,7 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
-    effective_ref_key = ref_key or ""
+    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,
