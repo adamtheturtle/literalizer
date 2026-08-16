@@ -40,7 +40,7 @@ def _variable_form(
     *,
     call: CallSpec,
     lang_cls: literalizer.LanguageCls,
-) -> literalizer.NewVariable | None:
+) -> literalizer.NewVariable | literalizer.ExistingVariable | None:
     """Return the variable form a rendering case declares its value in.
 
     Modifiers are resolved against the language rather than declared as
@@ -48,13 +48,27 @@ def _variable_form(
     declarations take one.  A language with no named variables to bind
     to renders the value on its own, which is the only form it has.
     """
-    if not lang_cls.supports_variable_names:
-        return None
-    modifiers = frozenset(
-        enum_member_by_name(enum_cls=lang_cls.Modifiers, name=name)
-        for name in call.modifiers
-    )
-    return literalizer.NewVariable(name="my_data", modifiers=modifiers)
+    match call.variable_form:
+        case "new":
+            return literalizer.NewVariable(
+                name=call.variable_name,
+                modifiers=frozenset(),
+            )
+        case "existing":
+            return literalizer.ExistingVariable(name=call.variable_name)
+        case None:
+            if not lang_cls.supports_variable_names:
+                return None
+            modifiers = frozenset(
+                enum_member_by_name(enum_cls=lang_cls.Modifiers, name=name)
+                for name in call.modifiers
+            )
+            return literalizer.NewVariable(
+                name="my_data",
+                modifiers=modifiers,
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -66,23 +80,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     so the seams below only restate that for the type checker.
     """
     lang_cls = case.lang_cls
-    variable_form: (
-        literalizer.NewVariable | literalizer.ExistingVariable | None
-    )
-    match call.variable_form:
-        case "new":
-            variable_form = literalizer.NewVariable(
-                name=call.variable_name,
-                modifiers=frozenset(),
-            )
-        case "existing":
-            variable_form = literalizer.ExistingVariable(
-                name=call.variable_name,
-            )
-        case None:
-            variable_form = _variable_form(call=call, lang_cls=lang_cls)
-        case _ as unreachable_api:
-            assert_never(unreachable_api)
+    variable_form = _variable_form(call=call, lang_cls=lang_cls)
     match call.api:
         case "constructor":
             lang_cls(**case.kwargs)

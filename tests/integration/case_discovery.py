@@ -146,12 +146,12 @@ _MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
-    """Narrow an untyped parser mapping for strict type checkers."""
+    """Narrow a dynamically typed mapping for strict type checkers."""
     return isinstance(value, dict)
 
 
 def _is_object_list(value: object, /) -> TypeIs[list[object]]:
-    """Narrow an untyped parser sequence for strict type checkers."""
+    """Narrow a dynamically typed sequence for strict type checkers."""
     return isinstance(value, list)
 
 

@@ -57,12 +57,12 @@ type VariableFormName = Literal["new", "existing"]
 
 
 def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
-    """Narrow an untyped manifest table for strict type checkers."""
+    """Narrow a dynamically typed table for strict type checkers."""
     return isinstance(value, dict)
 
 
 def _bound_refs_items(value: object) -> object:
-    """Make a TOML inline table hashable for a frozen call spec."""
+    """Make a TOML inline table usable as a frozen model key."""
     if _is_object_dict(value):
         return tuple(value.items())
     return value
