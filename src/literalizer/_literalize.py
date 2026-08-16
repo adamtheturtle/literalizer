@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Final, Protocol, assert_never, runtime_checkable
 
@@ -5175,12 +5176,20 @@ def _validate_call_target(
             target_function=target_function,
             reason="it must contain non-empty dotted components",
         )
+    is_constructor_target = any(
+        language.format_constructor_target(candidate) == target_function
+        for candidate in re.findall(
+            pattern=r"[^\W\d]\w*", string=target_function
+        )
+    )
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
     for part in target_function_parts:
         if not language_cls.new_variable_name_syntax.accepts(name=part):
+            if is_constructor_target:
+                return
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
                 target_function=target_function,
