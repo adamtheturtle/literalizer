@@ -5,7 +5,7 @@ import pytest
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
 from literalizer.exceptions import TargetScalarCollisionError
-from literalizer.languages import JavaScript
+from literalizer.languages import JavaScript, Swift
 
 
 @pytest.mark.parametrize(
@@ -30,6 +30,10 @@ from literalizer.languages import JavaScript
         (
             "1970-01-01T00:00:01Z: temporal\n1: integer\n",
             JavaScript(datetime_format=JavaScript.datetime_formats.EPOCH),
+        ),
+        (
+            "2024-01-01: date\n2024-01-01T00:00:00Z: datetime\n",
+            Swift(),
         ),
     ],
 )

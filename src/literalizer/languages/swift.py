@@ -107,13 +107,45 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import TargetScalarCollisionError
 
 _CONTROL_CHAR_THRESHOLD = 32
+
+
+def _reject_date_midnight_collisions(data: Value) -> None:
+    """Reject Swift ``Date`` keys that can denote the same instant."""
+    match data:
+        case dict() | set():
+            values = data.keys() if isinstance(data, dict) else data
+            dates = {
+                (scalar.year, scalar.month, scalar.day): scalar
+                for scalar in values
+                if type(scalar) is datetime.date
+            }
+            for scalar in values:
+                if (
+                    isinstance(scalar, datetime.datetime)
+                    and scalar.time().replace(tzinfo=None) == datetime.time()
+                    and (scalar.year, scalar.month, scalar.day) in dates
+                ):
+                    raise TargetScalarCollisionError(
+                        language_name="Swift",
+                        first=dates[(scalar.year, scalar.month, scalar.day)],
+                        second=scalar,
+                        rendered="the same Date instant",
+                    )
+            children = data.values() if isinstance(data, dict) else ()
+            for child in children:
+                _reject_date_midnight_collisions(data=child)
+        case list():
+            for value in data:
+                _reject_date_midnight_collisions(data=value)
+        case _:
+            return
 
 
 @beartype
@@ -1059,7 +1091,10 @@ class Swift(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    @staticmethod
+    def validate_spec_for_data(data: Value) -> None:
+        """Reject target-induced collisions between temporal keys."""
+        _reject_date_midnight_collisions(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
