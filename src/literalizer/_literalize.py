@@ -5151,6 +5151,53 @@ def _validate_call_target(
 
 
 @beartype
+def _validate_wrapped_call_scaffold(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+    arg_values: Sequence[Value],
+    ref_case: IdentifierCase | None,
+    bound_ref_names: Sequence[str],
+) -> None:
+    """Reject call inputs that collide with or empty a file scaffold."""
+    if not arg_values:
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "wrap_in_file requires at least one generated call; "
+                "the per-element input is empty"
+            ),
+        )
+    if (
+        len(target_function_parts) == 1
+        and isinstance(language, _HasCallWrapperEntrypoint)
+        and target_function == language.call_wrapper_entrypoint_name
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it collides with the generated file entrypoint",
+        )
+    converted_bound_ref_names = {
+        ref_case.convert(name=name) if ref_case is not None else name
+        for name in bound_ref_names
+    }
+    colliding_names = converted_bound_ref_names.intersection(
+        target_function_parts
+    )
+    if colliding_names:
+        collision = min(colliding_names)
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                f"bound ref {collision!r} collides with the generated "
+                "call-target scaffold"
+            ),
+        )
+
+
+@beartype
 def _validate_call_preconditions(
     *,
     language: Language,
@@ -5185,34 +5232,15 @@ def _validate_call_preconditions(
         target_function=target_function,
         target_function_parts=target_function_parts,
     )
-    if (
-        wrap_in_file
-        and len(target_function_parts) == 1
-        and isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function == language.call_wrapper_entrypoint_name
-    ):
-        raise InvalidCallTargetError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-            reason="it collides with the generated file entrypoint",
-        )
     if wrap_in_file:
-        converted_bound_ref_names = {
-            ref_case.convert(name=name) if ref_case is not None else name
-            for name in bound_ref_names
-        }
-        colliding_names = converted_bound_ref_names.intersection(
-            target_function_parts
+        _validate_wrapped_call_scaffold(
+            language=language,
+            target_function=target_function,
+            target_function_parts=target_function_parts,
+            arg_values=arg_values,
+            ref_case=ref_case,
+            bound_ref_names=bound_ref_names,
         )
-        if colliding_names:
-            collision = min(colliding_names)
-            raise UnsupportedCallShapeError(
-                language_name=type(language).__name__,
-                reason=(
-                    f"bound ref {collision!r} collides with the generated "
-                    "call-target scaffold"
-                ),
-            )
     if variable_form is not None:
         _validate_call_variable_form(
             language=language,

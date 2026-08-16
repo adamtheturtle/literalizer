@@ -47,6 +47,7 @@ from literalizer.languages import (
     Dart,
     Dhall,
     Elm,
+    Erlang,
     Go,
     Haskell,
     Haxe,
@@ -57,6 +58,7 @@ from literalizer.languages import (
     Mojo,
     Nix,
     Occam,
+    PureScript,
     Python,
     Racket,
     SystemVerilog,
@@ -1001,5 +1003,29 @@ def test_wrapped_call_rejects_entrypoint_target_collision(
             language=language,
             target_function=target_function,
             parameter_names=(),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Elm(), Erlang(), Hcl(), PureScript()],
+)
+def test_wrapped_call_rejects_empty_per_element_input(
+    language: Language,
+) -> None:
+    """A complete-file wrapper must not contain an incomplete empty
+    body.
+    """
+    with pytest.raises(
+        expected_exception=UnsupportedCallShapeError,
+        match="the per-element input is empty",
+    ):
+        literalize_call(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="process",
+            parameter_names=("value",),
             wrap_in_file=True,
         )
