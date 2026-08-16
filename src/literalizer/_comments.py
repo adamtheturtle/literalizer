@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, assert_never, runtime_checkable
 
@@ -26,6 +27,20 @@ class QuoteSensitiveCommentSuffix(str):
     """Mark a comment form whose lexer parses quotes inside comments."""
 
     __slots__ = ()
+
+
+class EncodingCookieSafeCommentPrefix(str):
+    """Mark comments that must not become Python encoding declarations."""
+
+    __slots__ = ()
+
+
+_PYTHON_ENCODING_COOKIE = re.compile(
+    pattern=(
+        r"(?P<label>coding)(?P<separator>[:=])"
+        r"(?P<encoding>[ \t]*[-_.a-zA-Z0-9]+)"
+    ),
+)
 
 
 class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
@@ -350,6 +365,12 @@ def _format_comment(
 ) -> str:
     """Format a single comment line."""
     if text:
+        if isinstance(comment_prefix, EncodingCookieSafeCommentPrefix):
+            text = _PYTHON_ENCODING_COOKIE.sub(
+                repl=r"\g<label> \g<separator>\g<encoding>",
+                string=text,
+                count=1,
+            )
         escaped = neutralize_comment_terminator(
             text=text,
             comment_suffix=comment_suffix,

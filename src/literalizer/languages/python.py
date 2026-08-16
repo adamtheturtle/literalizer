@@ -12,6 +12,7 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._comments import EncodingCookieSafeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1237,7 +1238,7 @@ class Python(metaclass=LanguageCls):
         """Comment style options."""
 
         HASH = CommentConfig(
-            prefix="#",
+            prefix=EncodingCookieSafeCommentPrefix(object="#"),
             suffix="",
         )
 
