@@ -130,6 +130,20 @@ class _HasCallWrapperEntrypoint(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _RequiresUniqueDottedCallParts(Protocol):
+    """A language whose dotted-call helpers are named from path
+    segments.
+    """
+
+    @property
+    def dotted_call_stub_requires_unique_parts(self) -> bool:
+        """Return whether repeated path segments collide in the
+        scaffold.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class _DisabledRefKey(str):
     """Identity sentinel distinct from an explicitly enabled empty key."""
 
@@ -5178,6 +5192,19 @@ def _validate_wrapped_call_scaffold(
             language_name=type(language).__name__,
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
+        )
+    if (
+        isinstance(language, _RequiresUniqueDottedCallParts)
+        and language.dotted_call_stub_requires_unique_parts
+        and len(set(target_function_parts)) != len(target_function_parts)
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason=(
+                "repeated components collide with generated dotted-call "
+                "helper declarations"
+            ),
         )
     converted_bound_ref_names = {
         ref_case.convert(name=name) if ref_case is not None else name

@@ -55,12 +55,16 @@ from literalizer.languages import (
     Java,
     JavaScript,
     Jsonnet,
+    Kotlin,
     Mojo,
     Nix,
     Occam,
     PureScript,
     Python,
     Racket,
+    Rust,
+    Scala,
+    Swift,
     SystemVerilog,
     Tcl,
     VisualBasic,
@@ -1026,6 +1030,28 @@ def test_wrapped_call_rejects_empty_per_element_input(
             input_format=InputFormat.JSON,
             language=language,
             target_function="process",
+            parameter_names=("value",),
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[Go(), Java(), Kotlin(), Rust(), Scala(), Swift()],
+)
+def test_wrapped_call_rejects_repeated_static_helper_parts(
+    language: Language,
+) -> None:
+    """Repeated dotted parts must not declare duplicate helper types."""
+    with pytest.raises(
+        expected_exception=InvalidCallTargetError,
+        match="repeated components collide with generated dotted-call",
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="app.app.f",
             parameter_names=("value",),
             wrap_in_file=True,
         )
