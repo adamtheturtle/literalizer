@@ -201,7 +201,7 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     offset use ``Time.new`` with the offset string. Naive datetimes use
     ``Time.utc`` so the host time zone cannot affect the result.
     """
-    second = str(value.second)
+    second = str(object=value.second)
     if value.microsecond:
         second += f" + Rational({value.microsecond}, 1000000)"
     args = (
