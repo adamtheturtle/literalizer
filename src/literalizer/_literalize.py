@@ -5151,6 +5151,7 @@ def _validate_call_preconditions(
     call_transform: Callable[[CallContext], str] | None,
     style: CallStyle,
     variable_form: NewVariable | ExistingVariable | None,
+    wrap_in_file: bool,
 ) -> None:
     """Raise typed errors for unsupported ``literalize_call`` inputs.
 
@@ -5164,7 +5165,7 @@ def _validate_call_preconditions(
     validate_call_parameter_names(
         language=language,
         names=parameter_names,
-        reject_reserved=isinstance(style, KeywordCallStyle),
+        reject_reserved=(isinstance(style, KeywordCallStyle) or wrap_in_file),
     )
     _validate_call_target(
         language=language,
@@ -5794,6 +5795,7 @@ def literalize_call_parsed(
         call_transform=call_transform,
         style=style,
         variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
     )
     if (
         isinstance(style, DottedCommandCallStyle)

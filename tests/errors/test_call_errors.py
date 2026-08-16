@@ -17,7 +17,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer._language import validate_call_parameter_names
+from literalizer._language import Language, validate_call_parameter_names
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -41,16 +41,22 @@ from literalizer.languages import (
     Ada,
     Bash,
     Cobol,
+    CSharp,
     Dhall,
     Elm,
     Haskell,
+    Haxe,
     Hcl,
     JavaScript,
     Jsonnet,
+    Mojo,
     Nix,
     Python,
     Racket,
+    SystemVerilog,
     Tcl,
+    VisualBasic,
+    Wren,
     Yaml,
 )
 
@@ -155,6 +161,32 @@ def test_literalize_call_reserved_parameter_name_raises() -> None:
             language=Python(),
             target_function="f",
             parameter_names=("class",),
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        CSharp(),
+        Haxe(),
+        Mojo(),
+        SystemVerilog(),
+        VisualBasic(),
+        Wren(),
+    ],
+)
+def test_wrapped_positional_stub_rejects_reserved_parameter(
+    language: Language,
+) -> None:
+    """A positional call's wrapper still declares named parameters."""
+    with pytest.raises(expected_exception=InvalidCallParameterNameError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function="f",
+            parameter_names=("class",),
+            wrap_in_file=True,
         )
 
 
