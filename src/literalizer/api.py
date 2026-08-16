@@ -579,6 +579,12 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
+    if isinstance(parameter_names, str):
+        msg = "parameter_names must be a sequence of strings, not a string"
+        raise TypeError(msg)
+    if isinstance(comment_source, str):
+        msg = "comment_source must be a sequence of strings, not a string"
+        raise TypeError(msg)
     effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,
