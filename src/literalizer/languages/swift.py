@@ -119,10 +119,11 @@ _CONTROL_CHAR_THRESHOLD = 32
 @beartype
 def _format_string_escaped(value: str) -> str:
     r"""Format *value* as an escaped Swift string literal."""
-    return format_string_backslash_control(
+    formatted = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:x}}}",
     )
+    return formatted.replace("\x7f", "\\u{7f}")
 
 
 @beartype
@@ -135,7 +136,8 @@ def _format_string_multiline(value: str) -> str:
     cannot add indentation to the value.
     """
     has_unsafe_control = any(
-        ord(char) < _CONTROL_CHAR_THRESHOLD and char not in "\n\t"
+        (ord(char) < _CONTROL_CHAR_THRESHOLD or char == "\x7f")
+        and char not in "\n\t"
         for char in value
     )
     has_trailing_line_whitespace = any(

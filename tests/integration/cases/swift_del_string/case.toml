@@ -1,0 +1,8 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+languages = ["Swift"]
+languages_reason = "The Swift compiler rejects literal DEL characters in source."
+
+[[variants]]
+axis = "swift_del_string"

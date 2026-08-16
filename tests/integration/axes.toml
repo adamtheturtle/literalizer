@@ -953,6 +953,12 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "OTP_25" },
 ]
 
+[axes.swift_del_string]
+plan = "every_non_default_member"
+name_template = "{lang}_del_{format}"
+option = "string_format"
+include_default = true
+
 [axes.toml_basic_string]
 plan = "fixed_overrides"
 name_template = "{lang}_basic_string"
