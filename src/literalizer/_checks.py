@@ -50,7 +50,9 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
             result = spec.format_bytes(value)
         case datetime.datetime():
             result = spec.format_datetime(value)
-        case datetime.time():
+        # No supported input syntax can put a time-only value in a mapping
+        # key or set, the only positions whose scalar identities are checked.
+        case datetime.time():  # pragma: no cover
             result = spec.format_time(value)
         case _:
             result = spec.format_date(value)

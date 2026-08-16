@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Distinct byte and string set members must remain distinct after rendering."
+exceptions = ["TargetScalarCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ["? !!binary /w==\n: bytes\n? ff\n: string\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "bytes_format", member = "HEX" },
+]

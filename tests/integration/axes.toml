@@ -953,6 +953,29 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "OTP_25" },
 ]
 
+[axes.erlang_otp_json_noncharacter_string]
+plan = "fixed_overrides"
+name_template = "{lang}_otp_json_noncharacter_string"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "OTP_25" },
+  { kind = "enum_member_present", option = "json_type", member = "OTP_JSON" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "OTP_25" },
+  { kind = "enum_member", option = "json_type", member = "OTP_JSON" },
+]
+
+[axes.occam_epoch_datetime_list]
+plan = "fixed_overrides"
+name_template = "{lang}_epoch_datetime_list"
+gates = [
+  { kind = "metadata_field", field = "language_id", value = "occam" },
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
+
 [axes.swift_del_string]
 plan = "every_non_default_member"
 name_template = "{lang}_del_{format}"

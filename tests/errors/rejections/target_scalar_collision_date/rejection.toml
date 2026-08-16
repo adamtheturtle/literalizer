@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Distinct date and string collection scalars must remain distinct after rendering."
+exceptions = ["TargetScalarCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = [
+  "2024-01-01: temporal\n\"2024-01-01\": string\n",
+]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "date_format", member = "ISO" },
+]

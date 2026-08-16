@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Python"]
+languages_reason = "Focused coverage of a null mapping key through a language that preserves it as a scalar key."
+suites = ["base"]
