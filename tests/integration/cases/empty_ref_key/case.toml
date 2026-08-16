@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref-default"
+languages = ["Python"]
+languages_reason = "Sampled: empty ref-key parsing is language-independent."
+
+[ref]
+ref_key = ""
+languages = ["Python"]
+languages_reason = "Sampled: empty ref-key parsing is language-independent."

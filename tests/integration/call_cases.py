@@ -432,7 +432,7 @@ def _literalize_call_case(
             consumable_refs=config.consumable_refs,
             ref_values=ref_values,
             bound_refs=bound_refs,
-            ref_key="$ref",
+            ref_key=config.ref_key,
             variable_form=variable_form,
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
@@ -457,7 +457,7 @@ def _literalize_call_case(
         consumable_refs=config.consumable_refs,
         ref_values=ref_values,
         bound_refs=bound_refs,
-        ref_key="$ref",
+        ref_key=config.ref_key,
         collection_layout=literalizer.CollectionLayout(
             value=config.collection_layout
         ),

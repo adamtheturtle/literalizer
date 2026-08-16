@@ -1,0 +1,5 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Python assignment is itself a declaration."
+base_context = { variable_form = "existing" }

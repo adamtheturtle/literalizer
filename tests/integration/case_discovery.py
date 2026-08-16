@@ -19,6 +19,8 @@ from typing import Any, assert_never
 import json5
 from beartype import beartype
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import TaggedScalar
+from typing_extensions import TypeIs
 
 import literalizer
 from literalizer._language import NewVariableNameSyntax
@@ -143,6 +145,30 @@ type CaseData = (
 _MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
+def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
+    """Narrow an untyped parser mapping for strict type checkers."""
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object, /) -> TypeIs[list[object]]:
+    """Narrow an untyped parser sequence for strict type checkers."""
+    return isinstance(value, list)
+
+
+def _demote_yaml_tags(*, value: object) -> object:
+    """Demote round-trip-only tagged scalar wrappers for discovery."""
+    if isinstance(value, TaggedScalar):
+        return vars(value)["value"]
+    if _is_object_dict(value):
+        return {
+            _demote_yaml_tags(value=key): _demote_yaml_tags(value=item)
+            for key, item in value.items()
+        }
+    if _is_object_list(value):
+        return [_demote_yaml_tags(value=item) for item in value]
+    return value
+
+
 @beartype
 def load_case_data(*, input_info: CaseInput) -> CaseData:
     """Parse a case input file according to its declared format.
@@ -165,9 +191,17 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # ``set`` instead of the ruamel comment-tracking subclasses,
             # so the result matches ``CaseData`` exactly.  Comments are
             # irrelevant to the key/float predicates.
-            parsed = YAML(typ="safe").load(  # pyright: ignore[reportUnknownMemberType]
-                stream=source,
+            # Plain ``=`` is a legacy value tag in the safe loader, while
+            # Literalizer deliberately routes it through the round-trip
+            # loader. Mirror that choice so discovery can inspect the same
+            # valid fixtures as the public API.
+            yaml = YAML() if "=" in source else YAML(typ="safe")
+            yaml_parsed: Any = _demote_yaml_tags(
+                value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
+                    stream=source,
+                )
             )
+            parsed = yaml_parsed
         case literalizer.InputFormat.TOML:
             # Unlike the other parsers (which return ``Any``),
             # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``

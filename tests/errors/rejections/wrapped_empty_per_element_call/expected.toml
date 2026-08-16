@@ -1,0 +1,7 @@
+# languages rejecting: 4; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Elm = "Elm cannot represent this call shape: wrap_in_file requires at least one generated call; the per-element input is empty"
+Erlang = "Erlang cannot represent this call shape: wrap_in_file requires at least one generated call; the per-element input is empty"
+Hcl = "Hcl cannot represent this call shape: wrap_in_file requires at least one generated call; the per-element input is empty"
+PureScript = "PureScript cannot represent this call shape: wrap_in_file requires at least one generated call; the per-element input is empty"

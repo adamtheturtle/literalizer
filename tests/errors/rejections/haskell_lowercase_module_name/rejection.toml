@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Haskell module components must start with an uppercase letter."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Haskell"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "lower" }]

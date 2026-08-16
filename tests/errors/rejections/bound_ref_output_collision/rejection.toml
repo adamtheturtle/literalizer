@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "A bound ref cannot redeclare the rendered output variable."
+exceptions = ["BoundRefOutputCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"data"}']
+input_format = "json"
+wrap_in_file = true
+ref_key = "$ref"
+bound_refs = { data = 1 }
+variable_form = "new"
+variable_name = "data"

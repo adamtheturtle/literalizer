@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "C and C++ wrapped calls reject their generated Module entrypoint."
+exceptions = ["InvalidCallTargetError"]
+languages = ["C", "Cpp"]
+
+[call]
+api = "literalize_call"
+sources = ["[[]]"]
+input_format = "json"
+target_function = "Module"
+parameter_names = []
+wrap_in_file = true

@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Typed complete-file wrappers reject assignment to an undeclared existing variable."
+exceptions = ["ExistingVariableNotSelfContainedError"]
+languages = ["CSharp", "Cpp", "Go", "Java", "Kotlin", "Rust", "Swift"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+wrap_in_file = true
+variable_form = "existing"
+variable_name = "x"

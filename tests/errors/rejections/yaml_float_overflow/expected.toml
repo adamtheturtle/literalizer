@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+Python = "Invalid YAML: finite numeric token '1e309' is outside binary64 range"

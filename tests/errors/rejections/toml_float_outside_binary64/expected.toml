@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TOMLParseError]
+"Python['value = 1e309']" = "Invalid TOML: finite numeric token '1e309' is outside binary64 range"
+"Python['value = -1e-4000']" = "Invalid TOML: finite numeric token '-1e-4000' is outside binary64 range"

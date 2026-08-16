@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Rust native maps and sets reject floating-point keys."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ["1.0: value\n", "!!set\n? 1.0\n"]
+input_format = "yaml"

@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Haskell", "Kotlin", "PureScript", "Rust", "Scala", "Swift"]
+languages_reason = "These block-comment syntaxes nest and must neutralize embedded openers."
+
+[[variants]]
+axis = "comment"

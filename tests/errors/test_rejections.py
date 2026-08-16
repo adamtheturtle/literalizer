@@ -29,6 +29,7 @@ from .rejection_manifests import (
     CallSpec,
     RejectionManifest,
     load_rejection_manifests,
+    substituted,
 )
 
 _MANIFESTS = load_rejection_manifests(rejections_dir=REJECTIONS_DIR)
@@ -65,6 +66,23 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     so the seams below only restate that for the type checker.
     """
     lang_cls = case.lang_cls
+    variable_form: (
+        literalizer.NewVariable | literalizer.ExistingVariable | None
+    )
+    match call.variable_form:
+        case "new":
+            variable_form = literalizer.NewVariable(
+                name=call.variable_name,
+                modifiers=frozenset(),
+            )
+        case "existing":
+            variable_form = literalizer.ExistingVariable(
+                name=call.variable_name,
+            )
+        case None:
+            variable_form = _variable_form(call=call, lang_cls=lang_cls)
+        case _ as unreachable_api:
+            assert_never(unreachable_api)
     match call.api:
         case "constructor":
             lang_cls(**case.kwargs)
@@ -75,21 +93,49 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
                 source=case.source,
                 input_format=call.input_format,
                 language=lang_cls(**case.kwargs),
-                variable_form=_variable_form(call=call, lang_cls=lang_cls),
+                variable_form=variable_form,
+                wrap_in_file=call.wrap_in_file,
+                pre_indent_level=call.pre_indent_level,
+                include_delimiters=call.include_delimiters,
+                ref_key=call.ref_key,
+                bound_refs=dict(call.bound_refs) or None,
             )
         case "literalize_call":
             assert case.source is not None
             assert call.input_format is not None
             assert call.target_function is not None
+            ref_case = None
+            if call.ref_case is not None:
+                resolved_ref_case = enum_member_by_name(
+                    enum_cls=literalizer.IdentifierCase,
+                    name=call.ref_case,
+                )
+                assert isinstance(
+                    resolved_ref_case,
+                    literalizer.IdentifierCase,
+                )
+                ref_case = resolved_ref_case
             literalizer.literalize_call(
                 source=case.source,
                 input_format=call.input_format,
                 language=lang_cls(**case.kwargs),
-                target_function=call.target_function,
-                parameter_names=list(call.parameter_names),
+                target_function=substituted(
+                    template=call.target_function,
+                    value=case.value,
+                ),
+                parameter_names=[
+                    substituted(template=name, value=case.value)
+                    for name in call.parameter_names
+                ],
+                per_element=call.per_element,
+                wrap_in_file=call.wrap_in_file,
+                ref_key=call.ref_key,
+                ref_case=ref_case,
+                bound_refs=dict(call.bound_refs) or None,
+                comment_source=call.comment_source,
             )
-        case _ as unreachable:
-            assert_never(unreachable)
+        case _ as unreachable_call:
+            assert_never(unreachable_call)
 
 
 @pytest.mark.parametrize(

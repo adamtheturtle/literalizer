@@ -499,6 +499,7 @@ class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     target_function: str
     parameter_names: StringTuple
     per_element: bool
+    ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)

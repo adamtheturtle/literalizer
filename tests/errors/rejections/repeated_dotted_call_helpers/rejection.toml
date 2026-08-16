@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Wrapped dotted calls reject repeated generated helper components."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Go", "Java", "Kotlin", "Rust", "Scala", "Swift"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "app.app.f"
+parameter_names = ["value"]
+wrap_in_file = true

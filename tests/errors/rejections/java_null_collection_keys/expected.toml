@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Java['null: value\\n']" = "Java's Map.entry() does not accept null keys"
+"Java['!!set\\n? null\\n']" = "Java's Set.of() does not accept null elements"

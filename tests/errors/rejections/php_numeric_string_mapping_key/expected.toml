@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Php['{\"0\": \"a\", \"1\": \"b\"}']" = "PHP arrays coerce numeric string mapping key '0' to an integer key"
+"Php['{\"outer\": {\"-2\": \"value\"}}']" = "PHP arrays coerce numeric string mapping key '-2' to an integer key"

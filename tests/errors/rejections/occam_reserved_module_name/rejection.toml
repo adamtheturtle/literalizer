@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Occam rejects IF as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Occam"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "IF" }]

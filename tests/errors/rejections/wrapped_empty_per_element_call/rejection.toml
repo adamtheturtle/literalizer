@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Complete-file wrappers reject empty per-element call input."
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Elm", "Erlang", "Hcl", "PureScript"]
+
+[call]
+api = "literalize_call"
+sources = ["[]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+wrap_in_file = true

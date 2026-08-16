@@ -1,0 +1,8 @@
+# languages rejecting: 5; languages accepting: 0
+
+[MixedDictKeysError]
+Bash = "Bash stringifies distinct dict keys 1 and '1' as '1'"
+Hcl = "Hcl stringifies distinct dict keys 1 and '1' as '1'"
+Perl = "Perl stringifies distinct dict keys 1 and '1' as '1'"
+Raku = "Raku stringifies distinct dict keys 1 and '1' as '1'"
+Tcl = "Tcl stringifies distinct dict keys 1 and '1' as '1'"

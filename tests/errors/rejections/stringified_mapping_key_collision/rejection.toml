@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "String-keyed target maps reject distinct YAML keys that stringify identically."
+exceptions = ["MixedDictKeysError"]
+languages = ["Bash", "Hcl", "Perl", "Raku", "Tcl"]
+
+[call]
+api = "literalize"
+sources = ["1: integer\n\"1\": string\n"]
+input_format = "yaml"

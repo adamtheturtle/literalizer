@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Case-converted bound references cannot shadow the call-target scaffold."
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[{\"$ref\": \"f\"}]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["value"]
+bound_refs = { F = 1 }
+ref_key = "$ref"
+ref_case = "SNAKE"
+wrap_in_file = true

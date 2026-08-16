@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+JavaScript = "JavaScript Date cannot preserve sub-millisecond datetime precision: 2024-01-15T00:00:00.123456"

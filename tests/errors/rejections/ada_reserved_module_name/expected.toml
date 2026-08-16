@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+Ada = "Ada cannot use module_name 'begin': it is not a valid identifier"

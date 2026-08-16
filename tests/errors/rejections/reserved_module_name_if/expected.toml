@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidModuleNameError]
+C = "C cannot use module_name 'if': it is not a valid identifier"
+ObjectiveC = "ObjectiveC cannot use module_name 'if': it is not a valid identifier"

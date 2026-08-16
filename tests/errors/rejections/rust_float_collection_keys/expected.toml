@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Rust['1.0: value\\n']" = "Rust map formats cannot use float keys"
+"Rust['!!set\\n? 1.0\\n']" = "Rust set formats cannot use float members"

@@ -1,0 +1,10 @@
+# languages rejecting: 7; languages accepting: 0
+
+[ExistingVariableNotSelfContainedError]
+CSharp = "CSharp cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Cpp = "Cpp cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Go = "Go cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Java = "Java cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Kotlin = "Kotlin cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Rust = "Rust cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Swift = "Swift cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"

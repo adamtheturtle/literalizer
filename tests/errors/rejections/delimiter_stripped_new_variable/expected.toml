@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[DelimiterlessVariableError]
+Python = "include_delimiters=False cannot be combined with variable_form"

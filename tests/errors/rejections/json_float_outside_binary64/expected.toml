@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONParseError]
+"Python['1e309']" = "Invalid JSON: finite numeric token '1e309' is outside binary64 range"
+"Python['-1e-4000']" = "Invalid JSON: finite numeric token '-1e-4000' is outside binary64 range"

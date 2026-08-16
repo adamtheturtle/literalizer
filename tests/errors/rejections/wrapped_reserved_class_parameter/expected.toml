@@ -1,0 +1,9 @@
+# languages rejecting: 6; languages accepting: 0
+
+[InvalidCallParameterNameError]
+CSharp = "CSharp cannot use call parameter 'class': it is a reserved identifier"
+Haxe = "Haxe cannot use call parameter 'class': it is a reserved identifier"
+Mojo = "Mojo cannot use call parameter 'class': it is a reserved identifier"
+SystemVerilog = "SystemVerilog cannot use call parameter 'class': it is a reserved identifier"
+VisualBasic = "VisualBasic cannot use call parameter 'class': it is a reserved identifier"
+Wren = "Wren cannot use call parameter 'class': it is a reserved identifier"

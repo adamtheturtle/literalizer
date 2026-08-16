@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Wrapped positional stubs reject if as a reserved parameter name."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Occam", "Zig"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["if"]
+wrap_in_file = true

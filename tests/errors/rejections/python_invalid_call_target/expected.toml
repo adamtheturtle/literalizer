@@ -1,0 +1,13 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Python['']" = "Python cannot use call target '': it must contain non-empty dotted components"
+"Python['.']" = "Python cannot use call target '.': it must contain non-empty dotted components"
+"Python['.f']" = "Python cannot use call target '.f': it must contain non-empty dotted components"
+"Python['1f']" = "Python cannot use call target '1f': component '1f' is not a valid identifier"
+"Python['bad-name']" = "Python cannot use call target 'bad-name': component 'bad-name' is not a valid identifier"
+"Python['class']" = "Python cannot use call target 'class': component 'class' is a reserved identifier"
+"Python['class.obj']" = "Python cannot use call target 'class.obj': component 'class' is a reserved identifier"
+"Python['f.']" = "Python cannot use call target 'f.': it must contain non-empty dotted components"
+"Python['f..g']" = "Python cannot use call target 'f..g': it must contain non-empty dotted components"
+"Python['obj.class']" = "Python cannot use call target 'obj.class': component 'class' is a reserved identifier"

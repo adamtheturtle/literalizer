@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidCallTargetError]
+C = "C cannot use call target 'Module': it collides with the generated file entrypoint"
+Cpp = "Cpp cannot use call target 'Module': it collides with the generated file entrypoint"
