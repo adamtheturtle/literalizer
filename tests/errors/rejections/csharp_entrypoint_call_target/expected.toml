@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+CSharp = "CSharp cannot use call target 'Main': it collides with the generated file entrypoint"

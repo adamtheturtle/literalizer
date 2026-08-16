@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "JavaScript Date rejects datetime precision below one millisecond."
+exceptions = ["UnrepresentableInputError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ["2024-01-15T00:00:00.123456"]
+input_format = "yaml"

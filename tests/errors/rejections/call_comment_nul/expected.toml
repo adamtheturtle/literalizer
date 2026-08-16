@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[CommentSourceNulError]
+Python = "comment_source entry at index 0 contains a NUL byte; source comments cannot contain NUL"

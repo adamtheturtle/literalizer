@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A delimiter-stripped fragment cannot declare a new variable."
+exceptions = ["InvalidRenderArgumentError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["[1, 2]"]
+input_format = "json"
+include_delimiters = false
+variable_form = "new"
+variable_name = "x"

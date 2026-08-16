@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Dart and Go wrapped calls reject their generated main entrypoint."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Dart", "Go"]
+
+[call]
+api = "literalize_call"
+sources = ["[[]]"]
+input_format = "json"
+target_function = "main"
+parameter_names = []
+wrap_in_file = true

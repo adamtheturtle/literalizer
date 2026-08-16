@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Ada rejects begin as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Ada"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "begin" }]

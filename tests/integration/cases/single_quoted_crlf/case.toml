@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Perl", "Php", "Ruby"]
+languages_reason = "These single-quoted formats require the escaped CRLF fallback."
+
+[[variants]]
+axis = "string_format"

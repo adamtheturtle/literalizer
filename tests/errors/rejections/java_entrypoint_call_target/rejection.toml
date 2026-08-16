@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Java wrapped calls reject their generated module entrypoint."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Java"]
+
+[call]
+api = "literalize_call"
+sources = ["[[]]"]
+input_format = "json"
+target_function = "module"
+parameter_names = []
+wrap_in_file = true

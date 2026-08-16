@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Sampled: empty ref-key parsing is language-independent."

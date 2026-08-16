@@ -39,6 +39,7 @@ class RejectionCase:
     lang_cls: literalizer.LanguageCls
     kwargs: Mapping[str, object]
     source: str | None
+    value: str | None
 
 
 @beartype
@@ -199,6 +200,7 @@ def _cases_for_languages(
                             ),
                             lang_cls=lang_cls,
                             source=source,
+                            value=value,
                             kwargs=_case_kwargs(
                                 manifest=manifest,
                                 lang_cls=lang_cls,

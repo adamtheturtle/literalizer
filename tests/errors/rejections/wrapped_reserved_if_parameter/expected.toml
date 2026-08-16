@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidCallParameterNameError]
+Occam = "Occam cannot use call parameter 'if': it is a reserved identifier"
+Zig = "Zig cannot use call parameter 'if': it is a reserved identifier"

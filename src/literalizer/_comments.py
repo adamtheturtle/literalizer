@@ -379,7 +379,7 @@ def _format_comment(
             # A final backslash can splice the following physical line in
             # C-family source processing (and continues lines in several
             # shells).
-            escaped += " "
+            escaped += " ."
         return f"{line_prefix}{comment_prefix} {escaped}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
 

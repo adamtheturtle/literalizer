@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Languages reserving module reject it as a wrapper name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["FSharp", "Fortran", "SystemVerilog"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "module" }]

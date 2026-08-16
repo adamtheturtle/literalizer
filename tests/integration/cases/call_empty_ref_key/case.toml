@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+ref_key = ""
+ref_declarations = { external_value = "1" }
+languages = ["Python"]
+languages_reason = "Sampled: empty ref-key parsing is language-independent."

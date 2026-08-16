@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Malformed underscored YAML numerics raise the public YAML parse error."
+exceptions = ["YAMLParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["x: +_\n", "x: +_\n# force roundtrip path\n"]
+input_format = "yaml"

@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Lua", "ObjectiveC"]
+languages_reason = "These native datetime formats emit fractional Unix epoch literals."

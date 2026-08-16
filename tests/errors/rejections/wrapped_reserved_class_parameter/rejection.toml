@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Wrapped positional stubs reject class as a reserved parameter name."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["CSharp", "Haxe", "Mojo", "SystemVerilog", "VisualBasic", "Wren"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["class"]
+wrap_in_file = true

@@ -1,0 +1,9 @@
+# languages rejecting: 6; languages accepting: 0
+
+[InvalidCallTargetError]
+Go = "Go cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"
+Java = "Java cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"
+Kotlin = "Kotlin cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"
+Rust = "Rust cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"
+Scala = "Scala cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"
+Swift = "Swift cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"

@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "A wrapped bound reference cannot shadow the call-target scaffold."
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[{\"$ref\": \"f\"}]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["value"]
+bound_refs = { f = 1 }
+ref_key = "$ref"
+wrap_in_file = true

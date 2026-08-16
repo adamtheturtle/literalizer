@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "C-family languages reject if as a wrapper name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["C", "ObjectiveC"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "if" }]

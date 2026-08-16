@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Tcl"]
+languages_reason = "Tcl hexadecimal escapes can consume following hexadecimal digits."

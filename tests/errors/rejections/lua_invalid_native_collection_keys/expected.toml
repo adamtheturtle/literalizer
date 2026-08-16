@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Lua['.nan: value\\n']" = "Lua cannot use NaN as a mapping key"
+"Lua['!!set\\n? .nan\\n']" = "Lua cannot use NaN as a set member table key"

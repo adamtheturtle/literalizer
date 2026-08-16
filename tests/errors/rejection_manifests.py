@@ -52,6 +52,20 @@ VALUE_PLACEHOLDER = "value"
 """The only placeholder a manifest's constructor arguments substitute."""
 
 type ApiName = Literal["literalize", "literalize_call", "constructor"]
+type VariableFormName = Literal["new", "existing"]
+
+
+def _bound_refs_items(
+    value: dict[object, object], /
+) -> tuple[tuple[object, object], ...]:
+    """Make a TOML inline table usable as a frozen model key."""
+    return tuple(value.items())
+
+
+type BoundRefs = Annotated[
+    tuple[tuple[str, int | str], ...],
+    BeforeValidator(_bound_refs_items),
+]
 
 
 class RejectionManifestError(ValueError):
@@ -299,11 +313,23 @@ class CallSpec(  # noqa: NOD001
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
     )
-    target_function: Annotated[str, Field(min_length=1)] | None = None
+    target_function: str | None = None
     parameter_names: Annotated[
         tuple[DeclaredName, ...],
         Field(strict=False),
     ] = Field(default_factory=_no_names)
+    per_element: bool = True
+    wrap_in_file: bool = False
+    ref_key: str | None = None
+    ref_case: str | None = None
+    bound_refs: BoundRefs = ()
+    comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
+        None
+    )
+    pre_indent_level: int = 0
+    include_delimiters: bool = True
+    variable_form: VariableFormName | None = None
+    variable_name: str = "my_data"
     kwargs: Annotated[tuple[RejectionKwarg, ...], Field(strict=False)] = Field(
         default_factory=_no_kwargs
     )
@@ -325,7 +351,7 @@ class CallSpec(  # noqa: NOD001
         if calls != (self.target_function is not None):
             msg = f"api = {self.api!r} requires exactly a target_function"
             raise ValueError(msg)
-        if calls != bool(self.parameter_names):
+        if calls != ("parameter_names" in self.model_fields_set):
             msg = f"api = {self.api!r} requires exactly parameter_names"
             raise ValueError(msg)
         if self.api != "literalize" and self.modifiers:
@@ -422,6 +448,9 @@ class _RejectionData(  # noqa: NOD001
             for kwarg in self.call.kwargs
             for template in _kwarg_templates(kwarg=kwarg)
         ]
+        templates.extend(self.call.parameter_names)
+        if self.call.target_function is not None:
+            templates.append(self.call.target_function)
         unknown = sorted(
             placeholder
             for template in templates

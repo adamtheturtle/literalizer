@@ -6,11 +6,8 @@ from typing import Any
 import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import (
-    BoundRefOutputCollisionError,
-    InvalidValueInputError,
-)
-from literalizer.languages import JavaScript, Python, Rust
+from literalizer.exceptions import InvalidValueInputError
+from literalizer.languages import Python, Rust
 
 
 def test_cyclic_supplemental_values_raise_typed_error() -> None:
@@ -67,25 +64,6 @@ def test_deep_supplemental_value_raises_typed_error() -> None:
             input_format=InputFormat.JSON,
             language=Python(),
             ref_values={"value": deeply_nested_value},
-        )
-
-
-def test_bound_ref_cannot_redeclare_output_variable() -> None:
-    """Bound refs and the final output share one declaration name-
-    space.
-    """
-    with pytest.raises(
-        expected_exception=BoundRefOutputCollisionError,
-        match="'data'",
-    ):
-        literalize(
-            source='{"$ref":"data"}',
-            input_format=InputFormat.JSON,
-            language=JavaScript(),
-            variable_form=NewVariable(name="data", modifiers=frozenset()),
-            wrap_in_file=True,
-            bound_refs={"data": 1},
-            ref_key="$ref",
         )
 
 

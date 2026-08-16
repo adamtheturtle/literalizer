@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Class-like languages reject class as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Cpp", "Crystal", "D", "Haxe", "Scala"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "class" }]

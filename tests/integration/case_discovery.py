@@ -19,6 +19,8 @@ from typing import Any, assert_never
 import json5
 from beartype import beartype
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import TaggedScalar
+from typing_extensions import TypeIs
 
 import literalizer
 from literalizer._language import NewVariableNameSyntax
@@ -102,7 +104,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     """
     try:
         literalizer.literalize(
-            source='{"": 1, "key\\u0001": 2}',
+            source='{"key\\u0001": 2}',
             input_format=literalizer.InputFormat.JSON,
             language=lang_cls(),
         )
@@ -143,6 +145,30 @@ type CaseData = (
 _MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
+def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
+    """Narrow a dynamically typed mapping for strict type checkers."""
+    return isinstance(value, dict)
+
+
+def _is_object_list(value: object, /) -> TypeIs[list[object]]:
+    """Narrow a dynamically typed sequence for strict type checkers."""
+    return isinstance(value, list)
+
+
+def _demote_yaml_tags(*, value: object) -> object:
+    """Demote round-trip-only tagged scalar wrappers for discovery."""
+    if isinstance(value, TaggedScalar):
+        return vars(value)["value"]
+    if _is_object_dict(value):
+        return {
+            _demote_yaml_tags(value=key): _demote_yaml_tags(value=item)
+            for key, item in value.items()
+        }
+    if _is_object_list(value):
+        return [_demote_yaml_tags(value=item) for item in value]
+    return value
+
+
 @beartype
 def load_case_data(*, input_info: CaseInput) -> CaseData:
     """Parse a case input file according to its declared format.
@@ -165,9 +191,17 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # ``set`` instead of the ruamel comment-tracking subclasses,
             # so the result matches ``CaseData`` exactly.  Comments are
             # irrelevant to the key/float predicates.
-            parsed = YAML(typ="safe").load(  # pyright: ignore[reportUnknownMemberType]
-                stream=source,
+            # Plain ``=`` is a legacy value tag in the safe loader, while
+            # Literalizer deliberately routes it through the round-trip
+            # loader. Mirror that choice so discovery can inspect the same
+            # valid fixtures as the public API.
+            yaml = YAML() if "=" in source else YAML(typ="safe")
+            yaml_parsed: Any = _demote_yaml_tags(
+                value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
+                    stream=source,
+                )
             )
+            parsed = yaml_parsed
         case literalizer.InputFormat.TOML:
             # Unlike the other parsers (which return ``Any``),
             # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
@@ -181,14 +215,12 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
 
 
 def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
-    """Return ``True`` if *data* contains a dict key that is empty or
-    has characters outside printable ASCII.
-    """
+    """Return whether a nonempty dict key is outside printable ASCII."""
     match data:
         case dict():
             for key in data:
                 if isinstance(key, str) and (
-                    not key or not key.isprintable() or not key.isascii()
+                    key and (not key.isprintable() or not key.isascii())
                 ):
                     return True
             return any(
@@ -245,8 +277,8 @@ def cases_with_invalid_matlab_struct_keys(
 def cases_with_non_trivial_dict_keys(
     cases_dir: Path,
 ) -> frozenset[str]:
-    """Return case directory names whose input has dict keys that some
-    languages cannot represent (empty or non-printable-ASCII).
+    """Return case directory names whose input has non-printable-ASCII
+    dict keys that some languages cannot represent.
 
     Every case is parsed by its declared format, so a JSON/JSON5/TOML
     case carrying such keys is detected the same as a YAML one.
