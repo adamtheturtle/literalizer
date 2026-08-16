@@ -109,7 +109,7 @@ _format_quoted_string = make_backslash_string_formatter(
 
 @beartype
 def _format_string(value: str) -> str:
-    """Format an Erlang charlist without illegal noncharacter tokens."""
+    """Format an Erlang char-list without illegal non-character tokens."""
     if "\ufffe" in value or "\uffff" in value:
         return (
             f"[{', '.join(str(object=ord(character)) for character in value)}]"

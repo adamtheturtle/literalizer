@@ -546,7 +546,7 @@ class InvalidPreIndentLevelError(InvalidRenderArgumentError):
 
 
 class DelimiterlessVariableError(InvalidRenderArgumentError):
-    """Raised when a delimiterless collection is bound as one value."""
+    """Raised when a delimiter-less collection is bound as one value."""
 
     def __init__(self) -> None:
         """Create a ``DelimiterlessVariableError``."""
@@ -775,10 +775,10 @@ class CommentSourceMultilineError(LiteralizerError):
 
 
 class CommentSourceNulError(LiteralizerError):
-    """Raised when a ``comment_source`` entry contains a NUL byte.
+    """Raised when a ``comment_source`` entry contains a null byte.
 
-    Source-code toolchains commonly reject NUL even inside comments.
-    To resolve, remove or replace the NUL character.
+    Source-code tool chains commonly reject null bytes even inside comments.
+    To resolve, remove or replace the null character.
     """
 
     def __init__(self, *, index: int) -> None:

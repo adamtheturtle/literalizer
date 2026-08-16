@@ -123,7 +123,7 @@ _INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
 
 
 def _reject_numeric_string_keys(data: Value) -> None:
-    """Reject mapping keys that PHP arrays coerce from strings to ints."""
+    """Reject mapping keys that PHP arrays coerce from strings to integers."""
     stack = [data]
     while stack:
         value = stack.pop()

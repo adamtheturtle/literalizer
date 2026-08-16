@@ -136,7 +136,7 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 
 def _reject_float_collection_keys(data: Value) -> None:
     """Reject floats requiring unavailable Rust
-    ``Eq``/``Hash``/``Ord``.
+    equality, hashing, and ordering traits.
     """
     match data:
         case dict():

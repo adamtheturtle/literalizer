@@ -188,7 +188,7 @@ def reject_aware_datetimes(
 def reject_stringified_dict_key_collisions(
     *, data: Value, language_name: str
 ) -> None:
-    """Reject distinct mapping keys that stringify to the same key."""
+    """Reject distinct mapping keys that convert to the same string."""
     match data:
         case dict():
             normalized: dict[str, Scalar] = {}

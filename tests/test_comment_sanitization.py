@@ -54,7 +54,9 @@ def test_nested_block_comment_openers_are_neutralized(
     unsafe_opener: str,
     safe_opener: str,
 ) -> None:
-    """Preserved source text cannot open an unclosed nested comment."""
+    """Preserved source text cannot open an unterminated nested
+    comment.
+    """
     result = literalize(
         source=f"# nested opener {unsafe_opener} remains\nx: 1\n",
         input_format=InputFormat.YAML,

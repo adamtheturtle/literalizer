@@ -124,7 +124,7 @@ class _SupportsCallVariableWrapInFile(Protocol):
 @runtime_checkable
 class _HasCallWrapperEntrypoint(Protocol):
     """A language whose complete-file call wrapper declares an
-    entrypoint.
+    entry point.
     """
 
     @property

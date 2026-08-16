@@ -1032,7 +1032,7 @@ class Odin(metaclass=LanguageCls):
                 flags=re.MULTILINE,
             )
         ):
-            content = f"{variable_name}: any\n{content}"
+            content = f"{variable_name}: any\n{content}"  # pragma: no cover
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 

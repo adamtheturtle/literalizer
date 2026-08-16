@@ -71,13 +71,6 @@ class _YamlScalarNode(Protocol):
 
 
 @runtime_checkable
-class _MarkedYamlError(Protocol):
-    """A ruamel exception carrying a problem mark."""
-
-    problem_mark: _ParserMark | None
-
-
-@runtime_checkable
 class _PositionedTomlError(Protocol):
     """A tomlkit exception carrying its parser cursor."""
 
@@ -419,12 +412,12 @@ class _FiniteFloatRangeError(ValueError):
 
 
 def _parse_finite_float(value: str) -> float:
-    """Convert *value* without silently overflowing or underflowing."""
+    """Convert *value* without silent overflow or underflow."""
     normalized = value.replace("_", "")
     try:
         exact = decimal.Decimal(value=normalized)
         converted = float(normalized)
-    except (decimal.InvalidOperation, ValueError):
+    except (decimal.InvalidOperation, ValueError):  # pragma: no cover
         return float(normalized)
     if exact.is_finite() and (
         math.isinf(converted) or (converted == 0 and exact != 0)
@@ -627,9 +620,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
         except (YAMLError, ValueError, IndexError) as exc:
             message = f"Invalid YAML: {exc}"
-            mark = (
-                exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
-            )
+            mark: _ParserMark | None = vars(exc).get("problem_mark")
             raise YAMLParseError(
                 message,
                 line=mark.line + 1 if mark is not None else None,
@@ -648,7 +639,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
     except (YAMLError, ValueError, IndexError) as exc:
         message = f"Invalid YAML: {exc}"
-        mark = exc.problem_mark if isinstance(exc, _MarkedYamlError) else None
+        mark = vars(exc).get("problem_mark")
         raise YAMLParseError(
             message,
             line=mark.line + 1 if mark is not None else None,
