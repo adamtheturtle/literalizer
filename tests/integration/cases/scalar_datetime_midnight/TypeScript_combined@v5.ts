@@ -1,3 +1,3 @@
-let my_data = new Date("2024-01-15T00:00:00");
-my_data = new Date("2024-01-15T00:00:00");
+let my_data = new Date(2024, 0, 15, 0, 0, 0);
+my_data = new Date(2024, 0, 15, 0, 0, 0);
 export {};

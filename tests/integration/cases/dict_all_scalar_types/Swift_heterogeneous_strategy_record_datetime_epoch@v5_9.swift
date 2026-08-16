@@ -6,7 +6,7 @@ let my_data = Record0(
     f: 1.5,
     b: true,
     n: nil,
-    d: DateComponents(calendar: Calendar(identifier: .gregorian), year: 2024, month: 1, day: 15).date!,
+    d: DateComponents(calendar: Calendar(identifier: .gregorian), timeZone: TimeZone(secondsFromGMT: 0)!, year: 2024, month: 1, day: 15).date!,
     dt: 1705320000,
     by: "48656c6c6f",
 )

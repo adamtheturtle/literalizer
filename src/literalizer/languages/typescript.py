@@ -16,11 +16,11 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
-    datetime_iso_formatter,
     format_date_iso,
     format_date_javascript,
     format_datetime_epoch,
     format_datetime_iso,
+    format_datetime_javascript,
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
@@ -588,9 +588,7 @@ class TypeScript(metaclass=LanguageCls):
         """Datetime formatting options for TypeScript."""
 
         JS = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(
-                template='new Date("{iso}")',
-            ),
+            formatter=format_datetime_javascript,
             preamble_lines=(),
             type_produced=datetime.datetime,
         )

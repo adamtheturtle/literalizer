@@ -190,6 +190,7 @@ def _format_date_swift(value: datetime.date) -> str:
     return (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
+        "timeZone: TimeZone(secondsFromGMT: 0)!, "
         f"year: {value.year}, month: {value.month}, day: {value.day}"
         ").date!"
     )

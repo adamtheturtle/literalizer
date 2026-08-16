@@ -5,6 +5,8 @@ from collections.abc import Callable
 
 from beartype import beartype
 
+from literalizer.exceptions import UnrepresentableInputError
+
 
 @beartype
 def format_date_iso(value: datetime.date) -> str:
@@ -23,6 +25,31 @@ def format_date_javascript(value: datetime.date) -> str:
     zero-based, unlike :class:`datetime.date`.
     """
     return f"new Date({value.year}, {value.month - 1}, {value.day})"
+
+
+@beartype
+def format_datetime_javascript(value: datetime.datetime) -> str:
+    """Format an exactly representable JavaScript ``Date``.
+
+    Naive values use the numeric constructor so their calendar components do
+    not get parsed as an environment-dependent instant. Aware values retain
+    their explicit ISO offset. JavaScript ``Date`` has millisecond precision.
+    """
+    if value.microsecond % 1000:
+        msg = (
+            "JavaScript Date cannot preserve sub-millisecond datetime "
+            f"precision: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg)
+    if value.utcoffset() is not None:
+        return f'new Date("{value.isoformat(timespec="milliseconds")}")'
+    args = (
+        f"{value.year}, {value.month - 1}, {value.day}, {value.hour}, "
+        f"{value.minute}, {value.second}"
+    )
+    if value.microsecond:
+        args += f", {value.microsecond // 1000}"
+    return f"new Date({args})"
 
 
 @beartype
