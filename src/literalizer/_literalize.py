@@ -4477,7 +4477,8 @@ def _format_call_args(
                 formatted=formatted,
             )
             named = ", ".join(
-                f"{name}{kw_sep}{val}"
+                f"{f'[{name!r}]' if name in style.computed_names else name}"
+                f"{kw_sep}{val}"
                 for name, val in zip(params, formatted, strict=True)
             )
             result = f"({{ {named} }})"

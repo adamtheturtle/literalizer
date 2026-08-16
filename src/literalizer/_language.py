@@ -424,6 +424,7 @@ class ObjectCallStyle:
     """
 
     separator: str
+    computed_names: frozenset[str]
 
 
 @dataclasses.dataclass(frozen=True)

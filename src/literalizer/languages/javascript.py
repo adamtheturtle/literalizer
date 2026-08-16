@@ -596,7 +596,9 @@ class JavaScript(metaclass=LanguageCls):
     class CallStyles(enum.Enum):
         """JavaScript call style options."""
 
-        OBJECT = ObjectCallStyle(separator=": ")
+        OBJECT = ObjectCallStyle(
+            separator=": ", computed_names=frozenset({"__proto__"})
+        )
         POSITIONAL = PositionalCallStyle(
             arg_separator=", ", parenthesize_each_arg=False
         )
