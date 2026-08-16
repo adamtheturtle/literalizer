@@ -17,6 +17,7 @@ from literalizer._checks import (
     check_empty_sibling_sequence_type_hint_data,
     reject_aware_datetimes,
 )
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     fixed_open,
@@ -1159,7 +1160,7 @@ class Kotlin(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="/*",
-            suffix=" */",
+            suffix=NestingCommentSuffix(object=" */"),
         )
 
     class DeclarationStyles(enum.Enum):

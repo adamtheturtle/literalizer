@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1065,7 +1066,7 @@ class PureScript(metaclass=LanguageCls):
         )
         BLOCK = CommentConfig(
             prefix="{-",
-            suffix=" -}",
+            suffix=NestingCommentSuffix(object=" -}"),
         )
 
     class DeclarationStyles(enum.Enum):

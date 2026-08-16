@@ -33,6 +33,15 @@ class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
 
     __slots__ = ()
 
+    @property
+    def opener(self) -> str:
+        """Return the opening delimiter paired with this suffix."""
+        return {
+            "*)": "(*",
+            "*/": "/*",
+            "-}": "{-",
+        }[self.strip()]
+
 
 @dataclasses.dataclass(frozen=True)
 class ElementComments:
@@ -372,7 +381,7 @@ def neutralize_comment_terminator(
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
     if isinstance(comment_suffix, NestingCommentSuffix):
-        opener = "(*"
+        opener = comment_suffix.opener
         text = text.replace(opener, " ".join(opener))
     if not terminator or terminator not in text:
         return text
