@@ -118,6 +118,18 @@ class _SupportsCallVariableWrapInFile(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _HasCallWrapperEntrypoint(Protocol):
+    """A language whose complete-file call wrapper declares an
+    entrypoint.
+    """
+
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the identifier reserved by the generated wrapper."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class _DisabledRefKey(str):
     """Identity sentinel distinct from an explicitly enabled empty key."""
 
@@ -5173,6 +5185,17 @@ def _validate_call_preconditions(
         target_function=target_function,
         target_function_parts=target_function_parts,
     )
+    if (
+        wrap_in_file
+        and len(target_function_parts) == 1
+        and isinstance(language, _HasCallWrapperEntrypoint)
+        and target_function == language.call_wrapper_entrypoint_name
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it collides with the generated file entrypoint",
+        )
     if wrap_in_file:
         converted_bound_ref_names = {
             ref_case.convert(name=name) if ref_case is not None else name

@@ -1353,6 +1353,11 @@ class CSharp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entrypoint name."""
+        return "Main"
+
     def wrap_combined_in_file(
         self,
         declaration: str,

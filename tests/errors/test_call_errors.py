@@ -40,13 +40,18 @@ from literalizer.exceptions import (
 from literalizer.languages import (
     Ada,
     Bash,
+    C,
     Cobol,
+    Cpp,
     CSharp,
+    Dart,
     Dhall,
     Elm,
+    Go,
     Haskell,
     Haxe,
     Hcl,
+    Java,
     JavaScript,
     Jsonnet,
     Mojo,
@@ -966,5 +971,35 @@ def test_wrapped_call_rejects_bound_ref_target_collision(
             bound_refs={"F" if ref_case is not None else "f": 1},
             ref_case=ref_case,
             ref_key="$ref",
+            wrap_in_file=True,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("language", "target_function"),
+    argvalues=[
+        (C(), "Module"),
+        (Cpp(), "Module"),
+        (CSharp(), "Main"),
+        (Dart(), "main"),
+        (Go(), "main"),
+        (Java(), "module"),
+    ],
+)
+def test_wrapped_call_rejects_entrypoint_target_collision(
+    language: Language,
+    target_function: str,
+) -> None:
+    """A call stub must not reuse its complete-file entrypoint name."""
+    with pytest.raises(
+        expected_exception=InvalidCallTargetError,
+        match="collides with the generated file entrypoint",
+    ):
+        literalize_call(
+            source="[[]]",
+            input_format=InputFormat.JSON,
+            language=language,
+            target_function=target_function,
+            parameter_names=(),
             wrap_in_file=True,
         )
