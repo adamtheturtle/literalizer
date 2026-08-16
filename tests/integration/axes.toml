@@ -959,6 +959,16 @@ name_template = "{lang}_del_{format}"
 option = "string_format"
 include_default = true
 
+[axes.tcl_next_line_string]
+plan = "fixed_overrides"
+name_template = "{lang}_next_line_string"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "V8_6" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "V8_6" },
+]
+
 [axes.toml_basic_string]
 plan = "fixed_overrides"
 name_template = "{lang}_basic_string"

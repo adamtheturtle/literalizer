@@ -101,6 +101,7 @@ _format_string = make_backslash_string_formatter(
         ("[", "\\["),
         ("]", "\\]"),
         ("\0", "\\u0000"),
+        ("\x85", "\\u0085"),
     ],
 )
 
@@ -114,7 +115,7 @@ def _add_tcl_continuation(value: str) -> str:
     last) tells the interpreter to treat the next line as part of the
     same command.
     """
-    lines = value.splitlines()
+    lines = value.split(sep="\n")
     if len(lines) <= 1:
         return value
     result: list[str] = []

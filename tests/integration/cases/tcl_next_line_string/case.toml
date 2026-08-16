@@ -1,0 +1,8 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+languages = ["Tcl"]
+languages_reason = "Tcl must preserve U+0085 without treating it as a physical source line."
+
+[[variants]]
+axis = "tcl_next_line_string"
