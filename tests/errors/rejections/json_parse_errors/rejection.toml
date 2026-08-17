@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Malformed JSON and duplicate object keys raise typed parse errors."
+exceptions = ["JSONParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = [
+  "not json",
+  '{"a": 1, "a": 2}',
+  '{"outer": {"a": 1, "a": 2}}',
+]
+input_format = "json"

@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSON5ParseError]
+"Python['{invalid']" = "Invalid JSON5: <string>:1 Unexpected end of input at column 9"
+"Python['{a: 1, a: 2}']" = "Invalid JSON5: Duplicate key \"a\" found in object"
+"Python['{outer: {a: 1, a: 2}}']" = "Invalid JSON5: Duplicate key \"a\" found in object"
