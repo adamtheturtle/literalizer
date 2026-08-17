@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Malformed JSON5 and duplicate object keys raise typed parse errors."
+exceptions = ["JSON5ParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["{invalid", "{a: 1, a: 2}", "{outer: {a: 1, a: 2}}"]
+input_format = "json5"

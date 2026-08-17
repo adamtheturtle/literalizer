@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+"Python[':\\n  :\\n    - ][']" = "Invalid YAML: while parsing a block mapping\ndid not find expected key\n  in \"<unicode string>\", line 1, column 1"
+"Python['value: [1\\n# force roundtrip path\\n']" = "Invalid YAML: while parsing a flow sequence\n  in \"<unicode string>\", line 1, column 8:\n    value: [1\n           ^ (line: 1)\nexpected ',' or ']', but got '<stream end>'\n  in \"<unicode string>\", line 3, column 1:\n    \n    ^ (line: 3)"

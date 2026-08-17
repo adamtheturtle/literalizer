@@ -2,4 +2,4 @@
 
 [YAMLParseError]
 "Python['x: +_\\n']" = "Invalid YAML: invalid literal for int() with base 10: ''"
-"Python['x: +_\\n# force roundtrip path\\n']" = "Invalid YAML: string index out of range"
+"Python['x: +_\\n# force roundtrip path\\n']" = "Invalid YAML: malformed input"

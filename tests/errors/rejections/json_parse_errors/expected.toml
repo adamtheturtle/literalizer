@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONParseError]
+"Python['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
+"Python['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
+"Python['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
