@@ -636,7 +636,8 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             # behind. Never expose that partial state to the next public
             # call on this thread.
             _YAML_PARSERS.round_trip = None
-            message = f"Invalid YAML: {exc}"
+            detail = "malformed input" if isinstance(exc, IndexError) else exc
+            message = f"Invalid YAML: {detail}"
             mark: _ParserMark | None = vars(exc).get("problem_mark")
             raise YAMLParseError(
                 message,
@@ -656,7 +657,8 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
     except (YAMLError, ValueError, IndexError) as exc:
         _YAML_PARSERS.safe = None
-        message = f"Invalid YAML: {exc}"
+        detail = "malformed input" if isinstance(exc, IndexError) else exc
+        message = f"Invalid YAML: {detail}"
         mark = vars(exc).get("problem_mark")
         raise YAMLParseError(
             message,
