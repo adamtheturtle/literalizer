@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Nim"]
+languages_reason = "Nim-specific: a non-decimal numeral carries its sign outside the literal, so the signed 64-bit minimum needs a cast."
+suites = ["base"]
+
+[[variants]]
+axis = "integer_format"

@@ -39,6 +39,8 @@ from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
     format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_single_nul_hex,
@@ -96,7 +98,6 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
-    UnrepresentableIntegerError,
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -127,15 +128,6 @@ def _reject_nan_table_keys(data: Value) -> None:
                 _reject_nan_table_keys(data=value)
         case _:
             return
-
-
-@beartype
-def _format_lua_hex(value: int) -> str:
-    """Render hexadecimal only within the signed Lua integer range."""
-    if not I64_MIN <= value <= I64_MAX:
-        msg = f"Lua cannot represent {value} as a hexadecimal integer"
-        raise UnrepresentableIntegerError(msg)
-    return format_integer_hex(value=value)
 
 
 @beartype
@@ -370,6 +362,7 @@ class Lua(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -448,7 +441,7 @@ class Lua(metaclass=LanguageCls):
         """Integer format options."""
 
         DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=_format_lua_hex)
+        HEX = enum.member(value=format_integer_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
@@ -856,10 +849,22 @@ class Lua(metaclass=LanguageCls):
         a decimal numeral that overflows the integer range, so the
         operand converts to a float and the value silently loses
         integer precision.
+
+        The lexer turns any other numeral outside that range into a
+        float, whichever base it is written in, so the value is refused
+        rather than emitted (issue #3911).
         """
         base = self.integer_format
+        fallback = raise_for_unrepresentable_int(language_name="Lua")
         return lambda value: (
-            "math.mininteger" if value == I64_MIN else base(value)
+            "math.mininteger"
+            if value == I64_MIN
+            else make_overflow_fallback_formatter(
+                base=base,
+                fallback=fallback,
+                min_value=I64_MIN,
+                max_value=I64_MAX,
+            )(value)
         )
 
     @cached_property

@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Common Lisp declaration cannot name a locked special variable."
+exceptions = ["ReservedVariableNameError"]
+languages = ["CommonLisp"]
+values = ["Package", "features", "package", "print-base", "standard-output"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
