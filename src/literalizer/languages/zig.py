@@ -427,6 +427,7 @@ def _zig_record_field_identifier(key: str, /) -> str:
         return "@" + format_string_backslash_control(
             value=key,
             control_char_fmt="\\x{:02x}",
+            escape_delete=True,
         )
     return key
 
@@ -577,6 +578,7 @@ def _zig_parse_expression(data: Value) -> str:
     zig_literal = format_string_backslash_control(
         value=json_text,
         control_char_fmt="\\x{:02x}",
+        escape_delete=True,
     )
     return (
         "(std.json.parseFromSlice("
@@ -1713,6 +1715,7 @@ class Zig(metaclass=LanguageCls):
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
+                escape_delete=True,
             )
 
         return _format

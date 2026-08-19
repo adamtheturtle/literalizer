@@ -275,6 +275,7 @@ def _apply_elm_string(value: str, prefix: str) -> str:
     escaped = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:04x}}}",
+        escape_delete=False,
     )
     return f"{prefix}Str {escaped}"
 
@@ -580,6 +581,7 @@ def _format_elm_json_string(value: str) -> str:
     escaped = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:04x}}}",
+        escape_delete=False,
     )
     return f"Json.Encode.string {escaped}"
 

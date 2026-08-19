@@ -102,7 +102,11 @@ def _escape_roc_string_body(value: str) -> str:
         .replace("$(", "\\$(")
         .replace("${", "\\${")
     )
-    return escape_control_chars(value=escaped, fmt="\\u({:04x})")
+    return escape_control_chars(
+        value=escaped,
+        fmt="\\u({:04x})",
+        escape_delete=False,
+    )
 
 
 @beartype

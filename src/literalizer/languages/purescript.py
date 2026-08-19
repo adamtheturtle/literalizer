@@ -334,6 +334,7 @@ def _apply_purescript_string(value: str, prefix: str) -> str:
         escaped = format_string_backslash_control(
             value=value,
             control_char_fmt="\\x{:02x}",
+            escape_delete=False,
         )
         return f"{prefix}Str {escaped}"
     pieces: list[str] = []
@@ -345,6 +346,7 @@ def _apply_purescript_string(value: str, prefix: str) -> str:
         formatted = format_string_backslash_control(
             value=char,
             control_char_fmt="\\x{:02x}",
+            escape_delete=False,
         )[1:-1]
         pieces.append(formatted)
         hex_run_after_control = char <= "\x1f" and char not in "\t\n\r"
@@ -797,6 +799,7 @@ def _argonaut_parse_expression(data: Value) -> str:
     purescript_literal = format_string_backslash_control(
         value=json_text,
         control_char_fmt="\\x{:06x}",
+        escape_delete=False,
     )
     return f"fromRight jsonNull (jsonParser {purescript_literal})"
 

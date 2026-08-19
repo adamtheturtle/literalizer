@@ -695,6 +695,7 @@ class Yaml(metaclass=LanguageCls):
             formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
+                escape_delete=False,
             )
             return re.sub(
                 pattern=r"[\x7f-\x9f]",
