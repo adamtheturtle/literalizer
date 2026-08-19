@@ -75,7 +75,7 @@ optional-dependencies.dev = [
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
     "pytest-xdist==3.8.0",
-    "ruff==0.16.2",
+    "ruff==0.16.3",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
@@ -170,6 +170,10 @@ lint.per-file-ignores."doccmd_*.py" = [
     "S101",
     # Allow print() in docs for output-illustrating examples.
     "T201",
+]
+lint.per-file-ignores."scripts/*.py" = [
+    # Runner scripts intentionally execute explicitly selected toolchains.
+    "S603",
 ]
 lint.per-file-ignores."tests/**/test_*.py" = [
     # Allow 'assert' as we use it for tests.
