@@ -1,7 +1,7 @@
 from std.utils.variant import Variant
 comptime Value = Variant[String, Bool]
 def main():
-    var my_data = [
+    var my_data = List([
         {
             "input": {
                 "kind": Value(String("add")),
@@ -22,5 +22,5 @@ def main():
                 "error": Value(String("not_found")),
             },
         },
-    ]
+    ])
     _ = my_data

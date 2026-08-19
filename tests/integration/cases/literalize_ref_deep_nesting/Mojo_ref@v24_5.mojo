@@ -1,14 +1,14 @@
 def main():
-    var deep = [
-        [
+    var deep = List([
+        List([
             "one",
             "two",
-        ],
-        [
+        ]),
+        List([
             "three",
             "four",
-        ],
-    ]
+        ]),
+    ])
     var my_data = {
         "a": {
             "b": {

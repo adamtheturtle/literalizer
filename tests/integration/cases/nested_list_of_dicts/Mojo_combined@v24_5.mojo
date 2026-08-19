@@ -1,11 +1,11 @@
 def main():
-    var my_data = [
-        [{"name": "Alice"}, {"name": "Bob"}],
-        [{"name": "Charlie"}, {"name": "Dave"}],
-    ]
+    var my_data = List([
+        List([{"name": "Alice"}, {"name": "Bob"}]),
+        List([{"name": "Charlie"}, {"name": "Dave"}]),
+    ])
     _ = my_data
-    my_data = [
-        [{"name": "Alice"}, {"name": "Bob"}],
-        [{"name": "Charlie"}, {"name": "Dave"}],
-    ]
+    my_data = List([
+        List([{"name": "Alice"}, {"name": "Bob"}]),
+        List([{"name": "Charlie"}, {"name": "Dave"}]),
+    ])
     _ = my_data

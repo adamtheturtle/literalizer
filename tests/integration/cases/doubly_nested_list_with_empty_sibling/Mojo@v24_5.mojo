@@ -1,7 +1,7 @@
 def main():
-    var my_data = [
-        [[1, 2]],
+    var my_data = List([
+        List([List([1, 2])]),
         List[List[Int]](),
-        [[3, 4]],
-    ]
+        List([List([3, 4])]),
+    ])
     _ = my_data

@@ -874,7 +874,13 @@ def _build_variant_preamble(
 
 @beartype
 def _mojo_list_open(items: list[Value]) -> str:
-    """Return ``[`` after checking for null elements.
+    """Return an explicit ``List([`` after checking for null elements.
+
+    Mojo 1.0 changed a bare list expression such as ``[1, 2]`` to
+    construct a fixed-size ``Array`` rather than a heap-allocated
+    ``List``.  Wrap the expression in ``List(...)`` so this format keeps
+    its documented ``List`` semantics while the inner expression still
+    benefits from Mojo's literal element-type inference.
 
     Mojo cannot infer a list type from null-only elements.
     """
@@ -884,7 +890,7 @@ def _mojo_list_open(items: list[Value]) -> str:
             f"(got {len(items)} items, including null)."
         )
         raise NullInCollectionError(msg)
-    return "["
+    return "List(["
 
 
 @beartype
@@ -907,12 +913,12 @@ def _mojo_element_renders_as_string(
 ) -> bool:
     """Return whether *item* would render as a quoted ``String``.
 
-    Used to decide when a Mojo list literal needs an explicit
-    ``List[String]`` annotation: Mojo infers ``List[StringLiteral]`` from
-    a bare ``["a", "b"]`` literal, which is rejected when assigned into
-    a ``Variant`` slot expecting ``List[String]``.  ``str`` and ``bytes``
-    always render quoted; ``datetime`` and ``date`` only when the
-    configured formatter produces a string.
+    Used to decide when a Mojo list construction needs an explicit
+    ``List[String]`` annotation: Mojo can infer ``StringLiteral`` elements
+    from the inner ``["a", "b"]`` expression, which is rejected when
+    assigned into a ``Variant`` slot expecting ``List[String]``.  ``str``
+    and ``bytes`` always render quoted; ``datetime`` and ``date`` only
+    when the configured formatter produces a string.
     """
     match item:
         case str() | bytes():
@@ -930,7 +936,7 @@ def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
         sequence_open=_mojo_list_open,
-        close="]",
+        close="])",
         supports_heterogeneity=False,
         single_element_trailing_comma=False,
         supports_trailing_comma=True,
@@ -1755,8 +1761,8 @@ class Mojo(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return _MojoOrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str="["),
-            close="]",
+            ordered_map_open=fixed_open(open_str="List(["),
+            close="])",
             preamble_lines=(),
         )
 
@@ -1773,9 +1779,9 @@ class Mojo(metaclass=LanguageCls):
 
         Wraps the configured declaration formatter so a non-empty list of
         string-rendering elements gets an explicit ``List[String]``
-        annotation.  Mojo infers ``List[StringLiteral]`` from a bare
-        ``["a", "b"]`` literal, which is rejected when assigned into a
-        ``Variant`` slot expecting ``List[String]``.
+        annotation.  Mojo can infer ``StringLiteral`` elements from the
+        inner ``["a", "b"]`` expression, which is rejected when assigned
+        into a ``Variant`` slot expecting ``List[String]``.
         """
         base_formatter = self.declaration_style.value.formatter
         date_renders_as_string = self.date_format.value.type_produced is str

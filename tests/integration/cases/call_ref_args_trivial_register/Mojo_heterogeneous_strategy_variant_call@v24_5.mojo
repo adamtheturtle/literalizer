@@ -6,11 +6,11 @@ def main():
     var my_int = 1
     var my_bool = True
     var my_float = 3.14
-    var my_list = [
+    var my_list = List([
         1,
         2,
         3,
-    ]
+    ])
     process(my_int, 42)
     process(my_bool, 7)
     process(my_float, 9)
