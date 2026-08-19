@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A keyword leading a call target is matched without regard to case."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Ada", "Cobol", "Fortran", "VisualBasic"]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "IF"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true

@@ -1,5 +1,5 @@
 # languages rejecting: 2; languages accepting: 0
 
 [InvalidCallTargetError]
-Dart = "Dart cannot use call target 'main': it collides with the generated file entrypoint"
+Dart = "Dart cannot use call target 'main': component 'main' is a reserved identifier"
 Go = "Go cannot use call target 'main': it collides with the generated file entrypoint"

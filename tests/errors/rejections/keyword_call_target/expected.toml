@@ -1,0 +1,11 @@
+# languages rejecting: 8; languages accepting: 0
+
+[InvalidCallTargetError]
+Go = "Go cannot use call target 'if': component 'if' is a reserved identifier"
+Java = "Java cannot use call target 'if': component 'if' is a reserved identifier"
+JavaScript = "JavaScript cannot use call target 'if': component 'if' is a reserved identifier"
+Kotlin = "Kotlin cannot use call target 'if': component 'if' is a reserved identifier"
+Python = "Python cannot use call target 'if': component 'if' is a reserved identifier"
+Rust = "Rust cannot use call target 'if': component 'if' is a reserved identifier"
+Swift = "Swift cannot use call target 'if': component 'if' is a reserved identifier"
+TypeScript = "TypeScript cannot use call target 'if': component 'if' is a reserved identifier"

@@ -1,0 +1,7 @@
+# languages rejecting: 4; languages accepting: 0
+
+[InvalidCallTargetError]
+Ada = "Ada cannot use call target 'IF': component 'IF' is a reserved identifier"
+Cobol = "Cobol cannot use call target 'IF': component 'IF' is a reserved identifier"
+Fortran = "Fortran cannot use call target 'IF': component 'IF' is a reserved identifier"
+VisualBasic = "VisualBasic cannot use call target 'IF': component 'IF' is a reserved identifier"

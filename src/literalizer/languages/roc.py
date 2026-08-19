@@ -597,6 +597,22 @@ class Roc(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
+    contextual_call_target_identifiers: ClassVar[frozenset[str]] = (
+        # The words a module header is spelled from.  They are keywords
+        # only there, so a value may still take the name.
+        frozenset(
+            {
+                "app",
+                "exposing",
+                "interface",
+                "module",
+                "package",
+                "platform",
+                "provides",
+                "requires",
+            }
+        )
+    )
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "app",
