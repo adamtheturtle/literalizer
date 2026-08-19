@@ -148,6 +148,16 @@ class _RequiresUniqueDottedCallParts(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _NormalizesDottedCallPartCase(Protocol):
+    """A language whose dotted-call helper names fold component case."""
+
+    @property
+    def dotted_call_stub_normalizes_part_case(self) -> bool:
+        """Return whether helper naming normalizes component case."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class _DisabledRefKey(str):
     """Identity sentinel distinct from an explicitly enabled empty key."""
 
@@ -5248,16 +5258,24 @@ def _validate_wrapped_call_scaffold(
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
         )
-    # A language in this group derives one helper type name per
+    # Some languages in this group derive one helper type name per
     # component through a case-normalizing transform (``Foo`` and
     # ``foo`` both become ``FooType_``), so uniqueness holds on the
     # folded components rather than on the components as spelled
-    # (issue #3908).
-    folded_parts = [part.casefold() for part in target_function_parts]
+    # (issue #3908).  Others interpolate the component as spelled, and
+    # folding there would refuse targets that emit distinct helpers.
+    normalizes_case = (
+        isinstance(language, _NormalizesDottedCallPartCase)
+        and language.dotted_call_stub_normalizes_part_case
+    )
+    compared_parts = [
+        part.casefold() if normalizes_case else part
+        for part in target_function_parts
+    ]
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts
-        and len(set(folded_parts)) != len(folded_parts)
+        and len(set(compared_parts)) != len(compared_parts)
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,

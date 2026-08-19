@@ -1,1 +1,3 @@
-Reject dotted call components that differ only in case, which share one generated helper type declaration.
+Reject dotted call components that differ only in case for backends
+whose generated helper type names normalize that case, so the two
+components would share one declaration.
