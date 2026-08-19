@@ -1,0 +1,1 @@
+Reject Dart variable names that shadow a type name the backend writes into its annotations, or the ``main`` entry point a wrapped file declares.

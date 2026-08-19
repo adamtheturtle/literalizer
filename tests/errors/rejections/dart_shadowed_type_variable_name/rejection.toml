@@ -1,0 +1,25 @@
+schema_version = 1
+summary = "Dart declarations cannot shadow an emitted type name or main."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Dart"]
+values = [
+  "BigInt",
+  "DateTime",
+  "List",
+  "Map",
+  "Null",
+  "Set",
+  "String",
+  "bool",
+  "double",
+  "int",
+  "main",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

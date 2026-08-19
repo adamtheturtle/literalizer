@@ -428,11 +428,24 @@ class Dart(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
+        # The keywords, then the type names the backend writes into its
+        # annotations and ``main``, the entry point a wrapped file
+        # declares.  A top-level declaration taking one of those names
+        # shadows it, so the annotations referring to it stop resolving
+        # and the file does not analyze (issue #3931).
         {
+            "BigInt",
+            "DateTime",
+            "List",
+            "Map",
+            "Null",
+            "Set",
+            "String",
             "as",
             "assert",
             "async",
             "await",
+            "bool",
             "break",
             "case",
             "catch",
@@ -443,6 +456,7 @@ class Dart(metaclass=LanguageCls):
             "default",
             "deferred",
             "do",
+            "double",
             "dynamic",
             "else",
             "enum",
@@ -462,10 +476,12 @@ class Dart(metaclass=LanguageCls):
             "implements",
             "import",
             "in",
+            "int",
             "interface",
             "is",
             "late",
             "library",
+            "main",
             "mixin",
             "new",
             "null",
