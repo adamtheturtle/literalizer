@@ -171,6 +171,10 @@ lint.per-file-ignores."doccmd_*.py" = [
     # Allow print() in docs for output-illustrating examples.
     "T201",
 ]
+lint.per-file-ignores."scripts/*.py" = [
+    # Runner scripts intentionally execute explicitly selected toolchains.
+    "S603",
+]
 lint.per-file-ignores."tests/**/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
