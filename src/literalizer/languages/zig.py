@@ -397,8 +397,8 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
 # primitive types and values, which the compiler reports as "name
 # shadows primitive", plus ``main``, the function the wrapped file
 # declares and which a local constant may not shadow.  Keys carrying
-# the same names stay spellable as quoted struct members, so this set
-# is separate from the escaping set above (issue #3932).
+# the same names are still written as quoted struct members, so this
+# set is separate from the escaping set above (issue #3932).
 _ZIG_PRIMITIVE_IDENTIFIERS: frozenset[str] = frozenset(
     {
         "anyerror",
@@ -441,7 +441,7 @@ _ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
     | frozenset({"main"})
 )
 
-# Zig's arbitrary-width integer primitives are an open set (``u7``,
+# The arbitrary-width integer primitives are an open set (``u7``,
 # ``i33``), so they are matched rather than listed.  The float
 # primitives are a fixed set and are listed above.
 _ZIG_SIZED_PRIMITIVE = re.compile(pattern=r"[iu][0-9]+")
