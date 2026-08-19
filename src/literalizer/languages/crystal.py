@@ -482,6 +482,12 @@ class Crystal(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = (
+        # Crystal's discard marker cannot carry the default value a
+        # generated stub gives it, nor name a keyword argument
+        # (issue #3918).
+        frozenset({"_"})
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -631,6 +637,7 @@ class Crystal(metaclass=LanguageCls):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -645,6 +652,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence="Tuple.new",
             preamble_lines=(),
@@ -1412,6 +1420,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_sequence="[]",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=False,
                 preamble_lines=(),
                 format_entry=passthrough_sequence_entry,

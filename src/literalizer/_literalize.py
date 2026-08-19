@@ -1904,6 +1904,12 @@ def _format_list_value(
     # comma branch.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
+    if (
+        len(items) == 1
+        and sequence_cfg.single_element_template is not None
+        and sequence_open_override is None
+    ):
+        return sequence_cfg.single_element_template.format(items=joined)
     match sequence_open_override:
         case str():
             opener = sequence_open_override
@@ -2067,8 +2073,15 @@ def _wrap_body(
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
             closing = f"{close_prefix}{set_cfg.close}"
         case _:
-            opening = f"{line_prefix}{spec.sequence_open(data)}"
-            closing = f"{close_prefix}{spec.sequence_format_config.close}"
+            sequence_cfg = spec.sequence_format_config
+            template = sequence_cfg.single_element_template
+            if template is not None and len(data) == 1:
+                open_str, _, close_str = template.partition("{items}")
+            else:
+                open_str = spec.sequence_open(data)
+                close_str = sequence_cfg.close
+            opening = f"{line_prefix}{open_str}"
+            closing = f"{close_prefix}{close_str}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
@@ -2137,6 +2150,31 @@ def _sequence_open_for_ref_inference(
 
 
 @beartype
+def _single_element_sequence_delimiters(
+    *,
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
+    sequence_open_override: str | None,
+    ctx: _RenderContext,
+) -> tuple[str, str] | None:
+    """Return the delimiters a one-element sequence takes, if any.
+
+    The template a language declares for that length is one string
+    around its element; a multiline layout needs the two halves apart
+    so the element can sit on its own line (issue #3928).
+    """
+    template = ctx.spec.sequence_format_config.single_element_template
+    if (
+        template is None
+        or sequence_open_override is not None
+        or not isinstance(data, list)
+        or len(data) != 1
+    ):
+        return None
+    opening, _, close = template.partition("{items}")
+    return (opening, close)
+
+
+@beartype
 def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
@@ -2173,7 +2211,16 @@ def _collection_open_for_multiline_value(
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
         case _:
-            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            delimiters = _single_element_sequence_delimiters(
+                data=data,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            opener = (
+                delimiters[0]
+                if delimiters is not None
+                else _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            )
     return opener
 
 
@@ -2222,7 +2269,16 @@ def _format_multiline_collection_value(
         case set():
             close = spec.set_format_config.close
         case _:
-            close = spec.sequence_format_config.close
+            delimiters = _single_element_sequence_delimiters(
+                data=value,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            close = (
+                delimiters[1]
+                if delimiters is not None
+                else spec.sequence_format_config.close
+            )
     return f"{opening}\n{body}\n{close_prefix}{close}"
 
 

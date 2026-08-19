@@ -304,6 +304,18 @@ class _ScalaDictSpec:
 
 
 @beartype
+def _scala_parameter_declaration(name: str, /) -> str:
+    """Return one Scala stub parameter declaration.
+
+    A name ending in an underscore needs a space before the colon:
+    the parser reads ``x_:`` as one identifier, so the type ascription
+    is lost and the declaration does not parse (issue #3951).
+    """
+    separator = " :" if name.endswith("_") else ":"
+    return f"{name}{separator} Any = null"
+
+
+@beartype
 def _scala_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -312,7 +324,7 @@ def _scala_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any = null" for p in params)
+    param_list = ", ".join(_scala_parameter_declaration(p) for p in params)
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
     root = parts[0]
@@ -432,6 +444,10 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
         "yield",
     }
 )
+# ``_`` is not a Scala identifier, so a parameter named from
+# underscores alone has no valid form (issue #3951).
+_SCALA_ALL_UNDERSCORE_PARAMETER = re.compile(pattern=r"_+")
+
 _SCALA_SOFT_KEYWORDS = frozenset(
     {
         "as",
@@ -588,6 +604,12 @@ class Scala(metaclass=LanguageCls):
     reserved_variable_identifiers: frozenset[str] = (
         _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
     )
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"using"}
+    )
+    reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _SCALA_ALL_UNDERSCORE_PARAMETER
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     dotted_call_stub_requires_unique_parts = True
@@ -716,6 +738,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -731,6 +754,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -746,6 +770,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence="Array.empty[Any]",
             preamble_lines=(),
@@ -1662,6 +1687,7 @@ class Scala(metaclass=LanguageCls):
                 close=")",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_sequence="Json.arr()",
                 preamble_lines=(),
