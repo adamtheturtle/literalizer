@@ -463,22 +463,46 @@ def _rust_homogeneous_element_type(
     elements: Sequence[Value],
     infer: Callable[[Value], str],
     default_type: str,
+    sequence_encodes_length: bool,
 ) -> str:
     """Return the element type for a homogeneous Rust collection.
 
     An empty nested collection infers the language's default element
     type, which is a placeholder rather than a statement about the
     data, so a non-empty sibling decides for it (issue #3939).
+
+    An empty *sequence* is only a placeholder where the sequence
+    annotation leaves length out.  ``[T; 0]`` is a different type from
+    ``[T; 2]`` and no sibling can speak for it, so under a
+    length-bearing format the empty sequence keeps its own type and
+    unification reports the mismatch.
     """
     if not elements:
         return default_type
     informative = [
         element
         for element in elements
-        if element or not isinstance(element, (list, dict, set))
+        if element
+        or not isinstance(element, (list, dict, set))
+        or (sequence_encodes_length and isinstance(element, list))
     ]
     types = [infer(element) for element in informative or elements]
     return _unify_rust_types(types=types)
+
+
+@beartype
+def _rust_sequence_encodes_length(
+    *,
+    sequence_format_type_annotation: Callable[[str, int], str],
+) -> bool:
+    """Return whether a sequence annotation spells its length.
+
+    ``ARRAY`` renders ``[T; N]`` and ``VEC`` renders ``Vec<T>``, so the
+    formatter itself answers this rather than a declared flag.
+    """
+    return sequence_format_type_annotation(
+        "T", 0
+    ) != sequence_format_type_annotation("T", 1)
 
 
 @beartype
@@ -520,12 +544,17 @@ def _rust_type_annotation(
             default_dict_value_type=default_dict_value_type,
         )
 
+    sequence_encodes_length = _rust_sequence_encodes_length(
+        sequence_format_type_annotation=sequence_format_type_annotation,
+    )
+
     match data:
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
                 infer=recurse,
                 default_type=default_set_element_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return set_format_type_annotation(element_type)
         case list():
@@ -539,6 +568,7 @@ def _rust_type_annotation(
                 elements=data,
                 infer=recurse,
                 default_type=default_sequence_element_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return sequence_format_type_annotation(element_type, len(data))
         case dict():
@@ -547,11 +577,13 @@ def _rust_type_annotation(
                 elements=keys,
                 infer=recurse,
                 default_type=default_dict_key_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             value_type = _rust_homogeneous_element_type(
                 elements=list(data.values()),
                 infer=recurse,
                 default_type=default_dict_value_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return dict_format_type_annotation(key_type, value_type)
         case _:
@@ -4042,15 +4074,22 @@ class Rust(metaclass=LanguageCls):
         def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
             """Type the empty map from its first non-empty sibling."""
             sibling = siblings[0]
+            encodes_length = _rust_sequence_encodes_length(
+                sequence_format_type_annotation=(
+                    self.sequence_format.format_type_annotation
+                ),
+            )
             key_type = _rust_homogeneous_element_type(
                 elements=list(sibling),
                 infer=recurse,
                 default_type=self.default_dict_key_type,
+                sequence_encodes_length=encodes_length,
             )
             value_type = _rust_homogeneous_element_type(
                 elements=list(sibling.values()),
                 infer=recurse,
                 default_type=self.default_dict_value_type,
+                sequence_encodes_length=encodes_length,
             )
             annotation = self.dict_format.format_type_annotation(
                 key_type=key_type,
