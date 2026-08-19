@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Haskell declaration cannot take a Prelude or entry-point name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Haskell"]
+values = ["abs", "foldl'", "length", "main", "map", "print", "seq"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

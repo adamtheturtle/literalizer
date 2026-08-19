@@ -2340,11 +2340,27 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def format_integer_widened(self) -> Callable[[int], str]:
-        """Format every integer as an explicitly typed ``int64``."""
+        """Format every integer as an explicitly typed ``int64``.
+
+        A non-decimal format writes the sign outside the literal, so
+        the magnitude of ``int64.low`` is read as a positive ``int64``
+        first and rejected as out of range.  That one value is written
+        as its two's-complement bit pattern cast from ``uint64``, which
+        keeps the base the format asked for (issue #3937).
+        """
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        return lambda value: f"{base(value)}'i64"
+        is_decimal = self.integer_format is type(self.integer_format).DECIMAL
+
+        def _format(value: int, /) -> str:
+            """Format one integer as an ``int64`` literal."""
+            if value == I64_MIN and not is_decimal:
+                magnitude = base(-value)
+                return f"cast[int64]({magnitude}'u64)"
+            return f"{base(value)}'i64"
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:
