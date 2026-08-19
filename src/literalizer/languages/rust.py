@@ -544,8 +544,14 @@ def _rust_type_annotation(
             default_dict_value_type=default_dict_value_type,
         )
 
-    sequence_encodes_length = _rust_sequence_encodes_length(
-        sequence_format_type_annotation=sequence_format_type_annotation,
+    # A heterogeneous format annotates each element in place, so its
+    # arity already carries the length and the probe below must not run
+    # -- ``format_type_annotation`` raises for those formats.
+    sequence_encodes_length = (
+        sequence_supports_heterogeneity
+        or _rust_sequence_encodes_length(
+            sequence_format_type_annotation=sequence_format_type_annotation,
+        )
     )
 
     match data:
