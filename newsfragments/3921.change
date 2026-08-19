@@ -1,0 +1,1 @@
+Parse JSON5 hexadecimal integer literals instead of raising an uncaught ``TypeError``.

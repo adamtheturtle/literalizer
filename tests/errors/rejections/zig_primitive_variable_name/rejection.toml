@@ -1,0 +1,29 @@
+schema_version = 1
+summary = "Zig declarations cannot shadow a primitive or the wrapper's main."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Zig"]
+values = [
+  "anyerror",
+  "bool",
+  "c_int",
+  "comptime_int",
+  "f16",
+  "false",
+  "i33",
+  "main",
+  "null",
+  "true",
+  "type",
+  "u7",
+  "undefined",
+  "usize",
+  "void",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

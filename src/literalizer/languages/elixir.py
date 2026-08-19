@@ -45,6 +45,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -106,6 +107,7 @@ _format_string = make_backslash_string_formatter(
         ("\x85", "\\u0085"),
         ("\u2028", "\\u2028"),
         ("\u2029", "\\u2029"),
+        *bidi_escape_replacements(template="\\u{:04X}"),
     ],
 )
 

@@ -482,6 +482,12 @@ class Crystal(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = (
+        # Crystal's discard marker cannot carry the default value a
+        # generated stub gives it, nor name a keyword argument
+        # (issue #3918).
+        frozenset({"_"})
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

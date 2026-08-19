@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"R['_']" = "R cannot use call parameter '_': it is reserved in a call parameter list"
+"R['_1']" = "R cannot use call parameter '_1': it is reserved in a call parameter list"
+"R['_x']" = "R cannot use call parameter '_x': it is reserved in a call parameter list"
