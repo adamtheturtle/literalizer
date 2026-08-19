@@ -1,0 +1,1 @@
+No user-facing change: the lint workflow's apt installs are bounded and retried so a stalled mirror no longer consumes a whole job.
