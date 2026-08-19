@@ -5166,6 +5166,10 @@ def _validate_call_variable_form(
         )
 
 
+_CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
+"""The shape a class name takes in a constructor call target."""
+
+
 @beartype
 def _validate_call_target(
     *,
@@ -5180,11 +5184,18 @@ def _validate_call_target(
             target_function=target_function,
             reason="it must contain non-empty dotted components",
         )
+    # A constructor target is spelled by the language rather than by
+    # the caller (``Foo::new``, ``new Foo``, or the bare class name),
+    # so its shape is exempt from the identifier grammar.  Only a
+    # PascalCase class name is taken as evidence of one: a language
+    # that spells a constructor as the bare class name otherwise
+    # matches every target and exempts the lot (issue #3913).
     is_constructor_target = any(
         language.format_constructor_target(candidate) == target_function
         for candidate in re.findall(
             pattern=r"[^\W\d]\w*", string=target_function
         )
+        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
     )
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover

@@ -69,6 +69,13 @@ class NewVariableNameSyntax(enum.Enum):
     ASCII_LETTER_START = enum.auto()
     """An ASCII identifier that must begin with a letter."""
 
+    LOWER_SNAKE_ASCII = enum.auto()
+    """A lowercase ASCII identifier beginning with a letter.
+
+    V rejects an uppercase letter anywhere in a variable or function
+    name ("use snake_case instead") and rejects a leading underscore.
+    """
+
     def accepts(self, *, name: str) -> bool:
         """Return whether *name* matches this lexical grammar."""
         match self:
@@ -84,6 +91,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[a-z_][A-Za-z0-9_]*'*"
             case NewVariableNameSyntax.ASCII_LETTER_START:
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
+            case NewVariableNameSyntax.LOWER_SNAKE_ASCII:
+                pattern = r"[a-z][a-z0-9_]*"
             case _:  # pragma: no cover - enum exhaustiveness assertion
                 assert_never(self)
         return re.fullmatch(pattern=pattern, string=name) is not None
