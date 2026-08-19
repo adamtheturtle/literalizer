@@ -122,6 +122,12 @@ def _format_constructor_target(class_name: str, /) -> str:
     return f"{class_name}.new"
 
 
+# ``staticmethod`` over the ``beartype``-wrapped function directly is
+# not assignable to the declared ``ClassVar`` under every type checker,
+# so bind it through an explicitly typed name first, as Crystal does.
+_constructor_target: Callable[[str], str] = _format_constructor_target
+
+
 @beartype
 def _format_datetime_elixir(value: datetime.datetime) -> str:
     """Format a datetime as an Elixir sigil.
@@ -177,8 +183,26 @@ def _elixir_call_stub(
         param_list = ", ".join(_elixir_params(params=params))
         return (f"def {parts[0]}({param_list}), do: nil",)
     root = parts[0]
-    root_module = root.capitalize() + "Type_"
-    return (f"{root} = {root_module}",)
+    # `Playlist = PlaylistType_` matches against an alias rather than
+    # binding a variable, and fails at run time with a MatchError, so an
+    # alias root is named by its stub module and needs no binding.
+    if root[:1].isupper():
+        return ()
+    return (f"{root} = {_elixir_root_module(root)}",)
+
+
+@beartype
+def _elixir_root_module(root: str, /) -> str:
+    """Return the module a dotted call's leading component resolves to.
+
+    A capitalized root is already an alias, so the stub takes that name
+    and the call reaches it directly.  A lowercase root is a variable,
+    which is bound to a separately named stub module instead (a module
+    name cannot be lowercase).
+    """
+    if root[:1].isupper():
+        return root
+    return root.capitalize() + "Type_"
 
 
 @beartype
@@ -202,7 +226,7 @@ def _elixir_call_preamble_stub(
     fields = list(parts[1:-1])
     param_list = ", ".join(_elixir_params(params=params))
     if not fields:
-        root_module = root.capitalize() + "Type_"
+        root_module = _elixir_root_module(root)
         sig = f"{method}({param_list}), do: nil"
         stub = f"defmodule {root_module} do\n  def {sig}\nend"
         return (stub,)
@@ -217,7 +241,7 @@ def _elixir_call_preamble_stub(
         loop_sig = f"{next_field}, do: {prev_module}"
         lines.append(f"defmodule {curr_module} do\n  def {loop_sig}\nend")
         prev_module = curr_module
-    root_module = root.capitalize() + "Type_"
+    root_module = _elixir_root_module(root)
     root_sig = f"{fields[0]}, do: {prev_module}"
     lines.append(f"defmodule {root_module} do\n  def {root_sig}\nend")
     return tuple(lines)
@@ -261,7 +285,7 @@ class Elixir(metaclass=LanguageCls):
     format_integer_beyond_i64 = no_format_integer_beyond_i64
     accepts_type_name_call_target: ClassVar[bool] = False
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(_format_constructor_target)
+        staticmethod(_constructor_target)
     )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
