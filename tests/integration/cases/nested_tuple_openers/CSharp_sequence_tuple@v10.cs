@@ -1,4 +1,4 @@
 using System;
-var my_data = (
-    (((1)))
+var my_data = ValueTuple.Create(
+    ValueTuple.Create(ValueTuple.Create(ValueTuple.Create(1)))
 );
