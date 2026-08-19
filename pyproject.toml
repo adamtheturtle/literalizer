@@ -622,8 +622,15 @@ executionEnvironments = [
 [tool.ty]
 src.exclude = [ "repro.py" ]
 terminal.error-on-warning = true
-overrides = []
 analysis.respect-type-ignore-comments = false
+
+[[tool.ty.overrides]]
+include = [ "src/literalizer/languages/**/*.py" ]
+# ty 0.0.72 currently loses callable signatures for functions stored as enum
+# members. Keep the workaround scoped to the language enum implementations.
+rules.invalid-assignment = "ignore"
+rules.too-many-positional-arguments = "ignore"
+rules.unknown-argument = "ignore"
 
 [tool.pytest]
 ini_options.addopts = "-n auto"
