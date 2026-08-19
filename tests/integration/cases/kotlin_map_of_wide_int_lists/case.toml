@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Kotlin"]
+languages_reason = "Kotlin-specific: the LIST opener has no arm for the wide-integer sentinels, so a map value holding one is annotated from the generic value type rather than `Array<Long>`."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
