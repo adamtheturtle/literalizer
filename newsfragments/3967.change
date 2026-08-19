@@ -1,0 +1,1 @@
+Report a repeated key in a YAML ``!!omap`` as a ``YAMLParseError``, rather than letting ruamel's bare ``AssertionError`` escape.

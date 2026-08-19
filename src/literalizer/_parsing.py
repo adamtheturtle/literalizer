@@ -631,6 +631,22 @@ def _get_safe_yaml() -> YAML:
 
 
 @beartype
+def _yaml_load_detail(*, exc: Exception) -> object:
+    """Describe one ruamel failure for the public error message.
+
+    ``ruamel`` reports a repeated key in an ``!!omap`` by asserting
+    rather than by raising a parser error, and that assertion carries
+    no message of its own (issue #3967).  An ``IndexError`` or
+    ``AttributeError`` out of the scanner carries none either.
+    """
+    if isinstance(exc, AssertionError):
+        return "duplicate key in an ordered mapping"
+    if isinstance(exc, (IndexError, AttributeError)):
+        return "malformed input"
+    return exc
+
+
+@beartype
 def _yaml_needs_roundtrip(*, source: str) -> bool:
     """Return True when *source* needs the comment-preserving loader.
 
@@ -667,24 +683,35 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     """
     try:
         _validate_yaml_float_tokens(source=source)
-    except _FiniteFloatRangeError as exc:
-        message = f"Invalid YAML: {exc}"
+    except (
+        YAMLError,
+        ValueError,
+        IndexError,
+        AttributeError,
+    ) as exc:
+        # The scan is abandoned part way through whenever it raises, so
+        # the thread's parser keeps whatever state it had reached.
+        # Never hand that to the next public call (issue #3959).
+        _YAML_PARSERS.round_trip = None
+        message = f"Invalid YAML: {_yaml_load_detail(exc=exc)}"
         raise YAMLParseError(message) from exc
     if _yaml_needs_roundtrip(source=source):
         ruamel_yaml = get_yaml()
         try:
             # https://sourceforge.net/p/ruamel-yaml/tickets/564/
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-        except (YAMLError, ValueError, IndexError, AttributeError) as exc:
+        except (
+            YAMLError,
+            ValueError,
+            IndexError,
+            AttributeError,
+            AssertionError,
+        ) as exc:
             # A failed ruamel load leaves mutable scanner/parser state
             # behind. Never expose that partial state to the next public
             # call on this thread.
             _YAML_PARSERS.round_trip = None
-            detail = (
-                "malformed input"
-                if isinstance(exc, (IndexError, AttributeError))
-                else exc
-            )
+            detail = _yaml_load_detail(exc=exc)
             message = f"Invalid YAML: {detail}"
             mark: _ParserMark | None = vars(exc).get("problem_mark")
             raise YAMLParseError(
@@ -703,9 +730,15 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     safe_yaml = _get_safe_yaml()
     try:
         plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-    except (YAMLError, ValueError, IndexError) as exc:
+    except (
+        YAMLError,
+        ValueError,
+        IndexError,
+        AttributeError,
+        AssertionError,
+    ) as exc:
         _YAML_PARSERS.safe = None
-        detail = "malformed input" if isinstance(exc, IndexError) else exc
+        detail = _yaml_load_detail(exc=exc)
         message = f"Invalid YAML: {detail}"
         mark = vars(exc).get("problem_mark")
         raise YAMLParseError(

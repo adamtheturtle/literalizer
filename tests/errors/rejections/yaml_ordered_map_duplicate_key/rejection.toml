@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "A repeated key in an ordered mapping is a YAML parse error."
+exceptions = ["YAMLParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["a: !!omap [x: 1, x: 2]\n"]
+input_format = "yaml"
