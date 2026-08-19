@@ -82,7 +82,6 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
-    identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -109,6 +108,16 @@ _format_string = make_backslash_string_formatter(
         ("\u2029", "\\u2029"),
     ],
 )
+
+
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return an Elixir zero-argument constructor call target.
+
+    A capitalized bare name is an alias rather than a function, so the
+    constructor is spelled as a remote call on it (issue #3914).
+    """
+    return f"{class_name}.new"
 
 
 @beartype
@@ -248,8 +257,9 @@ class Elixir(metaclass=LanguageCls):
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
+    accepts_type_name_call_target: ClassVar[bool] = False
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(identity_constructor_target)
+        staticmethod(_format_constructor_target)
     )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment

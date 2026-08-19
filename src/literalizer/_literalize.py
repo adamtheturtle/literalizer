@@ -5201,9 +5201,15 @@ def _validate_call_target(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
+    # A bare constructor target is just the class name, which some
+    # languages do not admit as a function name at all (issue #3914).
+    exempt = is_constructor_target and (
+        len(target_function_parts) > 1
+        or language_cls.accepts_type_name_call_target
+    )
     for part in target_function_parts:
         if not language_cls.new_variable_name_syntax.accepts(name=part):
-            if is_constructor_target:
+            if exempt:
                 return
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,

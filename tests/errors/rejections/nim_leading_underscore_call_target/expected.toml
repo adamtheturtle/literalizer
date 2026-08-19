@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+Nim = "Nim cannot use call target '_do_thing': component '_do_thing' is not a valid identifier"

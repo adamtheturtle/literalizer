@@ -1211,6 +1211,16 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    accepts_type_name_call_target: bool = True
+    """Whether a bare type name may be a ``target_function``.
+
+    A constructor call target is spelled by the language, so its shape
+    is exempt from the declaration identifier grammar.  Where the bare
+    class name is that spelling, the exemption lets a capitalized name
+    through -- correct for a Haskell data constructor or a V struct,
+    wrong for Elixir, where a capitalized bare name parses as an alias
+    rather than a function (issue #3914).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
