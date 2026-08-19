@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Kotlin"]
+languages_reason = "Kotlin-specific: a map value rendered with `arrayOf` is annotated to match that opener."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
