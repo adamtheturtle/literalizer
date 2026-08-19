@@ -4097,10 +4097,17 @@ class Rust(metaclass=LanguageCls):
         def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
             """Type the empty map from its first non-empty sibling."""
             sibling = siblings[0]
-            encodes_length = _rust_sequence_encodes_length(
-                sequence_format_type_annotation=(
-                    self.sequence_format.format_type_annotation
-                ),
+            # As in ``_rust_type_annotation``, a heterogeneous format
+            # annotates each element in place and its
+            # ``format_type_annotation`` raises, so it must not be
+            # probed.
+            encodes_length = (
+                self.sequence_format.supports_heterogeneity
+                or _rust_sequence_encodes_length(
+                    sequence_format_type_annotation=(
+                        self.sequence_format.format_type_annotation
+                    ),
+                )
             )
             key_type = _rust_homogeneous_element_type(
                 elements=list(sibling),
