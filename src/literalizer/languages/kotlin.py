@@ -317,6 +317,12 @@ def _kotlin_list_value_type_name(
             primitive = _KOTLIN_PRIMITIVE_ARRAY_TYPES.get(inner)
             if primitive is not None:
                 return primitive
+            # The opener has no arm for the wide-integer sentinels, so
+            # the literal falls back to ``listOf<Any?>(``.  Naming
+            # ``Array<Long>`` for one would annotate a type the literal
+            # is not, so defer to the generic value type instead.
+            if _kotlin_type_to_opener(element_type=inner) is None:
+                return None
             scalar = scalar_resolver(inner)
             return None if scalar is None else f"Array<{scalar}>"
 
