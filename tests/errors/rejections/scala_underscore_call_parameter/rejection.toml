@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Scala parameter cannot be named from underscores alone."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Scala"]
+values = ["_", "__"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "do_thing"
+parameter_names = ["{value}"]
+wrap_in_file = true
