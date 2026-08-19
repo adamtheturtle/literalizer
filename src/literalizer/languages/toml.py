@@ -775,6 +775,7 @@ class Toml(metaclass=LanguageCls):
             formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\u{:04x}",
+                escape_delete=False,
             )
             return formatted.replace("\x7f", "\\u007f")
 

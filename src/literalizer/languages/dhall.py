@@ -198,7 +198,11 @@ def _format_dhall_string(value: str) -> str:
         .replace("\n", "\\n")
         .replace("\t", "\\t")
     )
-    escaped = escape_control_chars(value=escaped, fmt="\\u{{{:04X}}}")
+    escaped = escape_control_chars(
+        value=escaped,
+        fmt="\\u{{{:04X}}}",
+        escape_delete=False,
+    )
     return f'"{escaped}"'
 
 

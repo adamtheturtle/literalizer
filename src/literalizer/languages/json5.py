@@ -704,6 +704,7 @@ class Json5(metaclass=LanguageCls):
                 format_string_backslash_control(
                     value=value,
                     control_char_fmt="\\u{:04x}",
+                    escape_delete=False,
                 )
                 .replace("\u2028", r"\u2028")
                 .replace("\u2029", r"\u2029")

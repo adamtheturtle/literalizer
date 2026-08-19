@@ -155,6 +155,7 @@ def _format_string_escaped(value: str) -> str:
     formatted = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:x}}}",
+        escape_delete=False,
     )
     return formatted.replace("\x7f", "\\u{7f}")
 

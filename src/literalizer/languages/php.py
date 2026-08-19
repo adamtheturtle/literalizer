@@ -170,6 +170,7 @@ def _format_string_multiline_fallback(value: str) -> str:
     escaped = format_string_backslash_control(
         value=value,
         control_char_fmt=r"\x{:02x}",
+        escape_delete=False,
     )
     return escaped.replace("$", r"\$")
 

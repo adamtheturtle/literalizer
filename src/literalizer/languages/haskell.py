@@ -440,6 +440,7 @@ def _format_haskell_string_character(character: str) -> str:
     return format_string_backslash_control(
         value=character,
         control_char_fmt="\\x{:02x}",
+        escape_delete=False,
     )[1:-1]
 
 
@@ -474,6 +475,7 @@ def _build_string_formatters(
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
+                escape_delete=False,
             )
         pieces: list[str] = []
         for index, char in enumerate(iterable=value):

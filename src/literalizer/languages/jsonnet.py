@@ -764,6 +764,7 @@ class Jsonnet(metaclass=LanguageCls):
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\u{:04x}",
+                escape_delete=False,
             )
 
         return _format
