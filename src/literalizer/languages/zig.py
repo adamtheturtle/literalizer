@@ -396,7 +396,7 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
 # Names a Zig declaration cannot take, beyond the keywords.  ``_`` is
 # the discard identifier, which the compiler rejects as a binding name
 # ("'_' used as an identifier without @\"_\" syntax").  Keys carrying
-# the same names are still spellable as quoted struct members, so this
+# the same names are still written as quoted struct members, so this
 # set is separate from the escaping set above.
 _ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
     _ZIG_RESERVED_IDENTIFIERS | frozenset({"_"})
