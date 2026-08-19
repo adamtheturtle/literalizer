@@ -135,6 +135,16 @@ class _HasCallWrapperEntrypoint(Protocol):
 
 
 @runtime_checkable
+class _SharesEntrypointNamespace(Protocol):
+    """A language stubbing a dotted call root as its entry point is."""
+
+    @property
+    def dotted_call_root_shares_entrypoint_namespace(self) -> bool:
+        """Return whether a dotted root collides with the entry point."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
 class _RequiresUniqueDottedCallParts(Protocol):
     """A language whose dotted-call helpers are named from path
     segments.
@@ -5243,12 +5253,21 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    # The root names the stub the wrapper reaches through, so it
-    # collides with the entry point whether or not the target is dotted.
-    if (
-        isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function_parts[0] == language.call_wrapper_entrypoint_name
-    ):
+    # A dotted root usually names a different construct from the entry
+    # point -- Java's root is a ``static`` field beside the entry-point
+    # method, which compiles -- so only a language whose stub declares
+    # the root in the entry point's own namespace collides on it.
+    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
+        target_function == language.call_wrapper_entrypoint_name
+        or (
+            len(target_function_parts) > 1
+            and isinstance(language, _SharesEntrypointNamespace)
+            and language.dotted_call_root_shares_entrypoint_namespace
+            and target_function_parts[0]
+            == language.call_wrapper_entrypoint_name
+        )
+    )
+    if entrypoint_collides:
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,

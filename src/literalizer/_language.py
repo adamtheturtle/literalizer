@@ -1250,6 +1250,15 @@ class LanguageCls(type):
     wrong for Elixir, where a capitalized bare name parses as an alias
     rather than a function (issue #3914).
     """
+    dotted_call_root_shares_entrypoint_namespace: bool = False
+    """Whether a dotted call root is declared as the entry point is.
+
+    A generated stub usually declares the root as something other than
+    the wrapper entry point -- Java's root is a ``static`` field beside
+    the entry-point method -- so the two coexist.  Elixir stubs the root
+    as a ``defmodule`` with that name, which is what the wrapper itself
+    is, so the two definitions collide (issue #3914).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII

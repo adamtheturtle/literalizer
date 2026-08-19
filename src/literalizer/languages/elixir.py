@@ -698,6 +698,7 @@ class Elixir(metaclass=LanguageCls):
         return identity_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
+    dotted_call_root_shares_entrypoint_namespace = True
 
     @property
     def call_wrapper_entrypoint_name(self) -> str:
