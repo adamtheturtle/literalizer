@@ -1,0 +1,18 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Zig['anyerror']" = "Zig cannot use NewVariable name 'anyerror': it is a reserved identifier"
+"Zig['bool']" = "Zig cannot use NewVariable name 'bool': it is a reserved identifier"
+"Zig['c_int']" = "Zig cannot use NewVariable name 'c_int': it is a reserved identifier"
+"Zig['comptime_int']" = "Zig cannot use NewVariable name 'comptime_int': it is a reserved identifier"
+"Zig['f16']" = "Zig cannot use NewVariable name 'f16': it is a reserved identifier"
+"Zig['false']" = "Zig cannot use NewVariable name 'false': it is a reserved identifier"
+"Zig['i33']" = "Zig cannot use NewVariable name 'i33': it is a reserved identifier"
+"Zig['main']" = "Zig cannot use NewVariable name 'main': it is a reserved identifier"
+"Zig['null']" = "Zig cannot use NewVariable name 'null': it is a reserved identifier"
+"Zig['true']" = "Zig cannot use NewVariable name 'true': it is a reserved identifier"
+"Zig['type']" = "Zig cannot use NewVariable name 'type': it is a reserved identifier"
+"Zig['u7']" = "Zig cannot use NewVariable name 'u7': it is a reserved identifier"
+"Zig['undefined']" = "Zig cannot use NewVariable name 'undefined': it is a reserved identifier"
+"Zig['usize']" = "Zig cannot use NewVariable name 'usize': it is a reserved identifier"
+"Zig['void']" = "Zig cannot use NewVariable name 'void': it is a reserved identifier"
