@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"CommonLisp['Package']" = "CommonLisp cannot use NewVariable name 'Package': it is a reserved identifier"
+"CommonLisp['features']" = "CommonLisp cannot use NewVariable name 'features': it is a reserved identifier"
+"CommonLisp['package']" = "CommonLisp cannot use NewVariable name 'package': it is a reserved identifier"
+"CommonLisp['print-base']" = "CommonLisp cannot use NewVariable name 'print-base': it is a reserved identifier"
+"CommonLisp['standard-output']" = "CommonLisp cannot use NewVariable name 'standard-output': it is a reserved identifier"

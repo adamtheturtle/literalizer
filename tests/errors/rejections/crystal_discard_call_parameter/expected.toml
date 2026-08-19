@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+Crystal = "Crystal cannot use call parameter '_': it is reserved in a call parameter list"

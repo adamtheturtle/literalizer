@@ -194,10 +194,13 @@ def validate_call_parameter_names(
                 reason="it is duplicated",
             )
         seen.add(comparison_name)
-        parameter_only_reserved = {
-            "Scala": frozenset({"using"}),
-        }.get(language_name, frozenset())
-        if name in parameter_only_reserved:
+        parameter_pattern = (
+            language_cls.reserved_call_parameter_identifier_pattern
+        )
+        if name in language_cls.reserved_call_parameter_identifiers or (
+            parameter_pattern is not None
+            and parameter_pattern.fullmatch(string=name) is not None
+        ):
             raise InvalidCallParameterNameError(
                 language_name=language_name,
                 parameter_name=name,
@@ -1229,6 +1232,19 @@ class LanguageCls(type):
     Zig's arbitrary-width integer primitives (``u7``, ``i33``, ...) are
     an open set, so they are spelled as a pattern rather than
     enumerated.
+    """
+    reserved_call_parameter_identifiers: frozenset[str] = frozenset()
+    """Names a call parameter cannot take even where a declaration can.
+
+    Scala's ``using`` opens a parameter clause, and Crystal's ``_``
+    cannot carry the default value a generated stub gives it.
+    """
+    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None = None
+    """A shape a call parameter name cannot take.
+
+    R identifiers cannot begin with an underscore and Dart named
+    parameters cannot be private, so both are spelled as a pattern
+    rather than enumerated (issue #3916, issue #3952).
     """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
