@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Haskell['abs']" = "Haskell cannot use NewVariable name 'abs': it is a reserved identifier"
+"Haskell[\"foldl'\"]" = "Haskell cannot use NewVariable name \"foldl'\": it is a reserved identifier"
+"Haskell['length']" = "Haskell cannot use NewVariable name 'length': it is a reserved identifier"
+"Haskell['main']" = "Haskell cannot use NewVariable name 'main': it is a reserved identifier"
+"Haskell['map']" = "Haskell cannot use NewVariable name 'map': it is a reserved identifier"
+"Haskell['print']" = "Haskell cannot use NewVariable name 'print': it is a reserved identifier"
+"Haskell['seq']" = "Haskell cannot use NewVariable name 'seq': it is a reserved identifier"
