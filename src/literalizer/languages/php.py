@@ -289,6 +289,7 @@ class Php(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_call_target_keywords_case_sensitive = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "__halt_compiler",

@@ -5327,8 +5327,15 @@ def _validate_call_target(
     # keyword may spell (``obj.class`` in JavaScript), and is checked
     # against the narrower ``reserved_identifiers`` alone (#3905).
     head = target_function_parts[0]
+    # A language may match keywords without regard to case while still
+    # spelling identifiers case-sensitively, so both must agree before
+    # the head is compared by case.
+    head_case_sensitive = (
+        language.reserved_variable_identifiers_case_sensitive
+        and language_cls.reserved_call_target_keywords_case_sensitive
+    )
     if is_reserved_identifier(
-        case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+        case_sensitive=head_case_sensitive,
         name=head,
         reserved_identifiers=(
             language.reserved_variable_identifiers

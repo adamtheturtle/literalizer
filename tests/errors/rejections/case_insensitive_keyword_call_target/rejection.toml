@@ -1,7 +1,10 @@
 schema_version = 1
-summary = "A keyword leading a call target is matched without regard to case."
+summary = """
+A keyword leading a call target is matched without regard to case,
+whether the language spells all identifiers that way or only keywords.
+"""
 exceptions = ["InvalidCallTargetError"]
-languages = ["Ada", "Cobol", "Fortran", "VisualBasic"]
+languages = ["Ada", "Cobol", "Fortran", "Php", "PowerShell", "VisualBasic"]
 
 [call]
 api = "literalize_call"
