@@ -107,7 +107,7 @@ optional-dependencies.dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.70",
+    "ty==0.0.72",
     "types-pygments==2.20.0.20260728",
     "vale==3.13.0.0",
     "vulture==2.16",
@@ -626,8 +626,15 @@ executionEnvironments = [
 [tool.ty]
 src.exclude = [ "repro.py" ]
 terminal.error-on-warning = true
-overrides = []
 analysis.respect-type-ignore-comments = false
+
+[[tool.ty.overrides]]
+include = [ "src/literalizer/languages/**/*.py" ]
+# ty 0.0.72 currently loses callable signatures for functions stored as enum
+# members. Keep the workaround scoped to the language enum implementations.
+rules.invalid-assignment = "ignore"
+rules.too-many-positional-arguments = "ignore"
+rules.unknown-argument = "ignore"
 
 [tool.pytest]
 ini_options.addopts = "-n auto"
