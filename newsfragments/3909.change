@@ -1,0 +1,2 @@
+Mojo sequence and ordered-map output now uses explicit ``List([...])``
+construction, preserving dynamic-list semantics with Mojo 1.0.

@@ -1,13 +1,13 @@
 def main():
-    var my_data = [
-        [1, 2],
+    var my_data = List([
+        List([1, 2]),
         List[Int](),
-        [3, 4],
-    ]
+        List([3, 4]),
+    ])
     _ = my_data
-    my_data = [
-        [1, 2],
+    my_data = List([
+        List([1, 2]),
         List[Int](),
-        [3, 4],
-    ]
+        List([3, 4]),
+    ])
     _ = my_data

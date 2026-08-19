@@ -1,7 +1,7 @@
 def main():
-    var my_data: List[String] = [
+    var my_data: List[String] = List([
         # line 1
         # line 2
         "a",
-    ]
+    ])
     _ = my_data

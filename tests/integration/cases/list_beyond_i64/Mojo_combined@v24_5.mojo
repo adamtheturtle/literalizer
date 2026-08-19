@@ -1,11 +1,11 @@
 def main():
-    var my_data = [
+    var my_data = List([
         9223372036854775807,
         9223372036854775808,
-    ]
+    ])
     _ = my_data
-    my_data = [
+    my_data = List([
         9223372036854775807,
         9223372036854775808,
-    ]
+    ])
     _ = my_data

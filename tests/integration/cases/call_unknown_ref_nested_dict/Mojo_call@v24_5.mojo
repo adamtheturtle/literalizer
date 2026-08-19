@@ -4,4 +4,4 @@ def main():
     var my_list = {
         "unused": "value",
     }
-    process([[{"inner": my_list^}]])
+    process(List([List([{"inner": my_list^}])]))

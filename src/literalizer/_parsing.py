@@ -631,12 +631,16 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         try:
             # https://sourceforge.net/p/ruamel-yaml/tickets/564/
             raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
-        except (YAMLError, ValueError, IndexError) as exc:
+        except (YAMLError, ValueError, IndexError, AttributeError) as exc:
             # A failed ruamel load leaves mutable scanner/parser state
             # behind. Never expose that partial state to the next public
             # call on this thread.
             _YAML_PARSERS.round_trip = None
-            detail = "malformed input" if isinstance(exc, IndexError) else exc
+            detail = (
+                "malformed input"
+                if isinstance(exc, (IndexError, AttributeError))
+                else exc
+            )
             message = f"Invalid YAML: {detail}"
             mark: _ParserMark | None = vars(exc).get("problem_mark")
             raise YAMLParseError(

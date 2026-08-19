@@ -1,11 +1,11 @@
 def main():
-    var my_data: List[String] = [
+    var my_data: List[String] = List([
         "prefix ${HOME} suffix",
         "${interpolated}",
-    ]
+    ])
     _ = my_data
-    my_data = [
+    my_data = List([
         "prefix ${HOME} suffix",
         "${interpolated}",
-    ]
+    ])
     _ = my_data
