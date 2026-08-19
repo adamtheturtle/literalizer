@@ -18,6 +18,45 @@ class _StringFormatter(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+BIDI_FORMATTING_CHARACTERS: tuple[str, ...] = (
+    "\u202a",
+    "\u202b",
+    "\u202c",
+    "\u202d",
+    "\u202e",
+    "\u2066",
+    "\u2067",
+    "\u2068",
+    "\u2069",
+)
+"""The Unicode bidirectional formatting characters.
+
+Several toolchains reject these in source because of the "Trojan
+Source" class of attacks -- ``rustc`` denies them by default, Elixir
+raises a syntax error, the Dart analyzer warns -- so a backend whose
+toolchain does emits them as escapes instead (issue #3912).
+"""
+
+
+@beartype
+def bidi_escape_replacements(*, template: str) -> list[tuple[str, str]]:
+    r"""Return one ``(character, escape)`` pair per formatting character.
+
+    *template* receives the code point as a positional integer, e.g.
+    ``"\\u{{{:04X}}}"`` -> ``\\u{202A}``.
+    """
+    return [
+        (character, template.format(ord(character)))
+        for character in BIDI_FORMATTING_CHARACTERS
+    ]
+
+
+@beartype
+def has_bidi_formatting_character(*, value: str) -> bool:
+    """Return whether *value* holds one of those characters."""
+    return any(character in value for character in BIDI_FORMATTING_CHARACTERS)
+
+
 @beartype
 def _backslash_escape(*, value: str, quote_char: str) -> str:
     r"""Apply base backslash escapes to *value*.
