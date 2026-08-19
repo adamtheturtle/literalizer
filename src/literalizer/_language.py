@@ -141,6 +141,12 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "NewVariable validation requires a LanguageCls language"
         raise TypeError(msg)
+    pattern = language_cls.reserved_variable_identifier_pattern
+    if pattern is not None and pattern.fullmatch(string=name) is not None:
+        raise ReservedVariableNameError(
+            language_name=language_name,
+            variable_name=name,
+        )
     if language_cls.supports_record_struct_name_prefix:
         strategy = vars(language).get("heterogeneous_strategy")
         prefix = vars(language)["record_struct_name_prefix"]
@@ -1214,6 +1220,13 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    reserved_variable_identifier_pattern: re.Pattern[str] | None = None
+    """A shape a declaration name cannot take, beyond the names listed
+    in :attr:`~literalizer.Language.reserved_variable_identifiers`.
+    Zig's arbitrary-width integer primitives (``u7``, ``i33``, ...) are
+    an open set, so they are spelled as a pattern rather than
+    enumerated.
+    """
     reserved_call_parameter_identifiers: frozenset[str] = frozenset()
     """Names a call parameter cannot take even where a declaration can.
 

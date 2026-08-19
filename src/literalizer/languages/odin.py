@@ -51,7 +51,7 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_hex,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -115,6 +115,16 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
+)
+
+_BYTE_ORDER_MARK = "\ufeff"
+
+# Odin rejects a byte order mark anywhere in a source file, including
+# inside a string literal, and spells the escape with four hex digits
+# (issue #3920).
+_format_string_odin = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[("\0", "\\x00"), (_BYTE_ORDER_MARK, "\\ufeff")],
 )
 
 
@@ -443,8 +453,15 @@ def _to_jsonable(data: Value) -> object:
 
 @beartype
 def _format_odin_json_value(data: Value) -> str:
-    """Serialize *data* as a single-line JSON expression."""
-    return json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
+    """Serialize *data* as a single-line JSON expression.
+
+    A byte order mark is written as its JSON escape rather than as the
+    code point: Odin rejects the raw byte anywhere in a source file,
+    and the raw string the text is carried in has no escapes of its
+    own (issue #3920).
+    """
+    text = json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
+    return text.replace(_BYTE_ORDER_MARK, "\\uFEFF")
 
 
 @beartype
@@ -1122,7 +1139,7 @@ class Odin(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_nul_hex
+        return _format_string_odin
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
