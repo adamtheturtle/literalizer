@@ -131,6 +131,10 @@ _format_string_single = make_backslash_string_formatter(
 )
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
+# A Dart named parameter cannot be private, so a leading-underscore
+# name has no valid named-argument form (issue #3916).
+_DART_PRIVATE_NAME = re.compile(pattern=r"_.*")
+
 
 @beartype
 def _format_string_multiline(value: str) -> str:
@@ -426,6 +430,9 @@ class Dart(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _DART_PRIVATE_NAME
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         # The keywords, then the type names the backend writes into its
