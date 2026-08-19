@@ -307,7 +307,7 @@ def _kotlin_list_value_type_name(
     match inner:
         case ListType():
             nested = _kotlin_list_value_type_name(
-                inner,
+                element_type=inner,
                 scalar_resolver=scalar_resolver,
             )
             return None if nested is None else f"Array<{nested}>"
@@ -2248,7 +2248,7 @@ class Kotlin(metaclass=LanguageCls):
             if not renders_arrays:
                 return None
             return _kotlin_list_value_type_name(
-                element_type,
+                element_type=element_type,
                 scalar_resolver=scalar_resolver,
             )
 
