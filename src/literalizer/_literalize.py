@@ -4638,6 +4638,7 @@ def _append_trailing_comment(
     cfg = language.comment_config
     escaped_comment = neutralize_comment_terminator(
         text=comment,
+        comment_prefix=cfg.trailing_prefix,
         comment_suffix=cfg.suffix,
     )
     lines = rendered.split(sep="\n")

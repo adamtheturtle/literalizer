@@ -1,0 +1,1 @@
+Replace a control character in a preserved comment with a marker naming it when rendering Zig, which refuses one.

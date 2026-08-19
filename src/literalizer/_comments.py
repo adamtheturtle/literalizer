@@ -35,6 +35,32 @@ class EncodingCookieSafeCommentPrefix(str):
     __slots__ = ()
 
 
+class ControlCharacterFreeCommentPrefix(str):
+    """Mark comments whose text cannot carry a control character.
+
+    Zig reports "comment contains invalid byte" for a tab, a DELETE,
+    or any other C0 control inside a comment (issue #3962).
+    """
+
+    __slots__ = ()
+
+
+_BIDI_COMMENT_CHARACTERS = (
+    "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+)
+"""Bidirectional formatting characters, refused inside a comment.
+
+Elixir raises a syntax error for one, ``rustc`` denies it and the Dart
+analyzer warns, all under the "Trojan Source" heading.  A comment
+carries no escapes, so each is replaced by a marker naming it, the way
+the line and paragraph separators already are (issue #3963).
+"""
+
+_CONTROL_COMMENT_CHARACTERS = "".join(
+    chr(code) for code in (*range(0x20), 0x7F)
+)
+
+
 _PYTHON_ENCODING_COOKIE = re.compile(
     pattern=(
         r"(?P<label>coding)(?P<separator>[:=])"
@@ -373,6 +399,7 @@ def _format_comment(
             )
         escaped = neutralize_comment_terminator(
             text=text,
+            comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
         )
         if not comment_suffix and escaped.endswith("\\"):
@@ -385,9 +412,19 @@ def _format_comment(
 
 
 @beartype
+def _mark_code_points(*, text: str, characters: str) -> str:
+    """Replace each of *characters* with a marker naming it."""
+    for character in characters:
+        if character in text:
+            text = text.replace(character, f"<U+{ord(character):04X}>")
+    return text
+
+
+@beartype
 def neutralize_comment_terminator(
     *,
     text: str,
+    comment_prefix: str,
     comment_suffix: str,
 ) -> str:
     """Prevent *text* from closing a suffix-delimited target comment.
@@ -399,7 +436,15 @@ def neutralize_comment_terminator(
     ``<U+0029>``). Line-comment formats have an empty suffix and leave
     the source text unchanged.
     """
-    text = text.replace("\u2028", "<U+2028>").replace("\u2029", "<U+2029>")
+    text = _mark_code_points(
+        text=text,
+        characters=f"\u2028\u2029{_BIDI_COMMENT_CHARACTERS}",
+    )
+    if isinstance(comment_prefix, ControlCharacterFreeCommentPrefix):
+        text = _mark_code_points(
+            text=text,
+            characters=_CONTROL_COMMENT_CHARACTERS,
+        )
     if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
@@ -541,6 +586,7 @@ def literalize_yaml_scalar(
         case True, True:
             escaped_inline = neutralize_comment_terminator(
                 text=scalar_comments.inline,
+                comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
             )
             inline_value = (
@@ -632,6 +678,7 @@ def literalize_yaml_collection(
         if element_comment.inline:
             inline_text = neutralize_comment_terminator(
                 text=element_comment.inline,
+                comment_prefix=ctx.comment_prefix,
                 comment_suffix=ctx.comment_suffix,
             )
             output_line = (
@@ -770,6 +817,7 @@ def apply_collection_comments_to_elements(
         if ec.inline:
             escaped_inline = neutralize_comment_terminator(
                 text=ec.inline,
+                comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
             )
             element_lines = element_str.split(sep="\n")
