@@ -1,7 +1,7 @@
 using System;
-var my_data = (
+var my_data = ValueTuple.Create(
     1
 );
-my_data = (
+my_data = ValueTuple.Create(
     1
 );

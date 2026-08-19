@@ -254,6 +254,16 @@ class SequenceFormatConfig:
     requires_uniform_record_shapes: bool
     declared_type: str | None
     narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    single_element_template: str | None
+    """How a one-element sequence is spelled, if not as the openers.
+
+    ``{items}`` stands for the rendered element.  C# needs one: ``(x)``
+    is a parenthesized expression rather than a one-element tuple, so
+    the value would silently lose its collection (issue #3928).  The
+    spelling is kept here rather than in ``sequence_open`` because the
+    sibling-widening probe reads that opener as a statement about the
+    element type, which arity is not.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
