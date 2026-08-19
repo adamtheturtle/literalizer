@@ -880,7 +880,7 @@ def _mojo_list_open(items: list[Value]) -> str:
     construct a fixed-size ``Array`` rather than a heap-allocated
     ``List``.  Wrap the expression in ``List(...)`` so this format keeps
     its documented ``List`` semantics while the inner expression still
-    benefits from Mojo's literal element-type inference.
+    benefits from the language's literal element-type inference.
 
     Mojo cannot infer a list type from null-only elements.
     """
