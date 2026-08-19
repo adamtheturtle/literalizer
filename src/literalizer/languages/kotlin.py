@@ -70,6 +70,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -1812,6 +1813,7 @@ class Kotlin(metaclass=LanguageCls):
                 _kotlin_record_field_identifier,
                 reserved_identifiers=self.reserved_variable_identifiers,
             ),
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._kotlin_record_field_type,
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,

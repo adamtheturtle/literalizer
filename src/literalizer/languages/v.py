@@ -57,6 +57,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
     infer_element_type,
@@ -1288,6 +1289,7 @@ class V(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_V_NO_RECORD_SHAPE_NAMES,
             field_identifier=_v_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._v_record_field_type,
             render_declaration=self._v_render_record_declaration,
             render_literal=_v_record_literal,

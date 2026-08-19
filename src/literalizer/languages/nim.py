@@ -811,6 +811,18 @@ def _nim_record_field_identifier(key: str, /) -> str:
 
 
 @beartype
+def _nim_field_identifier_key(identifier: str, /) -> str:
+    """Fold a field identifier the way the compiler compares one.
+
+    Nim identifiers are style-insensitive: the first character is
+    compared as written, and the rest ignore case and underscores, so
+    ``aB``, ``a_b`` and ``ab`` all name one field (issue #3960).
+    """
+    head, tail = identifier[:1], identifier[1:]
+    return head + tail.replace("_", "").lower()
+
+
+@beartype
 def _nim_render_record_declaration(
     name: str,
     fields: Sequence[RecordDeclarationField],
@@ -1933,6 +1945,7 @@ class Nim(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_NIM_NO_RECORD_SHAPE_NAMES,
             field_identifier=_nim_record_field_identifier,
+            field_identifier_key=_nim_field_identifier_key,
             field_type=self._nim_record_field_type,
             render_declaration=partial(
                 _nim_render_record_declaration,

@@ -59,6 +59,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._json_native_document import (
@@ -1274,6 +1275,7 @@ class Crystal(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_CRYSTAL_NO_RECORD_SHAPE_NAMES,
             field_identifier=_crystal_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._crystal_record_field_type,
             render_declaration=_crystal_render_record_declaration,
             render_literal=_crystal_record_literal,

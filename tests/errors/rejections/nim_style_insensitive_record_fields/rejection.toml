@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Nim record fields collide under its style-insensitive identifier equality."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ['{"a-b": 1, "ab": 2}', '{"a b": 1, "aB": 2}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

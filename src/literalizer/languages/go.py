@@ -61,6 +61,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._heterogeneous import iter_wrapped_scalars
@@ -1137,6 +1138,7 @@ class Go(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             field_identifier=_go_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._go_record_field_type,
             render_declaration=self._go_render_declaration,
             render_literal=_go_record_literal,

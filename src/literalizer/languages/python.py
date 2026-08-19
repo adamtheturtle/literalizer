@@ -54,6 +54,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
@@ -1701,6 +1702,7 @@ class Python(metaclass=LanguageCls):
             # the auto ``{prefix}{N}`` names.
             record_shape_names=MappingProxyType(mapping={}),
             field_identifier=_python_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._record_field_type,
             render_declaration=self._python_render_declaration,
             render_literal=_python_record_literal,

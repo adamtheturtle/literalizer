@@ -148,6 +148,14 @@ class RecordRenderer:
     name_prefix: str
     record_shape_names: Mapping[frozenset[str], str]
     field_identifier: Callable[[str], str]
+    field_identifier_key: Callable[[str], str]
+    """How two field identifiers are compared for collision.
+
+    Identity for a language whose identifiers are distinct exactly when
+    they are spelled differently.  Nim's are style-insensitive -- ``aB``
+    and ``ab`` name the same field -- so it folds the spelling here
+    rather than letting the two through (issue #3960).
+    """
     field_type: Callable[[RecordFieldType], str]
     render_declaration: Callable[
         [str, Sequence[RecordDeclarationField]],
@@ -184,6 +192,12 @@ class RecordStrategy:
 
 
 @beartype
+def identity_field_identifier_key(identifier: str, /) -> str:
+    """Compare two field identifiers by their spelling alone."""
+    return identifier
+
+
+@beartype
 def _validate_field_identifiers(
     *,
     renderer: RecordRenderer,
@@ -206,7 +220,8 @@ def _validate_field_identifiers(
                     "field identifier under the RECORD heterogeneous strategy"
                 )
                 raise UnrepresentableInputError(msg)
-            if identifier in identifiers:
+            comparison = renderer.field_identifier_key(identifier)
+            if comparison in identifiers:
                 msg = (
                     f"cannot represent the dict key {key!r} under the "
                     "RECORD heterogeneous strategy: its field identifier "
@@ -214,7 +229,7 @@ def _validate_field_identifiers(
                     "record"
                 )
                 raise UnrepresentableInputError(msg)
-            identifiers.add(identifier)
+            identifiers.add(comparison)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

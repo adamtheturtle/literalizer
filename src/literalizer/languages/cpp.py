@@ -64,6 +64,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.tuple_strategy import (
     is_tuple_eligible,
@@ -3621,6 +3622,7 @@ class Cpp(metaclass=LanguageCls):
                 _cpp_record_field_identifier,
                 reserved_identifiers=self.reserved_variable_identifiers,
             ),
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
             render_literal=(

@@ -55,6 +55,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
     record_shape_for_dict,
@@ -1486,6 +1487,7 @@ class C(metaclass=LanguageCls):
                 _c_record_field_identifier,
                 reserved_identifiers=self.reserved_variable_identifiers,
             ),
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._c_record_field_type,
             render_declaration=_c_render_record_declaration,
             render_literal=_c_record_literal,
