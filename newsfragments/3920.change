@@ -1,0 +1,1 @@
+Escape U+FEFF in Odin string literals and in the JSON text an ``Odin(json_type=JSON_VALUE)`` declaration parses, since Odin rejects a byte order mark anywhere in a source file.
