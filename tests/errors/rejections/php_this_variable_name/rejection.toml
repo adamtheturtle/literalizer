@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "PHP cannot re-assign the $this variable."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Php"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "this"

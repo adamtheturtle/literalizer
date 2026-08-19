@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+Php = "Php cannot use NewVariable name 'this': it is a reserved identifier"

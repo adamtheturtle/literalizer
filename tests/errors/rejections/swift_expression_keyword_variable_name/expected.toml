@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Swift['Any']" = "Swift cannot use NewVariable name 'Any': it is a reserved identifier"
+"Swift['Self']" = "Swift cannot use NewVariable name 'Self': it is a reserved identifier"
+"Swift['as']" = "Swift cannot use NewVariable name 'as': it is a reserved identifier"
+"Swift['false']" = "Swift cannot use NewVariable name 'false': it is a reserved identifier"
+"Swift['in']" = "Swift cannot use NewVariable name 'in': it is a reserved identifier"
+"Swift['nil']" = "Swift cannot use NewVariable name 'nil': it is a reserved identifier"
+"Swift['self']" = "Swift cannot use NewVariable name 'self': it is a reserved identifier"
+"Swift['true']" = "Swift cannot use NewVariable name 'true': it is a reserved identifier"
