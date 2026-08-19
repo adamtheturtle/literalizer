@@ -1217,7 +1217,18 @@ class Crystal(metaclass=LanguageCls):
             case list() if not value:
                 return "Array(Nil)"
             case list():
-                parts = {self._crystal_type_for_value(item) for item in value}
+                # An empty nested list renders with the element type a
+                # non-empty sibling gives it, so the field type reads
+                # the siblings the same way (issue #3936).
+                informative = [
+                    item
+                    for item in value
+                    if item or not isinstance(item, (list, dict, set))
+                ]
+                parts = {
+                    self._crystal_type_for_value(item)
+                    for item in informative or value
+                }
                 return f"Array({_crystal_union(parts)})"
             case dict() if not value or isinstance(value, OrderedMap):
                 parts = {
