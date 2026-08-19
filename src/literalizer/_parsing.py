@@ -447,7 +447,7 @@ def _parse_json5_integer(  # noqa: NOD001
     """
     if base != _DECIMAL_BASE:
         return int(value, base=base)
-    return _parse_integer_preserving_negative_zero(value)
+    return _parse_integer_preserving_negative_zero(value=value)
 
 
 def _validate_yaml_float_tokens(*, source: str) -> None:
