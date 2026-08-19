@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "do_thing"
+parameter_names = ["x_"]
+per_element = true
+wrap_in_file = true
+languages = ["Scala"]
+languages_reason = "Scala-specific: the parser reads `x_:` as one identifier, so a trailing-underscore parameter needs a space before its type ascription."
