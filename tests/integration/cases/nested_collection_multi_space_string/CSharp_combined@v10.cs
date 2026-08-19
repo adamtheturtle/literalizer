@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System;
-var my_data = (
+var my_data = ValueTuple.Create(
     new Dictionary<string, object> {["key"] = "hello   world", ["value"] = 1}
 );
-my_data = (
+my_data = ValueTuple.Create(
     new Dictionary<string, object> {["key"] = "hello   world", ["value"] = 1}
 );

@@ -11,7 +11,7 @@ var my_data = new Dictionary<string, object> {
         },
         new Dictionary<string, object> {
             ["name"] = "Carol",
-            ["tags"] = (
+            ["tags"] = ValueTuple.Create(
                 "guest"
             )
         }
