@@ -1,0 +1,8 @@
+# languages rejecting: 5; languages accepting: 0
+
+[ReservedVariableNameError]
+Erlang = "Erlang cannot use NewVariable name '_': it is a reserved identifier"
+Go = "Go cannot use NewVariable name '_': it is a reserved identifier"
+Odin = "Odin cannot use NewVariable name '_': it is a reserved identifier"
+Perl = "Perl cannot use NewVariable name '_': it is a reserved identifier"
+Zig = "Zig cannot use NewVariable name '_': it is a reserved identifier"

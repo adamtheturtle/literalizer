@@ -383,6 +383,7 @@ class Perl(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "_",
             "BEGIN",
             "CHECK",
             "CORE",

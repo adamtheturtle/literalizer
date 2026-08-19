@@ -393,6 +393,15 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
     }
 )
 
+# Names a Zig declaration cannot take, beyond the keywords.  ``_`` is
+# the discard identifier, which the compiler rejects as a binding name
+# ("'_' used as an identifier without @\"_\" syntax").  Keys carrying
+# the same names are still written as quoted struct members, so this
+# set is separate from the escaping set above.
+_ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
+    _ZIG_RESERVED_IDENTIFIERS | frozenset({"_"})
+)
+
 # A dict key usable verbatim as a Zig ``struct`` member: a plain
 # identifier that is not a keyword.  Anything else is escaped as a
 # quoted identifier (``@"error"``).
@@ -645,7 +654,9 @@ class Zig(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = _ZIG_RESERVED_IDENTIFIERS
+    reserved_variable_identifiers: frozenset[str] = (
+        _ZIG_RESERVED_VARIABLE_IDENTIFIERS
+    )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
