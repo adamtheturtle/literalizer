@@ -449,6 +449,7 @@ class _RejectionData(  # noqa: NOD001
             for template in _kwarg_templates(kwarg=kwarg)
         ]
         templates.extend(self.call.parameter_names)
+        templates.append(self.call.variable_name)
         if self.call.target_function is not None:
             templates.append(self.call.target_function)
         unknown = sorted(
