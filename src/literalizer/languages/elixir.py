@@ -699,6 +699,16 @@ class Elixir(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entry-point name.
+
+        The wrapper defines ``defmodule Check``, and a capitalized call
+        root is stubbed as a module of that same name, so a root of
+        ``Check`` would define the module twice and lose the stub.
+        """
+        return "Check"
+
     def wrap_in_file(
         self,
         content: str,

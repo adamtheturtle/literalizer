@@ -5243,10 +5243,11 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
+    # The root names the stub the wrapper reaches through, so it
+    # collides with the entry point whether or not the target is dotted.
     if (
-        len(target_function_parts) == 1
-        and isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function == language.call_wrapper_entrypoint_name
+        isinstance(language, _HasCallWrapperEntrypoint)
+        and target_function_parts[0] == language.call_wrapper_entrypoint_name
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
