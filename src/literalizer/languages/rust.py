@@ -396,14 +396,18 @@ def _format_constructor_target(class_name: str, /) -> str:
 _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
+_RUST_INTEGER_WIDTHS = ("i32", "i64", "i128")
+
+
 @beartype
 def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
     All-integer type lists widen to the largest integer; otherwise,
-    returns the single type present.  Mixed-family inputs never reach
-    this function because
-    :func:`~literalizer._checks.check_data` raises for them.
+    returns the single type present.  A declaration style that needs an
+    annotation can still reach a collection whose element types differ
+    in shape rather than in width -- a list beside a map -- which no
+    single Rust type covers, so that is refused (issue #3939).
 
     Callers must pass a non-empty sequence.
     """
@@ -411,8 +415,14 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     match unique:
         case [only]:
             return only
+        case _ if all(name in _RUST_INTEGER_WIDTHS for name in unique):
+            return max(unique, key=_RUST_INTEGER_WIDTHS.index)
         case _:
-            return max(unique, key=("i32", "i64", "i128").index)
+            msg = (
+                "Rust cannot annotate a collection whose element types "
+                f"differ: {', '.join(sorted(unique))}."
+            )
+            raise UnrepresentableInputError(msg)
 
 
 @beartype
@@ -454,10 +464,20 @@ def _rust_homogeneous_element_type(
     infer: Callable[[Value], str],
     default_type: str,
 ) -> str:
-    """Return the element type for a homogeneous Rust collection."""
+    """Return the element type for a homogeneous Rust collection.
+
+    An empty nested collection infers the language's default element
+    type, which is a placeholder rather than a statement about the
+    data, so a non-empty sibling decides for it (issue #3939).
+    """
     if not elements:
         return default_type
-    types = [infer(element) for element in elements]
+    informative = [
+        element
+        for element in elements
+        if element or not isinstance(element, (list, dict, set))
+    ]
+    types = [infer(element) for element in informative or elements]
     return _unify_rust_types(types=types)
 
 

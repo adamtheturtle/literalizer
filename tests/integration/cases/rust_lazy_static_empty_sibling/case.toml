@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Rust"]
+languages_reason = "Rust-specific: only its LAZY_STATIC declarations carry an inferred annotation for this shape."
+suites = ["base"]
+
+[[variants]]
+axis = "declaration_style"
