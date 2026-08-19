@@ -1,0 +1,1 @@
+Escape Unicode format characters and line separators in Haskell string literals, which GHC reports as a lexical error.

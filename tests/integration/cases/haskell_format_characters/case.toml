@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Haskell"]
+languages_reason = "Haskell-specific: GHC refuses to lex a format character or a line separator inside a string literal, while an ordinary space separator is fine."
+suites = ["base"]
