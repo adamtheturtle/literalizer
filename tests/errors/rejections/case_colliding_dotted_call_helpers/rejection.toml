@@ -1,7 +1,12 @@
 schema_version = 1
-summary = "Dotted components that differ only in case share one generated helper type."
+summary = """
+Dotted components that differ only in case share one generated helper
+type in a backend whose helper naming normalizes component case.
+"""
 exceptions = ["InvalidCallTargetError"]
-languages = ["Java", "Kotlin", "Rust"]
+gates = [
+  { kind = "capability_flag", flag = "dotted_call_stub_requires_unique_parts" },
+]
 
 [call]
 api = "literalize_call"
@@ -11,3 +16,10 @@ target_function = "a.foo.Foo.bar"
 parameter_names = ["x"]
 per_element = false
 wrap_in_file = true
+
+[[accepts]]
+languages = ["Go", "Swift"]
+reason = """
+Go and Swift interpolate each component into the helper name as
+spelled, so case-distinct components yield distinct declarations.
+"""
