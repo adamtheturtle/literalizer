@@ -455,13 +455,13 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "string_literals_escape_unicode_line_separators": (
         _escapes_unicode_line_separators
     ),
-    # Only the backends that name dotted-call helpers after path
+    # Only the languages that name dotted-call helpers after path
     # segments declare this flag, and the production check reads it
-    # through a runtime-checkable protocol, so absence means False here
-    # too.
+    # through a protocol that tolerates its absence, so a missing
+    # value means False here too.
     "dotted_call_stub_requires_unique_parts": (
-        lambda lang_cls: getattr(
-            lang_cls, "dotted_call_stub_requires_unique_parts", False
+        lambda lang_cls: bool(
+            vars(lang_cls).get("dotted_call_stub_requires_unique_parts", False)
         )
     ),
 }
