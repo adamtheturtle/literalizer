@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Clojure['Integer']" = "Clojure cannot use NewVariable name 'Integer': it is a reserved identifier"
+"Clojure['Math']" = "Clojure cannot use NewVariable name 'Math': it is a reserved identifier"
+"Clojure['Object']" = "Clojure cannot use NewVariable name 'Object': it is a reserved identifier"
+"Clojure['String']" = "Clojure cannot use NewVariable name 'String': it is a reserved identifier"

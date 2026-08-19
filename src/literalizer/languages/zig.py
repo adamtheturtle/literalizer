@@ -393,14 +393,60 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
     }
 )
 
-# Names a Zig declaration cannot take, beyond the keywords.  ``_`` is
-# the discard identifier, which the compiler rejects as a binding name
-# ("'_' used as an identifier without @\"_\" syntax").  Keys carrying
-# the same names are still written as quoted struct members, so this
-# set is separate from the escaping set above.
-_ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
-    _ZIG_RESERVED_IDENTIFIERS | frozenset({"_"})
+# Names a Zig declaration cannot take, beyond the keywords: ``_``, the
+# discard identifier, which the compiler rejects as a binding name
+# ("'_' used as an identifier without @\"_\" syntax"); the primitive
+# types and values, which it reports as "name shadows primitive"; and
+# ``main``, the function the wrapped file declares and which a local
+# constant may not shadow.  Keys carrying the same names are still
+# written as quoted struct members, so this set is separate from the
+# escaping set above (issue #3932).
+_ZIG_PRIMITIVE_IDENTIFIERS: frozenset[str] = frozenset(
+    {
+        "anyerror",
+        "anyframe",
+        "anyopaque",
+        "anytype",
+        "bool",
+        "c_char",
+        "c_int",
+        "c_long",
+        "c_longdouble",
+        "c_longlong",
+        "c_short",
+        "c_uint",
+        "c_ulong",
+        "c_ulonglong",
+        "c_ushort",
+        "comptime_float",
+        "comptime_int",
+        "f128",
+        "f16",
+        "f32",
+        "f64",
+        "f80",
+        "false",
+        "isize",
+        "noreturn",
+        "null",
+        "true",
+        "type",
+        "undefined",
+        "usize",
+        "void",
+    }
 )
+
+_ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
+    _ZIG_RESERVED_IDENTIFIERS
+    | _ZIG_PRIMITIVE_IDENTIFIERS
+    | frozenset({"_", "main"})
+)
+
+# The arbitrary-width integer primitives are an open set (``u7``,
+# ``i33``), so they are matched rather than listed.  The float
+# primitives are a fixed set and are listed above.
+_ZIG_SIZED_PRIMITIVE = re.compile(pattern=r"[iu][0-9]+")
 
 # A dict key usable verbatim as a Zig ``struct`` member: a plain
 # identifier that is not a keyword.  Anything else is escaped as a
@@ -659,6 +705,9 @@ class Zig(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _ZIG_RESERVED_VARIABLE_IDENTIFIERS
+    )
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _ZIG_SIZED_PRIMITIVE
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

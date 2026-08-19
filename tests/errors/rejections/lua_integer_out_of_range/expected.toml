@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Lua[DECIMAL]['-9223372036854775809']" = "Lua cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Lua[DECIMAL]['9223372036854775808']" = "Lua cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Lua[DECIMAL]['18446744073709551616']" = "Lua cannot represent integer 18446744073709551616 without external arbitrary-precision integer support."
+"Lua[DECIMAL]['18446744073709551621']" = "Lua cannot represent integer 18446744073709551621 without external arbitrary-precision integer support."
+"Lua[HEX]['-9223372036854775809']" = "Lua cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
+"Lua[HEX]['9223372036854775808']" = "Lua cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Lua[HEX]['18446744073709551616']" = "Lua cannot represent integer 18446744073709551616 without external arbitrary-precision integer support."
+"Lua[HEX]['18446744073709551621']" = "Lua cannot represent integer 18446744073709551621 without external arbitrary-precision integer support."

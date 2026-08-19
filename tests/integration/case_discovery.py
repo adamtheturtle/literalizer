@@ -136,6 +136,8 @@ type _CaseScalar = (
 # pyright/ty fully resolved.
 type CaseData = (
     _CaseScalar
+    # A YAML ``!!pairs`` node resolves to a list of two-tuples.
+    | tuple[object, CaseData]
     | list[CaseData]
     | dict[object, CaseData]
     | set[_CaseScalar]

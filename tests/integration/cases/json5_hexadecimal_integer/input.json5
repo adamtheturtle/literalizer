@@ -1,0 +1,6 @@
+{
+  lower: 0xdeadbeef,
+  upper: 0X1F,
+  negative: -0x10,
+  zero: 0x0,
+}

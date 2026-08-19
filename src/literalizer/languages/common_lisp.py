@@ -155,6 +155,60 @@ def _common_lisp_call_stub(
     )
 
 
+# Names whose declaration form -- the name between asterisks, as
+# ``defparameter`` writes it -- is a symbol in the locked
+# ``COMMON-LISP`` package.  Declaring one aborts with a
+# ``SYMBOL-PACKAGE-LOCKED-ERROR`` (issue #3947).
+_COMMON_LISP_SPECIAL_VARIABLES: frozenset[str] = frozenset(
+    {
+        "break-on-signals",
+        "compile-file-pathname",
+        "compile-file-truename",
+        "compile-print",
+        "compile-verbose",
+        "debug-io",
+        "debugger-hook",
+        "default-pathname-defaults",
+        "error-output",
+        "features",
+        "gensym-counter",
+        "load-pathname",
+        "load-print",
+        "load-truename",
+        "load-verbose",
+        "macroexpand-hook",
+        "modules",
+        "package",
+        "print-array",
+        "print-base",
+        "print-case",
+        "print-circle",
+        "print-escape",
+        "print-gensym",
+        "print-length",
+        "print-level",
+        "print-lines",
+        "print-miser-width",
+        "print-pprint-dispatch",
+        "print-pretty",
+        "print-radix",
+        "print-readably",
+        "print-right-margin",
+        "query-io",
+        "random-state",
+        "read-base",
+        "read-default-float-format",
+        "read-eval",
+        "read-suppress",
+        "readtable",
+        "standard-input",
+        "standard-output",
+        "terminal-io",
+        "trace-output",
+    }
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CommonLisp(metaclass=LanguageCls):
@@ -187,8 +241,12 @@ class CommonLisp(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
+    # The reader folds a symbol name to upper case, so a reserved name
+    # is reserved in every spelling.
+    reserved_variable_identifiers_case_sensitive: bool = False
+    reserved_variable_identifiers: frozenset[str] = (
+        _COMMON_LISP_SPECIAL_VARIABLES
+    ) | frozenset(
         {
             "nil",
             "t",

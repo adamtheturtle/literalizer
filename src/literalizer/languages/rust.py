@@ -50,7 +50,9 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     format_string_backslash,
+    has_bidi_formatting_character,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
@@ -130,7 +132,10 @@ _RUST_RAW_STRING_OPEN = re.compile(pattern=r'(?<![A-Za-z0-9_])r(#{1,255})"')
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_backslash_nul = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", r"\0")],
+    extra_replacements=[
+        ("\0", r"\0"),
+        *bidi_escape_replacements(template="\\u{{{:04X}}}"),
+    ],
 )
 
 
@@ -196,7 +201,12 @@ def _format_string_raw(value: str) -> str:
     Falls back to an escaped string for multiline content, since
     indentation applied by wrapping code would corrupt the value.
     """
-    if "\n" in value or "\r" in value or "\0" in value:
+    if (
+        "\n" in value
+        or "\r" in value
+        or "\0" in value
+        or has_bidi_formatting_character(value=value)
+    ):
         return _format_string_backslash_nul(value=value)
     hashes = "#"
     while f'"{hashes}' in value:
@@ -210,6 +220,7 @@ def _format_string_multiline(value: str) -> str:
     if (
         "\0" in value
         or "\r" in value
+        or has_bidi_formatting_character(value=value)
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_backslash_nul(value=value)
