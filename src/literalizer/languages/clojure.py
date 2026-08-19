@@ -116,6 +116,110 @@ def _clojure_call_stub(
     )
 
 
+# The classes Clojure imports into every module by default.  A ``def``
+# cannot rebind a name already mapped to a class ("Expecting var, but
+# String is mapped to class java.lang.String"), so these cannot name a
+# declaration (issue #3943).
+_CLOJURE_DEFAULT_IMPORTS: frozenset[str] = frozenset(
+    {
+        "AbstractMethodError",
+        "Appendable",
+        "ArithmeticException",
+        "ArrayIndexOutOfBoundsException",
+        "ArrayStoreException",
+        "AssertionError",
+        "BigDecimal",
+        "BigInteger",
+        "Boolean",
+        "Byte",
+        "Callable",
+        "CharSequence",
+        "Character",
+        "Class",
+        "ClassCastException",
+        "ClassCircularityError",
+        "ClassFormatError",
+        "ClassLoader",
+        "ClassNotFoundException",
+        "CloneNotSupportedException",
+        "Cloneable",
+        "Comparable",
+        "Compiler",
+        "Deprecated",
+        "Double",
+        "Enum",
+        "EnumConstantNotPresentException",
+        "Error",
+        "Exception",
+        "ExceptionInInitializerError",
+        "Float",
+        "IllegalAccessError",
+        "IllegalAccessException",
+        "IllegalArgumentException",
+        "IllegalMonitorStateException",
+        "IllegalStateException",
+        "IllegalThreadStateException",
+        "IncompatibleClassChangeError",
+        "IndexOutOfBoundsException",
+        "InheritableThreadLocal",
+        "InstantiationError",
+        "InstantiationException",
+        "Integer",
+        "InternalError",
+        "InterruptedException",
+        "Iterable",
+        "LinkageError",
+        "Long",
+        "Math",
+        "NegativeArraySizeException",
+        "NoClassDefFoundError",
+        "NoSuchFieldError",
+        "NoSuchFieldException",
+        "NoSuchMethodError",
+        "NoSuchMethodException",
+        "NullPointerException",
+        "Number",
+        "NumberFormatException",
+        "Object",
+        "OutOfMemoryError",
+        "Override",
+        "Package",
+        "Process",
+        "ProcessBuilder",
+        "Readable",
+        "Runnable",
+        "Runtime",
+        "RuntimeException",
+        "RuntimePermission",
+        "SecurityException",
+        "SecurityManager",
+        "Short",
+        "StackOverflowError",
+        "StackTraceElement",
+        "StrictMath",
+        "String",
+        "StringBuffer",
+        "StringBuilder",
+        "StringIndexOutOfBoundsException",
+        "SuppressWarnings",
+        "System",
+        "Thread",
+        "ThreadDeath",
+        "ThreadGroup",
+        "ThreadLocal",
+        "Throwable",
+        "TypeNotPresentException",
+        "UnknownError",
+        "UnsatisfiedLinkError",
+        "UnsupportedClassVersionError",
+        "UnsupportedOperationException",
+        "VerifyError",
+        "VirtualMachineError",
+        "Void",
+    }
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Clojure(metaclass=LanguageCls):
@@ -149,7 +253,9 @@ class Clojure(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
+    reserved_variable_identifiers: frozenset[str] = (
+        _CLOJURE_DEFAULT_IMPORTS
+    ) | frozenset(
         {
             "catch",
             "def",
@@ -275,6 +381,7 @@ class Clojure(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),

@@ -55,6 +55,7 @@ def _build_sequence_format_config(
     close: str,
     supports_heterogeneity: bool,
     single_element_trailing_comma: bool,
+    single_element_template: str | None,
     supports_trailing_comma: bool,
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
@@ -88,6 +89,7 @@ def _build_sequence_format_config(
         requires_uniform_record_shapes=False,
         declared_type=None,
         narrowed_empty_form=None,
+        single_element_template=single_element_template,
     )
 
 
@@ -98,6 +100,7 @@ def sequence_format_factory(
     close: str,
     supports_heterogeneity: bool,
     single_element_trailing_comma: bool,
+    single_element_template: str | None,
     supports_trailing_comma: bool,
     empty_template: str | None,
     preamble_lines: tuple[str, ...],
@@ -119,6 +122,7 @@ def sequence_format_factory(
             close=close,
             supports_heterogeneity=supports_heterogeneity,
             single_element_trailing_comma=single_element_trailing_comma,
+            single_element_template=single_element_template,
             supports_trailing_comma=supports_trailing_comma,
             empty_template=empty_template,
             preamble_lines=preamble_lines,

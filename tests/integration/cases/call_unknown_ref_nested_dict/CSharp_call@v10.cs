@@ -6,6 +6,6 @@ static object process(object data = null) => null;
 var my_list = new Dictionary<string, string> {
     ["unused"] = "value"
 };
-process(((new Dictionary<string, object> {["inner"] = my_list})));
+process(ValueTuple.Create(ValueTuple.Create(new Dictionary<string, object> {["inner"] = my_list})));
     }
 }

@@ -141,6 +141,12 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "NewVariable validation requires a LanguageCls language"
         raise TypeError(msg)
+    pattern = language_cls.reserved_variable_identifier_pattern
+    if pattern is not None and pattern.fullmatch(string=name) is not None:
+        raise ReservedVariableNameError(
+            language_name=language_name,
+            variable_name=name,
+        )
     if language_cls.supports_record_struct_name_prefix:
         strategy = vars(language).get("heterogeneous_strategy")
         prefix = vars(language)["record_struct_name_prefix"]
@@ -188,10 +194,13 @@ def validate_call_parameter_names(
                 reason="it is duplicated",
             )
         seen.add(comparison_name)
-        parameter_only_reserved = {
-            "Scala": frozenset({"using"}),
-        }.get(language_name, frozenset())
-        if name in parameter_only_reserved:
+        parameter_pattern = (
+            language_cls.reserved_call_parameter_identifier_pattern
+        )
+        if name in language_cls.reserved_call_parameter_identifiers or (
+            parameter_pattern is not None
+            and parameter_pattern.fullmatch(string=name) is not None
+        ):
             raise InvalidCallParameterNameError(
                 language_name=language_name,
                 parameter_name=name,
@@ -239,6 +248,16 @@ class SequenceFormatConfig:
     requires_uniform_record_shapes: bool
     declared_type: str | None
     narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    single_element_template: str | None
+    """How a one-element sequence is spelled, if not as the openers.
+
+    ``{items}`` stands for the rendered element.  C# needs one: ``(x)``
+    is a parenthesized expression rather than a one-element tuple, so
+    the value would silently lose its collection (issue #3928).  The
+    spelling is kept here rather than in ``sequence_open`` because the
+    sibling-widening probe reads that opener as a statement about the
+    element type, which arity is not.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1211,6 +1230,26 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    reserved_variable_identifier_pattern: re.Pattern[str] | None = None
+    """A shape a declaration name cannot take, beyond the names listed
+    in :attr:`~literalizer.Language.reserved_variable_identifiers`.
+    Zig's arbitrary-width integer primitives (``u7``, ``i33``, ...) are
+    an open set, so they are spelled as a pattern rather than
+    enumerated.
+    """
+    reserved_call_parameter_identifiers: frozenset[str] = frozenset()
+    """Names a call parameter cannot take even where a declaration can.
+
+    Scala's ``using`` opens a parameter clause, and Crystal's ``_``
+    cannot carry the default value a generated stub gives it.
+    """
+    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None = None
+    """A shape a call parameter name cannot take.
+
+    R identifiers cannot begin with an underscore and Dart named
+    parameters cannot be private, so both are spelled as a pattern
+    rather than enumerated (issue #3916, issue #3952).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII

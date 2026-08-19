@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Dart named parameter cannot be private."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Dart"]
+values = ["_", "_1", "_x"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "do_thing"
+parameter_names = ["{value}"]
+wrap_in_file = true

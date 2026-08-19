@@ -46,7 +46,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar_nul_hex,
+    bidi_escape_replacements,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -125,11 +125,28 @@ def _format_datetime_dart(value: datetime.datetime) -> str:
 
 
 # Dart interpolates ``$`` in both single- and double-quoted strings.
+_BIDI_REPLACEMENTS = bidi_escape_replacements(template="\\u{:04X}")
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
-    extra_replacements=[("$", "\\$"), ("\0", r"\x00")],
+    extra_replacements=[
+        ("$", "\\$"),
+        ("\0", r"\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("$", "\\$"),
+        ("\0", r"\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
 )
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+# A Dart named parameter cannot be private, so a leading-underscore
+# name has no valid named-argument form (issue #3916).
+_DART_PRIVATE_NAME = re.compile(pattern=r"_.*")
 
 
 @beartype
@@ -145,6 +162,8 @@ def _format_string_multiline(value: str) -> str:
         .replace("'", "\\'")
         .replace("$", "\\$")
     )
+    for character, escape in _BIDI_REPLACEMENTS:
+        escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
@@ -426,6 +445,9 @@ class Dart(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _DART_PRIVATE_NAME
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         # The keywords, then the type names the backend writes into its
@@ -636,6 +658,7 @@ class Dart(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -651,6 +674,7 @@ class Dart(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=True,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence="()",
             preamble_lines=(),
@@ -772,7 +796,7 @@ class Dart(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
