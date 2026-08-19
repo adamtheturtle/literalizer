@@ -46,7 +46,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_dollar_nul_hex,
+    bidi_escape_replacements,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -125,9 +125,22 @@ def _format_datetime_dart(value: datetime.datetime) -> str:
 
 
 # Dart interpolates ``$`` in both single- and double-quoted strings.
+_BIDI_REPLACEMENTS = bidi_escape_replacements(template="\\u{:04X}")
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
-    extra_replacements=[("$", "\\$"), ("\0", r"\x00")],
+    extra_replacements=[
+        ("$", "\\$"),
+        ("\0", r"\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("$", "\\$"),
+        ("\0", r"\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
 )
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -145,6 +158,8 @@ def _format_string_multiline(value: str) -> str:
         .replace("'", "\\'")
         .replace("$", "\\$")
     )
+    for character, escape in _BIDI_REPLACEMENTS:
+        escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
@@ -756,7 +771,7 @@ class Dart(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_dollar_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
