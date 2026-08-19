@@ -39,6 +39,7 @@ from literalizer.exceptions import (
 type YamlCoercible = (
     Scalar
     | list[YamlCoercible]
+    | tuple[Scalar | TaggedScalar, YamlCoercible]
     | dict[Scalar | TaggedScalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
@@ -293,6 +294,15 @@ def _is_object_sequence(
     return isinstance(value, (list, set))
 
 
+@beartype
+def _is_object_pair(
+    value: object,
+    /,
+) -> TypeIs[tuple[object, object]]:
+    """Return whether a value is a ``!!pairs`` entry."""
+    return isinstance(value, tuple)
+
+
 def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
     """Return whether *value* is an object-typed ruamel YAML set."""
     return isinstance(value, CommentedSet)
@@ -333,13 +343,17 @@ def _validate_yaml_mapping_keys(*, data: object) -> None:
     elif _is_object_commented_set(data):
         for key in data:
             _validate_yaml_mapping_key(key=key)
+    elif _is_object_pair(data):
+        pair_key, pair_value = data
+        _validate_yaml_mapping_key(key=pair_key)
+        _validate_yaml_mapping_keys(data=pair_value)
     elif _is_object_sequence(data):
         for item in data:
             _validate_yaml_mapping_keys(data=item)
 
 
 @beartype
-def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
+def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
@@ -384,6 +398,18 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             return unwrapped
         case list():
             return [_unwrap_yaml_data(data=item) for item in data]
+        case tuple():
+            # A ``!!pairs`` node resolves to a list of two-tuples.  The
+            # tag is defined as a sequence of single-key mappings, and
+            # unlike ``!!omap`` it admits a repeated key, so each pair
+            # becomes its own mapping rather than one merged map
+            # (issue #3922).
+            pair_key, pair_value = data
+            return {
+                unwrap_yaml_scalar(value=pair_key): _unwrap_yaml_data(
+                    data=pair_value
+                )
+            }
         case CommentedSet():
             members: set[Scalar | TaggedScalar] = set(data)
             return {unwrap_yaml_scalar(value=item) for item in members}
@@ -427,9 +453,27 @@ def _parse_finite_float(value: str) -> float:
     return converted
 
 
+_DECIMAL_BASE = 10
+
+
 def _parse_integer_preserving_negative_zero(value: str) -> int | float:
     """Parse an integer token while retaining negative zero's sign."""
     return -0.0 if value == "-0" else int(value)
+
+
+def _parse_json5_integer(  # noqa: NOD001
+    value: str, base: int = 10
+) -> int | float:
+    """Parse a JSON5 integer token, decimal or hexadecimal.
+
+    ``json5`` calls this hook with the number base for a hexadecimal
+    token (``0xdeadbeef``) and without one for a decimal token, so the
+    parameter carries the default the library relies on rather than
+    being passed explicitly (issue #3921).
+    """
+    if base != _DECIMAL_BASE:
+        return int(value, base=base)
+    return _parse_integer_preserving_negative_zero(value=value)
 
 
 def _validate_yaml_float_tokens(*, source: str) -> None:
@@ -503,7 +547,7 @@ def _parse_json5(*, source: str) -> ParsedInput:
             s=source,
             allow_duplicate_keys=False,
             parse_float=_parse_finite_float,
-            parse_int=_parse_integer_preserving_negative_zero,
+            parse_int=_parse_json5_integer,
         )
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
