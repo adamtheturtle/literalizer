@@ -8,6 +8,11 @@
 # manual re-run (issue #3982).  Each attempt is bounded by `timeout`,
 # so a mirror that stops responding costs one attempt rather than the
 # job.
+#
+# `timeout` runs under `sudo` rather than around it: an unprivileged
+# `timeout` cannot signal a root `apt-get`, so its SIGTERM is refused
+# and the bound never fires.  `--kill-after` follows up with SIGKILL so
+# a wedged apt-get cannot hold its lock into the next attempt.
 
 set -euo pipefail
 
@@ -15,8 +20,9 @@ attempts=3
 attempt_seconds=180
 
 for attempt in $(seq 1 "$attempts"); do
-    if timeout "$attempt_seconds" sudo apt-get update &&
-        timeout "$attempt_seconds" sudo apt-get install -y "$@"; then
+    if sudo timeout --kill-after=10 "$attempt_seconds" apt-get update &&
+        sudo timeout --kill-after=10 "$attempt_seconds" apt-get install \
+            -y "$@"; then
         exit 0
     fi
     echo "apt-get attempt $attempt of $attempts failed or timed out" >&2
