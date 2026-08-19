@@ -39,6 +39,7 @@ from literalizer.exceptions import (
 type YamlCoercible = (
     Scalar
     | list[YamlCoercible]
+    | tuple[Scalar | TaggedScalar, YamlCoercible]
     | dict[Scalar | TaggedScalar, YamlCoercible]
     | CommentedOrderedMap
     | CommentedSet
@@ -293,6 +294,15 @@ def _is_object_sequence(
     return isinstance(value, (list, set))
 
 
+@beartype
+def _is_object_pair(
+    value: object,
+    /,
+) -> TypeIs[tuple[object, object]]:
+    """Return whether a value is a ``!!pairs`` entry."""
+    return isinstance(value, tuple)
+
+
 def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
     """Return whether *value* is an object-typed ruamel YAML set."""
     return isinstance(value, CommentedSet)
@@ -333,13 +343,17 @@ def _validate_yaml_mapping_keys(*, data: object) -> None:
     elif _is_object_commented_set(data):
         for key in data:
             _validate_yaml_mapping_key(key=key)
+    elif _is_object_pair(data):
+        pair_key, pair_value = data
+        _validate_yaml_mapping_key(key=pair_key)
+        _validate_yaml_mapping_keys(data=pair_value)
     elif _is_object_sequence(data):
         for item in data:
             _validate_yaml_mapping_keys(data=item)
 
 
 @beartype
-def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
+def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
@@ -384,6 +398,18 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             return unwrapped
         case list():
             return [_unwrap_yaml_data(data=item) for item in data]
+        case tuple():
+            # A ``!!pairs`` node resolves to a list of two-tuples.  The
+            # tag is defined as a sequence of single-key mappings, and
+            # unlike ``!!omap`` it admits a repeated key, so each pair
+            # becomes its own mapping rather than one merged map
+            # (issue #3922).
+            pair_key, pair_value = data
+            return {
+                unwrap_yaml_scalar(value=pair_key): _unwrap_yaml_data(
+                    data=pair_value
+                )
+            }
         case CommentedSet():
             members: set[Scalar | TaggedScalar] = set(data)
             return {unwrap_yaml_scalar(value=item) for item in members}
