@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Odin"]
+languages_reason = "Odin forbids a byte order mark anywhere in a source file, including inside a string literal."
+suites = ["base"]
+
+[[variants]]
+axis = "json_type"
