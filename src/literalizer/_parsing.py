@@ -427,9 +427,27 @@ def _parse_finite_float(value: str) -> float:
     return converted
 
 
+_DECIMAL_BASE = 10
+
+
 def _parse_integer_preserving_negative_zero(value: str) -> int | float:
     """Parse an integer token while retaining negative zero's sign."""
     return -0.0 if value == "-0" else int(value)
+
+
+def _parse_json5_integer(  # noqa: NOD001
+    value: str, base: int = 10
+) -> int | float:
+    """Parse a JSON5 integer token, decimal or hexadecimal.
+
+    ``json5`` calls this hook with the number base for a hexadecimal
+    token (``0xdeadbeef``) and without one for a decimal token, so the
+    parameter carries the default the library relies on rather than
+    being passed explicitly (issue #3921).
+    """
+    if base != _DECIMAL_BASE:
+        return int(value, base=base)
+    return _parse_integer_preserving_negative_zero(value)
 
 
 def _validate_yaml_float_tokens(*, source: str) -> None:
@@ -503,7 +521,7 @@ def _parse_json5(*, source: str) -> ParsedInput:
             s=source,
             allow_duplicate_keys=False,
             parse_float=_parse_finite_float,
-            parse_int=_parse_integer_preserving_negative_zero,
+            parse_int=_parse_json5_integer,
         )
     except ValueError as exc:
         message = f"Invalid JSON5: {exc}"
