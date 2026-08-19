@@ -351,6 +351,7 @@ class Php(metaclass=LanguageCls):
             "return",
             "static",
             "switch",
+            "this",
             "throw",
             "trait",
             "try",

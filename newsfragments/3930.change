@@ -1,0 +1,1 @@
+Reject Swift expression keywords (``self``, ``Self``, ``Any``, ``as``, ``in``, ``nil``, ``true``, ``false``) and PHP's ``this`` as ``NewVariable`` names, rather than emitting declarations their compilers refuse.

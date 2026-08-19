@@ -40,6 +40,7 @@ def _variable_form(
     *,
     call: CallSpec,
     lang_cls: literalizer.LanguageCls,
+    value: str | None,
 ) -> literalizer.NewVariable | literalizer.ExistingVariable | None:
     """Return the variable form a rendering case declares its value in.
 
@@ -48,14 +49,15 @@ def _variable_form(
     declarations take one.  A language with no named variables to bind
     to renders the value on its own, which is the only form it has.
     """
+    name = substituted(template=call.variable_name, value=value)
     match call.variable_form:
         case "new":
             return literalizer.NewVariable(
-                name=call.variable_name,
+                name=name,
                 modifiers=frozenset(),
             )
         case "existing":
-            return literalizer.ExistingVariable(name=call.variable_name)
+            return literalizer.ExistingVariable(name=name)
         case None:
             if not lang_cls.supports_variable_names:
                 return None
@@ -80,7 +82,11 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     so the seams below only restate that for the type checker.
     """
     lang_cls = case.lang_cls
-    variable_form = _variable_form(call=call, lang_cls=lang_cls)
+    variable_form = _variable_form(
+        call=call,
+        lang_cls=lang_cls,
+        value=case.value,
+    )
     match call.api:
         case "constructor":
             lang_cls(**case.kwargs)

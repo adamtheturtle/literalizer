@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Swift expression keywords cannot name a declaration."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Swift"]
+values = ["Any", "Self", "as", "false", "in", "nil", "self", "true"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
