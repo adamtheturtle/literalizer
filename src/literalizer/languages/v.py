@@ -82,6 +82,7 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -638,6 +639,9 @@ class V(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_SNAKE_ASCII
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
