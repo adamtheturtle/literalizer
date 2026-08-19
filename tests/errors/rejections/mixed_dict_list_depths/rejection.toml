@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A map with one value type cannot hold a list of scalars beside a list
+of lists: the two nest to different depths and share no element type,
+so a language whose map values are homogeneous refuses the shape.
+"""
+exceptions = ["MixedDictValuesError"]
+gates = [
+  { kind = "capability_flag", flag = "rejects_heterogeneous_dict_values" },
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": [1], "b": [[1]]}', '{"a": [{"x": 1}], "b": [[], [1]]}']
+input_format = "json"
