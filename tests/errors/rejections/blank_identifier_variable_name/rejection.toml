@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "The blank identifier cannot name a declaration."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Erlang", "Go", "Odin", "Perl", "Zig"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "_"

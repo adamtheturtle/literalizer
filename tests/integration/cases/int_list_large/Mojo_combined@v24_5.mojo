@@ -1,15 +1,15 @@
 def main():
-    var my_data = [
+    var my_data = List([
         1000000,
         -1234,
         255,
         -10,
-    ]
+    ])
     _ = my_data
-    my_data = [
+    my_data = List([
         1000000,
         -1234,
         255,
         -10,
-    ]
+    ])
     _ = my_data

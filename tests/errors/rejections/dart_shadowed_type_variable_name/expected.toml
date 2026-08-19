@@ -1,0 +1,14 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Dart['BigInt']" = "Dart cannot use NewVariable name 'BigInt': it is a reserved identifier"
+"Dart['DateTime']" = "Dart cannot use NewVariable name 'DateTime': it is a reserved identifier"
+"Dart['List']" = "Dart cannot use NewVariable name 'List': it is a reserved identifier"
+"Dart['Map']" = "Dart cannot use NewVariable name 'Map': it is a reserved identifier"
+"Dart['Null']" = "Dart cannot use NewVariable name 'Null': it is a reserved identifier"
+"Dart['Set']" = "Dart cannot use NewVariable name 'Set': it is a reserved identifier"
+"Dart['String']" = "Dart cannot use NewVariable name 'String': it is a reserved identifier"
+"Dart['bool']" = "Dart cannot use NewVariable name 'bool': it is a reserved identifier"
+"Dart['double']" = "Dart cannot use NewVariable name 'double': it is a reserved identifier"
+"Dart['int']" = "Dart cannot use NewVariable name 'int': it is a reserved identifier"
+"Dart['main']" = "Dart cannot use NewVariable name 'main': it is a reserved identifier"

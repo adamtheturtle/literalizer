@@ -1,9 +1,9 @@
 def process[*Ts: AnyType](*args: *Ts):
     pass
 def main():
-    var my_var = [
+    var my_var = List([
         1,
         2,
         3,
-    ]
+    ])
     process(my_var^)

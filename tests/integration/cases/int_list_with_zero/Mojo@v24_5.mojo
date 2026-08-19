@@ -1,7 +1,7 @@
 def main():
-    var my_data = [
+    var my_data = List([
         0,
         1,
         -1,
-    ]
+    ])
     _ = my_data

@@ -3,6 +3,6 @@ def main():
         "_": "_",
     }
     var my_data = {
-        "items": [item_var^, {"fallback": "value"}],
+        "items": List([item_var^, {"fallback": "value"}]),
     }
     _ = my_data

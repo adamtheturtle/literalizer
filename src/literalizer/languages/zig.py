@@ -393,12 +393,14 @@ _ZIG_RESERVED_IDENTIFIERS: frozenset[str] = frozenset(
     }
 )
 
-# Names a Zig declaration cannot take, beyond the keywords: the
-# primitive types and values, which the compiler reports as "name
-# shadows primitive", plus ``main``, the function the wrapped file
-# declares and which a local constant may not shadow.  Keys carrying
-# the same names are still written as quoted struct members, so this
-# set is separate from the escaping set above (issue #3932).
+# Names a Zig declaration cannot take, beyond the keywords: ``_``, the
+# discard identifier, which the compiler rejects as a binding name
+# ("'_' used as an identifier without @\"_\" syntax"); the primitive
+# types and values, which it reports as "name shadows primitive"; and
+# ``main``, the function the wrapped file declares and which a local
+# constant may not shadow.  Keys carrying the same names are still
+# written as quoted struct members, so this set is separate from the
+# escaping set above (issue #3932).
 _ZIG_PRIMITIVE_IDENTIFIERS: frozenset[str] = frozenset(
     {
         "anyerror",
@@ -438,7 +440,7 @@ _ZIG_PRIMITIVE_IDENTIFIERS: frozenset[str] = frozenset(
 _ZIG_RESERVED_VARIABLE_IDENTIFIERS: frozenset[str] = (
     _ZIG_RESERVED_IDENTIFIERS
     | _ZIG_PRIMITIVE_IDENTIFIERS
-    | frozenset({"main"})
+    | frozenset({"_", "main"})
 )
 
 # The arbitrary-width integer primitives are an open set (``u7``,
@@ -471,6 +473,7 @@ def _zig_record_field_identifier(key: str, /) -> str:
         return "@" + format_string_backslash_control(
             value=key,
             control_char_fmt="\\x{:02x}",
+            escape_delete=True,
         )
     return key
 
@@ -621,6 +624,7 @@ def _zig_parse_expression(data: Value) -> str:
     zig_literal = format_string_backslash_control(
         value=json_text,
         control_char_fmt="\\x{:02x}",
+        escape_delete=True,
     )
     return (
         "(std.json.parseFromSlice("
@@ -1760,6 +1764,7 @@ class Zig(metaclass=LanguageCls):
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
+                escape_delete=True,
             )
 
         return _format

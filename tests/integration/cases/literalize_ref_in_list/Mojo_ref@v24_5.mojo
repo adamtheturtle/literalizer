@@ -5,8 +5,8 @@ def main():
     var val_y = {
         "_": "_",
     }
-    var my_data = [
+    var my_data = List([
         val_x^,
         val_y^,
-    ]
+    ])
     _ = my_data

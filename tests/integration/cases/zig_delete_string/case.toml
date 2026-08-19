@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Zig"]
+languages_reason = "Zig-specific: the compiler rejects a raw U+007F byte in a string literal."
+suites = ["base"]

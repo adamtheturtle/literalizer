@@ -260,7 +260,7 @@ def _apply_concat_control(
 
 
 @beartype
-def escape_control_chars(*, value: str, fmt: str) -> str:
+def escape_control_chars(*, value: str, fmt: str, escape_delete: bool) -> str:
     r"""Replace C0 control characters (U+0000-U+001F) with escape sequences.
 
     Call **after** replacing named escapes (``\t``, ``\n``, ``\r``) so that
@@ -268,9 +268,14 @@ def escape_control_chars(*, value: str, fmt: str) -> str:
 
     The format pattern passed in ``fmt`` receives the code point as a
     positional integer, e.g. ``"\\x{:02x}"`` -> ``\\x01``.
+
+    *escape_delete* extends the replacement to U+007F (DELETE), which
+    some target languages reject as a raw byte in a string literal
+    while others carry it verbatim.
     """
+    pattern = r"[\x00-\x1f\x7f]" if escape_delete else r"[\x00-\x1f]"
     return re.sub(
-        pattern=r"[\x00-\x1f]",
+        pattern=pattern,
         repl=lambda m: fmt.format(ord(m.group())),
         string=value,
     )
@@ -281,6 +286,7 @@ def format_string_backslash_control(
     *,
     value: str,
     control_char_fmt: str,
+    escape_delete: bool,
 ) -> str:
     r"""Format a string using backslash escaping plus control-char escaping.
 
@@ -290,9 +296,15 @@ def format_string_backslash_control(
 
     Example with ``control_char_fmt="\\x{:02x}"`` and ``value="\x01hi"``
     returns ``'"\\x01hi"'``.
+
+    *escape_delete* is passed through to :func:`escape_control_chars`.
     """
     escaped = _backslash_escape(value=value, quote_char='"')
-    escaped = escape_control_chars(value=escaped, fmt=control_char_fmt)
+    escaped = escape_control_chars(
+        value=escaped,
+        fmt=control_char_fmt,
+        escape_delete=escape_delete,
+    )
     return f'"{escaped}"'
 
 

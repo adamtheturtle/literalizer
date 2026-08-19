@@ -863,6 +863,7 @@ class Sml(metaclass=LanguageCls):
             formatted = format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\{:03d}",
+                escape_delete=False,
             )
             return "".join(
                 (

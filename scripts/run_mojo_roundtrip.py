@@ -52,7 +52,10 @@ The shared input's nested containers and ``biginteger`` are excluded:
 
 Every top-level scalar in the shared input -- signed and wide integers,
 booleans, floats (including ``DBL_MAX`` and negative zero), and unicode /
-escaped / empty strings -- round-trips losslessly.
+escaped / empty strings -- round-trips losslessly.  The generated program
+also passes a separately literalized sequence to a ``List[Int]`` function,
+which guards against Mojo 1.0's bare ``[...]`` expressions silently
+changing the backend's documented sequence type from ``List`` to ``Array``.
 """
 
 import json
@@ -74,6 +77,7 @@ type JsonValue = (
 )
 
 _VAR_NAME = "my_data"
+_LIST_PROBE_NAME = "list_probe"
 _LABEL = "Mojo"
 _VARIANT_NAME = "JsonValue"
 _EXCLUDED_KEYS = (
@@ -133,6 +137,15 @@ def _build_program(*, json_text: str) -> str:
         var_name=_VAR_NAME,
         pre_indent_level=1,
     )
+    list_probe = roundtrip_common.literalize_new_variable(
+        language=Mojo(),
+        json_text="[1, 2, 3]",
+        var_name=_LIST_PROBE_NAME,
+        pre_indent_level=1,
+    )
+    if list_probe.preamble:
+        message = "the Mojo List semantic probe unexpectedly needs a preamble"
+        raise AssertionError(message)
     parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)
     walk = [
         '    var json = Python.import_module("json")',
@@ -150,8 +163,12 @@ def _build_program(*, json_text: str) -> str:
     return (
         "from std.python import Python\n"
         f"{preamble}\n"
+        "def require_list(value: List[Int]):\n"
+        "    pass\n"
         "def main() raises:\n"
         f"{result.code}\n"
+        f"{list_probe.code}\n"
+        f"    require_list({_LIST_PROBE_NAME}^)\n"
         f"{walk_body}\n"
     )
 

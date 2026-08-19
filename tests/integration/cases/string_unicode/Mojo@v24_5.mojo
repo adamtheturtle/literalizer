@@ -1,7 +1,7 @@
 def main():
-    var my_data: List[String] = [
+    var my_data: List[String] = List([
         "café",
         "中文",
         "😀",
-    ]
+    ])
     _ = my_data

@@ -2688,15 +2688,20 @@ jobs:
       - name: Crystal roundtrip
         run: uv run python -m scripts.run_crystal_roundtrip
 
-  # Mojo reserves ~3.6 GB of virtual address space per invocation
-  # (upstream: modular/modular#6433), so ubuntu-latest's 7 GB runner
-  # crashes in libKGENCompilerRTShared.so before producing any output —
-  # and even with overcommit + swap workarounds it could only run
-  # serially. Ubicloud's 16 GB runner comfortably fits `$(nproc)`
-  # parallel invocations without the workarounds.
+  # Stable Mojo 1.0 includes the memory-reservation fix from upstream
+  # modular/modular#6433, so GitHub's 16 GB public-repository runner can
+  # run the syntax checks in parallel again. Pull requests use the exact
+  # supported version; the scheduled workflow also tries the latest
+  # stable release as a non-blocking compatibility canary.
   lint-mojo:
-    runs-on: ubicloud-standard-4
+    name: lint-mojo (${{ matrix.mojo-version }})
+    runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.mojo-version == 'latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mojo-version: ${{ fromJSON(github.event_name == 'schedule' && '["1.0.0", "latest"]' || '["1.0.0"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2710,11 +2715,19 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # ``mojo-compiler==1.0.0b1`` is >= the ``VersionFormats.V24_5``
+      # ``mojo-compiler==1.0.0`` is >= the ``VersionFormats.V24_5``
       # value of ``Mojo.language_version`` in
       # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo
-        run: uv tool install --prerelease=allow 'mojo-compiler==1.0.0b1'
+        env:
+          MOJO_VERSION: ${{ matrix.mojo-version }}
+        run: |-
+          if [[ "$MOJO_VERSION" == latest ]]; then
+            uv tool install mojo-compiler
+          else
+            uv tool install "mojo-compiler==$MOJO_VERSION"
+          fi
+          mojo --version
       - name: Check Mojo syntax
         run: xargs -0 -P "$(nproc)" -n1 mojo run --Werror < /tmp/files-to-lint
       # Basic JSON -> Mojo -> JSON round-trip (issue 2664). Runs here

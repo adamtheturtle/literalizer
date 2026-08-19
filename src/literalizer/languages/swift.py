@@ -155,6 +155,7 @@ def _format_string_escaped(value: str) -> str:
     formatted = format_string_backslash_control(
         value=value,
         control_char_fmt="\\u{{{:x}}}",
+        escape_delete=False,
     )
     return formatted.replace("\x7f", "\\u{7f}")
 
@@ -552,6 +553,9 @@ class Swift(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "Any",
+            "Self",
+            "as",
             "associatedtype",
             "break",
             "case",
@@ -568,6 +572,7 @@ class Swift(metaclass=LanguageCls):
             "enum",
             "extension",
             "fallthrough",
+            "false",
             "fileprivate",
             "final",
             "for",
@@ -576,6 +581,7 @@ class Swift(metaclass=LanguageCls):
             "guard",
             "if",
             "import",
+            "in",
             "indirect",
             "infix",
             "init",
@@ -584,6 +590,7 @@ class Swift(metaclass=LanguageCls):
             "is",
             "let",
             "mutating",
+            "nil",
             "nonisolated",
             "nonmutating",
             "open",
@@ -600,6 +607,7 @@ class Swift(metaclass=LanguageCls):
             "required",
             "rethrows",
             "return",
+            "self",
             "set",
             "some",
             "static",
@@ -609,6 +617,7 @@ class Swift(metaclass=LanguageCls):
             "switch",
             "throw",
             "throws",
+            "true",
             "try",
             "typealias",
             "unowned",
