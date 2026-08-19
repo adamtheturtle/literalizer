@@ -1,0 +1,1 @@
+Reject dotted call components that differ only in case, which share one generated helper type declaration.

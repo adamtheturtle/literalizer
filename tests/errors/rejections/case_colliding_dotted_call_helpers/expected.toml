@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[InvalidCallTargetError]
+Java = "Java cannot use call target 'a.foo.Foo.bar': repeated components collide with generated dotted-call helper declarations"
+Kotlin = "Kotlin cannot use call target 'a.foo.Foo.bar': repeated components collide with generated dotted-call helper declarations"
+Rust = "Rust cannot use call target 'a.foo.Foo.bar': repeated components collide with generated dotted-call helper declarations"

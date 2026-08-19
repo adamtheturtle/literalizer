@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Dotted components that differ only in case share one generated helper type."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Java", "Kotlin", "Rust"]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "a.foo.Foo.bar"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true

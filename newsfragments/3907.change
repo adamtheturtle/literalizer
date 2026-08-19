@@ -1,0 +1,1 @@
+Reject a wrapped call whose result binding would take the same name as the generated target stub.

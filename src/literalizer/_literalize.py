@@ -5227,6 +5227,7 @@ def _validate_wrapped_call_scaffold(
     arg_values: Sequence[Value],
     ref_case: IdentifierCase | None,
     bound_ref_names: Sequence[str],
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> None:
     """Reject call inputs that collide with or empty a file scaffold."""
     if not arg_values:
@@ -5247,10 +5248,16 @@ def _validate_wrapped_call_scaffold(
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
         )
+    # A language in this group derives one helper type name per
+    # component through a case-normalizing transform (``Foo`` and
+    # ``foo`` both become ``FooType_``), so uniqueness holds on the
+    # folded components rather than on the components as spelled
+    # (issue #3908).
+    folded_parts = [part.casefold() for part in target_function_parts]
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts
-        and len(set(target_function_parts)) != len(target_function_parts)
+        and len(set(folded_parts)) != len(folded_parts)
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
@@ -5258,6 +5265,21 @@ def _validate_wrapped_call_scaffold(
             reason=(
                 "repeated components collide with generated dotted-call "
                 "helper declarations"
+            ),
+        )
+    # The generated stub declares the target's leading component, and
+    # the call's result binding is declared beside it.  A language that
+    # can carry both names is the exception rather than the rule, so
+    # the shape is refused rather than emitted (issue #3907).
+    if (
+        isinstance(variable_form, NewVariable)
+        and variable_form.name == target_function_parts[0]
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "the call result binding would redeclare the generated "
+                f"stub {variable_form.name!r}"
             ),
         )
     converted_bound_ref_names = {
@@ -5321,6 +5343,7 @@ def _validate_call_preconditions(
             arg_values=arg_values,
             ref_case=ref_case,
             bound_ref_names=bound_ref_names,
+            variable_form=variable_form,
         )
     if variable_form is not None:
         _validate_call_variable_form(
