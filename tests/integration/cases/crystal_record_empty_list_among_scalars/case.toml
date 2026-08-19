@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Crystal"]
+languages_reason = "Crystal-specific: its record field types are invariant, and only a same-kind sibling retargets an empty nested list, so one among scalars keeps its own type in the union."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy"

@@ -1219,11 +1219,21 @@ class Crystal(metaclass=LanguageCls):
             case list():
                 # An empty nested list renders with the element type a
                 # non-empty sibling gives it, so the field type reads
-                # the siblings the same way (issue #3936).
+                # the siblings the same way (issue #3936).  Only a
+                # sibling of the same kind gives it one; an empty list
+                # among scalars still renders ``[] of Nil``, so its own
+                # type has to stay in the union.
+                narrowed_kinds = tuple(
+                    kind
+                    for kind in (list, dict, set)
+                    if any(item and isinstance(item, kind) for item in value)
+                )
                 informative = [
                     item
                     for item in value
-                    if item or not isinstance(item, (list, dict, set))
+                    if item
+                    or not isinstance(item, (list, dict, set))
+                    or not isinstance(item, narrowed_kinds)
                 ]
                 parts = {
                     self._crystal_type_for_value(item)
