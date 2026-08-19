@@ -161,33 +161,43 @@ class Racket(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
+        # The keywords, then the procedures the generated literal and
+        # its wrapper call.  A ``define`` shadows the binding for the
+        # whole module body, including the literal that names it, so
+        # the module fails to load (issue #3946).
         {
             "begin",
             "begin0",
             "case",
             "cond",
+            "date",
             "define",
             "define-syntax",
             "do",
             "else",
             "for",
+            "hash",
             "if",
             "lambda",
             "let",
             "let*",
             "let-values",
             "letrec",
+            "list",
             "local",
+            "make-keyword-procedure",
             "match",
             "module",
             "provide",
             "quasiquote",
             "quote",
+            "set",
             "set!",
             "struct",
             "syntax",
             "syntax-case",
             "unless",
+            "void",
             "when",
         }
     )

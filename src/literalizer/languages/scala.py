@@ -432,6 +432,21 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
         "yield",
     }
 )
+# Members every value inherits from the root class ``Any``.  The
+# wrapped file declares its value inside an ``object``, so a ``val``
+# with one of these names overrides the inherited member and needs an
+# ``override`` modifier the declaration does not carry (issue #3945).
+_SCALA_INHERITED_MEMBERS = frozenset(
+    {
+        "clone",
+        "finalize",
+        "hashCode",
+        "notify",
+        "notifyAll",
+        "toString",
+        "wait",
+    }
+)
 _SCALA_SOFT_KEYWORDS = frozenset(
     {
         "as",
@@ -587,7 +602,7 @@ class Scala(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
-    )
+    ) | _SCALA_INHERITED_MEMBERS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     dotted_call_stub_requires_unique_parts = True
