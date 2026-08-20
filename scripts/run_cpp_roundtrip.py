@@ -8,9 +8,10 @@ hand the emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by a step of the ``lint-cpp`` job in
 ``.github/workflows/lint.yml``, because that job is where the C++
-toolchain (``clang++``) and the ``nlohmann-json3-dev`` package are
-already installed.  It shares the same input and comparison logic as
-the other per-language round-trip helpers.
+toolchain (``clang++``) is already installed and the pinned
+``nlohmann/json`` single header is already on
+``CPLUS_INCLUDE_PATH``.  It shares the same input and comparison logic
+as the other per-language round-trip helpers.
 
 The shared input's ``biginteger`` field is trimmed before
 literalization: its 26-digit value overflows the unsigned 64-bit range
