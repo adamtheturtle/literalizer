@@ -444,6 +444,22 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
         "yield",
     }
 )
+# Members every value inherits from the root class ``Any``.  The
+# wrapped file declares its value inside an ``object``, so a ``val``
+# with one of these names overrides the inherited member and needs an
+# ``override`` modifier the declaration does not carry (issue #3945).
+_SCALA_INHERITED_MEMBERS = frozenset(
+    {
+        "clone",
+        "finalize",
+        "hashCode",
+        "notify",
+        "notifyAll",
+        "toString",
+        "wait",
+    }
+)
+
 # ``_`` is not a Scala identifier, so a parameter named from
 # underscores alone has no valid form (issue #3951).
 _SCALA_ALL_UNDERSCORE_PARAMETER = re.compile(pattern=r"_+")
@@ -603,7 +619,7 @@ class Scala(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
-    )
+    ) | _SCALA_INHERITED_MEMBERS
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
         {"using"}
     )

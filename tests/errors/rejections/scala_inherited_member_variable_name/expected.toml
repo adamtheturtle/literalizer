@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Scala['clone']" = "Scala cannot use NewVariable name 'clone': it is a reserved identifier"
+"Scala['finalize']" = "Scala cannot use NewVariable name 'finalize': it is a reserved identifier"
+"Scala['hashCode']" = "Scala cannot use NewVariable name 'hashCode': it is a reserved identifier"
+"Scala['notify']" = "Scala cannot use NewVariable name 'notify': it is a reserved identifier"
+"Scala['notifyAll']" = "Scala cannot use NewVariable name 'notifyAll': it is a reserved identifier"
+"Scala['toString']" = "Scala cannot use NewVariable name 'toString': it is a reserved identifier"
+"Scala['wait']" = "Scala cannot use NewVariable name 'wait': it is a reserved identifier"
