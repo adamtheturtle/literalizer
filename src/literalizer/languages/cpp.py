@@ -355,12 +355,18 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
 @beartype
 def _make_cpp_element_to_type(
     *,
+    enable_list_type: bool,
     int_type: str,
     date_type: str | None,
     datetime_type: str | None,
     dict_type_name: str,
 ) -> Callable[[type | ListType | DictType], str | None]:
-    """Build the C++ element-to-type resolver."""
+    """Build the C++ element-to-type resolver.
+
+    *enable_list_type* is ``False`` under the ``ARRAY`` sequence
+    format, whose type carries the length this resolver has no value to
+    read (issue #3948).
+    """
     return make_element_to_type(
         str_type="std::string",
         bool_type="bool",
@@ -372,7 +378,7 @@ def _make_cpp_element_to_type(
         datetime_type=datetime_type,
         time_type="std::string",
         list_template="std::vector<{inner}>",
-        enable_list_type=True,
+        enable_list_type=enable_list_type,
         dict_type_template=f"{dict_type_name}<std::string, {{inner}}>",
         fallback_value_type=None,
         wide_int_type=None,
@@ -420,6 +426,19 @@ class _CppTypeCtx:
     tuple_strategy: bool
     variant_type_name: str
     dict_type_name: str
+    sequence_is_array: bool
+    """Whether a sequence renders as ``std::array``.
+
+    An array's length is part of its type, so a value-driven type
+    string spells it and the value-less resolver cannot name a
+    sequence type at all (issue #3948).
+    """
+
+    def sequence_type(self, *, inner: str, length: int) -> str:
+        """Return the type the active sequence format renders."""
+        if self.sequence_is_array:
+            return f"std::array<{inner}, {length}>"
+        return f"std::vector<{inner}>"
 
     def dict_type(self, value_type: str, /) -> str:
         """Return the active string-keyed mapping type."""
@@ -438,6 +457,7 @@ class _CppTypeCtx:
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver with the given *int_type*."""
         return _make_cpp_element_to_type(
+            enable_list_type=not self.sequence_is_array,
             int_type=int_type,
             date_type=self.date_type,
             datetime_type=self.datetime_type,
@@ -636,7 +656,10 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=False,
             )
-            return f"std::vector<{inner_type}>"
+            return type_ctx.sequence_type(
+                inner=inner_type,
+                length=len(item),
+            )
         case set():
             sorted_items: list[Value] = sorted(
                 item,
@@ -647,7 +670,10 @@ def _compute_cpp_type(  # noqa: PLR0911
                 type_ctx=type_ctx,
                 in_mapping_value=False,
             )
-            return f"std::vector<{inner_type}>"
+            return type_ctx.sequence_type(
+                inner=inner_type,
+                length=len(sorted_items),
+            )
         case _:
             cpp_type = element_to_type(type(item))
             if cpp_type is not None:
@@ -3746,6 +3772,11 @@ class Cpp(metaclass=LanguageCls):
                 "std::unordered_map"
                 if self.dict_format.name == "UNORDERED_MAP"
                 else "std::map"
+            ),
+            sequence_is_array=(
+                self.sequence_format is type(self.sequence_format).ARRAY
+                and not self._json_type_active
+                and not self._json_inline_document_active
             ),
         )
 

@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: its variant and map value types name the sequence type, whose spelling under ARRAY carries the length."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
