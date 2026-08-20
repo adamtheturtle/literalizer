@@ -119,7 +119,7 @@ class RoundTripCapability(enum.StrEnum):
 
 
 @beartype
-def _is_reserved_identifier(
+def is_reserved_identifier(
     *,
     case_sensitive: bool,
     name: str,
@@ -139,7 +139,7 @@ def _is_reserved_identifier(
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* cannot be used for a new variable declaration."""
     language_name = language.__class__.__name__
-    if _is_reserved_identifier(
+    if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
         name=name,
         reserved_identifiers=language.reserved_variable_identifiers,
@@ -1377,7 +1377,7 @@ class LanguageCls(type):
                     cls.module_name_must_start_uppercase
                     and not module_name[0].isupper()
                 )
-                or _is_reserved_identifier(
+                or is_reserved_identifier(
                     case_sensitive=instance.reserved_variable_identifiers_case_sensitive,
                     name=module_name,
                     reserved_identifiers=(
