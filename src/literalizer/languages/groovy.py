@@ -248,23 +248,30 @@ class Groovy(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
+        # The keywords, then the primitive type names: Groovy cannot
+        # parse ``def int = ...`` (issue #3944).
         {
             "as",
             "assert",
+            "boolean",
             "break",
+            "byte",
             "case",
             "catch",
+            "char",
             "class",
             "const",
             "continue",
             "def",
             "default",
             "do",
+            "double",
             "else",
             "enum",
             "extends",
             "final",
             "finally",
+            "float",
             "for",
             "goto",
             "if",
@@ -272,7 +279,9 @@ class Groovy(metaclass=LanguageCls):
             "import",
             "in",
             "instanceof",
+            "int",
             "interface",
+            "long",
             "native",
             "new",
             "null",
@@ -281,6 +290,7 @@ class Groovy(metaclass=LanguageCls):
             "protected",
             "public",
             "return",
+            "short",
             "static",
             "strictfp",
             "super",
@@ -292,6 +302,7 @@ class Groovy(metaclass=LanguageCls):
             "trait",
             "transient",
             "try",
+            "void",
             "volatile",
             "while",
         }

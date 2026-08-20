@@ -148,6 +148,16 @@ class _RequiresUniqueDottedCallParts(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _NormalizesDottedCallPartCase(Protocol):
+    """A language whose dotted-call helper names fold component case."""
+
+    @property
+    def dotted_call_stub_normalizes_part_case(self) -> bool:
+        """Return whether helper naming normalizes component case."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class _DisabledRefKey(str):
     """Identity sentinel distinct from an explicitly enabled empty key."""
 
@@ -5272,13 +5282,19 @@ def _validate_call_target(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
+    # A bare constructor target is just the class name, which some
+    # languages do not admit as a function name at all (issue #3914).
+    exempt = is_constructor_target and (
+        len(target_function_parts) > 1
+        or language_cls.accepts_type_name_call_target
+    )
     component_syntax = (
         language_cls.call_target_name_syntax
         or language_cls.new_variable_name_syntax
     )
     for part in target_function_parts:
         if not component_syntax.accepts(name=part):
-            if is_constructor_target:
+            if exempt:
                 return
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
@@ -5302,6 +5318,7 @@ def _validate_wrapped_call_scaffold(
     arg_values: Sequence[Value],
     ref_case: IdentifierCase | None,
     bound_ref_names: Sequence[str],
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> None:
     """Reject call inputs that collide with or empty a file scaffold."""
     if not arg_values:
@@ -5312,11 +5329,27 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    if (
-        len(target_function_parts) == 1
-        and isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function == language.call_wrapper_entrypoint_name
-    ):
+    # A dotted root usually names a different construct from the entry
+    # point -- Java's root is a ``static`` field beside the entry-point
+    # method, which compiles -- so only a language whose stub declares
+    # the root in the entry point's own namespace collides on it.
+    scaffold_language_cls = type(language)
+    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    shares_namespace = (
+        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
+    )
+    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
+        target_function == language.call_wrapper_entrypoint_name
+        or (
+            len(target_function_parts) > 1
+            and shares_namespace
+            and target_function_parts[0]
+            == language.call_wrapper_entrypoint_name
+        )
+    )
+    if entrypoint_collides:
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,
@@ -5345,10 +5378,24 @@ def _validate_wrapped_call_scaffold(
                         "in the generated file"
                     ),
                 )
+    # Some languages in this group derive one helper type name per
+    # component through a case-normalizing transform (``Foo`` and
+    # ``foo`` both become ``FooType_``), so uniqueness holds on the
+    # folded components rather than on the components as spelled
+    # (issue #3908).  Others interpolate the component as spelled, and
+    # folding there would refuse targets that emit distinct helpers.
+    normalizes_case = (
+        isinstance(language, _NormalizesDottedCallPartCase)
+        and language.dotted_call_stub_normalizes_part_case
+    )
+    compared_parts = [
+        part.casefold() if normalizes_case else part
+        for part in target_function_parts
+    ]
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts
-        and len(set(target_function_parts)) != len(target_function_parts)
+        and len(set(compared_parts)) != len(compared_parts)
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
@@ -5356,6 +5403,21 @@ def _validate_wrapped_call_scaffold(
             reason=(
                 "repeated components collide with generated dotted-call "
                 "helper declarations"
+            ),
+        )
+    # The generated stub declares the target's leading component, and
+    # the call's result binding is declared beside it.  A language that
+    # can carry both names is the exception rather than the rule, so
+    # the shape is refused rather than emitted (issue #3907).
+    if (
+        isinstance(variable_form, NewVariable)
+        and variable_form.name == target_function_parts[0]
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "the call result binding would redeclare the generated "
+                f"stub {variable_form.name!r}"
             ),
         )
     converted_bound_ref_names = {
@@ -5419,6 +5481,7 @@ def _validate_call_preconditions(
             arg_values=arg_values,
             ref_case=ref_case,
             bound_ref_names=bound_ref_names,
+            variable_form=variable_form,
         )
     if variable_form is not None:
         _validate_call_variable_form(

@@ -15,6 +15,7 @@ from literalizer._language import (
     CollectionLayout,
     IdentifierCase,
     Language,
+    is_reserved_identifier,
 )
 from literalizer._literalize import (
     BothVariableForms,
@@ -55,13 +56,28 @@ def _fresh_language(language: Language) -> Language:
 
 def _validate_bound_ref_output_name(
     *,
+    language: Language,
     variable_form: VariableForm | None,
     bound_ref_names: Mapping[str, object],
+    ref_case: IdentifierCase | None,
 ) -> None:
-    """Reject a bound ref that would re-declare the output binding."""
-    if (
-        isinstance(variable_form, NewVariable | BothVariableForms)
-        and variable_form.name in bound_ref_names
+    """Reject a bound ref that would re-declare the output binding.
+
+    The comparison is on the identifiers the two sides are emitted
+    with, not on the names the caller spelled: a bound ref is declared
+    under its ``ref_case`` conversion, so names that differ before the
+    conversion can converge after it (issue #3906).
+    """
+    if not isinstance(variable_form, NewVariable | BothVariableForms):
+        return
+    declared = {
+        ref_case.convert(name=name) if ref_case is not None else name
+        for name in bound_ref_names
+    }
+    if is_reserved_identifier(
+        case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+        name=variable_form.name,
+        reserved_identifiers=frozenset(declared),
     ):
         raise BoundRefOutputCollisionError(name=variable_form.name)
 
@@ -286,8 +302,10 @@ def literalize(
         combined_ref_values or None
     )
     _validate_bound_ref_output_name(
+        language=language,
         variable_form=variable_form,
         bound_ref_names=materialized_bound_refs,
+        ref_case=ref_case,
     )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
@@ -628,8 +646,10 @@ def literalize_call(
         variable_form=variable_form,
     )
     _validate_bound_ref_output_name(
+        language=language,
         variable_form=variable_form,
         bound_ref_names=bound_refs or {},
+        ref_case=ref_case,
     )
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent

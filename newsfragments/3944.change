@@ -1,0 +1,1 @@
+Reject Groovy primitive type names, Scala names that override an inherited ``Any`` member, and Racket names that shadow a procedure the generated literal calls.
