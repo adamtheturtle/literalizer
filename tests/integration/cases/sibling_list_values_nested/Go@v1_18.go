@@ -3,7 +3,7 @@ package main
 func main() {
 my_data := map[string]any{
 	"lint": []any{2, []any{}},
-	"test": []any{5, []any{"compile"}},
+	"test": []any{5, []string{"compile"}},
 }
 _ = my_data
 }

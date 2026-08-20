@@ -1641,8 +1641,13 @@ def _compute_sequence_open_override(
     differ the language has no stable fallback and no widening is
     applied.
     """
+    # An empty list has no contents to infer a type from, so its
+    # opener is the language's "accepts anything" one.  That says
+    # nothing about the slot, and comparing it would widen every
+    # sibling to match it, so only the lists that carry a type are
+    # compared (issue #3927).
     lists: list[list[Value]] = [
-        item for item in items if isinstance(item, list)
+        item for item in items if isinstance(item, list) and item
     ]
     # Widening compares openers across lists, so we need at least two
     # to have anything to compare.
