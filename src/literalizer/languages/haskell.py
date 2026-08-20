@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import itertools
+import unicodedata
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -430,12 +431,37 @@ def _is_haskell_hex_control(character: str) -> bool:
     """Return whether *character* uses a greedy Haskell hex escape."""
     return (
         character <= "\x1f" and character not in "\t\n\r"
-    ) or "\x7f" <= character <= "\x9f"
+    ) or _is_haskell_hex_escaped(character=character)
+
+
+_HASKELL_NON_GRAPHIC_CATEGORIES = frozenset({"Cf", "Zl", "Zp"})
+"""Unicode categories GHC refuses to lex inside a string literal.
+
+The format characters (``Cf``) and the line and paragraph separators
+(``Zl``/``Zp``) all produce "lexical error at character", while an
+ordinary space separator such as U+00A0 is accepted (issue #3953).
+"""
+
+
+def _is_haskell_hex_escaped(character: str) -> bool:
+    """Return whether *character* is written as a Haskell hex escape.
+
+    The category lookup dominates rendering when it runs per character,
+    so ASCII leaves before reaching it.  Nothing below ``U+007F`` can
+    qualify: the lowest character in any of the categories above is the
+    soft hyphen at ``U+00AD``.
+    """
+    if character < "\x7f":
+        return False
+    return (
+        character <= "\x9f"
+        or unicodedata.category(character) in _HASKELL_NON_GRAPHIC_CATEGORIES
+    )
 
 
 def _format_haskell_string_character(character: str) -> str:
     """Escape one character for a Haskell string literal."""
-    if "\x7f" <= character <= "\x9f":
+    if _is_haskell_hex_escaped(character=character):
         return f"\\x{ord(character):02x}"
     return format_string_backslash_control(
         value=character,
@@ -468,10 +494,10 @@ def _build_string_formatters(
             and following in "0123456789abcdefABCDEF"
             for character, following in itertools.pairwise(value)
         )
-        has_c1_control = any(
-            "\x7f" <= character <= "\x9f" for character in value
+        has_hex_escaped = any(
+            _is_haskell_hex_escaped(character=character) for character in value
         )
-        if not has_greedy_hex_boundary and not has_c1_control:
+        if not has_greedy_hex_boundary and not has_hex_escaped:
             return format_string_backslash_control(
                 value=value,
                 control_char_fmt="\\x{:02x}",
