@@ -1,0 +1,1 @@
+Type a Kotlin or Scala ``EPOCH`` datetime as ``Long`` whatever its magnitude, and suffix its literal to match, so a timestamp after 2038 no longer disagrees with the type it was declared under.
