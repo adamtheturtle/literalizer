@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A command-style call needs one value per declared parameter."
+exceptions = ["ParameterCountMismatchError"]
+languages = ["Forth", "Haskell", "Tcl"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2]"]
+input_format = "json"
+target_function = "do_thing"
+parameter_names = ["x", "y"]
+per_element = false
+wrap_in_file = true

@@ -4585,6 +4585,14 @@ def _format_call_args(
             | CommandCallStyle(arg_separator=sep)
             | DottedCommandCallStyle(arg_separator=sep)
         ):
+            # These styles write the arguments without naming them, but
+            # the declared parameters still fix the generated stub's
+            # arity, so a mismatch is a call the stub cannot take
+            # (issue #3956).
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             result = sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             result = _format_prefix_call_args(
