@@ -5310,6 +5310,40 @@ def _validate_call_target(
 
 
 @beartype
+def _collides_with_call_entrypoint(
+    *,
+    language: Language,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> bool:
+    """Return whether a call target renames the generated entry point.
+
+    A dotted root usually names a different construct from the entry
+    point -- Java's root is a ``static`` field beside the entry-point
+    method, which compiles -- so only a language whose stub declares
+    the root the same way the wrapper declares its entry point collides
+    on it.
+    """
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if not isinstance(language, _HasCallWrapperEntrypoint):
+        return False
+    entrypoint = language.call_wrapper_entrypoint_name
+    if target_function == entrypoint:
+        return True
+    # Sliced rather than measured by ``len``: a length test narrows the
+    # tuple type, and that narrowing reaches an unrelated index in the
+    # caller.
+    return (
+        bool(target_function_parts[1:])
+        and language_cls.dotted_call_root_shares_entrypoint_namespace
+        and target_function_parts[:1] == (entrypoint,)
+    )
+
+
+@beartype
 def _validate_wrapped_call_scaffold(
     *,
     language: Language,
@@ -5329,27 +5363,11 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    # A dotted root usually names a different construct from the entry
-    # point -- Java's root is a ``static`` field beside the entry-point
-    # method, which compiles -- so only a language whose stub declares
-    # the root in the entry point's own namespace collides on it.
-    scaffold_language_cls = type(language)
-    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
-        msg = "Call-scaffold validation requires a LanguageCls language"
-        raise TypeError(msg)
-    shares_namespace = (
-        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
-    )
-    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
-        target_function == language.call_wrapper_entrypoint_name
-        or (
-            len(target_function_parts) > 1
-            and shares_namespace
-            and target_function_parts[0]
-            == language.call_wrapper_entrypoint_name
-        )
-    )
-    if entrypoint_collides:
+    if _collides_with_call_entrypoint(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+    ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,
