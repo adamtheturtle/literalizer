@@ -1596,6 +1596,7 @@ def _compute_call_slot_scalar_wrap_ids(
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
+    sequence_open_override: str | None,
     spec: Language,
 ) -> str | None:
     """Determine the dict opener override for dicts in a sequence.
@@ -1605,9 +1606,18 @@ def _compute_sequence_dict_override(
     sequence type carries the map type instead of each dict.
     Otherwise falls back to the widening logic of
     :func:`_compute_dict_open_override`.
+
+    An anonymous opener elides the element type, which the language
+    only reads back from a sequence type that names it.  A parent that
+    has widened this sequence to its "accepts anything" opener does not
+    name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    if narrowed_open is not None:
+    widened = (
+        sequence_open_override is not None
+        and sequence_open_override == spec.sequence_open([])
+    )
+    if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
             return narrowed_open
@@ -1641,8 +1651,13 @@ def _compute_sequence_open_override(
     differ the language has no stable fallback and no widening is
     applied.
     """
+    # An empty list has no contents to infer a type from, so its
+    # opener is the language's "accepts anything" one.  That says
+    # nothing about the slot, and comparing it would widen every
+    # sibling to match it, so only the lists that carry a type are
+    # compared (issue #3927).
     lists: list[list[Value]] = [
-        item for item in items if isinstance(item, list)
+        item for item in items if isinstance(item, list) and item
     ]
     # Widening compares openers across lists, so we need at least two
     # to have anything to compare.
@@ -1873,6 +1888,7 @@ def _format_list_value(
         )
     dict_open_override = _compute_sequence_dict_override(
         items=value,
+        sequence_open_override=sequence_open_override,
         spec=spec,
     )
     parent_id = id(value)
@@ -2259,6 +2275,7 @@ def _format_multiline_collection_value(
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=CollectionLayout.MULTILINE,
+        sequence_open_override=sequence_open_override,
         ctx=ctx,
     )
     body = "\n".join(lines)
@@ -2406,6 +2423,7 @@ def _format_collection_lines(
     trailing_comma: bool,
     is_ordered_map: bool,
     collection_layout: CollectionLayout,
+    sequence_open_override: str | None,
     ctx: _RenderContext,
 ) -> list[str]:
     """Format collection elements as indented lines."""
@@ -2548,6 +2566,7 @@ def _format_collection_lines(
             )
             dict_open_override = _compute_sequence_dict_override(
                 items=list_data,
+                sequence_open_override=sequence_open_override,
                 spec=spec,
             )
             list_int_formatter = ctx.list_int_formatters.get(
@@ -3032,6 +3051,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=collection_layout,
+        sequence_open_override=None,
         ctx=ctx,
     )
 

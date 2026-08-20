@@ -1,0 +1,1 @@
+Stop an empty nested list from widening the same position in every sibling list: it carries no element type, so the siblings that do decide the slot.
