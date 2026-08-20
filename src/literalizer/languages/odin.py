@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import json
 import math
 import re
@@ -262,12 +263,19 @@ _ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 
 
 @beartype
-def _odin_record_field_identifier(key: str, /) -> str:
+def _odin_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Odin ``struct`` member name for a dict *key*.
 
     Odin member identifiers are the dict keys verbatim (no case
     conversion), matching the ``Record0{ id = 1, ... }`` literal form.
+    Odin has no escaped spelling for a keyword member, so a key that
+    is one is refused (issue #3934).
     """
+    if key in reserved_identifiers:
+        msg = f"Odin record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1228,7 +1236,10 @@ class Odin(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_ODIN_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_odin_record_field_identifier,
+            field_identifier=functools.partial(
+                _odin_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._odin_record_field_type,
             render_declaration=_odin_render_record_declaration,
             render_literal=_odin_record_literal,
