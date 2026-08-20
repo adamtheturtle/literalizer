@@ -1223,7 +1223,7 @@ class Crystal(metaclass=LanguageCls):
                 # sibling of the same kind gives it one; an empty list
                 # among scalars still renders ``[] of Nil``, so its own
                 # type has to stay in the union.
-                narrowed_kinds = tuple(
+                narrowed_kinds: tuple[type, ...] = tuple(
                     kind
                     for kind in (list, dict, set)
                     if any(item and isinstance(item, kind) for item in value)
