@@ -443,11 +443,18 @@ ordinary space separator such as U+00A0 is accepted (issue #3953).
 """
 
 
-@beartype
 def _is_haskell_hex_escaped(character: str) -> bool:
-    """Return whether *character* is written as a Haskell hex escape."""
+    """Return whether *character* is written as a Haskell hex escape.
+
+    The category lookup dominates rendering when it runs per character,
+    so ASCII leaves before reaching it.  Nothing below ``U+007F`` can
+    qualify: the lowest character in any of the categories above is the
+    soft hyphen at ``U+00AD``.
+    """
+    if character < "\x7f":
+        return False
     return (
-        "\x7f" <= character <= "\x9f"
+        character <= "\x9f"
         or unicodedata.category(character) in _HASKELL_NON_GRAPHIC_CATEGORIES
     )
 
