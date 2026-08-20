@@ -12,6 +12,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import ControlCharacterFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -828,7 +829,7 @@ class Zig(metaclass=LanguageCls):
         """Comment style options."""
 
         DOUBLE_SLASH = CommentConfig(
-            prefix="//",
+            prefix=ControlCharacterFreeCommentPrefix(object="//"),
             suffix="",
         )
 

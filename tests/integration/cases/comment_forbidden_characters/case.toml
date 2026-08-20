@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Dart", "Elixir", "Python", "Rust", "Zig"]
+languages_reason = "Sampled: Zig refuses a control character in a comment and the other three refuse a bidirectional formatting character, with Python standing for a backend that accepts both."
+suites = ["base"]
