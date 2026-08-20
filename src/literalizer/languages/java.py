@@ -2212,6 +2212,7 @@ class Java(metaclass=LanguageCls):
             ),
             set_opener_template=None,
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type="",
         )
         base = typed_collection_open(

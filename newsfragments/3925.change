@@ -1,0 +1,1 @@
+Keep a Dart map value holding a ``TUPLE`` sequence at the generic value type: the sequence renders as a record, whose arity is part of its type, so the element type alone cannot name it.

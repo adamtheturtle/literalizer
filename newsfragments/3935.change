@@ -1,0 +1,1 @@
+Read a Dart declared type back off the opener the renderer picked, so the annotation and the literal's own type arguments are one inference and the assignment type-checks.

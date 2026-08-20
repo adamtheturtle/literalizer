@@ -1704,6 +1704,7 @@ class Scala(metaclass=LanguageCls):
                 self.set_format.value.set_opener_template or None
             ),
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type="",
         )
 

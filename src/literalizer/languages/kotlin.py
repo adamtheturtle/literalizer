@@ -2211,6 +2211,7 @@ class Kotlin(metaclass=LanguageCls):
             datetime_type=self._dt_type_name,
             set_opener_template=base.set_opener_template or None,
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
         )
         return base.with_typed_opener(
