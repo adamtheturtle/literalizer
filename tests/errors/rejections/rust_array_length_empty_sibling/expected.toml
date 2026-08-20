@@ -1,4 +1,4 @@
 # languages rejecting: 1; languages accepting: 0
 
 [UnrepresentableInputError]
-Rust = "Rust cannot annotate a collection whose element types differ: [String; 0], [i32; 2]."
+Rust = "Rust renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 0, 2 have no common type"

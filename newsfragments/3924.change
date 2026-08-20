@@ -1,0 +1,1 @@
+Refuse sibling sequences of different lengths where the sequence renders as a fixed-size array -- ``Rust(sequence_format=ARRAY)`` and ``Nim(declaration_style=CONST)`` -- since an array's length is part of its type.
