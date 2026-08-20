@@ -1,0 +1,9 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Racket['date']" = "Racket cannot use NewVariable name 'date': it is a reserved identifier"
+"Racket['hash']" = "Racket cannot use NewVariable name 'hash': it is a reserved identifier"
+"Racket['list']" = "Racket cannot use NewVariable name 'list': it is a reserved identifier"
+"Racket['make-keyword-procedure']" = "Racket cannot use NewVariable name 'make-keyword-procedure': it is a reserved identifier"
+"Racket['set']" = "Racket cannot use NewVariable name 'set': it is a reserved identifier"
+"Racket['void']" = "Racket cannot use NewVariable name 'void': it is a reserved identifier"

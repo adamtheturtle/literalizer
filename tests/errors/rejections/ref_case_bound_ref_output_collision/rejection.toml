@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "A bound ref converging on the output name after ref_case conversion is rejected."
+exceptions = ["BoundRefOutputCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"my_ref"}']
+input_format = "json"
+wrap_in_file = true
+ref_key = "$ref"
+ref_case = "CAMEL"
+bound_refs = { my_ref = 1 }
+variable_form = "new"
+variable_name = "myRef"

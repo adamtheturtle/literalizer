@@ -69,7 +69,6 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_statement,
-    identity_call_target,
     identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
@@ -90,6 +89,14 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
+def _clojure_format_call_target(parts: Sequence[str], /) -> str:
+    """Return a Clojure call target for a dotted name."""
+    if len(parts) == 1:
+        return parts[0]
+    return f"{'.'.join(parts[:-1])}/{parts[-1]}"
+
+
+@beartype
 def _clojure_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -99,8 +106,6 @@ def _clojure_call_stub(
 ) -> tuple[str, ...]:
     """Return Clojure stub definitions for a call name.
 
-    For dotted names like ``app.client.fetch``, one ``defn`` is
-    emitted per prefix so that intermediate identifiers are bound.
     Each stub declares ``[& _args]`` and ignores them (the underscore
     prefix marks the binding as intentionally unused), so the
     generated function accepts any combination of positional and
@@ -108,12 +113,125 @@ def _clojure_call_stub(
     used both for the call target (invoked with ``:key value`` pairs)
     and for transform wrapper functions (invoked positionally).  Stub
     bodies return ``nil`` for void stubs and ``0`` for value stubs.
+
+    A dotted name such as ``app.client.fetch`` is a qualified call in
+    Clojure -- ``app.client/fetch`` -- rather than a chain of bindings,
+    so its stub creates that module and interns the var in it
+    (issue #3957).  A ``defn`` cannot name a var outside the module it
+    runs in, which is why the dotted form is spelled this way.
     """
     body = "nil" if stub_return is StubReturn.VOID else "0"
-    return tuple(
-        f"(defn {'.'.join(parts[: i + 1])} [& _args] {body})"
-        for i in range(len(parts))
+    if len(parts) == 1:
+        return (f"(defn {parts[0]} [& _args] {body})",)
+    namespace = ".".join(parts[:-1])
+    return (
+        f"(create-ns '{namespace})",
+        f"(intern '{namespace} '{parts[-1]} (fn [& _args] {body}))",
     )
+
+
+# The classes Clojure imports into every module by default.  A ``def``
+# cannot rebind a name already mapped to a class ("Expecting var, but
+# String is mapped to class java.lang.String"), so these cannot name a
+# declaration (issue #3943).
+_CLOJURE_DEFAULT_IMPORTS: frozenset[str] = frozenset(
+    {
+        "AbstractMethodError",
+        "Appendable",
+        "ArithmeticException",
+        "ArrayIndexOutOfBoundsException",
+        "ArrayStoreException",
+        "AssertionError",
+        "BigDecimal",
+        "BigInteger",
+        "Boolean",
+        "Byte",
+        "Callable",
+        "CharSequence",
+        "Character",
+        "Class",
+        "ClassCastException",
+        "ClassCircularityError",
+        "ClassFormatError",
+        "ClassLoader",
+        "ClassNotFoundException",
+        "CloneNotSupportedException",
+        "Cloneable",
+        "Comparable",
+        "Compiler",
+        "Deprecated",
+        "Double",
+        "Enum",
+        "EnumConstantNotPresentException",
+        "Error",
+        "Exception",
+        "ExceptionInInitializerError",
+        "Float",
+        "IllegalAccessError",
+        "IllegalAccessException",
+        "IllegalArgumentException",
+        "IllegalMonitorStateException",
+        "IllegalStateException",
+        "IllegalThreadStateException",
+        "IncompatibleClassChangeError",
+        "IndexOutOfBoundsException",
+        "InheritableThreadLocal",
+        "InstantiationError",
+        "InstantiationException",
+        "Integer",
+        "InternalError",
+        "InterruptedException",
+        "Iterable",
+        "LinkageError",
+        "Long",
+        "Math",
+        "NegativeArraySizeException",
+        "NoClassDefFoundError",
+        "NoSuchFieldError",
+        "NoSuchFieldException",
+        "NoSuchMethodError",
+        "NoSuchMethodException",
+        "NullPointerException",
+        "Number",
+        "NumberFormatException",
+        "Object",
+        "OutOfMemoryError",
+        "Override",
+        "Package",
+        "Process",
+        "ProcessBuilder",
+        "Readable",
+        "Runnable",
+        "Runtime",
+        "RuntimeException",
+        "RuntimePermission",
+        "SecurityException",
+        "SecurityManager",
+        "Short",
+        "StackOverflowError",
+        "StackTraceElement",
+        "StrictMath",
+        "String",
+        "StringBuffer",
+        "StringBuilder",
+        "StringIndexOutOfBoundsException",
+        "SuppressWarnings",
+        "System",
+        "Thread",
+        "ThreadDeath",
+        "ThreadGroup",
+        "ThreadLocal",
+        "Throwable",
+        "TypeNotPresentException",
+        "UnknownError",
+        "UnsatisfiedLinkError",
+        "UnsupportedClassVersionError",
+        "UnsupportedOperationException",
+        "VerifyError",
+        "VirtualMachineError",
+        "Void",
+    }
+)
 
 
 @beartype
@@ -149,7 +267,9 @@ class Clojure(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
+    reserved_variable_identifiers: frozenset[str] = (
+        _CLOJURE_DEFAULT_IMPORTS
+    ) | frozenset(
         {
             "catch",
             "def",
@@ -275,6 +395,7 @@ class Clojure(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -622,8 +743,14 @@ class Clojure(metaclass=LanguageCls):
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
+
+        A dot separates the segments of a Clojure module name, and a
+        slash separates that name from the var, so
+        ``app.client.fetch`` is called as ``app.client/fetch``.  Left
+        as written, the reader takes the whole symbol for a class name
+        (issue #3957).
         """
-        return identity_call_target
+        return _clojure_format_call_target
 
     @cached_property
     def format_call_ref_identifier(

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Rust = "Rust cannot annotate a collection whose element types differ: Vec<Vec<&str>>, Vec<Vec<i32>>."

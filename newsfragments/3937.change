@@ -1,0 +1,1 @@
+Emit the signed 64-bit minimum as a cast bit pattern in Nim's hexadecimal, octal and binary integer formats, which cannot carry the sign inside the numeral.

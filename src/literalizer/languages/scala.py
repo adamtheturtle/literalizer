@@ -304,6 +304,18 @@ class _ScalaDictSpec:
 
 
 @beartype
+def _scala_parameter_declaration(name: str, /) -> str:
+    """Return one Scala stub parameter declaration.
+
+    A name ending in an underscore needs a space before the colon:
+    the parser reads ``x_:`` as one identifier, so the type ascription
+    is lost and the declaration does not parse (issue #3951).
+    """
+    separator = " :" if name.endswith("_") else ":"
+    return f"{name}{separator} Any = null"
+
+
+@beartype
 def _scala_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -312,7 +324,7 @@ def _scala_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any = null" for p in params)
+    param_list = ", ".join(_scala_parameter_declaration(p) for p in params)
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
     root = parts[0]
@@ -432,6 +444,26 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
         "yield",
     }
 )
+# Members every value inherits from the root class ``Any``.  The
+# wrapped file declares its value inside an ``object``, so a ``val``
+# with one of these names overrides the inherited member and needs an
+# ``override`` modifier the declaration does not carry (issue #3945).
+_SCALA_INHERITED_MEMBERS = frozenset(
+    {
+        "clone",
+        "finalize",
+        "hashCode",
+        "notify",
+        "notifyAll",
+        "toString",
+        "wait",
+    }
+)
+
+# ``_`` is not a Scala identifier, so a parameter named from
+# underscores alone has no valid form (issue #3951).
+_SCALA_ALL_UNDERSCORE_PARAMETER = re.compile(pattern=r"_+")
+
 _SCALA_SOFT_KEYWORDS = frozenset(
     {
         "as",
@@ -587,10 +619,17 @@ class Scala(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
+    ) | _SCALA_INHERITED_MEMBERS
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"using"}
+    )
+    reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _SCALA_ALL_UNDERSCORE_PARAMETER
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     dotted_call_stub_requires_unique_parts = True
+    dotted_call_stub_normalizes_part_case = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -716,6 +755,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -731,6 +771,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -746,6 +787,7 @@ class Scala(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence="Array.empty[Any]",
             preamble_lines=(),
@@ -1662,6 +1704,7 @@ class Scala(metaclass=LanguageCls):
                 close=")",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_sequence="Json.arr()",
                 preamble_lines=(),

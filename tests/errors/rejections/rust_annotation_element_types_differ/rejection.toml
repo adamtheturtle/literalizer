@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Rust cannot annotate a collection whose element types differ in shape."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"a": [[1], []], "b": [["x"]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "LAZY_STATIC" },
+]

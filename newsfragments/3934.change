@@ -1,0 +1,1 @@
+Refuse a mapping key that is a keyword as a ``RECORD`` field name in Python, Odin and Nim, none of which has an escaped spelling for one, matching what Java, C, C++ and D already did.

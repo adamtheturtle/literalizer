@@ -414,6 +414,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_json_call_result_binding": (
         lambda lang_cls: lang_cls.supports_json_call_result_binding
     ),
+    "rejects_heterogeneous_dict_values": (
+        lambda lang_cls: not lang_cls.dict_supports_heterogeneous_values
+    ),
     "rejects_non_string_dict_keys": (
         lambda lang_cls: not lang_cls.supports_non_string_dict_keys
     ),
@@ -454,5 +457,14 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     ),
     "string_literals_escape_unicode_line_separators": (
         _escapes_unicode_line_separators
+    ),
+    # Only the languages that name dotted-call helpers after path
+    # segments declare this flag, and the production check reads it
+    # through a protocol that tolerates its absence, so a missing
+    # value means False here too.
+    "dotted_call_stub_requires_unique_parts": (
+        lambda lang_cls: bool(
+            vars(lang_cls).get("dotted_call_stub_requires_unique_parts", False)
+        )
     ),
 }

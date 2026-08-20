@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A Nim declaration name cannot begin with an underscore."
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "_my_data"

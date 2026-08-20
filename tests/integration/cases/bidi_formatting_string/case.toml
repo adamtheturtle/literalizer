@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Dart", "Elixir", "Rust"]
+languages_reason = "These toolchains reject a raw bidirectional formatting character in source: rustc denies it, Elixir raises a syntax error, and the Dart analyzer warns."
+suites = ["base"]
+
+[[variants]]
+axis = "string_format"

@@ -50,7 +50,9 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     format_string_backslash,
+    has_bidi_formatting_character,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
@@ -130,7 +132,10 @@ _RUST_RAW_STRING_OPEN = re.compile(pattern=r'(?<![A-Za-z0-9_])r(#{1,255})"')
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _format_string_backslash_nul = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", r"\0")],
+    extra_replacements=[
+        ("\0", r"\0"),
+        *bidi_escape_replacements(template="\\u{{{:04X}}}"),
+    ],
 )
 
 
@@ -196,7 +201,12 @@ def _format_string_raw(value: str) -> str:
     Falls back to an escaped string for multiline content, since
     indentation applied by wrapping code would corrupt the value.
     """
-    if "\n" in value or "\r" in value or "\0" in value:
+    if (
+        "\n" in value
+        or "\r" in value
+        or "\0" in value
+        or has_bidi_formatting_character(value=value)
+    ):
         return _format_string_backslash_nul(value=value)
     hashes = "#"
     while f'"{hashes}' in value:
@@ -210,6 +220,7 @@ def _format_string_multiline(value: str) -> str:
     if (
         "\0" in value
         or "\r" in value
+        or has_bidi_formatting_character(value=value)
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_backslash_nul(value=value)
@@ -396,14 +407,18 @@ def _format_constructor_target(class_name: str, /) -> str:
 _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
+_RUST_INTEGER_WIDTHS = ("i32", "i64", "i128")
+
+
 @beartype
 def _unify_rust_types(types: Sequence[str]) -> str:
     """Return a single Rust type that covers *types*.
 
     All-integer type lists widen to the largest integer; otherwise,
-    returns the single type present.  Mixed-family inputs never reach
-    this function because
-    :func:`~literalizer._checks.check_data` raises for them.
+    returns the single type present.  A declaration style that needs an
+    annotation can still reach a collection whose element types differ
+    in shape rather than in width -- a list beside a map -- which no
+    single Rust type covers, so that is refused (issue #3939).
 
     Callers must pass a non-empty sequence.
     """
@@ -411,8 +426,14 @@ def _unify_rust_types(types: Sequence[str]) -> str:
     match unique:
         case [only]:
             return only
+        case _ if all(name in _RUST_INTEGER_WIDTHS for name in unique):
+            return max(unique, key=_RUST_INTEGER_WIDTHS.index)
         case _:
-            return max(unique, key=("i32", "i64", "i128").index)
+            msg = (
+                "Rust cannot annotate a collection whose element types "
+                f"differ: {', '.join(sorted(unique))}."
+            )
+            raise UnrepresentableInputError(msg)
 
 
 @beartype
@@ -453,12 +474,46 @@ def _rust_homogeneous_element_type(
     elements: Sequence[Value],
     infer: Callable[[Value], str],
     default_type: str,
+    sequence_encodes_length: bool,
 ) -> str:
-    """Return the element type for a homogeneous Rust collection."""
+    """Return the element type for a homogeneous Rust collection.
+
+    An empty nested collection infers the language's default element
+    type, which is a placeholder rather than a statement about the
+    data, so a non-empty sibling decides for it (issue #3939).
+
+    An empty *sequence* is only a placeholder where the sequence
+    annotation leaves length out.  ``[T; 0]`` is a different type from
+    ``[T; 2]`` and no sibling can speak for it, so under a
+    length-bearing format the empty sequence keeps its own type and
+    unification reports the mismatch.
+    """
     if not elements:
         return default_type
-    types = [infer(element) for element in elements]
+    informative = [
+        element
+        for element in elements
+        if element
+        or not isinstance(element, (list, dict, set))
+        or (sequence_encodes_length and isinstance(element, list))
+    ]
+    types = [infer(element) for element in informative or elements]
     return _unify_rust_types(types=types)
+
+
+@beartype
+def _rust_sequence_encodes_length(
+    *,
+    sequence_format_type_annotation: Callable[[str, int], str],
+) -> bool:
+    """Return whether a sequence annotation spells its length.
+
+    ``ARRAY`` renders ``[T; N]`` and ``VEC`` renders ``Vec<T>``, so the
+    formatter itself answers this rather than a declared flag.
+    """
+    return sequence_format_type_annotation(
+        "T", 0
+    ) != sequence_format_type_annotation("T", 1)
 
 
 @beartype
@@ -500,12 +555,23 @@ def _rust_type_annotation(
             default_dict_value_type=default_dict_value_type,
         )
 
+    # A heterogeneous format annotates each element in place, so its
+    # arity already carries the length and the probe below must not run
+    # -- ``format_type_annotation`` raises for those formats.
+    sequence_encodes_length = (
+        sequence_supports_heterogeneity
+        or _rust_sequence_encodes_length(
+            sequence_format_type_annotation=sequence_format_type_annotation,
+        )
+    )
+
     match data:
         case set():
             element_type = _rust_homogeneous_element_type(
                 elements=list(data),
                 infer=recurse,
                 default_type=default_set_element_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return set_format_type_annotation(element_type)
         case list():
@@ -519,6 +585,7 @@ def _rust_type_annotation(
                 elements=data,
                 infer=recurse,
                 default_type=default_sequence_element_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return sequence_format_type_annotation(element_type, len(data))
         case dict():
@@ -527,11 +594,13 @@ def _rust_type_annotation(
                 elements=keys,
                 infer=recurse,
                 default_type=default_dict_key_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             value_type = _rust_homogeneous_element_type(
                 elements=list(data.values()),
                 infer=recurse,
                 default_type=default_dict_value_type,
+                sequence_encodes_length=sequence_encodes_length,
             )
             return dict_format_type_annotation(key_type, value_type)
         case _:
@@ -2768,6 +2837,7 @@ class Rust(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     dotted_call_stub_requires_unique_parts = True
+    dotted_call_stub_normalizes_part_case = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -2871,6 +2941,7 @@ class Rust(metaclass=LanguageCls):
                 close="]",
                 supports_heterogeneity=False,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_template="Vec::<{type}>::new()",
                 preamble_lines=(),
@@ -2884,6 +2955,7 @@ class Rust(metaclass=LanguageCls):
                 close="]",
                 supports_heterogeneity=False,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_template="[] as [{type}; 0]",
                 preamble_lines=(),
@@ -2896,7 +2968,10 @@ class Rust(metaclass=LanguageCls):
                 open_template="(",
                 close=")",
                 supports_heterogeneity=True,
-                single_element_trailing_comma=False,
+                # ``(x)`` is a parenthesized expression; a one-element
+                # tuple needs the trailing comma (issue #3940).
+                single_element_trailing_comma=True,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_template=None,
                 preamble_lines=(),
@@ -3916,6 +3991,7 @@ class Rust(metaclass=LanguageCls):
                 close="])",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_sequence=f"{_SERDE_JSON_MACRO}([])",
                 preamble_lines=(),
@@ -4022,15 +4098,29 @@ class Rust(metaclass=LanguageCls):
         def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
             """Type the empty map from its first non-empty sibling."""
             sibling = siblings[0]
+            # As in ``_rust_type_annotation``, a heterogeneous format
+            # annotates each element in place and its
+            # ``format_type_annotation`` raises, so it must not be
+            # probed.
+            encodes_length = (
+                self.sequence_format.supports_heterogeneity
+                or _rust_sequence_encodes_length(
+                    sequence_format_type_annotation=(
+                        self.sequence_format.format_type_annotation
+                    ),
+                )
+            )
             key_type = _rust_homogeneous_element_type(
                 elements=list(sibling),
                 infer=recurse,
                 default_type=self.default_dict_key_type,
+                sequence_encodes_length=encodes_length,
             )
             value_type = _rust_homogeneous_element_type(
                 elements=list(sibling.values()),
                 infer=recurse,
                 default_type=self.default_dict_value_type,
+                sequence_encodes_length=encodes_length,
             )
             annotation = self.dict_format.format_type_annotation(
                 key_type=key_type,

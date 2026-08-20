@@ -148,6 +148,16 @@ class _RequiresUniqueDottedCallParts(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@runtime_checkable
+class _NormalizesDottedCallPartCase(Protocol):
+    """A language whose dotted-call helper names fold component case."""
+
+    @property
+    def dotted_call_stub_normalizes_part_case(self) -> bool:
+        """Return whether helper naming normalizes component case."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 class _DisabledRefKey(str):
     """Identity sentinel distinct from an explicitly enabled empty key."""
 
@@ -1586,6 +1596,7 @@ def _compute_call_slot_scalar_wrap_ids(
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
+    sequence_open_override: str | None,
     spec: Language,
 ) -> str | None:
     """Determine the dict opener override for dicts in a sequence.
@@ -1595,9 +1606,18 @@ def _compute_sequence_dict_override(
     sequence type carries the map type instead of each dict.
     Otherwise falls back to the widening logic of
     :func:`_compute_dict_open_override`.
+
+    An anonymous opener elides the element type, which the language
+    only reads back from a sequence type that names it.  A parent that
+    has widened this sequence to its "accepts anything" opener does not
+    name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    if narrowed_open is not None:
+    widened = (
+        sequence_open_override is not None
+        and sequence_open_override == spec.sequence_open([])
+    )
+    if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
             return narrowed_open
@@ -1631,8 +1651,13 @@ def _compute_sequence_open_override(
     differ the language has no stable fallback and no widening is
     applied.
     """
+    # An empty list has no contents to infer a type from, so its
+    # opener is the language's "accepts anything" one.  That says
+    # nothing about the slot, and comparing it would widen every
+    # sibling to match it, so only the lists that carry a type are
+    # compared (issue #3927).
     lists: list[list[Value]] = [
-        item for item in items if isinstance(item, list)
+        item for item in items if isinstance(item, list) and item
     ]
     # Widening compares openers across lists, so we need at least two
     # to have anything to compare.
@@ -1863,6 +1888,7 @@ def _format_list_value(
         )
     dict_open_override = _compute_sequence_dict_override(
         items=value,
+        sequence_open_override=sequence_open_override,
         spec=spec,
     )
     parent_id = id(value)
@@ -1904,6 +1930,12 @@ def _format_list_value(
     # comma branch.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
+    if (
+        len(items) == 1
+        and sequence_cfg.single_element_template is not None
+        and sequence_open_override is None
+    ):
+        return sequence_cfg.single_element_template.format(items=joined)
     match sequence_open_override:
         case str():
             opener = sequence_open_override
@@ -2067,8 +2099,15 @@ def _wrap_body(
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
             closing = f"{close_prefix}{set_cfg.close}"
         case _:
-            opening = f"{line_prefix}{spec.sequence_open(data)}"
-            closing = f"{close_prefix}{spec.sequence_format_config.close}"
+            sequence_cfg = spec.sequence_format_config
+            template = sequence_cfg.single_element_template
+            if template is not None and len(data) == 1:
+                open_str, _, close_str = template.partition("{items}")
+            else:
+                open_str = spec.sequence_open(data)
+                close_str = sequence_cfg.close
+            opening = f"{line_prefix}{open_str}"
+            closing = f"{close_prefix}{close_str}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
@@ -2137,6 +2176,31 @@ def _sequence_open_for_ref_inference(
 
 
 @beartype
+def _single_element_sequence_delimiters(
+    *,
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
+    sequence_open_override: str | None,
+    ctx: _RenderContext,
+) -> tuple[str, str] | None:
+    """Return the delimiters a one-element sequence takes, if any.
+
+    The template a language declares for that length is one string
+    around its element; a multiline layout needs the two halves apart
+    so the element can sit on its own line (issue #3928).
+    """
+    template = ctx.spec.sequence_format_config.single_element_template
+    if (
+        template is None
+        or sequence_open_override is not None
+        or not isinstance(data, list)
+        or len(data) != 1
+    ):
+        return None
+    opening, _, close = template.partition("{items}")
+    return (opening, close)
+
+
+@beartype
 def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
@@ -2173,7 +2237,16 @@ def _collection_open_for_multiline_value(
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
         case _:
-            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            delimiters = _single_element_sequence_delimiters(
+                data=data,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            opener = (
+                delimiters[0]
+                if delimiters is not None
+                else _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            )
     return opener
 
 
@@ -2202,6 +2275,7 @@ def _format_multiline_collection_value(
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=CollectionLayout.MULTILINE,
+        sequence_open_override=sequence_open_override,
         ctx=ctx,
     )
     body = "\n".join(lines)
@@ -2222,7 +2296,16 @@ def _format_multiline_collection_value(
         case set():
             close = spec.set_format_config.close
         case _:
-            close = spec.sequence_format_config.close
+            delimiters = _single_element_sequence_delimiters(
+                data=value,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            close = (
+                delimiters[1]
+                if delimiters is not None
+                else spec.sequence_format_config.close
+            )
     return f"{opening}\n{body}\n{close_prefix}{close}"
 
 
@@ -2340,6 +2423,7 @@ def _format_collection_lines(
     trailing_comma: bool,
     is_ordered_map: bool,
     collection_layout: CollectionLayout,
+    sequence_open_override: str | None,
     ctx: _RenderContext,
 ) -> list[str]:
     """Format collection elements as indented lines."""
@@ -2482,6 +2566,7 @@ def _format_collection_lines(
             )
             dict_open_override = _compute_sequence_dict_override(
                 items=list_data,
+                sequence_open_override=sequence_open_override,
                 spec=spec,
             )
             list_int_formatter = ctx.list_int_formatters.get(
@@ -2966,6 +3051,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=collection_layout,
+        sequence_open_override=None,
         ctx=ctx,
     )
 
@@ -4519,6 +4605,14 @@ def _format_call_args(
             | CommandCallStyle(arg_separator=sep)
             | DottedCommandCallStyle(arg_separator=sep)
         ):
+            # These styles write the arguments without naming them, but
+            # the declared parameters still fix the generated stub's
+            # arity, so a mismatch is a call the stub cannot take
+            # (issue #3956).
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             result = sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             result = _format_prefix_call_args(
@@ -5172,6 +5266,30 @@ _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
 
 
 @beartype
+def _is_constructor_target(
+    *,
+    language: Language,
+    target_function: str,
+) -> bool:
+    """Return whether *target_function* is a constructor call target.
+
+    A constructor target is spelled by the language rather than by the
+    caller (``Foo::new``, ``new Foo``, or the bare class name), so its
+    shape is exempt from the identifier grammar.  Only a PascalCase
+    class name is taken as evidence of one: a language that spells a
+    constructor as the bare class name otherwise matches every target
+    and exempts the lot (issue #3913).
+    """
+    return any(
+        language.format_constructor_target(candidate) == target_function
+        for candidate in re.findall(
+            pattern=r"[^\W\d]\w*", string=target_function
+        )
+        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    )
+
+
+@beartype
 def _validate_call_target(
     *,
     language: Language,
@@ -5185,26 +5303,27 @@ def _validate_call_target(
             target_function=target_function,
             reason="it must contain non-empty dotted components",
         )
-    # A constructor target is spelled by the language rather than by
-    # the caller (``Foo::new``, ``new Foo``, or the bare class name),
-    # so its shape is exempt from the identifier grammar.  Only a
-    # PascalCase class name is taken as evidence of one: a language
-    # that spells a constructor as the bare class name otherwise
-    # matches every target and exempts the lot (issue #3913).
-    is_constructor_target = any(
-        language.format_constructor_target(candidate) == target_function
-        for candidate in re.findall(
-            pattern=r"[^\W\d]\w*", string=target_function
-        )
-        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    is_constructor_target = _is_constructor_target(
+        language=language,
+        target_function=target_function,
     )
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
+    # A bare constructor target is just the class name, which some
+    # languages do not admit as a function name at all (issue #3914).
+    exempt = is_constructor_target and (
+        len(target_function_parts) > 1
+        or language_cls.accepts_type_name_call_target
+    )
+    component_syntax = (
+        language_cls.call_target_name_syntax
+        or language_cls.new_variable_name_syntax
+    )
     for part in target_function_parts:
-        if not language_cls.new_variable_name_syntax.accepts(name=part):
-            if is_constructor_target:
+        if not component_syntax.accepts(name=part):
+            if exempt:
                 return
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
@@ -5228,6 +5347,7 @@ def _validate_wrapped_call_scaffold(
     arg_values: Sequence[Value],
     ref_case: IdentifierCase | None,
     bound_ref_names: Sequence[str],
+    variable_form: NewVariable | ExistingVariable | None,
 ) -> None:
     """Reject call inputs that collide with or empty a file scaffold."""
     if not arg_values:
@@ -5238,20 +5358,73 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    if (
-        len(target_function_parts) == 1
-        and isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function == language.call_wrapper_entrypoint_name
-    ):
+    # A dotted root usually names a different construct from the entry
+    # point -- Java's root is a ``static`` field beside the entry-point
+    # method, which compiles -- so only a language whose stub declares
+    # the root in the entry point's own namespace collides on it.
+    scaffold_language_cls = type(language)
+    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    shares_namespace = (
+        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
+    )
+    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
+        target_function == language.call_wrapper_entrypoint_name
+        or (
+            len(target_function_parts) > 1
+            and shares_namespace
+            and target_function_parts[0]
+            == language.call_wrapper_entrypoint_name
+        )
+    )
+    if entrypoint_collides:
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
         )
+    # Every component becomes a declaration in the generated file, so
+    # each follows the declaration grammar as well as the call-target
+    # one.  The two differ where a language spells a call target more
+    # freely than a name it can declare -- V calls ``http.Server`` but
+    # can declare neither half of it (issue #3989).
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if not _is_constructor_target(
+        language=language,
+        target_function=target_function,
+    ):
+        for part in target_function_parts:
+            if not language_cls.new_variable_name_syntax.accepts(name=part):
+                raise InvalidCallTargetError(
+                    language_name=type(language).__name__,
+                    target_function=target_function,
+                    reason=(
+                        f"component {part!r} cannot name a declaration "
+                        "in the generated file"
+                    ),
+                )
+    # Some languages in this group derive one helper type name per
+    # component through a case-normalizing transform (``Foo`` and
+    # ``foo`` both become ``FooType_``), so uniqueness holds on the
+    # folded components rather than on the components as spelled
+    # (issue #3908).  Others interpolate the component as spelled, and
+    # folding there would refuse targets that emit distinct helpers.
+    normalizes_case = (
+        isinstance(language, _NormalizesDottedCallPartCase)
+        and language.dotted_call_stub_normalizes_part_case
+    )
+    compared_parts = [
+        part.casefold() if normalizes_case else part
+        for part in target_function_parts
+    ]
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts
-        and len(set(target_function_parts)) != len(target_function_parts)
+        and len(set(compared_parts)) != len(compared_parts)
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
@@ -5259,6 +5432,21 @@ def _validate_wrapped_call_scaffold(
             reason=(
                 "repeated components collide with generated dotted-call "
                 "helper declarations"
+            ),
+        )
+    # The generated stub declares the target's leading component, and
+    # the call's result binding is declared beside it.  A language that
+    # can carry both names is the exception rather than the rule, so
+    # the shape is refused rather than emitted (issue #3907).
+    if (
+        isinstance(variable_form, NewVariable)
+        and variable_form.name == target_function_parts[0]
+    ):
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "the call result binding would redeclare the generated "
+                f"stub {variable_form.name!r}"
             ),
         )
     converted_bound_ref_names = {
@@ -5322,6 +5510,7 @@ def _validate_call_preconditions(
             arg_values=arg_values,
             ref_case=ref_case,
             bound_ref_names=bound_ref_names,
+            variable_form=variable_form,
         )
     if variable_form is not None:
         _validate_call_variable_form(

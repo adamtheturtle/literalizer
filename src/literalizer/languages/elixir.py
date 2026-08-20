@@ -45,6 +45,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -82,7 +83,6 @@ from literalizer._language import (
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
-    identity_constructor_target,
     never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -107,8 +107,25 @@ _format_string = make_backslash_string_formatter(
         ("\x85", "\\u0085"),
         ("\u2028", "\\u2028"),
         ("\u2029", "\\u2029"),
+        *bidi_escape_replacements(template="\\u{:04X}"),
     ],
 )
+
+
+@beartype
+def _format_constructor_target(class_name: str, /) -> str:
+    """Return an Elixir zero-argument constructor call target.
+
+    A capitalized bare name is an alias rather than a function, so the
+    constructor is spelled as a remote call on it (issue #3914).
+    """
+    return f"{class_name}.new"
+
+
+# ``staticmethod`` over the ``beartype``-wrapped function directly is
+# not assignable to the declared ``ClassVar`` under every type checker,
+# so bind it through an explicitly typed name first, as Crystal does.
+_constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 @beartype
@@ -166,8 +183,26 @@ def _elixir_call_stub(
         param_list = ", ".join(_elixir_params(params=params))
         return (f"def {parts[0]}({param_list}), do: nil",)
     root = parts[0]
-    root_module = root.capitalize() + "Type_"
-    return (f"{root} = {root_module}",)
+    # `Playlist = PlaylistType_` matches against an alias rather than
+    # binding a variable, and fails at run time with a MatchError, so an
+    # alias root is named by its stub module and needs no binding.
+    if root[:1].isupper():
+        return ()
+    return (f"{root} = {_elixir_root_module(root)}",)
+
+
+@beartype
+def _elixir_root_module(root: str, /) -> str:
+    """Return the module a dotted call's leading component resolves to.
+
+    A capitalized root is already an alias, so the stub takes that name
+    and the call reaches it directly.  A lowercase root is a variable,
+    which is bound to a separately named stub module instead (a module
+    name cannot be lowercase).
+    """
+    if root[:1].isupper():
+        return root
+    return root.capitalize() + "Type_"
 
 
 @beartype
@@ -191,7 +226,7 @@ def _elixir_call_preamble_stub(
     fields = list(parts[1:-1])
     param_list = ", ".join(_elixir_params(params=params))
     if not fields:
-        root_module = root.capitalize() + "Type_"
+        root_module = _elixir_root_module(root)
         sig = f"{method}({param_list}), do: nil"
         stub = f"defmodule {root_module} do\n  def {sig}\nend"
         return (stub,)
@@ -206,7 +241,7 @@ def _elixir_call_preamble_stub(
         loop_sig = f"{next_field}, do: {prev_module}"
         lines.append(f"defmodule {curr_module} do\n  def {loop_sig}\nend")
         prev_module = curr_module
-    root_module = root.capitalize() + "Type_"
+    root_module = _elixir_root_module(root)
     root_sig = f"{fields[0]}, do: {prev_module}"
     lines.append(f"defmodule {root_module} do\n  def {root_sig}\nend")
     return tuple(lines)
@@ -248,8 +283,9 @@ class Elixir(metaclass=LanguageCls):
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
+    accepts_type_name_call_target: ClassVar[bool] = False
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
-        staticmethod(identity_constructor_target)
+        staticmethod(_constructor_target)
     )
     format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
@@ -415,6 +451,7 @@ class Elixir(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -430,6 +467,7 @@ class Elixir(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -662,6 +700,16 @@ class Elixir(metaclass=LanguageCls):
         return identity_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
+
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entry-point name.
+
+        The wrapper defines ``defmodule Check``, and a capitalized call
+        root is stubbed as a module of that same name, so a root of
+        ``Check`` would define the module twice and lose the stub.
+        """
+        return "Check"
 
     def wrap_in_file(
         self,
