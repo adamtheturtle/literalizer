@@ -5313,8 +5313,10 @@ def _validate_call_target(
         raise TypeError(msg)
     # A bare constructor target is just the class name, which some
     # languages do not admit as a function name at all (issue #3914).
+    # Sliced rather than measured by ``len``: a length test narrows the
+    # tuple type, and that narrowing reaches the head index below.
     exempt = is_constructor_target and (
-        len(target_function_parts) > 1
+        bool(target_function_parts[1:])
         or language_cls.accepts_type_name_call_target
     )
     component_syntax = (
