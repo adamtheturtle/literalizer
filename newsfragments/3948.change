@@ -1,0 +1,1 @@
+C++ now spells a fixed-size sequence as ``std::array`` in the types it derives for variant members and map values, matching the literal it renders, when the ``ARRAY`` sequence format is selected.
