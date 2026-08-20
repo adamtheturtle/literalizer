@@ -180,7 +180,9 @@ def reject_ragged_nested_sequences(
         case list():
             lengths = {len(item) for item in data if isinstance(item, list)}
             if len(lengths) > 1:
-                sizes = ", ".join(str(length) for length in sorted(lengths))
+                sizes = ", ".join(
+                    str(object=length) for length in sorted(lengths)
+                )
                 msg = (
                     f"{language_name} renders a sequence as a fixed-size "
                     "array, whose length is part of its type, so sibling "
