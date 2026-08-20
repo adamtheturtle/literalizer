@@ -1253,11 +1253,11 @@ class LanguageCls(type):
     dotted_call_root_shares_entrypoint_namespace: bool = True
     """Whether a dotted call root is declared as the entry point is.
 
-    A generated stub usually declares the root in the same namespace as
-    the wrapper entry point, so a root spelling that entry point defines
-    the name twice.  Java is the exception: its root is a ``static``
-    field beside the entry-point method, and a field and a method of one
-    name coexist (issue #3914).
+    A generated stub usually declares the root the same way the wrapper
+    declares its entry point, so a root spelling that entry point
+    defines the name twice.  Java is the exception: its root is a
+    ``static`` field beside the entry-point method, and a field and a
+    method of one name coexist (issue #3914).
     """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
