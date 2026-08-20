@@ -350,20 +350,28 @@ def _values_mixed_types(*, values: Sequence[Value]) -> bool:
 
 
 @beartype
-def _list_nesting_depths(*, value: Value) -> frozenset[int]:
+def _list_nesting_depths(*, value: list[Value]) -> frozenset[int]:
     """Return the nesting depths a list value is known to have.
 
     An empty list carries no information about what it holds, so it
-    contributes no depth and stays compatible with any sibling; every
-    other list is one deeper than the depths its elements report, and a
-    non-list element reports none (issue #3933).
+    contributes no depth and stays compatible with any sibling
+    (issue #3933).
+
+    Each element is measured on its own.  A non-list element puts the
+    list at depth 1, and a list element puts it one deeper than that
+    element reports -- or at depth 2 when the element is empty, since an
+    empty list is still a list.  Folding the elements together first
+    would lose that: a list holding only empty lists reports nothing to
+    add to, and would read as a list of scalars.
     """
-    if not isinstance(value, list):
-        return frozenset()
-    inner = frozenset[int]().union(
-        *(_list_nesting_depths(value=item) for item in value)
-    )
-    return frozenset({depth + 1 for depth in inner} or ({1} if value else ()))
+    depths: set[int] = set()
+    for item in value:
+        if isinstance(item, list):
+            inner = _list_nesting_depths(value=item)
+            depths |= {depth + 1 for depth in inner} or {2}
+        else:
+            depths.add(1)
+    return frozenset(depths)
 
 
 @beartype
