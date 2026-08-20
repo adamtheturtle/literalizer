@@ -16,8 +16,19 @@
 
 set -euo pipefail
 
+# Two calls share one step's ``timeout-minutes: 10`` (600s) budget in
+# every job that uses this helper, so one call must fit inside 300s:
+#
+#     attempts x (attempt_seconds + kill_after) + (attempts - 1) x backoff
+#     3 x (80 + 10) + 2 x 5 = 280s
+#
+# Sized so every configured attempt is reachable.  With the previous
+# 300s the arithmetic came to 945s per call, so the step timeout killed
+# the run part-way through attempt 2, attempt 3 never ran, and the
+# second command in the step never started at all (issue #3982).
 attempts=3
-attempt_seconds=300
+attempt_seconds=80
+backoff_seconds=5
 
 if [[ ${1:-} == sudo ]]; then
     shift
@@ -31,7 +42,11 @@ for attempt in $(seq 1 "$attempts"); do
         exit 0
     fi
     echo "attempt $attempt of $attempts failed or timed out: $*" >&2
-    sleep 5
+    # No backoff after the final attempt: waiting before giving up buys
+    # nothing and spends budget the next call in the step needs.
+    if ((attempt < attempts)); then
+        sleep "$backoff_seconds"
+    fi
 done
 
 echo "failed after $attempts attempts: $*" >&2
