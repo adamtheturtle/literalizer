@@ -1,0 +1,1 @@
+Reject a Zig call parameter named for one of the arbitrary-width integer primitives, alongside the primitive and entry-point names already refused.
