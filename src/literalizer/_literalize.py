@@ -5272,13 +5272,19 @@ def _validate_call_target(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
+    # A bare constructor target is just the class name, which some
+    # languages do not admit as a function name at all (issue #3914).
+    exempt = is_constructor_target and (
+        len(target_function_parts) > 1
+        or language_cls.accepts_type_name_call_target
+    )
     component_syntax = (
         language_cls.call_target_name_syntax
         or language_cls.new_variable_name_syntax
     )
     for part in target_function_parts:
         if not component_syntax.accepts(name=part):
-            if is_constructor_target:
+            if exempt:
                 return
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
@@ -5312,11 +5318,27 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    if (
-        len(target_function_parts) == 1
-        and isinstance(language, _HasCallWrapperEntrypoint)
-        and target_function == language.call_wrapper_entrypoint_name
-    ):
+    # A dotted root usually names a different construct from the entry
+    # point -- Java's root is a ``static`` field beside the entry-point
+    # method, which compiles -- so only a language whose stub declares
+    # the root in the entry point's own namespace collides on it.
+    scaffold_language_cls = type(language)
+    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    shares_namespace = (
+        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
+    )
+    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
+        target_function == language.call_wrapper_entrypoint_name
+        or (
+            len(target_function_parts) > 1
+            and shares_namespace
+            and target_function_parts[0]
+            == language.call_wrapper_entrypoint_name
+        )
+    )
+    if entrypoint_collides:
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,

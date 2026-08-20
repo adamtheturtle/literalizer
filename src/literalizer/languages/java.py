@@ -1689,6 +1689,8 @@ class Java(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    dotted_call_root_shares_entrypoint_namespace = False
+
     @property
     def call_wrapper_entrypoint_name(self) -> str:
         """Return the generated complete-file entry-point name."""

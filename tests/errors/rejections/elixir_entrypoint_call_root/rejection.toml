@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+An Elixir call root is stubbed as a module of that name, so a root
+naming the generated wrapper module would define it twice.
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Elixir"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "Check.new"
+parameter_names = ["x"]
+wrap_in_file = true

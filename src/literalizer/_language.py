@@ -1261,6 +1261,25 @@ class LanguageCls(type):
     parameters cannot be private, so both are spelled as a pattern
     rather than enumerated (issue #3916, issue #3952).
     """
+    accepts_type_name_call_target: bool = True
+    """Whether a bare type name may be a ``target_function``.
+
+    A constructor call target is spelled by the language, so its shape
+    is exempt from the declaration identifier grammar.  Where the bare
+    class name is that spelling, the exemption lets a capitalized name
+    through -- correct for a Haskell data constructor or a V struct,
+    wrong for Elixir, where a capitalized bare name parses as an alias
+    rather than a function (issue #3914).
+    """
+    dotted_call_root_shares_entrypoint_namespace: bool = True
+    """Whether a dotted call root is declared as the entry point is.
+
+    A generated stub usually declares the root the same way the wrapper
+    declares its entry point, so a root spelling that entry point
+    defines the name twice.  Java is the exception: its root is a
+    ``static`` field beside the entry-point method, and a field and a
+    method of one name coexist (issue #3914).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
