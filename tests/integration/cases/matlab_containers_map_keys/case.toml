@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Matlab"]
+languages_reason = "MATLAB's containers.Map accepts character-array keys assembled from control-character segments."
+
+[[variants]]
+axis = "dict_format"

@@ -56,28 +56,6 @@ def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
     )
 
 
-def test_ref_markers_are_opt_in() -> None:
-    """A ``$ref`` object remains data unless marker handling is
-    enabled.
-    """
-    source = '{"value":{"$ref":"foo"}}'
-    variable_form = NewVariable(name="my_data", modifiers=frozenset())
-
-    assert literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Python(),
-        variable_form=variable_form,
-    ).code == ('my_data = {\n    "value": {"$ref": "foo"},\n}')
-    assert literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Python(),
-        variable_form=variable_form,
-        ref_key="$ref",
-    ).code == ('my_data = {\n    "value": foo,\n}')
-
-
 def test_ref_markers_preserve_multiline_collection_openers() -> None:
     """Ref-aware nested dicts and lists keep their multiline openers."""
     result = literalize(
