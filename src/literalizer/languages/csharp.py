@@ -1883,6 +1883,7 @@ class CSharp(metaclass=LanguageCls):
                 self._base_set_format_config.set_opener_template or None
             ),
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
         )
 

@@ -203,14 +203,12 @@ def _dart_scalar_hint(
             hint = "int"
         case float():
             hint = "double"
-        case str() | bytes():
+        case str() | bytes() | datetime.time():
             hint = "String"
         case datetime.datetime():
             hint = datetime_hint
         case datetime.date():
             hint = date_hint
-        case datetime.time():
-            hint = "String"
         case None:
             hint = "Null"
         case _ as unreachable:
@@ -229,21 +227,6 @@ def _dart_unique_or_dynamic(types: list[str]) -> str:
             return single
         case _:
             return "dynamic"
-
-
-@beartype
-def _dart_dict_hint(
-    *,
-    val_types: list[str],
-    is_empty: bool,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
-) -> str:
-    """Derive a Dart Map type annotation."""
-    if is_empty:
-        return f"Map<{default_dict_key_type}, {default_dict_value_type}>"
-    val_type = _dart_unique_or_dynamic(types=val_types)
-    return f"Map<{default_dict_key_type}, {val_type}>"
 
 
 @beartype
@@ -266,12 +249,45 @@ def _dart_list_hint(
     is_empty: bool,
     sequence_is_tuple: bool,
 ) -> str:
-    """Derive a Dart List/record type annotation."""
+    """Derive a Dart record type annotation.
+
+    A record's arity is part of its type, so it is built from the
+    element hints rather than read off the opener the way the other
+    containers are.
+    """
+    del sequence_is_tuple
     if is_empty:
-        return "()" if sequence_is_tuple else "List<dynamic>"
-    if sequence_is_tuple:
-        return f"({', '.join(elem_types)},)"
-    return f"List<{_dart_unique_or_dynamic(types=elem_types)}>"
+        return "()"
+    return f"({', '.join(elem_types)},)"
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _DartHintOpeners:
+    """The openers a declared type annotation is read back from."""
+
+    dict_open: Callable[[dict[Scalar, Value]], str]
+    sequence_open: Callable[[list[Value]], str]
+
+
+@beartype
+def _dart_opener_hint(
+    *,
+    prefix: str,
+    opener: str,
+    delimiter: str,
+    default_arguments: str,
+) -> str:
+    """Turn a rendered opener into the type it constructs.
+
+    The declared type and the literal's own type arguments have to be
+    one inference or the assignment does not type-check, so the type is
+    read back off the opener the renderer picked rather than derived a
+    second time (issue #3935).  An opener with no type arguments -- the
+    fallback for a value the renderer could not narrow -- names the
+    language's default ones.
+    """
+    arguments = opener.removesuffix(delimiter)
+    return f"{prefix}{arguments or f'<{default_arguments}>'}"
 
 
 @beartype
@@ -284,6 +300,7 @@ def _dart_type_hint(
     default_dict_key_type: str,
     default_dict_value_type: str,
     sequence_is_tuple: bool,
+    openers: _DartHintOpeners,
 ) -> str:
     """Derive a Dart type annotation from *data*."""
     recurse = functools.partial(
@@ -294,14 +311,17 @@ def _dart_type_hint(
         default_dict_key_type=default_dict_key_type,
         default_dict_value_type=default_dict_value_type,
         sequence_is_tuple=sequence_is_tuple,
+        openers=openers,
     )
     match data:
         case dict():
-            hint = _dart_dict_hint(
-                val_types=[recurse(data=v) for v in data.values()],
-                is_empty=not data,
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
+            hint = _dart_opener_hint(
+                prefix="Map",
+                opener=openers.dict_open(data),
+                delimiter="{",
+                default_arguments=(
+                    f"{default_dict_key_type}, {default_dict_value_type}"
+                ),
             )
         case set():
             hint = _dart_set_hint(
@@ -309,11 +329,18 @@ def _dart_type_hint(
                 is_empty=not data,
                 default_set_element_type=default_set_element_type,
             )
-        case list():
+        case list() if sequence_is_tuple:
             hint = _dart_list_hint(
                 elem_types=[recurse(data=e) for e in data],
                 is_empty=not data,
                 sequence_is_tuple=sequence_is_tuple,
+            )
+        case list():
+            hint = _dart_opener_hint(
+                prefix="List",
+                opener=openers.sequence_open(data),
+                delimiter="[",
+                default_arguments="dynamic",
             )
         case _:
             hint = _dart_scalar_hint(
@@ -338,6 +365,7 @@ def _format_dart_typed_declaration(
     default_dict_key_type: str,
     default_dict_value_type: str,
     sequence_is_tuple: bool,
+    openers: _DartHintOpeners,
 ) -> str:
     """Format a Dart variable declaration with an explicit type."""
     hint = _dart_type_hint(
@@ -348,6 +376,7 @@ def _format_dart_typed_declaration(
         default_dict_key_type=default_dict_key_type,
         default_dict_value_type=default_dict_value_type,
         sequence_is_tuple=sequence_is_tuple,
+        openers=openers,
     )
     return f"{keyword}{hint} {name} = {value};"
 
@@ -837,6 +866,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
+            openers: "_DartHintOpeners",
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
@@ -863,6 +893,7 @@ class Dart(metaclass=LanguageCls):
                     default_dict_key_type=default_dict_key_type,
                     default_dict_value_type=default_dict_value_type,
                     sequence_is_tuple=sequence_is_tuple,
+                    openers=openers,
                 )
 
             return _typed_formatter
@@ -1250,6 +1281,12 @@ class Dart(metaclass=LanguageCls):
             datetime_type=cfg.type_name(py_type=self._dt_tp),
             set_opener_template=None,
             narrow_dict_values=True,
+            # A ``TUPLE`` list renders as a Dart record, whose arity is
+            # part of its type, so the element type alone cannot name
+            # it and a list value keeps the generic one (issue #3925).
+            narrow_list_values=(
+                self.sequence_format is not type(self.sequence_format).TUPLE
+            ),
             dict_key_type=self.default_dict_key_type,
         )
 
@@ -1398,6 +1435,10 @@ class Dart(metaclass=LanguageCls):
             default_dict_value_type=self.default_dict_value_type,
             sequence_is_tuple=(
                 self.sequence_format is type(self.sequence_format).TUPLE
+            ),
+            openers=_DartHintOpeners(
+                dict_open=self.dict_format_config.dict_open,
+                sequence_open=self.sequence_open,
             ),
         )
 

@@ -606,6 +606,7 @@ class TypedOpenerConfig:
         datetime_type: str | None,
         set_opener_template: str | None,
         narrow_dict_values: bool,
+        narrow_list_values: bool,
         dict_key_type: str,
     ) -> TypeOpeners:
         """Build openers from the base scalar type mapping plus
@@ -623,6 +624,11 @@ class TypedOpenerConfig:
         ``Array<…>`` vs ``List<…>``), which would cause type
         mismatches in the generated code.
 
+        *narrow_list_values* does the same for ``ListType``.  Set it to
+        ``False`` when the active sequence format renders something the
+        element type alone cannot name -- a Dart record under ``TUPLE``,
+        whose arity is part of its type (issue #3925).
+
         When *dict_key_type* is given, ``{key_type}`` placeholders in
         ``dict_opener_template`` and ``dict_type_template`` are
         resolved before the templates are used.
@@ -637,7 +643,7 @@ class TypedOpenerConfig:
         )
         dict_set_resolver = self.element_to_type(
             list_template=None,
-            enable_list_type=True,
+            enable_list_type=narrow_list_values,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=narrow_dict_values,
