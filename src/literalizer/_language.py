@@ -228,7 +228,13 @@ def validate_call_parameter_names(
                         language.reserved_variable_identifiers
                     )
                 )
-            if reserved:
+            variable_pattern = (
+                language_cls.reserved_variable_identifier_pattern
+            )
+            if reserved or (
+                variable_pattern is not None
+                and variable_pattern.fullmatch(string=name) is not None
+            ):
                 raise InvalidCallParameterNameError(
                     language_name=language_name,
                     parameter_name=name,

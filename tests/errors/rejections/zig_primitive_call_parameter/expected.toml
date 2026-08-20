@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Zig['_']" = "Zig cannot use call parameter '_': it is a reserved identifier"
+"Zig['bool']" = "Zig cannot use call parameter 'bool': it is a reserved identifier"
+"Zig['comptime_int']" = "Zig cannot use call parameter 'comptime_int': it is a reserved identifier"
+"Zig['f16']" = "Zig cannot use call parameter 'f16': it is a reserved identifier"
+"Zig['i33']" = "Zig cannot use call parameter 'i33': it is a reserved identifier"
+"Zig['main']" = "Zig cannot use call parameter 'main': it is a reserved identifier"
+"Zig['type']" = "Zig cannot use call parameter 'type': it is a reserved identifier"
+"Zig['u7']" = "Zig cannot use call parameter 'u7': it is a reserved identifier"
+"Zig['void']" = "Zig cannot use call parameter 'void': it is a reserved identifier"

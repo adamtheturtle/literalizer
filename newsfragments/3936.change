@@ -1,0 +1,1 @@
+Give a Crystal ``RECORD`` field holding an empty nested list the type its literal narrows to, rather than a union naming ``Array(Nil)``, which the record constructor refused.

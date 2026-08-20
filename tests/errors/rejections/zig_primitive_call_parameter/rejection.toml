@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Zig call parameter cannot shadow a primitive or the wrapper's main."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Zig"]
+values = ["_", "bool", "comptime_int", "f16", "i33", "main", "type", "u7", "void"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "do_thing"
+parameter_names = ["{value}"]
+wrap_in_file = true
