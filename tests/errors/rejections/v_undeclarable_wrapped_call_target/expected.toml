@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"V['C.atoi']" = "V cannot use call target 'C.atoi': component 'C' cannot name a declaration in the generated file"
+"V['http.Server']" = "V cannot use call target 'http.Server': component 'Server' cannot name a declaration in the generated file"
