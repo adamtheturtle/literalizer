@@ -76,6 +76,15 @@ class NewVariableNameSyntax(enum.Enum):
     name ("use snake_case instead") and rejects a leading underscore.
     """
 
+    LOWER_SNAKE_OR_TYPE_ASCII = enum.auto()
+    """A lowercase snake identifier, or a name beginning uppercase.
+
+    A V call target's components are not all functions: a leading one
+    can be a module (``http.Server``) or the C interop module
+    (``C.atoi``), and V spells a type with an initial capital
+    (issue #3989).
+    """
+
     def accepts(self, *, name: str) -> bool:
         """Return whether *name* matches this lexical grammar."""
         match self:
@@ -93,6 +102,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
             case NewVariableNameSyntax.LOWER_SNAKE_ASCII:
                 pattern = r"[a-z][a-z0-9_]*"
+            case NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII:
+                pattern = r"[a-z][a-z0-9_]*|[A-Z][A-Za-z0-9_]*"
             case _:  # pragma: no cover - enum exhaustiveness assertion
                 assert_never(self)
         return re.fullmatch(pattern=pattern, string=name) is not None
@@ -108,7 +119,7 @@ class RoundTripCapability(enum.StrEnum):
 
 
 @beartype
-def _is_reserved_identifier(
+def is_reserved_identifier(
     *,
     case_sensitive: bool,
     name: str,
@@ -128,7 +139,7 @@ def _is_reserved_identifier(
 def validate_new_variable_name(*, language: "Language", name: str) -> None:
     """Raise when *name* cannot be used for a new variable declaration."""
     language_name = language.__class__.__name__
-    if _is_reserved_identifier(
+    if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
         name=name,
         reserved_identifiers=language.reserved_variable_identifiers,
@@ -194,10 +205,13 @@ def validate_call_parameter_names(
                 reason="it is duplicated",
             )
         seen.add(comparison_name)
-        parameter_only_reserved = {
-            "Scala": frozenset({"using"}),
-        }.get(language_name, frozenset())
-        if name in parameter_only_reserved:
+        parameter_pattern = (
+            language_cls.reserved_call_parameter_identifier_pattern
+        )
+        if name in language_cls.reserved_call_parameter_identifiers or (
+            parameter_pattern is not None
+            and parameter_pattern.fullmatch(string=name) is not None
+        ):
             raise InvalidCallParameterNameError(
                 language_name=language_name,
                 parameter_name=name,
@@ -214,7 +228,13 @@ def validate_call_parameter_names(
                         language.reserved_variable_identifiers
                     )
                 )
-            if reserved:
+            variable_pattern = (
+                language_cls.reserved_variable_identifier_pattern
+            )
+            if reserved or (
+                variable_pattern is not None
+                and variable_pattern.fullmatch(string=name) is not None
+            ):
                 raise InvalidCallParameterNameError(
                     language_name=language_name,
                     parameter_name=name,
@@ -245,6 +265,16 @@ class SequenceFormatConfig:
     requires_uniform_record_shapes: bool
     declared_type: str | None
     narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    single_element_template: str | None
+    """How a one-element sequence is spelled, if not as the openers.
+
+    ``{items}`` stands for the rendered element.  C# needs one: ``(x)``
+    is a parenthesized expression rather than a one-element tuple, so
+    the value would silently lose its collection (issue #3928).  The
+    spelling is kept here rather than in ``sequence_open`` because the
+    sibling-widening probe reads that opener as a statement about the
+    element type, which arity is not.
+    """
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1224,10 +1254,51 @@ class LanguageCls(type):
     an open set, so they are spelled as a pattern rather than
     enumerated.
     """
+    reserved_call_parameter_identifiers: frozenset[str] = frozenset()
+    """Names a call parameter cannot take even where a declaration can.
+
+    Scala's ``using`` opens a parameter clause, and Crystal's ``_``
+    cannot carry the default value a generated stub gives it.
+    """
+    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None = None
+    """A shape a call parameter name cannot take.
+
+    R identifiers cannot begin with an underscore and Dart named
+    parameters cannot be private, so both are spelled as a pattern
+    rather than enumerated (issue #3916, issue #3952).
+    """
+    accepts_type_name_call_target: bool = True
+    """Whether a bare type name may be a ``target_function``.
+
+    A constructor call target is spelled by the language, so its shape
+    is exempt from the declaration identifier grammar.  Where the bare
+    class name is that spelling, the exemption lets a capitalized name
+    through -- correct for a Haskell data constructor or a V struct,
+    wrong for Elixir, where a capitalized bare name parses as an alias
+    rather than a function (issue #3914).
+    """
+    dotted_call_root_shares_entrypoint_namespace: bool = True
+    """Whether a dotted call root is declared as the entry point is.
+
+    A generated stub usually declares the root the same way the wrapper
+    declares its entry point, so a root spelling that entry point
+    defines the name twice.  Java is the exception: its root is a
+    ``static`` field beside the entry-point method, and a field and a
+    method of one name coexist (issue #3914).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
     )
+    call_target_name_syntax: NewVariableNameSyntax | None = None
+    """The grammar each component of a ``target_function`` follows.
+
+    ``None`` means the declaration grammar, which is what a call target
+    follows in nearly every language.  V spells a variable and a
+    function in snake case but a type with an initial capital, and a
+    dotted target's leading component can be a module rather than a
+    value, so it declares its own (issue #3989).
+    """
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool
@@ -1312,7 +1383,7 @@ class LanguageCls(type):
                     cls.module_name_must_start_uppercase
                     and not module_name[0].isupper()
                 )
-                or _is_reserved_identifier(
+                or is_reserved_identifier(
                     case_sensitive=instance.reserved_variable_identifiers_case_sensitive,
                     name=module_name,
                     reserved_identifiers=(

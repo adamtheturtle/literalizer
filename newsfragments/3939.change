@@ -1,0 +1,1 @@
+Infer a Rust element type from a non-empty sibling rather than from an empty collection's placeholder, and refuse with a typed error, rather than a bare ``ValueError``, when element types genuinely differ.

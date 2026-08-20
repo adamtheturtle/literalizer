@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "DoThing"
+parameter_names = ["x"]
+per_element = true
+wrap_in_file = true
+languages = ["Erlang"]
+languages_reason = "Erlang-specific: a function name is an atom, so a capitalized name has to be quoted."

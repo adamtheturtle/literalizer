@@ -87,6 +87,14 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         lang_cls=lang_cls,
         value=case.value,
     )
+    ref_case = None
+    if call.ref_case is not None:
+        resolved_ref_case = enum_member_by_name(
+            enum_cls=literalizer.IdentifierCase,
+            name=call.ref_case,
+        )
+        assert isinstance(resolved_ref_case, literalizer.IdentifierCase)
+        ref_case = resolved_ref_case
     match call.api:
         case "constructor":
             lang_cls(**case.kwargs)
@@ -102,23 +110,13 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
                 pre_indent_level=call.pre_indent_level,
                 include_delimiters=call.include_delimiters,
                 ref_key=call.ref_key,
+                ref_case=ref_case,
                 bound_refs=dict(call.bound_refs) or None,
             )
         case "literalize_call":
             assert case.source is not None
             assert call.input_format is not None
             assert call.target_function is not None
-            ref_case = None
-            if call.ref_case is not None:
-                resolved_ref_case = enum_member_by_name(
-                    enum_cls=literalizer.IdentifierCase,
-                    name=call.ref_case,
-                )
-                assert isinstance(
-                    resolved_ref_case,
-                    literalizer.IdentifierCase,
-                )
-                ref_case = resolved_ref_case
             literalizer.literalize_call(
                 source=case.source,
                 input_format=call.input_format,
@@ -137,6 +135,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
                 ref_case=ref_case,
                 bound_refs=dict(call.bound_refs) or None,
                 comment_source=call.comment_source,
+                variable_form=(
+                    variable_form if call.variable_form is not None else None
+                ),
             )
         case _ as unreachable_call:  # pragma: no cover
             assert_never(unreachable_call)

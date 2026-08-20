@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A wrapped V call target must name a declaration V can spell."
+exceptions = ["InvalidCallTargetError"]
+languages = ["V"]
+values = ["C.atoi", "http.Server"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["x"]
+wrap_in_file = true

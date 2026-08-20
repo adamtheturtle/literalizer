@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Groovy['boolean']" = "Groovy cannot use NewVariable name 'boolean': it is a reserved identifier"
+"Groovy['byte']" = "Groovy cannot use NewVariable name 'byte': it is a reserved identifier"
+"Groovy['char']" = "Groovy cannot use NewVariable name 'char': it is a reserved identifier"
+"Groovy['double']" = "Groovy cannot use NewVariable name 'double': it is a reserved identifier"
+"Groovy['float']" = "Groovy cannot use NewVariable name 'float': it is a reserved identifier"
+"Groovy['int']" = "Groovy cannot use NewVariable name 'int': it is a reserved identifier"
+"Groovy['long']" = "Groovy cannot use NewVariable name 'long': it is a reserved identifier"
+"Groovy['short']" = "Groovy cannot use NewVariable name 'short': it is a reserved identifier"
+"Groovy['void']" = "Groovy cannot use NewVariable name 'void': it is a reserved identifier"

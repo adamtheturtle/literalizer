@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A capitalized bare Elixir name is an alias, not a function."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Elixir"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "DoThing"
+parameter_names = ["x"]
+wrap_in_file = true

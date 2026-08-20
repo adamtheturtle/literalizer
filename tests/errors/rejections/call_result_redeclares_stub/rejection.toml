@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "A wrapped call result cannot redeclare the generated target stub."
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "work"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+variable_name = "work"

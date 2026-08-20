@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A Nim identifier cannot begin with an underscore."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "_do_thing"
+parameter_names = ["x"]
+wrap_in_file = true

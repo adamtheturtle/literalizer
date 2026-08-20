@@ -1,0 +1,23 @@
+schema_version = 1
+summary = "A Groovy primitive type name cannot follow def."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Groovy"]
+values = [
+  "boolean",
+  "byte",
+  "char",
+  "double",
+  "float",
+  "int",
+  "long",
+  "short",
+  "void",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

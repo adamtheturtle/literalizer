@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Racket definition cannot shadow a procedure its literal calls."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Racket"]
+values = ["date", "hash", "list", "make-keyword-procedure", "set", "void"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
