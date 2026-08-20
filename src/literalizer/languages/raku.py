@@ -135,7 +135,7 @@ def _format_string_single(value: str) -> str:
     present.
     """
     if "\0" in value:
-        return _format_string_double(value)
+        return _format_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
 
