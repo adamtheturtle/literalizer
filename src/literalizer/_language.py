@@ -76,6 +76,15 @@ class NewVariableNameSyntax(enum.Enum):
     name ("use snake_case instead") and rejects a leading underscore.
     """
 
+    LOWER_SNAKE_OR_TYPE_ASCII = enum.auto()
+    """A lowercase snake identifier, or a name beginning uppercase.
+
+    A V call target's components are not all functions: a leading one
+    can be a module (``http.Server``) or the C interop module
+    (``C.atoi``), and V spells a type with an initial capital
+    (issue #3989).
+    """
+
     def accepts(self, *, name: str) -> bool:
         """Return whether *name* matches this lexical grammar."""
         match self:
@@ -93,6 +102,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
             case NewVariableNameSyntax.LOWER_SNAKE_ASCII:
                 pattern = r"[a-z][a-z0-9_]*"
+            case NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII:
+                pattern = r"[a-z][a-z0-9_]*|[A-Z][A-Za-z0-9_]*"
             case _:  # pragma: no cover - enum exhaustiveness assertion
                 assert_never(self)
         return re.fullmatch(pattern=pattern, string=name) is not None
@@ -1254,6 +1265,15 @@ class LanguageCls(type):
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
     )
+    call_target_name_syntax: NewVariableNameSyntax | None = None
+    """The grammar each component of a ``target_function`` follows.
+
+    ``None`` means the declaration grammar, which is what a call target
+    follows in nearly every language.  V spells a variable and a
+    function in snake case but a type with an initial capital, and a
+    dotted target's leading component can be a module rather than a
+    value, so it declares its own (issue #3989).
+    """
     allows_empty_call_parens: bool
     supports_dotted_call_stub: bool
     call_returns_expression: bool

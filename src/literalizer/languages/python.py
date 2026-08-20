@@ -107,7 +107,10 @@ from literalizer._language import (
 )
 from literalizer._preamble import HeterogeneousElements
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+)
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -752,13 +755,20 @@ def _build_type_hint_preamble_py38(
 
 
 @beartype
-def _python_record_field_identifier(key: str, /) -> str:
+def _python_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the dataclass field name for a dict *key*.
 
     Python field identifiers are the dict keys verbatim (no case
     conversion), matching the keyword-argument literal form
-    ``Record0(id=1, ...)``.
+    ``Record0(id=1, ...)``.  A keyword has no escaped spelling in
+    either the annotation or the keyword argument, so a key that is
+    one is refused (issue #3934).
     """
+    if key in reserved_identifiers:
+        msg = f"Python record field name {key!r} is reserved"
+        raise UnrepresentableInputError(msg)
     return key
 
 
@@ -1702,7 +1712,10 @@ class Python(metaclass=LanguageCls):
             # non-Rust ports); an empty mapping keeps every shape on
             # the auto ``{prefix}{N}`` names.
             record_shape_names=MappingProxyType(mapping={}),
-            field_identifier=_python_record_field_identifier,
+            field_identifier=functools.partial(
+                _python_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._record_field_type,
             render_declaration=self._python_render_declaration,
             render_literal=_python_record_literal,

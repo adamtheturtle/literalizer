@@ -5237,6 +5237,30 @@ _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
 
 
 @beartype
+def _is_constructor_target(
+    *,
+    language: Language,
+    target_function: str,
+) -> bool:
+    """Return whether *target_function* is a constructor call target.
+
+    A constructor target is spelled by the language rather than by the
+    caller (``Foo::new``, ``new Foo``, or the bare class name), so its
+    shape is exempt from the identifier grammar.  Only a PascalCase
+    class name is taken as evidence of one: a language that spells a
+    constructor as the bare class name otherwise matches every target
+    and exempts the lot (issue #3913).
+    """
+    return any(
+        language.format_constructor_target(candidate) == target_function
+        for candidate in re.findall(
+            pattern=r"[^\W\d]\w*", string=target_function
+        )
+        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    )
+
+
+@beartype
 def _validate_call_target(
     *,
     language: Language,
@@ -5250,25 +5274,20 @@ def _validate_call_target(
             target_function=target_function,
             reason="it must contain non-empty dotted components",
         )
-    # A constructor target is spelled by the language rather than by
-    # the caller (``Foo::new``, ``new Foo``, or the bare class name),
-    # so its shape is exempt from the identifier grammar.  Only a
-    # PascalCase class name is taken as evidence of one: a language
-    # that spells a constructor as the bare class name otherwise
-    # matches every target and exempts the lot (issue #3913).
-    is_constructor_target = any(
-        language.format_constructor_target(candidate) == target_function
-        for candidate in re.findall(
-            pattern=r"[^\W\d]\w*", string=target_function
-        )
-        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    is_constructor_target = _is_constructor_target(
+        language=language,
+        target_function=target_function,
     )
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-target validation requires a LanguageCls language"
         raise TypeError(msg)
+    component_syntax = (
+        language_cls.call_target_name_syntax
+        or language_cls.new_variable_name_syntax
+    )
     for part in target_function_parts:
-        if not language_cls.new_variable_name_syntax.accepts(name=part):
+        if not component_syntax.accepts(name=part):
             if is_constructor_target:
                 return
             raise InvalidCallTargetError(
@@ -5314,6 +5333,29 @@ def _validate_wrapped_call_scaffold(
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
         )
+    # Every component becomes a declaration in the generated file, so
+    # each follows the declaration grammar as well as the call-target
+    # one.  The two differ where a language spells a call target more
+    # freely than a name it can declare -- V calls ``http.Server`` but
+    # can declare neither half of it (issue #3989).
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if not _is_constructor_target(
+        language=language,
+        target_function=target_function,
+    ):
+        for part in target_function_parts:
+            if not language_cls.new_variable_name_syntax.accepts(name=part):
+                raise InvalidCallTargetError(
+                    language_name=type(language).__name__,
+                    target_function=target_function,
+                    reason=(
+                        f"component {part!r} cannot name a declaration "
+                        "in the generated file"
+                    ),
+                )
     # Some languages in this group derive one helper type name per
     # component through a case-normalizing transform (``Foo`` and
     # ``foo`` both become ``FooType_``), so uniqueness holds on the
