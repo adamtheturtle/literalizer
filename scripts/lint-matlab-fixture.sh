@@ -7,6 +7,8 @@
 #     accepts some backslash escapes (e.g. `\"`) that MATLAB rejects,
 #     so the parse check would be misleading.
 #   - files using the `datetime` builtin: not implemented in Octave.
+#   - `containers.Map` fixtures with empty character-array keys: MATLAB
+#     accepts these keys, while Octave rejects them in `cell2struct`.
 #
 # Invoked through `bash` (see the `Lint Matlab` workflow step), so no
 # shebang or execute bit is needed here.
@@ -21,6 +23,11 @@ fi
 
 if grep -qw datetime "$f"; then
     echo "Skipping $f — uses datetime(), which Octave does not implement"
+    exit 0
+fi
+
+if grep -q "containers.Map({''" "$f"; then
+    echo "Skipping $f — Octave rejects MATLAB's empty containers.Map key"
     exit 0
 fi
 
