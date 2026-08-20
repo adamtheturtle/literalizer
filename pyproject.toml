@@ -59,6 +59,9 @@ optional-dependencies.dev = [
     "mypy[faster-cache]==2.3.1",
     "mypy-strict-kwargs==2026.7.19.1",
     "no-defaults==2.1.0",
+    # Keep in sync with the ``prek-version`` inputs to the
+    # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
+    # ``.github/workflows/autofix.yml``.
     "prek==0.4.13",
     "pydantic==2.13.4",
     "pydocstringformatter==1.0.0",

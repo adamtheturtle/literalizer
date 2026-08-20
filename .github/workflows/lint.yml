@@ -62,7 +62,11 @@ jobs:
       - name: Lint
         uses: j178/prek-action@v3.0.0
         with:
-          prek-version: 0.4.11
+          # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
+          # sync. prek reimplements the ``pre-commit-hooks`` checks
+          # natively, so a version difference changes their verdicts and
+          # not merely their scheduling (issue 4013).
+          prek-version: 0.4.13
           extra-args: >-
             --all-files --group ${{ matrix.group }} --verbose
         env:
