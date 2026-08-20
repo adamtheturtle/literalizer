@@ -1,0 +1,10 @@
+schema_version = 1
+languages = ["Dart"]
+languages_reason = "Dart-specific: only its TUPLE format renders a record, whose arity is part of its type, so a map value holding one cannot be annotated from the element type."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"

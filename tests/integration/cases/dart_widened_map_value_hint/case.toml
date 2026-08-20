@@ -1,0 +1,10 @@
+schema_version = 1
+languages = ["Dart"]
+languages_reason = "Dart-specific: its declared type and the literal's own type arguments have to be one inference, and only Dart writes both."
+suites = ["base"]
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "type_hints_cross"

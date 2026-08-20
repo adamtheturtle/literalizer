@@ -22,7 +22,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
-    datetime_epoch_formatter,
     datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
@@ -313,6 +312,12 @@ def _scala_parameter_declaration(name: str, /) -> str:
     """
     separator = " :" if name.endswith("_") else ":"
     return f"{name}{separator} Any = null"
+
+
+@beartype
+def _format_scala_datetime_epoch(value: datetime.datetime, /) -> str:
+    """Format epoch seconds as a Scala ``Long`` literal."""
+    return f"{datetime_epoch_seconds(value=value)}L"
 
 
 @beartype
@@ -1364,7 +1369,7 @@ class Scala(metaclass=LanguageCls):
             isinstance(value, datetime.datetime)
             and self.datetime_format.value.type_produced is int
         ):
-            value = datetime_epoch_seconds(value=value)
+            return "Long"
         match value:
             case None:
                 return "Any"
@@ -1677,7 +1682,14 @@ class Scala(metaclass=LanguageCls):
 
     @cached_property
     def _datetime_type_name(self) -> str | None:
-        """Scala type name for the configured datetime format."""
+        """Scala type name for the configured datetime format.
+
+        Epoch seconds leave 32-bit range after 2038-01-19, and a map
+        value's type cannot depend on the value, so ``EPOCH`` is always
+        a ``Long`` (issue #3965).
+        """
+        if self.datetime_format.value.type_produced is int:
+            return "Long"
         return self._opener_config.type_name(
             py_type=self.datetime_format.value.type_produced,
         )
@@ -1692,6 +1704,7 @@ class Scala(metaclass=LanguageCls):
                 self.set_format.value.set_opener_template or None
             ),
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type="",
         )
 
@@ -1851,13 +1864,12 @@ class Scala(metaclass=LanguageCls):
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
-        ``EPOCH`` seconds are routed through :attr:`format_integer` so
-        a post-2038 value carries the ``L`` suffix Scala requires for
-        an integer literal outside 32-bit range: a bare ``4085195400``
-        is rejected by the compiler as "number too large" even when
-        the target type is ``Long``.  In-range epoch seconds format
-        identically to the plain integer, so every checked-in golden
-        file stays byte-identical.
+        ``EPOCH`` seconds carry the ``L`` suffix whatever their
+        magnitude.  A post-2038 value needs it -- a bare ``4085195400``
+        is "number too large" even where the target type is ``Long`` --
+        and the type a map value takes cannot depend on which side of
+        2038 the value falls, so the two are pinned together
+        (issue #3965).
         """
         base_formatter: Callable[[datetime.datetime], str] = (
             self.datetime_format
@@ -1865,7 +1877,7 @@ class Scala(metaclass=LanguageCls):
         if self._json_type_active:
             return format_datetime_iso
         if self.datetime_format is type(self.datetime_format).EPOCH:
-            return datetime_epoch_formatter(format_integer=self.format_integer)
+            return _format_scala_datetime_epoch
         return base_formatter
 
     @cached_property

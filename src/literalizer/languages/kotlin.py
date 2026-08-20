@@ -27,7 +27,6 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
-    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -325,6 +324,12 @@ def _kotlin_list_value_type_name(
                 return None
             scalar = scalar_resolver(inner)
             return None if scalar is None else f"Array<{scalar}>"
+
+
+@beartype
+def _format_kotlin_datetime_epoch(value: datetime.datetime, /) -> str:
+    """Format epoch seconds as a Kotlin ``Long`` literal."""
+    return f"{format_datetime_epoch(value=value)}L"
 
 
 @beartype
@@ -1107,7 +1112,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
         EPOCH = DatetimeFormatConfig(
-            formatter=format_datetime_epoch,
+            formatter=_format_kotlin_datetime_epoch,
             type_produced=int,
             preamble_lines=(),
         )
@@ -1768,13 +1773,12 @@ class Kotlin(metaclass=LanguageCls):
         format renders a ``LocalDateTime.of(...)`` call.  It stays
         value-driven rather than a pure ``cached_property``.
         """
+        del value
         produced = self.datetime_format.value.type_produced
         if produced is str:
             return "String"
         if produced is int:
-            epoch = datetime_epoch_seconds(value=value)
-            in_i32 = _KOTLIN_I32_MIN <= epoch <= _KOTLIN_I32_MAX
-            return "Int" if in_i32 else "Long"
+            return "Long"
         return "LocalDateTime"
 
     def _kotlin_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -2118,7 +2122,16 @@ class Kotlin(metaclass=LanguageCls):
 
     @cached_property
     def _dt_type_name(self) -> str | None:
-        """Resolved Kotlin type name for the chosen datetime format."""
+        """Resolved Kotlin type name for the chosen datetime format.
+
+        Epoch seconds leave Kotlin's signed 32-bit ``Int`` after
+        2038-01-19, and the type a map value takes cannot depend on
+        which side of that the value falls, so ``EPOCH`` is always a
+        ``Long`` and its literal always carries the suffix that makes
+        it one (issue #3965).
+        """
+        if self.datetime_format.value.type_produced is int:
+            return "Long"
         return self._opener_config.type_name(
             py_type=self.datetime_format.value.type_produced,
         )
@@ -2198,6 +2211,7 @@ class Kotlin(metaclass=LanguageCls):
             datetime_type=self._dt_type_name,
             set_opener_template=base.set_opener_template or None,
             narrow_dict_values=False,
+            narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
         )
         return base.with_typed_opener(

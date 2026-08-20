@@ -1,0 +1,1 @@
+Raise ``YAMLParseError`` from the numeric pre-scan, which ran outside the handler that converts parse failures, so a document with both an ``e`` and a control character leaked a ruamel error.
