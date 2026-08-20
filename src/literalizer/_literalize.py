@@ -5339,6 +5339,70 @@ def _validate_call_target(
 
 
 @beartype
+def _validate_wrapped_call_entrypoint(
+    *,
+    language: Language,
+    language_cls: LanguageCls,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Reject a call target that names the generated entry point.
+
+    A dotted root usually names a different construct from the entry
+    point -- Java's root is a ``static`` field beside the entry-point
+    method, which compiles -- so only a language whose stub declares
+    the root where the entry point itself lives collides on it.
+    """
+    if not isinstance(language, _HasCallWrapperEntrypoint):
+        return
+    shares_scope = language_cls.dotted_call_root_shares_entrypoint_namespace
+    collides = target_function == language.call_wrapper_entrypoint_name or (
+        len(target_function_parts) > 1
+        and shares_scope
+        and target_function_parts[0] == language.call_wrapper_entrypoint_name
+    )
+    if collides:
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it collides with the generated file entrypoint",
+        )
+
+
+@beartype
+def _validate_wrapped_call_declarations(
+    *,
+    language: Language,
+    language_cls: LanguageCls,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Reject a target component the generated file cannot declare.
+
+    Every component becomes a declaration in that file, so each follows
+    the declaration grammar as well as the call-target one.  The two
+    differ where a language spells a call target more freely than a
+    name it can declare -- V calls ``http.Server`` but can declare
+    neither half of it (issue #3989).
+    """
+    if _is_constructor_target(
+        language=language,
+        target_function=target_function,
+    ):
+        return
+    for part in target_function_parts:
+        if not language_cls.new_variable_name_syntax.accepts(name=part):
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=(
+                    f"component {part!r} cannot name a declaration "
+                    "in the generated file"
+                ),
+            )
+
+
+@beartype
 def _validate_wrapped_call_scaffold(
     *,
     language: Language,
@@ -5358,55 +5422,22 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    # A dotted root usually names a different construct from the entry
-    # point -- Java's root is a ``static`` field beside the entry-point
-    # method, which compiles -- so only a language whose stub declares
-    # the root in the entry point's own namespace collides on it.
-    scaffold_language_cls = type(language)
-    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
-        msg = "Call-scaffold validation requires a LanguageCls language"
-        raise TypeError(msg)
-    shares_namespace = (
-        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
-    )
-    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
-        target_function == language.call_wrapper_entrypoint_name
-        or (
-            len(target_function_parts) > 1
-            and shares_namespace
-            and target_function_parts[0]
-            == language.call_wrapper_entrypoint_name
-        )
-    )
-    if entrypoint_collides:
-        raise InvalidCallTargetError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-            reason="it collides with the generated file entrypoint",
-        )
-    # Every component becomes a declaration in the generated file, so
-    # each follows the declaration grammar as well as the call-target
-    # one.  The two differ where a language spells a call target more
-    # freely than a name it can declare -- V calls ``http.Server`` but
-    # can declare neither half of it (issue #3989).
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-scaffold validation requires a LanguageCls language"
         raise TypeError(msg)
-    if not _is_constructor_target(
+    _validate_wrapped_call_entrypoint(
         language=language,
+        language_cls=language_cls,
         target_function=target_function,
-    ):
-        for part in target_function_parts:
-            if not language_cls.new_variable_name_syntax.accepts(name=part):
-                raise InvalidCallTargetError(
-                    language_name=type(language).__name__,
-                    target_function=target_function,
-                    reason=(
-                        f"component {part!r} cannot name a declaration "
-                        "in the generated file"
-                    ),
-                )
+        target_function_parts=target_function_parts,
+    )
+    _validate_wrapped_call_declarations(
+        language=language,
+        language_cls=language_cls,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+    )
     # Some languages in this group derive one helper type name per
     # component through a case-normalizing transform (``Foo`` and
     # ``foo`` both become ``FooType_``), so uniqueness holds on the
