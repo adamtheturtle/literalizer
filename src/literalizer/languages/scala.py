@@ -61,6 +61,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -1399,6 +1400,7 @@ class Scala(metaclass=LanguageCls):
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
             field_identifier=_scala_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._scala_record_field_type,
             render_declaration=_scala_render_declaration,
             render_literal=_scala_record_literal,

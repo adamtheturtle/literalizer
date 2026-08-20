@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Nim['{\"a-b\": 1, \"ab\": 2}']" = "cannot represent the dict key 'ab' under the RECORD heterogeneous strategy: its field identifier 'ab' collides with another key in the same record"
+"Nim['{\"a b\": 1, \"aB\": 2}']" = "cannot represent the dict key 'aB' under the RECORD heterogeneous strategy: its field identifier 'aB' collides with another key in the same record"

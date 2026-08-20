@@ -69,6 +69,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._heterogeneous import iter_wrapped_scalars
@@ -1623,6 +1624,7 @@ class CSharp(metaclass=LanguageCls):
             name_prefix="Record",
             record_shape_names=self.record_shape_names,
             field_identifier=_csharp_record_field_identifier,
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._csharp_record_field_type,
             render_declaration=_csharp_render_record_declaration,
             render_literal=_csharp_record_literal,

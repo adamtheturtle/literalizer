@@ -1,0 +1,1 @@
+Compare Nim record field names under Nim's own identifier equality, where the characters after the first ignore case and underscores, so keys that name one field are refused rather than emitted twice.

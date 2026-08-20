@@ -58,6 +58,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     RecordStrategy,
     build_record_strategy,
+    identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._language import (
@@ -1290,6 +1291,7 @@ class Swift(metaclass=LanguageCls):
                 _swift_record_field_identifier,
                 reserved_identifiers=self.reserved_variable_identifiers,
             ),
+            field_identifier_key=identity_field_identifier_key,
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
