@@ -277,11 +277,62 @@ def _kotlin_type_to_opener(
             return scalar_openers.get(element_type)
 
 
+_KOTLIN_PRIMITIVE_ARRAY_TYPES: dict[type, str] = {
+    bool: "BooleanArray",
+    int: "IntArray",
+    float: "DoubleArray",
+}
+"""The element types the LIST format renders as a primitive array.
+
+``intArrayOf(1)`` is an ``IntArray``, which is unrelated to
+``Array<Int>``, so a map value carrying one has to be annotated with
+the primitive array type (issue #3941).
+"""
+
+
+@beartype
+def _kotlin_list_value_type_name(
+    element_type: ListType,
+    *,
+    scalar_resolver: Callable[[type | ListType | DictType], str | None],
+) -> str | None:
+    """Return the type the LIST format renders a list value as.
+
+    Mirrors :func:`_kotlin_type_to_opener` arm for arm, so a narrowed
+    map value type and the literal in it always name the same Kotlin
+    type.  ``None`` means the opener chosen there has no narrow type
+    to name, and the caller falls back to the generic value type.
+    """
+    inner = element_type.inner
+    match inner:
+        case ListType():
+            nested = _kotlin_list_value_type_name(
+                element_type=inner,
+                scalar_resolver=scalar_resolver,
+            )
+            return None if nested is None else f"Array<{nested}>"
+        case DictType():
+            return None
+        case _:
+            primitive = _KOTLIN_PRIMITIVE_ARRAY_TYPES.get(inner)
+            if primitive is not None:
+                return primitive
+            # The opener has no arm for the wide-integer sentinels, so
+            # the literal falls back to ``listOf<Any?>(``.  Naming
+            # ``Array<Long>`` for one would annotate a type the literal
+            # is not, so defer to the generic value type instead.
+            if _kotlin_type_to_opener(element_type=inner) is None:
+                return None
+            scalar = scalar_resolver(inner)
+            return None if scalar is None else f"Array<{scalar}>"
+
+
 @beartype
 def _kotlin_dict_value_type_name(
     element_type: type | ListType | DictType,
     *,
     base_resolver: Callable[[type | ListType | DictType], str | None],
+    list_resolver: Callable[[ListType], str | None],
     key_type: str,
     fallback: str,
 ) -> str | None:
@@ -294,6 +345,8 @@ def _kotlin_dict_value_type_name(
     typing.  See :meth:`Kotlin._kotlin_dict_value_type` for why list
     values are left to *base_resolver* rather than narrowed (#2890).
     """
+    if isinstance(element_type, ListType):
+        return list_resolver(element_type)
     if not isinstance(element_type, DictType):
         return base_resolver(element_type)
     value_type = element_type.value_type
@@ -302,6 +355,7 @@ def _kotlin_dict_value_type_name(
     inner = _kotlin_dict_value_type_name(
         element_type=value_type,
         base_resolver=base_resolver,
+        list_resolver=list_resolver,
         key_type=key_type,
         fallback=fallback,
     )
@@ -2177,12 +2231,37 @@ class Kotlin(metaclass=LanguageCls):
         )
         key_type = self.default_dict_key_type
         fallback = self.default_dict_value_type
+        scalar_resolver = self._opener_config.element_to_type(
+            list_template=None,
+            enable_list_type=False,
+            date_type=self._date_type_name,
+            datetime_type=self._dt_type_name,
+            enable_dict_type=False,
+            dict_key_type=self.default_dict_key_type,
+        )
+        # Only the LIST format renders a list value as an array; the
+        # others render one whose type the element type alone does not
+        # name (``Pair``/``Triple`` depend on arity), so those take the
+        # generic value type (issue #3941).
+        renders_arrays = (
+            self.sequence_format is type(self.sequence_format).LIST
+        )
+
+        def resolve_list(element_type: ListType) -> str | None:
+            """Map a list value to its rendered Kotlin type name."""
+            if not renders_arrays:
+                return None
+            return _kotlin_list_value_type_name(
+                element_type=element_type,
+                scalar_resolver=scalar_resolver,
+            )
 
         def resolve(element_type: type | ListType | DictType) -> str | None:
             """Map an element type to its rendered Kotlin type name."""
             return _kotlin_dict_value_type_name(
                 element_type=element_type,
                 base_resolver=base_resolver,
+                list_resolver=resolve_list,
                 key_type=key_type,
                 fallback=fallback,
             )

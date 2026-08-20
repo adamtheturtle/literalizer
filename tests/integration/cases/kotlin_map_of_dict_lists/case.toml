@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Kotlin"]
+languages_reason = "Kotlin-specific: a list of maps has no narrow array type, so the map value keeps the generic one."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
