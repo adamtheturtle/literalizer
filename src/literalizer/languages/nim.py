@@ -1531,10 +1531,7 @@ class Nim(metaclass=LanguageCls):
         the record renderer, so only a top-level native sequence needs this
         guard.
         """
-        if (
-            self.declaration_style
-            is type(self.declaration_style).CONST
-        ):
+        if self.declaration_style is type(self.declaration_style).CONST:
             # A ``const`` renders a bare Nim literal, whose nested
             # arrays carry their length in their type; the other styles
             # render a ``JsonNode``, which does not (issue #3924).

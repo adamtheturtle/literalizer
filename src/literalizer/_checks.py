@@ -178,9 +178,7 @@ def reject_ragged_nested_sequences(
                     language_name=language_name,
                 )
         case list():
-            lengths = {
-                len(item) for item in data if isinstance(item, list)
-            }
+            lengths = {len(item) for item in data if isinstance(item, list)}
             if len(lengths) > 1:
                 sizes = ", ".join(str(length) for length in sorted(lengths))
                 msg = (
