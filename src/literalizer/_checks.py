@@ -350,6 +350,48 @@ def _values_mixed_types(*, values: Sequence[Value]) -> bool:
 
 
 @beartype
+def _list_nesting_depths(*, value: list[Value]) -> frozenset[int]:
+    """Return the nesting depths a list value is known to have.
+
+    An empty list carries no information about what it holds, so it
+    contributes no depth and stays compatible with any sibling
+    (issue #3933).
+
+    Each element is measured on its own.  A non-list element puts the
+    list at depth 1, and a list element puts it one deeper than that
+    element reports -- or at depth 2 when the element is empty, since an
+    empty list is still a list.  Folding the elements together first
+    would lose that: a list holding only empty lists reports nothing to
+    add to, and would read as a list of scalars.
+    """
+    depths: set[int] = set()
+    for item in value:
+        if isinstance(item, list):
+            inner = _list_nesting_depths(value=item)
+            depths |= {depth + 1 for depth in inner} or {2}
+        else:
+            depths.add(1)
+    return frozenset(depths)
+
+
+@beartype
+def _values_mixed_list_depths(*, values: Sequence[Value]) -> bool:
+    """Check whether sibling list values nest to different depths.
+
+    A map with one value type cannot hold a list of scalars beside a
+    list of lists, and the two share no element type either, so the
+    shape is refused rather than rendered (issue #3933).
+    """
+    lists = [value for value in values if isinstance(value, list)]
+    if len(lists) <= 1:
+        return False
+    depths = frozenset[int]().union(
+        *(_list_nesting_depths(value=value) for value in lists)
+    )
+    return len(depths) > 1
+
+
+@beartype
 def _collect_scalar_type_names(*, data: Value) -> set[str]:
     """Collect the names of scalar type buckets found in *data*."""
     names: set[str] = set()
@@ -905,6 +947,58 @@ def _check_mixed_dict_values(
 
 
 @beartype
+def _has_mixed_dict_list_depths(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> bool:
+    """Return whether one dict has list values of differing depth."""
+    match data:
+        case dict():
+            values: list[Value] = list(data.values())
+            if id(data) not in record_dict_ids and _values_mixed_list_depths(
+                values=values
+            ):
+                return True
+            return any(
+                _has_mixed_dict_list_depths(
+                    data=value,
+                    record_dict_ids=record_dict_ids,
+                )
+                for value in values
+            )
+        case list():
+            return any(
+                _has_mixed_dict_list_depths(
+                    data=item,
+                    record_dict_ids=record_dict_ids,
+                )
+                for item in data
+            )
+        case _:
+            return False
+
+
+@beartype
+def _check_mixed_dict_list_depths(
+    *,
+    data: Value,
+    record_dict_ids: frozenset[int],
+) -> None:
+    """Raise if one dict has list values of differing depth."""
+    if _has_mixed_dict_list_depths(
+        data=data,
+        record_dict_ids=record_dict_ids,
+    ):
+        msg = (
+            "Dict contains list values nesting to different depths, "
+            "which cannot share one map value type in the target "
+            "language"
+        )
+        raise MixedDictValuesError(msg)
+
+
+@beartype
 def _check_mixed_list_values(
     *,
     data: Value,
@@ -1236,6 +1330,10 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
                 data=data,
                 record_dict_ids=wrapped_dict_ids,
                 tuple_list_ids=tuple_list_ids,
+            )
+            _check_mixed_dict_list_depths(
+                data=data,
+                record_dict_ids=wrapped_dict_ids,
             )
         if not seq_supports_het:
             _check_mixed_list_values(
