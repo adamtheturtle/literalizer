@@ -680,6 +680,7 @@ _JSON_NODE_SEQUENCE_CONFIG = SequenceFormatConfig(
     close="]",
     supports_heterogeneity=True,
     single_element_trailing_comma=False,
+    single_element_template=None,
     supports_trailing_comma=True,
     empty_sequence="[]",
     preamble_lines=(),
@@ -939,6 +940,7 @@ class Java(metaclass=LanguageCls):
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     dotted_call_stub_requires_unique_parts = True
+    dotted_call_stub_normalizes_part_case = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
@@ -1087,6 +1089,7 @@ class Java(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1106,6 +1109,7 @@ class Java(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=False,
             empty_sequence="List.of()",
             preamble_lines=("import java.util.List;",),
@@ -1685,6 +1689,8 @@ class Java(metaclass=LanguageCls):
         )
 
     call_styles = CallStyles
+
+    dotted_call_root_shares_entrypoint_namespace = False
 
     @property
     def call_wrapper_entrypoint_name(self) -> str:

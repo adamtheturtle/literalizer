@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Odin record fields cannot use reserved keywords."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize"
+sources = ['[{"if": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

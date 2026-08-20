@@ -482,6 +482,12 @@ class Crystal(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = (
+        # Crystal's discard marker cannot carry the default value a
+        # generated stub gives it, nor name a keyword argument
+        # (issue #3918).
+        frozenset({"_"})
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -631,6 +637,7 @@ class Crystal(metaclass=LanguageCls):
             empty_sequence="[] of Nil",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
@@ -645,6 +652,7 @@ class Crystal(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence="Tuple.new",
             preamble_lines=(),
@@ -1209,7 +1217,28 @@ class Crystal(metaclass=LanguageCls):
             case list() if not value:
                 return "Array(Nil)"
             case list():
-                parts = {self._crystal_type_for_value(item) for item in value}
+                # An empty nested list renders with the element type a
+                # non-empty sibling gives it, so the field type reads
+                # the siblings the same way (issue #3936).  Only a
+                # sibling of the same kind gives it one; an empty list
+                # among scalars still renders ``[] of Nil``, so its own
+                # type has to stay in the union.
+                narrowed_kinds: tuple[type, ...] = tuple(
+                    kind
+                    for kind in (list, dict, set)
+                    if any(item and isinstance(item, kind) for item in value)
+                )
+                informative = [
+                    item
+                    for item in value
+                    if item
+                    or not isinstance(item, (list, dict, set))
+                    or not isinstance(item, narrowed_kinds)
+                ]
+                parts = {
+                    self._crystal_type_for_value(item)
+                    for item in informative or value
+                }
                 return f"Array({_crystal_union(parts)})"
             case dict() if not value or isinstance(value, OrderedMap):
                 parts = {
@@ -1412,6 +1441,7 @@ class Crystal(metaclass=LanguageCls):
                 empty_sequence="[]",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=False,
                 preamble_lines=(),
                 format_entry=passthrough_sequence_entry,

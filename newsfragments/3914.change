@@ -1,0 +1,1 @@
+Follow each backend's function-name rules for a call target: Erlang quotes a name that is not an unquoted atom, Nim rejects a leading underscore, and Elixir rejects a capitalized bare name, which parses as an alias.

@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -170,6 +171,12 @@ def _format_r_dict_entry_error(
     return f"{key} = {formatted_value}"
 
 
+# An R symbol cannot begin with an underscore, and a bare ``_`` is the
+# native pipe placeholder, so neither can name a call argument
+# (issue #3952).
+_R_LEADING_UNDERSCORE = re.compile(pattern=r"_.*")
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class R(metaclass=LanguageCls):
@@ -227,6 +234,9 @@ class R(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _R_LEADING_UNDERSCORE
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -373,6 +383,7 @@ class R(metaclass=LanguageCls):
             close=")",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),

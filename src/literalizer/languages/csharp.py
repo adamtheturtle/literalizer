@@ -870,6 +870,11 @@ class CSharp(metaclass=LanguageCls):
                 close=")",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                # ``(x)`` is a parenthesized expression rather than a
+                # one-element tuple, so a single element takes the
+                # factory call the empty case already uses
+                # (issue #3928).
+                single_element_template="ValueTuple.Create({items})",
                 supports_trailing_comma=False,
                 empty_template="ValueTuple.Create()",
                 preamble_lines=("using System;",),
@@ -883,6 +888,7 @@ class CSharp(metaclass=LanguageCls):
                 close="}",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_template="new {type}[] {{}}",
                 preamble_lines=(),
@@ -1914,6 +1920,7 @@ class CSharp(metaclass=LanguageCls):
                 close="}",
                 supports_heterogeneity=True,
                 single_element_trailing_comma=False,
+                single_element_template=None,
                 supports_trailing_comma=True,
                 empty_sequence=_CSHARP_JSON_EMPTY_ARRAY,
                 preamble_lines=(),

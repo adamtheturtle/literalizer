@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Crystal"]
+languages_reason = "Crystal-specific: its record field types are invariant, so a field holding an empty nested list has to name the type the literal narrows to."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy"

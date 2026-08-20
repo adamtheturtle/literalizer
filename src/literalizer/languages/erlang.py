@@ -244,18 +244,23 @@ def _format_datetime_erlang(value: datetime.datetime) -> str:
     )
 
 
+_ERLANG_UNQUOTED_ATOM = re.compile(pattern=r"[a-z][A-Za-z0-9_@]*")
+
+
 @beartype
 def _erlang_format_call_target(parts: Sequence[str], /) -> str:
     """Rewrite a call target for Erlang.
 
-    Dotted names like ``app.client.fetch`` are wrapped in single
-    quotes so they form a valid Erlang atom; bare names pass
-    through unchanged.
+    A function name is an atom.  One that does not have the unquoted
+    atom shape -- a dotted name like ``app.client.fetch``, a
+    capitalized name (which would parse as a variable), or one led by
+    an underscore (a wildcard pattern) -- is wrapped in single quotes
+    so it still forms a valid atom (issue #3914).
     """
-    if len(parts) > 1:
-        name = ".".join(parts)
-        return f"'{name}'"
-    return parts[0]
+    name = ".".join(parts)
+    if _ERLANG_UNQUOTED_ATOM.fullmatch(string=name) is not None:
+        return name
+    return f"'{name}'"
 
 
 @beartype
@@ -456,6 +461,7 @@ class Erlang(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
@@ -471,6 +477,7 @@ class Erlang(metaclass=LanguageCls):
             close="}",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=False,
             empty_sequence=None,
             preamble_lines=(),
