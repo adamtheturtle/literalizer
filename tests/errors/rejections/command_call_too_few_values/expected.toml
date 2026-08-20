@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[ParameterCountMismatchError]
+Forth = "Expected 2 parameters but got 1 values"
+Haskell = "Expected 2 parameters but got 1 values"
+Tcl = "Expected 2 parameters but got 1 values"

@@ -1,0 +1,1 @@
+Reject sibling map values that nest to different list depths in a language whose map values must share one type, rather than emitting a map literal only the first entry fits.

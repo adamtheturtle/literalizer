@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Go"]
+languages_reason = "Go-specific: it is the only backend that elides a composite literal's element type, and the elision is only legal where the enclosing sequence type names it."
+suites = ["base"]

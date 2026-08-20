@@ -1,0 +1,18 @@
+# languages rejecting: 5; languages accepting: 0
+
+[MixedDictValuesError]
+"Dhall['{\"a\": [1], \"b\": [[1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Dhall['{\"a\": [{\"x\": 1}], \"b\": [[], [1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Dhall['{\"a\": [1, 2], \"b\": [[]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Mojo['{\"a\": [1], \"b\": [[1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Mojo['{\"a\": [{\"x\": 1}], \"b\": [[], [1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Mojo['{\"a\": [1, 2], \"b\": [[]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Nim['{\"a\": [1], \"b\": [[1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Nim['{\"a\": [{\"x\": 1}], \"b\": [[], [1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Nim['{\"a\": [1, 2], \"b\": [[]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Rust['{\"a\": [1], \"b\": [[1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Rust['{\"a\": [{\"x\": 1}], \"b\": [[], [1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"Rust['{\"a\": [1, 2], \"b\": [[]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"V['{\"a\": [1], \"b\": [[1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"V['{\"a\": [{\"x\": 1}], \"b\": [[], [1]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+"V['{\"a\": [1, 2], \"b\": [[]]}']" = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"

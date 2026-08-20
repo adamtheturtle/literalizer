@@ -53,6 +53,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -82,6 +83,7 @@ jobs:
       # ``luaVersion: '5.4'`` matches ``Lua.language_version`` (``V5_4``)
       # in ``src/literalizer/languages/lua.py``; keep them in sync.
       - name: Install Lua
+        timeout-minutes: 10
         uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: '5.4'
@@ -91,12 +93,14 @@ jobs:
       # release; the action picks the LuaRocks version compatible with
       # the Lua installed above.  See ``scripts/run_lua_roundtrip.py``.
       - name: Install LuaRocks
+        timeout-minutes: 10
         uses: leafo/gh-actions-luarocks@v6
       # ``dkjson`` is the pure-Lua JSON library used by
       # ``scripts/run_lua_roundtrip.py``; pinned to a ``2.x``
       # release.  Installed into the per-job tree provisioned above so
       # ``require "dkjson"`` resolves under the ``Lua roundtrip`` step.
       - name: Install dkjson
+        timeout-minutes: 10
         run: luarocks install dkjson 2.10-1
       # The pinned Nix ``2.34.7`` is in the Nix 2.x series, which is
       # ``>=`` the ``V2`` default of ``Nix.language_version`` in
@@ -107,6 +111,7 @@ jobs:
       # ``install_url`` release URL is the only mechanism for pinning
       # the Nix version.
       - name: Install Nix
+        timeout-minutes: 10
         uses: cachix/install-nix-action@v31
         with:
           install_url: https://releases.nixos.org/nix/nix-2.34.7/install
@@ -132,6 +137,7 @@ jobs:
       # provides no point-release pin, so the ``-3.0`` package suffix
       # is the only available version constraint.
       - name: Install apt packages
+        timeout-minutes: 10
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           packages: tcl=8.6.14build1 tcllib=1.21+dfsg-1 gforth=0.7.3+dfsg-9build4.1
@@ -146,6 +152,7 @@ jobs:
       # commit) and the script reaches it via the exported
       # ``LITERALIZER_FFL_PATH``.
       - name: Install FFL
+        timeout-minutes: 10
         run: |-
           git clone https://github.com/irdvo/ffl.git /tmp/ffl
           git -C /tmp/ffl checkout --quiet 753d418081a48afe8c86196261fda3299d93ac98
@@ -160,11 +167,13 @@ jobs:
       # the round-trip script; ``--no-auto-compile`` means no .go cache
       # build is needed.  Tag ``4.7.3`` is the latest upstream release.
       - name: Install guile-json
+        timeout-minutes: 10
         run: |-
           git clone https://github.com/aconchillo/guile-json.git /tmp/guile-json
           git -C /tmp/guile-json checkout --quiet 4.7.3
           echo "LITERALIZER_GUILE_JSON_PATH=/tmp/guile-json" >> "$GITHUB_ENV"
       - name: Install Dhall
+        timeout-minutes: 10
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
         # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
         # standard 17.0.0) default of ``Dhall.language_version`` in
@@ -181,6 +190,7 @@ jobs:
       # has no ``--langversion``-style flag, so the pinned CLI release
       # is the only mechanism for pinning the language version.
       - name: Install Wren CLI
+        timeout-minutes: 10
         run: |
           curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
@@ -194,6 +204,7 @@ jobs:
       # PowerShell has no ``--langversion``-style flag, so the pinned
       # release is the only mechanism for pinning the language version.
       - name: Install PowerShell
+        timeout-minutes: 10
         run: |-
           mkdir -p /tmp/powershell
           curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
@@ -201,6 +212,7 @@ jobs:
           chmod +x /tmp/powershell/pwsh
           echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           # Pinned to the ``requires-python = ">=3.12"`` floor in
@@ -217,6 +229,7 @@ jobs:
       # least the highest member (`JDK_16`) so `--release 16` is accepted.
       # 21 is the current LTS and also accepts `--release 11`.
       - name: Set up JDK
+        timeout-minutes: 10
         uses: actions/setup-java@v5.7.0
         with:
           distribution: temurin
@@ -232,6 +245,7 @@ jobs:
       # `lint-elm-run`); keep all of them and that `language_version`
       # declaration in sync.
       - name: Set up Node
+        timeout-minutes: 10
         uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -242,6 +256,7 @@ jobs:
       # the only mechanism for pinning the language version. Without this
       # step `php` is whatever `ubuntu-latest` ships and drifts.
       - name: Set up PHP
+        timeout-minutes: 10
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
@@ -278,6 +293,7 @@ jobs:
       # keep them in sync. Without this setup step the ``ruby`` binary is
       # whatever ``ubuntu-latest`` ships and drifts.
       - name: Set up Ruby
+        timeout-minutes: 10
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
@@ -327,6 +343,7 @@ jobs:
       # `Java.JsonTypes.JACKSON_JSON_NODE` in
       # `src/literalizer/languages/java.py`.
       - name: Set up Jackson for Java
+        timeout-minutes: 10
         run: |-
           mkdir -p /tmp/jackson-jars
           jackson_version=2.18.2
@@ -566,7 +583,10 @@ jobs:
       # the C round-trip step further down.  Installed before ``Lint C``
       # so its ``<cjson/cJSON.h>`` header is on the include path.
       - name: Install libcjson-dev
-        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
 
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
@@ -636,6 +656,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Odin
+        timeout-minutes: 10
         uses: laytan/setup-odin@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -667,6 +688,7 @@ jobs:
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -702,6 +724,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Roc
+        timeout-minutes: 10
         run: |-
           curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
             -o /tmp/roc.tar.gz
@@ -727,6 +750,7 @@ jobs:
       # `uv` is needed by the `Roc roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -764,6 +788,7 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-matlab-fixture.sh < /tmp/files-matlab
 
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -801,10 +826,12 @@ jobs:
       # pinned interpreter, so ``DateTime`` installs against it (no
       # ``sudo``, which would target the system Perl instead).
       - name: Set up Perl
+        timeout-minutes: 10
         uses: shogo82148/actions-setup-perl@v1.43.1
         with:
           perl-version: '5.36'
       - name: Install Perl DateTime
+        timeout-minutes: 10
         run: cpanm --notest DateTime
       - name: Lint Perl
         run: |-
@@ -813,6 +840,7 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs < /tmp/files-perl
 
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -836,11 +864,13 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Go-sourced linters
+        timeout-minutes: 10
         run: |-
           go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
           go install github.com/tmccombs/hcl2json@v0.6.9
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -891,6 +921,7 @@ jobs:
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
+        timeout-minutes: 10
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
@@ -906,6 +937,7 @@ jobs:
       # `uv` is needed by the `Norg roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -964,12 +996,14 @@ jobs:
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
+        timeout-minutes: 10
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       # `uv` is needed by the `TypeScript roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1011,10 +1045,12 @@ jobs:
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
+        timeout-minutes: 10
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1048,10 +1084,12 @@ jobs:
           cache: npm
           cache-dependency-path: .github/npm-linters/package-lock.json
       - name: Install npm-sourced linters
+        timeout-minutes: 10
         run: |
           npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1079,6 +1117,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install apt packages for Ada
+        timeout-minutes: 10
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
           # ``gprbuild`` and ``libgnatcoll-dev`` are used by
@@ -1087,6 +1126,7 @@ jobs:
           packages: gnat gprbuild libgnatcoll-dev
           version: 1.1
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1228,6 +1268,7 @@ jobs:
       # `uv` is needed by the `CSharp roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1293,10 +1334,12 @@ jobs:
       # ``SML_97`` is a fixed standard, so the version pin here is for
       # reproducibility rather than language selection.
       - name: Install MLton
+        timeout-minutes: 10
         run: |
           curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
 
       # Every fixture defines its own entry point at top level, so compile
@@ -1335,6 +1378,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Elixir
+        timeout-minutes: 10
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
@@ -1354,6 +1398,7 @@ jobs:
       # `uv` is needed by the `Elixir roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1381,6 +1426,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Erlang
+        timeout-minutes: 10
         uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ env.OTP_VERSION }}
@@ -1427,6 +1473,7 @@ jobs:
       # `uv` is needed by the `Erlang roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1455,11 +1502,13 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Gleam
+        timeout-minutes: 10
         uses: erlef/setup-beam@v1
         with:
           gleam-version: ${{ env.GLEAM_VERSION }}
           otp-version: '27'
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1520,6 +1569,7 @@ jobs:
       # pinned (not ``latest``) to stop the effective version drifting.
       # ``clj-kondo`` is a static linter, pinned for reproducibility.
       - name: Install clj-kondo and Babashka
+        timeout-minutes: 10
         uses: DeLaGuardo/setup-clojure@13
         with:
           clj-kondo: 2026.04.15
@@ -1531,6 +1581,7 @@ jobs:
       # pinned binary distribution is the only mechanism for installing a
       # Groovy ``>= V4``.
       - name: Install Groovy
+        timeout-minutes: 10
         run: |-
           # This pinned release has moved off the live mirrors, so fetch it
           # from Apache's canonical archive. Third-party mirrors do not
@@ -1543,10 +1594,15 @@ jobs:
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
+      # A dotted call target is a qualified call, and its stub creates
+      # the module it names with ``create-ns``/``intern`` at run time.
+      # ``clj-kondo`` reads the file statically, so it cannot see that
+      # module and reports it unresolved; the ``Run Clojure files``
+      # step below is what actually proves the call resolves.
       - name: Lint Clojure
         run: |-
           find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj && test -s /tmp/files-clj
-          xargs -0 clj-kondo --lint < /tmp/files-clj
+          xargs -0 clj-kondo --config '{:linters {:unresolved-namespace {:level :off}}}' --lint < /tmp/files-clj
       - name: Run Clojure files
         run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
 
@@ -1564,6 +1620,7 @@ jobs:
       # steps below; they run their helpers in project mode so
       # `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1623,6 +1680,7 @@ jobs:
         with:
           purescript: 0.15.15
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1647,9 +1705,10 @@ jobs:
       # Keep this paired with the `AESON_VALUE` member in
       # `Haskell.JsonTypes` in `src/literalizer/languages/haskell.py`.
       - name: Install aeson / aeson-qq for Haskell lint
+        timeout-minutes: 10
         run: |-
-          cabal update
-          cabal install --lib aeson aeson-qq base time bytestring
+          scripts/retry.sh cabal update
+          scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module
@@ -1722,6 +1781,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1730,7 +1790,10 @@ jobs:
       # on the default include path; clang-tidy does not link, so the
       # ``-lcjson`` library itself is irrelevant here.
       - name: Install libcjson-dev
-        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
@@ -1749,6 +1812,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1757,7 +1821,10 @@ jobs:
       # need the single-header library; the Ubuntu package ships
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
-        run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y nlohmann-json3-dev
       # Sorted round-robin sharding keeps the three runners balanced while
       # preserving exhaustive coverage. The fixture script still selects
       # C++14, C++17, or C++20 from each generated filename.
@@ -1803,12 +1870,17 @@ jobs:
       # JSON". Install cJSON first so ``configure`` detects it (via its
       # ``libcjson`` pkg-config file) and enables JSON I/O.
       - name: Install cJSON for GnuCOBOL JSON I/O
-        run: sudo apt-get update && sudo apt-get install -y libcjson-dev
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
       - name: Install GnuCOBOL
+        timeout-minutes: 10
         uses: fabasoad/setup-cobol-action@v1.6.2
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -1878,7 +1950,10 @@ jobs:
       # need the single-header library; the Ubuntu package ships
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
-        run: sudo apt-get update && sudo apt-get install -y nlohmann-json3-dev
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y nlohmann-json3-dev
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers hundreds of times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
@@ -1904,6 +1979,7 @@ jobs:
       # needs `uv`; the helper runs in project mode so `import literalizer`
       # resolves.
       - name: Install uv
+        timeout-minutes: 10
         if: matrix.shard == 0
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -1947,6 +2023,7 @@ jobs:
         run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_FIXTURE_TAG"
           > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Kotlin
+        timeout-minutes: 10
         uses: fwilhe2/setup-kotlin@v2
         with:
           version: ${{ env.KOTLIN_VERSION }}
@@ -1960,6 +2037,7 @@ jobs:
       # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
       # `src/literalizer/languages/kotlin.py`.
       - name: Set up kotlinx-serialization-json for Kotlin
+        timeout-minutes: 10
         run: |-
           mkdir -p /tmp/kotlinx-jars
           serialization_version=1.7.3
@@ -1986,6 +2064,7 @@ jobs:
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2016,6 +2095,7 @@ jobs:
         run: find tests/integration/cases -name '*.swift' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Swift
+        timeout-minutes: 10
         uses: SwiftyLab/setup-swift@v1
         with:
           cache-snapshot: true
@@ -2038,6 +2118,7 @@ jobs:
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2062,6 +2143,7 @@ jobs:
         run: find tests/integration/cases -name '*.ml' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install OCaml
+        timeout-minutes: 10
         uses: ocaml/setup-ocaml@v3
         with:
           # ``ocaml-compiler: 5`` resolves to the latest OCaml 5.x
@@ -2074,6 +2156,7 @@ jobs:
       # both reference ``Yojson.Safe.t``, so install ocamlfind+yojson
       # before the syntax / run / roundtrip steps below.
       - name: Install yojson
+        timeout-minutes: 10
         run: opam install -y yojson ocamlfind
       - name: Check OCaml syntax
         run: |-
@@ -2095,6 +2178,7 @@ jobs:
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2129,6 +2213,7 @@ jobs:
         run: find tests/integration/cases -name '*.lisp' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install SBCL
+        timeout-minutes: 10
         uses: 40ants/setup-lisp@v4
       - name: Check Common Lisp syntax
         run: >-
@@ -2146,11 +2231,13 @@ jobs:
       # call inside the roundtrip step does not have to fetch anything
       # over the network.
       - name: Install com.inuoe.jzon
+        timeout-minutes: 10
         run: ros install com.inuoe.jzon
       # ``uv`` is needed by the ``Common Lisp roundtrip`` step below; it
       # runs the helper in project mode so ``import literalizer``
       # resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2180,6 +2267,7 @@ jobs:
       - name: Cache Coursier artifacts
         uses: coursier/cache-action@v8
       - name: Install scala-cli
+        timeout-minutes: 10
         uses: VirtusLab/scala-cli-setup@v1.16.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
@@ -2215,6 +2303,7 @@ jobs:
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2242,6 +2331,7 @@ jobs:
       # `Haxe.language_version` (`V4`) in
       # `src/literalizer/languages/haxe.py`; keep them in sync.
       - name: Install Haxe
+        timeout-minutes: 10
         uses: krdlab/setup-haxe@v2
         with:
           haxe-version: 4.3.6
@@ -2270,6 +2360,7 @@ jobs:
       # `uv` is needed by the `Haxe roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2294,6 +2385,7 @@ jobs:
         run: find tests/integration/cases -name '*.dart' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Dart
+        timeout-minutes: 10
         uses: dart-lang/setup-dart@v1
       # Each fixture is its own implicit Dart library (no `library`
       # or `part` directives), so copying them all into one package
@@ -2343,6 +2435,7 @@ jobs:
       # `uv` is needed by the `Dart roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2370,6 +2463,7 @@ jobs:
       # `src/literalizer/languages/julia.py`; keep them in sync so the
       # fixture gate runs under the declared minimum Julia.
       - name: Install Julia
+        timeout-minutes: 10
         uses: julia-actions/setup-julia@v3
         with:
           version: '1.9'
@@ -2377,6 +2471,7 @@ jobs:
       # `scripts/run_julia_roundtrip.py`); `DataStructures`
       # backs the `OrderedDict` literals the fixture goldens use.
       - name: Set up Julia project
+        timeout-minutes: 10
         run: |
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
@@ -2385,6 +2480,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no --project=/tmp/julia-lint
           < /tmp/files-to-lint
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2433,6 +2529,7 @@ jobs:
       # `uv` is needed by the `Go roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2504,6 +2601,7 @@ jobs:
       # `uv` is needed by the `Rust roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2534,6 +2632,7 @@ jobs:
         run: find tests/integration/cases -name '*.R' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install R
+        timeout-minutes: 10
         uses: r-lib/actions/setup-r@v2
         with:
           windows-path-include-rtools: false
@@ -2552,10 +2651,12 @@ jobs:
       # per-job library directory and point `R_LIBS_USER` at it so the
       # script's `Rscript` subprocess can `library(jsonlite)`.
       - name: Install jsonlite
+        timeout-minutes: 10
         run: |
           mkdir -p /tmp/r-lint-libs
           Rscript -e 'install.packages("jsonlite", lib="/tmp/r-lint-libs", repos="https://cloud.r-project.org")'
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2590,6 +2691,7 @@ jobs:
       # language, so this pin tracks a concrete compiler build rather
       # than a language standard, and avoids the ``dmd-latest`` drift.
       - name: Install DMD
+        timeout-minutes: 10
         uses: dlang-community/setup-dlang@v2
         with:
           compiler: dmd-2.112.0
@@ -2621,6 +2723,7 @@ jobs:
       # `uv` is needed by the `D roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2644,6 +2747,7 @@ jobs:
         run: find tests/integration/cases -name '*.cr' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Crystal
+        timeout-minutes: 10
         uses: crystal-lang/install-crystal@v1
         with:
           # `crystal: 1.20.0` is `>=` `Crystal.language_version` (`V1`,
@@ -2676,6 +2780,7 @@ jobs:
       # `uv` is needed by the `Crystal roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2711,6 +2816,7 @@ jobs:
         run: find tests/integration/cases -name '*.mojo' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2719,6 +2825,7 @@ jobs:
       # value of ``Mojo.language_version`` in
       # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo
+        timeout-minutes: 10
         env:
           MOJO_VERSION: ${{ matrix.mojo-version }}
         run: |-
@@ -2837,6 +2944,7 @@ jobs:
         run: find tests/integration/cases -name '*.nim' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Nim
+        timeout-minutes: 10
         uses: jiro4989/setup-nim-action@v2
         with:
           nim-version: ${{ env.NIM_VERSION }}
@@ -2858,6 +2966,7 @@ jobs:
       # ``uv`` is needed by the ``Nim roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2878,6 +2987,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
@@ -2936,6 +3046,7 @@ jobs:
       # `uv` is needed by the `Racket roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -2967,6 +3078,7 @@ jobs:
         run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
       - name: Install Raku
+        timeout-minutes: 10
         uses: Raku/setup-raku@v1
         with:
           raku-version: ${{ env.RAKU_VERSION }}
@@ -2976,6 +3088,7 @@ jobs:
       # to keep the install fast.  See
       # ``scripts/run_raku_roundtrip.py``.
       - name: Install JSON::Fast
+        timeout-minutes: 10
         run: zef install --/test JSON::Fast
       - name: Check Raku syntax
         run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
@@ -2983,6 +3096,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
 
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -3015,6 +3129,7 @@ jobs:
         run: python3 -m tests.integration.list_fixtures .zig "$ZIG_FIXTURE_TAG" >
           /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
+        timeout-minutes: 10
         uses: mlugg/setup-zig@v2
         with:
           version: ${{ env.ZIG_VERSION }}
@@ -3052,6 +3167,7 @@ jobs:
       # `uv` is needed by the `Zig roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -3084,6 +3200,7 @@ jobs:
       # the round-trip program cleanly; bump this once the upstream
       # regression is fixed.
       - name: Install Verilator
+        timeout-minutes: 10
         uses: veryl-lang/setup-verilator@v2
         with:
           version: '5.046'
@@ -3097,6 +3214,7 @@ jobs:
       # `uv` is needed by the `SystemVerilog roundtrip` step below; it
       # runs the helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -3136,6 +3254,7 @@ jobs:
       # builtin__memdup``), so the build uses the runner's system
       # ``gcc`` as the C backend (``-cc gcc``) instead.
       - name: Install V
+        timeout-minutes: 10
         run: |
           curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
           unzip -q /tmp/v_linux.zip -d /tmp
@@ -3151,6 +3270,7 @@ jobs:
           echo 'fn main() {}' > /tmp/v-warmup.v
           v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -3214,6 +3334,7 @@ jobs:
       # `uv` is needed by the `Objective-C roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
+        timeout-minutes: 10
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
@@ -3253,6 +3374,7 @@ jobs:
       # Homebrew's llvm would otherwise prepend itself to `PATH` and
       # shadow the Apple clang that the PCH was built against.
       - name: Install clang-tidy
+        timeout-minutes: 10
         run: |-
           brew install --quiet llvm
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"

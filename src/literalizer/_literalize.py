@@ -1596,6 +1596,7 @@ def _compute_call_slot_scalar_wrap_ids(
 def _compute_sequence_dict_override(
     *,
     items: list[Value],
+    sequence_open_override: str | None,
     spec: Language,
 ) -> str | None:
     """Determine the dict opener override for dicts in a sequence.
@@ -1605,9 +1606,18 @@ def _compute_sequence_dict_override(
     sequence type carries the map type instead of each dict.
     Otherwise falls back to the widening logic of
     :func:`_compute_dict_open_override`.
+
+    An anonymous opener elides the element type, which the language
+    only reads back from a sequence type that names it.  A parent that
+    has widened this sequence to its "accepts anything" opener does not
+    name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    if narrowed_open is not None:
+    widened = (
+        sequence_open_override is not None
+        and sequence_open_override == spec.sequence_open([])
+    )
+    if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
             return narrowed_open
@@ -1641,8 +1651,13 @@ def _compute_sequence_open_override(
     differ the language has no stable fallback and no widening is
     applied.
     """
+    # An empty list has no contents to infer a type from, so its
+    # opener is the language's "accepts anything" one.  That says
+    # nothing about the slot, and comparing it would widen every
+    # sibling to match it, so only the lists that carry a type are
+    # compared (issue #3927).
     lists: list[list[Value]] = [
-        item for item in items if isinstance(item, list)
+        item for item in items if isinstance(item, list) and item
     ]
     # Widening compares openers across lists, so we need at least two
     # to have anything to compare.
@@ -1873,6 +1888,7 @@ def _format_list_value(
         )
     dict_open_override = _compute_sequence_dict_override(
         items=value,
+        sequence_open_override=sequence_open_override,
         spec=spec,
     )
     parent_id = id(value)
@@ -2259,6 +2275,7 @@ def _format_multiline_collection_value(
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=CollectionLayout.MULTILINE,
+        sequence_open_override=sequence_open_override,
         ctx=ctx,
     )
     body = "\n".join(lines)
@@ -2406,6 +2423,7 @@ def _format_collection_lines(
     trailing_comma: bool,
     is_ordered_map: bool,
     collection_layout: CollectionLayout,
+    sequence_open_override: str | None,
     ctx: _RenderContext,
 ) -> list[str]:
     """Format collection elements as indented lines."""
@@ -2548,6 +2566,7 @@ def _format_collection_lines(
             )
             dict_open_override = _compute_sequence_dict_override(
                 items=list_data,
+                sequence_open_override=sequence_open_override,
                 spec=spec,
             )
             list_int_formatter = ctx.list_int_formatters.get(
@@ -3032,6 +3051,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         trailing_comma=trailing_comma,
         is_ordered_map=is_ordered_map,
         collection_layout=collection_layout,
+        sequence_open_override=None,
         ctx=ctx,
     )
 
@@ -4585,6 +4605,14 @@ def _format_call_args(
             | CommandCallStyle(arg_separator=sep)
             | DottedCommandCallStyle(arg_separator=sep)
         ):
+            # These styles write the arguments without naming them, but
+            # the declared parameters still fix the generated stub's
+            # arity, so a mismatch is a call the stub cannot take
+            # (issue #3956).
+            _validate_call_parameter_count(
+                params=params,
+                formatted=formatted,
+            )
             result = sep.join(formatted)
         case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
             result = _format_prefix_call_args(
@@ -5310,6 +5338,70 @@ def _validate_call_target(
 
 
 @beartype
+def _validate_wrapped_call_entrypoint(
+    *,
+    language: Language,
+    language_cls: LanguageCls,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Reject a call target that names the generated entry point.
+
+    A dotted root usually names a different construct from the entry
+    point -- Java's root is a ``static`` field beside the entry-point
+    method, which compiles -- so only a language whose stub declares
+    the root where the entry point itself lives collides on it.
+    """
+    if not isinstance(language, _HasCallWrapperEntrypoint):
+        return
+    shares_scope = language_cls.dotted_call_root_shares_entrypoint_namespace
+    collides = target_function == language.call_wrapper_entrypoint_name or (
+        len(target_function_parts) > 1
+        and shares_scope
+        and target_function_parts[0] == language.call_wrapper_entrypoint_name
+    )
+    if collides:
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason="it collides with the generated file entrypoint",
+        )
+
+
+@beartype
+def _validate_wrapped_call_declarations(
+    *,
+    language: Language,
+    language_cls: LanguageCls,
+    target_function: str,
+    target_function_parts: tuple[str, ...],
+) -> None:
+    """Reject a target component the generated file cannot declare.
+
+    Every component becomes a declaration in that file, so each follows
+    the declaration grammar as well as the call-target one.  The two
+    differ where a language spells a call target more freely than a
+    name it can declare -- V calls ``http.Server`` but can declare
+    neither half of it (issue #3989).
+    """
+    if _is_constructor_target(
+        language=language,
+        target_function=target_function,
+    ):
+        return
+    for part in target_function_parts:
+        if not language_cls.new_variable_name_syntax.accepts(name=part):
+            raise InvalidCallTargetError(
+                language_name=type(language).__name__,
+                target_function=target_function,
+                reason=(
+                    f"component {part!r} cannot name a declaration "
+                    "in the generated file"
+                ),
+            )
+
+
+@beartype
 def _validate_wrapped_call_scaffold(
     *,
     language: Language,
@@ -5329,55 +5421,22 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    # A dotted root usually names a different construct from the entry
-    # point -- Java's root is a ``static`` field beside the entry-point
-    # method, which compiles -- so only a language whose stub declares
-    # the root in the entry point's own namespace collides on it.
-    scaffold_language_cls = type(language)
-    if not isinstance(scaffold_language_cls, LanguageCls):  # pragma: no cover
-        msg = "Call-scaffold validation requires a LanguageCls language"
-        raise TypeError(msg)
-    shares_namespace = (
-        scaffold_language_cls.dotted_call_root_shares_entrypoint_namespace
-    )
-    entrypoint_collides = isinstance(language, _HasCallWrapperEntrypoint) and (
-        target_function == language.call_wrapper_entrypoint_name
-        or (
-            len(target_function_parts) > 1
-            and shares_namespace
-            and target_function_parts[0]
-            == language.call_wrapper_entrypoint_name
-        )
-    )
-    if entrypoint_collides:
-        raise InvalidCallTargetError(
-            language_name=type(language).__name__,
-            target_function=target_function,
-            reason="it collides with the generated file entrypoint",
-        )
-    # Every component becomes a declaration in the generated file, so
-    # each follows the declaration grammar as well as the call-target
-    # one.  The two differ where a language spells a call target more
-    # freely than a name it can declare -- V calls ``http.Server`` but
-    # can declare neither half of it (issue #3989).
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Call-scaffold validation requires a LanguageCls language"
         raise TypeError(msg)
-    if not _is_constructor_target(
+    _validate_wrapped_call_entrypoint(
         language=language,
+        language_cls=language_cls,
         target_function=target_function,
-    ):
-        for part in target_function_parts:
-            if not language_cls.new_variable_name_syntax.accepts(name=part):
-                raise InvalidCallTargetError(
-                    language_name=type(language).__name__,
-                    target_function=target_function,
-                    reason=(
-                        f"component {part!r} cannot name a declaration "
-                        "in the generated file"
-                    ),
-                )
+        target_function_parts=target_function_parts,
+    )
+    _validate_wrapped_call_declarations(
+        language=language,
+        language_cls=language_cls,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+    )
     # Some languages in this group derive one helper type name per
     # component through a case-normalizing transform (``Foo`` and
     # ``foo`` both become ``FooType_``), so uniqueness holds on the
