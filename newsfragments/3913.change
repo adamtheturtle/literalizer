@@ -1,1 +1,0 @@
-Reject V variable, call-target and call-parameter names containing an uppercase letter or starting with an underscore, which the V compiler refuses.

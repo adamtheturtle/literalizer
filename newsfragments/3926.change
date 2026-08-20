@@ -1,1 +1,0 @@
-Fall back to an escaped literal when ``Python(string_format=RAW)`` renders a string containing a carriage return, which a raw literal cannot spell.

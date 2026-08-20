@@ -1,1 +1,0 @@
-Reject Haskell variable names that clash with a ``Prelude`` binding or with the generated ``main`` entry point, and Clojure names that rebind a class Clojure imports by default.

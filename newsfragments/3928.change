@@ -1,1 +1,0 @@
-Render a one-element C# sequence as ``ValueTuple.Create(x)``: ``(x)`` is a parenthesized expression, so the value silently lost its collection.

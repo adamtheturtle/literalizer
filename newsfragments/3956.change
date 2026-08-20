@@ -1,1 +1,0 @@
-Require one value per declared parameter for the command-style and postfix call styles too, so a generated stub and the call site cannot disagree on arity.

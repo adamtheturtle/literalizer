@@ -1,1 +1,0 @@
-No user-facing change: the ``prek`` version CI runs now matches the pinned development dependency, and the ``check-yaml`` hook skips the two capability cases whose non-finite floats its parser rejects.

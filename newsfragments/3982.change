@@ -1,1 +1,0 @@
-No user-facing change: the lint workflow's network installs are bounded and retried so a stalled registry no longer consumes a whole job, each retry is sized so every configured attempt fits inside its step budget, and the clang-tidy C job checks against a pinned, cached ``cJSON`` header instead of installing a package.

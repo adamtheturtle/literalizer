@@ -1,1 +1,0 @@
-Render a dotted Clojure call target as a qualified call, ``app.client/fetch``, and generate a matching stub, rather than emitting a symbol the reader takes for a class name.

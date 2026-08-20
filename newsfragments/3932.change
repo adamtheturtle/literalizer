@@ -1,1 +1,0 @@
-Reject Zig primitive type and value names, the arbitrary-width integer primitives such as ``u7``, and the wrapper's ``main`` entry point as ``NewVariable`` names.

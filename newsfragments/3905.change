@@ -1,1 +1,0 @@
-Reject a call target whose leading component is a reserved word in the target language, matched without regard to case where the language is case-insensitive.

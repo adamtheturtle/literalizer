@@ -1,1 +1,0 @@
-Render a one-element Rust ``TUPLE`` sequence as ``(x,)``, which is the one-element tuple, rather than as the parenthesized expression ``(x)``.

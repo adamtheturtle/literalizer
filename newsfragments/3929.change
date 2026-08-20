@@ -1,1 +1,0 @@
-Reject the blank identifier ``_`` as a ``NewVariable`` name for Erlang, Go, Odin, Perl and Zig, whose compilers cannot bind it.

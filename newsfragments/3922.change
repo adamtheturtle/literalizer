@@ -1,1 +1,0 @@
-Support the YAML ``!!pairs`` tag, rendering it as a sequence of single-entry mappings, rather than raising an internal type-hint violation.

@@ -1,1 +1,0 @@
-Escape the Unicode bidirectional formatting characters in Dart, Elixir and Rust string literals, which each of those compilers rejects in source.

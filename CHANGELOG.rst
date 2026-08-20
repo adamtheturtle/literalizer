@@ -3,6 +3,110 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.20
+----------
+
+- Reject a call target whose leading component is a reserved word in the target language, matched without regard to case where the language is case-insensitive.
+
+- Compare a bound ref against the output variable on the identifiers both are emitted with, so names that converge only after ``ref_case`` conversion are rejected rather than declared twice.
+
+- Reject a wrapped call whose result binding would take the same name as the generated target stub.
+
+- Reject dotted call components that differ only in case where the generated helper type names normalize that case, so the two components would share one declaration.
+
+- Mojo sequence and ordered-map output now uses explicit ``List([...])``
+  construction, preserving dynamic-list semantics with Mojo 1.0.
+
+- Reject Lua integers outside the signed 64-bit range in every integer format, not only hexadecimal: Lua's lexer turns such a numeral into a float, so the emitted literal denoted a different value.
+
+- Escape the Unicode bidirectional formatting characters in Dart, Elixir and Rust string literals, which each of those compilers rejects in source.
+
+- Reject V variable, call-target and call-parameter names containing an uppercase letter or starting with an underscore, which the V compiler refuses.
+
+- Follow each backend's function-name rules for a call target: Erlang quotes a name that is not an unquoted atom, Nim rejects a leading underscore, and Elixir rejects a capitalized bare name, which parses as an alias.
+
+- Reject call parameter names that Crystal, Dart, R and Scala cannot declare, and emit a Scala parameter whose name ends in an underscore with a space before its type ascription.
+
+- Reject a Zig call parameter named for one of the arbitrary-width integer primitives, alongside the primitive and entry-point names already refused.
+
+- Escape U+007F in Zig string literals, which the Zig compiler rejects as a raw byte.
+
+- Escape U+FEFF in Odin string literals and in the JSON text an ``Odin(json_type=JSON_VALUE)`` declaration parses, since Odin rejects a byte order mark anywhere in a source file.
+
+- Parse JSON5 hexadecimal integer literals instead of raising an uncaught ``TypeError``.
+
+- Support the YAML ``!!pairs`` tag, rendering it as a sequence of single-entry mappings, rather than raising an internal type-hint violation.
+
+- Refuse sibling sequences of different lengths where the sequence renders as a fixed-size array -- ``Rust(sequence_format=ARRAY)`` and ``Nim(declaration_style=CONST)`` -- since an array's length is part of its type.
+
+- Keep a Dart map value holding a ``TUPLE`` sequence at the generic value type: the sequence renders as a record, whose arity is part of its type, so the element type alone cannot name it.
+
+- Fall back to an escaped literal when ``Python(string_format=RAW)`` renders a string containing a carriage return, which a raw literal cannot spell.
+
+- Stop an empty nested list from widening the same position in every sibling list: it carries no element type, so the siblings that do decide the slot.
+
+- Render a one-element C# sequence as ``ValueTuple.Create(x)``: ``(x)`` is a parenthesized expression, so the value silently lost its collection.
+
+- Reject the blank identifier ``_`` as a ``NewVariable`` name for Erlang, Go, Odin, Perl and Zig, whose compilers cannot bind it.
+
+- Reject Swift expression keywords (``self``, ``Self``, ``Any``, ``as``, ``in``, ``nil``, ``true``, ``false``) and PHP's ``this`` as ``NewVariable`` names, rather than emitting declarations their compilers refuse.
+
+- Reject Dart variable names that shadow a type name the backend writes into its annotations, or the ``main`` entry point a wrapped file declares.
+
+- Reject Zig primitive type and value names, the arbitrary-width integer primitives such as ``u7``, and the wrapper's ``main`` entry point as ``NewVariable`` names.
+
+- Reject sibling map values that nest to different list depths in a language whose map values must share one type, rather than emitting a map literal only the first entry fits.
+
+- Refuse a mapping key that is a keyword as a ``RECORD`` field name in Python, Odin and Nim, none of which has an escaped spelling for one, matching what Java, C, C++ and D already did.
+
+- Read a Dart declared type back off the opener the renderer picked, so the annotation and the literal's own type arguments are one inference and the assignment type-checks.
+
+- Give a Crystal ``RECORD`` field holding an empty nested list the type its literal narrows to, rather than a union naming ``Array(Nil)``, which the record constructor refused.
+
+- Emit the signed 64-bit minimum as a cast bit pattern in Nim's hexadecimal, octal and binary integer formats, which cannot carry the sign inside the numeral.
+
+- Keep a composite literal's element type in Go where the enclosing sequence has been widened to ``[]any``, which does not name one, so the elision was not legal.
+
+- Infer a Rust element type from a non-empty sibling rather than from an empty collection's placeholder, and refuse with a typed error, rather than a bare ``ValueError``, when element types genuinely differ.
+
+- Render a one-element Rust ``TUPLE`` sequence as ``(x,)``, which is the one-element tuple, rather than as the parenthesized expression ``(x)``.
+
+- Annotate a Kotlin map value with the type its literal actually has: ``intArrayOf`` is an ``IntArray``, which is unrelated to ``Array<Int>``, and the non-default sequence formats render something the element type alone does not name.
+
+- Reject Haskell variable names that clash with a ``Prelude`` binding or with the generated ``main`` entry point, and Clojure names that rebind a class Clojure imports by default.
+
+- Reject Groovy primitive type names, Scala names that override an inherited ``Any`` member, and Racket names that shadow a procedure the generated literal calls.
+
+- Reject Common Lisp variable names whose declaration form is a symbol in the locked ``COMMON-LISP`` package, in any spelling.
+
+- C++ now spells a fixed-size sequence as ``std::array`` in the types it derives for variant members and map values, matching the literal it renders, when the ``ARRAY`` sequence format is selected.
+
+- Escape Unicode format characters and line separators in Haskell string literals, which GHC reports as a lexical error.
+
+- Require one value per declared parameter for the command-style and postfix call styles too, so a generated stub and the call site cannot disagree on arity.
+
+- Render a dotted Clojure call target as a qualified call, ``app.client/fetch``, and generate a matching stub, rather than emitting a symbol the reader takes for a class name.
+
+- Raise ``YAMLParseError`` from the numeric pre-scan, which ran outside the handler that converts parse failures, so a document with both an ``e`` and a control character leaked a ruamel error.
+
+- Compare Nim record field names under Nim's own identifier equality, where the characters after the first ignore case and underscores, so keys that name one field are refused rather than emitted twice.
+
+- Replace a control character in a preserved comment with a marker naming it when rendering Zig, which refuses one.
+
+- Replace a bidirectional formatting character in a preserved comment with a marker naming it, the way the line and paragraph separators already were, since Dart, Elixir and Rust all refuse one.
+
+- Type a Kotlin or Scala ``EPOCH`` datetime as ``Long`` whatever its magnitude, and suffix its literal to match, so a timestamp after 2038 no longer disagrees with the type it was declared under.
+
+- Report a repeated key in a YAML ``!!omap`` as a ``YAMLParseError``, rather than letting ruamel's bare ``AssertionError`` escape.
+
+- The C++ lint jobs now compile against a pinned, cached ``nlohmann/json`` single header instead of installing the ``nlohmann-json3-dev`` package, removing the apt step that intermittently hung for the whole job budget.
+
+- No user-facing change: the lint workflow's network installs are bounded and retried so a stalled registry no longer consumes a whole job, each retry is sized so every configured attempt fits inside its step budget, and the clang-tidy C job checks against a pinned, cached ``cJSON`` header instead of installing a package.
+
+- Accept a V call target whose components are module or type names, such as ``http.Server``, while still refusing one the wrapped file could not declare.
+
+- No user-facing change: the ``prek`` version CI runs now matches the pinned development dependency, and the ``check-yaml`` hook skips the two capability cases whose non-finite floats its parser rejects.
+
 2026.08.19
 ----------
 

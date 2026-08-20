@@ -1,1 +1,0 @@
-Annotate a Kotlin map value with the type its literal actually has: ``intArrayOf`` is an ``IntArray``, which is unrelated to ``Array<Int>``, and the non-default sequence formats render something the element type alone does not name.

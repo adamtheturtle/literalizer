@@ -1,1 +1,0 @@
-Reject Common Lisp variable names whose declaration form is a symbol in the locked ``COMMON-LISP`` package, in any spelling.

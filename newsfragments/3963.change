@@ -1,1 +1,0 @@
-Replace a bidirectional formatting character in a preserved comment with a marker naming it, the way the line and paragraph separators already were, since Dart, Elixir and Rust all refuse one.

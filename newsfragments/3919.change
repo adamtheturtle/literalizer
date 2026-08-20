@@ -1,1 +1,0 @@
-Escape U+007F in Zig string literals, which the Zig compiler rejects as a raw byte.

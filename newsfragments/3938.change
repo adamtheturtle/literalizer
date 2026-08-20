@@ -1,1 +1,0 @@
-Keep a composite literal's element type in Go where the enclosing sequence has been widened to ``[]any``, which does not name one, so the elision was not legal.

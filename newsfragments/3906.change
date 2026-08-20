@@ -1,1 +1,0 @@
-Compare a bound ref against the output variable on the identifiers both are emitted with, so names that converge only after ``ref_case`` conversion are rejected rather than declared twice.
