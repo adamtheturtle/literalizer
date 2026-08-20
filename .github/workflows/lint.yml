@@ -1543,10 +1543,15 @@ jobs:
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
+      # A dotted call target is a qualified call, and its stub creates
+      # the module it names with ``create-ns``/``intern`` at run time.
+      # ``clj-kondo`` reads the file statically, so it cannot see that
+      # module and reports it unresolved; the ``Run Clojure files``
+      # step below is what actually proves the call resolves.
       - name: Lint Clojure
         run: |-
           find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj && test -s /tmp/files-clj
-          xargs -0 clj-kondo --lint < /tmp/files-clj
+          xargs -0 clj-kondo --config '{:linters {:unresolved-namespace {:level :off}}}' --lint < /tmp/files-clj
       - name: Run Clojure files
         run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
 
