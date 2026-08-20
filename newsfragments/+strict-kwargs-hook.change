@@ -1,0 +1,1 @@
+No user-facing change: the redundant standalone ``strict-kwargs`` pre-commit hook is removed. Keyword-argument enforcement continues through the ``mypy_strict_kwargs`` plugin, which the required type-check job already runs.

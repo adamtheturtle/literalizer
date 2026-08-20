@@ -377,16 +377,6 @@ repos:
         stages: [pre-commit]
         groups: [fast]
 
-      - id: strict-kwargs-fix
-        name: strict-kwargs
-        entry: uv run --extra=dev strict-kwargs check --fix --diff
-        language: python
-        types_or: [python]
-        additional_dependencies: [*uv_version]
-        stages: [pre-commit]
-        groups: [fast]
-        require_serial: true
-
       - id: no-defaults
         name: no-defaults
         entry: uv run --extra=dev no-defaults
