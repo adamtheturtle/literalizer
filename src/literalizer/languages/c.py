@@ -1031,6 +1031,7 @@ class C(metaclass=LanguageCls):
             close="}})",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1789,6 +1790,7 @@ class C(metaclass=LanguageCls):
                 single_element_trailing_comma=(
                     fmt.single_element_trailing_comma
                 ),
+                single_element_template=fmt.single_element_template,
                 supports_trailing_comma=fmt.supports_trailing_comma,
                 empty_sequence=fmt.empty_sequence,
                 preamble_lines=fmt.preamble_lines,
@@ -1808,6 +1810,7 @@ class C(metaclass=LanguageCls):
             close="}})",
             supports_heterogeneity=fmt.supports_heterogeneity,
             single_element_trailing_comma=(fmt.single_element_trailing_comma),
+            single_element_template=fmt.single_element_template,
             supports_trailing_comma=fmt.supports_trailing_comma,
             empty_sequence=fmt.empty_sequence,
             preamble_lines=fmt.preamble_lines,

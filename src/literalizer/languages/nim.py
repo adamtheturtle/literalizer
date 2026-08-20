@@ -87,6 +87,7 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -798,7 +799,9 @@ _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 
 
 @beartype
-def _nim_record_field_identifier(key: str, /) -> str:
+def _nim_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Nim ``object`` field name for a dict *key*.
 
     Nim has style-insensitive identifiers that accept the original
@@ -807,7 +810,11 @@ def _nim_record_field_identifier(key: str, /) -> str:
     ``camelCase`` (e.g. ``display_name`` -> ``displayName``); the same
     conversion is applied to both so they always agree.
     """
-    return IdentifierCase.CAMEL.convert(name=key)
+    identifier = IdentifierCase.CAMEL.convert(name=key)
+    if identifier in reserved_identifiers:
+        msg = f"Nim record field name {identifier!r} is reserved"
+        raise UnrepresentableInputError(msg)
+    return identifier
 
 
 @beartype
@@ -1009,6 +1016,11 @@ class Nim(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        # Nim identifiers may not begin with an underscore
+        # (issue #3914).
+        NewVariableNameSyntax.ASCII_LETTER_START
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -1188,6 +1200,7 @@ class Nim(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1203,6 +1216,7 @@ class Nim(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1944,7 +1958,10 @@ class Nim(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_NIM_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_nim_record_field_identifier,
+            field_identifier=partial(
+                _nim_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_identifier_key=_nim_field_identifier_key,
             field_type=self._nim_record_field_type,
             render_declaration=partial(
@@ -2353,11 +2370,27 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     def format_integer_widened(self) -> Callable[[int], str]:
-        """Format every integer as an explicitly typed ``int64``."""
+        """Format every integer as an explicitly typed ``int64``.
+
+        A non-decimal format writes the sign outside the literal, so
+        the magnitude of ``int64.low`` is read as a positive ``int64``
+        first and rejected as out of range.  That one value is written
+        as its two's-complement bit pattern cast from ``uint64``, which
+        keeps the base the format asked for (issue #3937).
+        """
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        return lambda value: f"{base(value)}'i64"
+        is_decimal = self.integer_format is type(self.integer_format).DECIMAL
+
+        def _format(value: int, /) -> str:
+            """Format one integer as an ``int64`` literal."""
+            if value == I64_MIN and not is_decimal:
+                magnitude = base(-value)
+                return f"cast[int64]({magnitude}'u64)"
+            return f"{base(value)}'i64"
+
+        return _format
 
     @cached_property
     def comment_config(self) -> CommentConfig:

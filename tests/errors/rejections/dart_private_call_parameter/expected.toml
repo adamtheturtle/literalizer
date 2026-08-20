@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Dart['_']" = "Dart cannot use call parameter '_': it is reserved in a call parameter list"
+"Dart['_1']" = "Dart cannot use call parameter '_1': it is reserved in a call parameter list"
+"Dart['_x']" = "Dart cannot use call parameter '_x': it is reserved in a call parameter list"
