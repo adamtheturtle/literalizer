@@ -799,7 +799,9 @@ _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 
 
 @beartype
-def _nim_record_field_identifier(key: str, /) -> str:
+def _nim_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Nim ``object`` field name for a dict *key*.
 
     Nim has style-insensitive identifiers that accept the original
@@ -808,7 +810,11 @@ def _nim_record_field_identifier(key: str, /) -> str:
     ``camelCase`` (e.g. ``display_name`` -> ``displayName``); the same
     conversion is applied to both so they always agree.
     """
-    return IdentifierCase.CAMEL.convert(name=key)
+    identifier = IdentifierCase.CAMEL.convert(name=key)
+    if identifier in reserved_identifiers:
+        msg = f"Nim record field name {identifier!r} is reserved"
+        raise UnrepresentableInputError(msg)
+    return identifier
 
 
 @beartype
@@ -1182,6 +1188,7 @@ class Nim(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1197,6 +1204,7 @@ class Nim(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=True,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,
             preamble_lines=(),
@@ -1938,7 +1946,10 @@ class Nim(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_NIM_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_nim_record_field_identifier,
+            field_identifier=partial(
+                _nim_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_type=self._nim_record_field_type,
             render_declaration=partial(
                 _nim_render_record_declaration,

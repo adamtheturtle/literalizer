@@ -642,6 +642,9 @@ class V(metaclass=LanguageCls):
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_SNAKE_ASCII
     )
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII
+    )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
@@ -777,6 +780,7 @@ class V(metaclass=LanguageCls):
             close="]",
             supports_heterogeneity=False,
             single_element_trailing_comma=False,
+            single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=f"[]{_V_IFACE_NAME}{{}}",
             preamble_lines=(),

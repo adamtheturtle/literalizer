@@ -1,9 +1,9 @@
 using System;
-var my_data = (
+var my_data = ValueTuple.Create(
     "a"
     // trailing
 );
-my_data = (
+my_data = ValueTuple.Create(
     "a"
     // trailing
 );

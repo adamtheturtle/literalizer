@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+An array annotation spells its length, so an empty sequence beside a
+non-empty one is a different type that no sibling can speak for.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['[[1, 2], []]']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]

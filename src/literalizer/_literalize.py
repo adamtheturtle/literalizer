@@ -1904,6 +1904,12 @@ def _format_list_value(
     # comma branch.
     if len(items) == 1 and sequence_cfg.single_element_trailing_comma:
         joined += spec.element_separator.strip()
+    if (
+        len(items) == 1
+        and sequence_cfg.single_element_template is not None
+        and sequence_open_override is None
+    ):
+        return sequence_cfg.single_element_template.format(items=joined)
     match sequence_open_override:
         case str():
             opener = sequence_open_override
@@ -2067,8 +2073,15 @@ def _wrap_body(
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
             closing = f"{close_prefix}{set_cfg.close}"
         case _:
-            opening = f"{line_prefix}{spec.sequence_open(data)}"
-            closing = f"{close_prefix}{spec.sequence_format_config.close}"
+            sequence_cfg = spec.sequence_format_config
+            template = sequence_cfg.single_element_template
+            if template is not None and len(data) == 1:
+                open_str, _, close_str = template.partition("{items}")
+            else:
+                open_str = spec.sequence_open(data)
+                close_str = sequence_cfg.close
+            opening = f"{line_prefix}{open_str}"
+            closing = f"{close_prefix}{close_str}"
     return f"{opening.rstrip()}\n{body}\n{closing}"
 
 
@@ -2137,6 +2150,31 @@ def _sequence_open_for_ref_inference(
 
 
 @beartype
+def _single_element_sequence_delimiters(
+    *,
+    data: dict[Scalar, Value] | set[Scalar] | list[Value],
+    sequence_open_override: str | None,
+    ctx: _RenderContext,
+) -> tuple[str, str] | None:
+    """Return the delimiters a one-element sequence takes, if any.
+
+    The template a language declares for that length is one string
+    around its element; a multiline layout needs the two halves apart
+    so the element can sit on its own line (issue #3928).
+    """
+    template = ctx.spec.sequence_format_config.single_element_template
+    if (
+        template is None
+        or sequence_open_override is not None
+        or not isinstance(data, list)
+        or len(data) != 1
+    ):
+        return None
+    opening, _, close = template.partition("{items}")
+    return (opening, close)
+
+
+@beartype
 def _collection_open_for_multiline_value(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
@@ -2173,7 +2211,16 @@ def _collection_open_for_multiline_value(
         case _ if sequence_open_override is not None:
             opener = sequence_open_override
         case _:
-            opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            delimiters = _single_element_sequence_delimiters(
+                data=data,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            opener = (
+                delimiters[0]
+                if delimiters is not None
+                else _sequence_open_for_ref_inference(data=data, ctx=ctx)
+            )
     return opener
 
 
@@ -2222,7 +2269,16 @@ def _format_multiline_collection_value(
         case set():
             close = spec.set_format_config.close
         case _:
-            close = spec.sequence_format_config.close
+            delimiters = _single_element_sequence_delimiters(
+                data=value,
+                sequence_open_override=sequence_open_override,
+                ctx=ctx,
+            )
+            close = (
+                delimiters[1]
+                if delimiters is not None
+                else spec.sequence_format_config.close
+            )
     return f"{opening}\n{body}\n{close_prefix}{close}"
 
 
@@ -5171,6 +5227,30 @@ _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
 
 
 @beartype
+def _is_constructor_target(
+    *,
+    language: Language,
+    target_function: str,
+) -> bool:
+    """Return whether *target_function* is a constructor call target.
+
+    A constructor target is spelled by the language rather than by the
+    caller (``Foo::new``, ``new Foo``, or the bare class name), so its
+    shape is exempt from the identifier grammar.  Only a PascalCase
+    class name is taken as evidence of one: a language that spells a
+    constructor as the bare class name otherwise matches every target
+    and exempts the lot (issue #3913).
+    """
+    return any(
+        language.format_constructor_target(candidate) == target_function
+        for candidate in re.findall(
+            pattern=r"[^\W\d]\w*", string=target_function
+        )
+        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    )
+
+
+@beartype
 def _validate_call_target(
     *,
     language: Language,
@@ -5184,18 +5264,9 @@ def _validate_call_target(
             target_function=target_function,
             reason="it must contain non-empty dotted components",
         )
-    # A constructor target is spelled by the language rather than by
-    # the caller (``Foo::new``, ``new Foo``, or the bare class name),
-    # so its shape is exempt from the identifier grammar.  Only a
-    # PascalCase class name is taken as evidence of one: a language
-    # that spells a constructor as the bare class name otherwise
-    # matches every target and exempts the lot (issue #3913).
-    is_constructor_target = any(
-        language.format_constructor_target(candidate) == target_function
-        for candidate in re.findall(
-            pattern=r"[^\W\d]\w*", string=target_function
-        )
-        if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
+    is_constructor_target = _is_constructor_target(
+        language=language,
+        target_function=target_function,
     )
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
@@ -5207,8 +5278,12 @@ def _validate_call_target(
         len(target_function_parts) > 1
         or language_cls.accepts_type_name_call_target
     )
+    component_syntax = (
+        language_cls.call_target_name_syntax
+        or language_cls.new_variable_name_syntax
+    )
     for part in target_function_parts:
-        if not language_cls.new_variable_name_syntax.accepts(name=part):
+        if not component_syntax.accepts(name=part):
             if exempt:
                 return
             raise InvalidCallTargetError(
@@ -5269,6 +5344,29 @@ def _validate_wrapped_call_scaffold(
             target_function=target_function,
             reason="it collides with the generated file entrypoint",
         )
+    # Every component becomes a declaration in the generated file, so
+    # each follows the declaration grammar as well as the call-target
+    # one.  The two differ where a language spells a call target more
+    # freely than a name it can declare -- V calls ``http.Server`` but
+    # can declare neither half of it (issue #3989).
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Call-scaffold validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if not _is_constructor_target(
+        language=language,
+        target_function=target_function,
+    ):
+        for part in target_function_parts:
+            if not language_cls.new_variable_name_syntax.accepts(name=part):
+                raise InvalidCallTargetError(
+                    language_name=type(language).__name__,
+                    target_function=target_function,
+                    reason=(
+                        f"component {part!r} cannot name a declaration "
+                        "in the generated file"
+                    ),
+                )
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts

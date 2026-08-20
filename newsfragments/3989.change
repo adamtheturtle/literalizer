@@ -1,0 +1,1 @@
+Accept a V call target whose components are module or type names, such as ``http.Server``, while still refusing one the wrapped file could not declare.
