@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A Nim const renders a bare array literal, whose length is part of its
+type, so sibling sequences of different lengths have no common type.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ['{"a": [[1, 2], [3]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]

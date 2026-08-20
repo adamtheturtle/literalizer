@@ -11,6 +11,9 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
+from literalizer._checks import (
+    reject_ragged_nested_sequences,
+)
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -1528,6 +1531,14 @@ class Nim(metaclass=LanguageCls):
         the record renderer, so only a top-level native sequence needs this
         guard.
         """
+        if (
+            self.declaration_style
+            is type(self.declaration_style).CONST
+        ):
+            # A ``const`` renders a bare Nim literal, whose nested
+            # arrays carry their length in their type; the other styles
+            # render a ``JsonNode``, which does not (issue #3924).
+            reject_ragged_nested_sequences(data=data, language_name="Nim")
         if (
             self._uses_native_nim_collections
             and isinstance(data, list)

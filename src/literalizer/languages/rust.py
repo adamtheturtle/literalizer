@@ -12,7 +12,10 @@ from typing import ClassVar, assert_never
 
 from beartype import beartype
 
-from literalizer._checks import reject_aware_datetimes
+from literalizer._checks import (
+    reject_aware_datetimes,
+    reject_ragged_nested_sequences,
+)
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.format_dates import (
@@ -3961,6 +3964,8 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
+        if self.sequence_format is type(self.sequence_format).ARRAY:
+            reject_ragged_nested_sequences(data=data, language_name="Rust")
         if self._json_type_active:
             self._validate_json_value_keys(data)
         if (

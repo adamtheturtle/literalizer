@@ -159,6 +159,46 @@ def guard_collection_nesting_depth(
 
 
 @beartype
+def reject_ragged_nested_sequences(
+    *,
+    data: Value,
+    language_name: str,
+) -> None:
+    """Reject sibling lists of unequal length beside each other.
+
+    A fixed-size array literal carries its length in its type, so two
+    sibling arrays of different lengths have no common type and the
+    generated file does not compile (issue #3924).
+    """
+    match data:
+        case dict():
+            for value in data.values():
+                reject_ragged_nested_sequences(
+                    data=value,
+                    language_name=language_name,
+                )
+        case list():
+            lengths = {
+                len(item) for item in data if isinstance(item, list)
+            }
+            if len(lengths) > 1:
+                sizes = ", ".join(str(length) for length in sorted(lengths))
+                msg = (
+                    f"{language_name} renders a sequence as a fixed-size "
+                    "array, whose length is part of its type, so sibling "
+                    f"sequences of lengths {sizes} have no common type"
+                )
+                raise UnrepresentableInputError(msg)
+            for item in data:
+                reject_ragged_nested_sequences(
+                    data=item,
+                    language_name=language_name,
+                )
+        case _:
+            return
+
+
+@beartype
 def reject_aware_datetimes(
     *, data: Value, language_name: str, allow_utc_offset: bool
 ) -> None:
