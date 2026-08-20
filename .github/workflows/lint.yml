@@ -1776,6 +1776,11 @@ jobs:
   lint-c-tidy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Upstream cJSON release whose header the ``CJSON`` fixtures are
+      # checked against.  Only the header is used here; ``lint-fast``
+      # links the packaged library instead.
+      CJSON_VERSION: 1.7.19
     steps:
       - uses: actions/checkout@v7
         with:
@@ -1787,13 +1792,31 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # ``cJSON`` fixtures (``C(json_type=CJSON)``) need the cJSON header
-      # on the default include path; clang-tidy does not link, so the
-      # ``-lcjson`` library itself is irrelevant here.
-      - name: Install libcjson-dev
+      # on the include path.  clang-tidy does not link, so the compiled
+      # ``-lcjson`` library is irrelevant here and the header alone
+      # suffices -- which lets this job drop ``apt-get`` entirely rather
+      # than merely bound it (issue 3982).  ``C_INCLUDE_PATH`` marks the
+      # directory as a system include, so no diagnostic comes from
+      # inside the header, exactly as under the package.  The jobs that
+      # do link (``lint-fast``) and that need the ``pkg-config`` file
+      # (``lint-cobol``) still install the package.
+      - name: Cache cJSON header
+        id: cache-cjson-header
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/cjson-include
+          key: cjson-header-${{ env.CJSON_VERSION }}
+      - name: Fetch cJSON header
+        if: steps.cache-cjson-header.outputs.cache-hit != 'true'
         timeout-minutes: 10
         run: |-
-          scripts/retry.sh sudo apt-get update
-          scripts/retry.sh sudo apt-get install -y libcjson-dev
+          mkdir -p "${RUNNER_TEMP}/cjson-include/cjson"
+          scripts/retry.sh curl --fail --location --silent --show-error \
+            --output "${RUNNER_TEMP}/cjson-include/cjson/cJSON.h" \
+            "https://raw.githubusercontent.com/DaveGamble/cJSON/v${CJSON_VERSION}/cJSON.h"
+      - name: Put the cJSON header on the include path
+        run: echo "C_INCLUDE_PATH=${RUNNER_TEMP}/cjson-include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
+          >> "${GITHUB_ENV}"
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
