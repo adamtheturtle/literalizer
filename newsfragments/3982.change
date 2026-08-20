@@ -1,1 +1,1 @@
-No user-facing change: the lint workflow's apt installs are bounded and retried so a stalled mirror no longer consumes a whole job.
+No user-facing change: the lint workflow's network installs are bounded and retried so a stalled registry no longer consumes a whole job.

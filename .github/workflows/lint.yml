@@ -584,7 +584,9 @@ jobs:
       # so its ``<cjson/cJSON.h>`` header is on the include path.
       - name: Install libcjson-dev
         timeout-minutes: 10
-        run: scripts/apt-install.sh libcjson-dev
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
 
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
@@ -1700,8 +1702,8 @@ jobs:
       - name: Install aeson / aeson-qq for Haskell lint
         timeout-minutes: 10
         run: |-
-          cabal update
-          cabal install --lib aeson aeson-qq base time bytestring
+          scripts/retry.sh cabal update
+          scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module
@@ -1784,7 +1786,9 @@ jobs:
       # ``-lcjson`` library itself is irrelevant here.
       - name: Install libcjson-dev
         timeout-minutes: 10
-        run: scripts/apt-install.sh libcjson-dev
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
@@ -1813,7 +1817,9 @@ jobs:
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
         timeout-minutes: 10
-        run: scripts/apt-install.sh nlohmann-json3-dev
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y nlohmann-json3-dev
       # Sorted round-robin sharding keeps the three runners balanced while
       # preserving exhaustive coverage. The fixture script still selects
       # C++14, C++17, or C++20 from each generated filename.
@@ -1860,7 +1866,9 @@ jobs:
       # ``libcjson`` pkg-config file) and enables JSON I/O.
       - name: Install cJSON for GnuCOBOL JSON I/O
         timeout-minutes: 10
-        run: scripts/apt-install.sh libcjson-dev
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y libcjson-dev
       - name: Install GnuCOBOL
         timeout-minutes: 10
         uses: fabasoad/setup-cobol-action@v1.6.2
@@ -1938,7 +1946,9 @@ jobs:
       # ``<nlohmann/json.hpp>`` under the default include path.
       - name: Install nlohmann/json
         timeout-minutes: 10
-        run: scripts/apt-install.sh nlohmann-json3-dev
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y nlohmann-json3-dev
       # Fixtures are tiny TUs whose cost is dominated by re-parsing the
       # same standard headers hundreds of times. Build a precompiled header once
       # covering every header any fixture includes, then preload it in
