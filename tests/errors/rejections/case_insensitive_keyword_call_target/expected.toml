@@ -1,0 +1,9 @@
+# languages rejecting: 6; languages accepting: 0
+
+[InvalidCallTargetError]
+Ada = "Ada cannot use call target 'IF': component 'IF' is a reserved identifier"
+Cobol = "Cobol cannot use call target 'IF': component 'IF' is a reserved identifier"
+Fortran = "Fortran cannot use call target 'IF': component 'IF' is a reserved identifier"
+Php = "Php cannot use call target 'IF': component 'IF' is a reserved identifier"
+PowerShell = "PowerShell cannot use call target 'IF': component 'IF' is a reserved identifier"
+VisualBasic = "VisualBasic cannot use call target 'IF': component 'IF' is a reserved identifier"

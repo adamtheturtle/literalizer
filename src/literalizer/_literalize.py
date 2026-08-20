@@ -56,6 +56,7 @@ from literalizer._language import (
     PrefixCallStyle,
     StubReturn,
     decode_file_sections,
+    is_reserved_identifier,
     validate_call_parameter_names,
     validate_new_variable_name,
 )
@@ -5313,14 +5314,42 @@ def _validate_call_target(
         raise TypeError(msg)
     # A bare constructor target is just the class name, which some
     # languages do not admit as a function name at all (issue #3914).
+    # Sliced rather than measured by ``len``: a length test narrows the
+    # tuple type, and that narrowing reaches the head index below.
     exempt = is_constructor_target and (
-        len(target_function_parts) > 1
+        bool(target_function_parts[1:])
         or language_cls.accepts_type_name_call_target
     )
     component_syntax = (
         language_cls.call_target_name_syntax
         or language_cls.new_variable_name_syntax
     )
+    # The leading component names a function, or the value a member is
+    # read from, so it follows the declaration keyword rules of the
+    # target language.  A later component is a member name, which a
+    # keyword may spell (``obj.class`` in JavaScript), and is checked
+    # against the narrower ``reserved_identifiers`` alone (#3905).
+    head = target_function_parts[0]
+    # A language may match keywords without regard to case while still
+    # spelling identifiers case-sensitively, so both must agree before
+    # the head is compared by case.
+    head_case_sensitive = (
+        language.reserved_variable_identifiers_case_sensitive
+        and language_cls.reserved_call_target_keywords_case_sensitive
+    )
+    if is_reserved_identifier(
+        case_sensitive=head_case_sensitive,
+        name=head,
+        reserved_identifiers=(
+            language.reserved_variable_identifiers
+            - language_cls.contextual_call_target_identifiers
+        ),
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason=f"component {head!r} is a reserved identifier",
+        )
     for part in target_function_parts:
         if not component_syntax.accepts(name=part):
             if exempt:

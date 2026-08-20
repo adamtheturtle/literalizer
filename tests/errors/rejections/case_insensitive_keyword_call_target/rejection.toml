@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A keyword leading a call target is matched without regard to case,
+whether the language spells all identifiers that way or only keywords.
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Ada", "Cobol", "Fortran", "Php", "PowerShell", "VisualBasic"]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "IF"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true

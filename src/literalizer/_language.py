@@ -1286,6 +1286,27 @@ class LanguageCls(type):
     ``static`` field beside the entry-point method, and a field and a
     method of one name coexist (issue #3914).
     """
+    contextual_call_target_identifiers: frozenset[str] = frozenset()
+    """Reserved declaration names a call target may still lead with.
+
+    The leading component of a ``target_function`` names a function, or
+    the value a member is read from, so it follows the declaration
+    keyword rules of the target language.  A language that admits a
+    word as a function name but not as a declaration name -- a keyword
+    that is only contextual, such as PowerShell's ``process`` (an
+    advanced-function body block) or Roc's ``app`` (a module header) --
+    lists it here (issue #3905).
+    """
+    reserved_call_target_keywords_case_sensitive: bool = True
+    """Whether a reserved word leading a call target matches by case.
+
+    A language may spell identifiers case-sensitively while matching
+    keywords without regard to case, so ``IF`` names no function even
+    where ``myVar`` and ``myvar`` are distinct.  Such a language sets
+    this to ``False`` while leaving
+    :attr:`~literalizer.Language.reserved_variable_identifiers_case_sensitive`
+    ``True`` (issue #3905).
+    """
     module_name_must_start_uppercase: bool = False
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
