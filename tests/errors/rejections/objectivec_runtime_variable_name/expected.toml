@@ -1,0 +1,13 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"ObjectiveC['BOOL']" = "ObjectiveC cannot use NewVariable name 'BOOL': it is a reserved identifier"
+"ObjectiveC['Class']" = "ObjectiveC cannot use NewVariable name 'Class': it is a reserved identifier"
+"ObjectiveC['IMP']" = "ObjectiveC cannot use NewVariable name 'IMP': it is a reserved identifier"
+"ObjectiveC['NO']" = "ObjectiveC cannot use NewVariable name 'NO': it is a reserved identifier"
+"ObjectiveC['NULL']" = "ObjectiveC cannot use NewVariable name 'NULL': it is a reserved identifier"
+"ObjectiveC['Nil']" = "ObjectiveC cannot use NewVariable name 'Nil': it is a reserved identifier"
+"ObjectiveC['SEL']" = "ObjectiveC cannot use NewVariable name 'SEL': it is a reserved identifier"
+"ObjectiveC['YES']" = "ObjectiveC cannot use NewVariable name 'YES': it is a reserved identifier"
+"ObjectiveC['id']" = "ObjectiveC cannot use NewVariable name 'id': it is a reserved identifier"
+"ObjectiveC['nil']" = "ObjectiveC cannot use NewVariable name 'nil': it is a reserved identifier"

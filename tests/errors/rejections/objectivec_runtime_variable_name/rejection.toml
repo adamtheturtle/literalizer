@@ -1,0 +1,24 @@
+schema_version = 1
+summary = "Objective-C runtime keyword names cannot be used as variable identifiers."
+exceptions = ["ReservedVariableNameError"]
+languages = ["ObjectiveC"]
+values = [
+  "BOOL",
+  "Class",
+  "IMP",
+  "NO",
+  "NULL",
+  "Nil",
+  "SEL",
+  "YES",
+  "id",
+  "nil",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

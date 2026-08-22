@@ -387,6 +387,14 @@ class ObjectiveC(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "BOOL",
+            "Class",
+            "IMP",
+            "NO",
+            "NULL",
+            "Nil",
+            "SEL",
+            "YES",
             "auto",
             "break",
             "case",
@@ -402,10 +410,12 @@ class ObjectiveC(metaclass=LanguageCls):
             "float",
             "for",
             "goto",
+            "id",
             "if",
             "inline",
             "int",
             "long",
+            "nil",
             "register",
             "restrict",
             "return",
