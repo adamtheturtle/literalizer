@@ -385,6 +385,13 @@ class Perl(metaclass=LanguageCls):
         {
             "_",
             "BEGIN",
+            "ARGV",
+            "ENV",
+            "INC",
+            "SIG",
+            "STDIN",
+            "STDOUT",
+            "STDERR",
             "CHECK",
             "CORE",
             "END",

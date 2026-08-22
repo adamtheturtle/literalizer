@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Perl['ARGV']" = "Perl cannot use NewVariable name 'ARGV': it is a reserved identifier"
+"Perl['ENV']" = "Perl cannot use NewVariable name 'ENV': it is a reserved identifier"
+"Perl['INC']" = "Perl cannot use NewVariable name 'INC': it is a reserved identifier"
+"Perl['SIG']" = "Perl cannot use NewVariable name 'SIG': it is a reserved identifier"
+"Perl['STDERR']" = "Perl cannot use NewVariable name 'STDERR': it is a reserved identifier"
+"Perl['STDIN']" = "Perl cannot use NewVariable name 'STDIN': it is a reserved identifier"
+"Perl['STDOUT']" = "Perl cannot use NewVariable name 'STDOUT': it is a reserved identifier"
