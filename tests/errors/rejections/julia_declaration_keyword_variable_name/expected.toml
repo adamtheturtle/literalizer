@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Julia['abstract']" = "Julia cannot use NewVariable name 'abstract': it is a reserved identifier"
+"Julia['mutable']" = "Julia cannot use NewVariable name 'mutable': it is a reserved identifier"
+"Julia['primitive']" = "Julia cannot use NewVariable name 'primitive': it is a reserved identifier"
+"Julia['type']" = "Julia cannot use NewVariable name 'type': it is a reserved identifier"
+"Julia['where']" = "Julia cannot use NewVariable name 'where': it is a reserved identifier"
