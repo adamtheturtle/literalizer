@@ -1,0 +1,22 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Tcl['break']" = "Tcl cannot use NewVariable name 'break': it is a reserved identifier"
+"Tcl['catch']" = "Tcl cannot use NewVariable name 'catch': it is a reserved identifier"
+"Tcl['class']" = "Tcl cannot use NewVariable name 'class': it is a reserved identifier"
+"Tcl['continue']" = "Tcl cannot use NewVariable name 'continue': it is a reserved identifier"
+"Tcl['else']" = "Tcl cannot use NewVariable name 'else': it is a reserved identifier"
+"Tcl['elseif']" = "Tcl cannot use NewVariable name 'elseif': it is a reserved identifier"
+"Tcl['expr']" = "Tcl cannot use NewVariable name 'expr': it is a reserved identifier"
+"Tcl['for']" = "Tcl cannot use NewVariable name 'for': it is a reserved identifier"
+"Tcl['foreach']" = "Tcl cannot use NewVariable name 'foreach': it is a reserved identifier"
+"Tcl['global']" = "Tcl cannot use NewVariable name 'global': it is a reserved identifier"
+"Tcl['if']" = "Tcl cannot use NewVariable name 'if': it is a reserved identifier"
+"Tcl['method']" = "Tcl cannot use NewVariable name 'method': it is a reserved identifier"
+"Tcl['namespace']" = "Tcl cannot use NewVariable name 'namespace': it is a reserved identifier"
+"Tcl['proc']" = "Tcl cannot use NewVariable name 'proc': it is a reserved identifier"
+"Tcl['return']" = "Tcl cannot use NewVariable name 'return': it is a reserved identifier"
+"Tcl['set']" = "Tcl cannot use NewVariable name 'set': it is a reserved identifier"
+"Tcl['switch']" = "Tcl cannot use NewVariable name 'switch': it is a reserved identifier"
+"Tcl['variable']" = "Tcl cannot use NewVariable name 'variable': it is a reserved identifier"
+"Tcl['while']" = "Tcl cannot use NewVariable name 'while': it is a reserved identifier"
