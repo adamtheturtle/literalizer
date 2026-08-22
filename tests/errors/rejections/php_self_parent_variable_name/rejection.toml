@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "PHP cannot re-assign the $self or $parent variables."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Php"]
+values = ["parent", "self"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
