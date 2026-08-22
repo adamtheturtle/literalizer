@@ -41,6 +41,7 @@ from literalizer.exceptions import (
     BoundRefOutputCollisionError,
     DelimiterlessVariableError,
     InvalidPreIndentLevelError,
+    InvalidSequenceArgumentError,
     InvalidVariableModifierError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
@@ -635,11 +636,9 @@ def literalize_call(
     """
     language = _fresh_language(language=language)
     if isinstance(parameter_names, str):
-        msg = "parameter_names must be a sequence of strings, not a string"
-        raise TypeError(msg)
+        raise InvalidSequenceArgumentError(argument_name="parameter_names")
     if isinstance(comment_source, str):
-        msg = "comment_source must be a sequence of strings, not a string"
-        raise TypeError(msg)
+        raise InvalidSequenceArgumentError(argument_name="comment_source")
     effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
     _validate_variable_modifiers(
         language=language,

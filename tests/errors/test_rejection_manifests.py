@@ -267,7 +267,32 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                     'input_format = "json"\ntarget_function = "process"'
                 ),
             ),
-            "requires exactly parameter_names",
+            "requires exactly parameter_names or parameter_names_bare",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize_call"\nsources = ["1"]\n'
+                    'input_format = "json"\ntarget_function = "process"\n'
+                    'parameter_names = ["x"]\nparameter_names_bare = "ab"'
+                ),
+            ),
+            "declare parameter_names or parameter_names_bare, not both",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize_call"\nsources = ["1"]\n'
+                    'input_format = "json"\ntarget_function = "process"\n'
+                    'parameter_names = ["x"]\n'
+                    'comment_source = ["note"]\ncomment_source_bare = "ok"'
+                ),
+            ),
+            "declare comment_source or comment_source_bare, not both",
         ),
         (
             _manifest(

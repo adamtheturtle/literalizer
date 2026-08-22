@@ -567,6 +567,17 @@ class InvalidPreIndentLevelError(InvalidRenderArgumentError):
         )
 
 
+class InvalidSequenceArgumentError(InvalidRenderArgumentError):
+    """Raised when a sequence argument is passed as a bare string."""
+
+    def __init__(self, *, argument_name: str) -> None:
+        """Create an ``InvalidSequenceArgumentError``."""
+        super().__init__(
+            f"{argument_name} must be a sequence of strings, not a string"
+        )
+        self.argument_name = argument_name
+
+
 class DelimiterlessVariableError(InvalidRenderArgumentError):
     """Raised when a delimiter-less collection is bound as one value."""
 

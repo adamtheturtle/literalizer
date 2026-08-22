@@ -318,6 +318,7 @@ class CallSpec(  # noqa: NOD001
         tuple[DeclaredName, ...],
         Field(strict=False),
     ] = Field(default_factory=_no_names)
+    parameter_names_bare: str | None = None
     per_element: bool = True
     wrap_in_file: bool = False
     ref_key: str | None = None
@@ -326,6 +327,7 @@ class CallSpec(  # noqa: NOD001
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None
     )
+    comment_source_bare: str | None = None
     pre_indent_level: int = 0
     include_delimiters: bool = True
     variable_form: VariableFormName | None = None
@@ -351,8 +353,25 @@ class CallSpec(  # noqa: NOD001
         if calls != (self.target_function is not None):
             msg = f"api = {self.api!r} requires exactly a target_function"
             raise ValueError(msg)
-        if calls != ("parameter_names" in self.model_fields_set):
-            msg = f"api = {self.api!r} requires exactly parameter_names"
+        has_parameter_names = "parameter_names" in self.model_fields_set
+        has_parameter_names_bare = (
+            "parameter_names_bare" in self.model_fields_set
+        )
+        if calls != (has_parameter_names or has_parameter_names_bare):
+            msg = (
+                f"api = {self.api!r} requires exactly parameter_names "
+                "or parameter_names_bare"
+            )
+            raise ValueError(msg)
+        if has_parameter_names and has_parameter_names_bare:
+            msg = "declare parameter_names or parameter_names_bare, not both"
+            raise ValueError(msg)
+        has_comment_source = "comment_source" in self.model_fields_set
+        has_comment_source_bare = (
+            "comment_source_bare" in self.model_fields_set
+        )
+        if has_comment_source and has_comment_source_bare:
+            msg = "declare comment_source or comment_source_bare, not both"
             raise ValueError(msg)
         if self.api != "literalize" and self.modifiers:
             msg = "modifiers apply to api = 'literalize'"

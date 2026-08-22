@@ -104,31 +104,6 @@ def test_literalize_call_per_element_non_list_raises() -> None:
         )
 
 
-def test_literalize_call_rejects_bare_parameter_names_string() -> None:
-    """Container-valued call arguments must not split bare strings."""
-    with pytest.raises(expected_exception=TypeError, match="parameter_names"):
-        literalize_call(
-            source="[[1, 2], [3, 4]]",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="f",
-            parameter_names="ab",
-        )
-
-
-def test_literalize_call_rejects_bare_comment_source_string() -> None:
-    """A bare comment source must not split into one comment per character."""
-    with pytest.raises(expected_exception=TypeError, match="comment_source"):
-        literalize_call(
-            source="[[1, 2], [3, 4]]",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            target_function="f",
-            parameter_names=("a", "b"),
-            comment_source="ok",
-        )
-
-
 def test_literalize_call_parameter_count_too_few_raises() -> None:
     """Literalize_call raises when fewer parameter_names than values."""
     with pytest.raises(
