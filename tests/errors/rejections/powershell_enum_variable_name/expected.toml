@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"PowerShell['enum']" = "PowerShell cannot use NewVariable name 'enum': it is a reserved identifier"

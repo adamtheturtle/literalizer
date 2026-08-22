@@ -246,6 +246,7 @@ class PowerShell(metaclass=LanguageCls):
             "dynamicparam",
             "else",
             "elseif",
+            "enum",
             "end",
             "exit",
             "filter",
