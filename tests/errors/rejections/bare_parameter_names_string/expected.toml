@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidSequenceArgumentError]
+Python = "parameter_names must be a sequence of strings, not a string"

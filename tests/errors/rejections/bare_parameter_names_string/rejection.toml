@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Bare strings must not be passed as parameter_names."
+exceptions = ["InvalidSequenceArgumentError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2], [3, 4]]"]
+input_format = "json"
+target_function = "f"
+parameter_names_bare = "ab"
