@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Mojo cannot bind data to the implicit method receiver name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Mojo"]
+values = ["self"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": 2}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
