@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Julia declaration keywords cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Julia"]
+values = ["abstract", "mutable", "primitive", "type", "where"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
