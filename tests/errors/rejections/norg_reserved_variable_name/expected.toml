@@ -1,0 +1,22 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Norg['break']" = "Norg cannot use NewVariable name 'break': it is a reserved identifier"
+"Norg['const']" = "Norg cannot use NewVariable name 'const': it is a reserved identifier"
+"Norg['continue']" = "Norg cannot use NewVariable name 'continue': it is a reserved identifier"
+"Norg['else']" = "Norg cannot use NewVariable name 'else': it is a reserved identifier"
+"Norg['enum']" = "Norg cannot use NewVariable name 'enum': it is a reserved identifier"
+"Norg['fn']" = "Norg cannot use NewVariable name 'fn': it is a reserved identifier"
+"Norg['for']" = "Norg cannot use NewVariable name 'for': it is a reserved identifier"
+"Norg['if']" = "Norg cannot use NewVariable name 'if': it is a reserved identifier"
+"Norg['impl']" = "Norg cannot use NewVariable name 'impl': it is a reserved identifier"
+"Norg['let']" = "Norg cannot use NewVariable name 'let': it is a reserved identifier"
+"Norg['mod']" = "Norg cannot use NewVariable name 'mod': it is a reserved identifier"
+"Norg['mut']" = "Norg cannot use NewVariable name 'mut': it is a reserved identifier"
+"Norg['pub']" = "Norg cannot use NewVariable name 'pub': it is a reserved identifier"
+"Norg['return']" = "Norg cannot use NewVariable name 'return': it is a reserved identifier"
+"Norg['struct']" = "Norg cannot use NewVariable name 'struct': it is a reserved identifier"
+"Norg['trait']" = "Norg cannot use NewVariable name 'trait': it is a reserved identifier"
+"Norg['type']" = "Norg cannot use NewVariable name 'type': it is a reserved identifier"
+"Norg['use']" = "Norg cannot use NewVariable name 'use': it is a reserved identifier"
+"Norg['while']" = "Norg cannot use NewVariable name 'while': it is a reserved identifier"
