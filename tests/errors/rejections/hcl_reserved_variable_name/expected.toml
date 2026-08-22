@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Hcl['data']" = "Hcl cannot use NewVariable name 'data': it is a reserved identifier"
+"Hcl['locals']" = "Hcl cannot use NewVariable name 'locals': it is a reserved identifier"
+"Hcl['module']" = "Hcl cannot use NewVariable name 'module': it is a reserved identifier"
+"Hcl['output']" = "Hcl cannot use NewVariable name 'output': it is a reserved identifier"
+"Hcl['provider']" = "Hcl cannot use NewVariable name 'provider': it is a reserved identifier"
+"Hcl['resource']" = "Hcl cannot use NewVariable name 'resource': it is a reserved identifier"
+"Hcl['terraform']" = "Hcl cannot use NewVariable name 'terraform': it is a reserved identifier"
+"Hcl['variable']" = "Hcl cannot use NewVariable name 'variable': it is a reserved identifier"
