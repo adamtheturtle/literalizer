@@ -16,10 +16,8 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.a = (CVal[]){
-    ((CVal){.m = (CKV[]){
-        {"item", ((CVal){.s = "existing"})},
-        // This comment describes the next item.
-    }}),
+    ((CVal){.m = (CKV[]){{"item", ((CVal){.s = "existing"})}}}),
+    // This comment describes the next item.
     ((CVal){.m = (CKV[]){{"item", ((CVal){.s = "next"})}}}),
 }});
     (void)my_data;

@@ -1,17 +1,13 @@
 def main():
     var my_data = List([
-        {
-            "item": "existing",
-            # This comment describes the next item.
-        },
+        {"item": "existing"},
+        # This comment describes the next item.
         {"item": "next"},
     ])
     _ = my_data
     my_data = List([
-        {
-            "item": "existing",
-            # This comment describes the next item.
-        },
+        {"item": "existing"},
+        # This comment describes the next item.
         {"item": "next"},
     ])
     _ = my_data
