@@ -150,6 +150,10 @@ class _ParsedAfterToken:
 
     inline: str
     before_next: list[str]
+    # Source column of the standalone lines in *before_next*, or None
+    # when the token also carries an inline comment and so records the
+    # inline comment's column instead.
+    standalone_column: int | None
 
 
 @beartype
@@ -184,7 +188,11 @@ def _parse_after_token(
         for line in lines[start:]
         if line.strip().startswith("#")
     ]
-    return _ParsedAfterToken(inline=inline, before_next=before_next)
+    return _ParsedAfterToken(
+        inline=inline,
+        before_next=before_next,
+        standalone_column=None if inline else column,
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -271,19 +279,121 @@ def _element_after_comments(
 ) -> _ParsedAfterToken:
     """Extract inline and before-next comments after one element."""
     if key not in ca.items:
-        return _ParsedAfterToken(inline="", before_next=[])
+        return _ParsedAfterToken(
+            inline="", before_next=[], standalone_column=None
+        )
 
     item_tokens = ca.items[key]
     item_token = item_tokens[token_idx]
     if item_token is None:
-        return _ParsedAfterToken(inline="", before_next=[])
+        return _ParsedAfterToken(
+            inline="", before_next=[], standalone_column=None
+        )
     return _parse_after_token(token=item_token)
+
+
+@runtime_checkable
+class _CollectionValues(Protocol):
+    """Typed boundary for ruamel.yaml collection value lookup."""
+
+    def __getitem__(self, key: object, /) -> object:
+        """Return a collection value by key or index."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@beartype
+def _collection_value(
+    *,
+    values: _CollectionValues,
+    key: object,
+) -> object:
+    """Return a value through the typed collection lookup protocol."""
+    return values[key]
+
+
+@beartype
+def _collection_element_value(
+    *,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+    key: object,
+) -> object:
+    """Return the collection element identified by *key*."""
+    match ruamel_data:
+        case CommentedSet():
+            return key
+        case CommentedMap() | CommentedSeq():
+            return _collection_value(values=ruamel_data, key=key)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@runtime_checkable
+class _LineCol(Protocol):
+    """Typed boundary for ruamel.yaml source position metadata."""
+
+    col: int
+
+
+@beartype
+def _collection_column(
+    *,
+    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+) -> int:
+    """Return the source column this collection is written at."""
+    lc_descriptor: Any = CommentedBase.__dict__["lc"]
+    lc: _LineCol = lc_descriptor.fget(ruamel_data)
+    return lc.col
+
+
+@beartype
+def _outdented_trailing_comments(
+    *,
+    value: object,
+    own_column: int,
+) -> list[str]:
+    """Return comments stored on *value* that belong to its parent.
+
+    ruamel.yaml attaches a standalone comment written between two
+    elements of an outer collection to the *last* element of the inner
+    collection that precedes it.  Such a comment is written at the outer
+    collection's indentation, so it is outdented relative to the inner
+    collection holding it, while a comment that genuinely trails the
+    inner collection is indented to that collection's own column.
+
+    Walk down the chain of last elements collecting the comments written
+    at *own_column*, so a comment stored several levels down still
+    reaches the collection it was written for.  A comment outdented past
+    *own_column* belongs to a further ancestor, which runs this same
+    walk over its own elements and claims it there.
+    """
+    if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
+        return []
+
+    nested_column = _collection_column(ruamel_data=value)
+    targets = _collection_targets(ruamel_data=value)
+    if not targets.keys:
+        return []
+
+    last_key = targets.keys[-1]
+    deeper = _outdented_trailing_comments(
+        value=_collection_element_value(ruamel_data=value, key=last_key),
+        own_column=own_column,
+    )
+    parsed = _element_after_comments(
+        ca=_comment_association(ruamel_data=value),
+        key=last_key,
+        token_idx=targets.token_idx,
+    )
+    if parsed.standalone_column == own_column < nested_column:
+        return [*deeper, *parsed.before_next]
+    return deeper
 
 
 @beartype
 def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+    nested: bool,
 ) -> CollectionComments:
     """Extract top-level comments from parsed ruamel.yaml data.
 
@@ -293,6 +403,13 @@ def extract_yaml_comments(
     objects.
     Scalar values do not carry this metadata; use
     :func:`_extract_scalar_comments` for those.
+
+    Set *nested* when *ruamel_data* is a collection inside a larger
+    document.  A standalone comment written at an enclosing collection's
+    indentation is stored by *ruamel.yaml* on the last element of the
+    nested collection that precedes it, and belongs to that enclosing
+    collection rather than to this one.  A root collection has no
+    enclosing collection, so it keeps every comment stored on it.
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ca = _comment_association(ruamel_data=ruamel_data)
@@ -300,6 +417,7 @@ def extract_yaml_comments(
     # Header comments (before the first element).
     pending_before = _header_comment_lines(ca=ca)
     targets = _collection_targets(ruamel_data=ruamel_data)
+    own_column = _collection_column(ruamel_data=ruamel_data)
 
     # Iterate in insertion order so that pending_before propagation is
     # correct (a "before element N" comment is stored in the after-token
@@ -313,7 +431,26 @@ def extract_yaml_comments(
             token_idx=targets.token_idx,
         )
         inline = parsed.inline
-        pending_before = parsed.before_next
+        # A standalone comment outdented from this collection was
+        # written for an enclosing one, which claims it through its own
+        # walk over nested elements.  A root collection has no enclosing
+        # collection to claim it, so it keeps everything stored on it.
+        outdented = (
+            nested
+            and parsed.standalone_column is not None
+            and parsed.standalone_column < own_column
+        )
+        pending_before = [] if outdented else parsed.before_next
+        # ruamel.yaml stores a comment written between two elements of
+        # this collection on the last element of the nested collection
+        # that precedes it, so collect it from there.
+        pending_before += _outdented_trailing_comments(
+            value=_collection_element_value(
+                ruamel_data=ruamel_data,
+                key=key,
+            ),
+            own_column=own_column,
+        )
 
         element_map[key] = ElementComments(
             before=tuple(before),

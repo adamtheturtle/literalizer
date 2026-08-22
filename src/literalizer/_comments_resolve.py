@@ -130,6 +130,7 @@ def _resolve_yaml_collection_comments(
     """Resolve comments for a YAML list or dict."""
     collection_comments = extract_yaml_comments(
         ruamel_data=ruamel_data,
+        nested=False,
     )
 
     if language.skip_null_dict_values and isinstance(
@@ -183,6 +184,7 @@ def resolve_yaml_comments(
             return _resolve_collection_comments(
                 collection_comments=extract_yaml_comments(
                     ruamel_data=raw_data,
+                    nested=False,
                 ),
                 base=base,
                 language=language,

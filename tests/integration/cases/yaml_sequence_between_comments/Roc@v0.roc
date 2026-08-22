@@ -8,9 +8,7 @@ Val : [
 
 my_data : Val
 my_data = RList [
-    RDict [
-        ("item", RStr "existing"),
-        # This comment describes the next item.
-        ],
+    RDict [("item", RStr "existing")],
+    # This comment describes the next item.
     RDict [("item", RStr "next")],
     ]

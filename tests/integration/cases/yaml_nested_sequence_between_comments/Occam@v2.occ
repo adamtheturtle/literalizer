@@ -1,0 +1,27 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+            MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "item"; MOBILE LIT(lit.str; MOBILE []BYTE "existing"))]),
+            MOBILE LIT(lit.str; MOBILE []BYTE "kept")
+            -- This comment trails the first pair.
+        ]),
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "item"; MOBILE LIT(lit.str; MOBILE []BYTE "next"))]), MOBILE LIT(lit.str; MOBILE []BYTE "also kept")]),
+        -- This comment describes the last pair.
+        MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "item"; MOBILE LIT(lit.str; MOBILE []BYTE "last"))]), MOBILE LIT(lit.str; MOBILE []BYTE "kept too")])
+    ]):
+    SEQ
+        SKIP
+:

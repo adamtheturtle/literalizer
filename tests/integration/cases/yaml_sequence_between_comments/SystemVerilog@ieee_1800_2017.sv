@@ -12,7 +12,8 @@ typedef struct {
 module main;
 initial begin
 static _VVal my_data[] = '{
-    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VKV'{k: \"item\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"existing\"}}\n        // This comment describes the next item.\n    }"},
+    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"item\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"existing\"}}}"},
+    // This comment describes the next item.
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"item\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"next\"}}}"}
 };
 end
