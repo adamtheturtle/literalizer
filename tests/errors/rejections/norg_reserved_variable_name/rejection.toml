@@ -1,0 +1,33 @@
+schema_version = 1
+summary = "Norg keyword names cannot be used as variable identifiers."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Norg"]
+values = [
+  "break",
+  "const",
+  "continue",
+  "else",
+  "enum",
+  "fn",
+  "for",
+  "if",
+  "impl",
+  "let",
+  "mod",
+  "mut",
+  "pub",
+  "return",
+  "struct",
+  "trait",
+  "type",
+  "use",
+  "while",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
