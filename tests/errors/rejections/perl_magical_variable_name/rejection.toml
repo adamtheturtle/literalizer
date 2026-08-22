@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Perl magical variables cannot be used as my-scoped names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Perl"]
+values = ["ARGV", "ENV", "INC", "SIG", "STDERR", "STDIN", "STDOUT"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
