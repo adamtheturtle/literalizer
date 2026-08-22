@@ -1004,6 +1004,7 @@ class Mojo(metaclass=LanguageCls):
             "None",
             "True",
             "Self",
+            "self",
             "alias",
             "and",
             "as",
