@@ -499,6 +499,7 @@ class Go(metaclass=LanguageCls):
             "if",
             "import",
             "interface",
+            "main",
             "map",
             "nil",
             "package",

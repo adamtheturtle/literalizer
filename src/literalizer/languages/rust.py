@@ -2809,6 +2809,7 @@ class Rust(metaclass=LanguageCls):
             "let",
             "loop",
             "macro",
+            "main",
             "match",
             "mod",
             "move",
