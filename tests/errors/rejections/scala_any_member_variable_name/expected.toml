@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Scala['equals']" = "Scala cannot use NewVariable name 'equals': it is a reserved identifier"
+"Scala['getClass']" = "Scala cannot use NewVariable name 'getClass': it is a reserved identifier"
