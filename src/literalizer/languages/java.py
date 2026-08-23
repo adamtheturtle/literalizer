@@ -876,6 +876,14 @@ class Java(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "Array",
+            "Boolean",
+            "Double",
+            "Integer",
+            "List",
+            "Main",
+            "Map",
+            "String",
             "_",
             "abstract",
             "assert",
