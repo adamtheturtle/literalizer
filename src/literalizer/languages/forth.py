@@ -303,6 +303,7 @@ class Forth(metaclass=LanguageCls):
             "BEGIN",
             "DO",
             "ELSE",
+            "EXIT",
             "IF",
             "LOOP",
             "REPEAT",
