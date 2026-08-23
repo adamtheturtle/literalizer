@@ -43,8 +43,8 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
-    format_string_backslash_nul_hex,
+    bidi_escape_replacements,
+    has_bidi_formatting_character,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
@@ -115,10 +115,26 @@ from literalizer.exceptions import (
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
+_BIDI_REPLACEMENTS = bidi_escape_replacements(template="\\u{:04X}")
+
 # Python source cannot contain a literal zero byte.
+_format_string_double = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
 _format_string_single = make_backslash_string_formatter(
     quote_char="'",
-    extra_replacements=[("\0", "\\x00")],
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+_format_string_backslash = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[*_BIDI_REPLACEMENTS],
 )
 
 
@@ -139,18 +155,22 @@ def _format_string_raw(value: str) -> str:
     source, so the value read back would differ from the input
     (issue #3926).
     """
-    if "\0" in value or "\r" in value:
-        return format_string_backslash_nul_hex(value)
+    if (
+        "\0" in value
+        or "\r" in value
+        or has_bidi_formatting_character(value=value)
+    ):
+        return _format_string_double(value)
     stripped = value.rstrip("\\")
     trailing_backslashes = len(value) - len(stripped)
     if trailing_backslashes % 2 == 1:
-        return format_string_backslash(value)
+        return _format_string_backslash(value)
     has_newline = "\n" in value
     if '"' not in value and not has_newline:
         return f'r"{value}"'
     if "'''" not in value:
         return f"r'''{value}'''"
-    return format_string_backslash(value)
+    return _format_string_backslash(value)
 
 
 @beartype
@@ -167,6 +187,8 @@ def _format_string_multiline(value: str) -> str:
         .replace("\t", "\\t")
         .replace('"', '\\"')
     )
+    for character, escape in _BIDI_REPLACEMENTS:
+        escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
@@ -1355,7 +1377,7 @@ class Python(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
         RAW = enum.member(value=_format_string_raw)
         MULTILINE = enum.member(value=_format_string_multiline)
