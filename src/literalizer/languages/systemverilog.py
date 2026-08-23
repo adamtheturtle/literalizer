@@ -416,6 +416,7 @@ class SystemVerilog(metaclass=LanguageCls):
             "task",
             "this",
             "time",
+            "type",
             "typedef",
             "union",
             "unique",

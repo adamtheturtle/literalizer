@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Languages reject enum as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Crystal", "FSharp"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "enum" }]

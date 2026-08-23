@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidModuleNameError]
+Crystal = "Crystal cannot use module_name 'enum': it is not a valid identifier"
+FSharp = "FSharp cannot use module_name 'enum': it is not a valid identifier"

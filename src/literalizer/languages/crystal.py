@@ -508,6 +508,7 @@ class Crystal(metaclass=LanguageCls):
             "elsif",
             "end",
             "ensure",
+            "enum",
             "extend",
             "false",
             "for",
