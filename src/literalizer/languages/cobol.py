@@ -884,9 +884,11 @@ class Cobol(metaclass=LanguageCls):
             "exec",
             "exit",
             "goback",
+            "high-value",
             "if",
             "initialize",
             "inspect",
+            "low-value",
             "move",
             "multiply",
             "next",
@@ -900,6 +902,7 @@ class Cobol(metaclass=LanguageCls):
             "search",
             "set",
             "sort",
+            "spaces",
             "start",
             "stop",
             "subtract",
@@ -908,6 +911,8 @@ class Cobol(metaclass=LanguageCls):
             "use",
             "when",
             "write",
+            "zero",
+            "zeros",
         }
     )
     allows_empty_call_parens = True
