@@ -46,8 +46,8 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_hex,
-    format_string_backslash_single_nul_hex,
+    bidi_escape_replacements,
+    make_backslash_string_formatter,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -103,6 +103,22 @@ from literalizer._types import Value
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
+_BIDI_REPLACEMENTS = bidi_escape_replacements(template="\\u{:04X}")
+_format_string_double_base = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+_format_string_single_base = make_backslash_string_formatter(
+    quote_char="'",
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+
 
 @beartype
 def _escape_es2015_string_line_separators(value: str) -> str:
@@ -114,7 +130,7 @@ def _escape_es2015_string_line_separators(value: str) -> str:
 def _format_string_double(value: str) -> str:
     """Format an ES2015-compatible double-quoted string."""
     return _escape_es2015_string_line_separators(
-        value=format_string_backslash_nul_hex(value=value)
+        value=_format_string_double_base(value=value)
     )
 
 
@@ -122,7 +138,7 @@ def _format_string_double(value: str) -> str:
 def _format_string_single(value: str) -> str:
     """Format an ES2015-compatible single-quoted string."""
     return _escape_es2015_string_line_separators(
-        value=format_string_backslash_single_nul_hex(value=value)
+        value=_format_string_single_base(value=value)
     )
 
 
@@ -138,6 +154,8 @@ def _format_string_multiline(value: str) -> str:
         .replace("`", "\\`")
         .replace("${", r"\${")
     )
+    for character, escape in _BIDI_REPLACEMENTS:
+        escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
