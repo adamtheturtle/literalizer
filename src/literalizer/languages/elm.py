@@ -779,6 +779,7 @@ class Elm(metaclass=LanguageCls):
             "as",
             "case",
             "else",
+            "exposing",
             "if",
             "import",
             "in",
