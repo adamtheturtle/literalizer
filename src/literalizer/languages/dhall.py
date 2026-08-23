@@ -654,6 +654,7 @@ class Dhall(metaclass=LanguageCls):
             "then",
             "toMap",
             "using",
+            "with",
         }
     )
     allows_empty_call_parens = True
