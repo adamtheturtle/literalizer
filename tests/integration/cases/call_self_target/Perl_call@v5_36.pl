@@ -1,2 +1,0 @@
-sub self {}
-self("hello");

@@ -1,2 +1,0 @@
-: self ;
-s\" hello" self
