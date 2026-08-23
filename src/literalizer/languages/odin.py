@@ -567,6 +567,7 @@ class Odin(metaclass=LanguageCls):
             "import",
             "in",
             "inline",
+            "main",
             "map",
             "matrix",
             "or_return",

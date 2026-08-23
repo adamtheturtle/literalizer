@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[ReservedVariableNameError]
+"Go['main']" = "Go cannot use NewVariable name 'main': it is a reserved identifier"
+"Odin['main']" = "Odin cannot use NewVariable name 'main': it is a reserved identifier"
+"Rust['main']" = "Rust cannot use NewVariable name 'main': it is a reserved identifier"
