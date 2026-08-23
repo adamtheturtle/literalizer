@@ -448,6 +448,7 @@ class ObjectiveC(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
             "begin",
+            "class",
             "end",
         }
     )
