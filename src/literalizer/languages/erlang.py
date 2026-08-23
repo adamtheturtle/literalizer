@@ -366,8 +366,33 @@ class Erlang(metaclass=LanguageCls):
     supports_dict_literal_as_free_expression = True
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
+            "after",
+            "and",
+            "andalso",
+            "band",
             "begin",
+            "bnot",
+            "bor",
+            "bsl",
+            "bsr",
+            "bxor",
+            "case",
+            "catch",
+            "cond",
+            "div",
             "end",
+            "fun",
+            "if",
+            "let",
+            "not",
+            "of",
+            "or",
+            "orelse",
+            "receive",
+            "rem",
+            "try",
+            "when",
+            "xor",
         }
     )
     supports_module_name = True
