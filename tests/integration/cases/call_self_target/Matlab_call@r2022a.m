@@ -1,2 +1,0 @@
-self = @(varargin) [];
-self("hello")

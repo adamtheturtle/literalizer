@@ -948,6 +948,7 @@ class Java(metaclass=LanguageCls):
         | frozenset(
             {
                 "begin",
+                "end",
             }
         )
     )

@@ -65,6 +65,7 @@ Jsonnet
 LUB
 LocalDate
 Lua
+MLton
 Mixin
 Mojo
 NEL
