@@ -646,6 +646,11 @@ class Scala(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
     supports_dict_literal_as_free_expression = True
+    reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {
+            "end",
+        }
+    )
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True
