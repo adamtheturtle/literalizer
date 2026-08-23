@@ -293,6 +293,7 @@ class Raku(metaclass=LanguageCls):
             "loop",
             "method",
             "module",
+            "my",
             "next",
             "not",
             "or",

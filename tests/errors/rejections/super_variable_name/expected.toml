@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[ReservedVariableNameError]
+"Haxe['super']" = "Haxe cannot use NewVariable name 'super': it is a reserved identifier"
+"ObjectiveC['super']" = "ObjectiveC cannot use NewVariable name 'super': it is a reserved identifier"

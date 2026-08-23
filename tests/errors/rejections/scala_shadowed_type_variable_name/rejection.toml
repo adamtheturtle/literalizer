@@ -1,0 +1,33 @@
+schema_version = 1
+summary = "Scala declarations cannot shadow an emitted type or collection name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Scala"]
+values = [
+  "Any",
+  "Array",
+  "BigInt",
+  "Boolean",
+  "Double",
+  "Int",
+  "Json",
+  "List",
+  "ListMap",
+  "LocalDate",
+  "LocalTime",
+  "Long",
+  "Map",
+  "Seq",
+  "Set",
+  "String",
+  "TreeSet",
+  "ZoneId",
+  "ZonedDateTime",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

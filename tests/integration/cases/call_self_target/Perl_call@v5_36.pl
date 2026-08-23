@@ -1,0 +1,2 @@
+sub self {}
+self("hello");

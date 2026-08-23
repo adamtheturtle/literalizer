@@ -998,6 +998,9 @@ class Mojo(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
+    contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"self"}
+    )
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "False",

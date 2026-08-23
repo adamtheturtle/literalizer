@@ -45,7 +45,53 @@ jobs:
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
+  # Building the package is by far the most expensive part of preparing a
+  # benchmark environment: ``uv run`` calls the setuptools backend twice
+  # (once for metadata, once for the wheel), which costs about two minutes
+  # on a runner.  Paying that once here and handing the wheel to every
+  # shard keeps the per-shard cost down to installing pre-built wheels.
+  benchmark-wheel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Build the wheel
+        run: uv build --wheel --out-dir dist
+
+      - name: Upload the wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-wheel
+          path: dist/*.whl
+          retention-days: 1
+
   benchmarks:
+    needs: [benchmark-wheel]
+
+    strategy:
+      # A shard that fails still leaves the other shards' timings worth
+      # having, and CodSpeed reports on whatever it receives.
+      fail-fast: false
+      matrix:
+        # The benchmarks take around eleven minutes in total, and each
+        # shard pays about a minute of fixed setup, so six shards keep
+        # every shard under about four minutes.  ``pytest-test-groups``
+        # deals the benchmarks out round-robin, which spreads the slow
+        # per-language cases evenly.
+        #
+        # Keep in sync with ``--test-group-count`` below.
+        shard: [1, 2, 3, 4, 5, 6]
+
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -64,21 +110,40 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
+      - name: Download the wheel
+        uses: actions/download-artifact@v8
+        with:
+          name: benchmark-wheel
+          path: dist
+
+      - name: Create the benchmark environment
+        # Installing the wheel with its ``benchmark`` extra brings in the
+        # pinned test dependencies without building the project again.
+        run: |
+          uv venv
+          uv pip install "$(echo dist/*.whl)[benchmark]"
+
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5.0.3
         with:
           mode: simulation
-          run: uv run --extra=benchmark pytest tests/benchmarks --codspeed -o addopts=
+          run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
+            --test-group=${{ matrix.shard }} --test-group-count=6
+        env:
+          # Benchmark the checkout rather than the copy of the same code
+          # inside the virtual environment, so CodSpeed's call graph maps
+          # back onto ``src/``.
+          PYTHONPATH: src
 
   completion-ci:
-    needs: [build, benchmarks]
+    needs: [build, benchmark-wheel, benchmarks]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: always()
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' && needs.benchmarks.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi

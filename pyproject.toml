@@ -45,6 +45,11 @@ dependencies = [
 optional-dependencies.benchmark = [
     "pytest==9.1.1",
     "pytest-codspeed==5.0.3",
+    # Splits the benchmarks across the CI shards defined by the
+    # ``benchmarks`` matrix in ``.github/workflows/ci.yml``.  CodSpeed
+    # aggregates the shards back into a single report as long as they run
+    # in the same workflow.
+    "pytest-test-groups==1.2.1",
 ]
 optional-dependencies.dev = [
     "actionlint-py==1.7.12.24",
@@ -377,7 +382,6 @@ ignore = [
     ".clj-kondo",
     ".clj-kondo/**",
     ".git_archival.txt",
-    ".pre-commit-config.yaml",
     ".vale.ini",
     ".vscode/*.json",
     "CHANGELOG.rst",
@@ -394,6 +398,7 @@ ignore = [
     "Makefile",
     "newsfragments",
     "newsfragments/**",
+    "prek.toml",
     "repro.py",
     "scripts",
     "scripts/**",

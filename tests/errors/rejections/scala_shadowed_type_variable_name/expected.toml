@@ -1,0 +1,22 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Scala['Any']" = "Scala cannot use NewVariable name 'Any': it is a reserved identifier"
+"Scala['Array']" = "Scala cannot use NewVariable name 'Array': it is a reserved identifier"
+"Scala['BigInt']" = "Scala cannot use NewVariable name 'BigInt': it is a reserved identifier"
+"Scala['Boolean']" = "Scala cannot use NewVariable name 'Boolean': it is a reserved identifier"
+"Scala['Double']" = "Scala cannot use NewVariable name 'Double': it is a reserved identifier"
+"Scala['Int']" = "Scala cannot use NewVariable name 'Int': it is a reserved identifier"
+"Scala['Json']" = "Scala cannot use NewVariable name 'Json': it is a reserved identifier"
+"Scala['List']" = "Scala cannot use NewVariable name 'List': it is a reserved identifier"
+"Scala['ListMap']" = "Scala cannot use NewVariable name 'ListMap': it is a reserved identifier"
+"Scala['LocalDate']" = "Scala cannot use NewVariable name 'LocalDate': it is a reserved identifier"
+"Scala['LocalTime']" = "Scala cannot use NewVariable name 'LocalTime': it is a reserved identifier"
+"Scala['Long']" = "Scala cannot use NewVariable name 'Long': it is a reserved identifier"
+"Scala['Map']" = "Scala cannot use NewVariable name 'Map': it is a reserved identifier"
+"Scala['Seq']" = "Scala cannot use NewVariable name 'Seq': it is a reserved identifier"
+"Scala['Set']" = "Scala cannot use NewVariable name 'Set': it is a reserved identifier"
+"Scala['String']" = "Scala cannot use NewVariable name 'String': it is a reserved identifier"
+"Scala['TreeSet']" = "Scala cannot use NewVariable name 'TreeSet': it is a reserved identifier"
+"Scala['ZoneId']" = "Scala cannot use NewVariable name 'ZoneId': it is a reserved identifier"
+"Scala['ZonedDateTime']" = "Scala cannot use NewVariable name 'ZonedDateTime': it is a reserved identifier"

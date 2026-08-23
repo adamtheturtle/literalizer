@@ -26,7 +26,7 @@ jobs:
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         # We select hooks by prek group (defined via ``groups:`` in
-        # ``.pre-commit-config.yaml``) rather than by stage, so the slow
+        # ``prek.toml``) rather than by stage, so the slow
         # hooks run on separate runners in parallel instead of serialized
         # within one stage:
         #   - ``fast``: the quick pre-commit-stage hooks (+ check-manifest)

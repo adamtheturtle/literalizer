@@ -366,6 +366,7 @@ class Erlang(metaclass=LanguageCls):
     supports_dict_literal_as_free_expression = True
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
+            "begin",
             "end",
         }
     )
