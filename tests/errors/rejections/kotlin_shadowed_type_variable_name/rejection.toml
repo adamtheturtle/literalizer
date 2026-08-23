@@ -1,0 +1,21 @@
+schema_version = 1
+summary = "Kotlin declarations cannot shadow an emitted type or collection name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Kotlin"]
+values = [
+  "Array",
+  "Boolean",
+  "HashSet",
+  "Int",
+  "List",
+  "Map",
+  "String",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
