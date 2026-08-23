@@ -878,6 +878,8 @@ class Cobol(metaclass=LanguageCls):
             "divide",
             "else",
             "end",
+            "end-if",
+            "end-perform",
             "evaluate",
             "exec",
             "exit",
