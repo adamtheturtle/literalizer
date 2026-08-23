@@ -1,0 +1,18 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cobol['COMP']" = "Cobol cannot use NewVariable name 'COMP': it is a reserved identifier"
+"Cobol['COMP-5']" = "Cobol cannot use NewVariable name 'COMP-5': it is a reserved identifier"
+"Cobol['FILLER']" = "Cobol cannot use NewVariable name 'FILLER': it is a reserved identifier"
+"Cobol['FROM']" = "Cobol cannot use NewVariable name 'FROM': it is a reserved identifier"
+"Cobol['GIVING']" = "Cobol cannot use NewVariable name 'GIVING': it is a reserved identifier"
+"Cobol['OCCURS']" = "Cobol cannot use NewVariable name 'OCCURS': it is a reserved identifier"
+"Cobol['PIC']" = "Cobol cannot use NewVariable name 'PIC': it is a reserved identifier"
+"Cobol['PICTURE']" = "Cobol cannot use NewVariable name 'PICTURE': it is a reserved identifier"
+"Cobol['REDEFINES']" = "Cobol cannot use NewVariable name 'REDEFINES': it is a reserved identifier"
+"Cobol['RETURNING']" = "Cobol cannot use NewVariable name 'RETURNING': it is a reserved identifier"
+"Cobol['RUN']" = "Cobol cannot use NewVariable name 'RUN': it is a reserved identifier"
+"Cobol['TIMES']" = "Cobol cannot use NewVariable name 'TIMES': it is a reserved identifier"
+"Cobol['TO']" = "Cobol cannot use NewVariable name 'TO': it is a reserved identifier"
+"Cobol['USING']" = "Cobol cannot use NewVariable name 'USING': it is a reserved identifier"
+"Cobol['VALUE']" = "Cobol cannot use NewVariable name 'VALUE': it is a reserved identifier"
