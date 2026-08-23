@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+# ``self`` is reserved as a keyword but valid as a method call target.
+target_function = "self"
+parameter_names = ["value"]
+per_element = true
