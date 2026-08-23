@@ -1,0 +1,19 @@
+schema_version = 1
+summary = "C# declarations cannot shadow an emitted type or entry-point name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["CSharp"]
+values = [
+  "Boolean",
+  "Dictionary",
+  "Int32",
+  "List",
+  "String",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
