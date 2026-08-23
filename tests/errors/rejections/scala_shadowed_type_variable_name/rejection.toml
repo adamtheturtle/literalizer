@@ -9,7 +9,6 @@ values = [
   "Int",
   "Integer",
   "List",
-  "Main",
   "Map",
   "Option",
   "Seq",

@@ -468,7 +468,6 @@ _SCALA_EMITTED_TYPE_NAMES = frozenset(
         "Int",
         "Integer",
         "List",
-        "Main",
         "Map",
         "Option",
         "Seq",
