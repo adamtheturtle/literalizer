@@ -1,0 +1,21 @@
+          schema_version = 1
+          summary = "D built-in type names cannot be used as variable names."
+          exceptions = ["ReservedVariableNameError"]
+          languages = ["D"]
+          values = [
+            "idouble",
+"ifloat",
+"int",
+"ireal",
+"long",
+"real",
+"string",
+          ]
+
+          [call]
+          api = "literalize"
+          sources = ["{\"a\": 1, \"b\": [1, 2]}"]
+          input_format = "json"
+          wrap_in_file = true
+          variable_form = "new"
+          variable_name = "{value}"

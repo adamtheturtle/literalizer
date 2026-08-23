@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"D['idouble']" = "D cannot use NewVariable name 'idouble': it is a reserved identifier"
+"D['ifloat']" = "D cannot use NewVariable name 'ifloat': it is a reserved identifier"
+"D['int']" = "D cannot use NewVariable name 'int': it is a reserved identifier"
+"D['ireal']" = "D cannot use NewVariable name 'ireal': it is a reserved identifier"
+"D['long']" = "D cannot use NewVariable name 'long': it is a reserved identifier"
+"D['real']" = "D cannot use NewVariable name 'real': it is a reserved identifier"
+"D['string']" = "D cannot use NewVariable name 'string': it is a reserved identifier"
