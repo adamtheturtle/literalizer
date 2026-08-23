@@ -1,7 +1,7 @@
 schema_version = 1
 summary = "Class-like languages reject class as a wrapper module name."
 exceptions = ["InvalidModuleNameError"]
-languages = ["Cpp", "Crystal", "D", "Haxe", "Scala"]
+languages = ["Cpp", "Crystal", "D", "Haxe", "ObjectiveC", "Scala"]
 
 [call]
 api = "constructor"
