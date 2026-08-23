@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "HCL does not support dotted call targets."
+exceptions = ["DottedCallTargetNotSupportedError"]
+languages = ["Hcl"]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "helper.fn"
+parameter_names = ["x"]
+per_element = false
