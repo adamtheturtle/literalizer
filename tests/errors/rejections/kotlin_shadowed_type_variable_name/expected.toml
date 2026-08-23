@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Kotlin['Array']" = "Kotlin cannot use NewVariable name 'Array': it is a reserved identifier"
+"Kotlin['Boolean']" = "Kotlin cannot use NewVariable name 'Boolean': it is a reserved identifier"
+"Kotlin['HashSet']" = "Kotlin cannot use NewVariable name 'HashSet': it is a reserved identifier"
+"Kotlin['Int']" = "Kotlin cannot use NewVariable name 'Int': it is a reserved identifier"
+"Kotlin['List']" = "Kotlin cannot use NewVariable name 'List': it is a reserved identifier"
+"Kotlin['Map']" = "Kotlin cannot use NewVariable name 'Map': it is a reserved identifier"
+"Kotlin['String']" = "Kotlin cannot use NewVariable name 'String': it is a reserved identifier"

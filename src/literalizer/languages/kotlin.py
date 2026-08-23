@@ -983,6 +983,13 @@ class Kotlin(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "Array",
+            "Boolean",
+            "HashSet",
+            "Int",
+            "List",
+            "Map",
+            "String",
             "as",
             "break",
             "class",
