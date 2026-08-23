@@ -168,8 +168,11 @@ class Racket(metaclass=LanguageCls):
         {
             "begin",
             "begin0",
+            "car",
             "case",
+            "cdr",
             "cond",
+            "cons",
             "date",
             "define",
             "define-syntax",

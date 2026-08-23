@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Racket['car']" = "Racket cannot use NewVariable name 'car': it is a reserved identifier"
+"Racket['cdr']" = "Racket cannot use NewVariable name 'cdr': it is a reserved identifier"
+"Racket['cons']" = "Racket cannot use NewVariable name 'cons': it is a reserved identifier"
