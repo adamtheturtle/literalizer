@@ -464,16 +464,23 @@ _SCALA_EMITTED_TYPE_NAMES = frozenset(
     {
         "Any",
         "Array",
+        "BigInt",
         "Boolean",
+        "Double",
         "Int",
-        "Integer",
+        "Json",
         "List",
+        "ListMap",
+        "LocalDate",
+        "LocalTime",
+        "Long",
         "Map",
-        "Option",
         "Seq",
         "Set",
         "String",
-        "Vector",
+        "TreeSet",
+        "ZoneId",
+        "ZonedDateTime",
     }
 )
 
