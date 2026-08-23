@@ -1,0 +1,19 @@
+schema_version = 1
+summary = "Elixir special forms cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Elixir"]
+values = [
+  "__CALLER__",
+  "__DIR__",
+  "__ENV__",
+  "__MODULE__",
+  "__STACKTRACE__",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

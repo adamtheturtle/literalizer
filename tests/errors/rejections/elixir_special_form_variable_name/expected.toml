@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Elixir['__CALLER__']" = "Elixir cannot use NewVariable name '__CALLER__': it is a reserved identifier"
+"Elixir['__DIR__']" = "Elixir cannot use NewVariable name '__DIR__': it is a reserved identifier"
+"Elixir['__ENV__']" = "Elixir cannot use NewVariable name '__ENV__': it is a reserved identifier"
+"Elixir['__MODULE__']" = "Elixir cannot use NewVariable name '__MODULE__': it is a reserved identifier"
+"Elixir['__STACKTRACE__']" = "Elixir cannot use NewVariable name '__STACKTRACE__': it is a reserved identifier"
