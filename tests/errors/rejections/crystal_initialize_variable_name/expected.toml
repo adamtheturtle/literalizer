@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Crystal['initialize']" = "Crystal cannot use NewVariable name 'initialize': it is a reserved identifier"

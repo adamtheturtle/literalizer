@@ -511,6 +511,7 @@ class Crystal(metaclass=LanguageCls):
             "if",
             "in",
             "include",
+            "initialize",
             "lib",
             "macro",
             "module",
