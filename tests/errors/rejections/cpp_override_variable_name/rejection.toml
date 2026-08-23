@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "C++ override cannot be used as a variable name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Cpp"]
+values = [
+  "override",
+]
+
+[call]
+api = "literalize"
+sources = ["{\"a\": 1, \"b\": [1, 2]}"]
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
