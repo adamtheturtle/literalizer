@@ -1,0 +1,22 @@
+schema_version = 1
+summary = "HCL block type keywords cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Hcl"]
+values = [
+  "data",
+  "locals",
+  "module",
+  "output",
+  "provider",
+  "resource",
+  "terraform",
+  "variable",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
