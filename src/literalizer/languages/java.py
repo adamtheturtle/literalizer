@@ -881,7 +881,6 @@ class Java(metaclass=LanguageCls):
             "Double",
             "Integer",
             "List",
-            "Main",
             "Map",
             "String",
             "_",

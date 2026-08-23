@@ -6,6 +6,5 @@
 "Java['Double']" = "Java cannot use NewVariable name 'Double': it is a reserved identifier"
 "Java['Integer']" = "Java cannot use NewVariable name 'Integer': it is a reserved identifier"
 "Java['List']" = "Java cannot use NewVariable name 'List': it is a reserved identifier"
-"Java['Main']" = "Java cannot use NewVariable name 'Main': it is a reserved identifier"
 "Java['Map']" = "Java cannot use NewVariable name 'Map': it is a reserved identifier"
 "Java['String']" = "Java cannot use NewVariable name 'String': it is a reserved identifier"

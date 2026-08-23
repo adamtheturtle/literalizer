@@ -8,7 +8,6 @@ values = [
   "Double",
   "Integer",
   "List",
-  "Main",
   "Map",
   "String",
 ]
