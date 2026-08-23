@@ -1,0 +1,23 @@
+schema_version = 1
+summary = "Forth control-structure words cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Forth"]
+values = [
+  "BEGIN",
+  "DO",
+  "ELSE",
+  "IF",
+  "LOOP",
+  "REPEAT",
+  "THEN",
+  "UNTIL",
+  "WHILE",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

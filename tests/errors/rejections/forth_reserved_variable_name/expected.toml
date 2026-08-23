@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Forth['BEGIN']" = "Forth cannot use NewVariable name 'BEGIN': it is a reserved identifier"
+"Forth['DO']" = "Forth cannot use NewVariable name 'DO': it is a reserved identifier"
+"Forth['ELSE']" = "Forth cannot use NewVariable name 'ELSE': it is a reserved identifier"
+"Forth['IF']" = "Forth cannot use NewVariable name 'IF': it is a reserved identifier"
+"Forth['LOOP']" = "Forth cannot use NewVariable name 'LOOP': it is a reserved identifier"
+"Forth['REPEAT']" = "Forth cannot use NewVariable name 'REPEAT': it is a reserved identifier"
+"Forth['THEN']" = "Forth cannot use NewVariable name 'THEN': it is a reserved identifier"
+"Forth['UNTIL']" = "Forth cannot use NewVariable name 'UNTIL': it is a reserved identifier"
+"Forth['WHILE']" = "Forth cannot use NewVariable name 'WHILE': it is a reserved identifier"
