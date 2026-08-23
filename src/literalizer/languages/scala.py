@@ -457,7 +457,9 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
 _SCALA_INHERITED_MEMBERS = frozenset(
     {
         "clone",
+        "equals",
         "finalize",
+        "getClass",
         "hashCode",
         "notify",
         "notifyAll",
