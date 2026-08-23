@@ -3,11 +3,16 @@ summary = "HCL block type keywords cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
 languages = ["Hcl"]
 values = [
+  "check",
   "data",
+  "ephemeral",
+  "import",
   "locals",
   "module",
+  "moved",
   "output",
   "provider",
+  "removed",
   "resource",
   "terraform",
   "variable",

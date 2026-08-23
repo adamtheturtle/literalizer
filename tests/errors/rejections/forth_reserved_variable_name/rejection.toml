@@ -12,6 +12,9 @@ values = [
   "THEN",
   "UNTIL",
   "WHILE",
+  "begin",
+  "if",
+  "while",
 ]
 
 [call]

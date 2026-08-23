@@ -10,3 +10,6 @@
 "Forth['THEN']" = "Forth cannot use NewVariable name 'THEN': it is a reserved identifier"
 "Forth['UNTIL']" = "Forth cannot use NewVariable name 'UNTIL': it is a reserved identifier"
 "Forth['WHILE']" = "Forth cannot use NewVariable name 'WHILE': it is a reserved identifier"
+"Forth['begin']" = "Forth cannot use NewVariable name 'begin': it is a reserved identifier"
+"Forth['if']" = "Forth cannot use NewVariable name 'if': it is a reserved identifier"
+"Forth['while']" = "Forth cannot use NewVariable name 'while': it is a reserved identifier"
