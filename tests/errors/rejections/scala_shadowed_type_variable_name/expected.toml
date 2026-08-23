@@ -1,0 +1,16 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Scala['Any']" = "Scala cannot use NewVariable name 'Any': it is a reserved identifier"
+"Scala['Array']" = "Scala cannot use NewVariable name 'Array': it is a reserved identifier"
+"Scala['Boolean']" = "Scala cannot use NewVariable name 'Boolean': it is a reserved identifier"
+"Scala['Int']" = "Scala cannot use NewVariable name 'Int': it is a reserved identifier"
+"Scala['Integer']" = "Scala cannot use NewVariable name 'Integer': it is a reserved identifier"
+"Scala['List']" = "Scala cannot use NewVariable name 'List': it is a reserved identifier"
+"Scala['Main']" = "Scala cannot use NewVariable name 'Main': it is a reserved identifier"
+"Scala['Map']" = "Scala cannot use NewVariable name 'Map': it is a reserved identifier"
+"Scala['Option']" = "Scala cannot use NewVariable name 'Option': it is a reserved identifier"
+"Scala['Seq']" = "Scala cannot use NewVariable name 'Seq': it is a reserved identifier"
+"Scala['Set']" = "Scala cannot use NewVariable name 'Set': it is a reserved identifier"
+"Scala['String']" = "Scala cannot use NewVariable name 'String': it is a reserved identifier"
+"Scala['Vector']" = "Scala cannot use NewVariable name 'Vector': it is a reserved identifier"
