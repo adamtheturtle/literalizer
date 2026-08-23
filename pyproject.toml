@@ -377,7 +377,7 @@ ignore = [
     ".clj-kondo",
     ".clj-kondo/**",
     ".git_archival.txt",
-    ".pre-commit-config.yaml",
+    "prek.toml",
     ".vale.ini",
     ".vscode/*.json",
     "CHANGELOG.rst",
