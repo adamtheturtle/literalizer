@@ -511,6 +511,7 @@ class Crystal(metaclass=LanguageCls):
             "extend",
             "false",
             "for",
+            "fun",
             "if",
             "in",
             "include",
