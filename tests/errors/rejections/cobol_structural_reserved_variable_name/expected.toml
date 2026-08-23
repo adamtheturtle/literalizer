@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cobol['DATA']" = "Cobol cannot use NewVariable name 'DATA': it is a reserved identifier"
+"Cobol['DIVISION']" = "Cobol cannot use NewVariable name 'DIVISION': it is a reserved identifier"
+"Cobol['IDENTIFICATION']" = "Cobol cannot use NewVariable name 'IDENTIFICATION': it is a reserved identifier"
+"Cobol['PROCEDURE']" = "Cobol cannot use NewVariable name 'PROCEDURE': it is a reserved identifier"
+"Cobol['PROGRAM-ID']" = "Cobol cannot use NewVariable name 'PROGRAM-ID': it is a reserved identifier"
+"Cobol['SECTION']" = "Cobol cannot use NewVariable name 'SECTION': it is a reserved identifier"
+"Cobol['WORKING-STORAGE']" = "Cobol cannot use NewVariable name 'WORKING-STORAGE': it is a reserved identifier"
