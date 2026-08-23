@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Crystal rejects fun as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Crystal"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "fun" }]

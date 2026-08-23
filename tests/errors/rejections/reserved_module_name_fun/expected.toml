@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+Crystal = "Crystal cannot use module_name 'fun': it is not a valid identifier"
