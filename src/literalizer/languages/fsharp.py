@@ -522,6 +522,7 @@ class FSharp(metaclass=LanguageCls):
             "function",
             "global",
             "if",
+            "import",
             "in",
             "inherit",
             "inline",

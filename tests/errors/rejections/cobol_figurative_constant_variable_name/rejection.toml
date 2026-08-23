@@ -1,0 +1,19 @@
+schema_version = 1
+summary = "Cobol figurative constants cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Cobol"]
+values = [
+  "HIGH-VALUE",
+  "LOW-VALUE",
+  "SPACES",
+  "ZERO",
+  "ZEROS",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

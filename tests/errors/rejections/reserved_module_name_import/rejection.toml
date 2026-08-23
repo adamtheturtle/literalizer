@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Languages reject import as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Cpp", "FSharp"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "import" }]
