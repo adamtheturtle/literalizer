@@ -7,7 +7,6 @@ values = [
   "Dictionary",
   "Int32",
   "List",
-  "Main",
   "String",
 ]
 

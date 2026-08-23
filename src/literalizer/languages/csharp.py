@@ -668,7 +668,6 @@ class CSharp(metaclass=LanguageCls):
             "Dictionary",
             "Int32",
             "List",
-            "Main",
             "String",
             "abstract",
             "as",
