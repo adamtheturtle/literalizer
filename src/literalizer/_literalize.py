@@ -2322,7 +2322,10 @@ def _yaml_collection_comments(
     raw_value = ctx.yaml_comment_nodes.get(id(value))
     if raw_value is None:
         return None
-    comments = extract_yaml_comments(ruamel_data=raw_value)
+    comments = extract_yaml_comments(
+        ruamel_data=raw_value,
+        nested=id(value) != ctx.yaml_comment_root_id,
+    )
     if comments.trailing or any(
         element.before or element.inline for element in comments.elements
     ):
@@ -5121,7 +5124,9 @@ def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
         parsed.raw_data, CommentedSeq | CommentedMap | CommentedSet
     ):
         return False
-    collection_comments = extract_yaml_comments(ruamel_data=parsed.raw_data)
+    collection_comments = extract_yaml_comments(
+        ruamel_data=parsed.raw_data, nested=False
+    )
     if collection_comments.trailing:
         return True
     return any(element.before for element in collection_comments.elements)
@@ -6293,6 +6298,7 @@ def literalize_call_parsed(
         ):
             collection_comments = extract_yaml_comments(
                 ruamel_data=parsed.raw_data,
+                nested=False,
             )
         result = _render_call_per_element(
             data=per_element_data,

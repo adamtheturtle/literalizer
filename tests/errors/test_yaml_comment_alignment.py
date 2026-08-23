@@ -9,9 +9,13 @@ from literalizer._comments import CollectionComments
 from literalizer.languages import Java
 
 
-def _misaligned_comments(*, ruamel_data: object) -> CollectionComments:
+def _misaligned_comments(
+    *,
+    ruamel_data: object,
+    nested: bool,
+) -> CollectionComments:
     """Return deliberately malformed parser metadata for an error test."""
-    del ruamel_data
+    del ruamel_data, nested
     return CollectionComments(elements=(), trailing=("trailing",))
 
 
