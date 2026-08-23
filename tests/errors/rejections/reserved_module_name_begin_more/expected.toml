@@ -1,0 +1,13 @@
+# languages rejecting: 10; languages accepting: 0
+
+[InvalidModuleNameError]
+C = "C cannot use module_name 'begin': it is not a valid identifier"
+Cpp = "Cpp cannot use module_name 'begin': it is not a valid identifier"
+D = "D cannot use module_name 'begin': it is not a valid identifier"
+Erlang = "Erlang cannot use module_name 'begin': it is not a valid identifier"
+Fortran = "Fortran cannot use module_name 'begin': it is not a valid identifier"
+Haxe = "Haxe cannot use module_name 'begin': it is not a valid identifier"
+Java = "Java cannot use module_name 'begin': it is not a valid identifier"
+ObjectiveC = "ObjectiveC cannot use module_name 'begin': it is not a valid identifier"
+Occam = "Occam cannot use module_name 'begin': it is not a valid identifier"
+Scala = "Scala cannot use module_name 'begin': it is not a valid identifier"

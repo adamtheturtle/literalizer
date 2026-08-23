@@ -943,7 +943,13 @@ class Java(metaclass=LanguageCls):
         reserved_variable_identifiers
     )
     reserved_module_identifiers: ClassVar[frozenset[str]] = (
-        reserved_variable_identifiers | {"record", "var", "yield"}
+        reserved_variable_identifiers
+        | {"record", "var", "yield"}
+        | frozenset(
+            {
+                "begin",
+            }
+        )
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
