@@ -296,6 +296,7 @@ class Haxe(metaclass=LanguageCls):
             "public",
             "return",
             "static",
+            "super",
             "switch",
             "this",
             "throw",

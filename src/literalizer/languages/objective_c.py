@@ -424,6 +424,7 @@ class ObjectiveC(metaclass=LanguageCls):
             "sizeof",
             "static",
             "struct",
+            "super",
             "switch",
             "typedef",
             "typeof",
