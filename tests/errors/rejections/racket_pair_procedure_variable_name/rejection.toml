@@ -1,0 +1,17 @@
+          schema_version = 1
+          summary = "A Racket definition cannot shadow car, cdr, or cons."
+          exceptions = ["ReservedVariableNameError"]
+          languages = ["Racket"]
+          values = [
+            "car",
+"cdr",
+"cons",
+          ]
+
+          [call]
+          api = "literalize"
+          sources = ["{\"a\": 1, \"b\": [1, 2]}"]
+          input_format = "json"
+          wrap_in_file = true
+          variable_form = "new"
+          variable_name = "{value}"
