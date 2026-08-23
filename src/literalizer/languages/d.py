@@ -662,6 +662,7 @@ class D(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
             "begin",
+            "end",
         }
     )
     supports_module_name = True

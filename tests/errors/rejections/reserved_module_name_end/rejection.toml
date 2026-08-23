@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Languages reject end as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["C", "Cpp", "D", "Erlang", "Haxe", "Java", "ObjectiveC", "Occam", "Scala"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "end" }]
