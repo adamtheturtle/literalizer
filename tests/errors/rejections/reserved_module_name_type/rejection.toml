@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "SystemVerilog rejects type as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+languages = ["SystemVerilog"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "type" }]
