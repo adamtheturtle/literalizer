@@ -2421,6 +2421,7 @@ class Cpp(metaclass=LanguageCls):
             "operator",
             "or",
             "or_eq",
+            "override",
             "private",
             "protected",
             "public",

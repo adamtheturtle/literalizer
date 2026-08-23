@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cpp['override']" = "Cpp cannot use NewVariable name 'override': it is a reserved identifier"
