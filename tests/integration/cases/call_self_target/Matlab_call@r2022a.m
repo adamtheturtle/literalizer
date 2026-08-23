@@ -1,0 +1,2 @@
+self = @(varargin) [];
+self("hello")
