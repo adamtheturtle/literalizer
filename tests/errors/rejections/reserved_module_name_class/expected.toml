@@ -1,8 +1,9 @@
-# languages rejecting: 5; languages accepting: 0
+# languages rejecting: 6; languages accepting: 0
 
 [InvalidModuleNameError]
 Cpp = "Cpp cannot use module_name 'class': it is not a valid identifier"
 Crystal = "Crystal cannot use module_name 'class': it is not a valid identifier"
 D = "D cannot use module_name 'class': it is not a valid identifier"
 Haxe = "Haxe cannot use module_name 'class': it is not a valid identifier"
+ObjectiveC = "ObjectiveC cannot use module_name 'class': it is not a valid identifier"
 Scala = "Scala cannot use module_name 'class': it is not a valid identifier"
