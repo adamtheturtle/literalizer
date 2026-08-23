@@ -1,0 +1,9 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"CSharp['Boolean']" = "CSharp cannot use NewVariable name 'Boolean': it is a reserved identifier"
+"CSharp['Dictionary']" = "CSharp cannot use NewVariable name 'Dictionary': it is a reserved identifier"
+"CSharp['Int32']" = "CSharp cannot use NewVariable name 'Int32': it is a reserved identifier"
+"CSharp['List']" = "CSharp cannot use NewVariable name 'List': it is a reserved identifier"
+"CSharp['Main']" = "CSharp cannot use NewVariable name 'Main': it is a reserved identifier"
+"CSharp['String']" = "CSharp cannot use NewVariable name 'String': it is a reserved identifier"
