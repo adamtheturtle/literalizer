@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Raku cannot use the declarator my as a variable name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Raku"]
+values = ["my"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

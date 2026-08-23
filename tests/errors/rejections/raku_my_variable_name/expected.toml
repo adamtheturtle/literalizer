@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Raku['my']" = "Raku cannot use NewVariable name 'my': it is a reserved identifier"
