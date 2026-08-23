@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Erlang rejects reserved atoms as unquoted wrapper module names."
+exceptions = ["InvalidModuleNameError"]
+languages = ["Erlang"]
+values = ["after", "and", "andalso", "band", "bnot", "bor", "bsl", "bsr", "bxor", "case", "catch", "cond", "div", "fun", "if", "let", "not", "of", "or", "orelse", "receive", "rem", "try", "when", "xor"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]
