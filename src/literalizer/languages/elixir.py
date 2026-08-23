@@ -309,8 +309,10 @@ class Elixir(metaclass=LanguageCls):
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "__CALLER__",
+            "__DIR__",
             "__ENV__",
             "__MODULE__",
+            "__STACKTRACE__",
             "after",
             "alias",
             "and",
