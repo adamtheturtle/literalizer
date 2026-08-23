@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cobol['HIGH-VALUE']" = "Cobol cannot use NewVariable name 'HIGH-VALUE': it is a reserved identifier"
+"Cobol['LOW-VALUE']" = "Cobol cannot use NewVariable name 'LOW-VALUE': it is a reserved identifier"
+"Cobol['SPACES']" = "Cobol cannot use NewVariable name 'SPACES': it is a reserved identifier"
+"Cobol['ZERO']" = "Cobol cannot use NewVariable name 'ZERO': it is a reserved identifier"
+"Cobol['ZEROS']" = "Cobol cannot use NewVariable name 'ZEROS': it is a reserved identifier"
