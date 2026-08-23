@@ -454,6 +454,29 @@ _SCALA_RESERVED_IDENTIFIERS = frozenset(
 # wrapped file declares its value inside an ``object``, so a ``val``
 # with one of these names overrides the inherited member and needs an
 # ``override`` modifier the declaration does not carry (issue #3945).
+
+# Type / collection names the wrapped file writes into annotations and
+# constructors.  Declaring a value with one of those names shadows the
+# type on the right-hand side (``val List = Map(... List[Int](...))``,
+# ``val Map = Map(...)``, ...), so the file does not compile
+# (issues #4056, #4057, #4096-#4105).
+_SCALA_EMITTED_TYPE_NAMES = frozenset(
+    {
+        "Any",
+        "Array",
+        "Boolean",
+        "Int",
+        "Integer",
+        "List",
+        "Map",
+        "Option",
+        "Seq",
+        "Set",
+        "String",
+        "Vector",
+    }
+)
+
 _SCALA_INHERITED_MEMBERS = frozenset(
     {
         "clone",
@@ -626,8 +649,10 @@ class Scala(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
-        _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
-    ) | _SCALA_INHERITED_MEMBERS
+        (_SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS)
+        | _SCALA_INHERITED_MEMBERS
+        | _SCALA_EMITTED_TYPE_NAMES
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
         {"using"}
     )
