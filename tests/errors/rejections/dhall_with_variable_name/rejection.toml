@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Dhall with keyword cannot be used as a variable name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Dhall"]
+values = [
+  "with",
+]
+
+[call]
+api = "literalize"
+sources = ["{\"a\": 1}"]
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
