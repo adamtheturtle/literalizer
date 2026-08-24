@@ -1,0 +1,11 @@
+# languages rejecting: 8; languages accepting: 7
+
+[ReservedVariableNameError]
+D = "D cannot use NewVariable name 'import': it is a reserved identifier"
+FSharp = "FSharp cannot use NewVariable name 'import': it is a reserved identifier"
+Fortran = "Fortran cannot use NewVariable name 'import': it is a reserved identifier"
+Haskell = "Haskell cannot use NewVariable name 'import': it is a reserved identifier"
+Haxe = "Haxe cannot use NewVariable name 'import': it is a reserved identifier"
+Java = "Java cannot use NewVariable name 'import': it is a reserved identifier"
+Scala = "Scala cannot use NewVariable name 'import': it is a reserved identifier"
+SystemVerilog = "SystemVerilog cannot use NewVariable name 'import': it is a reserved identifier"
