@@ -4,9 +4,15 @@ exceptions = ["ReservedVariableNameError"]
 languages = ["Cobol"]
 values = [
   "HIGH-VALUE",
+  "HIGH-VALUES",
   "LOW-VALUE",
+  "LOW-VALUES",
+  "QUOTE",
+  "QUOTES",
+  "SPACE",
   "SPACES",
   "ZERO",
+  "ZEROES",
   "ZEROS",
 ]
 

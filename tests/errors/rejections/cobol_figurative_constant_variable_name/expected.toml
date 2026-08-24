@@ -2,7 +2,13 @@
 
 [ReservedVariableNameError]
 "Cobol['HIGH-VALUE']" = "Cobol cannot use NewVariable name 'HIGH-VALUE': it is a reserved identifier"
+"Cobol['HIGH-VALUES']" = "Cobol cannot use NewVariable name 'HIGH-VALUES': it is a reserved identifier"
 "Cobol['LOW-VALUE']" = "Cobol cannot use NewVariable name 'LOW-VALUE': it is a reserved identifier"
+"Cobol['LOW-VALUES']" = "Cobol cannot use NewVariable name 'LOW-VALUES': it is a reserved identifier"
+"Cobol['QUOTE']" = "Cobol cannot use NewVariable name 'QUOTE': it is a reserved identifier"
+"Cobol['QUOTES']" = "Cobol cannot use NewVariable name 'QUOTES': it is a reserved identifier"
+"Cobol['SPACE']" = "Cobol cannot use NewVariable name 'SPACE': it is a reserved identifier"
 "Cobol['SPACES']" = "Cobol cannot use NewVariable name 'SPACES': it is a reserved identifier"
 "Cobol['ZERO']" = "Cobol cannot use NewVariable name 'ZERO': it is a reserved identifier"
+"Cobol['ZEROES']" = "Cobol cannot use NewVariable name 'ZEROES': it is a reserved identifier"
 "Cobol['ZEROS']" = "Cobol cannot use NewVariable name 'ZEROS': it is a reserved identifier"
