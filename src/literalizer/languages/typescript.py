@@ -47,8 +47,8 @@ from literalizer._formatters.format_integers import (
     raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_hex,
-    format_string_backslash_single_nul_hex,
+    bidi_escape_replacements,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._language import (
@@ -107,12 +107,50 @@ from literalizer._types import OrderedMap, Scalar, Value
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
+_BIDI_REPLACEMENTS = bidi_escape_replacements(template="\\u{:04X}")
+_format_string_double_base = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+_format_string_single_base = make_backslash_string_formatter(
+    quote_char="'",
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *_BIDI_REPLACEMENTS,
+    ],
+)
+
+
+@beartype
+def _escape_es2015_string_line_separators(value: str) -> str:
+    """Escape line terminators forbidden in ES2015 string literals."""
+    return value.replace("\u2028", r"\u2028").replace("\u2029", r"\u2029")
+
+
+@beartype
+def _format_string_double(value: str) -> str:
+    """Format an ES2015-compatible double-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=_format_string_double_base(value=value)
+    )
+
+
+@beartype
+def _format_string_single(value: str) -> str:
+    """Format an ES2015-compatible single-quoted string."""
+    return _escape_es2015_string_line_separators(
+        value=_format_string_single_base(value=value)
+    )
+
 
 @beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating template literal."""
     if "\r" in value:
-        return format_string_backslash_nul_hex(value=value)
+        return _format_string_double(value=value)
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -120,6 +158,8 @@ def _format_string_multiline(value: str) -> str:
         .replace("`", "\\`")
         .replace("${", r"\${")
     )
+    for character, escape in _BIDI_REPLACEMENTS:
+        escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
         repl=lambda match: r"\x20" * len(match[0]),
         string=escaped,
@@ -840,8 +880,8 @@ class TypeScript(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
-        SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
+        DOUBLE = enum.member(value=_format_string_double)
+        SINGLE = enum.member(value=_format_string_single)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
