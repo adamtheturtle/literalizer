@@ -4,6 +4,7 @@ exceptions = ["ReservedVariableNameError"]
 languages = ["Cobol"]
 values = [
   "COMP",
+  "COMP-2",
   "COMP-5",
   "FILLER",
   "FROM",
@@ -11,11 +12,13 @@ values = [
   "OCCURS",
   "PIC",
   "PICTURE",
+  "POINTER",
   "REDEFINES",
   "RETURNING",
   "RUN",
   "TIMES",
   "TO",
+  "USAGE",
   "USING",
   "VALUE",
 ]
