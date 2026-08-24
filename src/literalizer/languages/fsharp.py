@@ -512,7 +512,6 @@ class FSharp(metaclass=LanguageCls):
             "elif",
             "else",
             "end",
-            "enum",
             "exception",
             "extern",
             "false",
