@@ -1,0 +1,24 @@
+schema_version = 1
+summary = """
+Languages that take a wrapper module name reject import as a
+declaration name only where it is actually reserved as one.
+"""
+exceptions = ["ReservedVariableNameError"]
+gates = [
+  { kind = "capability_flag", flag = "supports_module_name" },
+]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "import"
+
+[[accepts]]
+languages = ["Ada", "C", "Cpp", "Crystal", "Erlang", "ObjectiveC", "Occam"]
+reason = """
+import is a valid declaration name in these languages. C++ reserves it
+only as a wrapper module name.
+"""

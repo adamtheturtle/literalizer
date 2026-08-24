@@ -2408,7 +2408,6 @@ class Cpp(metaclass=LanguageCls):
             "friend",
             "goto",
             "if",
-            "import",
             "inline",
             "int",
             "long",
@@ -2474,6 +2473,7 @@ class Cpp(metaclass=LanguageCls):
         {
             "begin",
             "end",
+            "import",
         }
     )
     supports_module_name = True
