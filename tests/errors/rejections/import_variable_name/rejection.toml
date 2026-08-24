@@ -17,8 +17,8 @@ variable_form = "new"
 variable_name = "import"
 
 [[accepts]]
-languages = ["Ada", "C", "Cpp", "Crystal", "Erlang", "ObjectiveC", "Occam"]
+languages = ["Ada", "C", "Cpp", "Crystal", "Erlang", "FSharp", "ObjectiveC", "Occam"]
 reason = """
 import is a valid declaration name in these languages. C++ reserves it
-only as a wrapper module name.
+only as a wrapper module name, and F# does not reserve it at all.
 """

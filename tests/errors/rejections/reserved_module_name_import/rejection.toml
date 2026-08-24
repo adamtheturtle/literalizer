@@ -1,7 +1,7 @@
 schema_version = 1
-summary = "Languages reject import as a wrapper module name."
+summary = "C++ rejects import as a wrapper module name."
 exceptions = ["InvalidModuleNameError"]
-languages = ["Cpp", "FSharp"]
+languages = ["Cpp"]
 
 [call]
 api = "constructor"

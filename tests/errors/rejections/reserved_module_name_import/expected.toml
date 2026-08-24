@@ -1,5 +1,4 @@
-# languages rejecting: 2; languages accepting: 0
+# languages rejecting: 1; languages accepting: 0
 
 [InvalidModuleNameError]
 Cpp = "Cpp cannot use module_name 'import': it is not a valid identifier"
-FSharp = "FSharp cannot use module_name 'import': it is not a valid identifier"

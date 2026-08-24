@@ -1,8 +1,7 @@
-# languages rejecting: 8; languages accepting: 7
+# languages rejecting: 7; languages accepting: 8
 
 [ReservedVariableNameError]
 D = "D cannot use NewVariable name 'import': it is a reserved identifier"
-FSharp = "FSharp cannot use NewVariable name 'import': it is a reserved identifier"
 Fortran = "Fortran cannot use NewVariable name 'import': it is a reserved identifier"
 Haskell = "Haskell cannot use NewVariable name 'import': it is a reserved identifier"
 Haxe = "Haxe cannot use NewVariable name 'import': it is a reserved identifier"
