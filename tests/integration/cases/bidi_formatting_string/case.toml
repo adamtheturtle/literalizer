@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Dart", "Elixir", "Python", "Rust"]
-languages_reason = "These toolchains reject a raw bidirectional formatting character in source: rustc denies it, Elixir raises a syntax error, the Dart analyzer warns, and Python linters flag Trojan Source risk in string literals."
+languages = ["Dart", "Elixir", "JavaScript", "Python", "Rust"]
+languages_reason = "These toolchains reject a raw bidirectional formatting character in source: rustc denies it, Elixir raises a syntax error, the Dart analyzer warns, and JavaScript tooling plus Python linters flag Trojan Source risk in string literals."
 suites = ["base"]
 
 [[variants]]
