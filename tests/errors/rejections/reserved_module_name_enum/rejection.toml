@@ -1,7 +1,7 @@
 schema_version = 1
-summary = "Languages reject enum as a wrapper module name."
+summary = "Crystal rejects enum as a wrapper module name."
 exceptions = ["InvalidModuleNameError"]
-languages = ["Crystal", "FSharp"]
+languages = ["Crystal"]
 
 [call]
 api = "constructor"
