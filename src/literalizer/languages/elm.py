@@ -382,7 +382,12 @@ def _build_elm_body_preamble(
         del data  # unused
         p = constructor_prefix
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date}
+        str_types: set[type] = {
+            str,
+            bytes,
+            datetime.date,
+            datetime.time,
+        }
         if datetime_type_produced is int:
             int_types.add(datetime.datetime)
         else:

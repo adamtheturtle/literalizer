@@ -1,0 +1,1 @@
+Render bare ``datetime.time`` bound references in Elm without leaking an ``IndexError``.
