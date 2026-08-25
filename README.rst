@@ -12,11 +12,11 @@ Supported languages
 -------------------
 
 Ada, Bash, C, C#, C++, Clojure, COBOL, Common Lisp, Crystal, D, Dart, Dhall,
-Elixir, Elm, Erlang, F#, Fortran, Gleam, Go, Groovy, Haskell, Haxe, HCL,
-Java, JavaScript, JSON5, Jsonnet, Julia, Kotlin, Lua, MATLAB, Mojo, Nim, Norg,
-Objective-C, OCaml, Occam-pi, Odin, Perl, PHP, PowerShell, PureScript, Python,
-R, Racket, Raku, Roc, Ruby, Rust, Scala, Scheme, Swift, SystemVerilog, TOML,
-TypeScript, Visual Basic, YAML, Zig.
+Elixir, Elm, Erlang, F#, Forth, Fortran, Gleam, Go, Groovy, Haskell, Haxe, HCL,
+Java, JavaScript, JSON5, Jsonnet, Julia, Kotlin, Lua, MATLAB, Mojo, Nim, Nix,
+Norg, Objective-C, OCaml, Occam-pi, Odin, Perl, PHP, PowerShell, PureScript,
+Python, R, Racket, Raku, Roc, Ruby, Rust, Scala, Scheme, SML, Swift,
+SystemVerilog, Tcl, TOML, TypeScript, V, Visual Basic, Wren, YAML, Zig.
 
 Installation
 ------------
@@ -71,12 +71,12 @@ Comments in the source are preserved using the target language's comment syntax:
        input_format=InputFormat.YAML,
        language=Go(date_format=Go.date_formats.ISO),
    )
-   # result.code:
+   # result.code (backslash-t denotes a tab):
    # map[string]any{
-   #     // Server configuration
-   #     "host": "localhost",  // default host
-   #     "port": 8080,
-   #     "released": "2026-06-02",
+   # \t// Server configuration
+   # \t"host": "localhost",  // default host
+   # \t"port": 8080,
+   # \t"released": "2026-06-02",
    # }
 
 Use cases
