@@ -2630,11 +2630,11 @@ def _format_collection_lines(
 
 
 @beartype
-def _mapping_object_at(
-    *, mapping: Mapping[object, object], key: object
-) -> object:
-    """Return a mapping value with its public boundary type preserved."""
-    normalized = {
+def _normalized_mapping_objects(
+    *, mapping: Mapping[object, object]
+) -> dict[object, object]:
+    """Index mapping values by their public-boundary key once."""
+    return {
         (
             unwrap_yaml_scalar(value=raw_key)
             if isinstance(raw_key, TaggedScalar)
@@ -2642,7 +2642,6 @@ def _mapping_object_at(
         ): value
         for raw_key, value in mapping.items()
     }
-    return normalized[key]
 
 
 @beartype
@@ -2662,10 +2661,11 @@ def _collect_yaml_comment_nodes(
     if isinstance(raw_value, CommentedMap) and isinstance(value, dict):
         out[id(value)] = raw_value
         typed_raw_map: Mapping[object, object] = raw_value
+        normalized_raw_map = _normalized_mapping_objects(mapping=typed_raw_map)
         for key, child in value.items():
             _collect_yaml_comment_nodes(
                 value=child,
-                raw_value=_mapping_object_at(mapping=typed_raw_map, key=key),
+                raw_value=normalized_raw_map[key],
                 out=out,
             )
         return
