@@ -2377,7 +2377,7 @@ class Nim(metaclass=LanguageCls):
             range.
             """
             if value == I64_MIN and not is_decimal:
-                return f"cast[int64]({base(-value)}'u64)"
+                return f"cast[int]({base(-value)}'u64)"
             return base(value)
 
         return make_overflow_fallback_formatter(

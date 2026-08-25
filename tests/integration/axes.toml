@@ -1106,6 +1106,15 @@ name_template = "{lang}_i64_min_integer_format_{format}"
 option = "integer_format"
 gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
 
+[axes.nim_i64_min_record_integer_format]
+plan = "cross_product"
+name_template = "{lang}_i64_min_record_integer_format_{tag}_{secondary}"
+gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+secondaries = [{ tag = "integer", option = "integer_format" }]
+
 [axes.csharp_fallback_map_non_scalar]
 # This locks in C#'s System.Text.Json fallback syntax for nested non-scalars;
 # no cross-language capability denotes that language-specific spelling.
