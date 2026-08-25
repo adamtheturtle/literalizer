@@ -150,9 +150,9 @@ class _ParsedAfterToken:
 
     inline: str
     before_next: list[str]
-    # Source column of the standalone lines in *before_next*, or None
-    # when the token also carries an inline comment and so records the
-    # inline comment's column instead.
+    # Source column of the first standalone line in *before_next*.
+    # This is derived from that line when ruamel.yaml combines it with
+    # an inline comment whose token column describes only the first line.
     standalone_column: int | None
 
 
@@ -183,15 +183,20 @@ def _parse_after_token(
         inline = _strip_comment_marker(text=lines[0])
         start = 1
 
+    standalone_lines = [
+        line for line in lines[start:] if line.strip().startswith("#")
+    ]
     before_next = [
-        _strip_comment_marker(text=line)
-        for line in lines[start:]
-        if line.strip().startswith("#")
+        _strip_comment_marker(text=line) for line in standalone_lines
     ]
     return _ParsedAfterToken(
         inline=inline,
         before_next=before_next,
-        standalone_column=None if inline else column,
+        standalone_column=(
+            len(standalone_lines[0]) - len(standalone_lines[0].lstrip())
+            if standalone_lines
+            else None
+        ),
     )
 
 
@@ -350,7 +355,7 @@ def _outdented_trailing_comments(
     *,
     value: object,
     own_column: int,
-) -> list[str]:
+) -> ElementComments:
     """Return comments stored on *value* that belong to its parent.
 
     ruamel.yaml attaches a standalone comment written between two
@@ -367,12 +372,12 @@ def _outdented_trailing_comments(
     walk over its own elements and claims it there.
     """
     if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
-        return []
+        return ElementComments(before=(), inline="")
 
     nested_column = _collection_column(ruamel_data=value)
     targets = _collection_targets(ruamel_data=value)
     if not targets.keys:
-        return []
+        return ElementComments(before=(), inline="")
 
     last_key = targets.keys[-1]
     deeper = _outdented_trailing_comments(
@@ -385,7 +390,10 @@ def _outdented_trailing_comments(
         token_idx=targets.token_idx,
     )
     if parsed.standalone_column == own_column < nested_column:
-        return [*deeper, *parsed.before_next]
+        return ElementComments(
+            before=(*deeper.before, *parsed.before_next),
+            inline=parsed.inline or deeper.inline,
+        )
     return deeper
 
 
@@ -430,7 +438,6 @@ def extract_yaml_comments(
             key=key,
             token_idx=targets.token_idx,
         )
-        inline = parsed.inline
         # A standalone comment outdented from this collection was
         # written for an enclosing one, which claims it through its own
         # walk over nested elements.  A root collection has no enclosing
@@ -440,17 +447,20 @@ def extract_yaml_comments(
             and parsed.standalone_column is not None
             and parsed.standalone_column < own_column
         )
+        inline = "" if outdented else parsed.inline
         pending_before = [] if outdented else parsed.before_next
         # ruamel.yaml stores a comment written between two elements of
         # this collection on the last element of the nested collection
         # that precedes it, so collect it from there.
-        pending_before += _outdented_trailing_comments(
+        nested_comments = _outdented_trailing_comments(
             value=_collection_element_value(
                 ruamel_data=ruamel_data,
                 key=key,
             ),
             own_column=own_column,
         )
+        pending_before += list(nested_comments.before)
+        inline = inline or nested_comments.inline
 
         element_map[key] = ElementComments(
             before=tuple(before),
