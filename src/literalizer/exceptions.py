@@ -541,7 +541,8 @@ class InvalidValueInputError(InvalidRenderArgumentError):
     def __init__(self, *, argument_name: str) -> None:
         """Create an ``InvalidValueInputError``."""
         super().__init__(
-            f"{argument_name} must contain an acyclic, finitely nested value"
+            f"{argument_name} must contain an acyclic value within the "
+            "supported nesting depth"
         )
         self.argument_name = argument_name
 
