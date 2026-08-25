@@ -1149,7 +1149,7 @@ def _sibling_maps_diverge(
     ]
     if not spec.dict_supports_heterogeneous_values:
         inferred_value_types = {
-            infer_element_type(items=list(d.values())) for d in filtered
+            infer_element_type(items=list(d.values())) for d in filtered if d
         }
         if len(inferred_value_types) > 1:
             return True
