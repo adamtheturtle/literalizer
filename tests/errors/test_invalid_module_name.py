@@ -7,7 +7,9 @@ from literalizer.languages import Erlang
 
 
 def test_erlang_rejects_module_name_beyond_atom_limit() -> None:
-    """An Erlang module name must fit in the VM's atom limit."""
+    """An Erlang module name must fit in the virtual machine atom
+    limit.
+    """
     with pytest.raises(
         expected_exception=InvalidModuleNameError,
         match="Erlang cannot use module_name",
