@@ -460,8 +460,9 @@ def literalize_call(
             it; supplying *zip_source* without one raises
             :class:`~literalizer.exceptions.ZipValuesWithoutCallTransformError`).
         zip_input_format: The serialization format of *zip_source*.
-            Required whenever *zip_source* is supplied and ignored
-            otherwise.
+            Required whenever *zip_source* is supplied. Supplying it without
+            *zip_source* raises
+            :class:`~literalizer.exceptions.ZipInputFormatWithoutSourceError`.
         comment_source: Optional sequence of trailing source-code
             comments, one per generated call, paired positionally.
             Each non-empty entry is emitted as a line comment **after**

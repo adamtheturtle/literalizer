@@ -1,0 +1,1 @@
+Reject zip input formats when no corresponding source is provided.

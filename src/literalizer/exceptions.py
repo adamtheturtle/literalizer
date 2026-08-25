@@ -767,6 +767,22 @@ class ZipSourceWithoutInputFormatError(LiteralizerError):
         )
 
 
+class ZipInputFormatWithoutSourceError(LiteralizerError):
+    """Raised when ``literalize_call`` is given ``zip_input_format``
+    without a companion ``zip_source``.
+
+    To resolve, pass ``zip_source`` alongside ``zip_input_format``, or drop
+    ``zip_input_format``.
+    """
+
+    def __init__(self) -> None:
+        """Create a ``ZipInputFormatWithoutSourceError``."""
+        super().__init__(
+            "zip_input_format was supplied without a zip_source; there is "
+            "no companion source to parse"
+        )
+
+
 class CommentSourceLengthMismatchError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``comment_source``
     whose entry count differs from the number of generated calls.
