@@ -1287,8 +1287,8 @@ def _check_unrepresentable_sibling_maps(
     """
     typed_sibling_maps = (
         not spec.dict_supports_heterogeneous_values
-        or _dict_slot_uses_variant_typing(spec=spec)
-    )
+        and not spec.heterogeneous_behavior.skip_scalar_checks
+    ) or _dict_slot_uses_variant_typing(spec=spec)
     if typed_sibling_maps and (
         _has_unrepresentable_sibling_maps(
             data=data,
