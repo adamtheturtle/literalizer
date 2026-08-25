@@ -9,6 +9,23 @@ from literalizer.exceptions import UnrepresentableInputError
 
 
 @beartype
+def normalize_datetime_utc(
+    value: datetime.datetime, *, language_name: str
+) -> datetime.datetime:
+    """Normalize an aware datetime or raise a typed representation
+    error.
+    """
+    try:
+        return value.astimezone(tz=datetime.UTC)
+    except OverflowError as error:
+        msg = (
+            f"{language_name} cannot normalize datetime to UTC within "
+            f"Python's supported year range: {value.isoformat()}"
+        )
+        raise UnrepresentableInputError(msg) from error
+
+
+@beartype
 def format_date_iso(value: datetime.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
 

@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -275,7 +276,7 @@ def _perl_use_utf8_preamble(data: Value, /) -> tuple[str, ...]:
 def _format_datetime_perl(value: datetime.datetime) -> str:
     """Format a datetime as a Perl ``DateTime`` constructor."""
     if value.tzinfo is not None:
-        value = value.astimezone(tz=datetime.UTC)
+        value = normalize_datetime_utc(value=value, language_name="Perl")
     parts = (
         f"DateTime->new(year => {value.year}, "
         f"month => {value.month}, day => {value.day}, "

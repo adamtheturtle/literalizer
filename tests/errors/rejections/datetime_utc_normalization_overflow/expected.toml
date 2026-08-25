@@ -1,0 +1,11 @@
+# languages rejecting: 4; languages accepting: 0
+
+[UnrepresentableInputError]
+"Haskell['0001-01-01T00:00:00+01:00']" = "Haskell cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+01:00"
+"Haskell['9999-12-31T23:59:59-01:00']" = "Haskell cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-01:00"
+"Perl['0001-01-01T00:00:00+01:00']" = "Perl cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+01:00"
+"Perl['9999-12-31T23:59:59-01:00']" = "Perl cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-01:00"
+"R['0001-01-01T00:00:00+01:00']" = "R cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+01:00"
+"R['9999-12-31T23:59:59-01:00']" = "R cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-01:00"
+"Raku['0001-01-01T00:00:00+01:00']" = "Raku cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+01:00"
+"Raku['9999-12-31T23:59:59-01:00']" = "Raku cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-01:00"
