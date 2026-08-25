@@ -1,0 +1,21 @@
+"""Tests for COBOL data-name disambiguation."""
+
+from literalizer.languages.cobol import (
+    _NameScope,  # pyright: ignore[reportPrivateUsage]
+    _unique_cobol_name,  # pyright: ignore[reportPrivateUsage]
+)
+
+
+def test_cobol_collision_suffix_probe_advances() -> None:
+    """Repeated collisions retain the next suffix for their base."""
+    scope = _NameScope(level=5, used=set(), next_suffix={})
+    collision_count = 1_000
+
+    names = [
+        _unique_cobol_name(base="F-A-B", scope=scope)
+        for _ in range(collision_count)
+    ]
+
+    assert names[:3] == ["F-A-B", "F-A-B-2", "F-A-B-3"]
+    assert names[-1] == "F-A-B-1000"
+    assert scope.next_suffix["F-A-B"] == collision_count + 1

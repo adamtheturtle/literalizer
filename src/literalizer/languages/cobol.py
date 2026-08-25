@@ -284,27 +284,31 @@ class _NameScope:
 
     level: int
     used: set[str]
+    next_suffix: dict[str, int]
 
 
 @beartype
-def _unique_cobol_name(base: str, used: set[str]) -> str:
-    """Return *base*, or a suffixed variant of it, not present in *used*.
+def _unique_cobol_name(base: str, scope: _NameScope) -> str:
+    """Return *base*, or a suffixed variant absent from *scope.used*.
 
     On collision a ``-2``, ``-3``, ... suffix is appended; the base is
     truncated first when needed so the result stays within
     :data:`_MAX_COBOL_NAME_LENGTH`.  The chosen name is recorded in
-    *used*.
+    *scope.used*.  The next suffix is retained per base so repeated
+    collisions do not restart the probe at ``-2``.
     """
-    if base not in used:
-        used.add(base)
+    if base not in scope.used:
+        scope.used.add(base)
+        scope.next_suffix[base] = 2
         return base
-    counter = 2
+    counter = scope.next_suffix.get(base, 2)
     while True:
         suffix = f"-{counter}"
         head = base[: _MAX_COBOL_NAME_LENGTH - len(suffix)].rstrip("-")
         proposed_name = f"{head}{suffix}"
-        if proposed_name not in used:
-            used.add(proposed_name)
+        if proposed_name not in scope.used:
+            scope.used.add(proposed_name)
+            scope.next_suffix[base] = counter + 1
             return proposed_name
         counter += 1
 
@@ -337,8 +341,8 @@ def _disambiguate_data_names(content: str) -> str:
         if name == "FILLER" or not scopes:
             new_name = name
         else:
-            new_name = _unique_cobol_name(base=name, used=scopes[-1].used)
-        scopes.append(_NameScope(level=level, used=set()))
+            new_name = _unique_cobol_name(base=name, scope=scopes[-1])
+        scopes.append(_NameScope(level=level, used=set(), next_suffix={}))
         out_lines.append(
             f"{match['indent']}{match['level']} {new_name}{match['rest']}"
         )
