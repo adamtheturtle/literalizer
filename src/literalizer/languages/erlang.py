@@ -96,6 +96,8 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
+_MAX_ATOM_LENGTH = 255
+
 _format_quoted_string = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
@@ -712,8 +714,9 @@ class Erlang(metaclass=LanguageCls):
 
     def __post_init__(self) -> None:
         """Validate that the module name is an unquoted Erlang atom."""
-        if re.fullmatch(
-            pattern=r"[a-z][A-Za-z0-9_@]*", string=self.module_name
+        if len(self.module_name) <= _MAX_ATOM_LENGTH and re.fullmatch(
+            pattern=r"[a-z][A-Za-z0-9_@]*",
+            string=self.module_name,
         ):
             return
         raise InvalidModuleNameError(
