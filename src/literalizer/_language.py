@@ -7,6 +7,7 @@ import math
 import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
+from types import MappingProxyType
 from typing import (
     Any,
     ClassVar,
@@ -1395,6 +1396,14 @@ class LanguageCls(type):
                 option=min(known_unsupported),
             )
         instance: Language = super().__call__(*args, **kwargs)
+        if cls.supports_record_shape_names:
+            object.__setattr__(
+                instance,
+                "record_shape_names",
+                MappingProxyType(
+                    mapping=dict(vars(instance)["record_shape_names"])
+                ),
+            )
         if cls.supports_record_struct_name_prefix:
             prefix = vars(instance)["record_struct_name_prefix"]
             if (
