@@ -37,7 +37,7 @@ def test_aware_time_rejected_when_native_formatter_drops_offset(
 
 
 def test_aware_time_allowed_when_string_formatter_preserves_offset() -> None:
-    """Offset-preserving string backends remain supported."""
+    """Offset-preserving string back ends remain supported."""
     result = literalize(
         source='{"x": {"$ref": "value"}}',
         input_format=InputFormat.JSON,
