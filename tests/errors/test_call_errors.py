@@ -25,6 +25,7 @@ from literalizer.exceptions import (
     CommentSourceLengthMismatchError,
     CommentSourceMultilineError,
     InvalidCallParameterNameError,
+    InvalidCallTargetError,
     ParameterCountMismatchError,
     PerElementNotListError,
     UnsupportedCallShapeError,
@@ -41,6 +42,7 @@ from literalizer.languages import (
     Cobol,
     Dhall,
     Elm,
+    Fortran,
     Haskell,
     JavaScript,
     Jsonnet,
@@ -50,6 +52,18 @@ from literalizer.languages import (
     Tcl,
     Yaml,
 )
+
+
+def test_fortran_rejects_long_constructor_call_target() -> None:
+    """Constructor spelling does not bypass Fortran's name limit."""
+    with pytest.raises(expected_exception=InvalidCallTargetError):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Fortran(),
+            target_function="A" * 64,
+            parameter_names=["value"],
+        )
 
 
 def test_dhall_literalize_call_rejects_non_scalar_arg() -> None:
