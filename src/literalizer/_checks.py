@@ -425,10 +425,12 @@ def _values_mixed_list_depths(*, values: Sequence[Value]) -> bool:
     lists = [value for value in values if isinstance(value, list)]
     if len(lists) <= 1:
         return False
-    depths = frozenset[int]().union(
-        *(_list_nesting_depths(value=value) for value in lists)
-    )
-    return len(depths) > 1
+    depth_shapes = {
+        depths
+        for value in lists
+        if (depths := _list_nesting_depths(value=value))
+    }
+    return len(depth_shapes) > 1
 
 
 @beartype
