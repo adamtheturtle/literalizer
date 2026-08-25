@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, overload
 
 from beartype import beartype
 
+from literalizer._formatters.type_inference import infer_element_type
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -1138,6 +1139,27 @@ def _dict_slot_uses_variant_typing(*, spec: Language) -> bool:
 
 
 @beartype
+def _fill_nested_empty_map_siblings(
+    *, maps: list[dict[Scalar, Value]]
+) -> None:
+    """Give nested empty maps a non-empty sibling's inferred shape."""
+    for d in maps:
+        for key, value in list(d.items()):
+            if value != {}:
+                continue
+            replacement = next(
+                (
+                    sibling[key]
+                    for sibling in maps
+                    if isinstance(sibling.get(key), dict) and sibling[key]
+                ),
+                None,
+            )
+            if replacement is not None:
+                d[key] = replacement
+
+
+@beartype
 def _sibling_maps_diverge(
     *,
     pool: list[Value],
@@ -1172,6 +1194,14 @@ def _sibling_maps_diverge(
         }
         for d in maps
     ]
+    if not spec.dict_supports_heterogeneous_values:
+        if spec.dict_format_config.narrowed_empty_form is not None:
+            _fill_nested_empty_map_siblings(maps=filtered)
+        inferred_value_types = {
+            infer_element_type(items=list(d.values())) for d in filtered if d
+        }
+        if len(inferred_value_types) > 1:
+            return True
     return len({dict_open(d) for d in filtered}) > 1
 
 
@@ -1206,7 +1236,9 @@ def _has_unrepresentable_sibling_maps(
                 for value in data.values()
             )
         case dict():
-            if _sibling_maps_diverge(
+            if _dict_slot_uses_variant_typing(
+                spec=spec
+            ) and _sibling_maps_diverge(
                 pool=list(data.values()),
                 spec=spec,
                 record_dict_ids=record_dict_ids,
@@ -1231,18 +1263,25 @@ def _has_unrepresentable_sibling_maps(
             if (
                 id(data) not in tuple_list_ids
                 and len(plain_dicts) == len(data) >= min_dicts_for_pooling
-            ):
-                pooled = [
-                    value
-                    for element in plain_dicts
-                    for value in element.values()
-                ]
-                if _sibling_maps_diverge(
-                    pool=pooled,
+                and (
+                    spec.dict_supports_heterogeneous_values
+                    or not record_dict_ids
+                )
+                and _sibling_maps_diverge(
+                    pool=(
+                        [
+                            value
+                            for element in plain_dicts
+                            for value in element.values()
+                        ]
+                        if spec.dict_supports_heterogeneous_values
+                        else list(data)
+                    ),
                     spec=spec,
                     record_dict_ids=record_dict_ids,
-                ):
-                    return True
+                )
+            ):
+                return True
             return any(
                 _has_unrepresentable_sibling_maps(
                     data=item,
@@ -1272,7 +1311,11 @@ def _check_unrepresentable_sibling_maps(
     longer rely on their content-specific normal opener and are equally
     safe to exclude from the divergence probe.
     """
-    if _dict_slot_uses_variant_typing(spec=spec) and (
+    typed_sibling_maps = (
+        not spec.dict_supports_heterogeneous_values
+        and not spec.heterogeneous_behavior.skip_scalar_checks
+    ) or _dict_slot_uses_variant_typing(spec=spec)
+    if typed_sibling_maps and (
         _has_unrepresentable_sibling_maps(
             data=data,
             spec=spec,
