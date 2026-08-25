@@ -1316,6 +1316,11 @@ class PureScript(metaclass=LanguageCls):
             indent=self.indent,
         )
 
+    @property
+    def call_wrapper_entrypoint_name(self) -> str:
+        """Return the generated complete-file entry-point name."""
+        return "main"
+
     def wrap_in_file(
         self,
         content: str,

@@ -1,0 +1,1 @@
+Reject wrapped calls whose target collides with the generated file entry point.
