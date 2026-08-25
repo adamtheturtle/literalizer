@@ -123,10 +123,10 @@ Variable references as arguments
 --------------------------------
 
 An argument can be a **reference to a named variable** instead of an inline literal value.
-Use a ``{"$ref": "name"}`` marker at the argument position and :func:`~literalizer.literalize_call` emits the identifier verbatim at that slot.
+Use a ``{"$ref": "name"}`` marker at the argument position and pass ``ref_key="$ref"``; :func:`~literalizer.literalize_call` then emits the identifier verbatim at that slot.
 Other arguments are still rendered as literals as usual, so refs and literals can be mixed freely.
 
-For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to :func:`~literalizer.literalize_call` with ``parameter_names=["data", "count"]`` and ``language=Python()`` yields ``process(data=my_var, count=42)``.
+For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to :func:`~literalizer.literalize_call` with ``parameter_names=["data", "count"]``, ``language=Python()``, and ``ref_key="$ref"`` yields ``process(data=my_var, count=42)``.
 
 This composes with :class:`~literalizer.NewVariable`: declare the data once with :func:`~literalizer.literalize` and then refer to it from a call rendered by :func:`~literalizer.literalize_call`, without repeating the literal value at the call site.
 
@@ -153,9 +153,10 @@ The call still renders only the identifier, but the referenced value participate
        language=language,
        target_function="process",
        parameter_names=["data", "count"],
+       ref_key="$ref",
        ref_values={"myList": declaration.source_data},
    )
-   assert call.declaration_code == "process(myList, 42)"
+   assert call.declaration_code == "process myList (42)"
 
 If a ref name is omitted from ``ref_values``, its marker is ignored for preamble inference as before.
 ``ref_values`` keys are the names from the input data before any ``ref_case`` conversion.
@@ -178,6 +179,8 @@ Each :class:`Language` exposes two related but independent attributes:
 
 The same YAML source can drive idiomatic identifiers across multiple languages.
 For example, the JSON source ``[[{"$ref": "user_obj"}, 42]]`` with ``parameter_names=["data", "count"]`` produces:
+
+With ``ref_key="$ref"`` passed:
 
 * ``ref_case=IdentifierCase.SNAKE`` with ``language=Python()`` → ``process(data=user_obj, count=42)``.
 * ``ref_case=IdentifierCase.CAMEL`` with ``language=JavaScript()`` → ``process({ data: userObj, count: 42 });``.
@@ -207,7 +210,8 @@ This is the call-side counterpart of :func:`~literalizer.literalize`'s own ``bou
        input_format=InputFormat.JSON,
        language=Haskell(),
        target_function="process",
-       parameter_names=["data", "count"],
+       parameter_names=["value", "count"],
+       ref_key="$ref",
        wrap_in_file=True,
        bound_refs={"my_list": [1, 2, 3]},
    )
@@ -245,6 +249,7 @@ For example, suppose you have a configuration dict where ``timeout`` and ``host`
        source=config_json,
        input_format=InputFormat.JSON,
        language=Python(),
+       ref_key="$ref",
        ref_case=IdentifierCase.SNAKE,
    )
    assert result.bare_code == (
