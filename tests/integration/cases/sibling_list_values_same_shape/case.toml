@@ -1,5 +1,7 @@
 schema_version = 1
 owner = "variant"
+languages = ["Rust"]
+languages_reason = "Rust-specific regression for its typed HashMap values under the TUPLE sequence format."
 
 [[variants]]
 axis = "sequence_tuple_nested"
