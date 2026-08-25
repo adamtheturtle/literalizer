@@ -101,6 +101,18 @@ from literalizer._types import Value
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
+_PERL_MIN_NORMAL_FLOAT = float.fromhex("0x1.0p-1022")
+
+
+@beartype
+def _format_perl_float_fixed(value: float) -> str:
+    """Keep tiny fixed-point values within Perl's token limit."""
+    magnitude = abs(value)
+    if 0 < magnitude <= _PERL_MIN_NORMAL_FLOAT:
+        return format_float_scientific(value=value)
+    return format_float_fixed(value=value)
+
+
 @beartype
 def _format_perl_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating multiline Perl literal."""
@@ -622,7 +634,7 @@ class Perl(metaclass=LanguageCls):
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        FIXED = enum.member(value=_format_perl_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

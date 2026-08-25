@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Perl"]
+languages_reason = "Perl-specific: its tokenizer rejects the hundreds of digits in fixed-point subnormal literals."
+
+[[variants]]
+axis = "float_format"
