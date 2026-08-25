@@ -1113,6 +1113,27 @@ def _dict_slot_uses_variant_typing(*, spec: Language) -> bool:
 
 
 @beartype
+def _fill_nested_empty_map_siblings(
+    *, maps: list[dict[Scalar, Value]]
+) -> None:
+    """Give nested empty maps a non-empty sibling's inferred shape."""
+    for d in maps:
+        for key, value in list(d.items()):
+            if value != {}:
+                continue
+            replacement = next(
+                (
+                    sibling[key]
+                    for sibling in maps
+                    if isinstance(sibling.get(key), dict) and sibling[key]
+                ),
+                None,
+            )
+            if replacement is not None:
+                d[key] = replacement
+
+
+@beartype
 def _sibling_maps_diverge(
     *,
     pool: list[Value],
@@ -1149,20 +1170,7 @@ def _sibling_maps_diverge(
     ]
     if not spec.dict_supports_heterogeneous_values:
         if spec.dict_format_config.narrowed_empty_form is not None:
-            for d in filtered:
-                for key, value in list(d.items()):
-                    if value == {}:
-                        replacement = next(
-                            (
-                                sibling[key]
-                                for sibling in filtered
-                                if isinstance(sibling.get(key), dict)
-                                and sibling[key]
-                            ),
-                            None,
-                        )
-                        if replacement is not None:
-                            d[key] = replacement
+            _fill_nested_empty_map_siblings(maps=filtered)
         inferred_value_types = {
             infer_element_type(items=list(d.values())) for d in filtered if d
         }
