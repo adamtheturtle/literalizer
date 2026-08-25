@@ -1,9 +1,9 @@
 schema_version = 1
-summary = "Lua rejects NaN mapping keys and set members."
+summary = "Lua rejects null and NaN mapping keys and set members."
 exceptions = ["UnrepresentableInputError"]
 languages = ["Lua"]
 
 [call]
 api = "literalize"
-sources = [".nan: value\n", "!!set\n? .nan\n"]
+sources = ["null: value\n", ".nan: value\n", "!!set\n? null\n", "!!set\n? .nan\n"]
 input_format = "yaml"

@@ -1,0 +1,1 @@
+Reject null Lua mapping keys and set members instead of emitting invalid ``[nil]`` table entries.

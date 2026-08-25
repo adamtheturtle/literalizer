@@ -107,25 +107,32 @@ _format_string_lua_escaped = make_backslash_string_formatter(
 )
 
 
-def _reject_nan_table_keys(data: Value) -> None:
-    """Reject NaN where Lua would use it as a table index."""
+def _reject_invalid_table_key(value: Value, *, location: str) -> None:
+    """Reject one value Lua cannot use as a table index."""
+    if value is None:
+        msg = f"Lua cannot use null as a {location}"
+        raise UnrepresentableInputError(msg)
+    if isinstance(value, float) and math.isnan(value):
+        msg = f"Lua cannot use NaN as a {location}"
+        raise UnrepresentableInputError(msg)
+
+
+def _reject_invalid_table_keys(data: Value) -> None:
+    """Reject values Lua cannot use as table indexes."""
     match data:
         case dict():
-            if any(isinstance(key, float) and math.isnan(key) for key in data):
-                msg = "Lua cannot use NaN as a mapping key"
-                raise UnrepresentableInputError(msg)
+            for key in data:
+                _reject_invalid_table_key(value=key, location="mapping key")
             for value in data.values():
-                _reject_nan_table_keys(data=value)
+                _reject_invalid_table_keys(data=value)
         case set():
-            if any(
-                isinstance(value, float) and math.isnan(value)
-                for value in data
-            ):
-                msg = "Lua cannot use NaN as a set member table key"
-                raise UnrepresentableInputError(msg)
+            for value in data:
+                _reject_invalid_table_key(
+                    value=value, location="set member table key"
+                )
         case list():
             for value in data:
-                _reject_nan_table_keys(data=value)
+                _reject_invalid_table_keys(data=value)
         case _:
             return
 
@@ -567,7 +574,7 @@ class Lua(metaclass=LanguageCls):
     def validate_spec_for_data(data: Value) -> None:
         """Reject mapping shapes that Lua tables cannot represent."""
         reject_empty_dicts(data=data, language_name="Lua")
-        _reject_nan_table_keys(data=data)
+        _reject_invalid_table_keys(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
