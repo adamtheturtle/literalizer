@@ -1148,6 +1148,21 @@ def _sibling_maps_diverge(
         for d in maps
     ]
     if not spec.dict_supports_heterogeneous_values:
+        if spec.dict_format_config.narrowed_empty_form is not None:
+            for d in filtered:
+                for key, value in list(d.items()):
+                    if value == {}:
+                        replacement = next(
+                            (
+                                sibling[key]
+                                for sibling in filtered
+                                if isinstance(sibling.get(key), dict)
+                                and sibling[key]
+                            ),
+                            None,
+                        )
+                        if replacement is not None:
+                            d[key] = replacement
         inferred_value_types = {
             infer_element_type(items=list(d.values())) for d in filtered if d
         }
@@ -1214,8 +1229,20 @@ def _has_unrepresentable_sibling_maps(
             if (
                 id(data) not in tuple_list_ids
                 and len(plain_dicts) == len(data) >= min_dicts_for_pooling
+                and (
+                    spec.dict_supports_heterogeneous_values
+                    or not record_dict_ids
+                )
                 and _sibling_maps_diverge(
-                    pool=list(data),
+                    pool=(
+                        [
+                            value
+                            for element in plain_dicts
+                            for value in element.values()
+                        ]
+                        if spec.dict_supports_heterogeneous_values
+                        else list(data)
+                    ),
                     spec=spec,
                     record_dict_ids=record_dict_ids,
                 )
