@@ -57,7 +57,10 @@ def test_deep_supplemental_value_raises_typed_error() -> None:
 
     with pytest.raises(
         expected_exception=InvalidValueInputError,
-        match="ref_values",
+        match=(
+            "ref_values must contain an acyclic value within the supported "
+            "nesting depth"
+        ),
     ):
         literalize(
             source="1",
