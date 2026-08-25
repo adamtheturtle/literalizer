@@ -3770,6 +3770,7 @@ def literalize_bound_refs(
     )
     decl_results: list[LiteralizeResult] = []
     for name in ordered_names:
+        language.validate_spec_for_data(data=bound_refs[name])
         converted_name = (
             ref_case.convert(name=name) if ref_case is not None else name
         )
