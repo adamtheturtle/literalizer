@@ -5,4 +5,7 @@ suites = ["base", "combined"]
 axis = "json_type"
 
 [[variants]]
+axis = "nim_i64_min_integer_format"
+
+[[variants]]
 axis = "language_version"

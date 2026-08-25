@@ -1100,6 +1100,12 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "V1_9" },
 ]
 
+[axes.nim_i64_min_integer_format]
+plan = "every_non_default_member"
+name_template = "{lang}_i64_min_integer_format_{format}"
+option = "integer_format"
+gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+
 [axes.csharp_fallback_map_non_scalar]
 # This locks in C#'s System.Text.Json fallback syntax for nested non-scalars;
 # no cross-language capability denotes that language-specific spelling.

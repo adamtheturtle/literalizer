@@ -2367,10 +2367,21 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        base = self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+        is_decimal = self.integer_format is type(self.integer_format).DECIMAL
+
+        def _format(value: int, /) -> str:
+            """Keep non-decimal ``int64.low`` within Nim's parser
+            range.
+            """
+            if value == I64_MIN and not is_decimal:
+                return f"cast[int64]({base(-value)}'u64)"
+            return base(value)
+
         return make_overflow_fallback_formatter(
-            base=self.integer_format.get_formatter(
-                numeric_separator=self.numeric_separator,
-            ),
+            base=_format,
             fallback=raise_for_unrepresentable_int(language_name="Nim"),
             min_value=I64_MIN,
             max_value=I64_MAX,
