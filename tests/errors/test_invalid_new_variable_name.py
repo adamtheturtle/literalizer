@@ -40,6 +40,7 @@ from literalizer.languages import (
     TypeScript,
     V,
     VisualBasic,
+    Wren,
     Zig,
 )
 
@@ -164,6 +165,18 @@ def test_cobol_rejects_names_rendered_with_boundary_hyphens(name: str) -> None:
             input_format=InputFormat.JSON,
             language=Cobol(),
             variable_form=NewVariable(name=name, modifiers=frozenset()),
+            wrap_in_file=True,
+        )
+
+
+def test_wren_rejects_bare_underscore_variable_name() -> None:
+    """Wren reserves leading underscores for fields inside classes."""
+    with pytest.raises(expected_exception=ReservedVariableNameError):
+        literalize(
+            source="[1, 2]",
+            input_format=InputFormat.JSON,
+            language=Wren(),
+            variable_form=NewVariable(name="_", modifiers=frozenset()),
             wrap_in_file=True,
         )
 
