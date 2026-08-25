@@ -1,0 +1,5 @@
+[
+    [2, "hello"],  // trailing note
+    // next element
+    [3, "world"],
+]

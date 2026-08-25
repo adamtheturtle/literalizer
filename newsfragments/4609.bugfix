@@ -1,0 +1,2 @@
+Preserve an inline comment on the last scalar of a nested YAML collection when
+it is followed by an outdented comment for the next parent element.
