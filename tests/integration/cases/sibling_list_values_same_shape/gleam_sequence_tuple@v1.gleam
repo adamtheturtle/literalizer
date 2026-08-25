@@ -7,7 +7,7 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("test", #(GInt(5), #(GStr("compile")))),
+    #("test", #(GInt(5), #(GStr("compile"), GStr("test")))),
     #("package", #(GInt(7), #(GStr("link"), GStr("test")))),
   ])
   let _ = my_data

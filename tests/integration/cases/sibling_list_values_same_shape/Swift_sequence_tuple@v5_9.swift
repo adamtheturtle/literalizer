@@ -1,4 +1,4 @@
-let my_data: [String: Any] = [
-    "test": (5, ("compile")),
+let my_data = [
+    "test": (5, ("compile", "test")),
     "package": (7, ("link", "test")),
 ]
