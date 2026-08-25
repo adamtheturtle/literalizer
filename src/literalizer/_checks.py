@@ -227,6 +227,30 @@ def reject_aware_datetimes(
 
 
 @beartype
+def _reject_unpreserved_aware_times(*, data: Value, spec: Language) -> None:
+    """Reject aware times when the selected formatter drops the offset."""
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case datetime.time() if value.utcoffset() is not None:
+                naive = value.replace(tzinfo=None)
+                if spec.format_time(value) == spec.format_time(naive):
+                    msg = (
+                        f"{type(spec).__name__} native time format cannot "
+                        f"preserve UTC offset {value.utcoffset()}"
+                    )
+                    raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
+@beartype
 def reject_stringified_dict_key_collisions(
     *, data: Value, language_name: str
 ) -> None:
@@ -1296,6 +1320,7 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
     formats.
     """
     _check_raw_control_characters(data=data, spec=spec)
+    _reject_unpreserved_aware_times(data=data, spec=spec)
     _check_scalar_identity_collisions(data=data, spec=spec)
     if not spec.set_format_config.preserves_set_semantics and _contains_set(
         data
