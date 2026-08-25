@@ -55,7 +55,7 @@ from literalizer.languages import (
 
 
 def test_fortran_rejects_long_constructor_call_target() -> None:
-    """Constructor spelling does not bypass Fortran's name limit."""
+    """Constructor spelling does not bypass the Fortran name limit."""
     with pytest.raises(expected_exception=InvalidCallTargetError):
         literalize_call(
             source="[[1]]",
