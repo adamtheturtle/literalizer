@@ -272,7 +272,8 @@ The strategies that synthesize a declaration accept a constructor argument that 
    * - Argument
      - Applies to
    * - ``record_struct_name_prefix`` (default ``"Record"``)
-     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala, Cpp, Swift, Nim
+     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala, Cpp, Swift, Nim,
+       Odin, V, Crystal, D, and Zig
    * - ``heterogeneous_value_enum_name`` (default ``"Value"``)
      - ``TAGGED_ENUM`` on Rust
    * - ``heterogeneous_value_union_name`` (default ``"Value"``)
@@ -280,7 +281,9 @@ The strategies that synthesize a declaration accept a constructor argument that 
    * - ``heterogeneous_value_variant_name`` (default ``"Value"``)
      - ``VARIANT`` on Mojo, ``OBJECT_VARIANT`` on Nim
 
-Rust, Go, Java, Kotlin, and Scala additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name. Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration. This is useful when documentation starter code already defines the domain type.
+Rust, Go, Java, Kotlin, Scala, and CSharp additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name. Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration. This is useful when documentation starter code already defines the domain type.
+
+C and CSharp do not accept ``record_struct_name_prefix``, despite supporting the ``RECORD`` strategy.
 
 .. seealso::
 
