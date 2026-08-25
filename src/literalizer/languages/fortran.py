@@ -494,6 +494,7 @@ class Fortran(metaclass=LanguageCls):
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.ASCII_LETTER_START
     )
+    max_variable_identifier_length: ClassVar[int | None] = 63
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64

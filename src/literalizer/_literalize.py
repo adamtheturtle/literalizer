@@ -5356,7 +5356,10 @@ def _validate_call_target(
             reason=f"component {head!r} is a reserved identifier",
         )
     for part in target_function_parts:
-        if not component_syntax.accepts(name=part):
+        if not component_syntax.accepts(name=part) or (
+            language_cls.max_variable_identifier_length is not None
+            and len(part) > language_cls.max_variable_identifier_length
+        ):
             if exempt:
                 return
             raise InvalidCallTargetError(

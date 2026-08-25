@@ -174,7 +174,10 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
                 variable_name=name,
             )
     syntax = language_cls.new_variable_name_syntax
-    if not syntax.accepts(name=name):
+    if not syntax.accepts(name=name) or (
+        language_cls.max_variable_identifier_length is not None
+        and len(name) > language_cls.max_variable_identifier_length
+    ):
         raise InvalidNewVariableNameError(
             language_name=language_name,
             variable_name=name,
@@ -240,7 +243,10 @@ def validate_call_parameter_names(
                     parameter_name=name,
                     reason="it is a reserved identifier",
                 )
-        if not language_cls.new_variable_name_syntax.accepts(name=name):
+        if not language_cls.new_variable_name_syntax.accepts(name=name) or (
+            language_cls.max_variable_identifier_length is not None
+            and len(name) > language_cls.max_variable_identifier_length
+        ):
             raise InvalidCallParameterNameError(
                 language_name=language_name,
                 parameter_name=name,
@@ -1311,6 +1317,7 @@ class LanguageCls(type):
     new_variable_name_syntax: NewVariableNameSyntax = (
         NewVariableNameSyntax.ASCII
     )
+    max_variable_identifier_length: int | None = None
     call_target_name_syntax: NewVariableNameSyntax | None = None
     """The grammar each component of a ``target_function`` follows.
 
