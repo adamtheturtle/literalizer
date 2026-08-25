@@ -436,7 +436,7 @@ class InvalidCppRawStringDelimiterError(LiteralizerError, ValueError):
 
 
 class ReservedVariableNameError(LiteralizerError):
-    """Raised when a ``NewVariable`` name is reserved by the target
+    """Raised when a variable or reference name is reserved by the target
     language.
 
     To resolve, use a non-reserved identifier for the target language.
@@ -446,20 +446,22 @@ class ReservedVariableNameError(LiteralizerError):
         self,
         *,
         language_name: str,
+        name_source: str = "NewVariable",
         variable_name: str,
     ) -> None:
         """Create a ``ReservedVariableNameError``."""
         super().__init__(
-            f"{language_name} cannot use NewVariable name "
+            f"{language_name} cannot use {name_source} name "
             f"{variable_name!r}: it is a reserved identifier"
         )
         self.language_name = language_name
+        self.name_source = name_source
         self.variable_name = variable_name
 
 
 class InvalidNewVariableNameError(LiteralizerError):
-    """Raised when a ``NewVariable`` name is not a syntactically valid
-    declaration identifier for the target language.
+    """Raised when a variable or reference name is not a syntactically
+    valid identifier for the target language.
 
     Literalizer does not repair or escape variable names.  To resolve, use
     a name whose spelling is valid for the target language.
@@ -469,14 +471,16 @@ class InvalidNewVariableNameError(LiteralizerError):
         self,
         *,
         language_name: str,
+        name_source: str = "NewVariable",
         variable_name: str,
     ) -> None:
         """Create an ``InvalidNewVariableNameError``."""
         super().__init__(
-            f"{language_name} cannot use NewVariable name "
+            f"{language_name} cannot use {name_source} name "
             f"{variable_name!r}: it is not a valid identifier"
         )
         self.language_name = language_name
+        self.name_source = name_source
         self.variable_name = variable_name
 
 

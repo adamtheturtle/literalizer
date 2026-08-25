@@ -3229,7 +3229,11 @@ def _apply_variable_wrapper(
                 if is_call_binding
                 else language.format_variable_declaration
             )
-            validate_new_variable_name(language=language, name=name)
+            validate_new_variable_name(
+                language=language,
+                name=name,
+                name_source="NewVariable",
+            )
             wrapped = declaration_formatter(
                 name,
                 value,
@@ -3245,6 +3249,7 @@ def _apply_variable_wrapper(
             validate_new_variable_name(
                 language=language,
                 name=variable_form.name,
+                name_source="ExistingVariable",
             )
             wrapped = assignment_formatter(
                 variable_form.name,
@@ -4013,7 +4018,11 @@ def _validated_ref_name(
         if ref_case is not None
         else raw_ref_name
     )
-    validate_new_variable_name(language=language, name=ref_name)
+    validate_new_variable_name(
+        language=language,
+        name=ref_name,
+        name_source="reference",
+    )
     return ref_name
 
 

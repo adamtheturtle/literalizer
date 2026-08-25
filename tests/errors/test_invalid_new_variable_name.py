@@ -88,7 +88,10 @@ def test_hyphenated_new_variable_name_raises(
 @pytest.mark.parametrize(argnames="name", argvalues=["", "a.b[0]"])
 def test_invalid_existing_variable_name_raises(name: str) -> None:
     """Assignment targets must be plain identifiers, not expressions."""
-    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+    with pytest.raises(
+        expected_exception=InvalidNewVariableNameError,
+        match="cannot use ExistingVariable name",
+    ):
         literalize(
             source="[1]",
             input_format=InputFormat.JSON,
@@ -99,7 +102,10 @@ def test_invalid_existing_variable_name_raises(name: str) -> None:
 
 def test_reserved_existing_variable_name_raises() -> None:
     """Assignment targets reject target-language reserved words."""
-    with pytest.raises(expected_exception=ReservedVariableNameError):
+    with pytest.raises(
+        expected_exception=ReservedVariableNameError,
+        match="cannot use ExistingVariable name",
+    ):
         literalize(
             source="[1]",
             input_format=InputFormat.JSON,
@@ -110,7 +116,10 @@ def test_reserved_existing_variable_name_raises() -> None:
 
 def test_call_existing_variable_name_is_validated() -> None:
     """Call-result assignments use the same target validation."""
-    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+    with pytest.raises(
+        expected_exception=InvalidNewVariableNameError,
+        match="cannot use ExistingVariable name",
+    ):
         literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,

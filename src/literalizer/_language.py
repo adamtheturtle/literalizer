@@ -11,6 +11,7 @@ from typing import (
     Any,
     ClassVar,
     Final,
+    Literal,
     Protocol,
     assert_never,
     runtime_checkable,
@@ -136,8 +137,13 @@ def is_reserved_identifier(
 
 
 @beartype
-def validate_new_variable_name(*, language: "Language", name: str) -> None:
-    """Raise when *name* cannot be used for a new variable declaration."""
+def validate_new_variable_name(
+    *,
+    language: "Language",
+    name: str,
+    name_source: Literal["NewVariable", "ExistingVariable", "reference"],
+) -> None:
+    """Raise when *name* cannot be used as a variable identifier."""
     language_name = language.__class__.__name__
     if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
@@ -146,6 +152,7 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     ):
         raise ReservedVariableNameError(
             language_name=language_name,
+            name_source=name_source,
             variable_name=name,
         )
     language_cls = type(language)
@@ -156,6 +163,7 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
     if pattern is not None and pattern.fullmatch(string=name) is not None:
         raise ReservedVariableNameError(
             language_name=language_name,
+            name_source=name_source,
             variable_name=name,
         )
     if language_cls.supports_record_struct_name_prefix:
@@ -171,12 +179,14 @@ def validate_new_variable_name(*, language: "Language", name: str) -> None:
         ):
             raise ReservedVariableNameError(
                 language_name=language_name,
+                name_source=name_source,
                 variable_name=name,
             )
     syntax = language_cls.new_variable_name_syntax
     if not syntax.accepts(name=name):
         raise InvalidNewVariableNameError(
             language_name=language_name,
+            name_source=name_source,
             variable_name=name,
         )
 

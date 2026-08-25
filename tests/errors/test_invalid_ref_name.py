@@ -15,7 +15,10 @@ from literalizer.languages import Python
 )
 def test_literalize_rejects_invalid_ref_name(name: str) -> None:
     """Literal refs cannot inject arbitrary source text."""
-    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+    with pytest.raises(
+        expected_exception=InvalidNewVariableNameError,
+        match="cannot use reference name",
+    ):
         literalize(
             source=f'{{"a": {{"$ref": "{name}"}}}}',
             input_format=InputFormat.JSON,
@@ -26,7 +29,10 @@ def test_literalize_rejects_invalid_ref_name(name: str) -> None:
 
 def test_literalize_call_rejects_reserved_ref_name() -> None:
     """Call refs apply the target language's reserved-word rules."""
-    with pytest.raises(expected_exception=ReservedVariableNameError):
+    with pytest.raises(
+        expected_exception=ReservedVariableNameError,
+        match="cannot use reference name",
+    ):
         literalize_call(
             source='{"$ref": "class"}',
             input_format=InputFormat.JSON,
