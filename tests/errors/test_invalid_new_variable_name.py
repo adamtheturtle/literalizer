@@ -101,6 +101,33 @@ def test_invalid_existing_variable_name_raises(name: str) -> None:
         )
 
 
+def test_fortran_rejects_variable_name_beyond_standard_limit() -> None:
+    """Fortran 2018 limits names to 63 characters."""
+    with pytest.raises(expected_exception=InvalidNewVariableNameError):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=Fortran(),
+            variable_form=NewVariable(
+                name="v" * 64,
+                modifiers=frozenset(),
+            ),
+        )
+
+
+def test_fortran_accepts_variable_name_at_standard_limit() -> None:
+    """The 63-character Fortran name boundary remains valid."""
+    literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=Fortran(),
+        variable_form=NewVariable(
+            name="v" * 63,
+            modifiers=frozenset(),
+        ),
+    )
+
+
 def test_reserved_existing_variable_name_raises() -> None:
     """Assignment targets reject target-language reserved words."""
     with pytest.raises(
