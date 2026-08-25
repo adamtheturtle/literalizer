@@ -31,6 +31,7 @@ from literalizer.exceptions import (
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
+    ZipInputFormatWithoutSourceError,
     ZipSourceWithoutInputFormatError,
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
@@ -464,6 +465,25 @@ def test_literalize_call_zip_source_without_input_format_raises() -> None:
             parameter_names=["value"],
             call_transform=lambda ctx: f"emit({ctx.call}, {ctx.zipped})",
             zip_source="[true, false]",
+        )
+
+
+def test_literalize_call_zip_input_format_without_source_raises() -> None:
+    """``zip_input_format`` cannot be silently ignored."""
+    with pytest.raises(
+        expected_exception=ZipInputFormatWithoutSourceError,
+        match=(
+            r"^zip_input_format was supplied without a zip_source; there is "
+            r"no companion source to parse$"
+        ),
+    ):
+        literalize_call(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            target_function="process",
+            parameter_names=["value"],
+            zip_input_format=InputFormat.JSON,
         )
 
 

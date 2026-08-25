@@ -98,6 +98,7 @@ from literalizer.exceptions import (
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
+    ZipInputFormatWithoutSourceError,
     ZipSourceWithoutInputFormatError,
     ZipValuesLengthMismatchError,
     ZipValuesWithoutCallTransformError,
@@ -6111,6 +6112,8 @@ def _resolve_zip_literals(
     with the call arguments rendered by the same call.
     """
     if zip_source is None:
+        if zip_input_format is not None:
+            raise ZipInputFormatWithoutSourceError
         return None
     if zip_input_format is None:
         raise ZipSourceWithoutInputFormatError
