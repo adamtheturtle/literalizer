@@ -2373,7 +2373,7 @@ class Nim(metaclass=LanguageCls):
         is_decimal = self.integer_format is type(self.integer_format).DECIMAL
 
         def _format(value: int, /) -> str:
-            """Keep non-decimal ``int64.low`` within Nim's parser
+            """Keep non-decimal ``int64.low`` within the Nim parser
             range.
             """
             if value == I64_MIN and not is_decimal:
