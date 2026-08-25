@@ -22,6 +22,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -265,7 +266,7 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
     ``UTCTime`` represents a point in time in UTC.
     """
     if value.tzinfo is not None:
-        value = value.astimezone(tz=datetime.UTC)
+        value = normalize_datetime_utc(value=value, language_name="Haskell")
     total_seconds = value.hour * 3600 + value.minute * 60 + value.second
     if value.microsecond:
         picos = total_seconds * 10**12 + value.microsecond * 10**6

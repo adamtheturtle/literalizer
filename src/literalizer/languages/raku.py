@@ -21,6 +21,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -201,7 +202,7 @@ def _raku_format_call_target(parts: Sequence[str], /) -> str:
 def _format_datetime_raku(value: datetime.datetime) -> str:
     """Format a datetime as a Raku ``DateTime`` constructor."""
     if value.tzinfo is not None:
-        value = value.astimezone(tz=datetime.UTC)
+        value = normalize_datetime_utc(value=value, language_name="Raku")
     if value.microsecond:
         second_part = f"{value.second}.{value.microsecond:06d}".rstrip("0")
     else:

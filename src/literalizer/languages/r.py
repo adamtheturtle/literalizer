@@ -19,6 +19,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -106,7 +107,7 @@ def _format_datetime_r(value: datetime.datetime, /) -> str:
     """
     aware = value.utcoffset() is not None
     if aware:
-        value = value.astimezone(tz=datetime.UTC)
+        value = normalize_datetime_utc(value=value, language_name="R")
     rendered = value.strftime(format="%Y-%m-%d %H:%M:%S")
     if value.microsecond:
         rendered += f".{value.microsecond:06d}"
