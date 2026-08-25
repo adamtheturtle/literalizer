@@ -89,6 +89,7 @@ from literalizer._language import (
     IdentifierCase,
     JsonType,
     LanguageCls,
+    LeadingPreamble,
     ModifierCombination,
     OrderedMapFormatConfig,
     PositionalCallStyle,
@@ -119,7 +120,6 @@ from literalizer._language import (
     no_data_preamble,
     no_empty_container_literal_overrides,
     no_format_integer_widened,
-    no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
@@ -2770,7 +2770,6 @@ class Rust(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
-    leading_preamble = no_leading_preamble
     extension = ".rs"
     pygments_name = "rust"
     stringifies_nested_collections = False
@@ -3534,6 +3533,27 @@ class Rust(metaclass=LanguageCls):
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
+
+    @cached_property
+    def leading_preamble(self) -> LeadingPreamble:
+        """Raise the macro recursion limit before every other file
+        item.
+        """
+        enabled = self._json_type_active
+
+        def _recursion_limit(
+            _data: Value, /, *, has_variable_declaration: bool
+        ) -> tuple[str, ...]:
+            """Return the crate attribute for JSON macro output."""
+            del has_variable_declaration
+            if enabled:
+                return (
+                    "// Permit serde_json::json! to expand wide values.",
+                    '#![recursion_limit = "4096"]',
+                )
+            return ()
+
+        return _recursion_limit
 
     def wrap_in_file(
         self,
