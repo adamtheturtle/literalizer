@@ -19,3 +19,16 @@ def test_cobol_collision_suffix_probe_advances() -> None:
     assert names[:3] == ["F-A-B", "F-A-B-2", "F-A-B-3"]
     assert names[-1] == "F-A-B-1000"
     assert scope.next_suffix["F-A-B"] == collision_count + 1
+
+
+def test_cobol_collision_suffix_skips_preexisting_name() -> None:
+    """A scope without a cursor can still skip an occupied suffix."""
+    expected_next_suffix = 4
+    scope = _NameScope(
+        level=5,
+        used={"F-A-B", "F-A-B-2"},
+        next_suffix={},
+    )
+
+    assert _unique_cobol_name(base="F-A-B", scope=scope) == "F-A-B-3"
+    assert scope.next_suffix["F-A-B"] == expected_next_suffix
