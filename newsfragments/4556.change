@@ -1,0 +1,1 @@
+Reject Erlang module names that exceed the virtual machine atom limit.
