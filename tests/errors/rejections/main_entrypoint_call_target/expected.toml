@@ -1,5 +1,10 @@
-# languages rejecting: 2; languages accepting: 0
+# languages rejecting: 7; languages accepting: 0
 
 [InvalidCallTargetError]
 Dart = "Dart cannot use call target 'main': component 'main' is a reserved identifier"
+Elm = "Elm cannot use call target 'main': it collides with the generated file entrypoint"
+Gleam = "Gleam cannot use call target 'main': it collides with the generated file entrypoint"
 Go = "Go cannot use call target 'main': component 'main' is a reserved identifier"
+Mojo = "Mojo cannot use call target 'main': it collides with the generated file entrypoint"
+PureScript = "PureScript cannot use call target 'main': it collides with the generated file entrypoint"
+V = "V cannot use call target 'main': it collides with the generated file entrypoint"
