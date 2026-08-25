@@ -25,10 +25,11 @@ def test_typed_sibling_maps_reject_different_value_types(
 @pytest.mark.parametrize(argnames="language", argvalues=[Rust(), V()])
 def test_typed_sibling_maps_allow_same_value_type(language: Language) -> None:
     """Different keys do not matter when every map value type agrees."""
-    literalize(
-        source='[{"s": 1}, {"t": 3}]',
-        input_format=InputFormat.JSON,
-        language=language,
-        variable_form=NewVariable(name="value", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
+    for source in ('[{"s": 1}, {"t": 3}]', '[{"m": {}}, {"m": {}}]'):
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name="value", modifiers=frozenset()),
+            wrap_in_file=True,
+        )
