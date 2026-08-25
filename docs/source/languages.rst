@@ -402,18 +402,18 @@ This emits raw D scalars, ``T[]`` array literals, and ``V[K]`` associative-array
 Inputs that have no narrow form, a heterogeneous list, a heterogeneous-valued dict, an empty list or dict (D's ``auto`` cannot infer an element type for an empty literal), a set, an ordered map, or a non-record dict, are rejected with :class:`~literalizer.exceptions.UnrepresentableInputError`.
 The ``RECORD`` ``heterogeneous_strategy`` is also rejected because it already renders record-shaped dicts as generated ``struct`` literals, which conflicts with narrow mode's associative-array form.
 
-Empty mappings on Ada, Lua, PHP, and R
---------------------------------------
+Empty mappings in seven languages
+---------------------------------
 
-Ada, Lua, PHP, and R all have a runtime representation that cannot distinguish an empty mapping from an empty sequence.
+Ada, COBOL, Common Lisp, Lua, PHP, R, and Scheme all have a runtime representation that cannot distinguish an empty mapping from an empty sequence.
 Lua's table, PHP's array, and R's ``list()`` each serialize an empty mapping the same way their JSON encoders serialize an empty sequence (typically ``[]``).
 The Ada literalizer's unified ``A_Val`` aggregate likewise collapses an empty ``AMap'[]`` and an empty ``AList'[]`` to the same runtime value, so the mapping/sequence distinction is lost on round-trip.
-``literalize`` refuses to emit a literal that cannot round-trip and raises :class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on those four languages whenever an empty mapping appears at any depth in the input.
+``literalize`` refuses to emit a literal that cannot round-trip and raises :class:`~literalizer.exceptions.UnrepresentableEmptyDictError` on those seven languages whenever an empty mapping appears at any depth in the input.
 Empty sequences are unambiguous and are still accepted.
 
 .. code-block:: python
 
-   """Ada, Lua, PHP, and R reject empty mappings."""
+   """Seven languages reject empty mappings."""
 
    import contextlib
    import json
