@@ -95,7 +95,7 @@ from literalizer.exceptions import (
     UnrepresentableIntegerError,
 )
 
-_R_MIN_NORMAL_FLOAT = float.fromhex("0x1.0p-1022")
+_R_MIN_SAFE_FIXED_MAGNITUDE = 1e-16
 _R_MAX_SAFE_FIXED_MAGNITUDE = 1e16
 
 
@@ -104,14 +104,13 @@ def _format_r_float_fixed(value: float) -> str:
     """Avoid fixed spellings that R's decimal parser rounds incorrectly.
 
     R's ``R_strtod`` is not correctly rounded for the long decimals
-    produced for subnormal values, the smallest normal value, and
-    values beyond the exactly tested fixed-point range. Keep FIXED for
-    ordinary magnitudes and use the round-tripping scientific formatter
-    outside that range.
+    produced outside the conservatively bounded fixed-point range. Keep
+    FIXED for ordinary magnitudes and use the round-tripping scientific
+    formatter outside that range.
     """
     magnitude = abs(value)
     if (
-        0 < magnitude <= _R_MIN_NORMAL_FLOAT
+        0 < magnitude < _R_MIN_SAFE_FIXED_MAGNITUDE
         or magnitude > _R_MAX_SAFE_FIXED_MAGNITUDE
     ):
         return format_float_scientific(value=value)
