@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go RECORD widens this slice to []any, where composite element types may not be elided."
+
+[[variants]]
+axis = "heterogeneous_strategy"

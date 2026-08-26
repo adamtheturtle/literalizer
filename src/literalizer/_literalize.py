@@ -1659,10 +1659,12 @@ def _compute_sequence_dict_override(
     name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    widened = (
-        sequence_open_override is not None
-        and sequence_open_override == spec.sequence_open([])
+    sequence_open = (
+        sequence_open_override
+        if sequence_open_override is not None
+        else spec.sequence_open(items)
     )
+    widened = sequence_open == spec.sequence_open([])
     if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
