@@ -3653,11 +3653,28 @@ def literalize_both_forms(
     variable_form: BothVariableForms,
     ref_case: IdentifierCase | None,
     ref_values: Mapping[str, Value] | None,
+    explicit_ref_values: Mapping[str, Value] | None,
+    bound_refs: Mapping[str, Value],
     ref_key: str,
     record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
+    if bound_refs:
+        return literalize_bound_refs(
+            source=source,
+            input_format=input_format,
+            language=language,
+            pre_indent_level=pre_indent_level,
+            include_delimiters=include_delimiters,
+            variable_form=variable_form,
+            ref_case=ref_case,
+            explicit_ref_values=explicit_ref_values,
+            bound_refs=bound_refs,
+            ref_key=ref_key,
+            record_null_substitutions=record_null_substitutions,
+            collection_layout=collection_layout,
+        )
     pre_form = literalize_pre_form(
         source=source,
         input_format=input_format,
@@ -3722,6 +3739,7 @@ class _BoundRefComposition:
 
     declarations: tuple[LiteralizeResult, ...]
     main_result: LiteralizeResult
+    assignment_result: LiteralizeResult | None
     main_variable_name: str
 
 
@@ -3733,7 +3751,7 @@ def literalize_bound_refs(
     language: Language,
     pre_indent_level: int,
     include_delimiters: bool,
-    variable_form: NewVariable | ExistingVariable,
+    variable_form: NewVariable | ExistingVariable | BothVariableForms,
     ref_case: IdentifierCase | None,
     explicit_ref_values: Mapping[str, Value] | None,
     bound_refs: Mapping[str, Value],
@@ -3772,11 +3790,29 @@ def literalize_bound_refs(
         record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
     )
+    declaration_form = (
+        NewVariable(
+            name=variable_form.name,
+            modifiers=variable_form.modifiers,
+        )
+        if isinstance(variable_form, BothVariableForms)
+        else variable_form
+    )
     main_result = literalize_apply_form(
         pre_form=pre_form,
         language=language,
-        variable_form=variable_form,
+        variable_form=declaration_form,
         wrap_in_file=False,
+    )
+    assignment_result = (
+        literalize_apply_form(
+            pre_form=pre_form,
+            language=language,
+            variable_form=ExistingVariable(name=variable_form.name),
+            wrap_in_file=False,
+        )
+        if isinstance(variable_form, BothVariableForms)
+        else None
     )
     decl_results: list[LiteralizeResult] = []
     for name in ordered_names:
@@ -3798,6 +3834,7 @@ def literalize_bound_refs(
     composition = _BoundRefComposition(
         declarations=tuple(decl_results),
         main_result=main_result,
+        assignment_result=assignment_result,
         main_variable_name=variable_form.name,
     )
     return _compose_bound_refs(
@@ -3957,11 +3994,20 @@ def _compose_bound_refs(
             )
         ),
     )
-    wrapped = language.wrap_in_file(
-        content=sequenced_content,
-        variable_name=composition.main_variable_name,
-        body_preamble=scoped.body + unified_body_preamble,
-    )
+    body_preamble = scoped.body + unified_body_preamble
+    if composition.assignment_result is None:
+        wrapped = language.wrap_in_file(
+            content=sequenced_content,
+            variable_name=composition.main_variable_name,
+            body_preamble=body_preamble,
+        )
+    else:
+        wrapped = language.wrap_combined_in_file(
+            declaration=sequenced_content,
+            assignment=composition.assignment_result.bare_code,
+            variable_name=composition.main_variable_name,
+            body_preamble=body_preamble,
+        )
     if scoped.file_scope:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(

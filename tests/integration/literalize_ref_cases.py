@@ -50,7 +50,6 @@ from .language_specs import (
     sorted_languages,
     with_per_fixture_module_name,
 )
-from .variant_cases import wrap_variable_form
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -230,7 +229,9 @@ def run_literalize_ref_golden_case(
                 config.heterogeneous_strategy
             ],
         )
-    variable_form_obj: literalizer.NewVariable | None = wrap_variable_form()
+    variable_form_obj: literalizer.VariableForm | None = (
+        config.resolved_variable_form()
+    )
     try:
         literalizer.literalize(
             source='{"key": "value"}',
