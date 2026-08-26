@@ -988,7 +988,8 @@ class Swift(metaclass=LanguageCls):
                         sequence_is_tuple=sequence_is_tuple,
                     )
                     needs_context = data is None or (
-                        bool(data) and "Record0(" not in value
+                        bool(data)
+                        and ("Record0(" not in value or hint == "[Any]")
                     )
                     if isinstance(data, dict) and any(
                         not isinstance(key, str) for key in data
