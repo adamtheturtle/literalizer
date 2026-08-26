@@ -768,33 +768,11 @@ def _accumulate_cousin_empty_dict_overrides(
             for item in value
             if isinstance(item, dict) and not isinstance(item, OrderedMap)
         ]
-        keys = {key for sibling in sibling_dicts for key in sibling}
-        for key in keys:
-            cousins = [
-                sibling[key] for sibling in sibling_dicts if key in sibling
-            ]
-            empty_maps = [
-                cousin
-                for cousin in cousins
-                if isinstance(cousin, dict)
-                and not isinstance(cousin, OrderedMap)
-                and not cousin
-            ]
-            non_empty_maps = [
-                cousin
-                for cousin in cousins
-                if isinstance(cousin, dict)
-                and not isinstance(cousin, OrderedMap)
-                and cousin
-            ]
-            if (
-                empty_maps
-                and non_empty_maps
-                and len(empty_maps) + len(non_empty_maps) == len(cousins)
-            ):
-                replacement = narrowed_empty_dict(non_empty_maps)
-                for empty_map in empty_maps:
-                    out.setdefault(id(empty_map), replacement)
+        _accumulate_sibling_dict_empty_overrides(
+            sibling_dicts=sibling_dicts,
+            narrowed_empty_dict=narrowed_empty_dict,
+            out=out,
+        )
         for child in value:
             _accumulate_cousin_empty_dict_overrides(
                 value=child,
@@ -805,6 +783,38 @@ def _accumulate_cousin_empty_dict_overrides(
         for child in value.values():
             _accumulate_cousin_empty_dict_overrides(
                 value=child,
+                narrowed_empty_dict=narrowed_empty_dict,
+                out=out,
+            )
+
+
+@beartype
+def _accumulate_sibling_dict_empty_overrides(
+    *,
+    sibling_dicts: Sequence[dict[Scalar, Value]],
+    narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
+    out: dict[int, str],
+) -> None:
+    """Type empty maps at corresponding paths through sibling dicts."""
+    keys = {key for sibling in sibling_dicts for key in sibling}
+    for key in keys:
+        cousins = [sibling[key] for sibling in sibling_dicts if key in sibling]
+        maps = [
+            cousin
+            for cousin in cousins
+            if isinstance(cousin, dict) and not isinstance(cousin, OrderedMap)
+        ]
+        if len(maps) != len(cousins):
+            continue
+        empty_maps = [cousin for cousin in maps if not cousin]
+        non_empty_maps = [cousin for cousin in maps if cousin]
+        if empty_maps and non_empty_maps:
+            replacement = narrowed_empty_dict(non_empty_maps)
+            for empty_map in empty_maps:
+                out.setdefault(id(empty_map), replacement)
+        if non_empty_maps:
+            _accumulate_sibling_dict_empty_overrides(
+                sibling_dicts=non_empty_maps,
                 narrowed_empty_dict=narrowed_empty_dict,
                 out=out,
             )

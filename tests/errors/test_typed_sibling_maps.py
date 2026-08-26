@@ -33,3 +33,21 @@ def test_typed_sibling_maps_allow_same_value_type(language: Language) -> None:
             variable_form=NewVariable(name="value", modifiers=frozenset()),
             wrap_in_file=True,
         )
+
+
+@pytest.mark.parametrize(argnames="language", argvalues=[Rust(), V()])
+def test_deep_sibling_maps_still_reject_incompatible_types(
+    language: Language,
+) -> None:
+    """Recursive empty borrowing must not hide real deep divergence."""
+    with pytest.raises(expected_exception=HeterogeneousSiblingMapsError):
+        literalize(
+            source=(
+                '[{"outer":{"inner":{"x":1}}},'
+                '{"outer":{"inner":{"x":"different"}}}]'
+            ),
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name="value", modifiers=frozenset()),
+            wrap_in_file=True,
+        )
