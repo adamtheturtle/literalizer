@@ -464,6 +464,7 @@ class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     """
 
     ref_key: str = "$ref"
+    variable_form: VariableFormName = "new"
     collection_layout: CollectionLayoutName = "compact"
     heterogeneous_strategy: str | None = None
     ref_case_override: RefIdentifierCase | None = None
@@ -474,6 +475,12 @@ class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     explicit_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+
+    def resolved_variable_form(self) -> literalizer.VariableForm:
+        """Return the public API variable form selected by the
+        manifest.
+        """
+        return _VARIABLE_FORMS_BY_NAME[self.variable_form]
 
 
 class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):

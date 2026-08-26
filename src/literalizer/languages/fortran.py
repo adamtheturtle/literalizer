@@ -986,7 +986,21 @@ class Fortran(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
-        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
+        has_bound_declarations = declaration.count("type(fval_t) ::") > 1
+        assignment_scope = (
+            f"{declaration}\n{assignment}"
+            if has_bound_declarations
+            else assignment
+        )
+        assignment_declaration = (
+            ""
+            if has_bound_declarations
+            else f"{self.indent}type(fval_t) :: {variable_name}\n"
+        )
+        assign_indented = textwrap.indent(
+            text=assignment_scope,
+            prefix=self.indent,
+        )
         return (
             f"subroutine {self.module_name}_declaration()\n"
             f"{self.indent}use fval_m\n"
@@ -997,7 +1011,7 @@ class Fortran(metaclass=LanguageCls):
             f"subroutine {self.module_name}_assignment()\n"
             f"{self.indent}use fval_m\n"
             f"{self.indent}implicit none\n"
-            f"{self.indent}type(fval_t) :: {variable_name}\n"
+            f"{assignment_declaration}"
             f"{assign_indented}\n"
             f"end subroutine {self.module_name}_assignment\n"
             "\n"

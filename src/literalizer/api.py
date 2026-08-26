@@ -341,6 +341,8 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_values=materialized_ref_values,
+            explicit_ref_values=explicit_ref_values or None,
+            bound_refs=materialized_bound_refs,
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,

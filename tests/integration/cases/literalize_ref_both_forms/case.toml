@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Fortran", "Go", "Python"]
+languages_reason = "Sampled: Fortran exercises wrappers with separate declaration and assignment scopes, Go provides a compiled single-scope file, and Python provides an executed assignment path."
+
+[ref]
+variable_form = "both"
+languages = ["Fortran", "Go", "Python"]
+languages_reason = "Sampled: Fortran exercises wrappers with separate declaration and assignment scopes, Go provides a compiled single-scope file, and Python provides an executed assignment path."
+
+[ref.value_sources]
+shared = "[1, 2]"
