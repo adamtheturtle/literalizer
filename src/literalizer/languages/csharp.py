@@ -229,6 +229,17 @@ def _reject_conflicting_csharp_modifiers(
             group_name="mutability",
             keywords=mutability,
         )
+    storage = tuple(
+        modifier.value
+        for modifier in (_CSharpModifiers.STATIC, _CSharpModifiers.CONST)
+        if modifier in modifiers
+    )
+    if len(storage) > 1:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="storage",
+            keywords=storage,
+        )
 
 
 def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:

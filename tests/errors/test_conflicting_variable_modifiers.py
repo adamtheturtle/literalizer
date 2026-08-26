@@ -92,6 +92,30 @@ def test_csharp_rejects_const_with_readonly() -> None:
         )
 
 
+def test_csharp_rejects_static_const() -> None:
+    """``const`` is implicitly static, so spelling both is invalid."""
+    with pytest.raises(
+        expected_exception=ConflictingVariableModifiersError,
+        match=re.escape(
+            pattern=(
+                "CSharp accepts at most one storage modifier; "
+                "received static, const"
+            )
+        ),
+    ):
+        literalize(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=CSharp(),
+            variable_form=NewVariable(
+                name="value",
+                modifiers=frozenset(
+                    {CSharp.modifiers.STATIC, CSharp.modifiers.CONST},
+                ),
+            ),
+        )
+
+
 def test_one_modifier_per_group_is_accepted() -> None:
     """Modifiers from different groups still combine."""
     result = literalize(
