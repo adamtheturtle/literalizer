@@ -1834,9 +1834,7 @@ def _record_field_type_signature(  # pylint: disable=redefined-variable-type
 
     result: Hashable
     match value:
-        case [] if sequence_supports_heterogeneity:
-            result = "()"
-        case []:
+        case [] if not sequence_supports_heterogeneity:
             result = sequence_format_type_annotation("String", 0)
         case list() if (
             id(value) in tuple_list_ids or sequence_supports_heterogeneity
