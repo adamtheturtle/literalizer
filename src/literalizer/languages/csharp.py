@@ -70,6 +70,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
 from literalizer._heterogeneous import iter_wrapped_scalars
@@ -634,36 +635,6 @@ class _CSharpWidenedMapNarrowing:
     """Per-pass concrete value type for widened record fallback maps."""
 
     value_type: str | None
-
-
-@beartype
-def _all_record_shaped(items: list[Value], /) -> bool:
-    """Return whether *items* is a non-empty list whose every element is
-    a record-shaped dict (non-empty, all-string-keyed, not an ordered
-    map).
-
-    Under the ``RECORD`` strategy such a list renders each element as a
-    generated ``RecordN`` literal, so the C# sequence opener widens to
-    an implicitly-typed array (``new[] { ... }``) whose element type C#
-    infers from those literals, rather than the
-    ``Dictionary<string, object>[]`` the typed opener would otherwise
-    emit.
-
-    Uniformity of shape need not be checked here: a sibling list whose
-    record-shaped dicts do not all share one shape is rejected for every
-    ``RECORD`` language by the shared
-    :func:`literalizer._checks.check_data` guard before any value is
-    formatted, so a list reaching this predicate is always single-shape
-    and the inferred ``RecordN[]`` is well-formed.
-    """
-    if not items:
-        return False
-    return all(
-        isinstance(item, dict)
-        and not isinstance(item, OrderedMap)
-        and record_shape_for_dict(value=item) is not None
-        for item in items
-    )
 
 
 @beartype
@@ -2073,12 +2044,20 @@ class CSharp(metaclass=LanguageCls):
             base_open = fmt.sequence_open
         if self._json_type_active or not self._record_strategy_active:
             return base_open
+        record_name_for_value = self._record_strategy.record_name_for_value
+        assert record_name_for_value is not None  # noqa: S101
 
         def _open(items: list[Value]) -> str:
             """Return the implicitly-typed array opener for an
             all-record list, else the typed array opener.
             """
-            if _all_record_shaped(items):
+            if (
+                nested_record_sequence_type(
+                    value=items,
+                    record_name_for_value=record_name_for_value,
+                )
+                is not None
+            ):
                 return "new[] {"
             return base_open(items)
 

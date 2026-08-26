@@ -62,6 +62,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -1817,6 +1818,8 @@ class Scala(metaclass=LanguageCls):
         if self.heterogeneous_strategy not in (cls.RECORD, cls.TUPLE):
             return base
         plain_open = self.sequence_format.value.sequence_open
+        record_name_for_value = self._record_strategy.record_name_for_value
+        assert record_name_for_value is not None  # noqa: S101
 
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.
@@ -1824,9 +1827,16 @@ class Scala(metaclass=LanguageCls):
             ``OrderedMap`` is never record-eligible, so an omap element
             keeps the typed opener.
             """
-            if any(
-                isinstance(item, dict) and not isinstance(item, OrderedMap)
-                for item in items
+            if (
+                any(
+                    isinstance(item, dict) and not isinstance(item, OrderedMap)
+                    for item in items
+                )
+                or nested_record_sequence_type(
+                    value=items,
+                    record_name_for_value=record_name_for_value,
+                )
+                is not None
             ):
                 return plain_open(items)
             return base(items)

@@ -302,6 +302,17 @@ plan = "every_non_default_member"
 name_template = "{lang}_heterogeneous_strategy_{format}"
 option = "heterogeneous_strategy"
 
+[axes.heterogeneous_strategy_record]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_strategy_record"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.heterogeneous_strategy_datetime_cross]
 plan = "cross_product"
 name_template = "{lang}_heterogeneous_strategy_{format}_{tag}_{secondary}"

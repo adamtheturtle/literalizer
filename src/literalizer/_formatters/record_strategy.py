@@ -192,6 +192,37 @@ class RecordStrategy:
 
 
 @beartype
+def nested_record_sequence_type(
+    *,
+    value: Value,
+    record_name_for_value: Callable[[object], str | None],
+) -> tuple[int, str] | None:
+    """Return ``(depth, record_name)`` for a uniform nested record list.
+
+    Every sequence level must be non-empty, every branch must have the same
+    depth, and every leaf dict must render as the same generated record type.
+    """
+    record_name = record_name_for_value(value)
+    if record_name is not None:
+        return (0, record_name)
+    if not isinstance(value, list) or not value:
+        return None
+    child_types = {
+        nested_record_sequence_type(
+            value=item,
+            record_name_for_value=record_name_for_value,
+        )
+        for item in value
+    }
+    if len(child_types) != 1 or None in child_types:
+        return None
+    (child_type,) = child_types
+    assert child_type is not None  # noqa: S101
+    depth, name = child_type
+    return (depth + 1, name)
+
+
+@beartype
 def identity_field_identifier_key(identifier: str, /) -> str:
     """Compare two field identifiers by their spelling alone."""
     return identifier

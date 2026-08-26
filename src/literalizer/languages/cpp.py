@@ -66,6 +66,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.tuple_strategy import (
     is_tuple_eligible,
@@ -1586,6 +1587,36 @@ def _all_record_shaped(
         and record_shape_for_dict(value=item) is not None
         for item in items
     )
+
+
+@beartype
+def _cpp14_record_list_open(
+    *,
+    items: list[dict[str, Value]],
+    record_shape_names: Mapping[frozenset[str], str],
+    record_rendering_active: bool,
+    record_name_for_value: Callable[[object], str | None],
+) -> str | None:
+    """Return an explicit C++14 vector opener for record literals."""
+    first_item = items[0]
+    keys = frozenset(first_item.keys())
+    if all(frozenset(item.keys()) == keys for item in items):
+        name = record_shape_names.get(keys)
+        if name is not None:
+            return f"std::vector<{name}>{{"
+    if record_rendering_active:
+        name = record_name_for_value(first_item)
+        return f"std::vector<{name}>{{"
+    return None
+
+
+@beartype
+def _cpp14_nested_record_list_open(*, depth: int, name: str) -> str:
+    """Return the explicit C++14 vector opener for nested records."""
+    element_type = name
+    for _ in range(depth):
+        element_type = f"std::vector<{element_type}>"
+    return f"{element_type}{{"
 
 
 @beartype
@@ -3860,16 +3891,25 @@ class Cpp(metaclass=LanguageCls):
             base_items = items
             if _all_record_shaped(items):
                 if self.language_version is self.version_formats.CPP14:
-                    first_item = items[0]
-                    keys = frozenset(first_item.keys())
-                    if all(frozenset(item.keys()) == keys for item in items):
-                        name = self.record_shape_names.get(keys)
-                        if name is not None:
-                            return f"std::vector<{name}>{{"
-                    if record_rendering_active:
-                        name = record_name_for_value(first_item)
-                        return f"std::vector<{name}>{{"
-                    return base_open(base_items)
+                    record_open = _cpp14_record_list_open(
+                        items=items,
+                        record_shape_names=self.record_shape_names,
+                        record_rendering_active=record_rendering_active,
+                        record_name_for_value=record_name_for_value,
+                    )
+                    return record_open or base_open(base_items)
+                return "std::vector{"
+            nested_type = nested_record_sequence_type(
+                value=items,
+                record_name_for_value=record_name_for_value,
+            )
+            if nested_type is not None:
+                depth, name = nested_type
+                if self.language_version is self.version_formats.CPP14:
+                    return _cpp14_nested_record_list_open(
+                        depth=depth,
+                        name=name,
+                    )
                 return "std::vector{"
             return base_open(base_items)
 

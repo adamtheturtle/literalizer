@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp", "CSharp", "Go", "Scala"]
+languages_reason = "These backends previously inferred nested record lists as nested map containers under RECORD."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
