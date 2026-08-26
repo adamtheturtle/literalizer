@@ -192,34 +192,43 @@ def _reject_conflicting_csharp_modifiers(
 ) -> None:
     """Reject modifier combinations that would not compile.
 
-    A field has exactly one visibility, and ``const`` is implicitly static
-    and immutable so it cannot also be ``readonly``.
+    A field has one accessibility level; C# spells the combined
+    ``private protected`` level with two keywords. ``const`` is implicitly
+    static and immutable so it cannot also be ``readonly``.
 
     Raises:
         ConflictingVariableModifiersError: If a group has several members.
     """
-    groups = (
-        (
-            "visibility",
-            (
-                _CSharpModifiers.PUBLIC,
-                _CSharpModifiers.PRIVATE,
-                _CSharpModifiers.PROTECTED,
-            ),
-        ),
-        (
-            "mutability",
-            (_CSharpModifiers.CONST, _CSharpModifiers.READONLY),
-        ),
+    visibility = tuple(
+        modifier.value
+        for modifier in (
+            _CSharpModifiers.PUBLIC,
+            _CSharpModifiers.PRIVATE,
+            _CSharpModifiers.PROTECTED,
+        )
+        if modifier in modifiers
     )
-    for group_name, members in groups:
-        given = tuple(m.value for m in members if m in modifiers)
-        if len(given) > 1:
-            raise ConflictingVariableModifiersError(
-                language_name="CSharp",
-                group_name=group_name,
-                keywords=given,
-            )
+    private_protected = (
+        _CSharpModifiers.PRIVATE.value,
+        _CSharpModifiers.PROTECTED.value,
+    )
+    if len(visibility) > 1 and visibility != private_protected:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="visibility",
+            keywords=visibility,
+        )
+    mutability = tuple(
+        modifier.value
+        for modifier in (_CSharpModifiers.CONST, _CSharpModifiers.READONLY)
+        if modifier in modifiers
+    )
+    if len(mutability) > 1:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="mutability",
+            keywords=mutability,
+        )
 
 
 def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:

@@ -49,6 +49,23 @@ def test_csharp_rejects_two_visibilities() -> None:
         )
 
 
+def test_csharp_accepts_private_protected() -> None:
+    """``private protected`` is one combined C# accessibility level."""
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=CSharp(),
+        variable_form=NewVariable(
+            name="value",
+            modifiers=frozenset(
+                {CSharp.modifiers.PRIVATE, CSharp.modifiers.PROTECTED},
+            ),
+        ),
+    )
+
+    assert result.code == "private protected int value = 1;"
+
+
 def test_csharp_rejects_const_with_readonly() -> None:
     """``const`` is already immutable, so ``readonly`` conflicts with
     it.
