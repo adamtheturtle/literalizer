@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Crystal", "Dhall", "Mojo", "V"]
+languages_reason = "These backends provide a bespoke typed-empty sequence form, which map values must use when borrowing an element type from a non-empty sibling."
+suites = ["base"]
