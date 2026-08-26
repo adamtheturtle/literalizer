@@ -51,6 +51,7 @@ from literalizer._formatters.format_integers import (
     format_integer_tick,
     make_i64_min_safe_formatter,
     make_long_suffix_formatter,
+    make_negative_nondecimal_i64_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
@@ -3946,11 +3947,19 @@ class Cpp(metaclass=LanguageCls):
                 min_value=I64_MIN,
                 max_value=I64_MAX,
             )
+        base_int_formatter = (
+            self.numeric_literal_suffix.wrap_integer_formatter(
+                base=base_int_formatter,
+            )
+        )
+        if self.integer_format is not type(self.integer_format).DECIMAL:
+            base_int_formatter = make_negative_nondecimal_i64_formatter(
+                base=base_int_formatter,
+                suffix="LL",
+            )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(
-                base=self.numeric_literal_suffix.wrap_integer_formatter(
-                    base=base_int_formatter,
-                ),
+                base=base_int_formatter,
             ),
             fallback=make_ull_fallback(language_name="C++"),
             min_value=I64_MIN,
