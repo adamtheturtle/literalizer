@@ -1283,10 +1283,6 @@ def _has_unrepresentable_sibling_maps(
             if (
                 id(data) not in tuple_list_ids
                 and len(plain_dicts) == len(data) >= min_dicts_for_pooling
-                and (
-                    spec.dict_supports_heterogeneous_values
-                    or not record_dict_ids
-                )
                 and _sibling_maps_diverge(
                     pool=(
                         [
