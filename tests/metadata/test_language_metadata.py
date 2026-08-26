@@ -165,8 +165,8 @@ def test_language_protocol_members_are_not_class_level_none() -> None:
     The runtime Protocol checker treats class-level ``None`` as the
     PEP 544 "attribute is not implemented" marker.  That prevents ABC cache
     warming and makes repeated ``isinstance(_, Language)`` checks traverse the
-    whole protocol.  Related upstream context:
-    https://github.com/python/cpython/issues/102433.
+    whole protocol.  Reported upstream as
+    https://github.com/python/cpython/issues/156413.
     """
     missing = object()
     protocol_members = get_protocol_members(Language)

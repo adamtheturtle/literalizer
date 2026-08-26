@@ -2,6 +2,9 @@ r"""``isinstance()`` against a ``@runtime_checkable`` Protocol is fast
 when every member resolves to a non-``None`` value, and slow (O(N) in
 member count) when any member is ``None``.
 
+Reported upstream as
+https://github.com/python/cpython/issues/156413.
+
 This is plain ``isinstance`` behavior — no beartype involved.
 ``beartype`` amplifies the impact because every
 ``@beartype``-decorated function parameter typed as a

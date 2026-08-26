@@ -105,8 +105,8 @@ spelling_word_list_filename = "../../spelling_private_dict.txt"
 linkcheck_ignore = [
     r"https://dhall-lang\.org/",
     r"https://json5\.org/",
-    # GitHub intermittently returns 504 for this CPython issue despite retries.
-    r"https://github\.com/python/cpython/issues/102433",
+    # GitHub intermittently returns 504 for CPython issues despite retries.
+    r"https://github\.com/python/cpython/issues/156413",
 ]
 linkcheck_retries = 5
 

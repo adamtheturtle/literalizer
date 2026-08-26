@@ -1061,6 +1061,9 @@ an O(N)-in-protocol-member-count walk in
 ``_ProtocolMeta.__instancecheck__``.  With our ~110-member protocol
 that turned a 1.3 ms ``literalize()`` call into a 305 ms one.  Using
 ``sys.maxsize`` as the "unlimited" sentinel keeps the cache warm.
+
+Reported upstream as
+https://github.com/python/cpython/issues/156413.
 """
 
 
@@ -2883,8 +2886,7 @@ class _NoPygmentsName(str):
 # "attribute is not implemented" signal during runtime Protocol checks,
 # which prevents ABC cache warming and makes repeated ``isinstance(_,
 # Language)`` calls walk every protocol member.
-# See https://github.com/python/cpython/issues/102433 for related
-# runtime Protocol attribute lookup context.
+# Reported upstream as https://github.com/python/cpython/issues/156413.
 no_pygments_name = _NoPygmentsName()
 
 
