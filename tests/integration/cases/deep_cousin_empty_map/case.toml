@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Rust", "V"]
+languages_reason = "Rust and V narrow empty map literals from non-empty cousins and require the borrowed type at every corresponding nested path."
+suites = ["base"]
