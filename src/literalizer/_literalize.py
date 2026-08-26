@@ -1227,7 +1227,8 @@ def _format_dict_entry_value(
                 # sequence length (for example ``std::array<T, N>``):
                 # doing so would turn an empty list into N default values.
                 length_bearing = any(
-                    ctx.spec.sequence_open([sibling[0]]) != sibling_opener
+                    ctx.spec.sequence_open([*sibling, sibling[0]])
+                    != sibling_opener
                     for sibling in non_empty_siblings
                 )
                 if length_bearing:

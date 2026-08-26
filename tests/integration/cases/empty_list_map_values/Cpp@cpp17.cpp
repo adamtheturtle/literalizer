@@ -5,7 +5,7 @@
 #include <cstddef>
 int main() {
 auto my_data = std::map<std::string, std::vector<int>>{
-    {"a", std::vector<int>{1, 2}},
+    {"a", std::vector<int>{1}},
     {"b", std::vector<int>{}},
 };
     (void)my_data;

@@ -8,7 +8,7 @@ languages = ["Nim"]
 
 [call]
 api = "literalize"
-sources = ['{"a": [1, 2], "b": []}']
+sources = ['{"a": [1], "b": []}']
 input_format = "json"
 wrap_in_file = true
 variable_form = "new"
