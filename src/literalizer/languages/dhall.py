@@ -82,13 +82,13 @@ from literalizer._language import (
     no_pygments_name,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     InvalidDictKeyError,
+    UnrepresentableInputError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -120,6 +120,32 @@ _DHALL_RESERVED_LABELS = frozenset(
         "with",
     }
 )
+
+
+@beartype
+def _reject_mixed_scalar_container_lists(data: Value, /) -> None:
+    """Reject Dhall lists requiring union alternatives for containers."""
+    match data:
+        case list():
+            has_scalar = any(
+                not isinstance(item, (dict, list, set)) for item in data
+            )
+            has_container = any(
+                isinstance(item, (dict, list, set)) for item in data
+            )
+            if has_scalar and has_container:
+                msg = (
+                    "Dhall UNION_TYPE can wrap scalar alternatives only; "
+                    "a scalar and a container cannot share one List type"
+                )
+                raise UnrepresentableInputError(msg)
+            children = data
+        case dict():
+            children = list(data.values())
+        case _:
+            return
+    for child in children:
+        _reject_mixed_scalar_container_lists(child)
 
 
 @beartype
@@ -962,7 +988,12 @@ class Dhall(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject container alternatives the scalar union cannot
+        encode.
+        """
+        if self.heterogeneous_strategy.name == "UNION_TYPE":
+            _reject_mixed_scalar_container_lists(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
