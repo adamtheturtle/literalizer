@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+Rust ordered-map values share one array type even under the RECORD strategy,
+so differently sized arrays remain unrepresentable.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ["!!omap\n- short: [1]\n- long: [1, 2]\n"]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]

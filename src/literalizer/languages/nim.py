@@ -1547,7 +1547,11 @@ class Nim(metaclass=LanguageCls):
             # A ``const`` renders a bare Nim literal, whose nested
             # arrays carry their length in their type; the other styles
             # render a ``JsonNode``, which does not (issue #3924).
-            reject_ragged_nested_sequences(data=data, language_name="Nim")
+            reject_ragged_nested_sequences(
+                data=data,
+                language_name="Nim",
+                record_fields_are_independent=False,
+            )
         if (
             self._uses_native_nim_collections
             and isinstance(data, list)
