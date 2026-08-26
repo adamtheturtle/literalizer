@@ -165,6 +165,7 @@ def reject_ragged_nested_sequences(
     *,
     data: Value,
     language_name: str,
+    record_fields_are_independent: bool,
 ) -> None:
     """Reject sibling lists of unequal length beside each other.
 
@@ -174,25 +175,32 @@ def reject_ragged_nested_sequences(
     """
     match data:
         case dict():
-            lengths = {
-                len(value)
-                for value in data.values()
-                if isinstance(value, list)
-            }
-            if len(lengths) > 1:
-                sizes = ", ".join(
-                    str(object=length) for length in sorted(lengths)
-                )
-                msg = (
-                    f"{language_name} renders a sequence as a fixed-size "
-                    "array, whose length is part of its type, so sibling "
-                    f"sequences of lengths {sizes} have no common type"
-                )
-                raise UnrepresentableInputError(msg)
+            is_record = bool(data) and all(
+                isinstance(key, str) for key in data
+            )
+            if not (record_fields_are_independent and is_record):
+                lengths = {
+                    len(value)
+                    for value in data.values()
+                    if isinstance(value, list)
+                }
+                if len(lengths) > 1:
+                    sizes = ", ".join(
+                        str(object=length) for length in sorted(lengths)
+                    )
+                    msg = (
+                        f"{language_name} renders a sequence as a fixed-size "
+                        "array, whose length is part of its type, so sibling "
+                        f"sequences of lengths {sizes} have no common type"
+                    )
+                    raise UnrepresentableInputError(msg)
             for value in data.values():
                 reject_ragged_nested_sequences(
                     data=value,
                     language_name=language_name,
+                    record_fields_are_independent=(
+                        record_fields_are_independent
+                    ),
                 )
         case list():
             lengths = {len(item) for item in data if isinstance(item, list)}
@@ -210,6 +218,9 @@ def reject_ragged_nested_sequences(
                 reject_ragged_nested_sequences(
                     data=item,
                     language_name=language_name,
+                    record_fields_are_independent=(
+                        record_fields_are_independent
+                    ),
                 )
         case _:
             return

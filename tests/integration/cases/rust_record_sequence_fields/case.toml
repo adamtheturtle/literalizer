@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Rust"]
+languages_reason = "Rust record field declarations must match fixed-size ARRAY and heterogeneous TUPLE sequence literals."
+
+[[variants]]
+axis = "record_sequence_format"

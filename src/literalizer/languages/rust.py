@@ -902,6 +902,8 @@ class _StrategyParams:
     unify_optional_fields: bool
     map_value_typing: RecordMapValueTypings
     empty_container_type_hints: Mapping[EmptyContainerPath, str]
+    sequence_format_type_annotation: Callable[[str, int], str]
+    sequence_supports_heterogeneity: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1592,6 +1594,8 @@ def _rust_record_field_type(
     record_names: "dict[RecordShape, str]",
     shapes_by_id: "Mapping[int, RecordShape]",
     tuple_list_ids: frozenset[int],
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
 ) -> str:
     """Return the Rust struct field type for *value*.
 
@@ -1620,9 +1624,11 @@ def _rust_record_field_type(
     # ``case dict()`` paths reject the input instead of emitting a
     # struct that fails to compile.
     match value:
-        case []:
-            return "Vec<String>"
-        case list() if id(value) in tuple_list_ids:
+        case [] if not sequence_supports_heterogeneity:
+            return sequence_format_type_annotation("String", 0)
+        case list() if (
+            id(value) in tuple_list_ids or sequence_supports_heterogeneity
+        ):
             element_types = [
                 _rust_record_field_type(
                     value=item,
@@ -1632,10 +1638,17 @@ def _rust_record_field_type(
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
+                    sequence_format_type_annotation=(
+                        sequence_format_type_annotation
+                    ),
+                    sequence_supports_heterogeneity=(
+                        sequence_supports_heterogeneity
+                    ),
                 )
                 for item in value
             ]
-            return f"({', '.join(element_types)})"
+            trailing_comma = "," if len(element_types) == 1 else ""
+            return f"({', '.join(element_types)}{trailing_comma})"
         case list():
             inner_types = [
                 _rust_record_field_type(
@@ -1646,10 +1659,18 @@ def _rust_record_field_type(
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
+                    sequence_format_type_annotation=(
+                        sequence_format_type_annotation
+                    ),
+                    sequence_supports_heterogeneity=(
+                        sequence_supports_heterogeneity
+                    ),
                 )
                 for item in value
             ]
-            return f"Vec<{_unify_rust_types(types=inner_types)}>"
+            return sequence_format_type_annotation(
+                _unify_rust_types(types=inner_types), len(value)
+            )
         case dict():
             shape = shapes_by_id.get(id(value))
             if shape is not None and shape in record_names:
@@ -1782,6 +1803,8 @@ def _record_field_type_signature(  # pylint: disable=redefined-variable-type
     tuple_list_ids: frozenset[int],
     date_type: str,
     datetime_type: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
 ) -> Hashable:
     """Return a structural stand-in for the Rust type
     :func:`_rust_record_field_type` would declare for *value*.
@@ -1805,17 +1828,26 @@ def _record_field_type_signature(  # pylint: disable=redefined-variable-type
             tuple_list_ids=tuple_list_ids,
             date_type=date_type,
             datetime_type=datetime_type,
+            sequence_format_type_annotation=sequence_format_type_annotation,
+            sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         )
 
     result: Hashable
     match value:
+        case [] if sequence_supports_heterogeneity:
+            result = "()"
         case []:
-            result = "Vec<String>"
-        case list() if id(value) in tuple_list_ids:
+            result = sequence_format_type_annotation("String", 0)
+        case list() if (
+            id(value) in tuple_list_ids or sequence_supports_heterogeneity
+        ):
             result = ("tuple", tuple(recurse(item=item) for item in value))
         case list():
             element_signatures = [recurse(item=item) for item in value]
-            result = ("vec", _unify_signatures(signatures=element_signatures))
+            result = (
+                sequence_format_type_annotation("T", len(value)),
+                _unify_signatures(signatures=element_signatures),
+            )
         case dict() if id(value) in group_of:
             result = group_of[id(value)]
         case dict():
@@ -1877,6 +1909,8 @@ def _instance_signature(
     tuple_list_ids: frozenset[int],
     date_type: str,
     datetime_type: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
 ) -> tuple[Hashable, ...]:
     """Return the per-key field-type signatures of *instance*, in
     shape-key order, with :data:`_ABSENT_FIELD` for a key it lacks.
@@ -1888,6 +1922,8 @@ def _instance_signature(
             tuple_list_ids=tuple_list_ids,
             date_type=date_type,
             datetime_type=datetime_type,
+            sequence_format_type_annotation=sequence_format_type_annotation,
+            sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         )
         if key in instance
         else _ABSENT_FIELD
@@ -1925,6 +1961,8 @@ def _regroup_by_field_signatures(
     tuple_list_ids: frozenset[int],
     date_type: str,
     datetime_type: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
 ) -> dict[int, Hashable]:
     """Run one refinement round: split each group of *group_of* whose
     members' field signatures conflict, keeping agreeing groups whole.
@@ -1944,6 +1982,12 @@ def _regroup_by_field_signatures(
                 tuple_list_ids=tuple_list_ids,
                 date_type=date_type,
                 datetime_type=datetime_type,
+                sequence_format_type_annotation=(
+                    sequence_format_type_annotation
+                ),
+                sequence_supports_heterogeneity=(
+                    sequence_supports_heterogeneity
+                ),
             )
             for member in members
         ]
@@ -2024,6 +2068,8 @@ def _refine_record_shapes(
     tuple_list_ids: frozenset[int],
     date_type: str,
     datetime_type: str,
+    sequence_format_type_annotation: Callable[[str, int], str],
+    sequence_supports_heterogeneity: bool,
 ) -> dict[int, RecordShape]:
     """Split record shapes whose dicts disagree on a field's Rust type.
 
@@ -2061,6 +2107,8 @@ def _refine_record_shapes(
             tuple_list_ids=tuple_list_ids,
             date_type=date_type,
             datetime_type=datetime_type,
+            sequence_format_type_annotation=sequence_format_type_annotation,
+            sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         )
         old_partition = _partition(instances=instances, group_of=group_of)
         new_partition = _partition(instances=instances, group_of=regrouped)
@@ -2163,6 +2211,12 @@ def _record_behavior_impl(
             ),
             date_type=params.date_type,
             datetime_type=params.datetime_type,
+            sequence_format_type_annotation=(
+                params.sequence_format_type_annotation
+            ),
+            sequence_supports_heterogeneity=(
+                params.sequence_supports_heterogeneity
+            ),
         )
         name_cache.clear()
         id_to_shape.clear()
@@ -2414,6 +2468,12 @@ def _record_preamble_impl(
             tuple_list_ids=tuple_list_ids,
             date_type=params.date_type,
             datetime_type=params.datetime_type,
+            sequence_format_type_annotation=(
+                params.sequence_format_type_annotation
+            ),
+            sequence_supports_heterogeneity=(
+                params.sequence_supports_heterogeneity
+            ),
         )
         ordered_shapes: list[RecordShape] = []
         seen: set[RecordShape] = set()
@@ -2471,6 +2531,12 @@ def _record_preamble_impl(
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
                     tuple_list_ids=tuple_list_ids,
+                    sequence_format_type_annotation=(
+                        params.sequence_format_type_annotation
+                    ),
+                    sequence_supports_heterogeneity=(
+                        params.sequence_supports_heterogeneity
+                    ),
                 )
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
@@ -3748,6 +3814,12 @@ class Rust(metaclass=LanguageCls):
             unify_optional_fields=self.record_unify_optional_fields,
             map_value_typing=self.record_map_value_typing,
             empty_container_type_hints=self.empty_container_type_hints,
+            sequence_format_type_annotation=(
+                self.sequence_format.format_type_annotation
+            ),
+            sequence_supports_heterogeneity=(
+                self.sequence_format.supports_heterogeneity
+            ),
         )
 
     @cached_property
@@ -3992,7 +4064,14 @@ class Rust(metaclass=LanguageCls):
             type(self.sequence_format).ARRAY,
             type(self.sequence_format).TUPLE,
         }:
-            reject_ragged_nested_sequences(data=data, language_name="Rust")
+            reject_ragged_nested_sequences(
+                data=data,
+                language_name="Rust",
+                record_fields_are_independent=(
+                    self.heterogeneous_strategy
+                    is type(self.heterogeneous_strategy).RECORD
+                ),
+            )
         if self._json_type_active:
             self._validate_json_value_keys(data)
         if (

@@ -847,6 +847,15 @@ overrides = [
   { kind = "true_flag", kwarg = "record_unify_optional_fields" },
 ]
 
+[axes.record_sequence_format]
+plan = "fixed_overrides"
+name_template = "{lang}_record_sequence_{format}"
+primary_axis = "sequence"
+gates = [{ kind = "metadata_field", field = "language_id", value = "rust" }]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
 [axes.sequence]
 plan = "every_non_default_member"
 name_template = "{lang}_sequence_{format}"
