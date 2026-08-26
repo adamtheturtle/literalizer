@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A Nim const renders map values as bare array literals, whose lengths are
+part of their types, so empty and non-empty list values have no common type.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ['{"a": [1, 2], "b": []}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]

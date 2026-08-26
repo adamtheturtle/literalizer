@@ -1,0 +1,1 @@
+Empty list values in maps now borrow the element type of a non-empty sibling in Go, Rust, and C++ output. Length-bearing Rust and Nim formats reject incompatible empty and non-empty siblings instead of emitting code that does not compile.

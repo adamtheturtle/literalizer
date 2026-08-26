@@ -3988,7 +3988,10 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
-        if self.sequence_format is type(self.sequence_format).ARRAY:
+        if self.sequence_format in {
+            type(self.sequence_format).ARRAY,
+            type(self.sequence_format).TUPLE,
+        }:
             reject_ragged_nested_sequences(data=data, language_name="Rust")
         if self._json_type_active:
             self._validate_json_value_keys(data)
