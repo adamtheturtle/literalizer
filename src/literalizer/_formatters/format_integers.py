@@ -10,6 +10,7 @@ from literalizer.exceptions import UnrepresentableIntegerError
 I64_MAX = 2**63 - 1
 I64_MIN = -(2**63)
 U64_MAX = 2**64 - 1
+_I32_MIN = -(2**31)
 
 
 @beartype
@@ -26,6 +27,34 @@ def make_i64_min_safe_formatter(
         if value == I64_MIN:
             return "(-9223372036854775807LL - 1)"
         return base(value)
+
+    return _format
+
+
+@beartype
+def make_negative_nondecimal_i64_formatter(
+    *, base: Callable[[int], str], suffix: str
+) -> Callable[[int], str]:
+    """Give wide negative non-decimal operands a signed 64-bit type.
+
+    C-family compilers type a hexadecimal, octal, or binary magnitude
+    such as ``0x80000000`` as unsigned when it no longer fits their
+    signed 32-bit type. Negating that operand therefore wraps before it
+    reaches the surrounding 64-bit value. Append the language's signed
+    64-bit suffix from that boundary downwards so negation stays signed.
+    """
+
+    @beartype
+    def _format(value: int) -> str:
+        """Format one integer with a wide signed suffix when needed."""
+        rendered = base(value)
+        if value > _I32_MIN:
+            return rendered
+        if rendered.endswith(suffix):
+            return rendered
+        if suffix == "LL" and rendered.endswith("L"):
+            return f"{rendered}L"
+        return f"{rendered}{suffix}"
 
     return _format
 

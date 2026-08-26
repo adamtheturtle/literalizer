@@ -40,6 +40,7 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_underscore,
+    make_negative_nondecimal_i64_formatter,
     make_overflow_fallback_formatter,
     make_unsigned_overflow_fallback,
 )
@@ -1657,6 +1658,11 @@ class D(metaclass=LanguageCls):
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+        if self.integer_format is not type(self.integer_format).DECIMAL:
+            base = make_negative_nondecimal_i64_formatter(
+                base=base,
+                suffix="L",
+            )
         return make_overflow_fallback_formatter(
             base=lambda value: "long.min" if value == I64_MIN else base(value),
             fallback=make_unsigned_overflow_fallback(

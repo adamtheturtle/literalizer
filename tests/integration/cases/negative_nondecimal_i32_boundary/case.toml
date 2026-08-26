@@ -1,0 +1,10 @@
+schema_version = 1
+languages = ["C", "Cpp", "D"]
+languages_reason = "These C-family backends infer an unsigned type for a non-decimal magnitude at the signed 32-bit boundary unless the generated literal forces signed 64-bit arithmetic."
+suites = ["base"]
+
+[[variants]]
+axis = "integer_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"

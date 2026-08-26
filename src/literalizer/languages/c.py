@@ -38,6 +38,7 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     make_i64_min_safe_formatter,
     make_long_suffix_formatter,
+    make_negative_nondecimal_i64_formatter,
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
@@ -1908,6 +1909,11 @@ class C(metaclass=LanguageCls):
             if suffix_is_auto
             else self.integer_format
         )
+        if self.integer_format is not type(self.integer_format).DECIMAL:
+            base = make_negative_nondecimal_i64_formatter(
+                base=base,
+                suffix="LL",
+            )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(base=base),
             fallback=make_ull_fallback(language_name="C"),
