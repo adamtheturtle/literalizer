@@ -101,7 +101,7 @@ _R_MAX_SAFE_FIXED_MAGNITUDE = 1e16
 
 @beartype
 def _format_r_float_fixed(value: float) -> str:
-    """Avoid fixed spellings that R's decimal parser misrounds.
+    """Avoid fixed spellings that R's decimal parser rounds incorrectly.
 
     R's ``R_strtod`` is not correctly rounded for the long decimals
     produced for subnormal values, the smallest normal value, and
