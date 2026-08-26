@@ -6449,9 +6449,12 @@ def literalize_call_parsed(
             collection_layout=collection_layout,
             variable_form=variable_form,
         )
+    rendered_uses_zip = zip_resolution is not None and any(
+        literal in result for literal in zip_resolution.literals
+    )
     preamble_data = _preamble_data_with_zip(
         data_for_preamble=data_for_preamble,
-        zip_resolution=zip_resolution,
+        zip_resolution=zip_resolution if rendered_uses_zip else None,
         per_element=per_element,
     )
     computed = compute_preamble(

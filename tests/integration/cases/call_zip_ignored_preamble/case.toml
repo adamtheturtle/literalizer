@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Go", "Rust"]
+languages_reason = "Go rejects an unused time import, while Rust exposes the same zip-derived preamble path for chrono values."
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_transform = "{call}"
+zip_source = "---\n- 2024-01-15T12:00:00\n- 2024-02-15T12:30:00\n"
+zip_input_format = "yaml"
