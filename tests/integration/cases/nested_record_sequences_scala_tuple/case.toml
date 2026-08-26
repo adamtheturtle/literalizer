@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Scala"]
+languages_reason = "Scala's TUPLE strategy composes RECORD and must preserve nested record element inference."
+
+[[variants]]
+axis = "nested_tuple_strategy"

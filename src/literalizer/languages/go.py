@@ -62,6 +62,7 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._heterogeneous import iter_wrapped_scalars
@@ -1451,11 +1452,13 @@ class Go(metaclass=LanguageCls):
             rendered as one record, else ``[]any{`` for lists holding
             record-shaped dicts.
             """
-            names = {record_name_for_value(item) for item in items}
-            if len(names) == 1:
-                (name,) = names
-                if name is not None:
-                    return f"[]{name}{{"
+            nested_type = nested_record_sequence_type(
+                value=items,
+                record_name_for_value=record_name_for_value,
+            )
+            if nested_type is not None:
+                depth, name = nested_type
+                return f"{'[]' * depth}{name}{{"
             return (
                 f"[]{self.default_sequence_element_type}{{"
                 if any(
