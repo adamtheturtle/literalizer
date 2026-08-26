@@ -95,6 +95,27 @@ from literalizer.exceptions import (
     UnrepresentableIntegerError,
 )
 
+_R_MIN_SAFE_FIXED_MAGNITUDE = 1e-16
+_R_MAX_SAFE_FIXED_MAGNITUDE = 1e16
+
+
+@beartype
+def _format_r_float_fixed(value: float) -> str:
+    """Avoid fixed spellings that R's decimal parser rounds incorrectly.
+
+    R's ``R_strtod`` is not correctly rounded for the long decimals
+    produced outside the conservatively bounded fixed-point range. Keep
+    FIXED for ordinary magnitudes and use the round-tripping scientific
+    formatter outside that range.
+    """
+    magnitude = abs(value)
+    if (
+        0 < magnitude < _R_MIN_SAFE_FIXED_MAGNITUDE
+        or magnitude > _R_MAX_SAFE_FIXED_MAGNITUDE
+    ):
+        return format_float_scientific(value=value)
+    return format_float_fixed(value=value)
+
 
 @beartype
 def _format_datetime_r(value: datetime.datetime, /) -> str:
@@ -448,7 +469,7 @@ class R(metaclass=LanguageCls):
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        FIXED = enum.member(value=_format_r_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""
