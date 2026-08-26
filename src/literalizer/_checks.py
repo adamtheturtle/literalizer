@@ -2,6 +2,7 @@
 collection-shape constraints.
 """
 
+import copy
 import datetime
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, overload
@@ -1139,24 +1140,41 @@ def _dict_slot_uses_variant_typing(*, spec: Language) -> bool:
 
 
 @beartype
+def _plain_maps(*, values: Iterable[Value]) -> list[dict[Scalar, Value]]:
+    """Return unordered plain maps from *values*."""
+    return [
+        value
+        for value in values
+        if isinstance(value, dict) and not isinstance(value, OrderedMap)
+    ]
+
+
+@beartype
 def _fill_nested_empty_map_siblings(
     *, maps: list[dict[Scalar, Value]]
 ) -> None:
-    """Give nested empty maps a non-empty sibling's inferred shape."""
-    for d in maps:
-        for key, value in list(d.items()):
-            if value != {}:
-                continue
-            replacement = next(
-                (
-                    sibling[key]
-                    for sibling in maps
-                    if isinstance(sibling.get(key), dict) and sibling[key]
-                ),
-                None,
-            )
+    """Give nested empty maps a non-empty cousin's inferred shape."""
+    keys = {key for sibling in maps for key in sibling}
+    for key in keys:
+        owners = [sibling for sibling in maps if key in sibling]
+        cousins = [owner[key] for owner in owners]
+        cousin_maps = _plain_maps(values=cousins)
+        if cousins and len(cousin_maps) == len(cousins):
+            replacement = next((cousin for cousin in cousins if cousin), None)
             if replacement is not None:
-                d[key] = replacement
+                for owner in owners:
+                    if owner[key] == {}:
+                        owner[key] = copy.deepcopy(x=replacement)
+            nested_maps = _plain_maps(values=(owner[key] for owner in owners))
+            _fill_nested_empty_map_siblings(
+                maps=nested_maps,
+            )
+            continue
+        for cousin in cousins:
+            if isinstance(cousin, list):
+                nested_maps = _plain_maps(values=cousin)
+                if nested_maps:
+                    _fill_nested_empty_map_siblings(maps=nested_maps)
 
 
 @beartype
@@ -1186,14 +1204,16 @@ def _sibling_maps_diverge(
     min_maps_for_divergence = 2
     if len(maps) < min_maps_for_divergence:
         return False
-    filtered = [
-        {
-            k: v
-            for k, v in d.items()
-            if not (spec.skip_null_dict_values and v is None)
-        }
-        for d in maps
-    ]
+    filtered = copy.deepcopy(
+        x=[
+            {
+                k: v
+                for k, v in d.items()
+                if not (spec.skip_null_dict_values and v is None)
+            }
+            for d in maps
+        ]
+    )
     if not spec.dict_supports_heterogeneous_values:
         if spec.dict_format_config.narrowed_empty_form is not None:
             _fill_nested_empty_map_siblings(maps=filtered)

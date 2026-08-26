@@ -17,7 +17,7 @@ Two shapes come up most often:
 
 * A **list** whose elements are not all the same scalar type, e.g. ``[1, "two", 3.0]``.
   In a dynamically typed language this is an ordinary list; in Rust it is not a valid ``Vec<T>``.
-* A **record-shaped dict**: a non-empty, string-keyed dict whose values mix scalars with at least one container, e.g. ``{"id": 100, "related_ids": [102, 103]}``.
+* A non-empty, string-keyed dict whose values mix scalars with at least one container is **record-shaped**, e.g. ``{"id": 100, "related_ids": [102, 103]}``.
   Conceptually this is a record (a struct), not a map, so a strict-map language has no ``HashMap`` that fits it.
 
 Languages whose native collections are already heterogeneous (most dynamically typed languages, plus formats such as JSON5, YAML, and TOML) never reach a strategy: the data is representable as-is, so they expose only ``ERROR`` and never raise for these inputs.
