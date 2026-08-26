@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Swift"]
+languages_reason = "Swift-specific: RECORD emits struct values whose heterogeneous sibling scalar requires an explicit [Any] variable annotation."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy"
