@@ -484,7 +484,7 @@ Custom language implementations
 To support a language that is not built in, create a class that satisfies the :class:`~literalizer.Language` protocol, using ``metaclass=LanguageCls`` and defining the required nested enum classes and attributes.
 
 When an attribute is part of the :class:`~literalizer.Language` protocol but should resolve to ``None``, expose that value through a descriptor or property instead of storing literal ``None`` on the class.
-CPython treats class-level ``None`` as "attribute is not implemented" during runtime protocol checks, which can prevent ABC cache warming for large ``@runtime_checkable`` protocols; see `python/cpython#102433 <https://github.com/python/cpython/issues/102433>`__.
+CPython treats class-level ``None`` as "attribute is not implemented" during runtime protocol checks, which can prevent ABC cache warming for large ``@runtime_checkable`` protocols; see `python/cpython#156413 <https://github.com/python/cpython/issues/156413>`__.
 Built-in languages use shared descriptors such as ``no_pygments_name`` and ``no_format_integer_widened`` for this pattern.
 
 Look at any built-in language module under ``literalizer/languages/`` for a complete working example.
