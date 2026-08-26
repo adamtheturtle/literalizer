@@ -174,6 +174,21 @@ def reject_ragged_nested_sequences(
     """
     match data:
         case dict():
+            lengths = {
+                len(value)
+                for value in data.values()
+                if isinstance(value, list)
+            }
+            if len(lengths) > 1:
+                sizes = ", ".join(
+                    str(object=length) for length in sorted(lengths)
+                )
+                msg = (
+                    f"{language_name} renders a sequence as a fixed-size "
+                    "array, whose length is part of its type, so sibling "
+                    f"sequences of lengths {sizes} have no common type"
+                )
+                raise UnrepresentableInputError(msg)
             for value in data.values():
                 reject_ragged_nested_sequences(
                     data=value,

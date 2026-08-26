@@ -948,6 +948,7 @@ def _format_ordered_map_value(
                 raw_value=v,
                 formatted_value=_format_dict_entry_value(
                     value=v,
+                    sibling_list_values=sibling_list_values,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
@@ -1160,6 +1161,7 @@ def _format_dict_value(
                 raw_value=v,
                 formatted_value=_format_dict_entry_value(
                     value=v,
+                    sibling_list_values=sibling_list_values,
                     outer_sequence_override=outer_sequence_override,
                     position_overrides=position_overrides,
                     ctx=ctx,
@@ -1191,6 +1193,7 @@ def _format_dict_value(
 def _format_dict_entry_value(
     *,
     value: Value,
+    sibling_list_values: Sequence[list[Value]],
     outer_sequence_override: str | None,
     position_overrides: Sequence[str | None],
     ctx: _RenderContext,
@@ -1210,6 +1213,37 @@ def _format_dict_entry_value(
     """
     child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
+        if not value and outer_sequence_override is None:
+            non_empty_siblings = [
+                sibling for sibling in sibling_list_values if sibling
+            ]
+            sibling_openers = {
+                ctx.spec.sequence_open(sibling)
+                for sibling in non_empty_siblings
+            }
+            if len(sibling_openers) == 1:
+                (sibling_opener,) = sibling_openers
+                # Do not borrow an opener whose spelling includes the
+                # sequence length (for example ``std::array<T, N>``):
+                # doing so would turn an empty list into N default values.
+                length_bearing = any(
+                    ctx.spec.sequence_open([*sibling, sibling[0]])
+                    != sibling_opener
+                    for sibling in non_empty_siblings
+                )
+                if length_bearing:
+                    return _format_list_value(
+                        value=value,
+                        sequence_open_override=None,
+                        child_sequence_open_overrides=position_overrides,
+                        ctx=child_ctx,
+                    )
+                narrowed_empty_form = (
+                    ctx.spec.sequence_format_config.narrowed_empty_form
+                )
+                if narrowed_empty_form is not None:
+                    return narrowed_empty_form(non_empty_siblings)
+                outer_sequence_override = sibling_opener
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
             ctx=child_ctx,
@@ -2502,6 +2536,7 @@ def _format_collection_lines(
                     raw_value=v,
                     formatted_value=_format_dict_entry_value(
                         value=v,
+                        sibling_list_values=sibling_list_values,
                         outer_sequence_override=outer_sequence_override,
                         position_overrides=position_overrides,
                         ctx=line_ctx,

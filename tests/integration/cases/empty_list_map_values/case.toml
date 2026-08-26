@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp", "Go", "Rust"]
+languages_reason = "These statically typed backends infer one sequence type for every value in a map and must type an empty list from its non-empty sibling."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
