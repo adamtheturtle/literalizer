@@ -126,6 +126,7 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
+    ConflictingVariableModifiersError,
     IncompatibleFormatsError,
     InvalidRecordNameError,
     UnrepresentableInputError,
@@ -186,12 +187,68 @@ class _CSharpModifiers(enum.Enum):
 
 
 @beartype
+def _reject_conflicting_csharp_modifiers(
+    modifiers: frozenset[enum.Enum],
+) -> None:
+    """Reject modifier combinations that would not compile.
+
+    A field has one accessibility level; C# spells the combined
+    ``private protected`` level with two keywords. ``const`` is implicitly
+    static and immutable so it cannot also be ``readonly``.
+
+    Raises:
+        ConflictingVariableModifiersError: If a group has several members.
+    """
+    visibility = tuple(
+        modifier.value
+        for modifier in (
+            _CSharpModifiers.PUBLIC,
+            _CSharpModifiers.PRIVATE,
+            _CSharpModifiers.PROTECTED,
+        )
+        if modifier in modifiers
+    )
+    private_protected = (
+        _CSharpModifiers.PRIVATE.value,
+        _CSharpModifiers.PROTECTED.value,
+    )
+    if len(visibility) > 1 and visibility != private_protected:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="visibility",
+            keywords=visibility,
+        )
+    mutability = tuple(
+        modifier.value
+        for modifier in (_CSharpModifiers.CONST, _CSharpModifiers.READONLY)
+        if modifier in modifiers
+    )
+    if len(mutability) > 1:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="mutability",
+            keywords=mutability,
+        )
+    storage = tuple(
+        modifier.value
+        for modifier in (_CSharpModifiers.STATIC, _CSharpModifiers.CONST)
+        if modifier in modifiers
+    )
+    if len(storage) > 1:
+        raise ConflictingVariableModifiersError(
+            language_name="CSharp",
+            group_name="storage",
+            keywords=storage,
+        )
+
+
 def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static readonly `` prefix for a C#
     declaration, including a trailing space when non-empty.
 
     Values that are not :class:`_CSharpModifiers` members are ignored.
     """
+    _reject_conflicting_csharp_modifiers(modifiers=modifiers)
     keywords = [m.value for m in _CSharpModifiers if m in modifiers]
     if not keywords:
         return ""
