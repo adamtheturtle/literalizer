@@ -1,12 +1,12 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Go", "Python"]
-languages_reason = "Sampled: Go provides a compiled self-contained file and Python provides an executed assignment path for the language-independent bound-ref composition."
+languages = ["Fortran", "Go", "Python"]
+languages_reason = "Sampled: Fortran exercises wrappers with separate declaration and assignment scopes, Go provides a compiled single-scope file, and Python provides an executed assignment path."
 
 [ref]
 variable_form = "both"
-languages = ["Go", "Python"]
-languages_reason = "Sampled: Go provides a compiled self-contained file and Python provides an executed assignment path for the language-independent bound-ref composition."
+languages = ["Fortran", "Go", "Python"]
+languages_reason = "Sampled: Fortran exercises wrappers with separate declaration and assignment scopes, Go provides a compiled single-scope file, and Python provides an executed assignment path."
 
 [ref.value_sources]
 shared = "[1, 2]"

@@ -981,12 +981,17 @@ class Fortran(metaclass=LanguageCls):
         """Wrap Fortran declaration + assignment in separate
         subroutines.
         """
+        _ = variable_name
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
         )
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
-        assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
+        assignment_scope = f"{declaration}\n{assignment}"
+        assign_indented = textwrap.indent(
+            text=assignment_scope,
+            prefix=self.indent,
+        )
         return (
             f"subroutine {self.module_name}_declaration()\n"
             f"{self.indent}use fval_m\n"
@@ -997,7 +1002,6 @@ class Fortran(metaclass=LanguageCls):
             f"subroutine {self.module_name}_assignment()\n"
             f"{self.indent}use fval_m\n"
             f"{self.indent}implicit none\n"
-            f"{self.indent}type(fval_t) :: {variable_name}\n"
             f"{assign_indented}\n"
             f"end subroutine {self.module_name}_assignment\n"
             "\n"
