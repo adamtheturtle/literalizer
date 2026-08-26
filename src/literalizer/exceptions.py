@@ -941,3 +941,32 @@ class WrapCombinedInFileNotSupportedError(LiteralizerError):
     To resolve, use a single variable form, or target a language that
     supports the combined form.
     """
+
+
+class ConflictingVariableModifiersError(LiteralizerError):
+    """Raised when declaration modifiers cannot be combined.
+
+    Some modifier groups are mutually exclusive: a Java or C# field has
+    exactly one visibility, and a C# field is ``const`` or ``readonly``
+    but not both. Emitting all of them produces source that does not
+    compile, so the combination is rejected instead.
+
+    To resolve, pass at most one modifier from the reported group.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        group_name: str,
+        keywords: tuple[str, ...],
+    ) -> None:
+        """Create a ``ConflictingVariableModifiersError``."""
+        joined = ", ".join(keywords)
+        super().__init__(
+            f"{language_name} accepts at most one {group_name} modifier; "
+            f"received {joined}"
+        )
+        self.language_name = language_name
+        self.group_name = group_name
+        self.keywords = keywords

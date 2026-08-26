@@ -117,6 +117,7 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    ConflictingVariableModifiersError,
     IncompatibleFormatsError,
     InvalidModuleNameError,
     InvalidRecordNameError,
@@ -499,12 +500,38 @@ def _java_type_hint(
 
 
 @beartype
+def _reject_conflicting_java_modifiers(
+    modifiers: frozenset[enum.Enum],
+) -> None:
+    """Reject modifier combinations that would not compile.
+
+    A field has exactly one visibility, so emitting more than one
+    produces source such as ``public private int x``.
+
+    Raises:
+        ConflictingVariableModifiersError: If several visibilities are given.
+    """
+    visibility = (
+        _JavaModifiers.PUBLIC,
+        _JavaModifiers.PRIVATE,
+        _JavaModifiers.PROTECTED,
+    )
+    given = tuple(m.value for m in visibility if m in modifiers)
+    if len(given) > 1:
+        raise ConflictingVariableModifiersError(
+            language_name="Java",
+            group_name="visibility",
+            keywords=given,
+        )
+
+
 def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static final `` prefix for a Java
     declaration, including a trailing space when non-empty.
 
     Values that are not :class:`_JavaModifiers` members are ignored.
     """
+    _reject_conflicting_java_modifiers(modifiers=modifiers)
     keywords = [m.value for m in _JavaModifiers if m in modifiers]
     if not keywords:
         return ""
