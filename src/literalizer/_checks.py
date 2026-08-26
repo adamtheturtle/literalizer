@@ -175,8 +175,10 @@ def reject_ragged_nested_sequences(
     """
     match data:
         case dict():
-            is_record = bool(data) and all(
-                isinstance(key, str) for key in data
+            is_record = (
+                bool(data)
+                and not isinstance(data, OrderedMap)
+                and all(isinstance(key, str) for key in data)
             )
             if not (record_fields_are_independent and is_record):
                 lengths = {
