@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Dhall's UNION_TYPE strategy defines scalar alternatives only, so a scalar
+cannot share a List with a record or another container.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Dhall"]
+
+[call]
+api = "literalize"
+sources = ['[{"a": 1}, 5]']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "UNION_TYPE" },
+]

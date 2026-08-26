@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Dhall = "Dhall UNION_TYPE can wrap scalar alternatives only; a scalar and a container cannot share one List type"
