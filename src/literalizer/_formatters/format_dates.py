@@ -34,6 +34,21 @@ def format_date_iso(value: datetime.date) -> str:
     return f'"{value.isoformat()}"'
 
 
+# ECMA-262 maps a year argument of 0 to 99 to ``1900 + year``, so the
+# numeric constructor cannot spell an early year directly.  ``setFullYear``
+# takes the year as given and returns the adjusted time value, which the
+# outer constructor turns back into a ``Date`` (issue #4520).
+_JAVASCRIPT_OFFSET_YEAR_MAX = 99
+
+
+@beartype
+def _javascript_date_expression(*, year: int, args: str) -> str:
+    """Return a ``Date`` expression that keeps *year* as written."""
+    if 0 <= year <= _JAVASCRIPT_OFFSET_YEAR_MAX:
+        return f"new Date(new Date({args}).setFullYear({year}))"
+    return f"new Date({args})"
+
+
 @beartype
 def format_date_javascript(value: datetime.date) -> str:
     """Format a date as a JavaScript local-midnight ``Date``.
@@ -41,7 +56,10 @@ def format_date_javascript(value: datetime.date) -> str:
     The numeric constructor uses local calendar components. Its month is
     zero-based, unlike :class:`datetime.date`.
     """
-    return f"new Date({value.year}, {value.month - 1}, {value.day})"
+    return _javascript_date_expression(
+        year=value.year,
+        args=f"{value.year}, {value.month - 1}, {value.day}",
+    )
 
 
 @beartype
@@ -66,7 +84,7 @@ def format_datetime_javascript(value: datetime.datetime) -> str:
     )
     if value.microsecond:
         args += f", {value.microsecond // 1000}"
-    return f"new Date({args})"
+    return _javascript_date_expression(year=value.year, args=args)
 
 
 @beartype
