@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Gleam['MyData']" = "Gleam cannot use NewVariable name 'MyData': it is not a valid identifier"
+"Gleam['_my_data']" = "Gleam cannot use NewVariable name '_my_data': it is not a valid identifier"
+"Gleam['myData']" = "Gleam cannot use NewVariable name 'myData': it is not a valid identifier"

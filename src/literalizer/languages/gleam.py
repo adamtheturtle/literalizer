@@ -691,8 +691,12 @@ class Gleam(metaclass=LanguageCls):
             ``GBool``, ``GInt``, etc.
     """
 
+    # Gleam spells a variable in snake case: an uppercase letter
+    # anywhere is a syntax error, and a leading underscore makes a
+    # discard binding the generated file cannot then read back
+    # (issue #4540).
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
-        NewVariableNameSyntax.LOWER_ASCII
+        NewVariableNameSyntax.LOWER_SNAKE_ASCII
     )
 
     format_integer_widened = no_format_integer_widened
