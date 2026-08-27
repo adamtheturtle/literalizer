@@ -583,6 +583,19 @@ class InvalidSequenceArgumentError(InvalidRenderArgumentError):
         self.argument_name = argument_name
 
 
+class ModuleNameVariableCollisionError(InvalidRenderArgumentError):
+    """Raised when the wrapper name is the bound variable's own name."""
+
+    def __init__(self, *, language_name: str, name: str) -> None:
+        """Create a ``ModuleNameVariableCollisionError``."""
+        super().__init__(
+            f"{language_name} cannot use module_name {name!r}: the "
+            "wrapper and the variable it binds share one scope"
+        )
+        self.language_name = language_name
+        self.name = name
+
+
 class DelimiterlessVariableError(InvalidRenderArgumentError):
     """Raised when a delimiter-less collection is bound as one value."""
 

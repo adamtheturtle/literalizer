@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A Fortran program unit and the variables it declares are one
+namespace, so a wrapper named after the bound variable declares the
+name twice (#4530).
+"""
+exceptions = ["ModuleNameVariableCollisionError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "shared_name"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "shared_name" }]

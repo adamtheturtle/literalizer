@@ -15,6 +15,7 @@ from literalizer._language import (
     CollectionLayout,
     IdentifierCase,
     Language,
+    LanguageCls,
     is_reserved_identifier,
 )
 from literalizer._literalize import (
@@ -44,6 +45,7 @@ from literalizer.exceptions import (
     InvalidPreIndentLevelError,
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
+    ModuleNameVariableCollisionError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
@@ -101,6 +103,42 @@ def _validate_variable_modifiers(
 
 
 @beartype
+def _validate_module_name_variable_collision(
+    *,
+    language: Language,
+    variable_form: VariableForm | None,
+    wrap_in_file: bool,
+) -> None:
+    """Reject a wrapper named after the variable it would declare.
+
+    Only a language whose wrapper shares a scope with the value it
+    binds is affected; nearly every other wrapper opens one of its own
+    (issue #4530).
+    """
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Module-name validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if (
+        not wrap_in_file
+        or variable_form is None
+        or not language_cls.supports_module_name
+        or not language_cls.module_name_shares_variable_scope
+    ):
+        return
+    module_name = vars(language)["module_name"]
+    if is_reserved_identifier(
+        case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+        name=variable_form.name,
+        reserved_identifiers=frozenset({module_name}),
+    ):
+        raise ModuleNameVariableCollisionError(
+            language_name=language_cls.__name__,
+            name=module_name,
+        )
+
+
+@beartype
 def _validate_render_arguments(
     *,
     language: Language,
@@ -128,6 +166,11 @@ def _validate_render_arguments(
             language_name=type(language).__name__,
             case_name=ref_case.name,
         )
+    _validate_module_name_variable_collision(
+        language=language,
+        variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+    )
 
 
 @beartype
