@@ -24,7 +24,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
-    dict_entry_with_separator,
+    dict_entry_with_computed_names,
     dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
@@ -100,6 +100,12 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+
+# An object literal reads a ``__proto__`` property key -- quoted or
+# not -- as setting the prototype rather than defining an own
+# property, so the entry is silently lost.  Only the computed form
+# ``["__proto__"]`` defines a property (issue #4523).
+_COMPUTED_PROPERTY_NAMES: frozenset[str] = frozenset({"__proto__"})
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -468,9 +474,10 @@ class JavaScript(metaclass=LanguageCls):
         OBJECT = DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
-            format_entry=dict_entry_with_separator(
+            format_entry=dict_entry_with_computed_names(
                 separator=": ",
                 format_value=passthrough_sequence_entry,
+                computed_names=_COMPUTED_PROPERTY_NAMES,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -961,9 +968,10 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        return dict_entry_with_separator(
+        return dict_entry_with_computed_names(
             separator=": ",
             format_value=passthrough_sequence_entry,
+            computed_names=_COMPUTED_PROPERTY_NAMES,
         )
 
     @cached_property

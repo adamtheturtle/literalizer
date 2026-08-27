@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["JavaScript", "TypeScript"]
+languages_reason = "ECMAScript object literals give __proto__ setter semantics."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"

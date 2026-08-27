@@ -1,0 +1,3 @@
+Spell a ``__proto__`` dict key as a computed property in JavaScript and
+TypeScript.  A quoted ``__proto__`` key in an object literal sets the prototype
+instead of defining a property, so the entry was silently lost.
