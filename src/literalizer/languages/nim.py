@@ -1168,6 +1168,7 @@ class Nim(metaclass=LanguageCls):
                 template='{{"year": {year}, "month": {month}, '
                 '"day": {day}, "hour": {hour}, '
                 '"minute": {minute}, "second": {second}}}',
+                millisecond_template=None,
             ),
             preamble_lines=(),
             type_produced=datetime.datetime,

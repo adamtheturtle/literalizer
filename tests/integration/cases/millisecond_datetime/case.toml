@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Julia"]
+languages_reason = "Julia is the only back end whose native datetime type carries milliseconds; every other one is whole-second or ISO-string."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"

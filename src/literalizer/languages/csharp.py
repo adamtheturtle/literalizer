@@ -865,6 +865,7 @@ class CSharp(metaclass=LanguageCls):
             formatter=datetime_ymdhms_formatter(
                 template="new DateTime({year}, {month}, {day}, "
                 "{hour}, {minute}, {second})",
+                millisecond_template=None,
             ),
             preamble_lines=("using System;",),
             type_produced=datetime.datetime,

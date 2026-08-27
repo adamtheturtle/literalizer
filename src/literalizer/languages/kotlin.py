@@ -1124,6 +1124,7 @@ class Kotlin(metaclass=LanguageCls):
             formatter=datetime_ymdhms_formatter(
                 template="LocalDateTime.of({year}, {month}, {day}, "
                 "{hour}, {minute}, {second})",
+                millisecond_template=None,
             ),
             preamble_lines=("import java.time.LocalDateTime",),
             type_produced=datetime.datetime,

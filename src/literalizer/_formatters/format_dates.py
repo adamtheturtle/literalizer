@@ -263,15 +263,34 @@ def date_ymd_formatter(
     return _format
 
 
+_MICROSECONDS_PER_MILLISECOND = 1000
+
+
 @beartype
-def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
+def _format_datetime_ymdhms(
+    value: datetime.datetime,
+    template: str,
+    millisecond_template: str | None,
+) -> str:
     """Format a datetime using a year/month/day/hour/minute/second
     template.
+
+    A target whose native type carries milliseconds supplies a second
+    template taking a ``{millisecond}`` placeholder; it is used only
+    for a value that has one, so a whole-second value keeps the
+    shorter spelling (issue #4521).
     """
-    if value.microsecond:
+    if millisecond_template is None:
+        if value.microsecond:
+            msg = (
+                "whole-second native datetime format cannot preserve "
+                f"microseconds: {value.isoformat()}"
+            )
+            raise UnrepresentableInputError(msg)
+    elif value.microsecond % _MICROSECONDS_PER_MILLISECOND:
         msg = (
-            "whole-second native datetime format cannot preserve "
-            f"microseconds: {value.isoformat()}"
+            "millisecond-precision native datetime format cannot "
+            f"preserve sub-millisecond precision: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
     if value.utcoffset() is not None:
@@ -280,13 +299,19 @@ def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
             f"timezone awareness: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
-    return template.format(
+    selected = (
+        millisecond_template
+        if millisecond_template is not None and value.microsecond
+        else template
+    )
+    return selected.format(
         year=value.year,
         month=value.month,
         day=value.day,
         hour=value.hour,
         minute=value.minute,
         second=value.second,
+        millisecond=value.microsecond // _MICROSECONDS_PER_MILLISECOND,
     )
 
 
@@ -294,6 +319,7 @@ def _format_datetime_ymdhms(value: datetime.datetime, template: str) -> str:
 def datetime_ymdhms_formatter(
     *,
     template: str,
+    millisecond_template: str | None,
 ) -> Callable[[datetime.datetime], str]:
     """Return a datetime formatter that substitutes year, month, day,
     hour, minute, and second into *template*.
@@ -301,17 +327,27 @@ def datetime_ymdhms_formatter(
     The *template* must contain ``{year}``, ``{month}``, ``{day}``,
     ``{hour}``, ``{minute}``, and ``{second}`` placeholders.
 
+    *millisecond_template* is that template plus a ``{millisecond}``
+    placeholder, for a target whose native datetime type carries
+    milliseconds; ``None`` means the target is whole-second and any
+    fraction is refused.
+
     Example::
 
         fmt = datetime_ymdhms_formatter(
             template="new DateTime({year}, {month}, {day}, "
                      "{hour}, {minute}, {second})",
+            millisecond_template=None,
         )
     """
 
     def _format(value: datetime.datetime) -> str:
         """Delegate to module-level implementation."""
-        return _format_datetime_ymdhms(value=value, template=template)
+        return _format_datetime_ymdhms(
+            value=value,
+            template=template,
+            millisecond_template=millisecond_template,
+        )
 
     return _format
 

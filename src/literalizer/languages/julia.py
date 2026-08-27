@@ -321,6 +321,11 @@ class Julia(metaclass=LanguageCls):
             formatter=datetime_ymdhms_formatter(
                 template="DateTime({year}, {month}, {day}, "
                 "{hour}, {minute}, {second})",
+                # ``Dates.DateTime`` stores milliseconds, so a whole
+                # number of them is exactly representable and only a
+                # finer fraction is refused (issue #4521).
+                millisecond_template="DateTime({year}, {month}, {day}, "
+                "{hour}, {minute}, {second}, {millisecond})",
             ),
             preamble_lines=("using Dates",),
             type_produced=datetime.datetime,

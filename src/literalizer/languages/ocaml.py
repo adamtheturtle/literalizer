@@ -506,6 +506,7 @@ class OCaml(metaclass=LanguageCls):
             formatter=datetime_ymdhms_formatter(
                 template="ODatetime (({year}, {month}, {day}), "
                 "({hour}, {minute}, {second}))",
+                millisecond_template=None,
             ),
             preamble_lines=(),
             type_produced=datetime.datetime,
@@ -1139,6 +1140,7 @@ class OCaml(metaclass=LanguageCls):
                     f"(({{year}}, {{month}}, {{day}}), "
                     f"({{hour}}, {{minute}}, {{second}}))"
                 ),
+                millisecond_template=None,
             )
         return base_formatter
 
