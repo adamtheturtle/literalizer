@@ -1,0 +1,3 @@
+Hoist the imports of a wrapped Haskell call above its target-function stub.
+An argument value needing a preamble import, such as a datetime, produced a
+file GHC rejects with ``parse error on input 'import'``.
