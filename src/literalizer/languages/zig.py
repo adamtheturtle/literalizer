@@ -704,6 +704,10 @@ class Zig(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    # The stub declares the target and its parameters in one
+    # statement, and this language treats the target name as in
+    # scope there (issue #4528).
+    call_parameter_may_shadow_target: ClassVar[bool] = False
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _ZIG_RESERVED_VARIABLE_IDENTIFIERS

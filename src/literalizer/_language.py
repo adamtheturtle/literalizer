@@ -1317,6 +1317,15 @@ class LanguageCls(type):
     advanced-function body block) or Roc's ``app`` (a module header) --
     lists it here (issue #3905).
     """
+    call_parameter_may_shadow_target: bool = True
+    """Whether a stub parameter may be named after the call target.
+
+    A wrapped file declares the target and its parameters in one
+    statement, and a few languages refuse a parameter that shadows the
+    name that statement declares: Zig reports ``function parameter
+    shadows declaration of``, the Fortran compiler a host-association
+    clash, and Roslyn ``BC30530`` (issue #4528).
+    """
     reserved_call_target_keywords_case_sensitive: bool = True
     """Whether a reserved word leading a call target matches by case.
 
