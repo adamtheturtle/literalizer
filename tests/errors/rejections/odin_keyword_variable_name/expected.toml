@@ -1,0 +1,9 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Odin['bit_set']" = "Odin cannot use NewVariable name 'bit_set': it is a reserved identifier"
+"Odin['fallthrough']" = "Odin cannot use NewVariable name 'fallthrough': it is a reserved identifier"
+"Odin['not_in']" = "Odin cannot use NewVariable name 'not_in': it is a reserved identifier"
+"Odin['or_break']" = "Odin cannot use NewVariable name 'or_break': it is a reserved identifier"
+"Odin['or_continue']" = "Odin cannot use NewVariable name 'or_continue': it is a reserved identifier"
+"Odin['or_else']" = "Odin cannot use NewVariable name 'or_else': it is a reserved identifier"

@@ -239,6 +239,7 @@ class JavaScript(metaclass=LanguageCls):
             "delete",
             "do",
             "else",
+            "enum",
             "export",
             "extends",
             "false",

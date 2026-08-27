@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Crystal['annotation']" = "Crystal cannot use NewVariable name 'annotation': it is a reserved identifier"
+"Crystal['instance_sizeof']" = "Crystal cannot use NewVariable name 'instance_sizeof': it is a reserved identifier"
+"Crystal['offsetof']" = "Crystal cannot use NewVariable name 'offsetof': it is a reserved identifier"
+"Crystal['pointerof']" = "Crystal cannot use NewVariable name 'pointerof': it is a reserved identifier"

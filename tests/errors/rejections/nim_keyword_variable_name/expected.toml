@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Nim['isnot']" = "Nim cannot use NewVariable name 'isnot': it is a reserved identifier"
+"Nim['notin']" = "Nim cannot use NewVariable name 'notin': it is a reserved identifier"
+"Nim['yield']" = "Nim cannot use NewVariable name 'yield': it is a reserved identifier"

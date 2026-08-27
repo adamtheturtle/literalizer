@@ -273,6 +273,13 @@ class R(metaclass=LanguageCls):
             "FALSE",
             "Inf",
             "NA",
+            # The typed ``NA`` constants are parser literals, not
+            # names: assigning to one is either an error or, for
+            # ``NA_character_``, silently discarded (issue #4507).
+            "NA_character_",
+            "NA_complex_",
+            "NA_integer_",
+            "NA_real_",
             "NULL",
             "NaN",
             "TRUE",

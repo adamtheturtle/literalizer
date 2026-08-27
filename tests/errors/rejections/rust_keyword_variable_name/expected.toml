@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Rust['do']" = "Rust cannot use NewVariable name 'do': it is a reserved identifier"
+"Rust['final']" = "Rust cannot use NewVariable name 'final': it is a reserved identifier"

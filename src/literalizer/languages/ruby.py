@@ -281,6 +281,9 @@ class Ruby(metaclass=LanguageCls):
         {
             "BEGIN",
             "END",
+            "__ENCODING__",
+            "__FILE__",
+            "__LINE__",
             "alias",
             "and",
             "begin",
