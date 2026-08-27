@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+I128 is the widest Roc integer type and the i128 literal suffix pins
+the type, so a value beyond its range in either direction is refused
+(#4508).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Roc"]
+
+[call]
+api = "literalize"
+sources = [
+  "170141183460469231731687303715884105728",
+  "-170141183460469231731687303715884105729",
+]
+input_format = "json"

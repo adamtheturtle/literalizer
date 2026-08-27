@@ -36,6 +36,8 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     escape_control_chars,
@@ -255,6 +257,10 @@ def _build_roc_str_formatter(
     return _format
 
 
+_I128_MIN = -(2**127)
+_I128_MAX = 2**127 - 1
+
+
 @beartype
 def _apply_roc_integer(
     value: int, prefix: str, base: Callable[[int], str]
@@ -278,13 +284,23 @@ def _build_roc_integer_formatter(
 ) -> Callable[[int], str]:
     """Build an integer formatter that produces ``{prefix}Int``
     constructors.
+
+    ``I128`` is the widest Roc integer type, and the ``i128`` suffix
+    pins the literal to it, so a value outside that range raises
+    rather than emitting a literal the compiler rejects as
+    out-of-range (issue #4508).
     """
 
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_integer(value=value, prefix=prefix, base=base)
 
-    return _format
+    return make_overflow_fallback_formatter(
+        base=_format,
+        min_value=_I128_MIN,
+        max_value=_I128_MAX,
+        fallback=raise_for_unrepresentable_int(language_name="Roc"),
+    )
 
 
 @beartype
