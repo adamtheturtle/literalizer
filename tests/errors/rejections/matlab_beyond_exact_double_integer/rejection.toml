@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A bare Matlab numeric literal is double precision, so an integer past
+the range a double holds exactly is refused rather than silently
+rounded (#4502).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Matlab"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"

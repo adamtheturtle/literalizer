@@ -33,6 +33,10 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -703,8 +707,18 @@ class Matlab(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Format an int value as a literal."""
-        return str
+        """Format an int value as a literal.
+
+        A bare numeric literal is double precision, so an integer
+        outside the range a double holds exactly is silently rounded
+        rather than represented (issue #4502).
+        """
+        return make_overflow_fallback_formatter(
+            base=str,
+            min_value=-(2**53),
+            max_value=2**53,
+            fallback=raise_for_unrepresentable_int(language_name="Matlab"),
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
