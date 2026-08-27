@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Sml['false']" = "Sml cannot use NewVariable name 'false': it is a reserved identifier"
+"Sml['mod']" = "Sml cannot use NewVariable name 'mod': it is a reserved identifier"
+"Sml['nil']" = "Sml cannot use NewVariable name 'nil': it is a reserved identifier"
+"Sml['true']" = "Sml cannot use NewVariable name 'true': it is a reserved identifier"

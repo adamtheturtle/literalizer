@@ -1,0 +1,45 @@
+schema_version = 1
+summary = """
+A Common Lisp call target cannot name a symbol of the locked
+COMMON-LISP package, in any spelling.
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["CommonLisp"]
+values = [
+  "MOD",
+  "abs",
+  "assert",
+  "class",
+  "defun",
+  "error",
+  "flet",
+  "if",
+  "labels",
+  "lambda",
+  "length",
+  "let",
+  "list",
+  "loop",
+  "max",
+  "min",
+  "mod",
+  "not",
+  "null",
+  "open",
+  "or",
+  "progn",
+  "quote",
+  "rem",
+  "return",
+  "setq",
+  "type",
+  "when",
+]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

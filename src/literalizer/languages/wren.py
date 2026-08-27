@@ -236,6 +236,7 @@ class Wren(metaclass=LanguageCls):
             "in",
             "is",
             "loop",
+            "null",
             "return",
             "static",
             "super",

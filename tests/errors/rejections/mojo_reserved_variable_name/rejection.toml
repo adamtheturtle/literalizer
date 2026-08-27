@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Mojo keywords that no declaration can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Mojo"]
+values = ["case", "lambda", "match"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

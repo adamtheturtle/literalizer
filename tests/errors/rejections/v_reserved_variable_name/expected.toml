@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"V['exit']" = "V cannot use NewVariable name 'exit': it is a reserved identifier"
+"V['nil']" = "V cannot use NewVariable name 'nil': it is a reserved identifier"
+"V['panic']" = "V cannot use NewVariable name 'panic': it is a reserved identifier"
+"V['print']" = "V cannot use NewVariable name 'print': it is a reserved identifier"
+"V['println']" = "V cannot use NewVariable name 'println': it is a reserved identifier"

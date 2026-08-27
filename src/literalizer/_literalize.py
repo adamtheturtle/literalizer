@@ -5477,7 +5477,15 @@ def _validate_call_target(
                 target_function=target_function,
                 reason=f"component {part!r} is not a valid identifier",
             )
-        if part in language.reserved_identifiers:
+        # A language that folds identifier case matches a member
+        # component without regard to case too: the Common Lisp reader
+        # folds a symbol name, so ``MOD`` and ``mod`` name one symbol
+        # (issue #4547).
+        if is_reserved_identifier(
+            case_sensitive=head_case_sensitive,
+            name=part,
+            reserved_identifiers=language.reserved_identifiers,
+        ):
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
                 target_function=target_function,

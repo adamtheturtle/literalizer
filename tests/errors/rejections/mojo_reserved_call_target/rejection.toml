@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Mojo keywords that no declaration can name as a call target."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Mojo"]
+values = ["case", "lambda", "match"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

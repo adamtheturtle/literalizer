@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cobol['function']" = "Cobol cannot use NewVariable name 'function': it is a reserved identifier"
+"Cobol['null']" = "Cobol cannot use NewVariable name 'null': it is a reserved identifier"

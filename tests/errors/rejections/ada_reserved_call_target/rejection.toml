@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Ada reserved words that no declaration can name as a call target."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Ada"]
+values = ["abs", "and", "parallel", "some"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

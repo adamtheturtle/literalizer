@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Ada['abs']" = "Ada cannot use NewVariable name 'abs': it is a reserved identifier"
+"Ada['and']" = "Ada cannot use NewVariable name 'and': it is a reserved identifier"
+"Ada['parallel']" = "Ada cannot use NewVariable name 'parallel': it is a reserved identifier"
+"Ada['some']" = "Ada cannot use NewVariable name 'some': it is a reserved identifier"

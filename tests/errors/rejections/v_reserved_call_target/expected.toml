@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"V['exit']" = "V cannot use call target 'exit': component 'exit' is a reserved identifier"
+"V['nil']" = "V cannot use call target 'nil': component 'nil' is a reserved identifier"
+"V['panic']" = "V cannot use call target 'panic': component 'panic' is a reserved identifier"
+"V['print']" = "V cannot use call target 'print': component 'print' is a reserved identifier"
+"V['println']" = "V cannot use call target 'println': component 'println' is a reserved identifier"

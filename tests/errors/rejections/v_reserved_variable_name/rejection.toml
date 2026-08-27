@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "The V nil literal and the builtin functions no declaration can redefine."
+exceptions = ["ReservedVariableNameError"]
+languages = ["V"]
+values = ["exit", "nil", "panic", "print", "println"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

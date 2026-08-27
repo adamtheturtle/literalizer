@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Cobol['function']" = "Cobol cannot use call target 'function': component 'function' is a reserved identifier"
+"Cobol['null']" = "Cobol cannot use call target 'null': component 'null' is a reserved identifier"
