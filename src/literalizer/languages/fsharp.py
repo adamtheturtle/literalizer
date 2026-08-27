@@ -630,6 +630,7 @@ class FSharp(metaclass=LanguageCls):
             formatter=datetime_ymdhms_formatter(
                 template="System.DateTime({year}, {month}, {day}, "
                 "{hour}, {minute}, {second})",
+                millisecond_template=None,
             ),
             preamble_lines=(),
             type_produced=datetime.datetime,
