@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Nix integers are 64-bit signed, so a wider value is refused rather
+than routed through builtins.fromJSON, which floats or throws on it
+(#4503).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Nix"]
+
+[call]
+api = "literalize"
+sources = [
+  "9223372036854775808",
+  "18446744073709551616",
+  "-9223372036854775809",
+]
+input_format = "json"
