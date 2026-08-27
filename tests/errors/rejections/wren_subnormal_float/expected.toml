@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Wren['5e-324']" = "Wren cannot represent the subnormal float 5e-324: its lexer rejects the literal as out of range and it has no hexadecimal float form."
+"Wren['-5e-324']" = "Wren cannot represent the subnormal float -5e-324: its lexer rejects the literal as out of range and it has no hexadecimal float form."
+"Wren['1e-310']" = "Wren cannot represent the subnormal float 1e-310: its lexer rejects the literal as out of range and it has no hexadecimal float form."

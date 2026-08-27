@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+The Wren lexer reports a subnormal literal as out of range, and Wren
+has no hexadecimal float form to spell one another way (#4489).
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Wren"]
+
+[call]
+api = "literalize"
+sources = ["5e-324", "-5e-324", "1e-310"]
+input_format = "json"
