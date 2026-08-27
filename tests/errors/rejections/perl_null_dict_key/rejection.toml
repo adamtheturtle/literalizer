@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+A Perl hash key is always a string, so a null key becomes an ordinary
+string key that no longer means null (#4544).
+"""
+exceptions = ["UnrepresentableNullError"]
+languages = ["Perl"]
+
+[call]
+api = "literalize"
+sources = ["? ~\n: 1\n"]
+input_format = "yaml"
