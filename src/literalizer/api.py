@@ -40,6 +40,7 @@ from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     BoundRefOutputCollisionError,
     DelimiterlessVariableError,
+    DelimiterlessWrappedFileError,
     InvalidPreIndentLevelError,
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
@@ -97,6 +98,36 @@ def _validate_variable_modifiers(
                 language_name=type(language).__name__,
                 modifier=modifier,
             )
+
+
+@beartype
+def _validate_render_arguments(
+    *,
+    language: Language,
+    pre_indent_level: int,
+    include_delimiters: bool,
+    variable_form: VariableForm | None,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+) -> None:
+    """Reject rendering arguments that cannot be combined."""
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
+    if pre_indent_level < 0:
+        raise InvalidPreIndentLevelError
+    if not include_delimiters and variable_form is not None:
+        raise DelimiterlessVariableError
+    # A delimiter-less fragment is the inside of a collection, which no
+    # language can stand up as a whole file (issue #4529).
+    if not include_delimiters and wrap_in_file:
+        raise DelimiterlessWrappedFileError
+    if ref_case is not None and ref_case not in language.supported_ref_cases:
+        raise UnsupportedIdentifierCaseError(
+            language_name=type(language).__name__,
+            case_name=ref_case.name,
+        )
 
 
 @beartype
@@ -249,19 +280,14 @@ def literalize(
     """
     language = _fresh_language(language=language)
     effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
-    _validate_variable_modifiers(
+    _validate_render_arguments(
         language=language,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
         variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+        ref_case=ref_case,
     )
-    if pre_indent_level < 0:
-        raise InvalidPreIndentLevelError
-    if not include_delimiters and variable_form is not None:
-        raise DelimiterlessVariableError
-    if ref_case is not None and ref_case not in language.supported_ref_cases:
-        raise UnsupportedIdentifierCaseError(
-            language_name=type(language).__name__,
-            case_name=ref_case.name,
-        )
     explicit_ref_values: dict[str, Value] = (
         {
             name: materialize_value_input(

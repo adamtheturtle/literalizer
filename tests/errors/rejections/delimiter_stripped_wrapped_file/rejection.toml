@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A delimiter-stripped fragment cannot be a self-contained file.  The
+rule is language-independent; the languages named here are the ones
+that name no variable, which is how this case reaches wrap_in_file
+without a variable form of its own.
+"""
+exceptions = ["DelimiterlessWrappedFileError"]
+languages = ["Json5", "Jsonnet", "Yaml"]
+
+[call]
+api = "literalize"
+sources = ["[1, 2]"]
+input_format = "json"
+include_delimiters = false
+wrap_in_file = true

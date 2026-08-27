@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[DelimiterlessWrappedFileError]
+Json5 = "include_delimiters=False cannot be combined with wrap_in_file"
+Jsonnet = "include_delimiters=False cannot be combined with wrap_in_file"
+Yaml = "include_delimiters=False cannot be combined with wrap_in_file"

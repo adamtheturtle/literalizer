@@ -593,6 +593,16 @@ class DelimiterlessVariableError(InvalidRenderArgumentError):
         )
 
 
+class DelimiterlessWrappedFileError(InvalidRenderArgumentError):
+    """Raised when a delimiter-less fragment would become a whole file."""
+
+    def __init__(self) -> None:
+        """Create a ``DelimiterlessWrappedFileError``."""
+        super().__init__(
+            "include_delimiters=False cannot be combined with wrap_in_file"
+        )
+
+
 class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
     """Raised when a complete file would assign an undeclared name."""
 
