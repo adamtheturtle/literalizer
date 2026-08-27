@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Sml['false']" = "Sml cannot use call target 'false': component 'false' is a reserved identifier"
+"Sml['mod']" = "Sml cannot use call target 'mod': component 'mod' is a reserved identifier"
+"Sml['nil']" = "Sml cannot use call target 'nil': component 'nil' is a reserved identifier"
+"Sml['true']" = "Sml cannot use call target 'true': component 'true' is a reserved identifier"

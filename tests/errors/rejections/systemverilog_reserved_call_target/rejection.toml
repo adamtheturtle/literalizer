@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "IEEE 1800-2017 keywords that no SystemVerilog declaration can name as a call target."
+exceptions = ["InvalidCallTargetError"]
+languages = ["SystemVerilog"]
+values = ["and", "assert", "let", "new", "not", "null", "or"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

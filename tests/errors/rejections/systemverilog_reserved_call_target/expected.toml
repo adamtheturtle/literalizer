@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"SystemVerilog['and']" = "SystemVerilog cannot use call target 'and': component 'and' is a reserved identifier"
+"SystemVerilog['assert']" = "SystemVerilog cannot use call target 'assert': component 'assert' is a reserved identifier"
+"SystemVerilog['let']" = "SystemVerilog cannot use call target 'let': component 'let' is a reserved identifier"
+"SystemVerilog['new']" = "SystemVerilog cannot use call target 'new': component 'new' is a reserved identifier"
+"SystemVerilog['not']" = "SystemVerilog cannot use call target 'not': component 'not' is a reserved identifier"
+"SystemVerilog['null']" = "SystemVerilog cannot use call target 'null': component 'null' is a reserved identifier"
+"SystemVerilog['or']" = "SystemVerilog cannot use call target 'or': component 'or' is a reserved identifier"

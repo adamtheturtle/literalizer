@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Standard ML special identifiers and the infix mod, which no binding can redefine."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Sml"]
+values = ["false", "mod", "nil", "true"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

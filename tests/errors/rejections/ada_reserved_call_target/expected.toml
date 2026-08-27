@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Ada['abs']" = "Ada cannot use call target 'abs': component 'abs' is a reserved identifier"
+"Ada['and']" = "Ada cannot use call target 'and': component 'and' is a reserved identifier"
+"Ada['parallel']" = "Ada cannot use call target 'parallel': component 'parallel' is a reserved identifier"
+"Ada['some']" = "Ada cannot use call target 'some': component 'some' is a reserved identifier"

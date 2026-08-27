@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Mojo['case']" = "Mojo cannot use NewVariable name 'case': it is a reserved identifier"
+"Mojo['lambda']" = "Mojo cannot use NewVariable name 'lambda': it is a reserved identifier"
+"Mojo['match']" = "Mojo cannot use NewVariable name 'match': it is a reserved identifier"

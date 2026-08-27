@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Mojo['case']" = "Mojo cannot use call target 'case': component 'case' is a reserved identifier"
+"Mojo['lambda']" = "Mojo cannot use call target 'lambda': component 'lambda' is a reserved identifier"
+"Mojo['match']" = "Mojo cannot use call target 'match': component 'match' is a reserved identifier"

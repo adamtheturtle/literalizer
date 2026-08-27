@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "The V nil literal and the builtin functions no declaration can redefine as a call target."
+exceptions = ["InvalidCallTargetError"]
+languages = ["V"]
+values = ["exit", "nil", "panic", "print", "println"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

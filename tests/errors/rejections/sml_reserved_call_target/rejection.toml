@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Standard ML special identifiers and the infix mod, which no binding can redefine as a call target."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Sml"]
+values = ["false", "mod", "nil", "true"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true

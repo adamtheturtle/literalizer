@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "IEEE 1800-2017 keywords that no SystemVerilog declaration can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["SystemVerilog"]
+values = ["and", "assert", "let", "new", "not", "null", "or"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
