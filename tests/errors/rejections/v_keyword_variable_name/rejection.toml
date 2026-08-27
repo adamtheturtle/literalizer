@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "V keywords that no ``:=`` binding can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["V"]
+values = ["asm", "dump", "goto", "isreftype", "lock", "rlock", "sizeof", "spawn", "static", "typeof", "union", "volatile"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

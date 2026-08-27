@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Ruby['__ENCODING__']" = "Ruby cannot use NewVariable name '__ENCODING__': it is a reserved identifier"
+"Ruby['__FILE__']" = "Ruby cannot use NewVariable name '__FILE__': it is a reserved identifier"
+"Ruby['__LINE__']" = "Ruby cannot use NewVariable name '__LINE__': it is a reserved identifier"

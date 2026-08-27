@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Crystal keywords that no local variable can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Crystal"]
+values = ["annotation", "instance_sizeof", "offsetof", "pointerof"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

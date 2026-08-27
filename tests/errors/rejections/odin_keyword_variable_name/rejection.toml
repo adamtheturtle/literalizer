@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Odin keywords that no declaration can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Odin"]
+values = ["bit_set", "fallthrough", "not_in", "or_break", "or_continue", "or_else"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

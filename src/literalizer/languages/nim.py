@@ -1063,6 +1063,7 @@ class Nim(metaclass=LanguageCls):
             "include",
             "interface",
             "is",
+            "isnot",
             "iterator",
             "let",
             "macro",
@@ -1071,6 +1072,7 @@ class Nim(metaclass=LanguageCls):
             "mod",
             "nil",
             "not",
+            "notin",
             "object",
             "of",
             "or",
@@ -1093,6 +1095,7 @@ class Nim(metaclass=LanguageCls):
             "while",
             "with",
             "xor",
+            "yield",
         }
     )
     allows_empty_call_parens = True

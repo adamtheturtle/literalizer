@@ -628,6 +628,7 @@ class Swift(metaclass=LanguageCls):
             "var",
             "weak",
             "where",
+            "while",
             "willSet",
         }
     )

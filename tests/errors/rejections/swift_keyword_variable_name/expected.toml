@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Swift['while']" = "Swift cannot use NewVariable name 'while': it is a reserved identifier"

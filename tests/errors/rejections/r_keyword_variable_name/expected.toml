@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"R['NA_character_']" = "R cannot use NewVariable name 'NA_character_': it is a reserved identifier"
+"R['NA_complex_']" = "R cannot use NewVariable name 'NA_complex_': it is a reserved identifier"
+"R['NA_integer_']" = "R cannot use NewVariable name 'NA_integer_': it is a reserved identifier"
+"R['NA_real_']" = "R cannot use NewVariable name 'NA_real_': it is a reserved identifier"

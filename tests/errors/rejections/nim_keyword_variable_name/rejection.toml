@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Nim operator keywords and ``yield``, which no ``let`` can name."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Nim"]
+values = ["isnot", "notin", "yield"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

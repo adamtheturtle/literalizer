@@ -1,0 +1,15 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"V['asm']" = "V cannot use NewVariable name 'asm': it is a reserved identifier"
+"V['dump']" = "V cannot use NewVariable name 'dump': it is a reserved identifier"
+"V['goto']" = "V cannot use NewVariable name 'goto': it is a reserved identifier"
+"V['isreftype']" = "V cannot use NewVariable name 'isreftype': it is a reserved identifier"
+"V['lock']" = "V cannot use NewVariable name 'lock': it is a reserved identifier"
+"V['rlock']" = "V cannot use NewVariable name 'rlock': it is a reserved identifier"
+"V['sizeof']" = "V cannot use NewVariable name 'sizeof': it is a reserved identifier"
+"V['spawn']" = "V cannot use NewVariable name 'spawn': it is a reserved identifier"
+"V['static']" = "V cannot use NewVariable name 'static': it is a reserved identifier"
+"V['typeof']" = "V cannot use NewVariable name 'typeof': it is a reserved identifier"
+"V['union']" = "V cannot use NewVariable name 'union': it is a reserved identifier"
+"V['volatile']" = "V cannot use NewVariable name 'volatile': it is a reserved identifier"
