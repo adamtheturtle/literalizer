@@ -632,8 +632,15 @@ class Fortran(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
             "begin",
+            # The wrapped file always emits ``module fval_m`` for the
+            # value carrier, so a wrapper of that name declares the
+            # module twice (issue #4530).
+            "fval_m",
         }
     )
+    # A Fortran program unit and the variables it declares sit in one
+    # scope, so ``program x`` cannot also declare ``x`` (issue #4530).
+    module_name_shares_variable_scope: ClassVar[bool] = True
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True

@@ -1257,6 +1257,14 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    module_name_shares_variable_scope: bool = False
+    """Whether the wrapper name and the bound variable share a scope.
+
+    A Fortran ``program`` unit and the variables it declares sit in one
+    scope, so a wrapper named after the variable declares the name
+    twice.  Nearly every other wrapper introduces a scope of its own
+    (issue #4530).
+    """
     reserved_variable_identifier_pattern: re.Pattern[str] | None = None
     """A shape a declaration name cannot take, beyond the names listed
     in :attr:`~literalizer.Language.reserved_variable_identifiers`.

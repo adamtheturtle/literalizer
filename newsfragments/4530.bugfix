@@ -1,0 +1,3 @@
+Reject two Fortran ``module_name`` values that produce a file gfortran refuses:
+``fval_m``, the support module every wrapped file emits, and a name equal to
+the variable the file binds, which a program unit cannot declare twice.

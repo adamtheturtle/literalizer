@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+Fortran = "Fortran cannot use module_name 'fval_m': it is not a valid identifier"
