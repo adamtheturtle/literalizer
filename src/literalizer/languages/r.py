@@ -58,6 +58,7 @@ from literalizer._language import (
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -258,6 +259,12 @@ class R(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
         _R_LEADING_UNDERSCORE
+    )
+    # An R symbol begins with a letter or a dot; a leading underscore
+    # is a syntax error wherever it appears, not just in a call
+    # argument (issue #4504).
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.ASCII_LETTER_START
     )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(

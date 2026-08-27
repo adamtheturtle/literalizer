@@ -1,0 +1,2 @@
+Reject R ``NewVariable`` names that begin with an underscore: an R symbol
+begins with a letter, so the emitted file was a syntax error.

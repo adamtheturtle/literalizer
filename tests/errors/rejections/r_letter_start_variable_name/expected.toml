@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"R['_']" = "R cannot use NewVariable name '_': it is not a valid identifier"
+"R['__x']" = "R cannot use NewVariable name '__x': it is not a valid identifier"
+"R['_x']" = "R cannot use NewVariable name '_x': it is not a valid identifier"
