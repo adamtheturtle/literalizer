@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+A Forth cell is a signed 64-bit machine word, so an integer outside
+that range is refused rather than silently negated or wrapped (#4501).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Forth"]
+
+[call]
+api = "literalize"
+sources = ["9223372036854775808", "-9223372036854775809"]
+input_format = "json"

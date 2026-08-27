@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Forth['9223372036854775808']" = "Forth cannot represent integer 9223372036854775808 without external arbitrary-precision integer support."
+"Forth['-9223372036854775809']" = "Forth cannot represent integer -9223372036854775809 without external arbitrary-precision integer support."
