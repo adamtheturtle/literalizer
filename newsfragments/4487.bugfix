@@ -1,0 +1,3 @@
+Spell the minimum ``Long`` as ``Long.MinValue`` inside a Visual Basic typed
+array, as the scalar form already did.  Visual Basic reads the raw literal as a
+negation of a value one past ``Long.MaxValue`` and refuses it with ``BC30036``.
