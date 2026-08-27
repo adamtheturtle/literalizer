@@ -339,10 +339,15 @@ def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
     )
 
 
+# Jsonnet declares reserved identifiers for its call parameter and
+# call target names while naming no variable at all, so a
+# ``NewVariable`` there is refused for a different reason (issue
+# #4549).
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
     language_cls
     for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
     if language_cls.reserved_variable_identifiers
+    and language_cls.supports_variable_names
 )
 
 

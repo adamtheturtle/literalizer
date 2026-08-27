@@ -1,0 +1,21 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Jsonnet['assert']" = "Jsonnet cannot use call parameter 'assert': it is a reserved identifier"
+"Jsonnet['else']" = "Jsonnet cannot use call parameter 'else': it is a reserved identifier"
+"Jsonnet['error']" = "Jsonnet cannot use call parameter 'error': it is a reserved identifier"
+"Jsonnet['false']" = "Jsonnet cannot use call parameter 'false': it is a reserved identifier"
+"Jsonnet['for']" = "Jsonnet cannot use call parameter 'for': it is a reserved identifier"
+"Jsonnet['function']" = "Jsonnet cannot use call parameter 'function': it is a reserved identifier"
+"Jsonnet['if']" = "Jsonnet cannot use call parameter 'if': it is a reserved identifier"
+"Jsonnet['import']" = "Jsonnet cannot use call parameter 'import': it is a reserved identifier"
+"Jsonnet['importbin']" = "Jsonnet cannot use call parameter 'importbin': it is a reserved identifier"
+"Jsonnet['importstr']" = "Jsonnet cannot use call parameter 'importstr': it is a reserved identifier"
+"Jsonnet['in']" = "Jsonnet cannot use call parameter 'in': it is a reserved identifier"
+"Jsonnet['local']" = "Jsonnet cannot use call parameter 'local': it is a reserved identifier"
+"Jsonnet['null']" = "Jsonnet cannot use call parameter 'null': it is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use call parameter 'self': it is a reserved identifier"
+"Jsonnet['super']" = "Jsonnet cannot use call parameter 'super': it is a reserved identifier"
+"Jsonnet['tailstrict']" = "Jsonnet cannot use call parameter 'tailstrict': it is a reserved identifier"
+"Jsonnet['then']" = "Jsonnet cannot use call parameter 'then': it is a reserved identifier"
+"Jsonnet['true']" = "Jsonnet cannot use call parameter 'true': it is a reserved identifier"
