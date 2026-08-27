@@ -1,0 +1,3 @@
+Raise ``RefOutputCollisionError`` when a ref identifier is the name the output
+binding declares.  The emitted code read the binding being declared, which was
+either a guaranteed runtime error or a silent self-reference.

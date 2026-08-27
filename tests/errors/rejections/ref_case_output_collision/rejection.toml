@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A ref converging on the output variable's name after ref_case
+conversion is rejected: the emitted identifier reads the binding being
+declared (#4506).
+"""
+exceptions = ["RefOutputCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ['{"a": {"$ref": "myVar"}}']
+input_format = "json"
+ref_key = "$ref"
+ref_case = "SNAKE"
+variable_form = "new"
+variable_name = "my_var"

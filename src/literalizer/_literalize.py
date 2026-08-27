@@ -94,6 +94,7 @@ from literalizer.exceptions import (
     LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    RefOutputCollisionError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
@@ -3326,6 +3327,13 @@ class _PreFormState:
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
+    ref_identifiers: frozenset[str]
+    """The identifiers the rendered refs are emitted as.
+
+    Already ``ref_case``-converted, so a caller-spelled name and the
+    output binding's name are compared as the file spells them
+    (issue #4506).
+    """
 
 
 @beartype
@@ -3431,6 +3439,13 @@ def _literalize_pre_form_impl(
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
+        ref_identifiers=frozenset(
+            ref_case.convert(name=name) if ref_case is not None else name
+            for name in _call_arg_ref_names_in_value(
+                value=data,
+                ref_key=active_ref_key,
+            )
+        ),
     )
 
 
@@ -3572,6 +3587,14 @@ def literalize_apply_form(
     comments, computes the preamble, and optionally wraps the output
     in a complete file.
     """
+    # A ref is emitted as a bare identifier, so one that converts to
+    # the name the output binding declares reads that binding before it
+    # exists rather than anything the caller meant (issue #4506).
+    if (
+        isinstance(variable_form, NewVariable)
+        and variable_form.name in pre_form.ref_identifiers
+    ):
+        raise RefOutputCollisionError(name=variable_form.name)
     if wrap_in_file and isinstance(variable_form, ExistingVariable):
         assignment = _apply_variable_wrapper(
             result=pre_form.result,

@@ -583,6 +583,17 @@ class InvalidSequenceArgumentError(InvalidRenderArgumentError):
         self.argument_name = argument_name
 
 
+class RefOutputCollisionError(InvalidRenderArgumentError):
+    """Raised when a ref identifier is the output binding's own name."""
+
+    def __init__(self, *, name: str) -> None:
+        """Create a ``RefOutputCollisionError``."""
+        super().__init__(
+            f"ref name {name!r} collides with the output variable"
+        )
+        self.name = name
+
+
 class DelimiterlessVariableError(InvalidRenderArgumentError):
     """Raised when a delimiter-less collection is bound as one value."""
 
