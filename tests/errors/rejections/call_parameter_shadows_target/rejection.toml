@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A wrapped stub declares the call target and its parameters in one
+statement, and these languages treat the target name as in scope
+there, so a parameter repeating it is refused (#4528).
+"""
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Fortran", "VisualBasic", "Zig"]
+
+[call]
+api = "literalize_call"
+sources = ['[["x", 1]]']
+input_format = "json"
+target_function = "check"
+parameter_names = ["check", "n"]
+wrap_in_file = true

@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[InvalidCallParameterNameError]
+Fortran = "Fortran cannot use call parameter 'check': it shadows the generated call-target declaration"
+VisualBasic = "VisualBasic cannot use call parameter 'check': it shadows the generated call-target declaration"
+Zig = "Zig cannot use call parameter 'check': it shadows the generated call-target declaration"

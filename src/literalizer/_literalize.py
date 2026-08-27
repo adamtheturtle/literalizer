@@ -89,6 +89,7 @@ from literalizer.exceptions import (
     CommentSourceNulError,
     DottedCallTargetNotSupportedError,
     ExistingVariableNotSelfContainedError,
+    InvalidCallParameterNameError,
     InvalidCallTargetError,
     InvalidValueInputError,
     LiteralizerError,
@@ -5558,11 +5559,49 @@ def _validate_wrapped_call_declarations(
 
 
 @beartype
+def _validate_wrapped_call_parameter_shadowing(
+    *,
+    language: Language,
+    language_cls: LanguageCls,
+    target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
+) -> None:
+    """Reject a stub parameter named after the target it belongs to.
+
+    The stub declares the target and its parameters in one statement,
+    so a language that treats the target name as in scope there refuses
+    a parameter repeating it (issue #4528).
+    """
+    if language_cls.call_parameter_may_shadow_target:
+        return
+    case_sensitive = language.reserved_variable_identifiers_case_sensitive
+    declared = {
+        part if case_sensitive else part.casefold()
+        for part in target_function_parts
+    }
+    shadowing = next(
+        (
+            name
+            for name in parameter_names
+            if (name if case_sensitive else name.casefold()) in declared
+        ),
+        None,
+    )
+    if shadowing is not None:
+        raise InvalidCallParameterNameError(
+            language_name=type(language).__name__,
+            parameter_name=shadowing,
+            reason="it shadows the generated call-target declaration",
+        )
+
+
+@beartype
 def _validate_wrapped_call_scaffold(
     *,
     language: Language,
     target_function: str,
     target_function_parts: tuple[str, ...],
+    parameter_names: Sequence[str],
     arg_values: Sequence[Value],
     ref_case: IdentifierCase | None,
     bound_ref_names: Sequence[str],
@@ -5592,6 +5631,12 @@ def _validate_wrapped_call_scaffold(
         language_cls=language_cls,
         target_function=target_function,
         target_function_parts=target_function_parts,
+    )
+    _validate_wrapped_call_parameter_shadowing(
+        language=language,
+        language_cls=language_cls,
+        target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
     )
     # Some languages in this group derive one helper type name per
     # component through a case-normalizing transform (``Foo`` and
@@ -5693,6 +5738,7 @@ def _validate_call_preconditions(
             language=language,
             target_function=target_function,
             target_function_parts=target_function_parts,
+            parameter_names=parameter_names,
             arg_values=arg_values,
             ref_case=ref_case,
             bound_ref_names=bound_ref_names,
