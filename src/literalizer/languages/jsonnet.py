@@ -33,6 +33,10 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
     reject_special_floats,
 )
+from literalizer._formatters.format_integers import (
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
@@ -584,8 +588,18 @@ class Jsonnet(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Format an int value as a literal."""
-        return str
+        """Format an int value as a literal.
+
+        A Jsonnet number is double precision, so an integer outside
+        the range a double holds exactly is silently rounded rather
+        than represented (issue #4476).
+        """
+        return make_overflow_fallback_formatter(
+            base=str,
+            min_value=-(2**53),
+            max_value=2**53,
+            fallback=raise_for_unrepresentable_int(language_name="Jsonnet"),
+        )
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
