@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Zig refuses a parameter that shadows any file-scope declaration, which
+for a dotted target includes the helper each component declares
+(#4528).
+"""
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Zig"]
+
+[call]
+api = "literalize_call"
+sources = ['[["x", 1]]']
+input_format = "json"
+target_function = "outer.inner"
+parameter_names = ["outer", "n"]
+wrap_in_file = true

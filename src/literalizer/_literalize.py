@@ -40,6 +40,7 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
 )
 from literalizer._language import (
+    CallParameterShadowing,
     CallStyle,
     CallSupport,
     CollectionLayout,
@@ -3595,6 +3596,7 @@ def _scope_preamble_for_wrap(
 @beartype
 def _validate_ref_output_name(
     *,
+    language: Language,
     pre_form: _PreFormState,
     variable_form: NewVariable | ExistingVariable | None,
 ) -> None:
@@ -3612,15 +3614,21 @@ def _validate_ref_output_name(
     ):
         return
     ref_case = pre_form.ref_case
-    collides = any(
-        (ref_case.convert(name=name) if ref_case is not None else name)
-        == variable_form.name
+    # Compared with the language's own case sensitivity, as the bound
+    # ref check is: an Ada or Fortran ref differing only in case is the
+    # same identifier (issue #4506).
+    identifiers = frozenset(
+        ref_case.convert(name=name) if ref_case is not None else name
         for name in _call_arg_ref_names_in_value(
             value=pre_form.data,
             ref_key=pre_form.active_ref_key,
         )
     )
-    if collides:
+    if is_reserved_identifier(
+        case_sensitive=(language.reserved_variable_identifiers_case_sensitive),
+        name=variable_form.name,
+        reserved_identifiers=identifiers,
+    ):
         raise RefOutputCollisionError(name=variable_form.name)
 
 
@@ -3639,6 +3647,7 @@ def literalize_apply_form(
     in a complete file.
     """
     _validate_ref_output_name(
+        language=language,
         pre_form=pre_form,
         variable_form=variable_form,
     )
@@ -5521,8 +5530,9 @@ def _validate_call_target(
         name=head,
         reserved_identifiers=(
             language.reserved_variable_identifiers
-            - language_cls.contextual_call_target_identifiers
-        ),
+            | language_cls.reserved_call_target_head_identifiers
+        )
+        - language_cls.contextual_call_target_identifiers,
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
@@ -5638,18 +5648,24 @@ def _validate_wrapped_call_parameter_shadowing(
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
 ) -> None:
-    """Reject a stub parameter named after the target it belongs to.
+    """Reject a stub parameter repeating a name the stub declares.
 
     The stub declares the target and its parameters in one statement,
-    so a language that treats the target name as in scope there refuses
-    a parameter repeating it (issue #4528).
+    so a language that treats the declared name as in scope there
+    refuses a parameter repeating it (issue #4528).
     """
-    if language_cls.call_parameter_may_shadow_target:
-        return
+    match language_cls.call_parameter_shadowing:
+        case CallParameterShadowing.ALLOWED:
+            return
+        case CallParameterShadowing.TARGET_NAME:
+            declared_parts = target_function_parts[-1:]
+        case CallParameterShadowing.ANY_DECLARATION:
+            declared_parts = target_function_parts
+        case _ as unreachable:  # pragma: no cover
+            assert_never(unreachable)
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
     declared = {
-        part if case_sensitive else part.casefold()
-        for part in target_function_parts
+        part if case_sensitive else part.casefold() for part in declared_parts
     }
     shadowing = next(
         (

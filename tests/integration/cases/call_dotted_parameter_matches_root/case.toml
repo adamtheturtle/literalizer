@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "outer.inner"
+parameter_names = ["outer", "n"]
+per_element = true
+wrap_in_file = true
+languages = ["Fortran", "VisualBasic"]
+languages_reason = "These put the parameter list on the innermost component alone -- Fortran drops the other components entirely -- so a parameter matching the root is not a redeclaration."

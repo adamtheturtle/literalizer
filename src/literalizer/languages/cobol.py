@@ -128,6 +128,19 @@ _COBOL_UNREPRESENTABLE_CONTROLS: Mapping[str, str] = MappingProxyType(
 
 
 @beartype
+def _reject_cobol_control_call_arg(data: Value, /) -> None:
+    """Reject a call argument carrying a control a literal cannot
+    carry.
+    """
+    control = _first_cobol_unrepresentable_control(data=data)
+    if control is not None:
+        raise UnrepresentableStringError(
+            language_name="COBOL",
+            character_name=control,
+        )
+
+
+@beartype
 def _first_cobol_unrepresentable_control(*, data: Value) -> str | None:
     """Return the name of the first control character a literal cannot
     carry, or ``None``.
@@ -1306,8 +1319,16 @@ class Cobol(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        return no_validate_call_arg
+        """Return call-argument validation for this language.
+
+        A call argument is emitted as an alphanumeric literal like any
+        other value, so it carries the same control-character limits;
+        ``validate_spec_for_data`` covers only the ``literalize`` path
+        (issue #4513).
+        """
+        if self._json_type_active:
+            return no_validate_call_arg
+        return _reject_cobol_control_call_arg
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
