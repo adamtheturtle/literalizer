@@ -1,0 +1,3 @@
+Emit a bidirectional formatting character in an R string as its ``\uXXXX``
+escape.  The R parser refuses a raw one with "bidi formatting not allowed, use
+escapes instead".
