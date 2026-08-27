@@ -5,8 +5,9 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, partial
+from types import MappingProxyType
 from typing import ClassVar
 
 from beartype import beartype
@@ -103,18 +104,67 @@ _COBOL_PIC_S9_18_MIN = -_COBOL_PIC_S9_18_MAX
 def _format_string_cobol(value: str) -> str:
     """Format a COBOL alphanumeric string literal.
 
-    Control characters (newlines, tabs, carriage returns) are replaced
-    with spaces because COBOL string literals cannot span multiple lines
-    and have no escape sequences.  Double quotes are escaped by doubling
-    them, then the whole string is wrapped in double quotes.
+    Double quotes are escaped by doubling them, then the whole string
+    is wrapped in double quotes.
 
     Example: ``say "hi" loud`` becomes ``"say ""hi"" loud"``.
     """
-    cleaned = value
-    for char, replacement in {"\n": " ", "\r": " ", "\t": " "}.items():
-        cleaned = cleaned.replace(char, replacement)
-    escaped = cleaned.replace('"', '""')
+    escaped = value.replace('"', '""')
     return f'"{escaped}"'
+
+
+# The control characters a plain COBOL alphanumeric literal cannot
+# carry.  A literal has no escape sequences and cannot span lines, so
+# these were silently replaced with spaces; the ``json_type=CJSON``
+# value tree splices them as ``X"NN"`` fragments instead and is
+# unaffected (issue #4513).
+_COBOL_UNREPRESENTABLE_CONTROLS: Mapping[str, str] = MappingProxyType(
+    mapping={
+        "\t": "TAB",
+        "\n": "LF",
+        "\r": "CR",
+    }
+)
+
+
+@beartype
+def _first_cobol_unrepresentable_control(*, data: Value) -> str | None:
+    """Return the name of the first control character a literal cannot
+    carry, or ``None``.
+
+    Only value positions are walked: a plain COBOL mapping key names a
+    data item rather than being emitted as a literal, so a control
+    character there is spelled out by the data-name derivation.
+    """
+    match data:
+        case str():
+            return next(
+                (
+                    name
+                    for character, name in (
+                        _COBOL_UNREPRESENTABLE_CONTROLS.items()
+                    )
+                    if character in data
+                ),
+                None,
+            )
+        case dict():
+            values: Iterable[Value] = data.values()
+        case list() | set():
+            values = data
+        case _:
+            return None
+    return next(
+        (
+            found
+            for found in (
+                _first_cobol_unrepresentable_control(data=value)
+                for value in values
+            )
+            if found is not None
+        ),
+        None,
+    )
 
 
 @beartype
@@ -1239,6 +1289,12 @@ class Cobol(metaclass=LanguageCls):
             raise UnrepresentableStringError(
                 language_name="COBOL",
                 character_name="an empty string",
+            )
+        control = _first_cobol_unrepresentable_control(data=data)
+        if not self._json_type_active and control is not None:
+            raise UnrepresentableStringError(
+                language_name="COBOL",
+                character_name=control,
             )
         placeholder = _first_cobol_placeholder(data=data)
         if self._json_type_active or placeholder is None:
