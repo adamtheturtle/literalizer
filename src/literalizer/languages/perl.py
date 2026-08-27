@@ -12,7 +12,10 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._checks import reject_stringified_dict_key_collisions
+from literalizer._checks import (
+    reject_null_dict_keys,
+    reject_stringified_dict_key_collisions,
+)
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -810,6 +813,7 @@ class Perl(metaclass=LanguageCls):
             data=data,
             language_name="Perl",
         )
+        reject_null_dict_keys(data=data, language_name="Perl")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

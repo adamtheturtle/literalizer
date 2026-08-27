@@ -1,0 +1,3 @@
+Raise ``UnrepresentableNullError`` for a null Perl hash key.  A Perl hash key
+is always a string, so such a key was emitted as the bareword ``undef``, which
+the fat comma quoted into the ordinary string key ``"undef"``.

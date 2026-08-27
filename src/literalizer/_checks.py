@@ -26,6 +26,7 @@ from literalizer.exceptions import (
     MixedListValuesError,
     TargetScalarCollisionError,
     UnrepresentableInputError,
+    UnrepresentableNullError,
     UnrepresentableStringError,
 )
 
@@ -310,6 +311,29 @@ def reject_stringified_dict_key_collisions(
                     data=value,
                     language_name=language_name,
                 )
+        case _:
+            return
+
+
+def reject_null_dict_keys(*, data: Value, language_name: str) -> None:
+    """Reject a null mapping key in a language whose keys are strings.
+
+    Such a language has no null key: the key is converted to text, so
+    ``None`` silently becomes an ordinary string key that no longer
+    means null (issue #4544).
+    """
+    match data:
+        case dict():
+            for key, value in data.items():
+                if key is None:
+                    raise UnrepresentableNullError(
+                        language_name=language_name,
+                        conflated_value="the string form of that key",
+                    )
+                reject_null_dict_keys(data=value, language_name=language_name)
+        case list() | set():
+            for value in data:
+                reject_null_dict_keys(data=value, language_name=language_name)
         case _:
             return
 
