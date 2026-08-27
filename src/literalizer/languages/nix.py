@@ -36,6 +36,7 @@ from literalizer._formatters.format_integers import (
     I64_MAX,
     I64_MIN,
     make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_dollar,
@@ -131,19 +132,6 @@ _NIX_KEYWORDS: frozenset[str] = frozenset(
         "with",
     }
 )
-
-
-@beartype
-def _format_nix_fromjson_literal(value: int) -> str:
-    """Format a value outside signed 64-bit range as a Nix
-    ``builtins.fromJSON`` expression.
-
-    Nix integers are 64-bit signed; values outside that range must be
-    materialized at evaluation time.  ``builtins.fromJSON "…"`` accepts
-    arbitrary-precision JSON integer literals and passes
-    ``nix-instantiate --parse``.
-    """
-    return f'(builtins.fromJSON "{value}")'
 
 
 @beartype
@@ -663,7 +651,13 @@ class Nix(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Format an int value as a literal."""
+        """Format an int value as a literal.
+
+        Nix integers are 64-bit signed.  A wider value has no literal
+        form: ``builtins.fromJSON`` parses one at or above ``2**64``
+        into a float, and throws on evaluation between ``2**63`` and
+        ``2**64`` (issue #4503).
+        """
 
         def format_i64(value: int) -> str:
             """Render the signed minimum without C-family suffixes."""
@@ -675,7 +669,7 @@ class Nix(metaclass=LanguageCls):
 
         return make_overflow_fallback_formatter(
             base=format_i64,
-            fallback=_format_nix_fromjson_literal,
+            fallback=raise_for_unrepresentable_int(language_name="Nix"),
             min_value=I64_MIN,
             max_value=I64_MAX,
         )
