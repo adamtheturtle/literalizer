@@ -87,6 +87,7 @@ from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     InvalidDictKeyError,
+    UnrepresentableStringError,
 )
 
 _MAX_STRINGIFIED_COLLECTION_DEPTH = 12
@@ -199,10 +200,43 @@ def _format_bash_dict_entry(
     return f"[{key}]={_to_bash_value(item=formatted_value)}"
 
 
+_DELETE_CHARACTER = "\x7f"
+
+
+@beartype
+def _reject_delete_in_compound(*, data: Value) -> None:
+    r"""Reject U+007F in a value a compound assignment would carry.
+
+    Bash keeps the byte through a simple ``name=value`` assignment but
+    inserts a spurious ``\x01`` before it inside the bracketed
+    compound form an array or associative array uses, so a string in a
+    collection loses its value (issue #4462).
+    """
+    match data:
+        case str() if _DELETE_CHARACTER in data:
+            raise UnrepresentableStringError(
+                language_name="Bash",
+                character_name="DELETE",
+            )
+        case dict():
+            for key, value in data.items():
+                _reject_delete_in_compound(data=key)
+                _reject_delete_in_compound(data=value)
+        case list() | set():
+            for value in data:
+                _reject_delete_in_compound(data=value)
+        case _:
+            return
+
+
 @beartype
 def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
     """Raise for values and dict keys that Bash cannot represent."""
     reject_nulls(data=data, language_name="Bash")
+    # A lone scalar is emitted as a simple assignment, which keeps the
+    # byte; anything else goes through a compound assignment.
+    if not isinstance(data, str):
+        _reject_delete_in_compound(data=data)
     guard_collection_nesting_depth(
         data=data,
         language_name="Bash",
