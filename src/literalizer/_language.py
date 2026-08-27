@@ -71,6 +71,14 @@ class NewVariableNameSyntax(enum.Enum):
     ASCII_LETTER_START = enum.auto()
     """An ASCII identifier that must begin with a letter."""
 
+    LOWER_LETTER_ASCII = enum.auto()
+    """An ASCII identifier beginning with a lowercase letter.
+
+    Elm spells a value in camel case and reserves a capitalized name
+    for a type or constructor, and its grammar has no place for a
+    leading underscore at all (issue #4525).
+    """
+
     LOWER_SNAKE_ASCII = enum.auto()
     """A lowercase ASCII identifier beginning with a letter.
 
@@ -102,6 +110,8 @@ class NewVariableNameSyntax(enum.Enum):
                 pattern = r"[a-z_][A-Za-z0-9_]*'*"
             case NewVariableNameSyntax.ASCII_LETTER_START:
                 pattern = r"[A-Za-z][A-Za-z0-9_]*"
+            case NewVariableNameSyntax.LOWER_LETTER_ASCII:
+                pattern = r"[a-z][A-Za-z0-9_]*"
             case NewVariableNameSyntax.LOWER_SNAKE_ASCII:
                 pattern = r"[a-z][a-z0-9_]*"
             case NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII:
@@ -1296,6 +1306,16 @@ class LanguageCls(type):
     through -- correct for a Haskell data constructor or a V struct,
     wrong for Elixir, where a capitalized bare name parses as an alias
     rather than a function (issue #3914).
+    """
+    declares_type_name_call_target: bool = True
+    """Whether a wrapped file can declare a bare type-name call target.
+
+    A constructor target is exempt from the identifier grammar because
+    the language spells it, but ``wrap_in_file`` still has to declare
+    the target.  Where that declaration is a function -- Haskell's
+    ``name :: ...``, Gleam's ``pub fn name`` -- a capitalized name is
+    a constructor the declaration syntax has no room for, so the
+    exemption stops at the file scaffold (issue #4525).
     """
     dotted_call_root_shares_entrypoint_namespace: bool = True
     """Whether a dotted call root is declared as the entry point is.

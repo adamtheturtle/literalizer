@@ -1,0 +1,8 @@
+# languages rejecting: 5; languages accepting: 0
+
+[InvalidCallTargetError]
+Elm = "Elm cannot use call target 'Module': component 'Module' cannot name a declaration in the generated file"
+Gleam = "Gleam cannot use call target 'Module': component 'Module' cannot name a declaration in the generated file"
+Haskell = "Haskell cannot use call target 'Module': component 'Module' cannot name a declaration in the generated file"
+OCaml = "OCaml cannot use call target 'Module': component 'Module' cannot name a declaration in the generated file"
+PureScript = "PureScript cannot use call target 'Module': component 'Module' cannot name a declaration in the generated file"

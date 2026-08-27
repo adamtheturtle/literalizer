@@ -1,0 +1,4 @@
+Reject a capitalized ``target_function`` for Elm, Gleam, Haskell, OCaml and
+PureScript when ``wrap_in_file`` is set: the generated file declares the target
+as a function, which a name those languages read as a constructor cannot be.
+Elm also rejects a leading-underscore name, which its grammar has no place for.

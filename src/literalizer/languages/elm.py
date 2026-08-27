@@ -62,6 +62,7 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -754,6 +755,17 @@ class Elm(metaclass=LanguageCls):
             Defaults to ``"E"``, producing constructors like ``ENull``,
             ``EBool``, ``EInt``, etc.
     """
+
+    # Elm spells a value in camel case; a capitalized name is a
+    # type or constructor, and a leading underscore has no place
+    # in the grammar (issue #4525).
+    # A wrapped file declares the call target as a function, and a
+    # capitalized name is a constructor rather than a function name,
+    # so the constructor-target exemption stops there (issue #4525).
+    declares_type_name_call_target: ClassVar[bool] = False
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_LETTER_ASCII
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
