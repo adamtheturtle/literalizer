@@ -1,0 +1,3 @@
+Reject ``init`` as a Go declaration name.  A generated stub for it neither
+declares nor calls: ``init`` must take no arguments and return nothing, and
+cannot be referenced.

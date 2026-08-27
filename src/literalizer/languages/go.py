@@ -499,6 +499,10 @@ class Go(metaclass=LanguageCls):
             "goto",
             "if",
             "import",
+            # ``init`` must take no arguments and return nothing, and
+            # cannot be referenced at all, so a generated stub named
+            # after it neither declares nor calls (issue #4493).
+            "init",
             "interface",
             "main",
             "map",

@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A Go init function must take no arguments and return nothing, and
+cannot be referenced at all, so a generated stub named after it
+neither declares nor calls (#4493).
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Go"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "init"
+parameter_names = ["a"]
+wrap_in_file = true
