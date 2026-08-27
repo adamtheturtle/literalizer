@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Jsonnet['9007199254740993']" = "Jsonnet cannot represent integer 9007199254740993 without external arbitrary-precision integer support."
+"Jsonnet['-9007199254740993']" = "Jsonnet cannot represent integer -9007199254740993 without external arbitrary-precision integer support."

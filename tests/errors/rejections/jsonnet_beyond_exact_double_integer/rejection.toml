@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+A Jsonnet number is double precision, so an integer past the range a
+double holds exactly is refused rather than silently rounded (#4476).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Jsonnet"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"
