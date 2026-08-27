@@ -1,1 +1,0 @@
-Raise the Rust crate recursion limit for complete-file ``serde_json::json!`` output so ordinary wide and nested collections compile.

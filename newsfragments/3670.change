@@ -1,1 +1,0 @@
-Escape DEL and C1 controls in YAML strings so parsers accept the document and preserve values such as NEL.

@@ -1,1 +1,0 @@
-Make COBOL data-name collision suffixing run in linear rather than quadratic time.

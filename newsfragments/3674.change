@@ -1,1 +1,0 @@
-Emit Scheme NUL escapes without a trailing semicolon so Guile does not inject the semicolon into the string value.

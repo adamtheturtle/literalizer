@@ -3,6 +3,72 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.27
+----------
+
+- Escape DEL and C1 controls in YAML strings so parsers accept the document and preserve values such as NEL.
+
+- Escape DEL and non-ASCII UTF-8 bytes in SML strings so MLton accepts the source without changing its byte values.
+
+- Escape DEL in TOML basic strings so conforming TOML parsers accept the generated document.
+
+- Emit Scheme NUL escapes without a trailing semicolon so Guile does not inject the semicolon into the string value.
+
+- Reject Wren integers outside the exactly representable range of its double-backed ``Num`` type.
+
+- Reject variable names that collide with auto-generated record type names under the ``RECORD`` heterogeneous strategy.
+
+- Keep a YAML comment written between two elements of an outer collection on the element it precedes.
+  ``ruamel.yaml`` stores such a comment on the last element of the nested collection before it, and since 2026.8.12 it was rendered inside that nested collection instead, or dropped altogether under ``literalize_call(per_element=True)``.
+
+- Raise the Rust crate recursion limit for complete-file ``serde_json::json!`` output so ordinary wide and nested collections compile.
+
+- Raise ``UnrepresentableInputError`` when a timezone-aware datetime falls outside Python's supported range during UTC normalization.
+
+- Reject wrapped calls whose target collides with the generated file entry point.
+
+- Reject null Lua mapping keys and set members instead of emitting invalid ``[nil]`` table entries.
+
+- Snapshot record shape names when constructing a language specification.
+
+- Reject Erlang module names that exceed the virtual machine atom limit.
+
+- Reject Fortran variable and call-target names longer than 63 characters.
+
+- Identify the source of invalid variable names in validation errors.
+
+- Clarify errors when supplemental values exceed the supported nesting depth.
+
+- Reject zip input formats when no corresponding source is provided.
+
+- Reject Wren variable names beginning with an underscore.
+
+- Make comment-preserving YAML mappings render in linear rather than quadratic time.
+
+- Make COBOL data-name collision suffixing run in linear rather than quadratic time.
+
+- Empty list values in maps now borrow the element type of a non-empty sibling in Go, Rust, and C++ output. Length-bearing Rust and Nim formats reject incompatible empty and non-empty siblings instead of emitting code that does not compile.
+
+- C, C++, and D non-decimal integer formats now keep negative values at and below the signed 32-bit boundary signed instead of wrapping them to positive values.
+
+- ``BothVariableForms`` now emits ``bound_refs`` declarations before the declaration and assignment pair, keeping wrapped output self-contained.
+
+- Render ``int64.low`` in Nim's non-decimal integer formats without producing an out-of-range literal.
+
+- Reject timezone-aware ``datetime.time`` values when a native formatter would silently discard their UTC offset.
+
+- Render bare ``datetime.time`` bound references in Elm without leaking an ``IndexError``.
+
+- Reject sibling Rust and V maps whose independently inferred value types cannot share one enclosing list type.
+
+- Allow same-shaped heterogeneous lists to be used as sibling map values.
+
+- Reject declaration modifiers that cannot be combined. Java and C# accept one
+  visibility modifier except for ``private protected``, and a C# ``const`` field
+  cannot also be declared ``static`` or ``readonly``.
+  Emitting every modifier produced source such as ``public private int x``, which
+  does not compile.
+
 2026.08.23
 ----------
 

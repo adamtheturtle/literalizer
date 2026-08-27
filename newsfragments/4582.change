@@ -1,1 +1,0 @@
-``BothVariableForms`` now emits ``bound_refs`` declarations before the declaration and assignment pair, keeping wrapped output self-contained.

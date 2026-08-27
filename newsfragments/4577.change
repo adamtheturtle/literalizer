@@ -1,1 +1,0 @@
-Make comment-preserving YAML mappings render in linear rather than quadratic time.

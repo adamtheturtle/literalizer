@@ -1,1 +1,0 @@
-Reject timezone-aware ``datetime.time`` values when a native formatter would silently discard their UTC offset.

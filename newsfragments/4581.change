@@ -1,1 +1,0 @@
-C, C++, and D non-decimal integer formats now keep negative values at and below the signed 32-bit boundary signed instead of wrapping them to positive values.

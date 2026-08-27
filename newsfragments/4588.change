@@ -1,1 +1,0 @@
-Reject sibling Rust and V maps whose independently inferred value types cannot share one enclosing list type.

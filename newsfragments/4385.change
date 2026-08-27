@@ -1,2 +1,0 @@
-Keep a YAML comment written between two elements of an outer collection on the element it precedes.
-``ruamel.yaml`` stores such a comment on the last element of the nested collection before it, and since 2026.8.12 it was rendered inside that nested collection instead, or dropped altogether under ``literalize_call(per_element=True)``.
