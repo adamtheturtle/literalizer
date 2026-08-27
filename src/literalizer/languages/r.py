@@ -3,9 +3,10 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import ClassVar
 
 from beartype import beartype
@@ -192,6 +193,29 @@ def _format_r_dict_entry_error(
         )
         raise InvalidDictKeyError(msg)
     return f"{key} = {formatted_value}"
+
+
+# The R decimal float parser is several units in the last place out at
+# the widest exponent, where one unit is about 2e292, so a value near
+# the maximum overflows to ``Inf``.  The hexadecimal form is read
+# exactly, so it carries that range (issue #4479).
+_R_WIDEST_EXPONENT_MIN = 2.0**1023
+
+
+@beartype
+def _format_r_float(value: float, /, *, base: Callable[[float], str]) -> str:
+    """Format a float, spelling the widest exponent in hexadecimal.
+
+    A non-finite value goes to *base*, which spells it with the R
+    names ``Inf``/``NaN``.
+    """
+    if (
+        isinstance(value, float)
+        and math.isfinite(value)
+        and abs(value) >= _R_WIDEST_EXPONENT_MIN
+    ):
+        return value.hex()
+    return base(value)
 
 
 # An R symbol cannot begin with an underscore, and a bare ``_`` is the
@@ -888,8 +912,14 @@ class R(metaclass=LanguageCls):
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
-        """Callable that formats a float value as a literal."""
-        return self.float_format
+        """Callable that formats a float value as a literal.
+
+        A value at the widest exponent is spelled in hexadecimal,
+        which the R parser reads exactly, because its decimal parser
+        is several units in the last place out there and overflows to
+        ``Inf`` near the maximum (issue #4479).
+        """
+        return partial(_format_r_float, base=self.float_format)
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
