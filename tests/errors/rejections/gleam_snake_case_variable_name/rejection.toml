@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Gleam variable names are snake_case and cannot start with an underscore."
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Gleam"]
+values = ["MyData", "_my_data", "myData"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"
