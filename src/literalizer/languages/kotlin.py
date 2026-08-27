@@ -143,6 +143,12 @@ from literalizer.exceptions import (
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+# Kotlin reserves every all-underscore name -- ``_``, ``__``,
+# ``___`` and so on -- so the set is spelled as a pattern rather
+# than enumerated (issue #4510).
+_KOTLIN_ALL_UNDERSCORES = re.compile(pattern=r"_+")
+
 _format_string_backslash_dollar_nul = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("$", r"\$"), ("\0", r"\u0000")],
@@ -981,6 +987,9 @@ class Kotlin(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_variable_identifiers_case_sensitive: bool = True
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
+        _KOTLIN_ALL_UNDERSCORES
+    )
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "Any",

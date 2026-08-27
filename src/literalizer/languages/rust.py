@@ -2852,6 +2852,10 @@ class Rust(metaclass=LanguageCls):
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "Self",
+            # ``_`` is a pattern that discards its value rather than a
+            # binding, so the generated file cannot read it back
+            # (issue #4510).
+            "_",
             "abstract",
             "as",
             "async",

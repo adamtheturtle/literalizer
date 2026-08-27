@@ -1,11 +1,23 @@
 schema_version = 1
 summary = "The blank identifier cannot name a declaration."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Erlang", "Go", "Odin", "Perl", "Zig"]
+languages = [
+  "Elixir",
+  "Erlang",
+  "Go",
+  "Haskell",
+  "Kotlin",
+  "Odin",
+  "Perl",
+  "Rust",
+  "Zig",
+]
 
 [call]
 api = "literalize"
-sources = ['{"a": 1, "b": [1, 2]}']
+# Homogeneous values: a language that cannot represent a dict of
+# mixed value types refuses the data before it looks at the name.
+sources = ['{"a": 1, "b": 2}']
 input_format = "json"
 wrap_in_file = true
 variable_form = "new"

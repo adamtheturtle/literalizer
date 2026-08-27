@@ -308,6 +308,9 @@ class Elixir(metaclass=LanguageCls):
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            # ``_`` is only meaningful inside a pattern, so the
+            # generated file cannot read it back (issue #4510).
+            "_",
             "__CALLER__",
             "__DIR__",
             "__ENV__",
