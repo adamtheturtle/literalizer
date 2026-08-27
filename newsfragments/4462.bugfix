@@ -1,0 +1,4 @@
+Raise ``UnrepresentableStringError`` for a Bash string value carrying U+007F
+inside a collection.  Bash inserts a spurious ``\x01`` before that byte in the
+compound assignment an array or associative array uses, silently changing the
+value; a lone scalar, which uses a simple assignment, is unaffected.
