@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+# The argument values need a preamble import, which the wrapped file
+# assembles alongside the target-function stub.
+[call]
+target_function = "check"
+parameter_names = ["ts", "d"]
+per_element = true
+wrap_in_file = true
+languages = ["Haskell"]
+languages_reason = "GHC alone among the wrapped-call back ends needs an import for a temporal argument, and requires every import to precede the first declaration."

@@ -141,6 +141,28 @@ def _haskell_arg_type_str(
     return "(" + ", ".join(type_name for _ in params) + ")"
 
 
+_HASKELL_IMPORT_PREFIX = "import "
+
+
+@beartype
+def _haskell_imports_first(*, lines: Sequence[str]) -> tuple[str, ...]:
+    """Return *lines* with the import declarations hoisted to the top.
+
+    GHC requires every import to precede the first declaration, and a
+    wrapped call assembles its target stub ahead of the preamble the
+    argument values need, so a datetime argument would otherwise put
+    ``import Data.Time`` below the stub (issue #4531).  The relative
+    order within each group is kept.
+    """
+    imports = tuple(
+        line for line in lines if line.startswith(_HASKELL_IMPORT_PREFIX)
+    )
+    rest = tuple(
+        line for line in lines if not line.startswith(_HASKELL_IMPORT_PREFIX)
+    )
+    return imports + rest
+
+
 @beartype
 def _build_haskell_call_stub_lines(
     *,
@@ -2006,7 +2028,7 @@ class Haskell(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
-        preamble = "\n".join(body_preamble)
+        preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         if not variable_name:
             # Call mode: bare expressions are not valid at module
             # top level in Haskell, so wrap them in ``main``. Each call
@@ -2050,7 +2072,7 @@ class Haskell(metaclass=LanguageCls):
         which would otherwise force the bindings into a ``do``-block
         where they would need ``let`` injection.
         """
-        preamble = "\n".join(body_preamble)
+        preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         indented_calls = "\n".join(
             f"{self.indent}_ <- {line}" if line.strip() else line
             for line in calls.split(sep="\n")
