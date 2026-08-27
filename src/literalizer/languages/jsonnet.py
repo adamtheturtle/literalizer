@@ -91,7 +91,11 @@ from literalizer.exceptions import (
 
 _JSONNET_IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
 
-_JSONNET_RESERVED_FIELDS = frozenset(
+# The reserved words of Jsonnet.  None can spell an unquoted object
+# field, a ``local`` binding, a function parameter or a stub field,
+# so the same set gates dict keys and declaration names
+# (issue #4549).
+_JSONNET_KEYWORDS = frozenset(
     {
         "assert",
         "else",
@@ -131,7 +135,7 @@ def _format_jsonnet_dict_entry(
     inner = key[1:-1]
     if (
         _JSONNET_IDENTIFIER_RE.match(string=inner)
-        and inner not in _JSONNET_RESERVED_FIELDS
+        and inner not in _JSONNET_KEYWORDS
     ):
         return f"{inner}: {formatted_value}"
     return f"{key}: {formatted_value}"
@@ -197,9 +201,9 @@ class Jsonnet(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_identifiers: ClassVar[frozenset[str]] = _JSONNET_KEYWORDS
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset()
+    reserved_variable_identifiers: frozenset[str] = _JSONNET_KEYWORDS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True

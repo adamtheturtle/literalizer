@@ -1,0 +1,21 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Jsonnet['assert']" = "Jsonnet cannot use call target 'assert': component 'assert' is a reserved identifier"
+"Jsonnet['else']" = "Jsonnet cannot use call target 'else': component 'else' is a reserved identifier"
+"Jsonnet['error']" = "Jsonnet cannot use call target 'error': component 'error' is a reserved identifier"
+"Jsonnet['false']" = "Jsonnet cannot use call target 'false': component 'false' is a reserved identifier"
+"Jsonnet['for']" = "Jsonnet cannot use call target 'for': component 'for' is a reserved identifier"
+"Jsonnet['function']" = "Jsonnet cannot use call target 'function': component 'function' is a reserved identifier"
+"Jsonnet['if']" = "Jsonnet cannot use call target 'if': component 'if' is a reserved identifier"
+"Jsonnet['import']" = "Jsonnet cannot use call target 'import': component 'import' is a reserved identifier"
+"Jsonnet['importbin']" = "Jsonnet cannot use call target 'importbin': component 'importbin' is a reserved identifier"
+"Jsonnet['importstr']" = "Jsonnet cannot use call target 'importstr': component 'importstr' is a reserved identifier"
+"Jsonnet['in']" = "Jsonnet cannot use call target 'in': component 'in' is a reserved identifier"
+"Jsonnet['local']" = "Jsonnet cannot use call target 'local': component 'local' is a reserved identifier"
+"Jsonnet['null']" = "Jsonnet cannot use call target 'null': component 'null' is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use call target 'self': component 'self' is a reserved identifier"
+"Jsonnet['super']" = "Jsonnet cannot use call target 'super': component 'super' is a reserved identifier"
+"Jsonnet['tailstrict']" = "Jsonnet cannot use call target 'tailstrict': component 'tailstrict' is a reserved identifier"
+"Jsonnet['then']" = "Jsonnet cannot use call target 'then': component 'then' is a reserved identifier"
+"Jsonnet['true']" = "Jsonnet cannot use call target 'true': component 'true' is a reserved identifier"

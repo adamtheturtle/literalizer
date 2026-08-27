@@ -1,0 +1,21 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Jsonnet['assert']" = "Jsonnet cannot use call target 'mod.assert': component 'assert' is a reserved identifier"
+"Jsonnet['else']" = "Jsonnet cannot use call target 'mod.else': component 'else' is a reserved identifier"
+"Jsonnet['error']" = "Jsonnet cannot use call target 'mod.error': component 'error' is a reserved identifier"
+"Jsonnet['false']" = "Jsonnet cannot use call target 'mod.false': component 'false' is a reserved identifier"
+"Jsonnet['for']" = "Jsonnet cannot use call target 'mod.for': component 'for' is a reserved identifier"
+"Jsonnet['function']" = "Jsonnet cannot use call target 'mod.function': component 'function' is a reserved identifier"
+"Jsonnet['if']" = "Jsonnet cannot use call target 'mod.if': component 'if' is a reserved identifier"
+"Jsonnet['import']" = "Jsonnet cannot use call target 'mod.import': component 'import' is a reserved identifier"
+"Jsonnet['importbin']" = "Jsonnet cannot use call target 'mod.importbin': component 'importbin' is a reserved identifier"
+"Jsonnet['importstr']" = "Jsonnet cannot use call target 'mod.importstr': component 'importstr' is a reserved identifier"
+"Jsonnet['in']" = "Jsonnet cannot use call target 'mod.in': component 'in' is a reserved identifier"
+"Jsonnet['local']" = "Jsonnet cannot use call target 'mod.local': component 'local' is a reserved identifier"
+"Jsonnet['null']" = "Jsonnet cannot use call target 'mod.null': component 'null' is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use call target 'mod.self': component 'self' is a reserved identifier"
+"Jsonnet['super']" = "Jsonnet cannot use call target 'mod.super': component 'super' is a reserved identifier"
+"Jsonnet['tailstrict']" = "Jsonnet cannot use call target 'mod.tailstrict': component 'tailstrict' is a reserved identifier"
+"Jsonnet['then']" = "Jsonnet cannot use call target 'mod.then': component 'then' is a reserved identifier"
+"Jsonnet['true']" = "Jsonnet cannot use call target 'mod.true': component 'true' is a reserved identifier"

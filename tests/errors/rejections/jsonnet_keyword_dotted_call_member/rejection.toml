@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A Jsonnet keyword cannot name the object field a dotted call target declares."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Jsonnet"]
+values = ["assert", "else", "error", "false", "for", "function", "if", "import", "importbin", "importstr", "in", "local", "null", "self", "super", "tailstrict", "then", "true"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "mod.{value}"
+parameter_names = ["a", "b"]
+wrap_in_file = true
