@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A COBOL call argument is emitted as an alphanumeric literal like any
+other value, so it carries the same control-character limits (#4513).
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Cobol"]
+
+[call]
+api = "literalize_call"
+sources = ['[["a\tb"]]']
+input_format = "json"
+target_function = "check"
+parameter_names = ["s"]
+wrap_in_file = true

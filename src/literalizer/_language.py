@@ -101,6 +101,24 @@ class NewVariableNameSyntax(enum.Enum):
         return re.fullmatch(pattern=self.value, string=name) is not None
 
 
+class CallParameterShadowing(enum.Enum):
+    """Which declarations a wrapped stub's parameter may not repeat."""
+
+    ALLOWED = enum.auto()
+    """A parameter may repeat any declared name."""
+
+    TARGET_NAME = enum.auto()
+    """A parameter may not repeat the name the stub itself declares.
+
+    A dotted target's earlier components name something else -- a
+    Visual Basic class, a Fortran component that is dropped entirely --
+    so only the component carrying the parameter list is compared.
+    """
+
+    ANY_DECLARATION = enum.auto()
+    """A parameter may not repeat any name the file declares."""
+
+
 class RoundTripCapability(enum.StrEnum):
     """Adversarial corpus groups supported by a target runtime."""
 
@@ -1314,6 +1332,16 @@ class LanguageCls(type):
     ``static`` field beside the entry-point method, and a field and a
     method of one name coexist (issue #3914).
     """
+    reserved_call_target_head_identifiers: frozenset[str] = frozenset()
+    """Names only the leading component of a call target cannot take.
+
+    A Common Lisp dotted stub declares each prefix of the target, so
+    ``mod.list`` declares ``MOD`` -- a symbol of the locked
+    ``COMMON-LISP`` package -- while ``helper.mod`` declares only
+    ``HELPER`` and ``HELPER.MOD``, neither of which is.  Only the head
+    can name a package symbol, and a parameter or a variable never does
+    (issue #4547).
+    """
     contextual_call_target_identifiers: frozenset[str] = frozenset()
     """Reserved declaration names a call target may still lead with.
 
@@ -1325,14 +1353,18 @@ class LanguageCls(type):
     advanced-function body block) or Roc's ``app`` (a module header) --
     lists it here (issue #3905).
     """
-    call_parameter_may_shadow_target: bool = True
-    """Whether a stub parameter may be named after the call target.
+    call_parameter_shadowing: CallParameterShadowing = (
+        CallParameterShadowing.ALLOWED
+    )
+    """Which declarations a wrapped stub's parameter may not repeat.
 
     A wrapped file declares the target and its parameters in one
-    statement, and a few languages refuse a parameter that shadows the
-    name that statement declares: Zig reports ``function parameter
-    shadows declaration of``, the Fortran compiler a host-association
-    clash, and Roslyn ``BC30530`` (issue #4528).
+    statement, and a few languages refuse a parameter that repeats a
+    name already declared there: the Fortran compiler reports a
+    host-association clash and Roslyn ``BC30530`` for the stub's own
+    name, while Zig reports ``function parameter shadows declaration
+    of`` for any file-scope declaration, which for a dotted target
+    includes the helper each component declares (issue #4528).
     """
     reserved_call_target_keywords_case_sensitive: bool = True
     """Whether a reserved word leading a call target matches by case.

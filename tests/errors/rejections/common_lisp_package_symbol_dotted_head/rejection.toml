@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A Common Lisp dotted stub declares each prefix of the target, so the
+leading component alone can name a symbol of the locked COMMON-LISP
+package (#4547).
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["CommonLisp"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "mod.helper"
+parameter_names = ["a", "b"]
+wrap_in_file = true

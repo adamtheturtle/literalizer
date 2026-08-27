@@ -370,6 +370,12 @@ class OCaml(metaclass=LanguageCls):
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_ASCII
     )
+    # A qualified target names a module, which OCaml spells with
+    # an initial capital; the declaration grammar above governs
+    # what a wrapped file can declare (issue #4525).
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.ASCII
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64

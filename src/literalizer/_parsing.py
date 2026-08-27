@@ -576,12 +576,21 @@ def _combine_surrogate_pairs(*, data: _Json5Value) -> Value:
         case str():
             return _combine_surrogate_pairs_in_text(text=data)
         case dict():
-            combined: dict[Scalar, Value] = {
-                _combine_surrogate_pairs_in_text(
-                    text=key
-                ): _combine_surrogate_pairs(data=value)
-                for key, value in data.items()
-            }
+            combined: dict[Scalar, Value] = {}
+            for key, value in data.items():
+                combined_key = _combine_surrogate_pairs_in_text(text=key)
+                # Two keys spelled differently -- one as the astral
+                # character, one as its escape pair -- name the same
+                # member once combined.  The JSON parser calls that a
+                # duplicate, so this one does too rather than silently
+                # keeping the last (issue #4519).
+                if combined_key in combined:
+                    msg = f"duplicate key {combined_key!r}"
+                    raise _format_parse_error(
+                        input_format=InputFormat.JSON5,
+                        detail=msg,
+                    )
+                combined[combined_key] = _combine_surrogate_pairs(data=value)
             return combined
         case list():
             return [_combine_surrogate_pairs(data=item) for item in data]

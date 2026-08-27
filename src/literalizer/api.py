@@ -119,9 +119,12 @@ def _validate_module_name_variable_collision(
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Module-name validation requires a LanguageCls language"
         raise TypeError(msg)
+    # ``BothVariableForms`` is exempt: its wrapper puts the binding in
+    # a subroutine named after the module rather than in the module's
+    # own scope, so the two names coexist (issue #4530).
     if (
         not wrap_in_file
-        or variable_form is None
+        or not isinstance(variable_form, NewVariable | ExistingVariable)
         or not language_cls.supports_module_name
         or not language_cls.module_name_shares_variable_scope
     ):
@@ -721,6 +724,11 @@ def literalize_call(
         variable_form=variable_form,
         bound_ref_names=bound_refs or {},
         ref_case=ref_case,
+    )
+    _validate_module_name_variable_collision(
+        language=language,
+        variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
     )
     if isinstance(variable_form, BothVariableForms):
         # Rendering both halves would invoke the call twice -- a silent

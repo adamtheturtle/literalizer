@@ -53,6 +53,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
+    CallParameterShadowing,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -314,9 +315,12 @@ class VisualBasic(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     # The stub declares the target and its parameters in one
-    # statement, and this language treats the target name as in
-    # scope there (issue #4528).
-    call_parameter_may_shadow_target: ClassVar[bool] = False
+    # statement, and this language treats that name as in scope
+    # there.  An earlier dotted component names something else
+    # (issue #4528).
+    call_parameter_shadowing: ClassVar[CallParameterShadowing] = (
+        CallParameterShadowing.TARGET_NAME
+    )
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

@@ -216,7 +216,9 @@ _COMMON_LISP_SPECIAL_VARIABLES: frozenset[str] = frozenset(
 # this because it is written between asterisks -- those that do not
 # are listed in ``_COMMON_LISP_SPECIAL_VARIABLES`` -- and a call
 # parameter escapes it because it is passed as a keyword rather than
-# bound (issue #4547).
+# bound (issue #4547).  Only the leading component of a dotted target
+# can name one: the stub declares each prefix, and a prefix carrying a
+# dot is a fresh symbol.
 _COMMON_LISP_PACKAGE_SYMBOLS: frozenset[str] = frozenset(
     {
         "&allow-other-keys",
@@ -1232,7 +1234,8 @@ class CommonLisp(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = (
+    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_target_head_identifiers: ClassVar[frozenset[str]] = (
         _COMMON_LISP_PACKAGE_SYMBOLS
     )
     # The reader folds a symbol name to upper case, so a reserved name
