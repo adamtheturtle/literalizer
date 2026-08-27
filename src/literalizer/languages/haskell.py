@@ -1555,6 +1555,10 @@ class Haskell(metaclass=LanguageCls):
             keys must be strings so they remain valid JSON object keys.
     """
 
+    # A wrapped file declares the call target as a function, and a
+    # capitalized name is a constructor rather than a function name,
+    # so the constructor-target exemption stops there (issue #4525).
+    declares_type_name_call_target: ClassVar[bool] = False
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
     )

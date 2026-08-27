@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A wrapped file declares its call target as a function, and these
+languages spell a capitalized name as a type or constructor, so the
+constructor-target exemption stops at the file scaffold (#4525).
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Elm", "Gleam", "Haskell", "OCaml", "PureScript"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "Module"
+parameter_names = ["a"]
+wrap_in_file = true

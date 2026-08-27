@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "The Elm grammar has no place for a leading underscore in a name."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Elm"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "_check"
+parameter_names = ["a"]
+wrap_in_file = true

@@ -695,6 +695,10 @@ class Gleam(metaclass=LanguageCls):
     # anywhere is a syntax error, and a leading underscore makes a
     # discard binding the generated file cannot then read back
     # (issue #4540).
+    # A wrapped file declares the call target as a function, and a
+    # capitalized name is a constructor rather than a function name,
+    # so the constructor-target exemption stops there (issue #4525).
+    declares_type_name_call_target: ClassVar[bool] = False
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_SNAKE_ASCII
     )

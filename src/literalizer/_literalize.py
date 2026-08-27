@@ -5541,9 +5541,12 @@ def _validate_wrapped_call_declarations(
     name it can declare -- V calls ``http.Server`` but can declare
     neither half of it (issue #3989).
     """
-    if _is_constructor_target(
-        language=language,
-        target_function=target_function,
+    if (
+        _is_constructor_target(
+            language=language,
+            target_function=target_function,
+        )
+        and language_cls.declares_type_name_call_target
     ):
         return
     for part in target_function_parts:

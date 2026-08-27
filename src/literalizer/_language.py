@@ -46,39 +46,48 @@ from literalizer.exceptions import (
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
 
-    The grammar describes source names exactly as supplied to a language's
+    Each member carries the pattern its grammar accepts.  The grammar
+    describes source names exactly as supplied to a language's
     declaration formatter.  It intentionally does not repair, quote, or
     otherwise transform a caller-provided name.
     """
 
-    ASCII = enum.auto()
+    ASCII = r"[A-Za-z_][A-Za-z0-9_]*"
     """An ASCII identifier beginning with a letter or underscore."""
 
-    ASCII_KEBAB = enum.auto()
+    ASCII_KEBAB = r"[A-Za-z_][A-Za-z0-9_-]*"
     """An ASCII identifier that may contain hyphens after its start."""
 
-    ASCII_KEBAB_LETTER_BOUNDED = enum.auto()
+    ASCII_KEBAB_LETTER_BOUNDED = r"[A-Za-z](?:[A-Za-z0-9_-]*[A-Za-z0-9])?"
     """An ASCII kebab identifier beginning and ending with a letter or
     digit.
     """
 
-    LOWER_ASCII = enum.auto()
+    LOWER_ASCII = r"[a-z_][A-Za-z0-9_]*"
     """An ASCII identifier beginning with a lowercase letter or underscore."""
 
-    LOWER_ASCII_PRIME_SUFFIX = enum.auto()
+    LOWER_ASCII_PRIME_SUFFIX = r"[a-z_][A-Za-z0-9_]*'*"
     """A lower-ASCII identifier with an optional trailing prime suffix."""
 
-    ASCII_LETTER_START = enum.auto()
+    ASCII_LETTER_START = r"[A-Za-z][A-Za-z0-9_]*"
     """An ASCII identifier that must begin with a letter."""
 
-    LOWER_SNAKE_ASCII = enum.auto()
+    LOWER_LETTER_ASCII = r"[a-z][A-Za-z0-9_]*"
+    """An ASCII identifier beginning with a lowercase letter.
+
+    Elm spells a value in camel case and reserves a capitalized name
+    for a type or constructor, and its grammar has no place for a
+    leading underscore at all (issue #4525).
+    """
+
+    LOWER_SNAKE_ASCII = r"[a-z][a-z0-9_]*"
     """A lowercase ASCII identifier beginning with a letter.
 
     V rejects an uppercase letter anywhere in a variable or function
     name ("use snake_case instead") and rejects a leading underscore.
     """
 
-    LOWER_SNAKE_OR_TYPE_ASCII = enum.auto()
+    LOWER_SNAKE_OR_TYPE_ASCII = r"[a-z][a-z0-9_]*|[A-Z][A-Za-z0-9_]*"
     """A lowercase snake identifier, or a name beginning uppercase.
 
     A V call target's components are not all functions: a leading one
@@ -89,26 +98,7 @@ class NewVariableNameSyntax(enum.Enum):
 
     def accepts(self, *, name: str) -> bool:
         """Return whether *name* matches this lexical grammar."""
-        match self:
-            case NewVariableNameSyntax.ASCII:
-                pattern = r"[A-Za-z_][A-Za-z0-9_]*"
-            case NewVariableNameSyntax.ASCII_KEBAB:
-                pattern = r"[A-Za-z_][A-Za-z0-9_-]*"
-            case NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED:
-                pattern = r"[A-Za-z](?:[A-Za-z0-9_-]*[A-Za-z0-9])?"
-            case NewVariableNameSyntax.LOWER_ASCII:
-                pattern = r"[a-z_][A-Za-z0-9_]*"
-            case NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX:
-                pattern = r"[a-z_][A-Za-z0-9_]*'*"
-            case NewVariableNameSyntax.ASCII_LETTER_START:
-                pattern = r"[A-Za-z][A-Za-z0-9_]*"
-            case NewVariableNameSyntax.LOWER_SNAKE_ASCII:
-                pattern = r"[a-z][a-z0-9_]*"
-            case NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII:
-                pattern = r"[a-z][a-z0-9_]*|[A-Z][A-Za-z0-9_]*"
-            case _:  # pragma: no cover - enum exhaustiveness assertion
-                assert_never(self)
-        return re.fullmatch(pattern=pattern, string=name) is not None
+        return re.fullmatch(pattern=self.value, string=name) is not None
 
 
 class RoundTripCapability(enum.StrEnum):
@@ -1296,6 +1286,16 @@ class LanguageCls(type):
     through -- correct for a Haskell data constructor or a V struct,
     wrong for Elixir, where a capitalized bare name parses as an alias
     rather than a function (issue #3914).
+    """
+    declares_type_name_call_target: bool = True
+    """Whether a wrapped file can declare a bare type-name call target.
+
+    A constructor target is exempt from the identifier grammar because
+    the language spells it, but ``wrap_in_file`` still has to declare
+    the target.  Where that declaration is a function -- Haskell's
+    ``name :: ...``, Gleam's ``pub fn name`` -- a capitalized name is
+    a constructor the declaration syntax has no room for, so the
+    exemption stops at the file scaffold (issue #4525).
     """
     dotted_call_root_shares_entrypoint_namespace: bool = True
     """Whether a dotted call root is declared as the entry point is.

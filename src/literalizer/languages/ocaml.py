@@ -68,6 +68,7 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     SequenceFormatConfig,
@@ -357,6 +358,18 @@ class OCaml(metaclass=LanguageCls):
               route through the ``Intlit`` escape hatch; the ``type val_t``
               preamble is dropped.
     """
+
+    # An OCaml value name begins with a lowercase letter or an
+    # underscore; a capitalized name is a constructor, so ``let
+    # Module ...`` is a pattern rather than a binding
+    # (issue #4525).
+    # A wrapped file declares the call target as a function, and a
+    # capitalized name is a constructor rather than a function name,
+    # so the constructor-target exemption stops there (issue #4525).
+    declares_type_name_call_target: ClassVar[bool] = False
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_ASCII
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64

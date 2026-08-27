@@ -63,6 +63,7 @@ from literalizer._language import (
     JsonType,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -893,6 +894,17 @@ class PureScript(metaclass=LanguageCls):
             Defaults to ``"P"``, producing constructors like ``PNull``,
             ``PBool``, ``PInt``, etc.
     """
+
+    # A PureScript value name begins lowercase; a capitalized
+    # one is a constructor the parser refuses in this
+    # position.  A leading underscore is fine (issue #4525).
+    # A wrapped file declares the call target as a function, and a
+    # capitalized name is a constructor rather than a function name,
+    # so the constructor-target exemption stops there (issue #4525).
+    declares_type_name_call_target: ClassVar[bool] = False
+    new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
+        NewVariableNameSyntax.LOWER_ASCII
+    )
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
