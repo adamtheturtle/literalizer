@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+Two JSON5 keys spelled differently -- one as the astral character,
+one as its surrogate escape pair -- name the same member once the
+pair is combined, which the JSON parser calls a duplicate (#4519).
+"""
+exceptions = ["JSON5ParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ['{ "😀": 1, "\ud83d\ude00": 2 }']
+input_format = "json5"
