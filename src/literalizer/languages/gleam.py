@@ -240,7 +240,7 @@ def _build_gleam_bytes_base64(
 @beartype
 def _apply_gleam_string(value: str, prefix: str) -> str:
     """Format a string with a constructor prefix."""
-    escaped = format_string_backslash_nul_braced_unicode(value)
+    escaped = format_string_backslash_nul_braced_unicode(value=value)
     return f"{prefix}Str({escaped})"
 
 
@@ -537,7 +537,7 @@ _GLEAM_JSON_STRING_OPEN: str = "json.string("
 @beartype
 def _format_gleam_json_string(value: str) -> str:
     """Format a string as a ``json.string("...")`` builder call."""
-    escaped = format_string_backslash_nul_braced_unicode(value)
+    escaped = format_string_backslash_nul_braced_unicode(value=value)
     return f"{_GLEAM_JSON_STRING_OPEN}{escaped})"
 
 
