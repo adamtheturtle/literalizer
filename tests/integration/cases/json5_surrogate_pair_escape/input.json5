@@ -1,0 +1,7 @@
+{
+  "astral": "\ud83d\ude00",
+  "mixed": "a\ud83d\ude00b",
+  "count": 2,
+  "list": ["\ud83d\ude00", 1],
+  "nested": { "inner": "\ud83d\ude00" },
+}

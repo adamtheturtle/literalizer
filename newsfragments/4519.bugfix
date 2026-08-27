@@ -1,0 +1,3 @@
+Accept a surrogate-pair escape in JSON5 input.  The pair was left uncombined
+and then refused as an unpaired surrogate, so a JSON document containing a
+default-serialized astral character failed on the JSON5 path.
