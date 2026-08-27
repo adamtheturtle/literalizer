@@ -1,0 +1,3 @@
+Preserve a carriage return in a Bash string value.  Trailing-whitespace
+trimming removed the carriage return of a ``\r\n`` pair, silently changing the
+value.
