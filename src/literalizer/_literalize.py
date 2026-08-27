@@ -2382,8 +2382,14 @@ def _yaml_collection_comments(
 
 @beartype
 def rstrip_lines(text: str) -> str:
-    """Remove trailing whitespace from each line."""
-    return "\n".join(line.rstrip() for line in text.split(sep="\n"))
+    r"""Remove trailing indentation whitespace from each line.
+
+    Only spaces and tabs are stripped.  A bare ``rstrip`` also removes
+    a carriage return, and a ``\r\n`` inside a string value the target
+    language embeds literally ends a line here, so the value silently
+    lost its carriage return (issue #4514).
+    """
+    return "\n".join(line.rstrip(" \t") for line in text.split(sep="\n"))
 
 
 @beartype
