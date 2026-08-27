@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableStringError]
+"Cobol['{\"s\": \"a\\\\nb\"}']" = "COBOL string literals cannot represent LF"
+"Cobol['{\"s\": \"a\\\\rb\"}']" = "COBOL string literals cannot represent CR"
+"Cobol['{\"s\": \"a\\\\tb\"}']" = "COBOL string literals cannot represent TAB"

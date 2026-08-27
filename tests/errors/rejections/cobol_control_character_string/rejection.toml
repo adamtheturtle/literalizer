@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A plain COBOL alphanumeric literal has no escape sequences and cannot
+span lines, so a string value carrying a tab, newline or carriage
+return is refused rather than silently turned into spaces (#4513).
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Cobol"]
+
+[call]
+api = "literalize"
+sources = ['{"s": "a\nb"}', '{"s": "a\rb"}', '{"s": "a\tb"}']
+input_format = "json"
