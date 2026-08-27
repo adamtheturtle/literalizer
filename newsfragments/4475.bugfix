@@ -1,0 +1,3 @@
+Raise ``UnrepresentableIntegerError`` for a Haxe integer outside the range a
+double holds exactly, rather than emitting a literal the target silently
+rounds.

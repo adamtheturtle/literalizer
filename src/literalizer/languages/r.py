@@ -37,7 +37,8 @@ from literalizer._formatters.format_floats import (
 )
 from literalizer._formatters.format_integers import format_integer_hex
 from literalizer._formatters.format_strings import (
-    format_string_backslash,
+    bidi_escape_replacements,
+    make_backslash_string_formatter,
     reject_nul_string_formatter,
 )
 from literalizer._language import (
@@ -198,6 +199,14 @@ def _format_r_dict_entry_error(
 # native pipe placeholder, so neither can name a call argument
 # (issue #3952).
 _R_LEADING_UNDERSCORE = re.compile(pattern=r"_.*")
+
+# The R parser refuses a raw bidirectional formatting character --
+# "formatting not allowed, use escapes instead" -- so each is emitted
+# as the ``\uXXXX`` escape it accepts (issue #4478).
+_format_string_r = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=bidi_escape_replacements(template="\\u{:04X}"),
+)
 
 
 @beartype
@@ -717,7 +726,7 @@ class R(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return reject_nul_string_formatter(
-            format_string_backslash,
+            _format_string_r,
             language_name="R",
         )
 
