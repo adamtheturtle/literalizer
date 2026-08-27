@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Php['count']" = "Php cannot use call target 'count': component 'count' is a reserved identifier"
+"Php['end']" = "Php cannot use call target 'end': component 'end' is a reserved identifier"
+"Php['next']" = "Php cannot use call target 'next': component 'next' is a reserved identifier"
+"Php['sort']" = "Php cannot use call target 'sort': component 'sort' is a reserved identifier"
+"Php['strlen']" = "Php cannot use call target 'strlen': component 'strlen' is a reserved identifier"

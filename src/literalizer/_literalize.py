@@ -5518,6 +5518,20 @@ def _validate_call_target(
     # keyword may spell (``obj.class`` in JavaScript), and is checked
     # against the narrower ``reserved_identifiers`` alone (#3905).
     head = target_function_parts[0]
+    # A language that declares a plain function only for a target with
+    # no dot in it reserves those names here (issue #4495).
+    if not target_function_parts[1:] and is_reserved_identifier(
+        case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+        name=head,
+        reserved_identifiers=(
+            language_cls.reserved_bare_call_target_identifiers
+        ),
+    ):
+        raise InvalidCallTargetError(
+            language_name=type(language).__name__,
+            target_function=target_function,
+            reason=f"component {head!r} is a reserved identifier",
+        )
     # A language may match keywords without regard to case while still
     # spelling identifiers case-sensitively, so both must agree before
     # the head is compared by case.

@@ -1332,6 +1332,16 @@ class LanguageCls(type):
     ``static`` field beside the entry-point method, and a field and a
     method of one name coexist (issue #3914).
     """
+    reserved_bare_call_target_identifiers: frozenset[str] = frozenset()
+    """Names only a call target with no dot in it cannot take.
+
+    A PHP stub declares a plain ``function`` only for such a target;
+    a dotted one becomes a class with a method and a variable holding
+    an instance, and neither of those shares a scope with a global
+    function.  So a name PHP always defines refuses ``end`` while
+    leaving ``end.foo`` -- and a parameter or variable ``$end`` --
+    alone (issue #4495).
+    """
     reserved_call_target_head_identifiers: frozenset[str] = frozenset()
     """Names only the leading component of a call target cannot take.
 

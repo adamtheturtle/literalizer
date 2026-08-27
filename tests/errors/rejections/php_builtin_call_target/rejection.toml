@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Declaring again a PHP function from the always-present Core or
+standard extension is a fatal error, so a generated stub named after one does
+not load (#4495).
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Php"]
+values = ["count", "end", "next", "sort", "strlen"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["a"]
+wrap_in_file = true
