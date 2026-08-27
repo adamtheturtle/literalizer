@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Sampled: surrogate-pair escape parsing is language-independent."

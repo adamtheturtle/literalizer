@@ -539,6 +539,56 @@ def _parse_json(*, source: str) -> ParsedInput:
     return ParsedPlain(data=data)
 
 
+type _Json5Value = (
+    str
+    | int
+    | float
+    | bool
+    | list[_Json5Value]
+    | dict[str, _Json5Value]
+    | None
+)
+"""The shape ``json5.loads`` returns: its object keys are always
+strings.
+"""
+
+
+@beartype
+def _combine_surrogate_pairs_in_text(*, text: str) -> str:
+    r"""Return *text* with well-formed UTF-16 surrogate pairs combined.
+
+    The ``json5`` package leaves a ``\uD83D\uDE00`` escape pair as two
+    separate code points, which the shared lone-surrogate check then
+    refuses even though the pair is well formed.  Re-encoding through
+    UTF-16 joins a pair and leaves a genuinely lone surrogate alone, so
+    that check still catches one (issue #4519).
+    """
+    return text.encode(encoding="utf-16", errors="surrogatepass").decode(
+        encoding="utf-16",
+        errors="surrogatepass",
+    )
+
+
+@beartype
+def _combine_surrogate_pairs(*, data: _Json5Value) -> Value:
+    """Return *data* with every string's surrogate pairs combined."""
+    match data:
+        case str():
+            return _combine_surrogate_pairs_in_text(text=data)
+        case dict():
+            combined: dict[Scalar, Value] = {
+                _combine_surrogate_pairs_in_text(
+                    text=key
+                ): _combine_surrogate_pairs(data=value)
+                for key, value in data.items()
+            }
+            return combined
+        case list():
+            return [_combine_surrogate_pairs(data=item) for item in data]
+        case _:
+            return data
+
+
 @beartype
 def _parse_json5(*, source: str) -> ParsedInput:
     """Parse a JSON5 string into a ``ParsedInput``."""
@@ -560,7 +610,7 @@ def _parse_json5(*, source: str) -> ParsedInput:
             line=int(position["line"]) if position is not None else None,
             column=(int(position["column"]) if position is not None else None),
         ) from exc
-    return ParsedPlain(data=data)
+    return ParsedPlain(data=_combine_surrogate_pairs(data=data))
 
 
 def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
