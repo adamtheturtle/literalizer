@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A wrapped Objective-C file imports Foundation, which brings the C
+library prototypes into scope, so a wrapper named after one of them
+redeclares it with a different signature (#4534).
+"""
+exceptions = ["InvalidModuleNameError"]
+languages = ["ObjectiveC"]
+values = ["memcpy", "printf", "strlen"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]

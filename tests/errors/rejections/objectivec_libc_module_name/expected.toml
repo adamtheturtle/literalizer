@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+"ObjectiveC['memcpy']" = "ObjectiveC cannot use module_name 'memcpy': it is not a valid identifier"
+"ObjectiveC['printf']" = "ObjectiveC cannot use module_name 'printf': it is not a valid identifier"
+"ObjectiveC['strlen']" = "ObjectiveC cannot use module_name 'strlen': it is not a valid identifier"
