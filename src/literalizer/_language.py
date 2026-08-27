@@ -1365,6 +1365,13 @@ class LanguageCls(type):
     """Whether call-result bindings preserve an active JSON value type."""
     supports_zero_parameter_calls: bool
     max_call_parameters: int
+    supports_multiline_dict_layout: bool = True
+    """Whether a mapping may be spread over several lines.
+
+    TOML forbids a multi-line inline table, so a mapping there stays on
+    one line -- and so does everything under it -- even when the caller
+    asks for the multiline layout (issue #4538).
+    """
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
     supports_multi_param_call_wrapper_stub: bool

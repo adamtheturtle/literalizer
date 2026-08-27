@@ -1995,6 +1995,25 @@ def _format_list_value(
 
 
 @beartype
+def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
+    """Return the context a value's own layout is rendered with.
+
+    TOML forbids a multi-line inline table, so a language that says so
+    renders a mapping -- and everything under it -- on one line even
+    when the caller asked for the multiline layout (issue #4538).
+    """
+    if not isinstance(value, dict | OrderedMap):
+        return ctx
+    language_cls = type(ctx.spec)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Layout selection requires a LanguageCls language"
+        raise TypeError(msg)
+    if language_cls.supports_multiline_dict_layout:
+        return ctx
+    return ctx.compact()
+
+
+@beartype
 def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     value: Value,
@@ -2032,6 +2051,7 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
     When the context's ``ref_case`` is set, the identifier name is
     converted to that case first.
     """
+    ctx = _layout_context(value=value, ctx=ctx)
     spec = ctx.spec
     if ctx.ref_key is not _DISABLED_REF_KEY and isinstance(value, dict):
         raw_ref_name = _extract_call_arg_ref_name(
