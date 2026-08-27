@@ -3327,13 +3327,10 @@ class _PreFormState:
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
-    ref_identifiers: frozenset[str]
-    """The identifiers the rendered refs are emitted as.
-
-    Already ``ref_case``-converted, so a caller-spelled name and the
-    output binding's name are compared as the file spells them
-    (issue #4506).
-    """
+    active_ref_key: str
+    """The ref key the render actually used, or the disabled sentinel."""
+    ref_case: IdentifierCase | None
+    """The case a ref identifier was converted to, if any."""
 
 
 @beartype
@@ -3439,13 +3436,8 @@ def _literalize_pre_form_impl(
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
-        ref_identifiers=frozenset(
-            ref_case.convert(name=name) if ref_case is not None else name
-            for name in _call_arg_ref_names_in_value(
-                value=data,
-                ref_key=active_ref_key,
-            )
-        ),
+        active_ref_key=active_ref_key,
+        ref_case=ref_case,
     )
 
 
@@ -3574,6 +3566,38 @@ def _scope_preamble_for_wrap(
 
 
 @beartype
+def _validate_ref_output_name(
+    *,
+    pre_form: _PreFormState,
+    variable_form: NewVariable | ExistingVariable | None,
+) -> None:
+    """Reject a ref emitted as the name the output binding declares.
+
+    A ref is rendered as a bare identifier, so one converging on the
+    declared name -- directly or through ``ref_case`` conversion --
+    reads that binding rather than anything the caller meant
+    (issue #4506).  An ``ExistingVariable`` is exempt: the name it
+    assigns to is already bound, so reading it is a legitimate shape.
+    """
+    if (
+        not isinstance(variable_form, NewVariable)
+        or pre_form.active_ref_key is _DISABLED_REF_KEY
+    ):
+        return
+    ref_case = pre_form.ref_case
+    collides = any(
+        (ref_case.convert(name=name) if ref_case is not None else name)
+        == variable_form.name
+        for name in _call_arg_ref_names_in_value(
+            value=pre_form.data,
+            ref_key=pre_form.active_ref_key,
+        )
+    )
+    if collides:
+        raise RefOutputCollisionError(name=variable_form.name)
+
+
+@beartype
 def literalize_apply_form(
     *,
     pre_form: _PreFormState,
@@ -3587,14 +3611,10 @@ def literalize_apply_form(
     comments, computes the preamble, and optionally wraps the output
     in a complete file.
     """
-    # A ref is emitted as a bare identifier, so one that converts to
-    # the name the output binding declares reads that binding before it
-    # exists rather than anything the caller meant (issue #4506).
-    if (
-        isinstance(variable_form, NewVariable)
-        and variable_form.name in pre_form.ref_identifiers
-    ):
-        raise RefOutputCollisionError(name=variable_form.name)
+    _validate_ref_output_name(
+        pre_form=pre_form,
+        variable_form=variable_form,
+    )
     if wrap_in_file and isinstance(variable_form, ExistingVariable):
         assignment = _apply_variable_wrapper(
             result=pre_form.result,
