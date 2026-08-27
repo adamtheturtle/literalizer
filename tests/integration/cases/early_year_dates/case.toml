@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["JavaScript", "TypeScript"]
+languages_reason = "ECMA-262 maps a year argument of 0 to 99 to 1900 + year, so only these back ends have to spell an early year another way."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"
