@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A wide Haxe integer lands in a Dynamic slot backed by the target's own
+number type, which is a double, so a value past the range a double
+holds exactly is refused rather than silently rounded (#4475).
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Haxe"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"

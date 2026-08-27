@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Haxe['9007199254740993']" = "Haxe cannot represent integer 9007199254740993 without external arbitrary-precision integer support."
+"Haxe['-9007199254740993']" = "Haxe cannot represent integer -9007199254740993 without external arbitrary-precision integer support."
