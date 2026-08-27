@@ -1,8 +1,12 @@
-# languages rejecting: 5; languages accepting: 0
+# languages rejecting: 9; languages accepting: 0
 
 [ReservedVariableNameError]
+Elixir = "Elixir cannot use NewVariable name '_': it is a reserved identifier"
 Erlang = "Erlang cannot use NewVariable name '_': it is a reserved identifier"
 Go = "Go cannot use NewVariable name '_': it is a reserved identifier"
+Haskell = "Haskell cannot use NewVariable name '_': it is a reserved identifier"
+Kotlin = "Kotlin cannot use NewVariable name '_': it is a reserved identifier"
 Odin = "Odin cannot use NewVariable name '_': it is a reserved identifier"
 Perl = "Perl cannot use NewVariable name '_': it is a reserved identifier"
+Rust = "Rust cannot use NewVariable name '_': it is a reserved identifier"
 Zig = "Zig cannot use NewVariable name '_': it is a reserved identifier"

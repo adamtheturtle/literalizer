@@ -1563,8 +1563,11 @@ class Haskell(metaclass=LanguageCls):
         _HASKELL_PRELUDE_BINDINGS
     ) | frozenset(
         # The keywords, plus ``main``, the entry point the wrapped file
-        # declares alongside the value.
+        # declares alongside the value, plus ``_``: a wildcard pattern
+        # rather than a name, which no type signature can head
+        # (issue #4510).
         {
+            "_",
             "as",
             "case",
             "class",

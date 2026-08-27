@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Kotlin['__']" = "Kotlin cannot use NewVariable name '__': it is a reserved identifier"
+"Kotlin['___']" = "Kotlin cannot use NewVariable name '___': it is a reserved identifier"
