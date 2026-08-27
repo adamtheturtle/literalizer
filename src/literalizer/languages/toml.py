@@ -170,6 +170,10 @@ class Toml(metaclass=LanguageCls):
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True
     max_call_parameters = NO_CALL_PARAMETER_LIMIT
+    # TOML forbids a multi-line inline table, so a mapping stays
+    # on one line whatever layout the caller asked for
+    # (issue #4538).
+    supports_multiline_dict_layout: ClassVar[bool] = False
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True

@@ -1,0 +1,2 @@
+Keep a TOML inline table on one line under the multiline collection layout.
+TOML forbids a multi-line inline table, so the emitted document did not parse.
