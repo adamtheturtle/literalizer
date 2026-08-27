@@ -34,7 +34,11 @@ from literalizer._formatters.format_floats import (
     format_float_repr,
     format_float_scientific,
 )
-from literalizer._formatters.format_integers import format_integer_hex
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_overflow_fallback_formatter,
+    raise_for_unrepresentable_int,
+)
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
 )
@@ -965,8 +969,19 @@ class Haxe(metaclass=LanguageCls):
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
-        """Callable that formats an int value as a literal."""
-        return self.integer_format
+        """Callable that formats an int value as a literal.
+
+        A wide integer lands in a ``Dynamic`` slot backed by the
+        target's own number type, which on the ``eval`` and JavaScript
+        targets is a double, so a value outside the range a double
+        holds exactly is silently rounded (issue #4475).
+        """
+        return make_overflow_fallback_formatter(
+            base=self.integer_format,
+            min_value=-(2**53),
+            max_value=2**53,
+            fallback=raise_for_unrepresentable_int(language_name="Haxe"),
+        )
 
     @cached_property
     def comment_config(self) -> CommentConfig:
