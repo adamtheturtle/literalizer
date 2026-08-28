@@ -13,9 +13,10 @@ def _misaligned_comments(
     *,
     ruamel_data: object,
     nested: bool,
+    hoist_nested_inline: bool,
 ) -> CollectionComments:
     """Return deliberately malformed parser metadata for an error test."""
-    del ruamel_data, nested
+    del ruamel_data, nested, hoist_nested_inline
     return CollectionComments(elements=(), trailing=("trailing",))
 
 

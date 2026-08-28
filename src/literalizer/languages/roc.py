@@ -83,7 +83,10 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
-from literalizer._statements import split_statements
+from literalizer._statements import (
+    insert_before_line_comment,
+    split_statements,
+)
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
@@ -542,6 +545,17 @@ def _roc_format_call_arg(_value: Value, formatted: str) -> str:
 
 
 @beartype
+def _roc_closed_call(*, statement: str) -> str:
+    """Return *statement* with its ``dbg`` closer before any comment."""
+    return insert_before_line_comment(
+        statement=statement,
+        text=")",
+        quotes='"',
+        line_comment_prefixes=("#",),
+    )
+
+
+@beartype
 def _indent_call_lines(*, content: str, indent: str) -> str:
     """Wrap each call line of *content* in ``dbg (...)`` for a Roc
     ``main`` body.
@@ -554,7 +568,9 @@ def _indent_call_lines(*, content: str, indent: str) -> str:
     pure-function result as an ``UNNECESSARY DEFINITION``.
     """
     return "\n".join(
-        f"{indent}dbg ({statement})".replace("\n", f"\n{indent}")
+        f"{indent}dbg ({_roc_closed_call(statement=statement)}".replace(
+            "\n", f"\n{indent}"
+        )
         for statement in split_statements(
             content=content,
             quotes='"',
