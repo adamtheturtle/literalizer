@@ -14,6 +14,7 @@ from ruamel.yaml.comments import (
     CommentedSet,
     TaggedScalar,
 )
+from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
@@ -21,6 +22,7 @@ from literalizer._comments import (
     CollectionComments,
     ElementComments,
     apply_collection_comments_to_elements,
+    extract_toml_comments,
     extract_yaml_comments,
     neutralize_comment_terminator,
     prepend_collection_comments,
@@ -589,7 +591,11 @@ class _RenderContext:
     yaml_comment_nodes: Mapping[
         int, CommentedSeq | CommentedMap | CommentedSet
     ]
-    yaml_comment_root_id: int | None
+    # Comments for the TOML document root.  Unlike the YAML nodes these
+    # are already extracted, because a tomlkit document is addressed by
+    # body position rather than by rendered container (issue #4483).
+    toml_comments: CollectionComments | None
+    comment_root_id: int | None
 
     def compact(self) -> "_RenderContext":
         """Return this context with compact collection rendering."""
@@ -613,7 +619,8 @@ class _RenderContext:
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
             yaml_comment_nodes=self.yaml_comment_nodes,
-            yaml_comment_root_id=self.yaml_comment_root_id,
+            toml_comments=self.toml_comments,
+            comment_root_id=self.comment_root_id,
         )
 
     def with_multiline(
@@ -645,7 +652,8 @@ class _RenderContext:
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
             yaml_comment_nodes=self.yaml_comment_nodes,
-            yaml_comment_root_id=self.yaml_comment_root_id,
+            toml_comments=self.toml_comments,
+            comment_root_id=self.comment_root_id,
         )
 
     def with_prefix(self, *, multiline_prefix: str) -> "_RenderContext":
@@ -670,7 +678,8 @@ class _RenderContext:
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
             yaml_comment_nodes=self.yaml_comment_nodes,
-            yaml_comment_root_id=self.yaml_comment_root_id,
+            toml_comments=self.toml_comments,
+            comment_root_id=self.comment_root_id,
         )
 
 
@@ -923,7 +932,7 @@ def _format_ordered_map_value(
     guard_dict_keys_supported(value=value, spec=spec)
     ordered_map_cfg = spec.ordered_map_format_config
 
-    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -1132,7 +1141,7 @@ def _format_dict_value(
     guard_dict_keys_supported(value=value, spec=spec)
     dict_cfg = spec.dict_format_config
 
-    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -1931,7 +1940,7 @@ def _format_list_value(
     spec = ctx.spec
     sequence_cfg = spec.sequence_format_config
 
-    if _yaml_collection_comments(value=value, ctx=ctx) is not None:
+    if _collection_comments(value=value, ctx=ctx) is not None:
         return _format_multiline_collection_value(
             value=value,
             ctx=ctx,
@@ -2402,26 +2411,47 @@ def _format_multiline_collection_value(
 
 
 @beartype
-def _yaml_collection_comments(
+def _collection_comments(
     *,
     value: Value,
     ctx: _RenderContext,
 ) -> CollectionComments | None:
-    """Return comments for a YAML collection, when present."""
+    """Return the source comments for a collection, when present.
+
+    Applying comments here, while the renderer still knows where each
+    element begins, is what keeps a comment on the element after a
+    multiline one from landing inside that one (issue #4483).
+    """
     if not ctx.spec.supports_collection_comments:
         return None
-    raw_value = ctx.yaml_comment_nodes.get(id(value))
-    if raw_value is None:
+    comments = _source_collection_comments(value=value, ctx=ctx)
+    if comments is None:
         return None
-    comments = extract_yaml_comments(
-        ruamel_data=raw_value,
-        nested=id(value) != ctx.yaml_comment_root_id,
-    )
     if comments.trailing or any(
         element.before or element.inline for element in comments.elements
     ):
         return comments
     return None
+
+
+@beartype
+def _source_collection_comments(
+    *,
+    value: Value,
+    ctx: _RenderContext,
+) -> CollectionComments | None:
+    """Return the extracted comments for a collection, when present."""
+    if ctx.toml_comments is not None:
+        if id(value) != ctx.comment_root_id:
+            return None
+        return ctx.toml_comments
+    raw_value = ctx.yaml_comment_nodes.get(id(value))
+    if raw_value is None:
+        return None
+    return extract_yaml_comments(
+        ruamel_data=raw_value,
+        nested=id(value) != ctx.comment_root_id,
+    )
 
 
 @beartype
@@ -2533,7 +2563,7 @@ def _format_collection_lines(
     line_ctx = ctx.with_prefix(multiline_prefix=body_prefix)
     lines: list[str] = []
     parent_id = id(data)
-    collection_comments = _yaml_collection_comments(
+    collection_comments = _collection_comments(
         value=data,
         ctx=ctx,
     )
@@ -2555,7 +2585,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
-                    redistribute=id(data) == ctx.yaml_comment_root_id,
+                    redistribute=id(data) == ctx.comment_root_id,
                 )
             sibling_list_values: list[list[Value]] = [
                 v for _, v in entries if isinstance(v, list)
@@ -2710,7 +2740,7 @@ def _format_collection_lines(
                 collection_comments = _filter_collection_comments(
                     collection_comments=collection_comments,
                     keep=keep_entries,
-                    redistribute=id(data) == ctx.yaml_comment_root_id,
+                    redistribute=id(data) == ctx.comment_root_id,
                 )
             _append_entries(
                 formatted_entries=formatted_entries,
@@ -2901,6 +2931,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     ref_key: str,
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
+    toml_comment_doc: TOMLDocument | None,
     validate_data: bool,
     record_context_data: Value | None,
 ) -> str:
@@ -2940,6 +2971,8 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             inside other collections.
         raw_yaml_data: The comment-preserving ruamel node corresponding
             to *data*, or ``None`` for non-YAML/comment-free input.
+        toml_comment_doc: The comment-preserving tomlkit document
+            corresponding to *data*, or ``None`` for non-TOML input.
         validate_data: Whether to run the data checks before rendering.
             Bound-ref declarations set this false after validating their
             shared record-shape context.
@@ -2977,7 +3010,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
     if validate_data:
         check_data(data=inference_data, spec=language)
 
-    if ref_key is _DISABLED_REF_KEY and raw_yaml_data is None:
+    if (
+        ref_key is _DISABLED_REF_KEY
+        and raw_yaml_data is None
+        and toml_comment_doc is None
+    ):
         fast_result = format_document_fast(
             language,
             data=data,
@@ -2997,6 +3034,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
             raw_value=raw_yaml_data,
             out=yaml_comment_nodes,
         )
+    toml_comments = (
+        None
+        if toml_comment_doc is None
+        else extract_toml_comments(toml_doc=toml_comment_doc)
+    )
 
     inference_id_map = _inference_to_source_container_ids(
         source=data,
@@ -3063,7 +3105,10 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         single_use_ref_names=frozenset(),
         consume_inhibited_ref_names=frozenset(),
         yaml_comment_nodes=yaml_comment_nodes,
-        yaml_comment_root_id=id(data) if yaml_comment_nodes else None,
+        toml_comments=toml_comments,
+        comment_root_id=(
+            id(data) if yaml_comment_nodes or toml_comments else None
+        ),
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -3216,6 +3261,7 @@ def _literalize_child_path(
                 ref_key=ref_key,
                 collection_layout=collection_layout,
                 raw_yaml_data=None,
+                toml_comment_doc=None,
                 validate_data=True,
                 record_context_data=None,
             )
@@ -3249,6 +3295,7 @@ def _literalize(
     ref_key: str,
     collection_layout: CollectionLayout,
     raw_yaml_data: object | None,
+    toml_comment_doc: TOMLDocument | None,
     validate_data: bool,
     record_context_data: Value | None,
 ) -> str:
@@ -3264,6 +3311,7 @@ def _literalize(
             ref_key=ref_key,
             collection_layout=collection_layout,
             raw_yaml_data=raw_yaml_data,
+            toml_comment_doc=toml_comment_doc,
             validate_data=validate_data,
             record_context_data=record_context_data,
         )
@@ -3429,6 +3477,9 @@ def _literalize_pre_form_impl(
             if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve
             else None
         ),
+        toml_comment_doc=(
+            parsed.toml_doc if isinstance(parsed, ParsedToml) else None
+        ),
         record_context_data=None,
         validate_data=True,
     )
@@ -3452,7 +3503,6 @@ def _literalize_pre_form_impl(
                 comment_suffix=cs,
                 comment_line_prefix=comment_line_prefix,
                 line_prefix=line_prefix,
-                include_delimiters=include_delimiters,
             )
             result = resolved.result
         case ParsedToml():
@@ -3464,7 +3514,6 @@ def _literalize_pre_form_impl(
                 comment_prefix=comment_cfg.prefix,
                 comment_suffix=comment_cfg.suffix,
                 comment_line_prefix=comment_line_prefix,
-                include_delimiters=include_delimiters,
             )
             result = resolved.result
         case _:
@@ -4005,6 +4054,7 @@ def _literalize_value_binding(
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
         raw_yaml_data=None,
+        toml_comment_doc=None,
         validate_data=record_context_data is None,
         record_context_data=record_context_data,
     )
@@ -4651,7 +4701,8 @@ def _format_single_call_arg(
         single_use_ref_names=single_use_ref_names,
         consume_inhibited_ref_names=consume_inhibited_ref_names,
         yaml_comment_nodes={},
-        yaml_comment_root_id=None,
+        toml_comments=None,
+        comment_root_id=None,
     )
     formatted = wrap_arg(
         value,
@@ -6354,7 +6405,8 @@ def _render_zip_literal(
         single_use_ref_names=frozenset(),
         consume_inhibited_ref_names=frozenset(),
         yaml_comment_nodes={},
-        yaml_comment_root_id=None,
+        toml_comments=None,
+        comment_root_id=None,
     )
     return _format_value(
         value=value,

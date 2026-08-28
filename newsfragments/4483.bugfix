@@ -1,0 +1,1 @@
+A comment on a TOML key that follows a multiline value is now placed on that key rather than inside the value above it.

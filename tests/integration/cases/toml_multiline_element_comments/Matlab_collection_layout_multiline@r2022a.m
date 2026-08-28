@@ -1,0 +1,7 @@
+my_data = struct(
+    'first', {{
+        1,
+        2
+    }},
+    'second', 3  % About the second key.
+);

@@ -902,7 +902,6 @@ class YamlCollectionContext:
     comment_prefix: str
     comment_suffix: str
     comment_line_prefix: str
-    include_delimiters: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1030,26 +1029,20 @@ def literalize_yaml_collection(
     *,
     ctx: YamlCollectionContext,
 ) -> str:
-    """Preserve comments for sequence/mapping YAML values."""
-    effective_indent = ctx.comment_line_prefix
-    all_lines = ctx.base.split(sep="\n")
+    """Attach comments to a collection with no element lines.
 
-    if ctx.include_delimiters and len(all_lines) > 1:
-        header = all_lines[0]
-        footer = all_lines[-1]
-        body_lines = all_lines[1:-1]
-    else:
-        header = None
-        footer = None
-        body_lines = all_lines
-
+    The renderer attaches collection comments itself, while it still
+    knows where each element begins (issue #4483).  This runs only for
+    the one shape it cannot: a language that drops null mapping values
+    renders an all-null mapping as an empty literal, so the comments
+    written for those entries have no line to sit beside and follow the
+    literal instead.
+    """
     _empty = ElementComments(before=(), inline="")
-    # Every extractor now emits one entry per rendered element, so no
-    # surplus entry has to be folded into the last line (issue #4482).
-    element_comments = ctx.element_comments
+    body_lines = ctx.base.split(sep="\n")
     padded = (
-        element_comments
-        + (_empty,) * (len(body_lines) - len(element_comments))
+        ctx.element_comments
+        + (_empty,) * (len(body_lines) - len(ctx.element_comments))
     )[: len(body_lines)]
 
     result: list[str] = []
@@ -1059,36 +1052,21 @@ def literalize_yaml_collection(
                 text=comment_text,
                 comment_prefix=ctx.comment_prefix,
                 comment_suffix=ctx.comment_suffix,
-                line_prefix=effective_indent,
+                line_prefix=ctx.comment_line_prefix,
             )
             for comment_text in element_comment.before
         )
-        if element_comment.inline:
-            inline_text = neutralize_comment_terminator(
-                text=element_comment.inline,
-                comment_prefix=ctx.comment_prefix,
-                comment_suffix=ctx.comment_suffix,
-            )
-            output_line = (
-                f"{body_line}  {ctx.comment_prefix} {inline_text}"
-                f"{ctx.comment_suffix}"
-            )
-        else:
-            output_line = body_line
-        result.append(output_line)
+        result.append(body_line)
 
     result.extend(
         _format_comment(
             text=comment_text,
             comment_prefix=ctx.comment_prefix,
             comment_suffix=ctx.comment_suffix,
-            line_prefix=effective_indent,
+            line_prefix=ctx.comment_line_prefix,
         )
         for comment_text in ctx.trailing
     )
-
-    if ctx.include_delimiters and header is not None and footer is not None:
-        return "\n".join([header, *result, footer])
     return "\n".join(result)
 
 
@@ -1139,7 +1117,6 @@ def apply_collection_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    include_delimiters: bool,
 ) -> str:
     """Apply extracted comments to a collection literal.
 
@@ -1161,7 +1138,6 @@ def apply_collection_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
     )
     return literalize_yaml_collection(ctx=ctx)
 

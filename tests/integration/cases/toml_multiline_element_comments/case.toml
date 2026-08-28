@@ -1,0 +1,7 @@
+schema_version = 1
+input = "input.toml"
+owner = "variant"
+
+[[variants]]
+axis = "collection_layout"
+requires = ["collection_comments"]
