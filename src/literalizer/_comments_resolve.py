@@ -81,7 +81,6 @@ def _resolve_collection_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    include_delimiters: bool,
     structurally_applied: bool,
 ) -> ResolvedComments:
     """Resolve pre-extracted collection comments."""
@@ -107,7 +106,6 @@ def _resolve_collection_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
     )
     return ResolvedComments(
         result=result,
@@ -125,7 +123,6 @@ def _resolve_yaml_collection_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    include_delimiters: bool,
 ) -> ResolvedComments:
     """Resolve comments for a YAML list or dict."""
     collection_comments = extract_yaml_comments(
@@ -148,7 +145,6 @@ def _resolve_yaml_collection_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
         structurally_applied=not (
             language.skip_null_dict_values
             and isinstance(ruamel_data, CommentedMap)
@@ -168,7 +164,6 @@ def resolve_yaml_comments(
     comment_suffix: str,
     comment_line_prefix: str,
     line_prefix: str,
-    include_delimiters: bool,
 ) -> ResolvedComments:
     """Resolve comments using the already-parsed round-trip YAML data.
 
@@ -191,7 +186,6 @@ def resolve_yaml_comments(
                 comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
                 comment_line_prefix=comment_line_prefix,
-                include_delimiters=include_delimiters,
                 structurally_applied=True,
             )
         case CommentedSeq() | CommentedMap():
@@ -202,7 +196,6 @@ def resolve_yaml_comments(
                 comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
                 comment_line_prefix=comment_line_prefix,
-                include_delimiters=include_delimiters,
             )
         case _:
             stream = StringIO(initial_value=yaml_string)
@@ -236,7 +229,6 @@ def resolve_toml_comments(
     comment_prefix: str,
     comment_suffix: str,
     comment_line_prefix: str,
-    include_delimiters: bool,
 ) -> ResolvedComments:
     """Extract and resolve comments from a tomlkit document."""
     return _resolve_collection_comments(
@@ -246,6 +238,7 @@ def resolve_toml_comments(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
-        include_delimiters=include_delimiters,
-        structurally_applied=False,
+        # The renderer applies these while it still knows where each
+        # element begins, the way it does for YAML (issue #4483).
+        structurally_applied=True,
     )
