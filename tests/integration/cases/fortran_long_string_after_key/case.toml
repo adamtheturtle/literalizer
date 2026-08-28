@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Fortran"]
+languages_reason = "Fortran-specific: free-form source caps a physical line at 132 columns, which the entry prefix in front of the first string chunk has to leave room for."
+suites = ["base"]
