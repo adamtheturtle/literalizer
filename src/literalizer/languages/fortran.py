@@ -298,9 +298,9 @@ def _wrap_fortran_expression_line(line: str, /) -> list[str]:
     """Split a long line, keeping any continuation marker it ends with.
 
     Wrapping runs over its own output, so a line already carrying a
-    trailing ``&`` is left alone unless it is past the column limit
-    even so, in which case the marker is set aside and put back on the
-    last piece (issue #4474).
+    trailing ``&`` is left alone unless it is past the safe column even
+    so, in which case the marker is set aside and put back on the last
+    piece (issue #4474).
     """
     stripped = line.rstrip()
     if not stripped.endswith("&"):
@@ -316,9 +316,9 @@ def _split_fortran_line(*, line: str) -> list[str]:
     """Split a long expression line at token boundaries outside strings.
 
     A comma is preferred, so an expression breaks between its elements
-    wherever it has any.  A line still past the 132-column limit with
-    no comma to break at falls back to breaking at a bracket, which is
-    the only place a deeply nested constructor chain offers.
+    wherever it has any.  A line still past the safe column with no
+    comma to break at falls back to breaking at a bracket, which is the
+    only place a deeply nested constructor chain offers.
     """
     remaining = line
     wrapped: list[str] = []
