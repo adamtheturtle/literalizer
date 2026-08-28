@@ -8,7 +8,7 @@ from collections import Counter
 from collections.abc import Callable, Hashable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar, Final, assert_never
 
 from beartype import beartype
 
@@ -259,6 +259,34 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 # Rust keywords (strict, reserved, weak) that are syntactically valid
 # PascalCase identifiers; lowercase keywords cannot collide with a name
 # that must start with an uppercase letter.
+_RUST_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        # Brought in by the ``use`` lines this back end emits.
+        "BTreeMap",
+        "BTreeSet",
+        "HashMap",
+        "HashSet",
+        "LazyLock",
+        "NaiveDate",
+        "NaiveDateTime",
+        "NaiveTime",
+        # Named by rendered types without an import: the prelude
+        # supplies these, and ``serde_json`` supplies ``Value``.
+        "Box",
+        "Option",
+        "String",
+        "Value",
+        "Vec",
+    }
+)
+"""Type names rendered Rust can reference.
+
+A struct named after one of these either shadows the type the same file
+uses or clashes with its ``use`` line, so rustc rejects the output
+(issue #4536).
+"""
+
+
 _RUST_PASCAL_KEYWORDS: frozenset[str] = frozenset({"Self"})
 
 # Rust keywords (strict and reserved, editions 2015 through 2024) that
@@ -4023,6 +4051,13 @@ class Rust(metaclass=LanguageCls):
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is a Rust reserved keyword."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in _RUST_EMITTED_TYPE_NAMES:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which names a type the generated "
+                    f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
             if name == self.heterogeneous_value_enum_name:

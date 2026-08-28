@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A struct named after a type the generated Rust itself uses either
+shadows that type or clashes with the use line importing it.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Rust"]
+values = ["HashMap", "String", "Value", "Vec"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["a", "b"]], names = ["{value}"] },
+]

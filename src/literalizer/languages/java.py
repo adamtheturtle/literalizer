@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import Any, ClassVar, assert_never
+from typing import Any, ClassVar, Final, assert_never
 
 from beartype import beartype
 
@@ -125,6 +125,45 @@ from literalizer.exceptions import (
     NullInCollectionError,
     UnrepresentableInputError,
 )
+
+_JAVA_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        # Brought in by the ``import`` lines this back end emits.
+        "BigInteger",
+        "HashMap",
+        "Instant",
+        "JsonNode",
+        "List",
+        "LocalDate",
+        "LocalTime",
+        "Map",
+        "ObjectMapper",
+        "Set",
+        "TreeSet",
+        "ZoneId",
+        "ZonedDateTime",
+        # Named by rendered types without an import: ``java.lang`` is
+        # always in scope.
+        "Boolean",
+        "Byte",
+        "Character",
+        "Double",
+        "Float",
+        "Integer",
+        "Long",
+        "Number",
+        "Object",
+        "Short",
+        "String",
+    }
+)
+"""Type names rendered Java can reference.
+
+A record named after one of these either shadows the type the same file
+uses or clashes with its ``import`` line, so javac rejects the output
+(issue #4536).
+"""
+
 
 _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
@@ -1533,6 +1572,13 @@ class Java(metaclass=LanguageCls):
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the wrapper "
                     f"class name (module_name)."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in _JAVA_EMITTED_TYPE_NAMES:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which names a type the generated "
+                    f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
             if auto_name_pattern.match(string=name):
