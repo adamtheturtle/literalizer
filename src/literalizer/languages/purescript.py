@@ -51,6 +51,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
+    CallParameterShadowing,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -939,6 +940,24 @@ class PureScript(metaclass=LanguageCls):
             Defaults to ``"P"``, producing constructors like ``PNull``,
             ``PBool``, ``PInt``, etc.
     """
+
+    reserved_module_identifiers = frozenset()
+    immutable_variable_modifiers = frozenset()
+    module_name_shares_variable_scope = False
+    reserved_variable_identifier_pattern = None
+    reserved_call_parameter_identifiers = frozenset()
+    reserved_call_parameter_identifier_pattern = None
+    accepts_type_name_call_target = True
+    dotted_call_root_shares_entrypoint_namespace = True
+    reserved_bare_call_target_identifiers = frozenset()
+    reserved_call_target_head_identifiers = frozenset()
+    contextual_call_target_identifiers = frozenset()
+    call_parameter_shadowing = CallParameterShadowing.ALLOWED
+    reserved_call_target_keywords_case_sensitive = True
+    module_name_must_start_uppercase = False
+    max_variable_identifier_length = None
+    supports_multiline_dict_layout = True
+    pools_map_integer_width = True
 
     # A PureScript value name begins lowercase; a capitalized
     # one is a constructor the parser refuses in this

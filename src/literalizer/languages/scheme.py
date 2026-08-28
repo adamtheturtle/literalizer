@@ -41,6 +41,7 @@ from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
     BareIntegerWidthStrategies,
+    CallParameterShadowing,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -165,6 +166,27 @@ def _scheme_call_stub(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scheme(metaclass=LanguageCls):
     """Scheme language specification."""
+
+    reserved_module_identifiers = frozenset()
+    immutable_variable_modifiers = frozenset()
+    wrap_in_file_tolerates_pre_indent = True
+    module_name_shares_variable_scope = False
+    reserved_variable_identifier_pattern = None
+    reserved_call_parameter_identifiers = frozenset()
+    reserved_call_parameter_identifier_pattern = None
+    accepts_type_name_call_target = True
+    declares_type_name_call_target = True
+    dotted_call_root_shares_entrypoint_namespace = True
+    reserved_bare_call_target_identifiers = frozenset()
+    reserved_call_target_head_identifiers = frozenset()
+    contextual_call_target_identifiers = frozenset()
+    call_parameter_shadowing = CallParameterShadowing.ALLOWED
+    reserved_call_target_keywords_case_sensitive = True
+    module_name_must_start_uppercase = False
+    max_variable_identifier_length = None
+    call_target_name_syntax = None
+    supports_multiline_dict_layout = True
+    pools_map_integer_width = True
 
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.ASCII_KEBAB

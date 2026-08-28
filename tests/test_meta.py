@@ -6,6 +6,7 @@ import pytest
 from beartype import beartype
 from ruamel.yaml import YAML
 
+from literalizer._language import LanguageCls
 from literalizer.languages import ALL_LANGUAGES
 
 
@@ -64,3 +65,22 @@ def test_all_lint_jobs_in_completion_gate(
 
     lint_jobs = {jid for jid in job_ids if jid.startswith("lint-")}
     assert lint_jobs <= completion_needs
+
+
+def test_every_language_declares_the_explicit_attributes() -> None:
+    """No language inherits a behavior it has not said something about.
+
+    :attr:`~literalizer._language.LanguageCls.explicit_language_attributes`
+    names what each language declares for itself.  No default is
+    held for any of them, so a language that leaves one out reads as an
+    attribute error at render time (issue #4655).
+    """
+    absent = {
+        language_cls.__name__: sorted(
+            name
+            for name in LanguageCls.explicit_language_attributes
+            if name not in vars(language_cls)
+        )
+        for language_cls in ALL_LANGUAGES
+    }
+    assert {name: names for name, names in absent.items() if names} == {}

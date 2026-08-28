@@ -55,6 +55,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
+    CallParameterShadowing,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -68,6 +69,7 @@ from literalizer._language import (
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
+    NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RoundTripCapability,
@@ -880,6 +882,25 @@ _PHP_ALWAYS_DEFINED_FUNCTIONS: frozenset[str] = frozenset(
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Php(metaclass=LanguageCls):
     """PHP language specification."""
+
+    reserved_module_identifiers = frozenset()
+    immutable_variable_modifiers = frozenset()
+    wrap_in_file_tolerates_pre_indent = True
+    module_name_shares_variable_scope = False
+    reserved_variable_identifier_pattern = None
+    reserved_call_parameter_identifiers = frozenset()
+    reserved_call_parameter_identifier_pattern = None
+    accepts_type_name_call_target = True
+    declares_type_name_call_target = True
+    dotted_call_root_shares_entrypoint_namespace = True
+    reserved_call_target_head_identifiers = frozenset()
+    call_parameter_shadowing = CallParameterShadowing.ALLOWED
+    module_name_must_start_uppercase = False
+    new_variable_name_syntax = NewVariableNameSyntax.ASCII
+    max_variable_identifier_length = None
+    call_target_name_syntax = None
+    supports_multiline_dict_layout = True
+    pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
