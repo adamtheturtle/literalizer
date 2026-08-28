@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+"Python['a: &a [1, *a]']" = "Invalid YAML: alias *a refers to the node that defines it"
+"Python['a: &a [*a]']" = "Invalid YAML: alias *a refers to the node that defines it"
+"Python['a: &a {b: *a}']" = "Invalid YAML: alias *a refers to the node that defines it"
+"Python['&a {a: *a}']" = "Invalid YAML: alias *a refers to the node that defines it"
+"Python['a: &a [1, *b']" = "Invalid YAML: found undefined alias 'b'\n  in \"<unicode string>\", line 1, column 11:\n    a: &a [1, *b\n              ^ (line: 1)"
