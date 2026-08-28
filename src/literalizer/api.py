@@ -66,6 +66,7 @@ def _validate_bound_ref_output_name(
     variable_form: VariableForm | None,
     bound_ref_names: Mapping[str, object],
     ref_case: IdentifierCase | None,
+    wrap_in_file: bool,
 ) -> None:
     """Reject a bound ref that would re-declare the output binding.
 
@@ -73,7 +74,14 @@ def _validate_bound_ref_output_name(
     with, not on the names the caller spelled: a bound ref is declared
     under its ``ref_case`` conversion, so names that differ before the
     conversion can converge after it (issue #3906).
+
+    Only a declaration can collide with another, and ``bound_refs``
+    emits declarations under ``wrap_in_file`` alone; without it the
+    refs stay free identifiers, exactly as ``ref_values`` leaves them,
+    and the documented degrade allows the same name (issue #4463).
     """
+    if not wrap_in_file:
+        return
     if not isinstance(variable_form, NewVariable | BothVariableForms):
         return
     declared = {
@@ -446,6 +454,7 @@ def literalize(
         variable_form=variable_form,
         bound_ref_names=materialized_bound_refs,
         ref_case=ref_case,
+        wrap_in_file=wrap_in_file,
     )
     if variable_form is not None and not language.supports_variable_names:
         raise VariableNameNotSupportedError(
@@ -791,6 +800,7 @@ def literalize_call(
         variable_form=variable_form,
         bound_ref_names=bound_refs or {},
         ref_case=ref_case,
+        wrap_in_file=wrap_in_file,
     )
     _validate_module_name_variable_collision(
         language=language,

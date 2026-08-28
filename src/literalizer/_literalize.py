@@ -4017,6 +4017,7 @@ def literalize_bound_refs(
                 ),
                 collection_layout=collection_layout,
                 record_context_data=pre_form.data_for_preamble,
+                line_prefix=pre_form.line_prefix,
             )
         )
     composition = _BoundRefComposition(
@@ -4039,17 +4040,20 @@ def _literalize_value_binding(
     variable_form: NewVariable,
     collection_layout: CollectionLayout,
     record_context_data: Value | None,
+    line_prefix: str,
 ) -> LiteralizeResult:
     """Render *value* as a variable binding without file wrapping.
 
     Mirrors the ``literalize`` declaration path for an already-parsed
     value (a bound ref's materialized value), so it carries no source
-    comments and needs no parsing.
+    comments and needs no parsing.  *line_prefix* is the caller's
+    margin, so a declaration sits at the same indentation as the
+    binding it precedes (issue #4464).
     """
     result_text = _literalize(
         data=value,
         language=language,
-        line_prefix="",
+        line_prefix=line_prefix,
         include_delimiters=True,
         ref_case=None,
         ref_values=None,
@@ -4065,7 +4069,7 @@ def _literalize_value_binding(
         language=language,
         data=value,
         variable_form=variable_form,
-        line_prefix="",
+        line_prefix=line_prefix,
         is_call_binding=False,
     )
     computed = compute_preamble(
@@ -6132,6 +6136,10 @@ def _compose_call_with_bound_ref_declarations(
             ),
             collection_layout=collection_layout,
             record_context_data=None,
+            # The call path composes its own file and applies no
+            # caller margin to the calls, so the declarations take
+            # none either.
+            line_prefix="",
         )
         for name, value in bound_refs.items()
     ]
