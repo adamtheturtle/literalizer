@@ -20,6 +20,10 @@ its 26-digit value overflows the Elm ``Int`` range (Elm ``Int`` is a JS
 finite ``Int``).  Same shape as the Go, TypeScript, Zig, and Rust
 exclusions.
 
+``negative_zero`` is excluded too: ``JSON.stringify`` writes ``0`` for
+``-0``, so the sign cannot survive the encode this driver performs, and
+the value is refused up front (issue #4543).
+
 Under ``json_type=JSON_ENCODE_VALUE`` the literalized output is already
 a :class:`Json.Encode.Value` built from idiomatic ``Json.Encode.*``
 calls.  No ``Val`` ADT or walker is needed: ``Json.Encode.encode 0``
@@ -34,7 +38,7 @@ from scripts.elm_common import ELM_JSON
 
 _VAR_NAME = "myData"
 _LABEL = "Elm"
-_EXCLUDED_KEYS = ("biginteger",)
+_EXCLUDED_KEYS = ("biginteger", "negative_zero")
 
 # Node wrapper.  ``Elm.Main.init`` returns synchronously; the runtime
 # processes the ``init`` ``Cmd`` (which calls ``output``) on the next
