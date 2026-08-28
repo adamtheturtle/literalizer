@@ -87,6 +87,8 @@ def make_element_to_type(
     list_template: str,
     enable_list_type: bool,
     dict_type_template: str | None,
+    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    | None,
     fallback_value_type: str | None,
     wide_int_type: str | None,
     beyond_i64_type: str | None,
@@ -103,10 +105,14 @@ def make_element_to_type(
     When *dict_type_template* is given it must contain ``{inner}``
     and is used to resolve ``DictType`` elements.  *fallback_value_type*
     is used when the dict value type is ``None`` or cannot be resolved.
+    *dict_value_to_type*, where given, resolves the value type inside a
+    ``DictType`` in place of this resolver, so a mapping element names
+    the type the mapping opener would write (issue #4515).
 
     Example::
 
         go_element_to_type = make_element_to_type(
+            dict_value_to_type=None,
             str_type="string",
             int_type="int",
             list_template="[]{inner}",
@@ -148,6 +154,7 @@ def make_element_to_type(
             list_template=list_template,
             enable_list_type=enable_list_type,
             dict_type_template=dict_type_template,
+            dict_value_to_type=dict_value_to_type,
             fallback_value_type=fallback_value_type,
         )
 
@@ -262,6 +269,8 @@ def _resolve_element_to_type(
     list_template: str,
     enable_list_type: bool,
     dict_type_template: str | None,
+    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    | None,
     fallback_value_type: str | None,
 ) -> str | None:
     """Resolve a Python element type to a language type name."""
@@ -271,12 +280,13 @@ def _resolve_element_to_type(
                 return None
             resolved: str | None = None
             if element_type.value_type is not None:
-                resolved = _resolve_element_to_type(
-                    element_type=element_type.value_type,
+                resolved = _resolve_dict_value_type(
+                    value_type=element_type.value_type,
                     scalar_types=scalar_types,
                     list_template=list_template,
                     enable_list_type=enable_list_type,
                     dict_type_template=dict_type_template,
+                    dict_value_to_type=dict_value_to_type,
                     fallback_value_type=fallback_value_type,
                 )
             inner = resolved if resolved is not None else fallback_value_type
@@ -291,6 +301,7 @@ def _resolve_element_to_type(
                     list_template=list_template,
                     enable_list_type=enable_list_type,
                     dict_type_template=dict_type_template,
+                    dict_value_to_type=dict_value_to_type,
                     fallback_value_type=fallback_value_type,
                 )
                 if enable_list_type
@@ -301,6 +312,39 @@ def _resolve_element_to_type(
             return list_template.format(inner=inner)
         case _:
             return scalar_types.get(element_type)
+
+
+@beartype
+def _resolve_dict_value_type(
+    *,
+    value_type: type | ListType | DictType,
+    scalar_types: dict[type, str],
+    list_template: str,
+    enable_list_type: bool,
+    dict_type_template: str | None,
+    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    | None,
+    fallback_value_type: str | None,
+) -> str | None:
+    """Resolve the value type a mapping element is written with.
+
+    A mapping element names the type its own opener would give it, so
+    where a caller hands over the resolver that opener uses, the value
+    goes through that one.  Naming a value type the mapping renderer
+    would not write leaves the element and its declared type disagreeing
+    (issue #4515).
+    """
+    if dict_value_to_type is not None:
+        return dict_value_to_type(value_type)
+    return _resolve_element_to_type(
+        element_type=value_type,
+        scalar_types=scalar_types,
+        list_template=list_template,
+        enable_list_type=enable_list_type,
+        dict_type_template=dict_type_template,
+        dict_value_to_type=None,
+        fallback_value_type=fallback_value_type,
+    )
 
 
 @beartype
@@ -546,6 +590,8 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         enable_dict_type: bool,
+        dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+        | None,
         dict_key_type: str,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
@@ -569,6 +615,7 @@ class TypedOpenerConfig:
             else raw_template
         )
         return make_element_to_type(
+            dict_value_to_type=dict_value_to_type,
             str_type=self._str_type,
             bool_type=self._bool_type,
             int_type=self._int_type,
@@ -633,20 +680,22 @@ class TypedOpenerConfig:
         ``dict_opener_template`` and ``dict_type_template`` are
         resolved before the templates are used.
         """
-        seq_resolver = self.element_to_type(
-            list_template=None,
-            enable_list_type=True,
-            date_type=date_type,
-            datetime_type=datetime_type,
-            enable_dict_type=True,
-            dict_key_type=dict_key_type,
-        )
         dict_set_resolver = self.element_to_type(
             list_template=None,
             enable_list_type=narrow_list_values,
             date_type=date_type,
             datetime_type=datetime_type,
             enable_dict_type=narrow_dict_values,
+            dict_value_to_type=None,
+            dict_key_type=dict_key_type,
+        )
+        seq_resolver = self.element_to_type(
+            list_template=None,
+            enable_list_type=True,
+            date_type=date_type,
+            datetime_type=datetime_type,
+            enable_dict_type=True,
+            dict_value_to_type=dict_set_resolver,
             dict_key_type=dict_key_type,
         )
         resolved_dict_opener = (

@@ -1388,6 +1388,7 @@ class Go(metaclass=LanguageCls):
             self.datetime_format.value.type_produced,
         )
         return make_element_to_type(
+            dict_value_to_type=None,
             str_type="string",
             bool_type="bool",
             int_type=go_int_type,

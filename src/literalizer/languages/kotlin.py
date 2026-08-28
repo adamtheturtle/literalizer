@@ -219,6 +219,7 @@ def _kotlin_list_sequence_open(
     types and date/datetime formats are handled correctly.
     """
     dict_resolver = cfg.element_to_type(
+        dict_value_to_type=None,
         list_template="List<{inner}>",
         enable_list_type=True,
         date_type=date_type,
@@ -1772,6 +1773,7 @@ class Kotlin(metaclass=LanguageCls):
         callers can fall back to the ``Any?`` top type.
         """
         return self._opener_config.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=False,
             date_type=None,
@@ -2262,6 +2264,7 @@ class Kotlin(metaclass=LanguageCls):
         list typing for everything else.
         """
         base_resolver = self._opener_config.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=True,
             date_type=self._date_type_name,
@@ -2272,6 +2275,7 @@ class Kotlin(metaclass=LanguageCls):
         key_type = self.default_dict_key_type
         fallback = self.default_dict_value_type
         scalar_resolver = self._opener_config.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=False,
             date_type=self._date_type_name,

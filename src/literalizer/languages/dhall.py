@@ -174,6 +174,7 @@ def _unescape_dhall_string(value: str) -> str:
 
 _dhall_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=make_element_to_type(
+        dict_value_to_type=None,
         str_type="Text",
         bool_type="Bool",
         int_type="Integer",
