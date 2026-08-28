@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record0 {
     name: &'static str,
     scores: Vec<i32>,

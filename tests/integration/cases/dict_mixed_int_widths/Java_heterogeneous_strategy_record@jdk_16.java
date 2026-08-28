@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record0(int a, long b, String c) {}
 class Main {
     public static void main() {

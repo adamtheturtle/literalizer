@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record0 {
     quantity: i32,
     big: i128,

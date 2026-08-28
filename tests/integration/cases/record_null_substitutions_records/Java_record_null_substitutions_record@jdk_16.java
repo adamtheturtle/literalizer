@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record0(int due_date, int parent_id, String assignee) {}
 class Main {
     public static void main() {

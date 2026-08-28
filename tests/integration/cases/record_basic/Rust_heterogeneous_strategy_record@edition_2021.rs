@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record0 {
     id: i32,
     label: &'static str,

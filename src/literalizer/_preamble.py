@@ -8,6 +8,7 @@ from beartype import beartype
 
 from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.format_floats import data_has_special_float
+from literalizer._formatters.type_inference import collect_record_shapes
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 
@@ -39,7 +40,11 @@ would let the walk stop before observing it.
 
 
 @beartype
-def _collect_value_types(*, data: Value) -> frozenset[type]:
+def _collect_value_types(
+    *,
+    data: Value,
+    recordized_dict_ids: frozenset[int],
+) -> frozenset[type]:
     """Return the set of Python types present in *data*.
 
     The document is walked with an explicit stack, and the walk stops
@@ -63,7 +68,15 @@ def _collect_value_types(*, data: Value) -> frozenset[type]:
                 pending.extend(value)
                 pending.extend(value.values())
             case dict():
-                found.update((dict, str))
+                # A dict the RECORD strategy turns into a struct is
+                # rendered as a struct literal rather than a map, so it
+                # does not pull in the map type's preamble.  Its keys
+                # become field names rather than string values, but
+                # ``str`` stays: a language may still name the string
+                # type in a field declaration (issue #4496).
+                found.add(str)
+                if id(value) not in recordized_dict_ids:
+                    found.add(dict)
                 pending.extend(value)
                 pending.extend(value.values())
             case set():
@@ -180,6 +193,26 @@ def _preamble_scalar_type(*, value: Scalar) -> type:
             return datetime.date
         case _:
             return scalar_type_bucket(value=value)
+
+
+@beartype
+def _recordized_dict_ids(*, data: Value, language: Language) -> frozenset[int]:
+    """Return the ids of dicts the RECORD strategy renders as structs.
+
+    ``collect_record_shapes`` is the pure eligibility pass, and
+    ``compute_wrap_ids`` names the nested sibling maps the strategy
+    drops back to plain maps, so the difference is what actually
+    becomes a struct.  The strategy's own ``compute_record_shapes``
+    is deliberately not called here: it reassigns document-order names
+    as a side effect, and the preamble walks the ref-resolved tree
+    rather than the rendered one (issue #4496).
+    """
+    behavior = language.heterogeneous_behavior
+    if behavior.render_record_literal is None:
+        return frozenset()
+    return frozenset(
+        collect_record_shapes(data=data)
+    ) - behavior.compute_wrap_ids(data)
 
 
 @beartype
@@ -378,7 +411,11 @@ def compute_preamble(
     """Compute preamble lines from the data types present and the
     language configuration.
     """
-    types = _collect_value_types(data=data)
+    recordized_dict_ids = _recordized_dict_ids(data=data, language=language)
+    types = _collect_value_types(
+        data=data,
+        recordized_dict_ids=recordized_dict_ids,
+    )
 
     scalar = tuple(
         line

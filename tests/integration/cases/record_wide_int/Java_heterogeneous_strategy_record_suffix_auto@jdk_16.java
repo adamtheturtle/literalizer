@@ -1,4 +1,3 @@
-import java.util.Map;
 import java.math.BigInteger;
 record Record0(long quantity, BigInteger big, double ratio, String label, boolean ok) {}
 class Main {

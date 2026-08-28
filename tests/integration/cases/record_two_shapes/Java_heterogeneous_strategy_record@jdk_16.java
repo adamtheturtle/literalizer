@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record1(int count, int rate) {}
 record Record2(int retries, int timeout) {}
 record Record0(Record1 metrics, Record2 flags) {}

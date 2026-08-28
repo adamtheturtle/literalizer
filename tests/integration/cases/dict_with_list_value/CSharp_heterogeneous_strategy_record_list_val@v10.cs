@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record Record0(string Name, int[] Scores);
 class Check {
     public static void Main() {

@@ -1,6 +1,5 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <variant>
 struct Record0 { std::string name; int age{}; bool active{}; double score{}; };
 int main() {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 record Record0(string S, int I, double F, bool B, object N, DateOnly D, string Dt, string By);
 class Check {
     public static void Main() {

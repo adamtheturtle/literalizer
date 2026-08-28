@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record1(int status) {}
 record Record2(String status) {}
 record Record4(String kind, boolean urgent) {}
