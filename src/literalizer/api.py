@@ -711,12 +711,15 @@ def literalize_call(
             neither the call nor its preamble inference and so may
             leave the declaration's data-dependent preamble entries
             uncovered, besides being an unused binding); this mirrors
-            ``literalize``'s *bound_refs* contract.  Incompatible with
-            *variable_form* (which binds the call *result*): the two
-            are rejected together with
-            :class:`~literalizer.exceptions.UnsupportedCallShapeError`
+            ``literalize``'s *bound_refs* contract.  Where declarations
+            are emitted, *variable_form* (which binds the call *result*)
+            cannot be combined with them and the pair raises
+            :class:`~literalizer.exceptions.UnsupportedCallShapeError`,
             because the declaration-composition path cannot apply a
-            language's call-result binding file scaffold.  Keys
+            language's call-result binding file scaffold.  Without
+            *wrap_in_file* nothing is composed, so the two coexist and
+            *bound_refs* contributes only the type information described
+            above.  Keys
             should match the identifiers used in *source* before any
             *ref_case* conversion.  Defaults to ``None`` (no bindings
             emitted; behavior is byte-identical to omitting this
