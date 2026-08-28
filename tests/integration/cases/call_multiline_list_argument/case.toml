@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["xs"]
+per_element = true
+wrap_in_file = true
+collection_layout = "multiline"
+# A wrapper that lists the calls has to keep a call whose argument
+# renders over several lines as one element (issue #4548).

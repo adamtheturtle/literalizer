@@ -97,6 +97,7 @@ from literalizer._language import (
     no_validate_call_arg,
     value_contains,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -2040,9 +2041,19 @@ class Haskell(metaclass=LanguageCls):
             # ``IO Val`` (``StubReturn.VALUE``) do not trigger
             # ``-Wunused-do-bind``. ``_ <-`` is also valid when the
             # action returns ``IO ()``.
+            # The bind belongs to the statement, not to each of its
+            # lines: a multiline collection argument spans several, and
+            # the rest are continuations that need only the same margin
+            # (issue #4527).
             indented = "\n".join(
-                f"{self.indent}_ <- {line}" if line.strip() else line
-                for line in content.split(sep="\n")
+                f"{self.indent}_ <- {statement}".replace(
+                    "\n", f"\n{self.indent}"
+                )
+                for statement in split_statements(
+                    content=content,
+                    quotes='"',
+                    line_comment_prefixes=("--",),
+                )
             )
             return (
                 f"module {self.module_name} where\n"

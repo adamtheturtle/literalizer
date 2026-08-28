@@ -83,6 +83,7 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
@@ -553,7 +554,12 @@ def _indent_call_lines(*, content: str, indent: str) -> str:
     pure-function result as an ``UNNECESSARY DEFINITION``.
     """
     return "\n".join(
-        f"{indent}dbg ({line})" for line in content.split(sep="\n")
+        f"{indent}dbg ({statement})".replace("\n", f"\n{indent}")
+        for statement in split_statements(
+            content=content,
+            quotes='"',
+            line_comment_prefixes=("#",),
+        )
     )
 
 

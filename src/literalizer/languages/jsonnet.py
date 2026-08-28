@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
+import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -87,6 +88,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_statements
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -523,8 +525,14 @@ class Jsonnet(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
         preamble_str = "\n".join(body_preamble) + "\n"
-        lines = content.split(sep="\n")
-        elements = [f"{self.indent}{line}," for line in lines if line]
+        elements = [
+            textwrap.indent(text=f"{statement},", prefix=self.indent)
+            for statement in split_statements(
+                content=content,
+                quotes="\"'",
+                line_comment_prefixes=("//", "#"),
+            )
+        ]
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 
     @staticmethod
