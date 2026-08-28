@@ -15,7 +15,7 @@ from ruamel.yaml.comments import (
     TaggedScalar,
 )
 from ruamel.yaml.tokens import CommentToken
-from tomlkit.items import Comment, Table, Whitespace
+from tomlkit.items import AoT, Comment, Item, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
 from literalizer._parsing import (
@@ -503,6 +503,92 @@ def extract_yaml_comments(
 
 
 @beartype
+def _toml_inline_comment(*, item: Item) -> str:
+    """Return the comment written after *item* on its own line."""
+    raw: str = item.trivia.comment
+    if raw.startswith("#"):
+        return _strip_comment_marker(text=raw)
+    return ""
+
+
+@dataclasses.dataclass(frozen=True)
+class _TomlNestedComments:
+    """Comments found below one top-level TOML item.
+
+    Attributes:
+        hoisted: Comments written above or beside a value inside the
+            item.  A flat model of top-level elements has nowhere finer
+            to put them, so they attach to the enclosing element rather
+            than being dropped (issues #4482 and #4484).
+        trailing: Comments written after the item's last value.  Those
+            were written for whatever follows the item, so they belong
+            to the next top-level element instead.
+    """
+
+    hoisted: tuple[str, ...]
+    trailing: tuple[str, ...]
+
+
+_NO_TOML_NESTED_COMMENTS = _TomlNestedComments(hoisted=(), trailing=())
+
+
+@beartype
+def _toml_body_comments(
+    *,
+    body: Iterable[tuple[object, Item]],
+) -> _TomlNestedComments:
+    """Collect the comments written inside one TOML container body."""
+    hoisted: list[str] = []
+    pending: list[str] = []
+    for _key, child in body:
+        match child:
+            case Comment():
+                raw: str = child.trivia.comment
+                pending.extend(_token_comment_lines(value=raw))
+            case Whitespace():
+                pass
+            case _:
+                inner = _toml_nested_comments(item=child)
+                inline = _toml_inline_comment(item=child)
+                hoisted.extend(pending)
+                pending = list(inner.trailing)
+                hoisted.extend((inline,) if inline else ())
+                hoisted.extend(inner.hoisted)
+    return _TomlNestedComments(
+        hoisted=tuple(hoisted),
+        trailing=tuple(pending),
+    )
+
+
+@beartype
+def _toml_nested_comments(*, item: Item) -> _TomlNestedComments:
+    """Collect the comments written below one TOML item.
+
+    A table body, an array of tables and a dotted key's implicit table
+    all hold comments belonging to a key nested inside a top-level
+    element, none of which this extractor used to read.
+    """
+    match item:
+        case AoT():
+            entries: list[Item] = list(item.body)
+            return _toml_body_comments(
+                body=[(None, entry) for entry in entries],
+            )
+        case Table():
+            return _toml_body_comments(body=item.value.body)
+        case _:
+            return _NO_TOML_NESTED_COMMENTS
+
+
+@dataclasses.dataclass(frozen=True)
+class _TomlElement:
+    """One rendered top-level TOML element and its comments."""
+
+    key: object
+    comments: ElementComments
+
+
+@beartype
 def extract_toml_comments(
     *,
     toml_doc: TOMLDocument,
@@ -512,11 +598,16 @@ def extract_toml_comments(
     Iterates over the document body and collects standalone comment
     nodes as "before" comments for the next keyed item, and inline
     ``trivia.comment`` values as inline comments.
+
+    A dotted key is stored as one implicit table per entry, so ``a.b``
+    and ``a.c`` are two body items for the single rendered element
+    ``a``; consecutive items sharing a key are merged into one
+    (issue #4482).
     """
     pending_before: list[str] = []
-    elements: list[ElementComments] = []
+    elements: list[_TomlElement] = []
 
-    for _key, item in toml_doc.body:
+    for key, item in toml_doc.body:
         match item:
             case Comment():
                 raw: str = item.trivia.comment
@@ -528,21 +619,31 @@ def extract_toml_comments(
                 continue
             case _:
                 pass
-        inline = ""
-        if not isinstance(item, Table):
-            raw_inline: str = item.trivia.comment
-            if raw_inline.startswith("#"):
-                inline = _strip_comment_marker(text=raw_inline)
+        inline = (
+            "" if isinstance(item, Table) else _toml_inline_comment(item=item)
+        )
+        nested = _toml_nested_comments(item=item)
+        before = (*pending_before, *nested.hoisted)
+        pending_before = list(nested.trailing)
+        if elements and key is not None and elements[-1].key == key:
+            merged = elements[-1].comments
+            elements[-1] = _TomlElement(
+                key=key,
+                comments=ElementComments(
+                    before=(*merged.before, *before),
+                    inline=merged.inline or inline,
+                ),
+            )
+            continue
         elements.append(
-            ElementComments(
-                before=tuple(pending_before),
-                inline=inline,
+            _TomlElement(
+                key=key,
+                comments=ElementComments(before=before, inline=inline),
             ),
         )
-        pending_before = []
 
     return CollectionComments(
-        elements=tuple(elements),
+        elements=tuple(element.comments for element in elements),
         trailing=tuple(pending_before),
     )
 
@@ -853,29 +954,9 @@ def literalize_yaml_collection(
         body_lines = all_lines
 
     _empty = ElementComments(before=(), inline="")
+    # Every extractor now emits one entry per rendered element, so no
+    # surplus entry has to be folded into the last line (issue #4482).
     element_comments = ctx.element_comments
-    if body_lines and len(element_comments) > len(body_lines):
-        retained = element_comments[: len(body_lines) - 1]
-        collapsed = element_comments[len(body_lines) - 1 :]
-        collapsed_before = tuple(
-            comment
-            for index, element in enumerate(iterable=collapsed)
-            for comment in (
-                *element.before,
-                *(
-                    (element.inline,)
-                    if element.inline and index < len(collapsed) - 1
-                    else ()
-                ),
-            )
-        )
-        element_comments = (
-            *retained,
-            ElementComments(
-                before=collapsed_before,
-                inline=collapsed[-1].inline,
-            ),
-        )
     padded = (
         element_comments
         + (_empty,) * (len(body_lines) - len(element_comments))

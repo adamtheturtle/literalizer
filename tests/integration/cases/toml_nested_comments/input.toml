@@ -1,0 +1,14 @@
+dotted.first = 1  # About the first dotted key.
+dotted.second = 2  # About the second dotted key.
+plain = 3  # About the plain key.
+
+[table]
+inner = 4  # Inside the table.
+
+# Before the first entry.
+[[entries]]
+name = "one"
+
+# Before the second entry.
+[[entries]]
+name = "two"
