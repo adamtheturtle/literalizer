@@ -678,9 +678,12 @@ def _kotlin_record_field_identifier(
     """Return the Kotlin record field name for a dict *key*.
 
     Kotlin allows ordinary identifiers verbatim and reserved words when
-    enclosed in backticks.
+    enclosed in backticks.  A name written only of underscores is
+    reserved as well, and backticks carry it too (issue #4505).
     """
-    return f"`{key}`" if key in reserved_identifiers else key
+    if key in reserved_identifiers or set(key) == {"_"}:
+        return f"`{key}`"
+    return key
 
 
 @beartype

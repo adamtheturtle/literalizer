@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Nim['[{\"__\": 1}]']" = "Nim cannot represent the dict key '__' as an object field name: '__' is not a Nim identifier, which starts with a letter and separates the rest with single underscores"
+"Nim['[{\"_x\": 1}]']" = "Nim cannot represent the dict key '_x' as an object field name: '_x' is not a Nim identifier, which starts with a letter and separates the rest with single underscores"
+"Nim['[{\"x_\": 1}]']" = "Nim cannot represent the dict key 'x_' as an object field name: 'x_' is not a Nim identifier, which starts with a letter and separates the rest with single underscores"

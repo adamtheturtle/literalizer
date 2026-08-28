@@ -801,6 +801,15 @@ _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 )
 
 
+_NIM_IDENTIFIER = re.compile(pattern=r"[A-Za-z](_?[A-Za-z0-9])*")
+"""What a Nim identifier is written as.
+
+An identifier starts with a letter and separates the rest with single
+underscores, so a leading, trailing or doubled underscore is not one
+(issue #4505).
+"""
+
+
 @beartype
 def _nim_record_field_identifier(
     key: str, /, *, reserved_identifiers: frozenset[str]
@@ -814,8 +823,20 @@ def _nim_record_field_identifier(
     conversion is applied to both so they always agree.
     """
     identifier = IdentifierCase.CAMEL.convert(name=key)
-    if identifier in reserved_identifiers:
+    folded = _nim_field_identifier_key(identifier)
+    if folded in {
+        _nim_field_identifier_key(reserved)
+        for reserved in reserved_identifiers
+    }:
         msg = f"Nim record field name {identifier!r} is reserved"
+        raise UnrepresentableInputError(msg)
+    if _NIM_IDENTIFIER.fullmatch(string=identifier) is None:
+        msg = (
+            f"Nim cannot represent the dict key {key!r} as an object "
+            f"field name: {identifier!r} is not a Nim identifier, which "
+            "starts with a letter and separates the rest with single "
+            "underscores"
+        )
         raise UnrepresentableInputError(msg)
     return identifier
 

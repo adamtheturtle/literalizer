@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+V holds a struct field name to snake case: no uppercase letter, and no
+leading underscore beyond the blank name.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["V"]
+
+[call]
+api = "literalize"
+sources = [
+  '[{"Self": 1}]',
+  '[{"__": 1}]',
+  '[{"camelCase": 1}]',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

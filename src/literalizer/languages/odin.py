@@ -264,6 +264,51 @@ _ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
 )
 
 
+_ODIN_UNUSABLE_FIELD_KEYS: frozenset[str] = frozenset(
+    {
+        # The compiler also reads ``not_in`` without its underscore.
+        "notin",
+        # A field named after a builtin type shadows that type inside
+        # the struct, so a sibling field declared with it does not
+        # resolve (issue #4505).
+        "any",
+        "b16",
+        "b32",
+        "b64",
+        "b8",
+        "bool",
+        "byte",
+        "complex128",
+        "complex32",
+        "complex64",
+        "cstring",
+        "f16",
+        "f32",
+        "f64",
+        "i128",
+        "i16",
+        "i32",
+        "i64",
+        "i8",
+        "int",
+        "quaternion128",
+        "quaternion256",
+        "quaternion64",
+        "rawptr",
+        "rune",
+        "string",
+        "u128",
+        "u16",
+        "u32",
+        "u64",
+        "u8",
+        "uint",
+        "uintptr",
+    }
+)
+"""Field names Odin refuses beyond the keywords a variable cannot take."""
+
+
 @beartype
 def _odin_record_field_identifier(
     key: str, /, *, reserved_identifiers: frozenset[str]
@@ -273,9 +318,10 @@ def _odin_record_field_identifier(
     Odin member identifiers are the dict keys verbatim (no case
     conversion), matching the ``Record0{ id = 1, ... }`` literal form.
     Odin has no escaped spelling for a keyword member, so a key that
-    is one is refused (issue #3934).
+    is one is refused (issue #3934), along with the builtin type names
+    a member would shadow (issue #4505).
     """
-    if key in reserved_identifiers:
+    if key in reserved_identifiers | _ODIN_UNUSABLE_FIELD_KEYS:
         msg = f"Odin record field name {key!r} is reserved"
         raise UnrepresentableInputError(msg)
     return key
