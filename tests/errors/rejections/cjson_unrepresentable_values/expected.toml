@@ -1,0 +1,9 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableInputError]
+"C[CJSON]['{\"f\": 1.7976931348623157e+308}']" = "C json_type=CJSON cannot represent float 1.7976931348623157e+308, which cJSON prints rounded to 15 significant digits and so out of range, reading back as infinity"
+"C[CJSON]['{\"n\": 9007199254740993}']" = "C json_type=CJSON cannot represent integer 9007199254740993, which a cJSON number stores as a double and cannot hold exactly"
+"C[CJSON]['{\"s\": \"a\\\\u0000b\"}']" = "C json_type=CJSON cannot represent a string with an embedded null, which cJSON truncates at"
+"Cobol[CJSON]['{\"f\": 1.7976931348623157e+308}']" = "Cobol json_type=CJSON cannot represent float 1.7976931348623157e+308, which cJSON prints rounded to 15 significant digits and so out of range, reading back as infinity"
+"Cobol[CJSON]['{\"n\": 9007199254740993}']" = "Cobol json_type=CJSON cannot represent integer 9007199254740993, which a cJSON number stores as a double and cannot hold exactly"
+"Cobol[CJSON]['{\"s\": \"a\\\\u0000b\"}']" = "Cobol json_type=CJSON cannot represent a string with an embedded null, which cJSON truncates at"

@@ -1,2 +1,3 @@
 ---
 "$key": "a\"b\tcé #{world} $ident"
+"trailing multi-byte": "café"
