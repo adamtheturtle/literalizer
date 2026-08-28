@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+Without wrap_in_file, bound_refs emits no declaration and degrades to
+type information, so a name shared with the output binding is not a
+redeclaration; the general ref-output rule still rejects it, the same
+way it rejects the equivalent ref_values form.
+"""
+exceptions = ["RefOutputCollisionError"]
+languages = ["JavaScript"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"data"}']
+input_format = "json"
+ref_key = "$ref"
+bound_refs = { data = 1 }
+variable_form = "new"
+variable_name = "data"

@@ -283,6 +283,7 @@ def run_literalize_ref_golden_case(
             }
             or None,
             ref_key=config.ref_key,
+            pre_indent_level=config.pre_indent_level,
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
             ),

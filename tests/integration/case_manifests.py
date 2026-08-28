@@ -472,6 +472,7 @@ class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     ref_key: str = "$ref"
     variable_form: VariableFormName = "new"
     collection_layout: CollectionLayoutName = "compact"
+    pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)

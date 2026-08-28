@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Go", "JavaScript"]
+languages_reason = "Brace languages, the only ones that combine pre_indent_level with wrap_in_file: a ref declaration has to take the same margin as the binding it precedes."
+
+[ref]
+pre_indent_level = 1
+languages = ["Go", "JavaScript"]
+languages_reason = "Brace languages, the only ones that combine pre_indent_level with wrap_in_file: a ref declaration has to take the same margin as the binding it precedes."
+
+[ref.value_sources]
+shared = "[1, 2]"

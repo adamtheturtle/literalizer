@@ -1,0 +1,1 @@
+Without wrap_in_file, a bound ref sharing a name with the output binding is no longer rejected as a redeclaration: no declaration is emitted there, so it behaves as ref_values does.
