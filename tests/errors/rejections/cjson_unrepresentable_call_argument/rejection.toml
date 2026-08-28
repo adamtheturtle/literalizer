@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+A call argument goes into the same cJSON tree a declared value does,
+so it faces the same limits.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["C", "Cobol"]
+option = "json_type"
+
+[call]
+api = "literalize_call"
+sources = [
+  '[[9007199254740993]]',
+  '[["a\u0000b"]]',
+]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+per_element = true

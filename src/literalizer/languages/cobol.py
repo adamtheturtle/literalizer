@@ -85,7 +85,6 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
 )
 from literalizer._types import Value
@@ -126,6 +125,12 @@ _COBOL_UNREPRESENTABLE_CONTROLS: Mapping[str, str] = MappingProxyType(
         "\r": "CR",
     }
 )
+
+
+@beartype
+def _reject_cjson_call_arg(value: Value, /) -> None:
+    """Reject a call argument the cJSON representation would change."""
+    reject_cjson_unrepresentable(data=value, language_name="Cobol")
 
 
 @beartype
@@ -1332,10 +1337,12 @@ class Cobol(metaclass=LanguageCls):
         A call argument is emitted as an alphanumeric literal like any
         other value, so it carries the same control-character limits;
         ``validate_spec_for_data`` covers only the ``literalize`` path
-        (issue #4513).
+        (issue #4513).  Under ``json_type=CJSON`` it goes into the
+        same tree a declared value does, so it faces the limits of
+        the C library instead (issue #4469).
         """
         if self._json_type_active:
-            return no_validate_call_arg
+            return _reject_cjson_call_arg
         return _reject_cobol_control_call_arg
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations

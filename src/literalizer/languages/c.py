@@ -720,6 +720,12 @@ _CJSON_NON_SCALAR_ARG_MSG = (
 
 
 @beartype
+def _reject_cjson_call_arg(value: Value, /) -> None:
+    """Reject a call argument the cJSON representation would change."""
+    reject_cjson_unrepresentable(data=value, language_name="C")
+
+
+@beartype
 def _check_c_json_value_keys(*, data: Value) -> None:
     """Reject non-string object keys under ``json_type=CJSON``.
 
@@ -1316,7 +1322,15 @@ class C(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
+        """Return call-argument validation for this language.
+
+        Under ``json_type=CJSON`` an argument goes into the same tree
+        a declared value does, so it faces the same limits from the C
+        library; ``validate_spec_for_data`` covers only the
+        ``literalize`` path (issue #4469).
+        """
+        if self._json_type_active:
+            return _reject_cjson_call_arg
         return no_validate_call_arg
 
     @cached_property
