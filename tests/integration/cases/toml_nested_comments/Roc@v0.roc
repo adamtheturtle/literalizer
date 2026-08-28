@@ -13,9 +13,9 @@ my_data = RDict [
     # About the second dotted key.
     ("dotted", RDict [("first", RInt 1i128), ("second", RInt 2i128)]),
     ("plain", RInt 3i128),  # About the plain key.
-    # Inside the table.
-    ("table", RDict [("inner", RInt 4i128)]),
     # Before the first entry.
     # Before the second entry.
     ("entries", RList [RDict [("name", RStr "one")], RDict [("name", RStr "two")]]),
+    # Inside the table.
+    ("table", RDict [("inner", RInt 4i128)]),
     ]

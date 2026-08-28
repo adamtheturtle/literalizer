@@ -15,9 +15,9 @@ my_data = PDict [
     -- About the second dotted key.
     (Tuple "dotted" (PDict [(Tuple "first" (PInt 1)), (Tuple "second" (PInt 2))])),
     (Tuple "plain" (PInt 3)),  -- About the plain key.
-    -- Inside the table.
-    (Tuple "table" (PDict [(Tuple "inner" (PInt 4))])),
     -- Before the first entry.
     -- Before the second entry.
-    (Tuple "entries" (PList [PDict [(Tuple "name" (PStr "one"))], PDict [(Tuple "name" (PStr "two"))]]))
+    (Tuple "entries" (PList [PDict [(Tuple "name" (PStr "one"))], PDict [(Tuple "name" (PStr "two"))]])),
+    -- Inside the table.
+    (Tuple "table" (PDict [(Tuple "inner" (PInt 4))]))
     ]

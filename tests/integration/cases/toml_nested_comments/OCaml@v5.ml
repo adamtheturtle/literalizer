@@ -10,11 +10,11 @@ let my_data : val_t = OMap [
     (* About the second dotted key. *)
     ("dotted", OMap [("first", OInt 1); ("second", OInt 2)]);
     ("plain", OInt 3);  (* About the plain key. *)
-    (* Inside the table. *)
-    ("table", OMap [("inner", OInt 4)]);
     (* Before the first entry. *)
     (* Before the second entry. *)
-    ("entries", OList [OMap [("name", OStr "one")]; OMap [("name", OStr "two")]])
+    ("entries", OList [OMap [("name", OStr "one")]; OMap [("name", OStr "two")]]);
+    (* Inside the table. *)
+    ("table", OMap [("inner", OInt 4)])
 ]
 
 end

@@ -5,11 +5,11 @@ procedure Main is
         -- About the second dotted key.
         AEntry ("dotted", AMap'[AEntry ("first", AInt (1)), AEntry ("second", AInt (2))]),
         AEntry ("plain", AInt (3)),  -- About the plain key.
-        -- Inside the table.
-        AEntry ("table", AMap'[AEntry ("inner", AInt (4))]),
         -- Before the first entry.
         -- Before the second entry.
-        AEntry ("entries", AList'[AMap'[AEntry ("name", AStr ("one"))], AMap'[AEntry ("name", AStr ("two"))]])
+        AEntry ("entries", AList'[AMap'[AEntry ("name", AStr ("one"))], AMap'[AEntry ("name", AStr ("two"))]]),
+        -- Inside the table.
+        AEntry ("table", AMap'[AEntry ("inner", AInt (4))])
     ];
 begin
     my_data := AMap'[
@@ -17,10 +17,10 @@ begin
         -- About the second dotted key.
         AEntry ("dotted", AMap'[AEntry ("first", AInt (1)), AEntry ("second", AInt (2))]),
         AEntry ("plain", AInt (3)),  -- About the plain key.
-        -- Inside the table.
-        AEntry ("table", AMap'[AEntry ("inner", AInt (4))]),
         -- Before the first entry.
         -- Before the second entry.
-        AEntry ("entries", AList'[AMap'[AEntry ("name", AStr ("one"))], AMap'[AEntry ("name", AStr ("two"))]])
+        AEntry ("entries", AList'[AMap'[AEntry ("name", AStr ("one"))], AMap'[AEntry ("name", AStr ("two"))]]),
+        -- Inside the table.
+        AEntry ("table", AMap'[AEntry ("inner", AInt (4))])
     ];
 end Main;

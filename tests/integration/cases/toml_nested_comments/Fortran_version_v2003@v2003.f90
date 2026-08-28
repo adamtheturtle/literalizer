@@ -90,11 +90,11 @@ program main
         ! About the second dotted key.
         fentry('dotted', fmap([fval_t :: fentry('first', fint(1_int64)), fentry('second', fint(2_int64))])), &
         fentry('plain', fint(3_int64)), &  ! About the plain key.
-        ! Inside the table.
-        fentry('table', fmap([fval_t :: fentry('inner', fint(4_int64))])), &
         ! Before the first entry.
         ! Before the second entry.
         fentry('entries', flist([fval_t :: fmap([fval_t :: fentry('name', fstr('one'))]), &
-    & fmap([fval_t :: fentry('name', fstr('two'))])])) &
+    & fmap([fval_t :: fentry('name', fstr('two'))])])), &
+        ! Inside the table.
+        fentry('table', fmap([fval_t :: fentry('inner', fint(4_int64))])) &
     ])
 end program main

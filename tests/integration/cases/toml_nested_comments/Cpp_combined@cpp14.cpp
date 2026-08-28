@@ -48,11 +48,11 @@ auto my_data = std::map<std::string, Value>{
     // About the second dotted key.
     {"dotted", Value{std::map<std::string, int>{{"first", 1}, {"second", 2}}}},
     {"plain", Value{3}},  // About the plain key.
-    // Inside the table.
-    {"table", Value{std::map<std::string, int>{{"inner", 4}}}},
     // Before the first entry.
     // Before the second entry.
     {"entries", Value{std::vector<std::map<std::string, std::string>>{std::map<std::string, std::string>{{"name", "one"}}, std::map<std::string, std::string>{{"name", "two"}}}}},
+    // Inside the table.
+    {"table", Value{std::map<std::string, int>{{"inner", 4}}}},
 };
 (void)my_data;
 my_data = std::map<std::string, Value>{
@@ -60,11 +60,11 @@ my_data = std::map<std::string, Value>{
     // About the second dotted key.
     {"dotted", Value{std::map<std::string, int>{{"first", 1}, {"second", 2}}}},
     {"plain", Value{3}},  // About the plain key.
-    // Inside the table.
-    {"table", Value{std::map<std::string, int>{{"inner", 4}}}},
     // Before the first entry.
     // Before the second entry.
     {"entries", Value{std::vector<std::map<std::string, std::string>>{std::map<std::string, std::string>{{"name", "one"}}, std::map<std::string, std::string>{{"name", "two"}}}}},
+    // Inside the table.
+    {"table", Value{std::map<std::string, int>{{"inner", 4}}}},
 };
     (void)my_data;
     return 0;

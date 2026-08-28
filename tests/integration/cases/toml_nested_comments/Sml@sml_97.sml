@@ -8,10 +8,10 @@ val my_data : val_t = SMap [
     (* About the second dotted key. *)
     ("dotted", SMap [("first", SInt 1), ("second", SInt 2)]),
     ("plain", SInt 3),  (* About the plain key. *)
-    (* Inside the table. *)
-    ("table", SMap [("inner", SInt 4)]),
     (* Before the first entry. *)
     (* Before the second entry. *)
-    ("entries", SList [SMap [("name", SStr "one")], SMap [("name", SStr "two")]])
+    ("entries", SList [SMap [("name", SStr "one")], SMap [("name", SStr "two")]]),
+    (* Inside the table. *)
+    ("table", SMap [("inner", SInt 4)])
 ]
 val _ = my_data

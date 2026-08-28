@@ -14,11 +14,11 @@ my_data = HMap [
     -- About the second dotted key.
     ("dotted", HMap [("first", 1), ("second", 2)]),
     ("plain", 3),  -- About the plain key.
-    -- Inside the table.
-    ("table", HMap [("inner", 4)]),
     -- Before the first entry.
     -- Before the second entry.
-    ("entries", HList [HMap [("name", HStr "one")], HMap [("name", HStr "two")]])
+    ("entries", HList [HMap [("name", HStr "one")], HMap [("name", HStr "two")]]),
+    -- Inside the table.
+    ("table", HMap [("inner", 4)])
     ]
 main :: IO ()
 main = seq my_data (return ())

@@ -580,14 +580,6 @@ def _toml_nested_comments(*, item: Item) -> _TomlNestedComments:
             return _NO_TOML_NESTED_COMMENTS
 
 
-@dataclasses.dataclass(frozen=True)
-class _TomlElement:
-    """One rendered top-level TOML element and its comments."""
-
-    key: object
-    comments: ElementComments
-
-
 @beartype
 def extract_toml_comments(
     *,
@@ -601,11 +593,12 @@ def extract_toml_comments(
 
     A dotted key is stored as one implicit table per entry, so ``a.b``
     and ``a.c`` are two body items for the single rendered element
-    ``a``; consecutive items sharing a key are merged into one
-    (issue #4482).
+    ``a``.  Items sharing a key are merged into one, wherever in the
+    document they are written, so that the result has exactly one entry
+    per rendered element (issue #4482).
     """
     pending_before: list[str] = []
-    elements: list[_TomlElement] = []
+    elements: dict[object, ElementComments] = {}
 
     for key, item in toml_doc.body:
         match item:
@@ -625,25 +618,14 @@ def extract_toml_comments(
         nested = _toml_nested_comments(item=item)
         before = (*pending_before, *nested.hoisted)
         pending_before = list(nested.trailing)
-        if elements and key is not None and elements[-1].key == key:
-            merged = elements[-1].comments
-            elements[-1] = _TomlElement(
-                key=key,
-                comments=ElementComments(
-                    before=(*merged.before, *before),
-                    inline=merged.inline or inline,
-                ),
-            )
-            continue
-        elements.append(
-            _TomlElement(
-                key=key,
-                comments=ElementComments(before=before, inline=inline),
-            ),
+        merged = elements.get(key, ElementComments(before=(), inline=""))
+        elements[key] = ElementComments(
+            before=(*merged.before, *before),
+            inline=merged.inline or inline,
         )
 
     return CollectionComments(
-        elements=tuple(element.comments for element in elements),
+        elements=tuple(elements.values()),
         trailing=tuple(pending_before),
     )
 
