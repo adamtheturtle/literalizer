@@ -234,24 +234,34 @@ def _purescript_int_fits_in_int32(value: int) -> bool:
 def _purescript_has_large_int(val: Value) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
+
+    Walked with an explicit stack rather than by recursion: a
+    beartype-wrapped call costs several interpreter frames per level,
+    so a recursive walk ran the stack out on a document well inside
+    the shared parse-depth guard (issue #4560).
     """
-    match val:
-        case bool():
-            return False
-        case int():
-            return not _purescript_int_fits_in_int32(value=val)
-        case list():
-            return any(_purescript_has_large_int(val=v) for v in val)
-        case dict():
-            return any(_purescript_has_large_int(val=v) for v in val.values())
-        case set():
-            return any(
-                _purescript_has_large_int(val=v)
-                for v in val
-                if isinstance(v, int) and not isinstance(v, bool)
-            )
-        case _:
-            return False
+    pending: list[Value] = [val]
+    while pending:
+        value = pending.pop()
+        match value:
+            case bool():
+                continue
+            case int():
+                if not _purescript_int_fits_in_int32(value=value):
+                    return True
+            case list():
+                pending.extend(value)
+            case dict():
+                pending.extend(value.values())
+            case set():
+                pending.extend(
+                    member
+                    for member in value
+                    if isinstance(member, int) and not isinstance(member, bool)
+                )
+            case _:
+                continue
+    return False
 
 
 @beartype
@@ -447,35 +457,56 @@ def _purescript_negative_float(val: float) -> bool:
 
 
 @beartype
+def _purescript_children(val: Value) -> list[Value]:
+    """Return the values nested inside *val*."""
+    match val:
+        case list():
+            return list(val)
+        case dict():
+            return list(val.values())
+        case set():
+            return [
+                member
+                for member in val
+                if isinstance(member, (int, float))
+                and not isinstance(member, bool)
+            ]
+        case _:
+            return []
+
+
+@beartype
+def _purescript_scalar_needs_prelude(val: Value) -> bool:
+    """Return True if *val* is a scalar needing ``import Prelude``."""
+    # Check bool before int (bool is a subclass of int).
+    match val:
+        case bool():
+            return False
+        case float():
+            return _purescript_negative_float(val=val)
+        case int():
+            return val < 0
+        case _:
+            return False
+
+
+@beartype
 def _purescript_needs_prelude(val: Value) -> bool:
     """Return True if *val* needs ``import Prelude``.
 
     Prelude is required for ``negate`` (any negative int or float)
     and for ``/`` (infinity / NaN expressed as ``1.0 / 0.0``).
+
+    Walked with an explicit stack rather than by recursion, for the same
+    reason as :func:`_purescript_has_large_int` (issue #4560).
     """
-    # Check bool before int (bool is a subclass of int).
-    match val:
-        case bool():
-            result = False
-        case float():
-            result = _purescript_negative_float(val=val)
-        case int():
-            result = val < 0
-        case list():
-            result = any(_purescript_needs_prelude(val=v) for v in val)
-        case dict():
-            result = any(
-                _purescript_needs_prelude(val=v) for v in val.values()
-            )
-        case set():
-            result = any(
-                _purescript_needs_prelude(val=v)
-                for v in val
-                if isinstance(v, (int, float)) and not isinstance(v, bool)
-            )
-        case _:
-            result = False
-    return result
+    pending: list[Value] = [val]
+    while pending:
+        value = pending.pop()
+        if _purescript_scalar_needs_prelude(val=value):
+            return True
+        pending.extend(_purescript_children(val=value))
+    return False
 
 
 @beartype

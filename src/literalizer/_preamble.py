@@ -132,18 +132,27 @@ def _needs_annotation(val: Value) -> bool:
     A collection needs annotation when it is empty (so type-checkers can
     infer element types) or contains an element/value that itself needs
     annotation.
+
+    Walked with an explicit stack: a beartype-wrapped call costs
+    several interpreter frames per level, so a recursive walk ran the
+    stack out on a document well inside the shared parse-depth guard
+    (issue #4560).
     """
-    match val:
-        case dict():
-            return not val or any(
-                _needs_annotation(val=v) for v in val.values()
-            )
-        case set():
-            return not val
-        case list():
-            return not val or any(_needs_annotation(val=v) for v in val)
-        case _:
-            return False
+    pending: list[Value] = [val]
+    while pending:
+        value = pending.pop()
+        match value:
+            case dict() | set() | list() if not value:
+                return True
+            case dict():
+                pending.extend(value.values())
+            case list():
+                pending.extend(value)
+            case _:
+                # A set's members are scalars, so a non-empty one holds
+                # nothing that could need an annotation of its own.
+                continue
+    return False
 
 
 @beartype
