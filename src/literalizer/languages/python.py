@@ -166,17 +166,17 @@ def _format_string_raw(value: str) -> str:
         or "\r" in value
         or has_bidi_formatting_character(value=value)
     ):
-        return _format_string_double(value)
+        return _format_string_double(value=value)
     stripped = value.rstrip("\\")
     trailing_backslashes = len(value) - len(stripped)
     if trailing_backslashes % 2 == 1:
-        return _format_string_backslash(value)
+        return _format_string_backslash(value=value)
     has_newline = "\n" in value
     if '"' not in value and not has_newline:
         return f'r"{value}"'
     if "'''" not in value:
         return f"r'''{value}'''"
-    return _format_string_backslash(value)
+    return _format_string_backslash(value=value)
 
 
 @beartype

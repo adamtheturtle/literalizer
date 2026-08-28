@@ -30,7 +30,7 @@ from .variant_cases import (
 from .variant_escape_hatches import build_typed_dict_null_filtering_variants
 from .variant_types import VariantCase
 
-_SampleEnum = enum.Enum("_SampleEnum", ["FIRST"])
+_SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
 
 
 def test_enum_member_by_name_raises_for_missing_member() -> None:

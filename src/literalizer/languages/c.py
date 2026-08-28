@@ -768,7 +768,7 @@ def _c_json_object_key(key: Scalar, /) -> str:
     narrows its static :data:`~literalizer._types.Scalar` type to
     :class:`str` without a redundant runtime branch.
     """
-    return format_string_backslash_nul_octal(str(object=key))
+    return format_string_backslash_nul_octal(value=str(object=key))
 
 
 @beartype
@@ -801,7 +801,7 @@ def _c_cjson_scalar_create(
         case float():
             return f"cJSON_CreateNumber({format_float(value)})"
         case str():
-            literal = format_string_backslash_nul_octal(value)
+            literal = format_string_backslash_nul_octal(value=value)
             return f"cJSON_CreateString({literal})"
         case None:
             return "cJSON_CreateNull()"

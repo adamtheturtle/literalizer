@@ -227,33 +227,39 @@ _LANGUAGES_BY_NAME = {
 }
 type ManifestLanguage = Annotated[
     literalizer.LanguageCls,
-    BeforeValidator(_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
+    BeforeValidator(func=_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
 ]
 type ManifestLanguages = Annotated[
     tuple[ManifestLanguage, ...],
     Field(strict=False),
 ]
 type CallTransformTemplate = Annotated[
-    InstanceOf[CallTransform], BeforeValidator(_to_call_transform)
+    InstanceOf[CallTransform], BeforeValidator(func=_to_call_transform)
 ]
 type CallStyleType = Annotated[
     type[literalizer.CallStyle],
-    BeforeValidator(_name_resolver(values_by_name=_CALL_STYLE_TYPES_BY_NAME)),
+    BeforeValidator(
+        func=_name_resolver(values_by_name=_CALL_STYLE_TYPES_BY_NAME)
+    ),
 ]
 type CallInputFormat = Annotated[
     literalizer.InputFormat,
-    BeforeValidator(_name_resolver(values_by_name=_INPUT_FORMATS_BY_NAME)),
+    BeforeValidator(
+        func=_name_resolver(values_by_name=_INPUT_FORMATS_BY_NAME)
+    ),
 ]
 type CallVariableForm = Annotated[
     InstanceOf[literalizer.NewVariable]
     | InstanceOf[literalizer.ExistingVariable],
     BeforeValidator(
-        _name_resolver(values_by_name=_CALL_VARIABLE_FORMS_BY_NAME)
+        func=_name_resolver(values_by_name=_CALL_VARIABLE_FORMS_BY_NAME)
     ),
 ]
 type RefIdentifierCase = Annotated[
     literalizer.IdentifierCase,
-    BeforeValidator(_name_resolver(values_by_name=_IDENTIFIER_CASES_BY_NAME)),
+    BeforeValidator(
+        func=_name_resolver(values_by_name=_IDENTIFIER_CASES_BY_NAME)
+    ),
 ]
 
 

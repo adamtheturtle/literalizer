@@ -64,7 +64,7 @@ def _bound_refs_items(
 
 type BoundRefs = Annotated[
     tuple[tuple[str, int | str], ...],
-    BeforeValidator(_bound_refs_items),
+    BeforeValidator(func=_bound_refs_items),
 ]
 
 
@@ -115,7 +115,7 @@ def _name_resolver[NamedT](
 
 type ExceptionType = Annotated[
     type[Exception],
-    BeforeValidator(_name_resolver(values_by_name=_EXCEPTIONS_BY_NAME)),
+    BeforeValidator(func=_name_resolver(values_by_name=_EXCEPTIONS_BY_NAME)),
 ]
 type ExceptionTypes = Annotated[
     tuple[ExceptionType, ...],
@@ -123,7 +123,9 @@ type ExceptionTypes = Annotated[
 ]
 type RejectionInputFormat = Annotated[
     literalizer.InputFormat,
-    BeforeValidator(_name_resolver(values_by_name=_INPUT_FORMATS_BY_NAME)),
+    BeforeValidator(
+        func=_name_resolver(values_by_name=_INPUT_FORMATS_BY_NAME)
+    ),
 ]
 type DeclaredName = Annotated[str, Field(min_length=1)]
 """A name a manifest spells: a language, an enum member, a parameter."""

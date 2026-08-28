@@ -226,7 +226,7 @@ def _format_perl_string_double(value: str) -> str:
     of source-file encoding.
     """
     base = (
-        format_string_backslash(value)
+        format_string_backslash(value=value)
         .replace("$", r"\$")
         .replace("@", r"\@")
         .replace("\0", r"\x{0}")
@@ -249,7 +249,7 @@ def _format_perl_string_double_utf8(value: str) -> str:
     author would write in a UTF-8 source file.
     """
     return (
-        format_string_backslash(value)
+        format_string_backslash(value=value)
         .replace("$", r"\$")
         .replace("@", r"\@")
         .replace("\0", r"\x{0}")

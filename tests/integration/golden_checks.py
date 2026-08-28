@@ -89,7 +89,7 @@ def skip_golden(
     """
     if unlink:
         golden_path.unlink(missing_ok=True)
-    pytest.skip(reason)
+    pytest.skip(reason=reason)
 
 
 @beartype
