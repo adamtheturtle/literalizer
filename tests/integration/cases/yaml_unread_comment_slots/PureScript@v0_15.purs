@@ -20,6 +20,11 @@ my_data = PDict [
     (Tuple "gap" (PInt 3)),
     -- On the block scalar header.
     (Tuple "block" (PStr "Text.\n")),
+    (Tuple "nested" (PList [
+        PInt 1,
+        PInt 1
+        -- On the nested alias.
+        ])),
     (Tuple "anchored" (PInt 4)),
     (Tuple "alias" (PInt 4))
     -- On the alias.

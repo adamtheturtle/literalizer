@@ -9,6 +9,11 @@ $my_data = [
     "gap" => 3,
     // On the block scalar header.
     "block" => "Text.\n",
+    "nested" => [
+        1,
+        1,
+        // On the nested alias.
+    ],
     "anchored" => 4,
     "alias" => 4,
     // On the alias.
@@ -23,6 +28,11 @@ $my_data = [
     "gap" => 3,
     // On the block scalar header.
     "block" => "Text.\n",
+    "nested" => [
+        1,
+        1,
+        // On the nested alias.
+    ],
     "anchored" => 4,
     "alias" => 4,
     // On the alias.

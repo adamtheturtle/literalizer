@@ -17,6 +17,7 @@ static _VKV my_data[] = '{
     _VKV'{k: "gap", v: _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""}},
     // On the block scalar header.
     _VKV'{k: "block", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "Text.\n"}},
+    _VKV'{k: "nested", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n        _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"},\n        _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}\n        // On the nested alias.\n    }"}},
     _VKV'{k: "anchored", v: _VVal'{tag: _VVAL_INT, i: 4, r: 0.0, s: ""}},
     _VKV'{k: "alias", v: _VVal'{tag: _VVAL_INT, i: 4, r: 0.0, s: ""}}
     // On the alias.

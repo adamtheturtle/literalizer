@@ -351,11 +351,11 @@ def _collection_end_comments(
 
     A comment written after a nested collection's closing bracket is the
     enclosing collection's inline comment on that element, and is stored
-    there as well, so a nested collection leaves both slots alone.
+    there as well, so a nested collection skips ``ca.comment``.  Nothing
+    duplicates ``ca.end``, which is the only home a comment on a nested
+    trailing node has, so that is read at every level.
     """
-    if nested:
-        return []
-    closing = (ca.comment or (None,))[:1]
+    closing = () if nested else (ca.comment or (None,))[:1]
     return [
         line
         for stored in (*closing, *ca.end)

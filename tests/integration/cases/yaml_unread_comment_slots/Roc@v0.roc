@@ -18,6 +18,11 @@ my_data = RDict [
     ("gap", RInt 3i128),
     # On the block scalar header.
     ("block", RStr "Text.\n"),
+    ("nested", RList [
+        RInt 1i128,
+        RInt 1i128,
+        # On the nested alias.
+        ]),
     ("anchored", RInt 4i128),
     ("alias", RInt 4i128),
     # On the alias.

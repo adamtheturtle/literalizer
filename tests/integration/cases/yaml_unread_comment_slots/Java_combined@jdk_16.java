@@ -11,6 +11,11 @@ var my_data = Map.ofEntries(
     Map.entry("gap", 3),
     // On the block scalar header.
     Map.entry("block", "Text.\n"),
+    Map.entry("nested", new int[]{
+        1,
+        1
+        // On the nested alias.
+    }),
     Map.entry("anchored", 4),
     Map.entry("alias", 4)
     // On the alias.
@@ -25,6 +30,11 @@ my_data = Map.ofEntries(
     Map.entry("gap", 3),
     // On the block scalar header.
     Map.entry("block", "Text.\n"),
+    Map.entry("nested", new int[]{
+        1,
+        1
+        // On the nested alias.
+    }),
     Map.entry("anchored", 4),
     Map.entry("alias", 4)
     // On the alias.

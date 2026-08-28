@@ -8,6 +8,11 @@ val my_data = mapOf<String, Any?>(
     "gap" to 3,
     // On the block scalar header.
     "block" to "Text.\n",
+    "nested" to intArrayOf(
+        1,
+        1,
+        // On the nested alias.
+    ),
     "anchored" to 4,
     "alias" to 4,
     // On the alias.

@@ -9,6 +9,11 @@
     ; On the block scalar header.
     (cons "block" "Text.
 ")
+    (cons "nested" (list
+        1
+        1
+        ; On the nested alias.
+    ))
     (cons "anchored" 4)
     (cons "alias" 4)
     ; On the alias.

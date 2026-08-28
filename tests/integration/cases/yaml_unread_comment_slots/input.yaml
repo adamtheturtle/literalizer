@@ -5,5 +5,8 @@ gap:
   3
 block: |  # On the block scalar header.
   Text.
-anchored: &shared 4
-alias: *shared  # On the alias.
+nested:
+  - &inner 1
+  - *inner  # On the nested alias.
+anchored: &outer 4
+alias: *outer  # On the alias.

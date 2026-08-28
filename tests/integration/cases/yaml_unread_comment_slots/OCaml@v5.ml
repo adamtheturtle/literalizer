@@ -15,6 +15,11 @@ let my_data : val_t = OMap [
     ("gap", OInt 3);
     (* On the block scalar header. *)
     ("block", OStr "Text.\n");
+    ("nested", OList [
+        OInt 1;
+        OInt 1
+        (* On the nested alias. *)
+    ]);
     ("anchored", OInt 4);
     ("alias", OInt 4)
     (* On the alias. *)

@@ -13,6 +13,11 @@ val my_data : val_t = SMap [
     ("gap", SInt 3),
     (* On the block scalar header. *)
     ("block", SStr "Text.\n"),
+    ("nested", SList [
+        SInt 1,
+        SInt 1
+        (* On the nested alias. *)
+    ]),
     ("anchored", SInt 4),
     ("alias", SInt 4)
     (* On the alias. *)

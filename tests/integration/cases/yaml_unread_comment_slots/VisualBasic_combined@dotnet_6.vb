@@ -8,6 +8,7 @@ Module Check
             {"flow", New Integer() {1, 2}},
             {"gap", 3},
             {"block", "Text." & Chr(10)},
+            {"nested", New Integer() {1, 1}},
             {"anchored", 4},
             {"alias", 4}
         }
@@ -21,6 +22,7 @@ Module Check
             {"flow", New Integer() {1, 2}},
             {"gap", 3},
             {"block", "Text." & Chr(10)},
+            {"nested", New Integer() {1, 1}},
             {"anchored", 4},
             {"alias", 4}
         }

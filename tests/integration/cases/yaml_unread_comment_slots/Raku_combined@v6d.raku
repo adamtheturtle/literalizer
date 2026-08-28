@@ -9,6 +9,11 @@ my $my_data = {
     # On the block scalar header.
     'block' => 'Text.
 ',
+    'nested' => [
+        1,
+        1,
+        # On the nested alias.
+    ],
     'anchored' => 4,
     'alias' => 4,
     # On the alias.
@@ -24,6 +29,11 @@ $my_data = {
     # On the block scalar header.
     'block' => 'Text.
 ',
+    'nested' => [
+        1,
+        1,
+        # On the nested alias.
+    ],
     'anchored' => 4,
     'alias' => 4,
     # On the alias.

@@ -9,6 +9,11 @@
     "gap" 3
     ; On the block scalar header.
     "block" "Text.\n"
+    "nested" (list
+        1
+        1
+        ; On the nested alias.
+    )
     "anchored" 4
     "alias" 4
     ; On the alias.

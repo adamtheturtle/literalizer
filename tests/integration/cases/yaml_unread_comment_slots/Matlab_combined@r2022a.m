@@ -8,6 +8,11 @@ my_data = struct(
     'gap', 3,
     % On the block scalar header.
     'block', sprintf('%s%s', "Text.", char(10)),
+    'nested', {{
+        1,
+        1
+        % On the nested alias.
+    }},
     'anchored', 4,
     'alias', 4
     % On the alias.
@@ -22,6 +27,11 @@ my_data = struct(
     'gap', 3,
     % On the block scalar header.
     'block', sprintf('%s%s', "Text.", char(10)),
+    'nested', {{
+        1,
+        1
+        % On the nested alias.
+    }},
     'anchored', 4,
     'alias', 4
     % On the alias.

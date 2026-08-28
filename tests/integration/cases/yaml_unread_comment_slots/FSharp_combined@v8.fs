@@ -16,6 +16,11 @@ let private _mainDeclaration () =
         ("gap", FInt 3L);
         // On the block scalar header.
         ("block", FStr "Text.\n");
+        ("nested", FList [
+            FInt 1L;
+            FInt 1L
+            // On the nested alias.
+        ]);
         ("anchored", FInt 4L);
         ("alias", FInt 4L)
         // On the alias.
@@ -33,6 +38,11 @@ let private _mainAssignment () =
         ("gap", FInt 3L);
         // On the block scalar header.
         ("block", FStr "Text.\n");
+        ("nested", FList [
+            FInt 1L;
+            FInt 1L
+            // On the nested alias.
+        ]);
         ("anchored", FInt 4L);
         ("alias", FInt 4L)
         // On the alias.

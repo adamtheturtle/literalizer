@@ -14,6 +14,11 @@ auto my_data = std::map<std::string, std::variant<std::vector<int>, int, std::st
     {"gap", 3},
     // On the block scalar header.
     {"block", "Text.\n"},
+    {"nested", std::vector<int>{
+        1,
+        1,
+        // On the nested alias.
+    }},
     {"anchored", 4},
     {"alias", 4},
     // On the alias.
@@ -29,6 +34,11 @@ my_data = std::map<std::string, std::variant<std::vector<int>, int, std::string>
     {"gap", 3},
     // On the block scalar header.
     {"block", "Text.\n"},
+    {"nested", std::vector<int>{
+        1,
+        1,
+        // On the nested alias.
+    }},
     {"anchored", 4},
     {"alias", 4},
     // On the alias.

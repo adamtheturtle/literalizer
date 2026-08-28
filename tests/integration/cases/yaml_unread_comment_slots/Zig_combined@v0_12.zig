@@ -21,6 +21,11 @@ pub fn main() void {
         .{ .key = "gap", .val = .{ .int = 3 } },
         // On the block scalar header.
         .{ .key = "block", .val = .{ .str = "Text.\n" } },
+        .{ .key = "nested", .val = .{ .arr = &.{
+            .{ .int = 1 },
+            .{ .int = 1 },
+            // On the nested alias.
+        }} },
         .{ .key = "anchored", .val = .{ .int = 4 } },
         .{ .key = "alias", .val = .{ .int = 4 } },
         // On the alias.
@@ -35,6 +40,11 @@ pub fn main() void {
         .{ .key = "gap", .val = .{ .int = 3 } },
         // On the block scalar header.
         .{ .key = "block", .val = .{ .str = "Text.\n" } },
+        .{ .key = "nested", .val = .{ .arr = &.{
+            .{ .int = 1 },
+            .{ .int = 1 },
+            // On the nested alias.
+        }} },
         .{ .key = "anchored", .val = .{ .int = 4 } },
         .{ .key = "alias", .val = .{ .int = 4 } },
         // On the alias.

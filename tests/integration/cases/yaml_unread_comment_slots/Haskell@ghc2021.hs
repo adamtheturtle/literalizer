@@ -19,6 +19,11 @@ my_data = HMap [
     ("gap", 3),
     -- On the block scalar header.
     ("block", HStr "Text.\n"),
+    ("nested", HList [
+        1,
+        1
+        -- On the nested alias.
+        ]),
     ("anchored", 4),
     ("alias", 4)
     -- On the alias.

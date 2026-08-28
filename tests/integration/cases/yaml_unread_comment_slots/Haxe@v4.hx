@@ -10,6 +10,11 @@ class Fixture_yaml_unread_comment_slots_Haxe {
             "gap" => 3,
             // On the block scalar header.
             "block" => "Text.\n",
+            "nested" => ([
+                1,
+                1,
+                // On the nested alias.
+            ] : Array<Dynamic>),
             "anchored" => 4,
             "alias" => 4,
             // On the alias.

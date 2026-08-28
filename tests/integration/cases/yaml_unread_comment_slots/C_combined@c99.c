@@ -25,6 +25,11 @@ CVal my_data = ((CVal){.m = (CKV[]){
     {"gap", ((CVal){.i = 3})},
     // On the block scalar header.
     {"block", ((CVal){.s = "Text.\n"})},
+    {"nested", ((CVal){.a = (CVal[]){
+        ((CVal){.i = 1}),
+        ((CVal){.i = 1}),
+        // On the nested alias.
+    }})},
     {"anchored", ((CVal){.i = 4})},
     {"alias", ((CVal){.i = 4})},
     // On the alias.
@@ -40,6 +45,11 @@ my_data = ((CVal){.m = (CKV[]){
     {"gap", ((CVal){.i = 3})},
     // On the block scalar header.
     {"block", ((CVal){.s = "Text.\n"})},
+    {"nested", ((CVal){.a = (CVal[]){
+        ((CVal){.i = 1}),
+        ((CVal){.i = 1}),
+        // On the nested alias.
+    }})},
     {"anchored", ((CVal){.i = 4})},
     {"alias", ((CVal){.i = 4})},
     // On the alias.

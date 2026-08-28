@@ -19,6 +19,11 @@ my_data = EDict [
     ("gap", EInt 3),
     -- On the block scalar header.
     ("block", EStr "Text.\n"),
+    ("nested", EList [
+        EInt 1,
+        EInt 1
+        -- On the nested alias.
+        ]),
     ("anchored", EInt 4),
     ("alias", EInt 4)
     -- On the alias.

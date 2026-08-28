@@ -94,6 +94,11 @@ subroutine main_declaration()
         fentry('gap', fint(3_int64)), &
         ! On the block scalar header.
         fentry('block', fstr('Text.' // achar(10))), &
+        fentry('nested', flist([fval_t :: &
+            fint(1_int64), &
+            fint(1_int64) &
+            ! On the nested alias.
+        ])), &
         fentry('anchored', fint(4_int64)), &
         fentry('alias', fint(4_int64)) &
         ! On the alias.
@@ -114,6 +119,11 @@ subroutine main_assignment()
         fentry('gap', fint(3_int64)), &
         ! On the block scalar header.
         fentry('block', fstr('Text.' // achar(10))), &
+        fentry('nested', flist([fval_t :: &
+            fint(1_int64), &
+            fint(1_int64) &
+            ! On the nested alias.
+        ])), &
         fentry('anchored', fint(4_int64)), &
         fentry('alias', fint(4_int64)) &
         ! On the alias.

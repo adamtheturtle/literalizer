@@ -16,6 +16,11 @@ pub fn main() {
     #("gap", GInt(3)),
     // On the block scalar header.
     #("block", GStr("Text.\n")),
+    #("nested", GList([
+      GInt(1),
+      GInt(1),
+      // On the nested alias.
+    ])),
     #("anchored", GInt(4)),
     #("alias", GInt(4)),
     // On the alias.
@@ -30,6 +35,11 @@ pub fn main() {
     #("gap", GInt(3)),
     // On the block scalar header.
     #("block", GStr("Text.\n")),
+    #("nested", GList([
+      GInt(1),
+      GInt(1),
+      // On the nested alias.
+    ])),
     #("anchored", GInt(4)),
     #("alias", GInt(4)),
     // On the alias.

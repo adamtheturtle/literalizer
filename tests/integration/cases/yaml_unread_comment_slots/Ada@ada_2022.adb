@@ -10,6 +10,11 @@ procedure Main is
         AEntry ("gap", AInt (3)),
         -- On the block scalar header.
         AEntry ("block", AStr ("Text." & Character'Val(10))),
+        AEntry ("nested", AList'[
+            AInt (1),
+            AInt (1)
+            -- On the nested alias.
+        ]),
         AEntry ("anchored", AInt (4)),
         AEntry ("alias", AInt (4))
         -- On the alias.

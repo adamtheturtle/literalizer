@@ -53,6 +53,11 @@ auto my_data = std::map<std::string, Value>{
     {"gap", Value{3}},
     // On the block scalar header.
     {"block", Value{"Text.\n"}},
+    {"nested", Value{std::vector<int>{
+        1,
+        1,
+        // On the nested alias.
+    }}},
     {"anchored", Value{4}},
     {"alias", Value{4}},
     // On the alias.
@@ -68,6 +73,11 @@ my_data = std::map<std::string, Value>{
     {"gap", Value{3}},
     // On the block scalar header.
     {"block", Value{"Text.\n"}},
+    {"nested", Value{std::vector<int>{
+        1,
+        1,
+        // On the nested alias.
+    }}},
     {"anchored", Value{4}},
     {"alias", Value{4}},
     // On the alias.

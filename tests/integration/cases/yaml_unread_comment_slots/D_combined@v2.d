@@ -10,6 +10,11 @@ auto my_data = JSONValue([
     "gap": JSONValue(3),
     // On the block scalar header.
     "block": JSONValue("Text.\n"),
+    "nested": JSONValue([
+        JSONValue(1),
+        JSONValue(1),
+        // On the nested alias.
+    ]),
     "anchored": JSONValue(4),
     "alias": JSONValue(4),
     // On the alias.
@@ -24,6 +29,11 @@ my_data = JSONValue([
     "gap": JSONValue(3),
     // On the block scalar header.
     "block": JSONValue("Text.\n"),
+    "nested": JSONValue([
+        JSONValue(1),
+        JSONValue(1),
+        // On the nested alias.
+    ]),
     "anchored": JSONValue(4),
     "alias": JSONValue(4),
     // On the alias.
