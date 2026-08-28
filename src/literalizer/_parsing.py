@@ -22,6 +22,11 @@ from ruamel.yaml.comments import (
     TaggedScalar,
 )
 from ruamel.yaml.error import YAMLError
+from ruamel.yaml.events import (
+    AliasEvent,
+    CollectionEndEvent,
+    CollectionStartEvent,
+)
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Float as TomlFloat
 from tomlkit.items import Integer as TomlInteger
@@ -848,6 +853,44 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
 
 
 @beartype
+def _reject_yaml_alias_cycle(*, source: str) -> None:
+    """Reject a YAML alias written inside the node it names.
+
+    ruamel cannot build a value for such an alias: it leaves ``None``
+    where the alias was, so the document silently loses the reference,
+    or descends without end and the failure is reported as excessive
+    nesting.  The event stream still shows it, because the alias arrives
+    while the collection carrying its anchor is open (issue #4562).
+    """
+    if "&" not in source or "*" not in source:
+        return
+    open_anchors: list[str | None] = []
+    try:
+        for event in YAML().parse(stream=source):  # pyright: ignore[reportUnknownMemberType]
+            match event:
+                case CollectionStartEvent():
+                    anchor: str | None = event.anchor  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                    open_anchors.append(anchor)  # pyright: ignore[reportUnknownArgumentType]
+                case CollectionEndEvent():
+                    open_anchors.pop()
+                case AliasEvent():
+                    alias: str | None = event.anchor  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+                    if alias is not None and alias in open_anchors:
+                        raise _format_parse_error(
+                            input_format=InputFormat.YAML,
+                            detail=(
+                                f"alias *{alias} refers to the node that "
+                                "defines it"
+                            ),
+                        )
+                case _:
+                    pass
+    except (YAMLError, ValueError, IndexError, AttributeError):
+        # Malformed input: the load below reports it with a position.
+        return
+
+
+@beartype
 def _parse_yaml(*, source: str) -> ParsedInput:
     """Parse a YAML string into a ``ParsedInput``.
 
@@ -858,6 +901,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
     (round-trip) loader so the same parse can later feed comment
     extraction without a second pass through the YAML source.
     """
+    _reject_yaml_alias_cycle(source=source)
     try:
         _validate_yaml_float_tokens(source=source)
     except (
