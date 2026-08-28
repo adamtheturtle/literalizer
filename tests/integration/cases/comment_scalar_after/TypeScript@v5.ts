@@ -1,0 +1,3 @@
+const my_data = 42
+// after;
+export {};
