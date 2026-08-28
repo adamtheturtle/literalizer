@@ -1,0 +1,1 @@
+Sibling maps under a mapping now get the explicit carrier construction their widened value type requires under ``Cpp(language_version=CPP14)``. Only siblings under a list did, so the mapping case emitted an initializer the explicit carrier constructor refuses.

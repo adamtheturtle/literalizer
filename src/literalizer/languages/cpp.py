@@ -1178,6 +1178,41 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
 
 
 @beartype
+def _cpp14_widened_sibling_map_ids(
+    *,
+    children: list[Value],
+    type_ctx: _CppTypeCtx,
+    excluded_ids: frozenset[int],
+) -> frozenset[int]:
+    """Return sibling maps widened to a carrier-typed value.
+
+    Sibling maps whose values do not share one type are all written
+    with the carrier as their value type, so each of their values needs
+    the explicit construction the carrier asks for.  Siblings appear
+    under a list and equally under a mapping (issue #4569).
+    """
+    siblings = [
+        child
+        for child in children
+        if isinstance(child, dict)
+        and not isinstance(child, OrderedMap)
+        and id(child) not in excluded_ids
+    ]
+    sibling_values = [
+        child_value for sibling in siblings for child_value in sibling.values()
+    ]
+    if len(siblings) > 1 and (
+        _compute_element_type_for_items(
+            items=sibling_values,
+            type_ctx=type_ctx,
+        )
+        == type_ctx.variant_type_name
+    ):
+        return frozenset(id(sibling) for sibling in siblings)
+    return frozenset()
+
+
+@beartype
 def _cpp14_variant_parent_ids(
     *,
     data: Value,
@@ -1202,6 +1237,13 @@ def _cpp14_variant_parent_ids(
             case OrderedMap():
                 children.extend(value.values())
                 type_children = children
+                ids.update(
+                    _cpp14_widened_sibling_map_ids(
+                        children=children,
+                        type_ctx=type_ctx,
+                        excluded_ids=excluded_ids,
+                    )
+                )
             case dict():
                 children.extend(value.values())
                 type_children = [
@@ -1213,30 +1255,23 @@ def _cpp14_variant_parent_ids(
                         and isinstance(child.get("$ref"), str)
                     )
                 ]
+                ids.update(
+                    _cpp14_widened_sibling_map_ids(
+                        children=children,
+                        type_ctx=type_ctx,
+                        excluded_ids=excluded_ids,
+                    )
+                )
             case list():
                 children.extend(value)
                 type_children = children
-                sibling_maps = [
-                    child
-                    for child in children
-                    if isinstance(child, dict)
-                    and not isinstance(child, OrderedMap)
-                    and id(child) not in excluded_ids
-                ]
-                sibling_values = [
-                    child_value
-                    for sibling in sibling_maps
-                    for child_value in sibling.values()
-                ]
-                if (
-                    len(sibling_maps) > 1
-                    and _compute_element_type_for_items(
-                        items=sibling_values,
+                ids.update(
+                    _cpp14_widened_sibling_map_ids(
+                        children=children,
                         type_ctx=type_ctx,
+                        excluded_ids=excluded_ids,
                     )
-                    == type_ctx.variant_type_name
-                ):
-                    ids.update(id(sibling) for sibling in sibling_maps)
+                )
             case set():
                 children.extend(
                     sorted(
@@ -1709,12 +1744,18 @@ def _build_cpp_record_preamble(
     type_ctx: _CppTypeCtx,
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
+    compute_carrier_ids: Callable[[Value], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
     native_only: bool,
     map_value_typing: RecordMapValueTypings,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the ``RECORD``-strategy ``data_dependent_preamble``.
+
+    *compute_wrap_ids* names the maps whose values are widened, which
+    the value alias is written for; *compute_carrier_ids* names every
+    container the active behavior writes through the carrier, which a
+    tuple-rendered list is not (issue #4568).
 
     Composes the ``std::variant`` / ``std::nullptr_t`` header lines (a
     record field may still be a heterogeneous list or an empty
@@ -1731,6 +1772,7 @@ def _build_cpp_record_preamble(
         the ``struct`` declarations.
         """
         wrap_ids = compute_wrap_ids(data)
+        carrier_ids = compute_carrier_ids(data)
         # Do not re-run the record strategy's shape computation here: its
         # render-time cache already holds the field requests that the
         # declaration preamble consumes.  The raw shape walk is enough to
@@ -1740,7 +1782,10 @@ def _build_cpp_record_preamble(
             if type_ctx.variant_type_name != "std::variant"
             else frozenset()
         )
-        tuple_list_ids = _cpp_tuple_list_ids(data=data)
+        # A list the active behavior wraps in the carrier is rendered
+        # as a carrier-typed vector rather than a tuple, so it still
+        # asks for the carrier declaration (issue #4568).
+        tuple_list_ids = _cpp_tuple_list_ids(data=data) - carrier_ids
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(
@@ -4137,6 +4182,9 @@ class Cpp(metaclass=LanguageCls):
                 compute_wrap_ids=(
                     self._record_strategy.behavior.compute_wrap_ids
                 ),
+                compute_carrier_ids=(
+                    self.heterogeneous_behavior.compute_wrap_ids
+                ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
@@ -4148,6 +4196,9 @@ class Cpp(metaclass=LanguageCls):
                 record_preamble=self._tuple_record_strategy.preamble,
                 compute_wrap_ids=(
                     self._tuple_record_strategy.behavior.compute_wrap_ids
+                ),
+                compute_carrier_ids=(
+                    self.heterogeneous_behavior.compute_wrap_ids
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
