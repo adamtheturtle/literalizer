@@ -1,0 +1,1 @@
+Haskell AESON_VALUE, Zig STD_JSON_VALUE, PureScript ARGONAUT_JSON and C CJSON now emit source comments before the declaration instead of dropping them.
