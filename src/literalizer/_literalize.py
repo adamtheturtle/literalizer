@@ -24,7 +24,7 @@ from literalizer._comments import (
     apply_collection_comments_to_elements,
     extract_toml_comments,
     extract_yaml_comments,
-    neutralize_comment_terminator,
+    neutralize_inline_comment,
     prepend_collection_comments,
 )
 from literalizer._comments_resolve import (
@@ -4989,7 +4989,7 @@ def _append_trailing_comment(
     if not comment:
         return rendered
     cfg = language.comment_config
-    escaped_comment = neutralize_comment_terminator(
+    escaped_comment = neutralize_inline_comment(
         text=comment,
         comment_prefix=cfg.trailing_prefix,
         comment_suffix=cfg.suffix,
