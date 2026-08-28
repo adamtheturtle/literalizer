@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cobol"]
+languages_reason = "COBOL-specific: GnuCOBOL truncates source text past 512 bytes, and an alphanumeric literal has no escape sequences and cannot span lines."
+suites = ["base"]
+
+[[variants]]
+axis = "json_type"

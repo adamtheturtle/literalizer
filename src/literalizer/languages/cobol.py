@@ -227,6 +227,79 @@ def _first_cobol_placeholder(data: Value) -> str | None:
     )
 
 
+_COBOL_LINE_BUDGET = 460
+"""How long a source line this module writes may grow.
+
+GnuCOBOL truncates source text past 512 bytes, so a long value is
+continued instead (issue #4470).  The budget stays under that limit
+because an entry is indented again when it is placed in a section.
+"""
+
+_COBOL_LITERAL_RUN_LENGTH = 400
+"""How many bytes one quoted run inside a value may grow to.
+
+A COBOL alphanumeric literal has no escape sequences and cannot span
+lines, so a long value is carried by several quoted runs joined with
+``&`` rather than by one run the source line cannot hold.  The limit
+GnuCOBOL truncates at counts bytes, so a run of multi-byte characters
+is measured the same way.
+"""
+
+_COBOL_CONTINUATION_INDENT = "    "
+"""What a continued value line resumes with, before its ``&``."""
+
+
+@beartype
+def _cobol_quoted_runs(literal: str, /) -> list[str]:
+    """Split a quoted literal into runs that each fit on a line.
+
+    A double quote inside the literal is written as a doubled pair and
+    is never split down the middle.
+    """
+    inner = literal[1:-1]
+    runs: list[str] = []
+    current = ""
+    used = 0
+    index = 0
+    while index < len(inner):
+        width = 2 if inner[index] == '"' else 1
+        piece = inner[index : index + width]
+        size = len(piece.encode(encoding="utf-8"))
+        if used + size > _COBOL_LITERAL_RUN_LENGTH:
+            runs.append(current)
+            current = ""
+            used = 0
+        current += piece
+        used += size
+        index += width
+    runs.append(current)
+    return [f'"{run}"' for run in runs]
+
+
+@beartype
+def _cobol_value_tokens(value: str, /) -> list[str]:
+    """Return the parts a formatted *value* is written as."""
+    if value.startswith('"') and value.endswith('"'):
+        return _cobol_quoted_runs(value)
+    return [value]
+
+
+@beartype
+def _cobol_value_entry(*, prefix: str, tokens: Sequence[str]) -> str:
+    """Return a data entry whose value fits the source line budget."""
+    lines: list[str] = []
+    current = f"{prefix} VALUE {tokens[0]}"
+    for token in tokens[1:]:
+        candidate = f"{current} & {token}"
+        if len(candidate.encode(encoding="utf-8")) <= _COBOL_LINE_BUDGET:
+            current = candidate
+            continue
+        lines.append(current)
+        current = f"{_COBOL_CONTINUATION_INDENT}& {token}"
+    lines.append(f"{current}.")
+    return "\n".join(lines)
+
+
 @beartype
 def _is_data_entry(s: str) -> bool:
     """Return True if *s* looks like a COBOL DATA DIVISION entry.
@@ -262,7 +335,10 @@ def _to_cobol_entry(value: str, name: str, level: int) -> str:
     Example: ``"42"`` → ``"05 FILLER PIC S9(18) COMP-5 VALUE 42."``
     """
     picture_clause = _pic_from_value(value=value)
-    return f"{level:02d} {name} {picture_clause} VALUE {value}."
+    return _cobol_value_entry(
+        prefix=f"{level:02d} {name} {picture_clause}",
+        tokens=_cobol_value_tokens(value),
+    )
 
 
 @beartype
@@ -451,7 +527,10 @@ def _format_cobol_dict_entry(
         nested = textwrap.indent(text=bumped, prefix="    ")
         return f"05 {name}.\n{nested}"
     picture_clause = _pic_from_value(value=formatted_value)
-    return f"05 {name} {picture_clause} VALUE {formatted_value}."
+    return _cobol_value_entry(
+        prefix=f"05 {name} {picture_clause}",
+        tokens=_cobol_value_tokens(formatted_value),
+    )
 
 
 @beartype
@@ -548,7 +627,10 @@ def _format_variable_declaration(
             content=f"01 {cobol_name}.\n{stripped}"
         )
     picture_clause = _pic_from_value(value=scalar)
-    return f"01 {cobol_name} {picture_clause} VALUE {scalar}."
+    return _cobol_value_entry(
+        prefix=f"01 {cobol_name} {picture_clause}",
+        tokens=_cobol_value_tokens(scalar),
+    )
 
 
 @beartype
@@ -590,12 +672,12 @@ _CJSON_CALL_ARG_MSG = (
 class _CobolStringLiteral:
     """A COBOL alphanumeric literal expression and its byte length.
 
-    :attr:`expr` is the text that follows ``VALUE`` (a quoted run, or a
-    ``&``-joined mix of quoted runs and ``X"NN"`` hex bytes); :attr:`size`
-    is the byte count a ``PIC X(size)`` clause must reserve to hold it.
+    :attr:`tokens` are the parts that follow ``VALUE`` (quoted runs and
+    ``X"NN"`` hex bytes, joined with ``&``); :attr:`size` is the byte
+    count a ``PIC X(size)`` clause must reserve to hold them.
     """
 
-    expr: str
+    tokens: tuple[str, ...]
     size: int
 
 
@@ -628,6 +710,9 @@ def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
     for byte in data:
         if _ASCII_PRINTABLE_MIN <= byte <= _ASCII_PRINTABLE_MAX:
             run += '""' if byte == _ASCII_DOUBLE_QUOTE else chr(byte)
+            if len(run) >= _COBOL_LITERAL_RUN_LENGTH:
+                tokens.append(f'"{run}"')
+                run = ""
             continue
         if run:
             tokens.append(f'"{run}"')
@@ -636,7 +721,7 @@ def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
     if run:
         tokens.append(f'"{run}"')
     tokens.append('X"00"')
-    return _CobolStringLiteral(expr=" & ".join(tokens), size=len(data) + 1)
+    return _CobolStringLiteral(tokens=tuple(tokens), size=len(data) + 1)
 
 
 # A child is composed into its parent with ``cJSON_AddItemTo*``, which
@@ -738,8 +823,9 @@ def _cobol_cjson_scalar_node(
         case str():
             literal = _cobol_null_terminated_literal(node)
             return _CobolScalarNode(
-                value_line=(
-                    f"01 {name}-V PIC X({literal.size}) VALUE {literal.expr}."
+                value_line=_cobol_value_entry(
+                    prefix=f"01 {name}-V PIC X({literal.size})",
+                    tokens=literal.tokens,
                 ),
                 create_call=create.format(
                     verb="String", passing="BY REFERENCE", name=name
@@ -801,8 +887,10 @@ def _cobol_cjson_build(
                         str(object=key)
                     )
                     ws_lines.append(
-                        f"01 {child}-K PIC X({key_literal.size}) "
-                        f"VALUE {key_literal.expr}."
+                        _cobol_value_entry(
+                            prefix=(f"01 {child}-K PIC X({key_literal.size})"),
+                            tokens=key_literal.tokens,
+                        )
                     )
                     proc_lines.append(
                         'CALL "cJSON_AddItemToObject" USING BY VALUE '
