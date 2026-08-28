@@ -236,11 +236,13 @@ because an entry is indented again when it is placed in a section.
 """
 
 _COBOL_LITERAL_RUN_LENGTH = 400
-"""How long one quoted run inside a value may grow.
+"""How many bytes one quoted run inside a value may grow to.
 
 A COBOL alphanumeric literal has no escape sequences and cannot span
 lines, so a long value is carried by several quoted runs joined with
-``&`` rather than by one run the source line cannot hold.
+``&`` rather than by one run the source line cannot hold.  The limit
+GnuCOBOL truncates at counts bytes, so a run of multi-byte characters
+is measured the same way.
 """
 
 _COBOL_CONTINUATION_INDENT = "    "
@@ -257,14 +259,18 @@ def _cobol_quoted_runs(literal: str, /) -> list[str]:
     inner = literal[1:-1]
     runs: list[str] = []
     current = ""
+    used = 0
     index = 0
     while index < len(inner):
         width = 2 if inner[index] == '"' else 1
         piece = inner[index : index + width]
-        if len(current) + width > _COBOL_LITERAL_RUN_LENGTH:
+        size = len(piece.encode(encoding="utf-8"))
+        if used + size > _COBOL_LITERAL_RUN_LENGTH:
             runs.append(current)
             current = ""
+            used = 0
         current += piece
+        used += size
         index += width
     runs.append(current)
     return [f'"{run}"' for run in runs]

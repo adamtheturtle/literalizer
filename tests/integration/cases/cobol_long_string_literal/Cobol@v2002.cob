@@ -8,5 +8,7 @@ WORKING-STORAGE SECTION.
     & "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".
     05 F-QUOTED PIC X(480) VALUE "a""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""b"
     & "a""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""ba""b".
+    05 F-WIDE PIC X(600) VALUE "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中"
+    & "中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中".
 PROCEDURE DIVISION.
     STOP RUN.
