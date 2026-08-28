@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[InvalidModuleNameError]
+Crystal = "Crystal cannot use module_name 'lower': it is not a valid identifier"
+Haskell = "Haskell cannot use module_name 'lower': it is not a valid identifier"
+Haxe = "Haxe cannot use module_name 'lower': it is not a valid identifier"

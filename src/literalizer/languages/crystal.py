@@ -561,6 +561,9 @@ class Crystal(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
     supports_dict_literal_as_free_expression = True
+    # The wrapper is a type declaration, which both languages
+    # require to start with an uppercase letter (issue #4533).
+    module_name_must_start_uppercase: ClassVar[bool] = True
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True

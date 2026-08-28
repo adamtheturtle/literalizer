@@ -1,0 +1,3 @@
+Reject a lowercase ``module_name`` for Haxe and Crystal.  The wrapper is a type
+or module declaration, which both languages require to start with an uppercase
+letter, so the emitted file did not compile.

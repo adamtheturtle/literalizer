@@ -329,6 +329,9 @@ class Haxe(metaclass=LanguageCls):
             "end",
         }
     )
+    # The wrapper is a type declaration, which both languages
+    # require to start with an uppercase letter (issue #4533).
+    module_name_must_start_uppercase: ClassVar[bool] = True
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True

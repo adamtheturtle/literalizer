@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[InvalidModuleNameError]
-Haskell = "Haskell cannot use module_name 'lower': it is not a valid identifier"
