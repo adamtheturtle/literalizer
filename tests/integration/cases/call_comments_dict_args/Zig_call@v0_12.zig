@@ -17,4 +17,5 @@ pub fn main() void {
     process(.{ .map = &.{.{ .key = "type", .val = .{ .str = "update" } }, .{ .key = "pr_id", .val = .{ .str = "pr_2" } }}});  // second case
     // third case
     process(.{ .map = &.{.{ .key = "type", .val = .{ .str = "delete" } }, .{ .key = "pr_id", .val = .{ .str = "pr_3" } }}});
+    // trailing comment
 }

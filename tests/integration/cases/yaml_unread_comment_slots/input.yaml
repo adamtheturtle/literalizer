@@ -1,0 +1,12 @@
+flow: [1,  # After the first element.
+  2]
+gap:
+  # Between the key and its value.
+  3
+block: |  # On the block scalar header.
+  Text.
+nested:
+  - &inner 1
+  - *inner  # On the nested alias.
+anchored: &outer 4
+alias: *outer  # On the alias.

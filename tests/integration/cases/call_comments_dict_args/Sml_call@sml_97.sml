@@ -8,3 +8,4 @@ val _ = process(SMap [("type", SStr "create"), ("pr_id", SStr "pr_1")])  (* firs
 val _ = process(SMap [("type", SStr "update"), ("pr_id", SStr "pr_2")])  (* second case *)
 (* third case *)
 val _ = process(SMap [("type", SStr "delete"), ("pr_id", SStr "pr_3")])
+(* trailing comment *)

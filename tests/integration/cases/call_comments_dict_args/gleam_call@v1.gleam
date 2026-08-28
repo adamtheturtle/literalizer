@@ -11,4 +11,5 @@ pub fn main() {
   process(GDict([#("type", GStr("update")), #("pr_id", GStr("pr_2"))]))  // second case
   // third case
   process(GDict([#("type", GStr("delete")), #("pr_id", GStr("pr_3"))]))
+  // trailing comment
 }
