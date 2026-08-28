@@ -6,4 +6,5 @@ process(JSONValue(["type": JSONValue("create"), "pr_id": JSONValue("pr_1")]));  
 process(JSONValue(["type": JSONValue("update"), "pr_id": JSONValue("pr_2")]));  // second case
 // third case
 process(JSONValue(["type": JSONValue("delete"), "pr_id": JSONValue("pr_3")]));
+// trailing comment
 }

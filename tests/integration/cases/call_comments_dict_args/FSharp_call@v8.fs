@@ -10,3 +10,4 @@ process(FMap [("type", FStr "create"); ("pr_id", FStr "pr_1")])  // first case
 process(FMap [("type", FStr "update"); ("pr_id", FStr "pr_2")])  // second case
 // third case
 process(FMap [("type", FStr "delete"); ("pr_id", FStr "pr_3")])
+// trailing comment

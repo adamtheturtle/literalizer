@@ -6,5 +6,6 @@ class Fixture_call_comments_dict_args_Haxe_call {
         process((["type" => "update", "pr_id" => "pr_2"] : Map<String, Dynamic>));  // second case
         // third case
         process((["type" => "delete", "pr_id" => "pr_3"] : Map<String, Dynamic>));
+        // trailing comment
     }
 }

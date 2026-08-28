@@ -88,6 +88,7 @@ program main
     call process(fmap([fval_t :: fentry('type', fstr('update')), fentry('pr_id', fstr('pr_2'))]))  ! second case
     ! third case
     call process(fmap([fval_t :: fentry('type', fstr('delete')), fentry('pr_id', fstr('pr_3'))]))
+    ! trailing comment
 contains
     subroutine process(value)
         implicit none

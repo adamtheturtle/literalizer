@@ -20,6 +20,7 @@ PROC main ()
     process(MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "type"; MOBILE LIT(lit.str; MOBILE []BYTE "update")), MOBILE LIT(lit.pair; MOBILE []BYTE "pr_id"; MOBILE LIT(lit.str; MOBILE []BYTE "pr_2"))]))  -- second case
     -- third case
     process(MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "type"; MOBILE LIT(lit.str; MOBILE []BYTE "delete")), MOBILE LIT(lit.pair; MOBILE []BYTE "pr_id"; MOBILE LIT(lit.str; MOBILE []BYTE "pr_3"))]))
+    -- trailing comment
     SEQ
         SKIP
 :

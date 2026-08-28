@@ -214,14 +214,24 @@ class _CollectionTargets:
 
     token_idx: int
     keys: list[object]
+    # Slots of ``ca.items[key]`` holding the comments a flow collection
+    # writes after an element's comma, kept on the element that follows
+    # them (issue #4491).
+    flow_before_token_indices: tuple[int, ...]
+    # Slots of ``ca.items[key]`` holding the comments written in the gap
+    # between a mapping key and its value.  ruamel.yaml stores those on
+    # a collection value a second time, as that collection's own header,
+    # so they are read only for a scalar value (issue #4491).
+    value_gap_token_indices: tuple[int, ...]
 
 
 @runtime_checkable
 class _CommentAssociation(Protocol):
     """Typed boundary for ruamel.yaml comment association metadata."""
 
-    comment: Sequence[Sequence[CommentToken] | None] | None
-    items: Mapping[object, Sequence[CommentToken | None]]
+    comment: Sequence[Any] | None
+    items: Mapping[object, Sequence[Any]]
+    end: Sequence[CommentToken]
 
 
 @beartype
@@ -245,16 +255,25 @@ def _collection_targets(
     # mappings at index 2.
     match ruamel_data:
         case CommentedSet():
-            return _CollectionTargets(token_idx=0, keys=list(ruamel_data))
+            return _CollectionTargets(
+                token_idx=0,
+                keys=list(ruamel_data),
+                flow_before_token_indices=(1,),
+                value_gap_token_indices=(),
+            )
         case CommentedMap():
             return _CollectionTargets(
                 token_idx=2,
                 keys=list(ruamel_data),
+                flow_before_token_indices=(),
+                value_gap_token_indices=(3,),
             )
         case CommentedSeq():
             return _CollectionTargets(
                 token_idx=0,
                 keys=list(range(len(ruamel_data))),
+                flow_before_token_indices=(1,),
+                value_gap_token_indices=(),
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -273,6 +292,76 @@ def _header_comment_lines(*, ca: _CommentAssociation) -> list[str]:
             _token_comment_lines(value=header_value),
         )
     return lines
+
+
+@beartype
+def _comment_token_lines(*, token: str | CommentToken) -> list[str]:
+    """Return the comment lines held by one stored comment entry.
+
+    The header comment on a block scalar is stored as a plain string
+    rather than as a :class:`CommentToken`, so both spellings are
+    accepted (issue #4491).
+    """
+    match token:
+        case str():
+            return _token_comment_lines(value=token)
+        case CommentToken():
+            value: str = token.value
+            return _token_comment_lines(value=value)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _element_before_comments(
+    *,
+    ca: _CommentAssociation,
+    key: object,
+    token_indices: tuple[int, ...],
+) -> list[str]:
+    """Extract comments stored as preceding one element.
+
+    A flow collection keeps the comment written after an element's comma
+    on the element that follows it, and a mapping keeps the comment
+    written between a key and its value in a slot of its own.  Both read
+    as standalone comments above the element (issue #4491).
+    """
+    if key not in ca.items:
+        return []
+    item_tokens = ca.items[key]
+    return [
+        line
+        for token_index in token_indices
+        for stored in item_tokens[token_index] or ()
+        for line in _comment_token_lines(token=stored)
+    ]
+
+
+@beartype
+def _collection_end_comments(
+    *,
+    ca: _CommentAssociation,
+    nested: bool,
+) -> list[str]:
+    """Extract comments stored as trailing the collection as a whole.
+
+    A flow collection's closing comment lands in ``ca.comment[0]``, and a
+    comment on a trailing alias node in ``ca.end``; neither is reachable
+    from any element (issue #4491).
+
+    A comment written after a nested collection's closing bracket is the
+    enclosing collection's inline comment on that element, and is stored
+    there as well, so a nested collection leaves both slots alone.
+    """
+    if nested:
+        return []
+    closing = (ca.comment or (None,))[:1]
+    return [
+        line
+        for stored in (*closing, *ca.end)
+        if stored is not None
+        for line in _comment_token_lines(token=stored)
+    ]
 
 
 @beartype
@@ -432,7 +521,26 @@ def extract_yaml_comments(
     # of element N-1 in insertion order).
     element_map: dict[object, ElementComments] = {}
     for key in targets.keys:
-        before = list(pending_before)
+        element_value = _collection_element_value(
+            ruamel_data=ruamel_data,
+            key=key,
+        )
+        # A collection written under its key keeps a comment above it in
+        # its own header slot too, so reading the gap slot as well would
+        # emit that comment twice.
+        gap_indices = (
+            ()
+            if isinstance(
+                element_value,
+                CommentedSeq | CommentedMap | CommentedSet,
+            )
+            else targets.value_gap_token_indices
+        )
+        before = list(pending_before) + _element_before_comments(
+            ca=ca,
+            key=key,
+            token_indices=(*targets.flow_before_token_indices, *gap_indices),
+        )
         parsed = _element_after_comments(
             ca=ca,
             key=key,
@@ -453,10 +561,7 @@ def extract_yaml_comments(
         # this collection on the last element of the nested collection
         # that precedes it, so collect it from there.
         nested_comments = _outdented_trailing_comments(
-            value=_collection_element_value(
-                ruamel_data=ruamel_data,
-                key=key,
-            ),
+            value=element_value,
             own_column=own_column,
         )
         pending_before += list(nested_comments.before)
@@ -479,7 +584,10 @@ def extract_yaml_comments(
 
     return CollectionComments(
         elements=tuple(element_map[k] for k in output_keys),
-        trailing=tuple(pending_before),
+        trailing=(
+            *pending_before,
+            *_collection_end_comments(ca=ca, nested=nested),
+        ),
     )
 
 

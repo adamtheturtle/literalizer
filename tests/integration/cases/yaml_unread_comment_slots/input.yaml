@@ -1,0 +1,9 @@
+flow: [1,  # After the first element.
+  2]
+gap:
+  # Between the key and its value.
+  3
+block: |  # On the block scalar header.
+  Text.
+anchored: &shared 4
+alias: *shared  # On the alias.

@@ -5,4 +5,5 @@ process(value = Map[String, String]("type" -> "create", "pr_id" -> "pr_1"))  // 
 process(value = Map[String, String]("type" -> "update", "pr_id" -> "pr_2"))  // second case
 // third case
 process(value = Map[String, String]("type" -> "delete", "pr_id" -> "pr_3"))
+// trailing comment
 }

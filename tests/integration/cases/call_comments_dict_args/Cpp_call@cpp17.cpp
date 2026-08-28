@@ -9,5 +9,6 @@ process(std::map<std::string, std::string>{{"type", "create"}, {"pr_id", "pr_1"}
 process(std::map<std::string, std::string>{{"type", "update"}, {"pr_id", "pr_2"}});  // second case
 // third case
 process(std::map<std::string, std::string>{{"type", "delete"}, {"pr_id", "pr_3"}});
+// trailing comment
     return 0;
 }

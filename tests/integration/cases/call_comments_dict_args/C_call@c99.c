@@ -21,5 +21,6 @@ process(((CVal){.m = (CKV[]){{"type", ((CVal){.s = "create"})}, {"pr_id", ((CVal
 process(((CVal){.m = (CKV[]){{"type", ((CVal){.s = "update"})}, {"pr_id", ((CVal){.s = "pr_2"})}}}));  // second case
 // third case
 process(((CVal){.m = (CKV[]){{"type", ((CVal){.s = "delete"})}, {"pr_id", ((CVal){.s = "pr_3"})}}}));
+// trailing comment
     return 0;
 }

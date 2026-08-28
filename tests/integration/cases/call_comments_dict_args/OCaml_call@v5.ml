@@ -10,5 +10,6 @@ let _ = process(OMap [("type", OStr "create"); ("pr_id", OStr "pr_1")])  (* firs
 let _ = process(OMap [("type", OStr "update"); ("pr_id", OStr "pr_2")])  (* second case *)
 (* third case *)
 let _ = process(OMap [("type", OStr "delete"); ("pr_id", OStr "pr_3")])
+(* trailing comment *)
 
 end

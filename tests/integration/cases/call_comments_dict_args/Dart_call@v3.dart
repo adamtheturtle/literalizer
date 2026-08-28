@@ -6,4 +6,5 @@ void main() {
     process(value: <String, String>{"type": "update", "pr_id": "pr_2"});  // second case
     // third case
     process(value: <String, String>{"type": "delete", "pr_id": "pr_3"});
+    // trailing comment
 }

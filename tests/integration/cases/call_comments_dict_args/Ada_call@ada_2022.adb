@@ -7,4 +7,5 @@ begin
     Process(value => AMap'[AEntry ("type", AStr ("update")), AEntry ("pr_id", AStr ("pr_2"))]);  -- second case
     -- third case
     Process(value => AMap'[AEntry ("type", AStr ("delete")), AEntry ("pr_id", AStr ("pr_3"))]);
+    -- trailing comment
 end Main;
