@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Toml"]
+languages_reason = "Only the TOML back end rewrites its wrapped output line by line, so only it can mistake a comma or hash inside a string for punctuation or split a line on U+0085, U+2028 or U+2029."
+suites = ["base"]

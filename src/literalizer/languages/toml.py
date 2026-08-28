@@ -105,6 +105,50 @@ def _format_time_toml(value: datetime.time) -> str:
 
 
 @beartype
+def _toml_comment_start(*, line: str) -> int:
+    """Return the index of *line*'s comment marker, or its length.
+
+    A ``#`` inside a basic string is content rather than a comment
+    marker, so the scan tracks whether it is inside one.  Only basic
+    strings need tracking: the renderer quotes both keys and string
+    values with ``"``, so a ``'`` only ever appears as content
+    (issue #4485).
+    """
+    in_string = False
+    escaped = False
+    for index, character in enumerate(iterable=line):
+        if not in_string:
+            if character == "#":
+                return index
+            in_string = character == '"'
+        elif escaped:
+            escaped = False
+        elif character == "\\":
+            escaped = True
+        elif character == '"':
+            in_string = False
+    return len(line)
+
+
+@beartype
+def _strip_structural_trailing_comma(*, line: str) -> str:
+    """Remove the inline table's trailing comma from a table line.
+
+    The comma that ends an inline table entry is structural and has no
+    place in the ``[table]`` form, but a comma inside a string value is
+    content.  Splitting the comment off first and then removing one
+    comma from the end of what remains distinguishes them without a
+    pattern that could match inside a string (issue #4485).
+    """
+    comment_start = _toml_comment_start(line=line)
+    value, comment = line[:comment_start], line[comment_start:]
+    stripped = value.rstrip()
+    if not stripped.endswith(","):
+        return line
+    return f"{stripped[:-1]}{value[len(stripped) :]}{comment}"
+
+
+@beartype
 def _format_toml_dict_entry(
     key: str,
     _raw_value: Value,
@@ -500,15 +544,14 @@ class Toml(metaclass=LanguageCls):
         if variable_name and content.startswith(mapping_prefix):
             entries = content[len(mapping_prefix) :].removesuffix("\n}")
             dedented = textwrap.dedent(text=entries)
+            # ``str.splitlines`` also breaks on U+0085, U+2028 and
+            # U+2029, which a basic string may carry raw, so split on
+            # real line separators only (issue #4486).
             table_lines = [
-                re.sub(
-                    pattern=r",(?=\s*(?:#|$))",
-                    repl="",
-                    string=line,
-                )
+                _strip_structural_trailing_comma(line=line)
                 if line and not line[0].isspace()
                 else line
-                for line in dedented.splitlines()
+                for line in dedented.split(sep="\n")
             ]
             return f"[{variable_name}]\n" + "\n".join(table_lines)
         return wrap_in_file_noop(
