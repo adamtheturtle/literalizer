@@ -608,6 +608,11 @@ _JSON5_STRING_OR_COMMENT = re.compile(
     flags=re.DOTALL,
 )
 
+_JSON5_ESCAPE_OR_SEPARATOR = re.compile(
+    pattern=r"\\.|[\u2028\u2029]",
+    flags=re.DOTALL,
+)
+
 _JSON5_RAW_LINE_SEPARATORS = {
     "\u2028": "\\u2028",
     "\u2029": "\\u2029",
@@ -632,6 +637,10 @@ def escape_json5_line_separators(*, source: str) -> str:
     ):
         return source
 
+    def _escape_separator(match: re.Match[str]) -> str:
+        """Return the escape for a bare separator, or the text as-is."""
+        return _JSON5_RAW_LINE_SEPARATORS.get(match.group(), match.group())
+
     def _escape_token(match: re.Match[str]) -> str:
         """Return the matched token with any enclosed separator
         escaped.
@@ -639,9 +648,14 @@ def escape_json5_line_separators(*, source: str) -> str:
         token = match.group()
         if token[0] not in {"'", '"'}:
             return token
-        for separator, escape in _JSON5_RAW_LINE_SEPARATORS.items():
-            token = token.replace(separator, escape)
-        return token
+        # A backslash before a separator is a line continuation, which
+        # escaping the separator would turn into an escaped backslash
+        # followed by the text "u2028", so escape pairs are matched
+        # first and passed through whole.
+        return _JSON5_ESCAPE_OR_SEPARATOR.sub(
+            repl=_escape_separator,
+            string=token,
+        )
 
     return _JSON5_STRING_OR_COMMENT.sub(repl=_escape_token, string=source)
 
