@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: only the C++14 carrier can widen sibling maps whose values diverge, and its converting constructor is explicit, so each widened value has to name it."
+suites = ["base"]

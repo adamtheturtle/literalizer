@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: only the C++14 carrier renders a heterogeneous scalar list as a carrier-typed vector, which asks for the carrier declaration the newer standards get from std::variant."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
