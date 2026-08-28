@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+"Haxe['Array']" = "Haxe cannot use module_name 'Array': it is not a valid identifier"
+"Haxe['Map']" = "Haxe cannot use module_name 'Map': it is not a valid identifier"
+"Haxe['Std']" = "Haxe cannot use module_name 'Std': it is not a valid identifier"

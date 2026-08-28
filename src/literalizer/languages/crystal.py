@@ -564,6 +564,70 @@ class Crystal(metaclass=LanguageCls):
     # The wrapper is a type declaration, which both languages
     # require to start with an uppercase letter (issue #4533).
     module_name_must_start_uppercase: ClassVar[bool] = True
+    # A standard library class or struct cannot be reopened as a
+    # module, and a generic module cannot be reopened without its type
+    # arguments, so the wrapper cannot take either name (issue #4533).
+    reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {
+            "Array",
+            "Atomic",
+            "Bool",
+            "Box",
+            "Bytes",
+            "Channel",
+            "Char",
+            "Class",
+            "Comparable",
+            "Deque",
+            "Dir",
+            "Enum",
+            "Enumerable",
+            "Exception",
+            "Fiber",
+            "File",
+            "Float",
+            "Float32",
+            "Float64",
+            "Hash",
+            "Indexable",
+            "Int",
+            "Int128",
+            "Int16",
+            "Int32",
+            "Int64",
+            "Int8",
+            "Iterable",
+            "Iterator",
+            "Mutex",
+            "NamedTuple",
+            "Nil",
+            "Number",
+            "Object",
+            "Path",
+            "Pointer",
+            "Proc",
+            "Process",
+            "Random",
+            "Range",
+            "Reference",
+            "Regex",
+            "Set",
+            "Signal",
+            "Slice",
+            "String",
+            "Struct",
+            "Symbol",
+            "Time",
+            "Tuple",
+            "UInt128",
+            "UInt16",
+            "UInt32",
+            "UInt64",
+            "UInt8",
+            "Union",
+            "Value",
+        }
+    )
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True

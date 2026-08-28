@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A Crystal standard library class or struct cannot be reopened as a
+module, and a generic module cannot be reopened without its type
+arguments (#4533).
+"""
+exceptions = ["InvalidModuleNameError"]
+languages = ["Crystal"]
+values = ["Enumerable", "Int32", "String"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]
