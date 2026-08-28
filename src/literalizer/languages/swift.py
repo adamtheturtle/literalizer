@@ -90,7 +90,6 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
     identity_call_arg,
@@ -533,7 +532,25 @@ class Swift(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Callable that binds a call result to a new variable.
+
+        The literal-binding formatter annotates from the value being
+        rendered, which is right for a literal and wrong for a call: the
+        binding holds whatever the stub returns, so the type of the
+        input is one Swift then refuses to convert to (issue #4537).
+        The declaration style's own formatter writes ``let name = ...``
+        and lets Swift infer.
+        """
+        formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str] = (
+            self.declaration_style.value.formatter
+        )
+        return formatter
+
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
