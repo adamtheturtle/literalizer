@@ -323,10 +323,34 @@ class Haxe(metaclass=LanguageCls):
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
     supports_dict_literal_as_free_expression = True
+    # A top-level type declaration named after a standard library
+    # type shadows it, and the generated code and the compiler itself
+    # reach for those types, so the wrapper cannot take their names
+    # (issue #4533).
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
         {
             "begin",
             "end",
+            "Any",
+            "Array",
+            "Bool",
+            "Class",
+            "Dynamic",
+            "Enum",
+            "Float",
+            "Int",
+            "Iterable",
+            "Iterator",
+            "KeyValueIterable",
+            "KeyValueIterator",
+            "Map",
+            "Null",
+            "Reflect",
+            "Std",
+            "StringBuf",
+            "Type",
+            "ValueType",
+            "Void",
         }
     )
     # The wrapper is a type declaration, which both languages

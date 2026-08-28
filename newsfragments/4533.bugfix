@@ -1,3 +1,1 @@
-Reject a lowercase ``module_name`` for Haxe and Crystal.  The wrapper is a type
-or module declaration, which both languages require to start with an uppercase
-letter, so the emitted file did not compile.
+``Haxe`` and ``Crystal`` now refuse a ``module_name`` that names a standard library type. A Haxe type declaration shadows the type it is named after, and a Crystal class or struct cannot be reopened as a module, so neither wrapper compiled.

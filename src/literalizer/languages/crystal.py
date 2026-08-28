@@ -564,6 +564,94 @@ class Crystal(metaclass=LanguageCls):
     # The wrapper is a type declaration, which both languages
     # require to start with an uppercase letter (issue #4533).
     module_name_must_start_uppercase: ClassVar[bool] = True
+    # A standard library class or struct cannot be reopened as a
+    # module, and a generic module cannot be reopened without its type
+    # arguments, so the wrapper cannot take either name (issue #4533).
+    # A standard library class or struct cannot be reopened as a
+    # module, and a generic module cannot be reopened without its type
+    # arguments, so the wrapper cannot take either name (issue #4533).
+    # These are the prelude's own top-level names that the compiler
+    # refuses; a name it accepts, such as JSON or Math, is not here.
+    reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {
+            "ArgumentError",
+            "Array",
+            "Atomic",
+            "Bool",
+            "Box",
+            "Bytes",
+            "Channel",
+            "Char",
+            "Class",
+            "Comparable",
+            "Deque",
+            "Dir",
+            "DivisionByZeroError",
+            "Enum",
+            "Enumerable",
+            "Errno",
+            "Exception",
+            "Fiber",
+            "File",
+            "Float",
+            "Float32",
+            "Float64",
+            "Hash",
+            "IO",
+            "IndexError",
+            "Indexable",
+            "Int",
+            "Int128",
+            "Int16",
+            "Int32",
+            "Int64",
+            "Int8",
+            "InvalidByteSequenceError",
+            "Iterable",
+            "Iterator",
+            "KeyError",
+            "NamedTuple",
+            "Nil",
+            "NilAssertionError",
+            "NotImplementedError",
+            "Number",
+            "Object",
+            "OverflowError",
+            "Path",
+            "Pointer",
+            "PrettyPrint",
+            "Proc",
+            "Process",
+            "Random",
+            "Range",
+            "Reference",
+            "ReferenceStorage",
+            "Regex",
+            "RuntimeError",
+            "Set",
+            "Signal",
+            "Slice",
+            "StaticArray",
+            "String",
+            "Struct",
+            "Symbol",
+            "SystemError",
+            "Thread",
+            "Time",
+            "Tuple",
+            "TypeCastError",
+            "UInt128",
+            "UInt16",
+            "UInt32",
+            "UInt64",
+            "UInt8",
+            "Union",
+            "VaList",
+            "Value",
+            "WasiError",
+            "WinError",
+        }
+    )
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True

@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A top-level Haxe type declaration named after a standard library type
+shadows it, and the generated code and the compiler itself reach for
+those types (#4533).
+"""
+exceptions = ["InvalidModuleNameError"]
+languages = ["Haxe"]
+values = ["Array", "Map", "Std"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]

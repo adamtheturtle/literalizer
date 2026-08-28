@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidModuleNameError]
+"Crystal['Enumerable']" = "Crystal cannot use module_name 'Enumerable': it is not a valid identifier"
+"Crystal['IO']" = "Crystal cannot use module_name 'IO': it is not a valid identifier"
+"Crystal['Int32']" = "Crystal cannot use module_name 'Int32': it is not a valid identifier"
+"Crystal['String']" = "Crystal cannot use module_name 'String': it is not a valid identifier"
