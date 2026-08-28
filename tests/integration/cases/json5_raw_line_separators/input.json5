@@ -1,0 +1,8 @@
+{
+  "double": "a b",
+  'single': 'c d',
+  // A comment, which both separators would end.
+  "both": "e f g",
+  "continued": "h\ i",
+  "escaped backslash": "j\\ k",
+}

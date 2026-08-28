@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Sampled: accepting a raw line separator is a parser concern, not a rendering one."

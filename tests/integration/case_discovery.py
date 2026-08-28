@@ -24,6 +24,7 @@ from typing_extensions import TypeIs
 
 import literalizer
 from literalizer._language import NewVariableNameSyntax
+from literalizer._parsing import escape_json5_line_separators
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
@@ -187,7 +188,14 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=source)
         case literalizer.InputFormat.JSON5:
-            parsed = json5.loads(s=source, allow_duplicate_keys=False)
+            # The library escapes a raw U+2028 or U+2029 inside a
+            # string before handing the source to ``json5``, which
+            # refuses one; parse the same way so a case may hold
+            # what the library accepts (issue #4518).
+            parsed = json5.loads(
+                s=escape_json5_line_separators(source=source),
+                allow_duplicate_keys=False,
+            )
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,
