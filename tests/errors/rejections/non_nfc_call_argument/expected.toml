@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableStringError]
+Hcl = "Hcl string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"
+Raku = "Raku string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"
