@@ -10,7 +10,10 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._checks import reject_stringified_dict_key_collisions
+from literalizer._checks import (
+    reject_non_nfc_strings,
+    reject_stringified_dict_key_collisions,
+)
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -526,11 +529,17 @@ class Hcl(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject mapping keys that collapse in HCL objects."""
+        """Reject data this target cannot represent as written.
+
+        HCL normalizes its source to NFC by specification, so a value
+        written with a combining mark comes back as the single
+        character it composes to (issue #4522).
+        """
         reject_stringified_dict_key_collisions(
             data=data,
             language_name="Hcl",
         )
+        reject_non_nfc_strings(data=data, language_name="Hcl")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

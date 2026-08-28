@@ -1,0 +1,1 @@
+HCL and Raku now reject a string that is not in Unicode NFC form, which both targets silently normalized with no escape spelling that avoided it.
