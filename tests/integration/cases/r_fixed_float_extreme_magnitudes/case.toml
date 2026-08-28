@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "variant"
 languages = ["R"]
-languages_reason = "R-specific: R_strtod misrounds long fixed-point decimal literals at extreme magnitudes."
+languages_reason = "R-specific: R_strtod misrounds long fixed-point decimal literals at extreme magnitudes, and overflows to Inf in the widest exponent."
 
 [[variants]]
 axis = "float_format"

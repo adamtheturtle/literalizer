@@ -1,0 +1,4 @@
+Emit a bidirectional formatting character in a D string as its ``\uXXXX``
+escape, in the WYSIWYG string format as well as the quoted one.  The D compiler refuses a
+raw one with "Bidirectional control characters are disallowed for security
+reasons".

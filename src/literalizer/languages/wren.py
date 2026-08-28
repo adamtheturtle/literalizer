@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
+import sys
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from typing import ClassVar
@@ -87,6 +88,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnrepresentableInputError
 
 # Prevent Wren from interpreting ``%(…)`` as string interpolation.
 _format_string = make_backslash_string_formatter(
@@ -187,6 +189,27 @@ def _format_wren_set_entry(_original: Value, item: str) -> str:
     Example: ``'"apple"'`` → ``'"apple": true'``.
     """
     return f"{item}: true"
+
+
+@beartype
+def _reject_subnormal_float(
+    *,
+    base: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Wrap *base* to refuse a subnormal, which Wren cannot read."""
+
+    def _format(value: float) -> str:
+        """Reject a subnormal, then delegate to the wrapped formatter."""
+        if 0 < abs(value) < sys.float_info.min:
+            msg = (
+                "Wren cannot represent the subnormal float "
+                f"{value!r}: its lexer rejects the literal as out of "
+                "range and it has no hexadecimal float form."
+            )
+            raise UnrepresentableInputError(msg)
+        return base(value)
+
+    return _format
 
 
 @beartype
@@ -821,8 +844,14 @@ class Wren(metaclass=LanguageCls):
 
     @cached_property
     def format_float(self) -> Callable[[float], str]:
-        """Callable that formats a float value as a literal."""
-        return self.float_format
+        """Callable that formats a float value as a literal.
+
+        A subnormal is refused: the Wren lexer reports the underflow
+        its ``strtod`` call returns as ``Number literal was too
+        large``, and Wren has neither a hexadecimal float literal nor
+        an arithmetic form that reaches one (issue #4489).
+        """
+        return _reject_subnormal_float(base=self.float_format)
 
     @cached_property
     def format_integer(self) -> Callable[[int], str]:

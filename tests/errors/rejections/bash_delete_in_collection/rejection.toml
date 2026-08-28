@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Bash keeps U+007F through a simple assignment but inserts a
+spurious \\x01 before it inside the bracketed compound form an array or
+associative array uses, so a string in a collection loses its
+value (#4462).
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Bash"]
+
+[call]
+api = "literalize"
+sources = ['["a\u007fb"]', '{"k": "a\u007fb"}']
+input_format = "json"

@@ -45,7 +45,9 @@ from literalizer._formatters.format_integers import (
     make_unsigned_overflow_fallback,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_hex,
+    bidi_escape_replacements,
+    has_bidi_formatting_character,
+    make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
@@ -123,6 +125,19 @@ def _format_d_float(value: float, /, *, base: Callable[[float], str]) -> str:
     return base(value)
 
 
+# The D compiler refuses a raw bidirectional formatting character in
+# source -- "Bidirectional control characters are disallowed for
+# security reasons" -- in a WYSIWYG string as much as a quoted one, so
+# each is emitted as the ``\uXXXX`` escape it accepts (issue #4516).
+_format_string_d = make_backslash_string_formatter(
+    quote_char='"',
+    extra_replacements=[
+        ("\0", "\\x00"),
+        *bidi_escape_replacements(template="\\u{:04X}"),
+    ],
+)
+
+
 @beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a D WYSIWYG string when source-safe."""
@@ -130,9 +145,10 @@ def _format_string_multiline(value: str) -> str:
         "`" in value
         or "\0" in value
         or "\r" in value
+        or has_bidi_formatting_character(value=value)
         or _TRAILING_LINE_WHITESPACE.search(string=value)
     ):
-        return format_string_backslash_nul_hex(value=value)
+        return _format_string_d(value=value)
     return f"`{value}`"
 
 
@@ -879,7 +895,7 @@ class D(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
-        DOUBLE = enum.member(value=format_string_backslash_nul_hex)
+        DOUBLE = enum.member(value=_format_string_d)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
