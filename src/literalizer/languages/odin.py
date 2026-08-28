@@ -111,10 +111,11 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
+    UnrepresentableIntegerError,
     UnrepresentableSpecialFloatError,
     WrapCombinedInFileNotSupportedError,
 )
@@ -970,27 +971,55 @@ class Odin(metaclass=LanguageCls):
         text), and non-finite floats (``NaN`` / ``+Infinity`` /
         ``-Infinity``) which JSON has no syntax for and which
         ``json.parse_string`` rejects at runtime.
+
+        Two more inputs the parser accepts without carrying: an object
+        name that is empty, which it discards along with its value, and
+        an integer outside the ``i64`` range it stores integers in,
+        which wraps around (issue #4477).
         """
         match data:
             case OrderedMap() | dict():
-                for key, value in data.items():
-                    if not isinstance(key, str):
-                        msg = (
-                            "Odin json_type can only represent dict keys "
-                            "as JSON object strings, not "
-                            f"{type(key).__name__}"
-                        )
-                        raise UnrepresentableInputError(msg)
-                    self._reject_backtick(value=key)
-                    self._validate_json_value(value)
+                self._validate_json_object(members=data)
             case list() | set():
                 for item in data:
                     self._validate_json_value(item)
+            case _:
+                self._reject_uncarried_scalar(value=data)
+
+    def _validate_json_object(
+        self,
+        *,
+        members: Mapping[Scalar, Value],
+    ) -> None:
+        """Reject an object member the JSON text cannot name or carry."""
+        for key, value in members.items():
+            if not isinstance(key, str):
+                msg = (
+                    "Odin json_type can only represent dict keys "
+                    f"as JSON object strings, not {type(key).__name__}"
+                )
+                raise UnrepresentableInputError(msg)
+            self._reject_empty_key(key=key)
+            self._reject_backtick(value=key)
+            self._validate_json_value(value)
+
+    @staticmethod
+    def _reject_uncarried_scalar(*, value: Value) -> None:
+        """Reject a scalar the embed-and-parse route does not carry."""
+        match value:
             case str():
-                self._reject_backtick(value=data)
+                Odin._reject_backtick(value=value)
             case bool():
                 return
-            case float() if not math.isfinite(data):
+            case int() if not I64_MIN <= value <= I64_MAX:
+                msg = (
+                    "Odin json_type parses the embedded JSON text with "
+                    "parse_integers=true, which stores every integer as an "
+                    f"i64; {value} is outside that range and wraps around "
+                    "silently."
+                )
+                raise UnrepresentableIntegerError(msg)
+            case float() if not math.isfinite(value):
                 msg = (
                     "Odin json_type renders the literalized value as a "
                     "JSON text; JSON has no representation for non-finite "
@@ -1000,6 +1029,17 @@ class Odin(metaclass=LanguageCls):
                 raise UnrepresentableSpecialFloatError(msg)
             case _:
                 return
+
+    @staticmethod
+    def _reject_empty_key(key: str) -> None:
+        """Raise if *key* is the empty name Odin's parser discards."""
+        if not key:
+            msg = (
+                "Odin json_type parses the embedded JSON text at runtime, "
+                "and its parser drops an object member whose name is "
+                "empty, so the entry would be missing from the value."
+            )
+            raise UnrepresentableInputError(msg)
 
     @staticmethod
     def _reject_backtick(value: str) -> None:
