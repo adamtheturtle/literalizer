@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record0 {
     within_i32: i64,
     beyond_i32: i64,

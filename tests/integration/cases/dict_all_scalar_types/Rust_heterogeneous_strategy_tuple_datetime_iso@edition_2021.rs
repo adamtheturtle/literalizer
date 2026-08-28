@@ -1,5 +1,4 @@
 use chrono::NaiveDate;
-use std::collections::HashMap;
 struct Record0 {
     s: &'static str,
     i: i32,

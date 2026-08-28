@@ -1,6 +1,5 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <variant>
 struct Record0 { int quantity{}; unsigned long long big{}; double ratio{}; std::string label; bool ok{}; };
 int main() {

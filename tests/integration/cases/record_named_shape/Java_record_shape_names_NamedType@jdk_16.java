@@ -1,4 +1,3 @@
-import java.util.Map;
 record NamedType(int id, String label, boolean enabled, int[] related_ids) {}
 class Main {
     public static void main() {

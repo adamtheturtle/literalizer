@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record Record0(int Quantity, ulong Big, double Ratio, string Label, bool Ok);
 class Check {
     public static void Main() {

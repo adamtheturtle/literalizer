@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record Record0(string Call, object[] Args);
 class Check {
     public static void Main() {

@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record1(String name, int age) {}
 record Record0(int id, Record1 owner) {}
 class Main {

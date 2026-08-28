@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record0 {
     short: (i32,),
     long: (i32, i32),

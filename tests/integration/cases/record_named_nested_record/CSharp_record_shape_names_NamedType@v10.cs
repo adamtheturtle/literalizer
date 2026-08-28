@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record NamedType(int Id, string Label, bool Enabled, int[] RelatedIds);
 record Record0(string Collection, NamedType FeaturedEntry);
 class Check {

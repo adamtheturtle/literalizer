@@ -2,7 +2,6 @@
 #include <string>
 #include <cstddef>
 #include <chrono>
-#include <map>
 #include <variant>
 struct Record0 { std::string s; int i{}; double f{}; bool b{}; std::nullptr_t n{}; std::chrono::year_month_day d; std::string dt; std::string by; };
 int main() {

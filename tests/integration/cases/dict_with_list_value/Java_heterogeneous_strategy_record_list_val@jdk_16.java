@@ -1,4 +1,3 @@
-import java.util.Map;
 record Record0(String name, int[] scores) {}
 class Main {
     public static void main() {

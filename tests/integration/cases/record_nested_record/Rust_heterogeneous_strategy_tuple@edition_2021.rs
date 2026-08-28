@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record1 {
     name: &'static str,
     age: i32,

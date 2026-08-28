@@ -1,6 +1,5 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <vector>
 struct Record0 { int a{}; };
 int main() {

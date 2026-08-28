@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record Record1(int A, string B, object C);
 record Record0(Record1 Outer);
 class Check {

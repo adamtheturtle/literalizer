@@ -1,5 +1,4 @@
 import java.time.LocalDate;
-import java.util.Map;
 record Record0(String s, int i, double f, boolean b, Object n, LocalDate d, int dt, String by) {}
 class Main {
     public static void main() {

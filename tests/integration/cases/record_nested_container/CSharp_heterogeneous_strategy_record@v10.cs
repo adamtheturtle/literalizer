@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 record Record0(string Title, string[] Tags, int Priority);
 class Check {
     public static void Main() {

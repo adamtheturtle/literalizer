@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 struct Record1 {
     count: i32,
     rate: i32,
