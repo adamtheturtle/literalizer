@@ -484,19 +484,27 @@ def reject_excessive_integer_digits(*, value: int) -> None:
         raise ExcessiveIntegerDigitsError(limit=limit) from exc
 
 
-def _parse_integer_preserving_negative_zero(value: str) -> int | float:
-    """Parse an integer token while retaining negative zero's sign.
+@beartype
+def reject_excessive_decimal_token(*, token: str) -> None:
+    """Reject a decimal integer token too wide to write back out.
 
-    The digit count is checked before the conversion: ``int`` refuses a
-    token wider than the interpreter's limit with the same bare
-    ``ValueError`` that writing one out raises (issue #4558).
+    Checked on the spelling rather than on the value, because ``int``
+    refuses a wide token with the same bare ``ValueError`` that writing
+    one out raises, so there is no value to inspect (issue #4558).  A
+    token that is not a plain run of decimal digits is left alone: a
+    float or a non-decimal base carries its own magnitude.
     """
+    limit = sys.get_int_max_str_digits()
+    digits = token.lstrip("+-").replace("_", "").lstrip("0")
+    if limit and len(digits) > limit and digits.isdigit():
+        raise ExcessiveIntegerDigitsError(limit=limit)
+
+
+def _parse_integer_preserving_negative_zero(value: str) -> int | float:
+    """Parse an integer token while retaining negative zero's sign."""
     if value == "-0":
         return -0.0
-    limit = sys.get_int_max_str_digits()
-    digits = value.lstrip("+-").replace("_", "").lstrip("0")
-    if limit and len(digits) > limit:
-        raise ExcessiveIntegerDigitsError(limit=limit)
+    reject_excessive_decimal_token(token=value)
     return int(value, base=_DECIMAL_BASE)
 
 
@@ -681,10 +689,7 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
         value: str = node.value
         if re.fullmatch(pattern=r"-0(?:_?0)*", string=value) is not None:
             return -0.0
-        limit = sys.get_int_max_str_digits()
-        digits = value.lstrip("+-").replace("_", "").lstrip("0")
-        if limit and len(digits) > limit and digits.isdigit():
-            raise ExcessiveIntegerDigitsError(limit=limit)
+        reject_excessive_decimal_token(token=value)
         return original(constructor_obj, node)
 
     constructor.add_constructor(
@@ -869,9 +874,14 @@ type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
 
 
 def _validate_toml_float_tokens(*, data: object) -> None:
-    """Check TOML float tokens before unwrapping discards their
+    """Check TOML numeric tokens before unwrapping discards their
     spelling.
     """
+    if isinstance(data, TomlFloat | TomlInteger):
+        # tomlkit reads a decimal integer too wide for ``int`` as a
+        # float, so checking the spelling first reports the real cause
+        # rather than a binary64 range complaint (issue #4558).
+        reject_excessive_decimal_token(token=data.as_string())
     if isinstance(data, TomlFloat):
         _parse_finite_float(value=data.as_string())
     elif isinstance(data, Mapping):

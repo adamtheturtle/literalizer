@@ -67,6 +67,11 @@ def fixture_lowered_digit_limit() -> Iterator[None]:
             InputFormat.TOML,
             id="toml-hexadecimal",
         ),
+        pytest.param(
+            f"a = {_OVER_LIMIT_DIGITS}",
+            InputFormat.TOML,
+            id="toml-decimal",
+        ),
     ],
 )
 def test_parsed_integer_beyond_digit_limit(
