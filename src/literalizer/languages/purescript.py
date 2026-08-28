@@ -1335,6 +1335,17 @@ class PureScript(metaclass=LanguageCls):
                 return
 
     @cached_property
+    def supports_collection_comments(self) -> bool:
+        """Whether a comment can sit inside the rendered value.
+
+        ``jsonParser`` is handed one JSON document, and JSON has no
+        comments, so a comment written inside
+        it would be text the parser refuses.  The comments go
+        before the declaration instead (issue #4546).
+        """
+        return not self._json_type_active
+
+    @cached_property
     def _json_type_active(self) -> bool:
         """Return whether PureScript should render via
         ``Data.Argonaut.Core.Json``.
@@ -1456,7 +1467,6 @@ class PureScript(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = True
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
