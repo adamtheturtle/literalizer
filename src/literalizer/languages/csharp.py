@@ -1085,6 +1085,12 @@ class CSharp(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset(
+        {
+            _CSharpModifiers.CONST,
+            _CSharpModifiers.READONLY,
+        }
+    )
     Modifiers = _CSharpModifiers
 
     date_formats = DateFormats

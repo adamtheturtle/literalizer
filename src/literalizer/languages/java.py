@@ -1391,6 +1391,11 @@ class Java(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset(
+        {
+            _JavaModifiers.FINAL,
+        }
+    )
     Modifiers = _JavaModifiers
 
     date_formats = DateFormats
