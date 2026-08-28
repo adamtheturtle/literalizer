@@ -169,12 +169,18 @@ def reject_ragged_nested_sequences(
     data: Value,
     language_name: str,
     record_fields_are_independent: bool,
+    list_elements_are_independent: bool,
 ) -> None:
     """Reject sibling lists of unequal length beside each other.
 
     A fixed-size array literal carries its length in its type, so two
     sibling arrays of different lengths have no common type and the
     generated file does not compile (issue #3924).
+
+    *list_elements_are_independent* says the enclosing list is itself
+    written as a tuple, whose element types stand apart, so siblings
+    inside one need no common type; a mapping value slot still takes
+    one type however its siblings are written (issue #4663).
     """
     match data:
         case dict():
@@ -206,10 +212,13 @@ def reject_ragged_nested_sequences(
                     record_fields_are_independent=(
                         record_fields_are_independent
                     ),
+                    list_elements_are_independent=(
+                        list_elements_are_independent
+                    ),
                 )
         case list():
             lengths = {len(item) for item in data if isinstance(item, list)}
-            if len(lengths) > 1:
+            if not list_elements_are_independent and len(lengths) > 1:
                 sizes = ", ".join(
                     str(object=length) for length in sorted(lengths)
                 )
@@ -225,6 +234,9 @@ def reject_ragged_nested_sequences(
                     language_name=language_name,
                     record_fields_are_independent=(
                         record_fields_are_independent
+                    ),
+                    list_elements_are_independent=(
+                        list_elements_are_independent
                     ),
                 )
         case _:

@@ -1577,6 +1577,7 @@ class Nim(metaclass=LanguageCls):
                 data=data,
                 language_name="Nim",
                 record_fields_are_independent=False,
+                list_elements_are_independent=False,
             )
         if (
             self._uses_native_nim_collections

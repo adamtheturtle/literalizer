@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Rust"]
+languages_reason = "Rust-specific: only its TUPLE sequence format writes a list as a tuple, whose element types stand apart, so ragged siblings inside one need no common type."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"

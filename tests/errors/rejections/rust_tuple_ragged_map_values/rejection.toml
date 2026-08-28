@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A map holds one value type however its values are written, so tuples of
+different arity in two of its slots have no common type.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"a": [1, 2, 3], "b": [1]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "TUPLE" },
+]

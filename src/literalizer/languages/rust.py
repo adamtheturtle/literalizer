@@ -4110,6 +4110,9 @@ class Rust(metaclass=LanguageCls):
                     self.heterogeneous_strategy
                     is type(self.heterogeneous_strategy).RECORD
                 ),
+                list_elements_are_independent=(
+                    self.sequence_format is type(self.sequence_format).TUPLE
+                ),
             )
         if self._json_type_active:
             self._validate_json_value_keys(data)
