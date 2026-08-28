@@ -423,7 +423,12 @@ class Raku(metaclass=LanguageCls):
             sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
-            single_element_trailing_comma=False,
+            # The single-argument rule flattens a one-element list
+            # whose element is itself a container, so `[[1]]` becomes
+            # `[1]` and `[{}]` becomes `[]`.  A trailing comma makes the
+            # literal a multi-element form, which is not flattened, and
+            # leaves a one-scalar list unchanged (issue #4524).
+            single_element_trailing_comma=True,
             single_element_template=None,
             supports_trailing_comma=True,
             empty_sequence=None,

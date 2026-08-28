@@ -1,6 +1,6 @@
 my $my_data = {
     'a' => {
-        'b' => [1],
+        'b' => [1,],
         # Outdented from the sequence, so the inner mapping claims this.
         'c' => 2,
     },
@@ -9,7 +9,7 @@ my $my_data = {
 };
 $my_data = {
     'a' => {
-        'b' => [1],
+        'b' => [1,],
         # Outdented from the sequence, so the inner mapping claims this.
         'c' => 2,
     },

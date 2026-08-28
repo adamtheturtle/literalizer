@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Raku"]
+languages_reason = "Raku's single-argument rule flattens a one-element list whose element is a container, so only Raku output distinguishes these shapes."
