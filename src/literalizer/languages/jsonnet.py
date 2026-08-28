@@ -88,7 +88,10 @@ from literalizer._language import (
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
-from literalizer._statements import split_statements
+from literalizer._statements import (
+    insert_before_line_comment,
+    split_statements,
+)
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -526,7 +529,15 @@ class Jsonnet(metaclass=LanguageCls):
             )
         preamble_str = "\n".join(body_preamble) + "\n"
         elements = [
-            textwrap.indent(text=f"{statement},", prefix=self.indent)
+            textwrap.indent(
+                text=insert_before_line_comment(
+                    statement=statement,
+                    text=",",
+                    quotes="\"'",
+                    line_comment_prefixes=("//", "#"),
+                ),
+                prefix=self.indent,
+            )
             for statement in split_statements(
                 content=content,
                 quotes="\"'",

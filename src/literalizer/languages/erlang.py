@@ -89,6 +89,10 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
+from literalizer._statements import (
+    insert_before_line_comment,
+    line_comment_start,
+)
 from literalizer._types import Value
 from literalizer.exceptions import (
     InvalidModuleNameError,
@@ -767,12 +771,32 @@ class Erlang(metaclass=LanguageCls):
                 f"{indented}\n"
                 f"{self.indent}{erlang_varname}."
             )
-        trimmed = content.rstrip().removesuffix(",")
+        # The clause terminator replaces the last statement's separator,
+        # which sits before any inline comment on that line rather than
+        # at the end of it (issue #4664).
+        stripped = content.rstrip()
+        comment_start = line_comment_start(
+            line=stripped.rsplit(sep="\n", maxsplit=1)[-1],
+            quotes='"',
+            line_comment_prefixes=("%",),
+        )
+        head, _, last = stripped.rpartition("\n")
+        code = last[:comment_start].rstrip()
+        gap = last[len(code) : comment_start]
+        trimmed_last = f"{code.removesuffix(',')}{gap}{last[comment_start:]}"
+        trimmed = f"{head}\n{trimmed_last}" if head else trimmed_last
         indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
         parts.append("x() ->")
-        parts.append(f"{indented}.")
+        parts.append(
+            insert_before_line_comment(
+                statement=indented,
+                text=".",
+                quotes='"',
+                line_comment_prefixes=("%",),
+            )
+        )
         return "\n".join(parts)
 
     def wrap_call_variable_in_file(

@@ -87,3 +87,52 @@ def split_statements(
             grouped.append([])
     joined = ["\n".join(group) for group in grouped]
     return [statement for statement in joined if statement.strip()]
+
+
+@beartype
+def line_comment_start(
+    *,
+    line: str,
+    quotes: str,
+    line_comment_prefixes: tuple[str, ...],
+) -> int:
+    """Return where *line*'s trailing comment begins, or its length.
+
+    A comment marker inside a string literal is content, so the scan
+    steps over string literals to find the real one.
+    """
+    for match in _skipped_span_pattern(
+        quotes=quotes,
+        line_comment_prefixes=line_comment_prefixes,
+    ).finditer(string=line):
+        if match.group()[:1] not in quotes:
+            return match.start()
+    return len(line)
+
+
+@beartype
+def insert_before_line_comment(
+    *,
+    statement: str,
+    text: str,
+    quotes: str,
+    line_comment_prefixes: tuple[str, ...],
+) -> str:
+    """Return *statement* with *text* placed before its comment.
+
+    A separator or terminator written after an inline comment is inside
+    the comment, so the parser never sees it (issue #4664).  The
+    whitespace between the code and the comment is preserved, so the
+    comment stays where it was written.
+    """
+    lines = statement.split(sep="\n")
+    last = lines[-1]
+    start = line_comment_start(
+        line=last,
+        quotes=quotes,
+        line_comment_prefixes=line_comment_prefixes,
+    )
+    code = last[:start].rstrip()
+    gap = last[len(code) : start]
+    lines[-1] = f"{code}{text}{gap}{last[start:]}"
+    return "\n".join(lines)

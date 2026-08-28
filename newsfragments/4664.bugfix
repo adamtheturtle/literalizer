@@ -1,1 +1,2 @@
 An inline comment on a scalar inside a call element now reaches the generated call line even when no standalone comment follows the element.
+A separator or terminator written after an inline call comment now goes before it, so Erlang, Jsonnet and Roc no longer put the clause terminator, array comma or dbg closer inside the comment.
