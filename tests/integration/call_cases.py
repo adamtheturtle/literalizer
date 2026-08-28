@@ -35,6 +35,7 @@ from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
+    ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     InvalidCallParameterNameError,
     InvalidCallTargetError,
@@ -68,6 +69,14 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
+            unlink=True,
+        ),
+        SkipReason(
+            error=ExistingVariableNotSelfContainedError,
+            reason=(
+                "binds a call result by assignment to a name a whole "
+                "file never declares"
+            ),
             unlink=True,
         ),
     ),
@@ -497,30 +506,6 @@ def _run_wrap_in_file_case(
             ref_values=None,
             bound_refs=None,
         )
-    mirror_form = config.self_contained_mirror_variable_form
-    if mirror_form is not None:
-        mirror_result = _literalize_call_case(
-            config=config,
-            spec=spec,
-            source=source,
-            input_info=input_info,
-            effective_ref_case=effective_ref_case,
-            variable_form=mirror_form,
-            wrap_in_file=True,
-            ref_values=None,
-            bound_refs=None,
-        )
-        if wrap_result.code != mirror_result.code:
-            skip_golden(
-                reason=(
-                    f"{lang_name} {config.variable_form!r} call-binding is "
-                    f"not self-contained (a bare assignment to an undeclared "
-                    f"name); it diverges from the compilable "
-                    f"{mirror_form!r} form, so no golden is emitted"
-                ),
-                golden_path=golden_path,
-                unlink=True,
-            )
     check_golden(
         contents=wrap_result.code + "\n",
         extension=lang_extension,

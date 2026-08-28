@@ -1,0 +1,1 @@
+An assignment that reads as one of a language declaration styles, such as an F# let rebind under LET_MUTABLE, is no longer refused as leaving the name undeclared.
