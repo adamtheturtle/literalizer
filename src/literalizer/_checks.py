@@ -271,31 +271,6 @@ _CJSON_PRINT_PRECISION = 15
 
 
 @beartype
-def _cjson_unrepresentable_reason(*, value: Value) -> str | None:
-    """Return why cJSON cannot carry *value*, or ``None`` if it can."""
-    match value:
-        case bool():
-            return None
-        case int() if abs(value) > _CJSON_EXACT_INTEGER_LIMIT:
-            return (
-                f"integer {value}, which a cJSON number stores as a double "
-                "and cannot hold exactly"
-            )
-        case float() if not math.isinf(value) and math.isinf(
-            float(f"{value:.{_CJSON_PRINT_PRECISION}g}")
-        ):
-            return (
-                f"float {value!r}, which cJSON prints rounded to "
-                f"{_CJSON_PRINT_PRECISION} significant digits and so out of "
-                "range, reading back as infinity"
-            )
-        case str() if "\x00" in value:
-            return "a string with an embedded null, which cJSON truncates at"
-        case _:
-            return None
-
-
-@beartype
 def reject_cjson_unrepresentable(*, data: Value, language_name: str) -> None:
     """Reject values the cJSON representation silently changes.
 
@@ -303,22 +278,44 @@ def reject_cjson_unrepresentable(*, data: Value, language_name: str) -> None:
     significant digits, and its strings end at the first null byte, so
     each of those inputs comes back as something else (issues #4469,
     #4512 and #4539).
+
+    Every value of the document passes through here, so the test and
+    the descent share one walk rather than calling out per value.
     """
     stack = [data]
     while stack:
         value = stack.pop()
-        reason = _cjson_unrepresentable_reason(value=value)
-        if reason is not None:
-            msg = f"{language_name} json_type=CJSON cannot represent {reason}"
-            raise UnrepresentableInputError(msg)
         match value:
+            case bool():
+                continue
+            case int() if abs(value) > _CJSON_EXACT_INTEGER_LIMIT:
+                reason = (
+                    f"integer {value}, which a cJSON number stores as a "
+                    "double and cannot hold exactly"
+                )
+            case float() if not math.isinf(value) and math.isinf(
+                float(f"{value:.{_CJSON_PRINT_PRECISION}g}")
+            ):
+                reason = (
+                    f"float {value!r}, which cJSON prints rounded to "
+                    f"{_CJSON_PRINT_PRECISION} significant digits and so "
+                    "out of range, reading back as infinity"
+                )
+            case str() if "\x00" in value:
+                reason = (
+                    "a string with an embedded null, which cJSON truncates at"
+                )
             case dict():
                 stack.extend(value.keys())
                 stack.extend(value.values())
+                continue
             case list() | set():
                 stack.extend(value)
+                continue
             case _:
                 continue
+        msg = f"{language_name} json_type=CJSON cannot represent {reason}"
+        raise UnrepresentableInputError(msg)
 
 
 @beartype
