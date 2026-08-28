@@ -1,0 +1,1 @@
+A Swift call binding no longer annotates its variable with the input data type, which did not match the call result and failed to compile.

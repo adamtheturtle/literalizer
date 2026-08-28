@@ -1,0 +1,21 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+MOBILE LIT FUNCTION record_entry (VAL MOBILE LIT s, VAL MOBILE LIT n, VAL MOBILE LIT b)
+    RESULT MOBILE LIT(lit.null)
+:
+PROC main ()
+    VAL MOBILE LIT my_data IS record_entry(MOBILE LIT(lit.str; MOBILE []BYTE "a"), MOBILE LIT(lit.int; 1), MOBILE LIT(lit.bool; TRUE)):
+    SEQ
+        SKIP
+:

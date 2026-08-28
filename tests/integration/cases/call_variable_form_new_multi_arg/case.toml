@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+# ``call_variable_form_new`` binds a scalar result; this binds one whose
+# argument list is a collection, which is what makes a data-derived
+# annotation on the binding visibly wrong (issue #4537).
+
+[call]
+target_function = "record_entry"
+parameter_names = ["s", "n", "b"]
+per_element = true
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true
