@@ -11,6 +11,7 @@ from typing import ClassVar, TypeGuard
 
 from beartype import beartype
 
+from literalizer._checks import reject_cjson_unrepresentable
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1288,6 +1289,7 @@ class C(metaclass=LanguageCls):
         """
         if self._json_type_active:
             _check_c_json_value_keys(data=data)
+            reject_cjson_unrepresentable(data=data, language_name="C")
             return
         if self._record_strategy_active:
             _check_c_record_nesting(

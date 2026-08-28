@@ -12,6 +12,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_cjson_unrepresentable
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1296,7 +1297,14 @@ class Cobol(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Reject empty strings outside the faithful JSON
         representation backed by the C library.
+
+        The C library has limits of its own: its numbers are stored as
+        a ``double`` and printed to 15 significant digits, and its
+        strings end at the first null byte (issues #4469, #4512 and
+        #4539).
         """
+        if self._json_type_active:
+            reject_cjson_unrepresentable(data=data, language_name="Cobol")
         has_empty_string = _data_has_empty_string_value(data=data)
         if not self._json_type_active and has_empty_string:
             raise UnrepresentableStringError(

@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+A cJSON number is a C double printed to 15 significant digits, and a
+cJSON string ends at the first null byte, so each of these inputs
+comes back as something else.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["C", "Cobol"]
+option = "json_type"
+
+[call]
+api = "literalize"
+sources = [
+  '{"f": 1.7976931348623157e+308}',
+  '{"n": 9007199254740993}',
+  '{"s": "a\u0000b"}',
+]
+input_format = "json"

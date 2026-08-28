@@ -4,6 +4,7 @@ collection-shape constraints.
 
 import copy
 import datetime
+import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, overload
@@ -249,6 +250,68 @@ def reject_aware_datetimes(
                     f"UTC offset {value.utcoffset()}"
                 )
                 raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
+_CJSON_EXACT_INTEGER_LIMIT = 2**53
+"""The widest integer a cJSON number holds exactly.
+
+A cJSON number is a C ``double``, so an integer past this is stored as
+the nearest representable value.
+"""
+
+_CJSON_PRINT_PRECISION = 15
+"""Significant digits the cJSON printer writes a number with."""
+
+
+@beartype
+def _cjson_unrepresentable_reason(*, value: Value) -> str | None:
+    """Return why cJSON cannot carry *value*, or ``None`` if it can."""
+    match value:
+        case bool():
+            return None
+        case int() if abs(value) > _CJSON_EXACT_INTEGER_LIMIT:
+            return (
+                f"integer {value}, which a cJSON number stores as a double "
+                "and cannot hold exactly"
+            )
+        case float() if not math.isinf(value) and math.isinf(
+            float(f"{value:.{_CJSON_PRINT_PRECISION}g}")
+        ):
+            return (
+                f"float {value!r}, which cJSON prints rounded to "
+                f"{_CJSON_PRINT_PRECISION} significant digits and so out of "
+                "range, reading back as infinity"
+            )
+        case str() if "\x00" in value:
+            return "a string with an embedded null, which cJSON truncates at"
+        case _:
+            return None
+
+
+@beartype
+def reject_cjson_unrepresentable(*, data: Value, language_name: str) -> None:
+    """Reject values the cJSON representation silently changes.
+
+    cJSON stores every number as a C ``double`` and prints it to 15
+    significant digits, and its strings end at the first null byte, so
+    each of those inputs comes back as something else (issues #4469,
+    #4512 and #4539).
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        reason = _cjson_unrepresentable_reason(value=value)
+        if reason is not None:
+            msg = f"{language_name} json_type=CJSON cannot represent {reason}"
+            raise UnrepresentableInputError(msg)
+        match value:
             case dict():
                 stack.extend(value.keys())
                 stack.extend(value.values())
