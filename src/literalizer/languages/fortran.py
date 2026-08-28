@@ -572,17 +572,21 @@ def _fortran_call_stub(
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
-    immutable_variable_modifiers = frozenset()
+    immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     reserved_variable_identifier_pattern = None
-    reserved_call_parameter_identifiers = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_parameter_identifier_pattern = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
-    reserved_bare_call_target_identifiers = frozenset()
-    reserved_call_target_head_identifiers = frozenset()
-    contextual_call_target_identifiers = frozenset()
+    reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
+        frozenset()
+    )
+    reserved_call_target_head_identifiers: ClassVar[frozenset[str]] = (
+        frozenset()
+    )
+    contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     call_target_name_syntax = None
