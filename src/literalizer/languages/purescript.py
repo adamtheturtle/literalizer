@@ -88,6 +88,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -621,14 +622,20 @@ def _purescript_format_call_arg(_original: Value, formatted: str, /) -> str:
 def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     """Indent call expressions for a PureScript ``let`` block.
 
-    *calls* is one single-line call expression per line: this is the
-    only shape produced by ``literalize_call`` for PureScript, which
-    uses :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
-    standalone comments in that path.  Each line receives two levels of
-    *indent* plus ``_ = ``.
+    Each statement receives two levels of *indent* plus ``_ = ``.  The
+    binding belongs to the statement rather than to each of its lines: a
+    multiline collection argument spans several, and the rest are
+    continuations that need only the same margin (issue #4527).
     """
-    binding_prefix = indent * 2 + "_ = "
-    return "\n".join(binding_prefix + line for line in calls.split(sep="\n"))
+    binding_indent = indent * 2
+    return "\n".join(
+        f"{binding_indent}_ = {statement}".replace("\n", f"\n{binding_indent}")
+        for statement in split_statements(
+            content=calls,
+            quotes='"',
+            line_comment_prefixes=("--",),
+        )
+    )
 
 
 @beartype

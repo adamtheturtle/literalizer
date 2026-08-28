@@ -13,10 +13,10 @@ instance Num Val where
 main :: IO ()
 main = do
     _ <- process (HList [
-    _ <-     1,
-    _ <-     2
-    _ <-     ])
+        1,
+        2
+        ])
     _ <- process (HList [
-    _ <-     3
-    _ <-     ])
+        3
+        ])
     pure ()

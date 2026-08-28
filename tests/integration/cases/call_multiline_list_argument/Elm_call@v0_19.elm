@@ -12,12 +12,12 @@ main : Program () () Never
 main =
     let
         _ = process (EList [
-        _ =     EInt 1,
-        _ =     EInt 2
-        _ =     ])
+            EInt 1,
+            EInt 2
+            ])
         _ = process (EList [
-        _ =     EInt 3
-        _ =     ])
+            EInt 3
+            ])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

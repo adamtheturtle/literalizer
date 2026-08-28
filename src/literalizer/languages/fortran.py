@@ -436,8 +436,12 @@ def _fortran_call_statement(call: str, /) -> str:
     All top-level call statements in the generated output invoke void
     subroutines (or subroutines wrapping a value-returning function),
     which require the ``call`` keyword in Fortran.
+
+    A multiline argument makes the statement span physical lines, and
+    free-form Fortran continues a logical line only where a ``&`` says
+    so, exactly as a multiline value binding already does (issue #4527).
     """
-    return f"call {call}"
+    return _add_continuation(value=f"call {call}")
 
 
 @beartype

@@ -13,11 +13,11 @@ main :: Unit
 main =
     let
         _ = process (PList [
-        _ =     PInt 1,
-        _ =     PInt 2
-        _ =     ])
+            PInt 1,
+            PInt 2
+            ])
         _ = process (PList [
-        _ =     PInt 3
-        _ =     ])
+            PInt 3
+            ])
     in
     unit

@@ -83,12 +83,12 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    call process(flist([fval_t ::
-        fint(1_int64),
-        fint(2_int64)
+    call process(flist([fval_t :: &
+        fint(1_int64), &
+        fint(2_int64) &
     ]))
-    call process(flist([fval_t ::
-        fint(3_int64)
+    call process(flist([fval_t :: &
+        fint(3_int64) &
     ]))
 contains
     subroutine process(xs)

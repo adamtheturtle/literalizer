@@ -88,6 +88,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_statements
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -165,50 +166,6 @@ def _jsonnet_call_stub(
     for field in reversed(fields):
         inner = f"{field}: {{ {inner} }}"
     return (f"local {root} = {{ {inner} }};",)
-
-
-_JSONNET_STRING_OR_COMMENT = re.compile(
-    pattern=(
-        r"\"(?:[^\"\\]|\\.)*\""
-        r"|'(?:[^'\\]|\\.)*'"
-        r"|//.*"
-        r"|#.*"
-    ),
-)
-
-
-@beartype
-def _jsonnet_bracket_delta(*, line: str) -> int:
-    """Return how many brackets *line* leaves open.
-
-    Brackets inside a string literal or a comment are text, so those are
-    removed before counting.
-    """
-    code = _JSONNET_STRING_OR_COMMENT.sub(repl="", string=line)
-    opened = sum(code.count(bracket) for bracket in "([{")
-    closed = sum(code.count(bracket) for bracket in ")]}")
-    return opened - closed
-
-
-@beartype
-def _jsonnet_statements(*, content: str) -> list[str]:
-    """Split rendered Jsonnet into whole statements.
-
-    A call whose argument renders multiline spans several lines, and all
-    of them are one element of the wrapping array; splitting on every
-    line made each a separate element and gave the opener a comma of its
-    own (issue #4548).
-    """
-    grouped: list[list[str]] = [[]]
-    depth = 0
-    for line in content.split(sep="\n"):
-        grouped[-1].append(line)
-        depth += _jsonnet_bracket_delta(line=line)
-        if depth <= 0:
-            depth = 0
-            grouped.append([])
-    joined = ["\n".join(group) for group in grouped]
-    return [statement for statement in joined if statement.strip()]
 
 
 @beartype
@@ -570,7 +527,11 @@ class Jsonnet(metaclass=LanguageCls):
         preamble_str = "\n".join(body_preamble) + "\n"
         elements = [
             textwrap.indent(text=f"{statement},", prefix=self.indent)
-            for statement in _jsonnet_statements(content=content)
+            for statement in split_statements(
+                content=content,
+                quotes="\"'",
+                line_comment_prefixes=("//", "#"),
+            )
         ]
         return preamble_str + "[\n" + "\n".join(elements) + "\n]"
 

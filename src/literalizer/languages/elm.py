@@ -86,6 +86,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
@@ -1161,7 +1162,12 @@ class Elm(metaclass=LanguageCls):
         let_indent = self.indent * 2
         if not variable_name:
             let_lines = [
-                f"{let_indent}_ = {line}" for line in content.split(sep="\n")
+                f"{let_indent}_ = {statement}".replace("\n", f"\n{let_indent}")
+                for statement in split_statements(
+                    content=content,
+                    quotes='"',
+                    line_comment_prefixes=("--",),
+                )
             ]
             return _elm_call_module(
                 preamble=preamble,
