@@ -106,7 +106,13 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._preamble import HeterogeneousElements
+from literalizer._preamble import (
+    EmptyDict,
+    EmptyList,
+    EmptyOrderedMap,
+    EmptySet,
+    HeterogeneousElements,
+)
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -618,17 +624,17 @@ def _build_type_hint_preamble(
         t
         for t, needs in (
             (
-                dict,
+                EmptyDict,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
             (
-                OrderedMap,
+                EmptyOrderedMap,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
-            (set, default_set_element_type == "Any"),
-            (list, default_sequence_element_type == "Any"),
+            (EmptySet, default_set_element_type == "Any"),
+            (EmptyList, default_sequence_element_type == "Any"),
         )
         if needs
     )
@@ -730,17 +736,17 @@ def _build_type_hint_preamble_py38(
         t
         for t, needs in (
             (
-                dict,
+                EmptyDict,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
             (
-                OrderedMap,
+                EmptyOrderedMap,
                 default_dict_value_type == "Any"
                 or default_dict_key_type == "Any",
             ),
-            (set, default_set_element_type == "Any"),
-            (list, default_sequence_element_type == "Any"),
+            (EmptySet, default_set_element_type == "Any"),
+            (EmptyList, default_sequence_element_type == "Any"),
         )
         if needs
     )

@@ -25,6 +25,35 @@ class HeterogeneousElements:
     """
 
 
+class EmptyCollection:
+    """Base for the sentinels naming a collection type present as empty.
+
+    ``annotated_collection_types`` names the collection types written
+    into an annotation.  Whether a language must import its "unknown
+    element type" alias turns on something narrower: whether one of
+    those collections is *empty*, because only an empty one falls back
+    to the configured default element type.  These sentinels carry that
+    separately, so naming every collection under an unconditional
+    annotation mode does not also demand the alias (issue #4571).
+    """
+
+
+class EmptyDict(EmptyCollection):
+    """An empty mapping appears in the data."""
+
+
+class EmptyOrderedMap(EmptyCollection):
+    """An empty ordered mapping appears in the data."""
+
+
+class EmptySet(EmptyCollection):
+    """An empty set appears in the data."""
+
+
+class EmptyList(EmptyCollection):
+    """An empty sequence appears in the data."""
+
+
 _ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset(
     # pylint does not model PEP 695 aliases, so it does not see the
     # ``__value__`` every ``type`` statement defines.
@@ -164,6 +193,91 @@ def _walk_annotated_collections(  # noqa: C901  # pylint: disable=too-complex
                     _add_collection_type(val=v, result=result)
         case _:
             pass
+
+
+_ANNOTATED_COLLECTION_TYPES = frozenset({dict, list, set, OrderedMap})
+
+
+type _Collection = dict[Scalar, Value] | set[Scalar] | list[Value]
+"""A container the preamble walks when looking for empty values."""
+
+
+@beartype
+def _collections_in(*, data: Value) -> list[_Collection]:
+    """Return every collection inside *data*, *data* itself included."""
+    found: list[_Collection] = []
+    pending: list[Value] = [data]
+    while pending:
+        value = pending.pop()
+        match value:
+            case dict():
+                found.append(value)
+                pending.extend(value.values())
+            case set():
+                found.append(value)
+            case list():
+                found.append(value)
+                pending.extend(value)
+            case _:
+                pass
+    return found
+
+
+@beartype
+def _empty_collection_sentinel(
+    *,
+    value: _Collection,
+) -> type | None:
+    """Return the sentinel for *value*'s type, or ``None`` if non-
+    empty.
+    """
+    if value:
+        return None
+    match value:
+        case OrderedMap():
+            return EmptyOrderedMap
+        case dict():
+            return EmptyDict
+        case set():
+            return EmptySet
+        case list():
+            return EmptyList
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
+def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
+    """Return the :class:`EmptyCollection` sentinels *data* calls for."""
+    sentinels = (
+        _empty_collection_sentinel(value=value)
+        for value in _collections_in(data=data)
+    )
+    return frozenset(
+        sentinel for sentinel in sentinels if sentinel is not None
+    )
+
+
+@beartype
+def _annotates_every_declaration(*, language: Language) -> bool:
+    """Return whether *language* annotates a declaration whatever its
+    shape.
+
+    Each language names its unconditional mode ``ALWAYS`` in its own
+    ``VariableTypeHints`` enum, so there is no shared member to compare
+    against and the mode is matched by name.  Under it every collection
+    in the data is named somewhere in the annotation, not just the ones
+    an emptiness rule would force (issue #4571).
+    """
+    always = next(
+        (
+            member
+            for member in language.variable_type_hints_formats
+            if member.name == "ALWAYS"
+        ),
+        None,
+    )
+    return always is not None and language.variable_type_hints is always
 
 
 @beartype
@@ -429,11 +543,14 @@ def compute_preamble(
         else ()
     )
     collection = _collection_preamble(types=types, language=language)
-    annotated_collection_types: frozenset[type] = (
-        _collect_annotated_collection_types(data=data)
-        if has_variable_declaration and types & {dict, list, set, OrderedMap}
-        else frozenset()
-    )
+    present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
+    annotated_collection_types: frozenset[type] = frozenset()
+    if has_variable_declaration and present_collection_types:
+        annotated_collection_types = (
+            present_collection_types
+            if _annotates_every_declaration(language=language)
+            else _collect_annotated_collection_types(data=data)
+        ) | _collect_empty_collection_types(data=data)
     if has_variable_declaration and _has_union_in_type_hints(data=data):
         annotated_collection_types = annotated_collection_types | frozenset(
             {HeterogeneousElements}
