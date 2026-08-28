@@ -1,4 +1,4 @@
 my $my_data = {
     'lint' => [2, []],
-    'test' => [5, ['compile']],
+    'test' => [5, ['compile',]],
 };
