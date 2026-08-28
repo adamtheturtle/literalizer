@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Fortran"]
+languages_reason = "Fortran-specific: a wrapped line still gains a continuation marker and the indentation of the file it sits in, which the 132-column budget has to leave room for."
+suites = ["base"]

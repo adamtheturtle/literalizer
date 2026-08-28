@@ -86,6 +86,17 @@ _FORTRAN_STRING_CHUNK_LENGTH = 105
 _FORTRAN_LINE_LIMIT = 132
 """The longest physical line free-form Fortran 2018 source admits."""
 
+_FORTRAN_LINE_MARGIN = 14
+"""What a line still gains after the wrapper has measured it.
+
+A piece takes a trailing continuation marker, and the whole program is
+indented once it is wrapped in a file, so a line is measured against
+the limit less this margin rather than against the limit itself.
+"""
+
+_FORTRAN_SAFE_COLUMN = _FORTRAN_LINE_LIMIT - _FORTRAN_LINE_MARGIN
+"""How long a line may grow before the wrapper has to split it."""
+
 _FORTRAN_CONTINUATION_PREFIX = "& "
 """What a continued physical line resumes with."""
 
@@ -294,7 +305,7 @@ def _wrap_fortran_expression_line(line: str, /) -> list[str]:
     stripped = line.rstrip()
     if not stripped.endswith("&"):
         return _split_fortran_line(line=line)
-    if len(line) <= _FORTRAN_LINE_LIMIT:
+    if len(line) <= _FORTRAN_SAFE_COLUMN:
         return [line]
     pieces = _split_fortran_line(line=stripped[:-1].rstrip())
     return [*pieces[:-1], f"{pieces[-1]} &"]
@@ -316,7 +327,7 @@ def _split_fortran_line(*, line: str) -> list[str]:
             line=remaining,
             break_after=_FORTRAN_ELEMENT_BREAK,
         )
-        if break_at is None and len(remaining) > _FORTRAN_LINE_LIMIT:
+        if break_at is None and len(remaining) > _FORTRAN_SAFE_COLUMN:
             break_at = _fortran_break_position(
                 line=remaining,
                 break_after=_FORTRAN_FALLBACK_BREAK,
