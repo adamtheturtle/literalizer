@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Java"]
+languages_reason = "Java's ZoneOffset caps at 18 hours, so only Java renders a wider offset as the equivalent UTC instant."
+
+[[variants]]
+axis = "datetime"
