@@ -116,7 +116,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import InvalidRecordNameError
+from literalizer.exceptions import (
+    InvalidRecordNameError,
+    UnrepresentableInputError,
+)
 
 _GO_I32_MIN = -(2**31)
 _GO_I32_MAX = 2**31 - 1
@@ -327,8 +330,20 @@ def _format_go_set_entry(_original: Value, item: str) -> str:
 
 @beartype
 def _go_record_field_identifier(key: str, /) -> str:
-    """Return the exported Go struct field name for a dict *key*."""
-    return IdentifierCase.PASCAL.convert(name=key)
+    """Return the exported Go struct field name for a dict *key*.
+
+    The blank identifier names no field, so a struct literal cannot
+    initialize one and the key is refused instead (issue #4505).
+    """
+    identifier = IdentifierCase.PASCAL.convert(name=key)
+    if identifier == "_":
+        msg = (
+            f"Go cannot represent the dict key {key!r} as a struct field "
+            "name: the blank identifier names no field, so a struct "
+            "literal cannot initialize it"
+        )
+        raise UnrepresentableInputError(msg)
+    return identifier
 
 
 @beartype

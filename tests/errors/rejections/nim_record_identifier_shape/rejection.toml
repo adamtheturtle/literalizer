@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+A Nim identifier starts with a letter and separates the rest with
+single underscores, so a leading, trailing or doubled one is not a
+field name.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = [
+  '[{"__": 1}]',
+  '[{"_x": 1}]',
+  '[{"x_": 1}]',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

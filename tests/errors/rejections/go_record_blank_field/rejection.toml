@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+The blank identifier names no Go struct field, so a struct literal
+cannot initialize one.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Go"]
+
+[call]
+api = "literalize"
+sources = ['[{"_": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

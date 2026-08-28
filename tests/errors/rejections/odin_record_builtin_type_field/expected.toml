@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Odin['[{\"notin\": 1, \"zz\": \"s\"}]']" = "Odin record field name 'notin' is reserved"
+"Odin['[{\"string\": 1, \"zz\": \"s\"}]']" = "Odin record field name 'string' is reserved"

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Go = "Go cannot represent the dict key '_' as a struct field name: the blank identifier names no field, so a struct literal cannot initialize it"

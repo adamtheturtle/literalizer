@@ -526,8 +526,20 @@ def _scala_record_field_identifier(key: str, /) -> str:
     Scala field identifiers preserve the dict key's spelling (no case
     conversion). Reserved words use Scala's backtick identifier syntax,
     which is valid in both the declaration and the named-argument literal.
+    A trailing underscore starts an operator identifier, so such a name
+    takes backticks too; the lone underscore is the wildcard, which no
+    backticks rescue, so it is refused (issue #4505).
     """
-    return f"`{key}`" if key in _SCALA_RESERVED_IDENTIFIERS else key
+    if key == "_":
+        msg = (
+            "Scala cannot represent the dict key '_' as a case class "
+            "field name: it is the wildcard, which is invalid even as a "
+            "backquoted identifier"
+        )
+        raise UnrepresentableInputError(msg)
+    if key in _SCALA_RESERVED_IDENTIFIERS or key.endswith("_"):
+        return f"`{key}`"
+    return key
 
 
 @beartype

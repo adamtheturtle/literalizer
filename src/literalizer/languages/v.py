@@ -114,7 +114,10 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import NullInCollectionError
+from literalizer.exceptions import (
+    NullInCollectionError,
+    UnrepresentableInputError,
+)
 
 # V interpolates ``$`` and requires an escaped zero byte.
 _format_string = make_backslash_string_formatter(
@@ -545,7 +548,22 @@ def _v_record_field_identifier(key: str, /) -> str:
 
     V member identifiers are the dict keys verbatim (no case
     conversion), matching the ``Record0{ id: 1, ... }`` literal form.
+    The compiler holds a field name to snake case: it refuses an
+    uppercase letter, and refuses a leading underscore on anything
+    longer than the blank name (issue #4505).
     """
+    if key != "_" and key.startswith("_"):
+        msg = (
+            f"V cannot represent the dict key {key!r} as a struct field "
+            "name: a field name cannot start with an underscore"
+        )
+        raise UnrepresentableInputError(msg)
+    if any(character.isupper() for character in key):
+        msg = (
+            f"V cannot represent the dict key {key!r} as a struct field "
+            "name: a field name cannot contain uppercase letters"
+        )
+        raise UnrepresentableInputError(msg)
     return key
 
 

@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+An Odin field named after a builtin type shadows it inside the struct,
+and the compiler also reads not_in without its underscore.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize"
+sources = [
+  '[{"notin": 1, "zz": "s"}]',
+  '[{"string": 1, "zz": "s"}]',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

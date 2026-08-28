@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+The Scala wildcard is invalid even as a backquoted identifier, so it
+cannot name a case class field.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Scala"]
+
+[call]
+api = "literalize"
+sources = ['[{"_": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

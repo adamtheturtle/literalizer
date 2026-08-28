@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"V['[{\"Self\": 1}]']" = "V cannot represent the dict key 'Self' as a struct field name: a field name cannot contain uppercase letters"
+"V['[{\"__\": 1}]']" = "V cannot represent the dict key '__' as a struct field name: a field name cannot start with an underscore"
+"V['[{\"camelCase\": 1}]']" = "V cannot represent the dict key 'camelCase' as a struct field name: a field name cannot contain uppercase letters"

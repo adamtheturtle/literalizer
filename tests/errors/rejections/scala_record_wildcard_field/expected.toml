@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Scala = "Scala cannot represent the dict key '_' as a case class field name: it is the wildcard, which is invalid even as a backquoted identifier"
