@@ -1,0 +1,9 @@
+let my_data: [String: Any] = [
+    "a": [
+        "b": [1],
+        // Outdented from the sequence, so the inner mapping claims this.
+        "c": 2,
+    ],
+    // Outdented from the inner mapping too, so the root claims this.
+    "d": 3,
+]
