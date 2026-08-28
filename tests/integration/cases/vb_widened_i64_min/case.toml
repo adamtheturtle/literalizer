@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["VisualBasic"]
+languages_reason = "Visual Basic reads -9223372036854775808 as a negation of a literal one past Long.MaxValue, so the minimum needs the Long.MinValue spelling inside a typed array as well as at scalar position."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"

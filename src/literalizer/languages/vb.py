@@ -99,6 +99,20 @@ from literalizer._types import Value
 
 
 @beartype
+def _format_vb_long(value: int, /, *, base: Callable[[int], str]) -> str:
+    """Format a Long, spelling the minimum as ``Long.MinValue``.
+
+    Visual Basic reads ``-9223372036854775808L`` as a negation of a
+    literal one past ``Long.MaxValue``, which is ``BC30036: Overflow``
+    wherever it appears -- inside a typed array element as much as at
+    scalar position (issue #4487).
+    """
+    if value == I64_MIN:
+        return "Long.MinValue"
+    return base(value)
+
+
+@beartype
 def _format_vb_ulong_positive(value: int) -> str:
     """Format a positive value above signed 64-bit range as a VB.NET
     ``UL`` unsigned 64-bit literal.
@@ -923,9 +937,7 @@ class VisualBasic(metaclass=LanguageCls):
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
         return make_overflow_fallback_formatter(
-            base=lambda value: (
-                "Long.MinValue" if value == I64_MIN else str(object=value)
-            ),
+            base=partial(_format_vb_long, base=str),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_vb_ulong_positive,
                 language_name="VB.NET",
@@ -940,7 +952,10 @@ class VisualBasic(metaclass=LanguageCls):
         collections (mixed-magnitude int sets/lists).
         """
         return make_overflow_fallback_formatter(
-            base=make_long_suffix_formatter(base=str),
+            base=partial(
+                _format_vb_long,
+                base=make_long_suffix_formatter(base=str),
+            ),
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_format_vb_ulong_positive,
                 language_name="VB.NET",
