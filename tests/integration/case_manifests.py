@@ -591,7 +591,6 @@ class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
     # the lint-CI compile of every fixture); they diverge from the
     # ``NewVariable`` form and are skipped (no golden) instead.  ``None``
     # disables the gate (every supporting language gets a golden).
-    self_contained_mirror_variable_form: CallVariableForm | None = None
     requires_call_returns_expression: bool = False
     requires_inline_multiline_dict_args: bool = False
     requires_standalone_wrapped_comments: bool = False

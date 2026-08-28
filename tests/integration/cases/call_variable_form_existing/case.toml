@@ -1,19 +1,15 @@
 schema_version = 1
 owner = "literalize-call"
 
-# ``ExistingVariable`` counterpart of ``call_variable_form_new``.  The
-# runner gates each language on
-# ``self_contained_mirror_variable_form``: only languages whose
-# ``ExistingVariable`` wrap-in-file output equals their ``NewVariable``
-# form (functional ``let`` rebinds and dynamic languages) get a golden;
-# imperative compiled languages emit a bare assignment to an undeclared
-# name and are skipped (no golden) rather than landing a non-compiling
-# fixture.
+# ``ExistingVariable`` counterpart of ``call_variable_form_new``.  Only
+# languages whose assignment declares the name it binds (functional
+# ``let`` rebinds and dynamic languages) get a golden; the rest raise
+# ``ExistingVariableNotSelfContainedError``, because a whole file that
+# assigns to an undeclared name does not compile, and are skipped.
 [call]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 wrap_in_file = true
 variable_form = "existing"
-self_contained_mirror_variable_form = "new"
 requires_call_returns_expression = true

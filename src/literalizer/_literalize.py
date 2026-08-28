@@ -3705,6 +3705,47 @@ def _validate_ref_output_name(
 
 
 @beartype
+def reject_undeclared_assignment(
+    *,
+    pre_form: _PreFormState,
+    language: Language,
+    variable_form: NewVariable | ExistingVariable | None,
+) -> None:
+    """Reject an assignment a complete file would leave undeclared.
+
+    A language whose assignment reads the same as its declaration needs
+    no prior declaration for the name, so assigning in a whole file is
+    fine.  Where the two differ, the file names something it never
+    declares (issue #4465).
+    """
+    if not isinstance(variable_form, ExistingVariable):
+        return
+    assignment = _apply_variable_wrapper(
+        result=pre_form.result,
+        language=language,
+        data=pre_form.data,
+        variable_form=variable_form,
+        line_prefix=pre_form.line_prefix,
+        is_call_binding=False,
+    )
+    declaration = _apply_variable_wrapper(
+        result=pre_form.result,
+        language=language,
+        data=pre_form.data,
+        variable_form=NewVariable(
+            name=variable_form.name,
+            modifiers=frozenset(),
+        ),
+        line_prefix=pre_form.line_prefix,
+        is_call_binding=False,
+    )
+    if assignment != declaration:
+        raise ExistingVariableNotSelfContainedError(
+            language_name=type(language).__name__
+        )
+
+
+@beartype
 def literalize_apply_form(
     *,
     pre_form: _PreFormState,
@@ -3723,30 +3764,12 @@ def literalize_apply_form(
         pre_form=pre_form,
         variable_form=variable_form,
     )
-    if wrap_in_file and isinstance(variable_form, ExistingVariable):
-        assignment = _apply_variable_wrapper(
-            result=pre_form.result,
+    if wrap_in_file:
+        reject_undeclared_assignment(
+            pre_form=pre_form,
             language=language,
-            data=pre_form.data,
             variable_form=variable_form,
-            line_prefix=pre_form.line_prefix,
-            is_call_binding=False,
         )
-        declaration = _apply_variable_wrapper(
-            result=pre_form.result,
-            language=language,
-            data=pre_form.data,
-            variable_form=NewVariable(
-                name=variable_form.name,
-                modifiers=frozenset(),
-            ),
-            line_prefix=pre_form.line_prefix,
-            is_call_binding=False,
-        )
-        if assignment != declaration:
-            raise ExistingVariableNotSelfContainedError(
-                language_name=type(language).__name__
-            )
 
     result = _apply_variable_wrapper(
         result=pre_form.result,
@@ -3985,6 +4008,14 @@ def literalize_bound_refs(
         )
         if isinstance(variable_form, BothVariableForms)
         else variable_form
+    )
+    # This route is reached only for a wrapped file, and the wrapping
+    # happens in the composer below, so the self-containment guard runs
+    # here rather than through ``literalize_apply_form`` (issue #4465).
+    reject_undeclared_assignment(
+        pre_form=pre_form,
+        language=language,
+        variable_form=declaration_form,
     )
     main_result = literalize_apply_form(
         pre_form=pre_form,
@@ -5476,12 +5507,17 @@ def _validate_parameter_count(
         )
 
 
+_CALL_BINDING_PROBE = "probe"
+"""A stand-in call result, used only to compare binding spellings."""
+
+
 @beartype
 def _validate_call_variable_form(
     *,
     language: Language,
     variable_form: NewVariable | ExistingVariable,
     call_count: int,
+    wrap_in_file: bool,
 ) -> None:
     """Raise typed errors for unsupported ``variable_form``
     combinations.
@@ -5522,6 +5558,27 @@ def _validate_call_variable_form(
                 "so the call result cannot be bound to a variable"
             ),
         )
+    if wrap_in_file and isinstance(variable_form, ExistingVariable):
+        # A whole file that assigns to a name it never declares does not
+        # compile, the same rule ``literalize`` applies to a value
+        # binding (issue #4468).  Comparing the two call-binding forms
+        # is what says whether the language needs the declaration: where
+        # they read alike, the assignment declares the name itself.
+        declaration = language.format_call_variable_declaration(
+            variable_form.name,
+            _CALL_BINDING_PROBE,
+            None,
+            frozenset(),
+        )
+        assignment = language.format_call_variable_assignment(
+            variable_form.name,
+            _CALL_BINDING_PROBE,
+            None,
+        )
+        if declaration != assignment:
+            raise ExistingVariableNotSelfContainedError(
+                language_name=type(language).__name__
+            )
 
 
 _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
@@ -5921,6 +5978,7 @@ def _validate_call_preconditions(
             language=language,
             variable_form=variable_form,
             call_count=len(arg_values),
+            wrap_in_file=wrap_in_file,
         )
     if (
         not language.supports_inline_multiline_dict_args

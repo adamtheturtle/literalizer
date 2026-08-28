@@ -1,0 +1,1 @@
+An assignment to a name a complete file never declares is now rejected on two more paths: with bound_refs, and when literalize_call binds its result to an ExistingVariable under wrap_in_file.

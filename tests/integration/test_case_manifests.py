@@ -195,17 +195,6 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'target_function = "process"\n'
                 'parameter_names = ["value"]\n'
                 "per_element = true\n"
-                'self_contained_mirror_variable_form = "mystery"\n'
-            ),
-            "Input should be 'existing', 'new'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
                 '[[call.variants]]\naxis = "made_up"\n'
             ),
             "unknown variant axis 'made_up'",

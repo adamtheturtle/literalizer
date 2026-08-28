@@ -1,0 +1,1 @@
+literalize_call with ExistingVariable and wrap_in_file now raises instead of emitting an assignment to an undeclared name.
