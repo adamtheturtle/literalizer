@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+"Rust['HashMap']" = "record_shape_names entry for keys ['a', 'b'] maps to 'HashMap', which names a type the generated code itself uses."
+"Rust['String']" = "record_shape_names entry for keys ['a', 'b'] maps to 'String', which names a type the generated code itself uses."
+"Rust['Value']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Value', which names a type the generated code itself uses."
+"Rust['Vec']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Vec', which names a type the generated code itself uses."

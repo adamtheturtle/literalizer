@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+"Java['Integer']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Integer', which names a type the generated code itself uses."
+"Java['Map']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Map', which names a type the generated code itself uses."
+"Java['Object']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Object', which names a type the generated code itself uses."
+"Java['String']" = "record_shape_names entry for keys ['a', 'b'] maps to 'String', which names a type the generated code itself uses."

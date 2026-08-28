@@ -1,0 +1,1 @@
+Rust and Java record_shape_names entries that name a type the generated code itself uses, such as Vec or String, are now rejected instead of producing output the compiler refuses.

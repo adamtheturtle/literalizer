@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A record named after a type the generated Java itself uses either
+shadows a java.lang type or clashes with the import naming it.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Java"]
+values = ["Integer", "Map", "Object", "String"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["a", "b"]], names = ["{value}"] },
+]
