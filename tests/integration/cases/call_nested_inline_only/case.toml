@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+# The sibling of ``call_nested_inline_between_comments`` with no
+# standalone comment anywhere: an inline comment inside an element has
+# to reach the call line on its own (issue #4664).
+
+[call]
+target_function = "f"
+parameter_names = ["a", "b"]
+per_element = true

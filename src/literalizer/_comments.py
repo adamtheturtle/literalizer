@@ -445,6 +445,7 @@ def _outdented_trailing_comments(
     value: object,
     own_column: int,
     intervening_columns: tuple[int, ...],
+    hoist_inline: bool,
 ) -> ElementComments:
     """Return comments stored on *value* that belong to its parent.
 
@@ -467,6 +468,12 @@ def _outdented_trailing_comments(
     through to reach *value*.  Any of them that the comment is also
     indented from is a closer claimant, and claims the comment through
     its own walk, so this one leaves it alone.
+
+    Set *hoist_inline* where the enclosing element renders on one line,
+    as a call statement does: the inline comment then has no line of its
+    own to sit on and belongs to the element (issue #4664).  Where the
+    nested collection keeps its own lines the comment stays on the
+    element it was written against.
     """
     if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
         return ElementComments(before=(), inline="")
@@ -481,6 +488,7 @@ def _outdented_trailing_comments(
         value=_collection_element_value(ruamel_data=value, key=last_key),
         own_column=own_column,
         intervening_columns=(*intervening_columns, nested_column),
+        hoist_inline=hoist_inline,
     )
     parsed = _element_after_comments(
         ca=_comment_association(ruamel_data=value),
@@ -501,6 +509,11 @@ def _outdented_trailing_comments(
             before=(*deeper.before, *parsed.before_next),
             inline=parsed.inline or deeper.inline,
         )
+    if hoist_inline:
+        return ElementComments(
+            before=deeper.before,
+            inline=parsed.inline or deeper.inline,
+        )
     return deeper
 
 
@@ -509,6 +522,7 @@ def extract_yaml_comments(
     *,
     ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
     nested: bool,
+    hoist_nested_inline: bool,
 ) -> CollectionComments:
     """Extract top-level comments from parsed ruamel.yaml data.
 
@@ -525,6 +539,10 @@ def extract_yaml_comments(
     nested collection that precedes it, and belongs to that enclosing
     collection rather than to this one.  A root collection has no
     enclosing collection, so it keeps every comment stored on it.
+
+    Set *hoist_nested_inline* where each element renders on one line, as
+    a call statement does, so an inline comment written inside an
+    element reaches the line that element becomes (issue #4664).
     """
     # https://sourceforge.net/p/ruamel-yaml/tickets/328/
     ca = _comment_association(ruamel_data=ruamel_data)
@@ -582,6 +600,7 @@ def extract_yaml_comments(
             value=element_value,
             own_column=own_column,
             intervening_columns=(),
+            hoist_inline=hoist_nested_inline,
         )
         pending_before += list(nested_comments.before)
         inline = inline or nested_comments.inline

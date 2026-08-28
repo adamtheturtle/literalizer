@@ -1,0 +1,3 @@
+def f(*_args: object, **_kwargs: object) -> object: ...
+f(a=2, b="hello")  # trailing note
+f(a=3, b="world")  # another note

@@ -128,6 +128,7 @@ def _resolve_yaml_collection_comments(
     collection_comments = extract_yaml_comments(
         ruamel_data=ruamel_data,
         nested=False,
+        hoist_nested_inline=False,
     )
 
     if language.skip_null_dict_values and isinstance(
@@ -180,6 +181,7 @@ def resolve_yaml_comments(
                 collection_comments=extract_yaml_comments(
                     ruamel_data=raw_data,
                     nested=False,
+                    hoist_nested_inline=False,
                 ),
                 base=base,
                 language=language,

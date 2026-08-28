@@ -2453,6 +2453,7 @@ def _source_collection_comments(
     return extract_yaml_comments(
         ruamel_data=raw_value,
         nested=id(value) != ctx.comment_root_id,
+        hoist_nested_inline=False,
     )
 
 
@@ -5453,7 +5454,9 @@ def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
     ):
         return False
     collection_comments = extract_yaml_comments(
-        ruamel_data=parsed.raw_data, nested=False
+        ruamel_data=parsed.raw_data,
+        nested=False,
+        hoist_nested_inline=False,
     )
     if collection_comments.trailing:
         return True
@@ -6749,6 +6752,9 @@ def literalize_call_parsed(
             collection_comments = extract_yaml_comments(
                 ruamel_data=parsed.raw_data,
                 nested=False,
+                # A call statement is one line, so an inline
+                # comment inside the element belongs on it.
+                hoist_nested_inline=True,
             )
         result = _render_call_per_element(
             data=per_element_data,

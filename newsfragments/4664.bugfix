@@ -1,0 +1,1 @@
+An inline comment on a scalar inside a call element now reaches the generated call line even when no standalone comment follows the element.
