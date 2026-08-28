@@ -1,0 +1,1 @@
+A YAML comment on its own line after a scalar document is now emitted as a standalone comment rather than being attached to the value as an inline comment.

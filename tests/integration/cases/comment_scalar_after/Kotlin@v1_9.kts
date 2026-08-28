@@ -1,0 +1,2 @@
+val my_data = 42
+// after

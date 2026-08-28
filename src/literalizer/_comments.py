@@ -614,6 +614,34 @@ class _ScalarComments:
 
     before: list[str]
     inline: str
+    after: list[str]
+
+
+@beartype
+def _split_scalar_after_token(*, value: str) -> _ScalarComments:
+    r"""Split a trailing comment token into its comment position classes.
+
+    *ruamel.yaml* hands the whole run of comments that follow a scalar
+    over as one token.  Only its first line can be an inline comment,
+    and only when the token starts on the same line as the value, which the
+    token value records by having no leading newline.  ``"# c\n"`` is
+    therefore inline while ``"\n# c\n"`` and ``"\n  # c\n"`` are
+    standalone comments on the lines after the value.  Every line
+    beyond the first is standalone whatever the first one is.
+    """
+    lines = value.split(sep="\n")
+    head, tail = lines[0], lines[1:]
+    if head.strip().startswith("#"):
+        return _ScalarComments(
+            before=[],
+            inline=_strip_comment_marker(text=head),
+            after=_token_comment_lines(value="\n".join(tail)),
+        )
+    return _ScalarComments(
+        before=[],
+        inline="",
+        after=_token_comment_lines(value=value),
+    )
 
 
 @beartype
@@ -631,7 +659,7 @@ def _extract_scalar_comments(
     *tokens* should come from ``YAML().scan()``.
     """
     before_comments: list[str] = []
-    inline = ""
+    trailing = _ScalarComments(before=[], inline="", after=[])
     for token in tokens:
         comment: list[Any] | None = token.comment
         if not comment:
@@ -640,14 +668,18 @@ def _extract_scalar_comments(
         before_tokens: list[CommentToken] = comment[1] or []
         if inline_token is not None:
             value: str = inline_token.value
-            inline = _strip_comment_marker(text=value)
+            trailing = _split_scalar_after_token(value=value)
         for bt in before_tokens:
             bt_value: str = bt.value
             before_comments.extend(
                 _token_comment_lines(value=bt_value),
             )
         break
-    return _ScalarComments(before=before_comments, inline=inline)
+    return _ScalarComments(
+        before=before_comments,
+        inline=trailing.inline,
+        after=trailing.after,
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -714,7 +746,11 @@ def literalize_yaml_scalar(
         tokens=tokens,
     )
 
-    if not scalar_comments.before and not scalar_comments.inline:
+    if (
+        not scalar_comments.before
+        and not scalar_comments.inline
+        and not scalar_comments.after
+    ):
         return ScalarCommentResult(result=base, pending_before=())
 
     formatted_before = tuple(
@@ -725,6 +761,15 @@ def literalize_yaml_scalar(
             line_prefix=line_prefix,
         )
         for comment_text in scalar_comments.before
+    )
+    formatted_after = tuple(
+        _format_comment(
+            text=comment_text,
+            comment_prefix=comment_prefix,
+            comment_suffix=comment_suffix,
+            line_prefix=line_prefix,
+        )
+        for comment_text in scalar_comments.after
     )
 
     pending: tuple[str, ...] = ()
@@ -751,15 +796,21 @@ def literalize_yaml_scalar(
         case _:
             inline_value = base
 
+    # Trailing standalone comments can only follow the value where an
+    # inline comment could: both need the value to end the declaration,
+    # or the rest of the declaration would land inside the comment.
+    trailing = formatted_after if supports_scalar_inline_comments else ()
+    pending += () if supports_scalar_inline_comments else formatted_after
+
     if supports_scalar_before_comments:
-        parts = [*formatted_before, inline_value]
+        parts = [*formatted_before, inline_value, *trailing]
         return ScalarCommentResult(
             result="\n".join(parts),
             pending_before=pending,
         )
 
     return ScalarCommentResult(
-        result=inline_value,
+        result="\n".join([inline_value, *trailing]),
         pending_before=(*formatted_before, *pending),
     )
 
