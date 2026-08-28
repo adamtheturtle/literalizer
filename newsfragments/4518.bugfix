@@ -1,0 +1,1 @@
+JSON5 input now accepts a raw U+2028 or U+2029 inside a string, which the JSON5 specification allows so that every JSON document is also a JSON5 document.

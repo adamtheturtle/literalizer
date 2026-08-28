@@ -1,0 +1,6 @@
+{
+  "double": "a b",
+  'single': 'c d',
+  // A comment, which both separators would end.
+  "both": "e f g",
+}
