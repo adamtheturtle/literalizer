@@ -3322,7 +3322,6 @@ class Cpp(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
@@ -3336,6 +3335,17 @@ class Cpp(metaclass=LanguageCls):
     def _json_type_active(self) -> bool:
         """Return whether C++ should render via ``nlohmann::json``."""
         return self.json_type is not None
+
+    @cached_property
+    def supports_collection_comments(self) -> bool:
+        """Whether a comment can sit inside the rendered collection.
+
+        The inline rendering hands one JSON document to
+        ``nlohmann::json::parse``, and JSON has no comments, so one
+        written inside it is a parse error rather than a comment.  The
+        comments go before the declaration instead (issue #4471).
+        """
+        return not self._json_inline_document_active
 
     @cached_property
     def _json_inline_document_active(self) -> bool:
