@@ -1424,6 +1424,16 @@ class LanguageCls(type):
     supports_default_dict_key_type: bool
     supports_non_string_dict_keys: bool
     checks_raw_control_dict_keys_separately: bool
+    pools_map_integer_width: bool = True
+    """Whether one integer width is chosen for a whole map's values.
+
+    A map whose value slot is a single declared type needs every
+    integer in it to fit that type.  Where the slot is a boxed
+    ``Object`` instead, each value carries its own type, so pooling
+    would refuse a document that mixes a wide unsigned value with an
+    ordinary negative one that VB.NET and C# each represent fine on
+    their own (issue #4488).
+    """
     supports_default_dict_value_type: bool
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
