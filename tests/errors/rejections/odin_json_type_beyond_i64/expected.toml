@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Odin['{\"n\": -9223372036854775809}']" = "Odin json_type parses the embedded JSON text with parse_integers=true, which stores every integer as an i64; -9223372036854775809 is outside that range and wraps around silently."
+"Odin['{\"n\": 18446744073709551615}']" = "Odin json_type parses the embedded JSON text with parse_integers=true, which stores every integer as an i64; 18446744073709551615 is outside that range and wraps around silently."
+"Odin['{\"n\": 9223372036854775808}']" = "Odin json_type parses the embedded JSON text with parse_integers=true, which stores every integer as an i64; 9223372036854775808 is outside that range and wraps around silently."

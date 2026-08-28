@@ -1,0 +1,1 @@
+``Odin(json_type=JSON_VALUE)`` now refuses an integer outside the signed 64-bit range, which the runtime parser wrapped around, and an object name that is empty, which it discarded along with its value.

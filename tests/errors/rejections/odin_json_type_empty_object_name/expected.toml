@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Odin = "Odin json_type parses the embedded JSON text at runtime, and its parser drops an object member whose name is empty, so the entry would be missing from the value."

@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Odin's JSON parser discards an object member whose name is empty, so
+the entry would be missing from the parsed value.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize"
+sources = ['{"": "x"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_VALUE" },
+]

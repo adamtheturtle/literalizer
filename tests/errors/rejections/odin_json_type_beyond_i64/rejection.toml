@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+The embedded JSON text is parsed with parse_integers=true, which stores
+every integer as an i64, so one outside that range wraps around.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Odin"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"n": -9223372036854775809}',
+  '{"n": 18446744073709551615}',
+  '{"n": 9223372036854775808}',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "JSON_VALUE" },
+]
