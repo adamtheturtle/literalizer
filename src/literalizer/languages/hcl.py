@@ -84,7 +84,6 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
     wrap_in_file_noop,
 )
@@ -543,8 +542,19 @@ class Hcl(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        return no_validate_call_arg
+        """Return call-argument validation for this language.
+
+        An argument is a value like any other, and this target
+        normalizes what it is given, so the same rejection a declared
+        value gets applies here (issue #4522).
+        """
+
+        @beartype
+        def _validate(value: Value) -> None:
+            """Reject an argument this target would normalize."""
+            reject_non_nfc_strings(data=value, language_name="Hcl")
+
+        return _validate
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:

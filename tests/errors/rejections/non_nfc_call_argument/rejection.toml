@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A call argument is a value like any other, and HCL and Raku normalize
+what they are given, so the rejection a declared value gets applies
+to an argument too.
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Hcl", "Raku"]
+
+[call]
+api = "literalize_call"
+sources = ['[["café"]]']
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
