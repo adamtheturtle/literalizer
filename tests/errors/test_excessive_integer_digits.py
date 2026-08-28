@@ -13,7 +13,10 @@ from collections.abc import Iterator
 import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import ExcessiveIntegerDigitsError
+from literalizer.exceptions import (
+    ExcessiveIntegerDigitsError,
+    LiteralizerError,
+)
 from literalizer.languages import Python
 
 _LOWERED_LIMIT = 640
@@ -67,11 +70,6 @@ def fixture_lowered_digit_limit() -> Iterator[None]:
             InputFormat.TOML,
             id="toml-hexadecimal",
         ),
-        pytest.param(
-            f"a = {_OVER_LIMIT_DIGITS}",
-            InputFormat.TOML,
-            id="toml-decimal",
-        ),
     ],
 )
 def test_parsed_integer_beyond_digit_limit(
@@ -86,6 +84,25 @@ def test_parsed_integer_beyond_digit_limit(
         literalize(
             source=source,
             input_format=input_format,
+            language=Python(),
+            variable_form=NewVariable(name="v", modifiers=frozenset()),
+        )
+
+
+@pytest.mark.usefixtures("lowered_digit_limit")
+def test_toml_decimal_beyond_digit_limit() -> None:
+    """A TOML decimal integer too wide to write out is rejected.
+
+    Which rejection arrives depends on the tomlkit release: some read
+    the token as a float, which reaches the numeric-token check and
+    gives :class:`ExcessiveIntegerDigitsError`, while others refuse it
+    as an invalid number.  Both are typed, which is what the contract
+    promises; the bare ``ValueError`` is what must not escape.
+    """
+    with pytest.raises(expected_exception=LiteralizerError):
+        literalize(
+            source=f"a = {_OVER_LIMIT_DIGITS}",
+            input_format=InputFormat.TOML,
             language=Python(),
             variable_form=NewVariable(name="v", modifiers=frozenset()),
         )
