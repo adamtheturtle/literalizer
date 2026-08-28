@@ -1,0 +1,3 @@
+def process(*_args: object, **_kwargs: object) -> object: ...
+process(value=1)  # trail \ .
+process(value=2)  # second

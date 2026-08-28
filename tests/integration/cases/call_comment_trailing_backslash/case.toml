@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+comment_source = ["trail \\", "second"]
+# A line comment ending in a backslash splices the following line
+# into itself in C-family source processing and in Tcl, which
+# swallows the call written there (issue #4466).
+requires_standalone_wrapped_comments = true

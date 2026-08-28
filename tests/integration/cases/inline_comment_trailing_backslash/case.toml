@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["C"]
+languages_reason = "A trailing backslash splices physical lines in C source, so an inline comment ending in one swallows the entry below it."

@@ -1,0 +1,1 @@
+A comment_source entry ending in a backslash no longer comments out the call written on the following line in C-family output and in Tcl.

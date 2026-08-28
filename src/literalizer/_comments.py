@@ -739,6 +739,32 @@ def extract_toml_comments(
 
 
 @beartype
+def neutralize_inline_comment(
+    *,
+    text: str,
+    comment_prefix: str,
+    comment_suffix: str,
+) -> str:
+    """Return *text* made safe to write after a comment marker.
+
+    As well as neutralizing anything that would close the comment early,
+    a trailing backslash is defused: a line comment ending in one
+    splices the next physical line into itself in C-family source
+    processing and in several shells, which silently swallows whatever
+    the comment sits beside (issue #4466).  A comment with a closing
+    delimiter ends where that delimiter says, so it needs no guard.
+    """
+    escaped = neutralize_comment_terminator(
+        text=text,
+        comment_prefix=comment_prefix,
+        comment_suffix=comment_suffix,
+    )
+    if not comment_suffix and escaped.endswith("\\"):
+        return f"{escaped} ."
+    return escaped
+
+
+@beartype
 def _format_comment(
     *,
     text: str,
@@ -754,16 +780,11 @@ def _format_comment(
                 string=text,
                 count=1,
             )
-        escaped = neutralize_comment_terminator(
+        escaped = neutralize_inline_comment(
             text=text,
             comment_prefix=comment_prefix,
             comment_suffix=comment_suffix,
         )
-        if not comment_suffix and escaped.endswith("\\"):
-            # A final backslash can splice the following physical line in
-            # C-family source processing (and continues lines in several
-            # shells).
-            escaped += " ."
         return f"{line_prefix}{comment_prefix} {escaped}{comment_suffix}"
     return f"{line_prefix}{comment_prefix}{comment_suffix}"
 
@@ -985,7 +1006,7 @@ def literalize_yaml_scalar(
 
     match bool(scalar_comments.inline), supports_scalar_inline_comments:
         case True, True:
-            escaped_inline = neutralize_comment_terminator(
+            escaped_inline = neutralize_inline_comment(
                 text=scalar_comments.inline,
                 comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
@@ -1179,7 +1200,7 @@ def apply_collection_comments_to_elements(
             for comment_text in ec.before
         )
         if ec.inline:
-            escaped_inline = neutralize_comment_terminator(
+            escaped_inline = neutralize_inline_comment(
                 text=ec.inline,
                 comment_prefix=comment_prefix,
                 comment_suffix=comment_suffix,
