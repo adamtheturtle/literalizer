@@ -7,6 +7,7 @@ import enum
 import json
 import math
 import re
+import sys
 import threading
 from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
@@ -29,6 +30,7 @@ from typing_extensions import TypeIs
 
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    ExcessiveIntegerDigitsError,
     JSON5ParseError,
     JSONParseError,
     ParseError,
@@ -455,10 +457,47 @@ def _parse_finite_float(value: str) -> float:
 
 _DECIMAL_BASE = 10
 
+_BITS_PER_DECIMAL_DIGIT_FLOOR = 3
+"""A conservative lower bound on the bits one decimal digit carries.
+
+An integer of at most ``limit * 3`` bits is below ``10 ** limit``, so it
+is always inside the interpreter's conversion limit and needs no check.
+"""
+
+
+@beartype
+def reject_excessive_integer_digits(*, value: int) -> None:
+    """Reject an integer the interpreter refuses to write out as text.
+
+    CPython caps ``int``-to-``str`` conversion and raises a bare
+    ``ValueError`` naming ``sys.set_int_max_str_digits``, which
+    describes the interpreter rather than the input (issue #4558).
+    """
+    limit = sys.get_int_max_str_digits()
+    if not limit:
+        return
+    if value.bit_length() <= limit * _BITS_PER_DECIMAL_DIGIT_FLOOR:
+        return
+    try:
+        str(object=value)
+    except ValueError as exc:
+        raise ExcessiveIntegerDigitsError(limit=limit) from exc
+
 
 def _parse_integer_preserving_negative_zero(value: str) -> int | float:
-    """Parse an integer token while retaining negative zero's sign."""
-    return -0.0 if value == "-0" else int(value)
+    """Parse an integer token while retaining negative zero's sign.
+
+    The digit count is checked before the conversion: ``int`` refuses a
+    token wider than the interpreter's limit with the same bare
+    ``ValueError`` that writing one out raises (issue #4558).
+    """
+    if value == "-0":
+        return -0.0
+    limit = sys.get_int_max_str_digits()
+    digits = value.lstrip("+-").replace("_", "").lstrip("0")
+    if limit and len(digits) > limit:
+        raise ExcessiveIntegerDigitsError(limit=limit)
+    return int(value, base=_DECIMAL_BASE)
 
 
 def _parse_json5_integer(  # noqa: NOD001
@@ -472,7 +511,9 @@ def _parse_json5_integer(  # noqa: NOD001
     being passed explicitly (issue #3921).
     """
     if base != _DECIMAL_BASE:
-        return int(value, base=base)
+        parsed = int(value, base=base)
+        reject_excessive_integer_digits(value=parsed)
+        return parsed
     return _parse_integer_preserving_negative_zero(value=value)
 
 
@@ -631,9 +672,19 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
     )
 
     def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
-        """Construct a YAML integer while preserving signed zero."""
-        if re.fullmatch(pattern=r"-0(?:_?0)*", string=node.value) is not None:
+        """Construct a YAML integer while preserving signed zero.
+
+        ruamel converts the token itself, so the digit count is checked
+        first: otherwise the interpreter's conversion limit surfaces as
+        its own bare ``ValueError`` (issue #4558).
+        """
+        value: str = node.value
+        if re.fullmatch(pattern=r"-0(?:_?0)*", string=value) is not None:
             return -0.0
+        limit = sys.get_int_max_str_digits()
+        digits = value.lstrip("+-").replace("_", "").lstrip("0")
+        if limit and len(digits) > limit and digits.isdigit():
+            raise ExcessiveIntegerDigitsError(limit=limit)
         return original(constructor_obj, node)
 
     constructor.add_constructor(

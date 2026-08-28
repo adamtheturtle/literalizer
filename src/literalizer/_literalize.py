@@ -68,6 +68,7 @@ from literalizer._parsing import (
     ParsedYaml,
     parse_input,
     recursion_parse_error,
+    reject_excessive_integer_digits,
     unwrap_yaml_scalar,
 )
 from literalizer._preamble import (
@@ -401,6 +402,7 @@ def _format_scalar(
         case bool():
             result = spec.true_literal if value else spec.false_literal
         case int():
+            reject_excessive_integer_digits(value=value)
             format_int = (
                 int_formatter
                 if int_formatter is not None

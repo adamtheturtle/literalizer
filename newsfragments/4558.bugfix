@@ -1,0 +1,1 @@
+An integer with more decimal digits than the interpreter converts to text now raises ExcessiveIntegerDigitsError from every input format and from the renderer, instead of a bare ValueError on the JSON and rendering paths.

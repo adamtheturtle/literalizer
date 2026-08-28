@@ -674,6 +674,29 @@ class UnrepresentableIntegerError(LiteralizerError):
     """
 
 
+class ExcessiveIntegerDigitsError(LiteralizerError):
+    """Raised when an integer is too wide for the interpreter to write out.
+
+    CPython refuses to convert an integer of more than
+    ``sys.get_int_max_str_digits()`` decimal digits to text, and the
+    ``ValueError`` it raises names ``sys.set_int_max_str_digits``, which
+    describes the interpreter rather than anything about the input or
+    the target language.  Both reading such an integer from a document
+    and rendering one supplied through the API raise this instead.
+
+    To resolve, use a narrower integer, or raise the interpreter limit
+    with ``sys.set_int_max_str_digits`` before calling.
+    """
+
+    def __init__(self, *, limit: int) -> None:
+        """Create an ``ExcessiveIntegerDigitsError``."""
+        super().__init__(
+            f"integer has more decimal digits than the {limit} this "
+            "interpreter converts to text"
+        )
+        self.limit = limit
+
+
 class UnrepresentableEmptyDictError(LiteralizerError):
     """Raised when an empty dict is passed to a target language whose
     runtime cannot distinguish an empty mapping from an empty sequence.
