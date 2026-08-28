@@ -1,0 +1,6 @@
+schema_version = 1
+input = "input.toml"
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "language_version"
