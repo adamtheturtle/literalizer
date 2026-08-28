@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "python_eager_always_imports"

@@ -498,6 +498,24 @@ overrides = [
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
 
+# ALWAYS annotates a declaration whatever its shape, so the annotation
+# names every collection in the data rather than only the ones an
+# emptiness rule forces.  Exercise the eager Python 3.8 imports for a
+# document that holds no empty collection at all.
+[axes.python_eager_always_imports]
+plan = "fixed_overrides"
+name_template = "{lang}_eager_always_imports"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "PY38" },
+  { kind = "enum_member_present", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "PY38" },
+  { kind = "enum_member", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]
+
 # tomlkit exposes one body entry per dotted-key statement even when
 # several statements collapse into one rendered top-level mapping key.
 [axes.python_toml_dotted_key_comments]
