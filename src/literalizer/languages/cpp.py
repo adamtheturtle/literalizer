@@ -442,6 +442,15 @@ class _CppTypeCtx:
     tuple_strategy: bool
     variant_type_name: str
     dict_type_name: str
+    record_name_for_value: Callable[[Value], str | None]
+    """The name a mapping is rendered as, where it is rendered as one.
+
+    Under the ``RECORD`` strategy a record-shaped mapping is written as
+    a generated ``struct`` literal, so a variant alternative beside it
+    has to name that ``struct`` rather than the mapping type the value
+    would otherwise take (issue #4500).
+    """
+
     sequence_is_array: bool
     """Whether a sequence renders as ``std::array``.
 
@@ -655,6 +664,9 @@ def _compute_cpp_type(  # noqa: PLR0911
             )
             return f"std::vector<std::pair<std::string, {value_type}>>"
         case dict():
+            record_name = type_ctx.record_name_for_value(item)
+            if record_name is not None:
+                return record_name
             values = list(item.values())
             value_type = _compute_element_type_for_items(
                 items=values,
@@ -3870,6 +3882,19 @@ class Cpp(metaclass=LanguageCls):
         )
         return dataclasses.replace(strategy, behavior=behavior)
 
+    def _rendered_record_name(self, value: Value, /) -> str | None:
+        """Return the ``struct`` name *value* is rendered as, if any.
+
+        Resolved when a type is needed rather than when the context is
+        built, since the record strategy is itself built from that
+        context.
+        """
+        if not self._record_strategy_active:
+            return None
+        lookup = self._record_strategy.record_name_for_value
+        assert lookup is not None  # noqa: S101
+        return lookup(value)
+
     @cached_property
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
@@ -3888,6 +3913,7 @@ class Cpp(metaclass=LanguageCls):
                 if self.dict_format.name == "UNORDERED_MAP"
                 else "std::map"
             ),
+            record_name_for_value=self._rendered_record_name,
             sequence_is_array=(
                 self.sequence_format is type(self.sequence_format).ARRAY
                 and not self._json_type_active

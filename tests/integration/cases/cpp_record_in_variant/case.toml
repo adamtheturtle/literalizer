@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: its heterogeneous carrier spells every alternative, so a recordized mapping beside other alternatives has to be named as the generated struct rather than as a mapping type."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
