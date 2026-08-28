@@ -355,21 +355,29 @@ def _outdented_trailing_comments(
     *,
     value: object,
     own_column: int,
+    intervening_columns: tuple[int, ...],
 ) -> ElementComments:
     """Return comments stored on *value* that belong to its parent.
 
     ruamel.yaml attaches a standalone comment written between two
     elements of an outer collection to the *last* element of the inner
-    collection that precedes it.  Such a comment is written at the outer
-    collection's indentation, so it is outdented relative to the inner
-    collection holding it, while a comment that genuinely trails the
-    inner collection is indented to that collection's own column.
+    collection that precedes it.  Such a comment is written at or to the
+    left of the outer collection's indentation, so it is outdented
+    relative to the inner collection holding it, while a comment that
+    genuinely trails the inner collection is indented to that
+    collection's own column.
 
     Walk down the chain of last elements collecting the comments written
-    at *own_column*, so a comment stored several levels down still
-    reaches the collection it was written for.  A comment outdented past
-    *own_column* belongs to a further ancestor, which runs this same
-    walk over its own elements and claims it there.
+    at or to the right of *own_column*, so a comment stored several
+    levels down still reaches the collection it was written for.  YAML
+    puts no constraint on where a comment starts, so it need not line up
+    with any collection exactly; the collection that claims it is the
+    innermost enclosing one it is not outdented from.
+
+    *intervening_columns* holds the columns of the collections walked
+    through to reach *value*.  Any of them that the comment is also
+    indented from is a closer claimant, and claims the comment through
+    its own walk, so this one leaves it alone.
     """
     if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
         return ElementComments(before=(), inline="")
@@ -383,13 +391,23 @@ def _outdented_trailing_comments(
     deeper = _outdented_trailing_comments(
         value=_collection_element_value(ruamel_data=value, key=last_key),
         own_column=own_column,
+        intervening_columns=(*intervening_columns, nested_column),
     )
     parsed = _element_after_comments(
         ca=_comment_association(ruamel_data=value),
         key=last_key,
         token_idx=targets.token_idx,
     )
-    if parsed.standalone_column == own_column < nested_column:
+    standalone_column = parsed.standalone_column
+    claimed = (
+        standalone_column is not None
+        and own_column <= standalone_column < nested_column
+        and not any(
+            own_column < column <= standalone_column
+            for column in intervening_columns
+        )
+    )
+    if claimed:
         return ElementComments(
             before=(*deeper.before, *parsed.before_next),
             inline=parsed.inline or deeper.inline,
@@ -458,6 +476,7 @@ def extract_yaml_comments(
                 key=key,
             ),
             own_column=own_column,
+            intervening_columns=(),
         )
         pending_before += list(nested_comments.before)
         inline = inline or nested_comments.inline

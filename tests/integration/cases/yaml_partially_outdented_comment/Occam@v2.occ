@@ -1,0 +1,26 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "a"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+            MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 1)])),
+            -- Outdented from the sequence, so the inner mapping claims this.
+            MOBILE LIT(lit.pair; MOBILE []BYTE "c"; MOBILE LIT(lit.int; 2))
+        ])),
+        -- Outdented from the inner mapping too, so the root claims this.
+        MOBILE LIT(lit.pair; MOBILE []BYTE "d"; MOBILE LIT(lit.int; 3))
+    ]):
+    SEQ
+        SKIP
+:
