@@ -5525,12 +5525,22 @@ def _validate_call_target(
         language.reserved_variable_identifiers_case_sensitive
         and language_cls.reserved_call_target_keywords_case_sensitive
     )
+    # A language that declares a plain function only for a target with
+    # no dot in it reserves those names here.  PHP matches a function
+    # name without regard to case, which ``head_case_sensitive``
+    # already carries (issue #4495).
+    bare_target_identifiers: frozenset[str] = (
+        language_cls.reserved_bare_call_target_identifiers
+        if not target_function_parts[1:]
+        else frozenset()
+    )
     if is_reserved_identifier(
         case_sensitive=head_case_sensitive,
         name=head,
         reserved_identifiers=(
             language.reserved_variable_identifiers
             | language_cls.reserved_call_target_head_identifiers
+            | bare_target_identifiers
         )
         - language_cls.contextual_call_target_identifiers,
     ):
