@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Cpp['[9223372036854775808, -1]']" = "C++ cannot represent negative integer -1 alongside 9223372036854775808, which is above the signed 64-bit range: no single C++ integer type holds both."
+"Cpp['{\"a\": -1, \"b\": 9223372036854775808}']" = "C++ cannot represent negative integer -1 alongside 9223372036854775808, which is above the signed 64-bit range: no single C++ integer type holds both."

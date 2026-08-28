@@ -254,6 +254,18 @@ def _narrowest_cpp_int_type(values: list[int]) -> str:
     if not values:
         return "int"
     if any(not I64_MIN <= v <= I64_MAX for v in values):
+        # The only C++ type holding a value above ``LLONG_MAX`` is
+        # unsigned, which no negative sibling narrows to, so a
+        # collection mixing the two fits no single type (issue #4570).
+        if any(v > I64_MAX for v in values) and any(v < 0 for v in values):
+            negative = min(values)
+            beyond = max(values)
+            msg = (
+                f"C++ cannot represent negative integer {negative} "
+                f"alongside {beyond}, which is above the signed 64-bit "
+                "range: no single C++ integer type holds both."
+            )
+            raise UnrepresentableIntegerError(msg)
         return "unsigned long long"
     if all(_INT32_MIN <= v <= _INT32_MAX for v in values):
         return "int"

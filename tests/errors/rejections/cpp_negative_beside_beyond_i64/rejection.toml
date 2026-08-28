@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+The only C++ type holding a value above LLONG_MAX is unsigned, and
+no negative sibling narrows to it, so a collection mixing the two
+fits no single element type.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ["[9223372036854775808, -1]", "{\"a\": -1, \"b\": 9223372036854775808}"]
+input_format = "json"

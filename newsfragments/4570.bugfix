@@ -1,0 +1,1 @@
+A C++ collection mixing a negative integer with one above the signed 64-bit range is now rejected instead of declaring an unsigned element type the negative value cannot narrow to.
