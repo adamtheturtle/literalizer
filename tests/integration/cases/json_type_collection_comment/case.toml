@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "variant"
+
+# A json_type that embeds one JSON document and parses it has nowhere
+# inside to put a comment, since JSON has none (issues #4471, #4472).
+
+[[variants]]
+axis = "json_type"
+suffix = "_comment"
+
+[[variants]]
+axis = "json_rendering"
+suffix = "_comment"

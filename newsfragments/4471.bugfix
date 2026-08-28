@@ -1,0 +1,1 @@
+Cpp INLINE_DOCUMENT and Crystal JSON_ANY now place comments before the declaration instead of inside the JSON document they hand to the parser, which rejected them.

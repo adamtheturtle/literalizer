@@ -1105,13 +1105,23 @@ class Crystal(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def supports_collection_comments(self) -> bool:
+        """Whether a comment can sit inside the rendered collection.
+
+        ``JSON::Any`` hands one JSON document to ``JSON.parse``, and
+        JSON has no comments, so one written inside it is a parse error
+        rather than a comment.  The comments go before the declaration
+        instead (issue #4472).
+        """
+        return not self._uses_json_any
 
     @cached_property
     def _uses_json_any(self) -> bool:
