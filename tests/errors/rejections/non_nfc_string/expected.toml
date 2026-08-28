@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableStringError]
+"Hcl['{\"c\": \"café\"}']" = "Hcl string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"
+"Hcl['{\"café\": 1}']" = "Hcl string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"
+"Raku['{\"c\": \"café\"}']" = "Raku string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"
+"Raku['{\"café\": 1}']" = "Raku string literals cannot represent the combining marks in 'café', which it normalizes to NFC form"

@@ -10,7 +10,10 @@ from typing import ClassVar
 
 from beartype import beartype
 
-from literalizer._checks import reject_stringified_dict_key_collisions
+from literalizer._checks import (
+    reject_non_nfc_strings,
+    reject_stringified_dict_key_collisions,
+)
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -658,11 +661,17 @@ class Raku(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject mapping keys that collapse in Raku hashes."""
+        """Reject data this target cannot represent as written.
+
+        A Raku string is normalized by definition, so a value written
+        with a combining mark comes back as the single character it
+        composes to, however the literal is spelled (issue #4522).
+        """
         reject_stringified_dict_key_collisions(
             data=data,
             language_name="Raku",
         )
+        reject_non_nfc_strings(data=data, language_name="Raku")
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:

@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+HCL normalizes its source to NFC by specification and a Raku Str is
+NFG-normalized by definition, so a decomposed sequence comes back
+precomposed however the literal is spelled.
+"""
+exceptions = ["UnrepresentableStringError"]
+languages = ["Hcl", "Raku"]
+
+[call]
+api = "literalize"
+sources = ['{"c": "café"}', '{"café": 1}']
+input_format = "json"

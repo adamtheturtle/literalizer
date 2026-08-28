@@ -4,6 +4,7 @@ collection-shape constraints.
 
 import copy
 import datetime
+import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, overload
 
@@ -248,6 +249,37 @@ def reject_aware_datetimes(
                     f"UTC offset {value.utcoffset()}"
                 )
                 raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
+@beartype
+def reject_non_nfc_strings(*, data: Value, language_name: str) -> None:
+    """Reject strings a target normalizes on the way back out.
+
+    HCL normalizes source to NFC by specification, and a Raku string
+    is normalized by definition, so a value written with a combining
+    mark comes back as the single character it composes to, however
+    the literal is spelled.  No escape avoids that, so the value is
+    refused rather than silently altered (issue #4522).
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case str() if not unicodedata.is_normalized("NFC", value):
+                raise UnrepresentableStringError(
+                    language_name=language_name,
+                    character_name=(
+                        f"the combining marks in {value!r}, which it "
+                        "normalizes to NFC form"
+                    ),
+                )
             case dict():
                 stack.extend(value.keys())
                 stack.extend(value.values())
