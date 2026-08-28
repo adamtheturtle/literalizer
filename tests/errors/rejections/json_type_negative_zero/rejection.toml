@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+aeson stores negative zero as an unsigned zero before anything is
+encoded, and JSON.stringify writes 0 for -0, so these JSON value
+types cannot keep the sign.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Elm", "Haskell", "PureScript"]
+option = "json_type"
+
+[call]
+api = "literalize"
+sources = ['{"z": -0.0}']
+input_format = "json"

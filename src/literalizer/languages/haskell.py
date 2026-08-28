@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_negative_zero
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -1986,9 +1987,14 @@ class Haskell(metaclass=LanguageCls):
     )
 
     def validate_spec_for_data(self, data: Value) -> None:
-        """Reject tuple sequences nested inside the generated ``Val``
-        ADT.
+        """Reject data this spec cannot produce valid code for.
+
+        A tuple sequence nested inside the generated ``Val`` ADT has
+        no constructor, and ``Data.Aeson`` has no signed zero
+        (issue #4543).
         """
+        if self.json_type is not None:
+            reject_negative_zero(data=data, language_name="Haskell")
         if (
             self.json_type is not None
             or self.sequence_format is not type(self.sequence_format).TUPLE

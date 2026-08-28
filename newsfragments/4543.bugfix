@@ -1,0 +1,1 @@
+Negative zero is now rejected for the Haskell AESON, Elm and PureScript JSON value types, which have no signed zero and silently dropped the sign.

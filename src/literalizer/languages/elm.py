@@ -10,6 +10,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_negative_zero
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1118,8 +1119,11 @@ class Elm(metaclass=LanguageCls):
         """Validate Elm-specific data/format combinations.
 
         Under :attr:`json_type` every dict key must be a string because
-        ``Json.Encode.object`` only admits string keys.
+        ``Json.Encode.object`` only admits string keys, and negative zero
+        cannot survive ``JSON.stringify`` (issue #4543).
         """
+        if self._json_active:
+            reject_negative_zero(data=data, language_name="Elm")
         if self._json_active:
             _validate_elm_json_data(data=data)
 
