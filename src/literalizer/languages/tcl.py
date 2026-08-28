@@ -63,7 +63,6 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
-    identity_call_statement,
     identity_call_target,
     identity_constructor_target,
     never_inhibits_consuming_form,
@@ -541,8 +540,14 @@ class Tcl(metaclass=LanguageCls):
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
-        """Return call-statement formatting for this language."""
-        return identity_call_statement
+        r"""Return call-statement formatting for this language.
+
+        A multiline argument makes the statement span physical lines,
+        and Tcl reads each of those as its own command unless a ``\``
+        continues it, exactly as a multiline value binding already does
+        (issue #4498).
+        """
+        return _add_tcl_continuation
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
