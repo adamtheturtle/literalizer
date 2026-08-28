@@ -6,7 +6,7 @@ arguments (#4533).
 """
 exceptions = ["InvalidModuleNameError"]
 languages = ["Crystal"]
-values = ["Enumerable", "Int32", "String"]
+values = ["Enumerable", "IO", "Int32", "String"]
 
 [call]
 api = "constructor"
