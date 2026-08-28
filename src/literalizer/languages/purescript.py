@@ -927,6 +927,7 @@ class PureScript(metaclass=LanguageCls):
     stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = True
+    wrap_in_file_tolerates_pre_indent: ClassVar[bool] = False
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True

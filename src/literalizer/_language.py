@@ -1275,6 +1275,15 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    wrap_in_file_tolerates_pre_indent: bool = True
+    """Whether a wrapped file survives being written at an indentation.
+
+    ``pre_indent_level`` indents the value declaration but not the
+    wrapper the file is built from, so the two sit at different
+    margins.  A language that reads indentation as structure cannot
+    parse that; one that reads braces does not care (issue #4535).
+    """
+
     module_name_shares_variable_scope: bool = False
     """Whether the wrapper name and the bound variable share a scope.
 

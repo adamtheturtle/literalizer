@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+pre_indent_level indents the declaration but not the wrapper around
+it, so a language that reads indentation as structure cannot parse
+the file that results.
+"""
+exceptions = ["PreIndentedWrappedFileError"]
+languages = ["Elm", "Mojo", "Nim", "Occam", "PureScript", "Python"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+pre_indent_level = 3
+wrap_in_file = true
+variable_form = "new"

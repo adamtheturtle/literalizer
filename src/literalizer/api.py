@@ -46,6 +46,7 @@ from literalizer.exceptions import (
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
     ModuleNameVariableCollisionError,
+    PreIndentedWrappedFileError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
@@ -142,6 +143,33 @@ def _validate_module_name_variable_collision(
 
 
 @beartype
+def _validate_pre_indented_wrap(
+    *,
+    language: Language,
+    pre_indent_level: int,
+    wrap_in_file: bool,
+) -> None:
+    """Reject an indented whole file the target could not parse.
+
+    The indent applies to the value declaration and not to the wrapper
+    around it, so the file carries two margins.  Only a language that
+    reads indentation as structure minds (issue #4535).
+    """
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Pre-indent validation requires a LanguageCls language"
+        raise TypeError(msg)
+    if (
+        pre_indent_level
+        and wrap_in_file
+        and not language_cls.wrap_in_file_tolerates_pre_indent
+    ):
+        raise PreIndentedWrappedFileError(
+            language_name=language_cls.__name__,
+        )
+
+
+@beartype
 def _validate_render_arguments(
     *,
     language: Language,
@@ -164,6 +192,11 @@ def _validate_render_arguments(
     # language can stand up as a whole file (issue #4529).
     if not include_delimiters and wrap_in_file:
         raise DelimiterlessWrappedFileError
+    _validate_pre_indented_wrap(
+        language=language,
+        pre_indent_level=pre_indent_level,
+        wrap_in_file=wrap_in_file,
+    )
     if ref_case is not None and ref_case not in language.supported_ref_cases:
         raise UnsupportedIdentifierCaseError(
             language_name=type(language).__name__,
