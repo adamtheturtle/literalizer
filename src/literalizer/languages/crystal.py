@@ -240,6 +240,7 @@ _constructor_target: Callable[[str], str] = _format_constructor_target
 
 _crystal_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=make_element_to_type(
+        dict_value_to_type=None,
         str_type="String",
         bool_type="Bool",
         int_type="Int32",

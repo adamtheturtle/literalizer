@@ -1111,6 +1111,7 @@ class VisualBasic(metaclass=LanguageCls):
             else "String"
         )
         return make_element_to_type(
+            dict_value_to_type=None,
             str_type="String",
             bool_type="Boolean",
             int_type="Integer",

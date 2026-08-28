@@ -2029,6 +2029,7 @@ class Java(metaclass=LanguageCls):
         fall back to the top type.
         """
         return self._opener_config.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=False,
             date_type=None,

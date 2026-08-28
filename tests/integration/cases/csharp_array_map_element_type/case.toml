@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["CSharp"]
+languages_reason = "C#-specific: the array element type a list of maps is declared with has to name what the map opener writes, which for C# is always the fallback value type."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"

@@ -102,6 +102,7 @@ from literalizer.exceptions import (
 )
 
 _mojo_element_to_type = make_element_to_type(
+    dict_value_to_type=None,
     str_type="String",
     bool_type="Bool",
     int_type="Int",
@@ -126,6 +127,7 @@ _mojo_element_to_type = make_element_to_type(
 # helper) returns ``None`` instead of silently lying with
 # ``Dict[String, String]``.
 _mojo_call_arg_element_to_type = make_element_to_type(
+    dict_value_to_type=None,
     str_type="String",
     bool_type="Bool",
     int_type="Int",
@@ -1702,6 +1704,7 @@ class Mojo(metaclass=LanguageCls):
         return base.with_typed_opener(
             type_to_opener=make_type_to_opener(
                 element_to_type=make_element_to_type(
+                    dict_value_to_type=None,
                     str_type="String",
                     bool_type="Bool",
                     int_type="Int",

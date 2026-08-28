@@ -241,6 +241,7 @@ def _list_sequence_open(
     return typed_collection_open(
         type_to_opener=make_type_to_opener(
             element_to_type=cfg.element_to_type(
+                dict_value_to_type=None,
                 list_template="List[{inner}]",
                 enable_list_type=True,
                 date_type=date_type,
@@ -1340,6 +1341,7 @@ class Scala(metaclass=LanguageCls):
         tracks the epoch value.
         """
         return self._opener_config.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=False,
             date_type=self._date_type_name,
@@ -1865,6 +1867,7 @@ class Scala(metaclass=LanguageCls):
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=self._opener_config.element_to_type(
+                        dict_value_to_type=None,
                         list_template=(
                             "List[{inner}]"
                             if self.sequence_format

@@ -144,6 +144,7 @@ _V_IFACE_DECL = f"interface {_V_IFACE_NAME} {{}}"
 _V_NULL_WRAPPED = f"{_V_IFACE_NAME}(unsafe {{ nil }})"
 
 _v_element_to_type = make_element_to_type(
+    dict_value_to_type=None,
     str_type="string",
     bool_type="bool",
     int_type="int",

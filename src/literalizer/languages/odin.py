@@ -1513,6 +1513,7 @@ class Odin(metaclass=LanguageCls):
         if self._json_type_active:
             return _JSON_VALUE_SET_CONFIG
         init_element_to_type = make_element_to_type(
+            dict_value_to_type=None,
             str_type="string",
             bool_type="bool",
             int_type="int",

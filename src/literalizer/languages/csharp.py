@@ -1580,6 +1580,7 @@ class CSharp(metaclass=LanguageCls):
         """
         cfg = self._opener_config
         return cfg.element_to_type(
+            dict_value_to_type=None,
             list_template=None,
             enable_list_type=False,
             date_type=cfg.type_name(py_type=self._date_tp),
@@ -2102,6 +2103,7 @@ class CSharp(metaclass=LanguageCls):
             dict_open=typed_dict_open(
                 type_to_opener=make_type_to_opener(
                     element_to_type=cfg.element_to_type(
+                        dict_value_to_type=None,
                         list_template=None,
                         enable_list_type=(
                             self.sequence_format is self.sequence_formats.ARRAY

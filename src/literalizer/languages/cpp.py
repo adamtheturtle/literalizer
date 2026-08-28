@@ -383,6 +383,7 @@ def _make_cpp_element_to_type(
     read (issue #3948).
     """
     return make_element_to_type(
+        dict_value_to_type=None,
         str_type="std::string",
         bool_type="bool",
         int_type=int_type,
