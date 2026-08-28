@@ -26,6 +26,7 @@ from ruamel.yaml.events import (
     AliasEvent,
     CollectionEndEvent,
     CollectionStartEvent,
+    ScalarEvent,
 )
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import Float as TomlFloat
@@ -853,6 +854,66 @@ def _yaml_needs_roundtrip(*, source: str) -> bool:
 
 
 @beartype
+def _record_anchor_binding(
+    *,
+    anchor: str,
+    binding: int,
+    latest_binding: dict[str, int],
+) -> None:
+    """Note that *anchor* now names the node numbered *binding*."""
+    if anchor:
+        latest_binding[anchor] = binding
+
+
+@beartype
+def _self_referential_alias(*, source: str) -> str | None:
+    """Return the anchor of an alias written inside the node it names.
+
+    An anchor name can be bound again further in, and an alias takes the
+    most recent binding, so each binding is numbered rather than tracked
+    by name alone: ``[1, &x 2, *x]`` names the scalar and is not a cycle
+    even while the sequence that first bound ``x`` is still open.
+    """
+    binding_count = 0
+    latest_binding: dict[str, int] = {}
+    open_bindings: set[int] = set()
+    open_collections: list[int] = []
+    try:
+        for event in YAML().parse(stream=source):  # pyright: ignore[reportUnknownMemberType]
+            match event:
+                case CollectionStartEvent():
+                    opened: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    binding_count += 1
+                    _record_anchor_binding(
+                        anchor=opened,
+                        binding=binding_count,
+                        latest_binding=latest_binding,
+                    )
+                    open_bindings.add(binding_count)
+                    open_collections.append(binding_count)
+                case CollectionEndEvent():
+                    open_bindings.discard(open_collections.pop())
+                case ScalarEvent():
+                    named: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    binding_count += 1
+                    _record_anchor_binding(
+                        anchor=named,
+                        binding=binding_count,
+                        latest_binding=latest_binding,
+                    )
+                case AliasEvent():
+                    alias: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    if latest_binding.get(alias) in open_bindings:
+                        return alias
+                case _:
+                    pass
+    except (YAMLError, ValueError, IndexError, AttributeError):
+        # Malformed input: the load reports it with a position instead.
+        return None
+    return None
+
+
+@beartype
 def _reject_yaml_alias_cycle(*, source: str) -> None:
     """Reject a YAML alias written inside the node it names.
 
@@ -864,30 +925,13 @@ def _reject_yaml_alias_cycle(*, source: str) -> None:
     """
     if "&" not in source or "*" not in source:
         return
-    open_anchors: list[str | None] = []
-    try:
-        for event in YAML().parse(stream=source):  # pyright: ignore[reportUnknownMemberType]
-            match event:
-                case CollectionStartEvent():
-                    anchor: str | None = event.anchor  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                    open_anchors.append(anchor)  # pyright: ignore[reportUnknownArgumentType]
-                case CollectionEndEvent():
-                    open_anchors.pop()
-                case AliasEvent():
-                    alias: str | None = event.anchor  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-                    if alias is not None and alias in open_anchors:
-                        raise _format_parse_error(
-                            input_format=InputFormat.YAML,
-                            detail=(
-                                f"alias *{alias} refers to the node that "
-                                "defines it"
-                            ),
-                        )
-                case _:
-                    pass
-    except (YAMLError, ValueError, IndexError, AttributeError):
-        # Malformed input: the load below reports it with a position.
+    anchor = _self_referential_alias(source=source)
+    if anchor is None:
         return
+    raise _format_parse_error(
+        input_format=InputFormat.YAML,
+        detail=f"alias *{anchor} refers to the node that defines it",
+    )
 
 
 @beartype
