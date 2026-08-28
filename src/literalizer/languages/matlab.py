@@ -92,7 +92,14 @@ _MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 @beartype
 def _format_matlab_string(value: str) -> str:
-    """Preserve backslashes while keeping Octave-compatible delimiters."""
+    """Preserve backslashes while keeping Octave-compatible delimiters.
+
+    A ``%s`` conversion copies up to the first null, so a string holding
+    one is built by concatenating char vectors instead, which carries
+    every character it is given (issue #4564).
+    """
+    if "\x00" in value:
+        return _matlab_char_vector(s=value)
     control_char_threshold = 32
     parts: list[str] = []
     for segment in re.split(pattern=r"([\\\x00-\x1f])", string=value):
@@ -116,28 +123,31 @@ def _format_matlab_string(value: str) -> str:
 def _decode_matlab_string_expr(expr: str) -> str:
     r"""Decode a MATLAB string expression back to its raw string value.
 
-    Reverses the output of ``format_string_matlab``.  Handles both the
-    simple ``"..."`` form (with ``""`` for embedded double-quotes) and
-    the ``sprintf('%s...', "...", char(N), ...)``
-    concatenation form used for control characters.
+    Reverses the output of ``format_string_matlab``.  Handles the simple
+    ``"..."`` form (with ``""`` for embedded double-quotes), the
+    ``sprintf('%s...', "...", char(N), ...)`` concatenation form used
+    for control characters, and the ``['...', char(N), ...]`` char
+    vector form used where a null is present.
     """
     if expr.startswith("sprintf("):
         expr = expr.partition(", ")[2].removesuffix(")")
     raw: list[str] = []
-    for string_seg, char_code in re.findall(
-        pattern=r'"((?:[^"]|"")*)"|char\((\d+)\)',
+    for double_seg, single_seg, char_code in re.findall(
+        pattern=(r'"((?:[^"]|"")*)"' r"|'((?:[^']|'')*)'" r"|char\((\d+)\)"),
         string=expr,
     ):
         if char_code:
             raw.append(chr(int(char_code)))
+        elif single_seg:
+            raw.append(single_seg.replace("''", "'"))
         else:
-            raw.append(string_seg.replace('""', '"'))
+            raw.append(double_seg.replace('""', '"'))
     return "".join(raw)
 
 
 @beartype
-def _matlab_char_key(s: str) -> str:
-    """Build a MATLAB char-array expression for a struct key.
+def _matlab_char_vector(s: str) -> str:
+    """Build a MATLAB char-array expression for *s*.
 
     Single quotes are doubled for valid char-vector literals.  Control
     characters (code points 0-31) cannot appear literally inside a
@@ -188,7 +198,7 @@ def _format_matlab_dict_entry(
             "digits, and underscores."
         )
         raise InvalidDictKeyError(msg)
-    key_expr = _matlab_char_key(s=inner)
+    key_expr = _matlab_char_vector(s=inner)
     if formatted_value.startswith("{") and formatted_value.endswith("}"):
         formatted_value = f"{{{formatted_value}}}"
     return f"{key_expr}, {formatted_value}"
@@ -210,7 +220,9 @@ def _format_datetime_matlab(value: datetime.datetime) -> str:
 @beartype
 def _containers_map_open(data: dict[Scalar, Value]) -> str:
     """Build the ``containers.Map`` opener with all keys collected."""
-    keys = ", ".join(_matlab_char_key(s=k) for k in data if isinstance(k, str))
+    keys = ", ".join(
+        _matlab_char_vector(s=k) for k in data if isinstance(k, str)
+    )
     return f"containers.Map({{{keys}}}, {{"
 
 
