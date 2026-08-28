@@ -1275,6 +1275,15 @@ class LanguageCls(type):
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
     reserved_module_identifiers: frozenset[str] = frozenset()
+    immutable_variable_modifiers: frozenset[enum.Enum] = frozenset()
+    """Modifiers whose declaration cannot be assigned to afterwards.
+
+    ``BothVariableForms`` emits a declaration and then an assignment to
+    the same name, which one of these makes impossible: C++ ``const``,
+    Java ``final`` and C# ``readonly``/``const`` all bind once
+    (issue #4565).
+    """
+
     wrap_in_file_tolerates_pre_indent: bool = True
     """Whether a wrapped file survives being written at an indentation.
 

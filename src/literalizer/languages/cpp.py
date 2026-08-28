@@ -2843,6 +2843,11 @@ class Cpp(metaclass=LanguageCls):
         YES = TrailingCommaConfig(multiline_trailing_comma=True)
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset(
+        {
+            _CppModifiers.CONST,
+        }
+    )
     Modifiers = _CppModifiers
 
     date_formats = DateFormats

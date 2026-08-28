@@ -627,6 +627,32 @@ class DelimiterlessWrappedFileError(InvalidRenderArgumentError):
         )
 
 
+class ImmutableVariableModifierError(InvalidRenderArgumentError):
+    """Raised when a once-bound declaration would be assigned to.
+
+    ``BothVariableForms`` emits a declaration and then an assignment to
+    the same name.  A modifier such as C++ ``const``, Java ``final`` or
+    C# ``readonly`` binds the name once, so the assignment that follows
+    cannot compile.
+    """
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        modifier: enum.Enum,
+    ) -> None:
+        """Create an ``ImmutableVariableModifierError``."""
+        modifier_name = f"{type(modifier).__qualname__}.{modifier.name}"
+        super().__init__(
+            f"{language_name} cannot combine BothVariableForms with "
+            f"{modifier_name}: the declaration binds the name once, so "
+            "the assignment that follows it cannot compile"
+        )
+        self.language_name = language_name
+        self.modifier = modifier
+
+
 class PreIndentedWrappedFileError(InvalidRenderArgumentError):
     """Raised when an indented whole file could not be parsed.
 

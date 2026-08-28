@@ -42,6 +42,7 @@ from literalizer.exceptions import (
     BoundRefOutputCollisionError,
     DelimiterlessVariableError,
     DelimiterlessWrappedFileError,
+    ImmutableVariableModifierError,
     InvalidPreIndentLevelError,
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
@@ -143,6 +144,35 @@ def _validate_module_name_variable_collision(
 
 
 @beartype
+def _validate_immutable_both_forms(
+    *,
+    language: Language,
+    variable_form: VariableForm | None,
+) -> None:
+    """Reject a once-bound declaration the assignment would rebind.
+
+    ``BothVariableForms`` writes a declaration and then an assignment to
+    the same name, which a modifier such as ``const`` or ``final``
+    forbids (issue #4565).
+    """
+    if not isinstance(variable_form, BothVariableForms):
+        return
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Modifier validation requires a LanguageCls language"
+        raise TypeError(msg)
+    immutable = sorted(
+        variable_form.modifiers & language_cls.immutable_variable_modifiers,
+        key=lambda modifier: modifier.name,
+    )
+    for modifier in immutable:
+        raise ImmutableVariableModifierError(
+            language_name=language_cls.__name__,
+            modifier=modifier,
+        )
+
+
+@beartype
 def _validate_pre_indented_wrap(
     *,
     language: Language,
@@ -192,6 +222,10 @@ def _validate_render_arguments(
     # language can stand up as a whole file (issue #4529).
     if not include_delimiters and wrap_in_file:
         raise DelimiterlessWrappedFileError
+    _validate_immutable_both_forms(
+        language=language,
+        variable_form=variable_form,
+    )
     _validate_pre_indented_wrap(
         language=language,
         pre_indent_level=pre_indent_level,
