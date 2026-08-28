@@ -455,6 +455,27 @@ def _widened_int_formatter(
 
 
 @beartype
+def _map_widened_int_formatter(
+    *,
+    items: list[Value],
+    spec: Language,
+) -> Callable[[int], str] | None:
+    """Return the pooled integer formatter for a map's values.
+
+    A language whose map value slot is a boxed ``Object`` gives each
+    value its own type, so there is nothing to pool and a mixed-width
+    document renders each value on its own terms (issue #4488).
+    """
+    language_cls = type(spec)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Map width pooling requires a LanguageCls language"
+        raise TypeError(msg)
+    if not language_cls.pools_map_integer_width:
+        return None
+    return _widened_int_formatter(items=items, spec=spec)
+
+
+@beartype
 def _sibling_list_groups(data: Value) -> list[list[list[Value]]]:
     """Return direct sibling-list families belonging to *data*."""
     if isinstance(data, dict):
@@ -932,7 +953,7 @@ def _format_ordered_map_value(
         list_values=sibling_list_values,
         spec=spec,
     )
-    map_int_formatter = _widened_int_formatter(
+    map_int_formatter = _map_widened_int_formatter(
         items=[v for _, v in ordered_map_items],
         spec=spec,
     )
@@ -1145,7 +1166,7 @@ def _format_dict_value(
     )
     map_int_formatter = ctx.dict_int_formatters.get(id(value))
     if map_int_formatter is None:
-        map_int_formatter = _widened_int_formatter(
+        map_int_formatter = _map_widened_int_formatter(
             items=list(dict_items.values()),
             spec=spec,
         )
@@ -1435,7 +1456,7 @@ def _accumulate_dict_int_formatters(
     ]
     min_maps_for_widening = 2
     if len(sibling_maps) >= min_maps_for_widening:
-        formatter = _widened_int_formatter(
+        formatter = _map_widened_int_formatter(
             items=[
                 item for sibling in sibling_maps for item in sibling.values()
             ],
@@ -2549,7 +2570,7 @@ def _format_collection_lines(
             )
             map_int_formatter = ctx.dict_int_formatters.get(id(dict_data))
             if map_int_formatter is None:
-                map_int_formatter = _widened_int_formatter(
+                map_int_formatter = _map_widened_int_formatter(
                     items=[v for _, v in entries],
                     spec=spec,
                 )

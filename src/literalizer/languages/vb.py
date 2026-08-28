@@ -483,6 +483,10 @@ class VisualBasic(metaclass=LanguageCls):
     supports_empty_dict_key = False
     supports_call_style = True
     supports_default_dict_key_type = True
+    # A Visual Basic map is Dictionary(Of String, Object), so each
+    # value carries its own type and there is no shared width to
+    # pool (issue #4488).
+    pools_map_integer_width: ClassVar[bool] = False
     supports_default_dict_value_type = True
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True

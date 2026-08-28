@@ -1,0 +1,4 @@
+Render each Visual Basic map value on its own terms instead of pooling one
+integer width across the map.  A document mixing a value beyond the signed
+64-bit range with an ordinary negative one was refused, though the map's value
+slot is ``Object`` and each value carries its own type.
