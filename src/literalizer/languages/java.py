@@ -25,6 +25,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_local_time_of,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_template,
@@ -248,9 +249,28 @@ def _java_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
     return ()
 
 
+_JAVA_MAX_ZONE_OFFSET = datetime.timedelta(hours=18)
+"""The widest offset ``java.time.ZoneOffset`` accepts.
+
+TOML permits an offset up to +-23:59, and Java rejects one past
++-18:00 at run time, so a wider offset is rendered as the equivalent
+UTC instant rather than as code that throws (issue #4517).
+"""
+
+
+@beartype
+def _within_java_zone_offset(value: datetime.datetime) -> datetime.datetime:
+    """Return *value* in a form Java's ``ZoneOffset`` can hold."""
+    offset = value.utcoffset()
+    if offset is None or abs(offset) <= _JAVA_MAX_ZONE_OFFSET:
+        return value
+    return normalize_datetime_utc(value=value, language_name="Java")
+
+
 @beartype
 def _format_datetime_java_zoned(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
+    value = _within_java_zone_offset(value=value)
     timezone_name = value.tzname() or "UTC"
     nanoseconds = value.microsecond * 1000
     return (
@@ -271,6 +291,7 @@ def _format_datetime_java_instant(value: datetime.datetime) -> str:
     Treating naive values as UTC matches the ISO 8601 convention for
     unqualified timestamps.
     """
+    value = _within_java_zone_offset(value=value)
     iso = value.isoformat()
     if value.tzinfo is None:
         iso += "Z"
