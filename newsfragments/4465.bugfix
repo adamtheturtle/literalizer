@@ -1,1 +1,1 @@
-An assignment to a name a complete file never declares is now rejected on two more paths: with bound_refs, and when literalize_call binds its result to an ExistingVariable under wrap_in_file.
+An assignment that reads as one of a language declaration styles, such as an F# let rebind under LET_MUTABLE, is no longer refused as leaving the name undeclared.
