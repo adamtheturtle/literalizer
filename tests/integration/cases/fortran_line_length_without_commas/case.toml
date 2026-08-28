@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Fortran"]
+languages_reason = "Fortran-specific: free-form source caps a physical line at 132 columns, and a single-element nesting chain offers no comma to continue at."
+suites = ["base"]

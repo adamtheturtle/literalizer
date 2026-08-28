@@ -83,6 +83,33 @@ from literalizer._types import Value
 
 _FORTRAN_WRAP_COLUMN = 110
 _FORTRAN_STRING_CHUNK_LENGTH = 105
+_FORTRAN_LINE_LIMIT = 132
+"""The longest physical line free-form Fortran 2018 source admits."""
+
+_FORTRAN_LINE_MARGIN = 14
+"""What a line still gains after the wrapper has measured it.
+
+A piece takes a trailing continuation marker, and the whole program is
+indented once it is wrapped in a file, so a line is measured against
+the limit less this margin rather than against the limit itself.
+"""
+
+_FORTRAN_SAFE_COLUMN = _FORTRAN_LINE_LIMIT - _FORTRAN_LINE_MARGIN
+"""How long a line may grow before the wrapper has to split it."""
+
+_FORTRAN_CONTINUATION_PREFIX = "& "
+"""What a continued physical line resumes with."""
+
+_FORTRAN_ELEMENT_BREAK = ","
+"""Where an expression prefers to break: between two elements."""
+
+_FORTRAN_FALLBACK_BREAK = ",()[]"
+"""Where an expression may break when no element boundary is in reach.
+
+A ``&`` continuation sits between any two tokens, so a bracket serves
+as well as a comma; a chain of nested constructors offers no comma
+until its innermost level (issue #4473).
+"""
 
 
 @beartype
@@ -242,26 +269,75 @@ def _fortran_comment_pos(line: str) -> int | None:
 
 
 @beartype
+def _fortran_break_position(*, line: str, break_after: str) -> int | None:
+    """Return the last place *line* may break, or ``None`` if nowhere.
+
+    Only the leading window that fits on a physical line is considered,
+    and a break character inside a string literal is content rather
+    than a token boundary.  The columns a continuation prefix occupies
+    are passed over, so a break always leaves a shorter remainder and
+    the wrapping loop always advances.
+    """
+    in_single_quote = False
+    break_at: int | None = None
+    scan = line[:_FORTRAN_WRAP_COLUMN].replace("''", "  ")
+    for index, character in enumerate(iterable=scan):
+        if character == "'":
+            in_single_quote = not in_single_quote
+        elif (
+            character in break_after
+            and not in_single_quote
+            and index >= len(_FORTRAN_CONTINUATION_PREFIX)
+        ):
+            break_at = index + 1
+    return break_at
+
+
+@beartype
 def _wrap_fortran_expression_line(line: str, /) -> list[str]:
-    """Split a long expression line at commas outside string literals."""
-    if line.rstrip().endswith("&"):
+    """Split a long line, keeping any continuation marker it ends with.
+
+    Wrapping runs over its own output, so a line already carrying a
+    trailing ``&`` is left alone unless it is past the safe column even
+    so, in which case the marker is set aside and put back on the last
+    piece (issue #4474).
+    """
+    stripped = line.rstrip()
+    if not stripped.endswith("&"):
+        return _split_fortran_line(line=line)
+    if len(line) <= _FORTRAN_SAFE_COLUMN:
         return [line]
+    pieces = _split_fortran_line(line=stripped[:-1].rstrip())
+    return [*pieces[:-1], f"{pieces[-1]} &"]
+
+
+@beartype
+def _split_fortran_line(*, line: str) -> list[str]:
+    """Split a long expression line at token boundaries outside strings.
+
+    A comma is preferred, so an expression breaks between its elements
+    wherever it has any.  A line still past the safe column with no
+    comma to break at falls back to breaking at a bracket, which is the
+    only place a deeply nested constructor chain offers.
+    """
     remaining = line
     wrapped: list[str] = []
-    while len(remaining) > _FORTRAN_WRAP_COLUMN and "," in remaining:
-        in_single_quote = False
-        break_at: int | None = None
-        scan = remaining[:_FORTRAN_WRAP_COLUMN].replace("''", "  ")
-        for i, character in enumerate(iterable=scan):
-            if character == "'":
-                in_single_quote = not in_single_quote
-            elif character == "," and not in_single_quote:
-                break_at = i + 1
+    while len(remaining) > _FORTRAN_WRAP_COLUMN:
+        break_at = _fortran_break_position(
+            line=remaining,
+            break_after=_FORTRAN_ELEMENT_BREAK,
+        )
+        if break_at is None and len(remaining) > _FORTRAN_SAFE_COLUMN:
+            break_at = _fortran_break_position(
+                line=remaining,
+                break_after=_FORTRAN_FALLBACK_BREAK,
+            )
         if break_at is None:
             break
-        split_at = break_at
-        wrapped.append(remaining[:split_at].rstrip())
-        remaining = "& " + remaining[split_at:].lstrip()
+        wrapped.append(remaining[:break_at].rstrip())
+        remaining = (
+            _FORTRAN_CONTINUATION_PREFIX + remaining[break_at:].lstrip()
+        )
     wrapped.append(remaining)
     return wrapped
 
