@@ -1,0 +1,9 @@
+# languages rejecting: 6; languages accepting: 0
+
+[PreIndentedWrappedFileError]
+Elm = "Elm cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"
+Mojo = "Mojo cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"
+Nim = "Nim cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"
+Occam = "Occam cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"
+PureScript = "PureScript cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"
+Python = "Python cannot combine pre_indent_level with wrap_in_file because its syntax reads indentation as structure"

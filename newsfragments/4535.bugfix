@@ -1,0 +1,1 @@
+pre_indent_level combined with wrap_in_file is now rejected for languages that read indentation as structure, where it produced a file the target cannot parse.

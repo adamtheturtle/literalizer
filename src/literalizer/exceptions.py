@@ -627,6 +627,26 @@ class DelimiterlessWrappedFileError(InvalidRenderArgumentError):
         )
 
 
+class PreIndentedWrappedFileError(InvalidRenderArgumentError):
+    """Raised when an indented whole file could not be parsed.
+
+    ``pre_indent_level`` indents the value declaration so it can be
+    spliced into surrounding code, but not the wrapper ``wrap_in_file``
+    builds around it, so the two end up at different margins.  A
+    language that reads indentation as structure cannot parse that; a
+    brace language does not care and still allows the combination.
+    """
+
+    def __init__(self, *, language_name: str) -> None:
+        """Create a ``PreIndentedWrappedFileError``."""
+        super().__init__(
+            f"{language_name} cannot combine pre_indent_level with "
+            "wrap_in_file because its syntax reads indentation as "
+            "structure"
+        )
+        self.language_name = language_name
+
+
 class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
     """Raised when a complete file would assign an undeclared name."""
 
