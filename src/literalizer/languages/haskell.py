@@ -1477,6 +1477,12 @@ _HASKELL_PRELUDE_BINDINGS: frozenset[str] = frozenset(
 
 
 @beartype
+def _reject_negative_zero_call_arg(value: Value, /) -> None:
+    """Reject a call argument whose signed zero would not survive."""
+    reject_negative_zero(data=value, language_name="Haskell")
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
@@ -2024,7 +2030,15 @@ class Haskell(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
+        """Return call-argument validation for this language.
+
+        Under ``json_type`` an argument is built as the same JSON value
+        a declared one is, and that type has no signed zero, so it
+        faces the same rejection; ``validate_spec_for_data`` covers
+        only the ``literalize`` path (issue #4543).
+        """
+        if self.json_type is not None:
+            return _reject_negative_zero_call_arg
         return no_validate_call_arg
 
     @cached_property
