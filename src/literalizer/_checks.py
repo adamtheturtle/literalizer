@@ -4,6 +4,7 @@ collection-shape constraints.
 
 import copy
 import datetime
+import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, overload
@@ -247,6 +248,35 @@ def reject_aware_datetimes(
                 msg = (
                     f"{language_name} native datetime format cannot preserve "
                     f"UTC offset {value.utcoffset()}"
+                )
+                raise UnrepresentableInputError(msg)
+            case dict():
+                stack.extend(value.keys())
+                stack.extend(value.values())
+            case list() | set():
+                stack.extend(value)
+            case _:
+                continue
+
+
+@beartype
+def reject_negative_zero(*, data: Value, language_name: str) -> None:
+    """Reject negative zero a target cannot keep the sign of.
+
+    Some JSON value types have no signed zero at all: Haskell's
+    ``Data.Aeson`` stores ``-0.0`` as ``Number 0.0`` before anything
+    is encoded, and ``JSON.stringify`` writes ``0`` for ``-0``.  The
+    sign is lost wherever the value goes next, so it is refused
+    rather than silently dropped (issue #4543).
+    """
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        match value:
+            case float() if value == 0.0 and math.copysign(1.0, value) < 0:
+                msg = (
+                    f"{language_name} cannot represent negative zero: its "
+                    "JSON value type has no signed zero"
                 )
                 raise UnrepresentableInputError(msg)
             case dict():

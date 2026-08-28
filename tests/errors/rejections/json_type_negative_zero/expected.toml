@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[UnrepresentableInputError]
+"Elm[JSON_ENCODE_VALUE]" = "Elm cannot represent negative zero: its JSON value type has no signed zero"
+"Haskell[AESON_VALUE]" = "Haskell cannot represent negative zero: its JSON value type has no signed zero"
+"PureScript[ARGONAUT_JSON]" = "PureScript cannot represent negative zero: its JSON value type has no signed zero"

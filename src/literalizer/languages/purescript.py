@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._checks import reject_negative_zero
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
@@ -1298,9 +1299,11 @@ class PureScript(metaclass=LanguageCls):
 
         Under :attr:`json_type` the data must round-trip through a JSON
         document, so walk *data* to reject non-string dict keys and
-        non-finite floats -- both inputs JSON cannot represent.
+        non-finite floats -- both inputs JSON cannot represent -- and
+        negative zero, whose sign ``JSON.stringify`` drops (issue #4543).
         """
         if self._json_type_active:
+            reject_negative_zero(data=data, language_name="PureScript")
             self._validate_json_value(data)
 
     def _validate_json_value(self, data: Value, /) -> None:
