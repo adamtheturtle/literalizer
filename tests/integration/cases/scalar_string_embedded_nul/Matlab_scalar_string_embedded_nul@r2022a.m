@@ -1,1 +1,1 @@
-my_data = sprintf('%s%s', char(0), "x");
+my_data = [char(0), 'x'];

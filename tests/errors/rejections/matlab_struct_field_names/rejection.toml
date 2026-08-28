@@ -9,6 +9,7 @@ sources = [
   '{"": "value"}',
   '{"1a": "value"}',
   '{"a b": "value"}',
+  '{"a\u0000b": "value"}',
   '{"a\u0001b": "value"}',
 ]
 input_format = "json"

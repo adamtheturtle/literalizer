@@ -1,0 +1,1 @@
+A MATLAB string holding a null is now built by concatenating character vectors rather than by splicing through ``sprintf``, whose ``%s`` conversion copies only up to the first null and so dropped the rest of the value.
