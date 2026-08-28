@@ -3717,7 +3717,11 @@ def _declaration_spellings(
     styles of the same declaration, and the second is what the
     assignment form emits, so it stands on its own (issue #4465).
     """
-    styles = type(language).DeclarationStyles
+    language_cls = type(language)
+    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
+        msg = "Declaration-style lookup requires a LanguageCls language"
+        raise TypeError(msg)
+    styles = language_cls.DeclarationStyles
     spellings: set[str] = set()
     for style in styles:
         try:
