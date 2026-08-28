@@ -1,7 +1,7 @@
 schema_version = 1
 
 [variants]
-record = ["nonrecord_dict_field"]
+record = ["field_type_split", "list_field_type_split", "nonrecord_dict_field"]
 
 [variants.non_default_kwargs]
 default_set_element_type = "string"
