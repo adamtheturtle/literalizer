@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+# The reference sits inside an ordered map argument, whose value type
+# has to come from what the reference holds; the generated stub also
+# has to take what an ordered map is written as.
+[call]
+target_function = "process"
+parameter_names = ["a"]
+per_element = true
+ref_declarations = { big_list = "[\"x\"]" }
+consumable_refs = ["big_list"]

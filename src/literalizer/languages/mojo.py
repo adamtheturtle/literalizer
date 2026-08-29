@@ -97,7 +97,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     NullInCollectionError,
@@ -181,6 +181,11 @@ def _value_to_mojo_type(
             return _mojo_call_arg_element_to_type(
                 infer_element_type(items=[value]) or list,
             )
+        case OrderedMap():
+            # An ordered map is written as a list of tuples, which no
+            # ``Dict`` parameter takes, so the slot falls back to the
+            # generic form (issue #4735).
+            return None
         case dict():
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"

@@ -1,0 +1,1 @@
+A ``Mojo`` call stub no longer declares an ordered map argument as a ``Dict``, which the list of tuples it is written as does not match. Resolving a reference also no longer turns an ordered map into a plain mapping, which is what let the wrong type through.
