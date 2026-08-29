@@ -4,7 +4,7 @@ A data class named after a type the generated Kotlin itself uses either shadows 
 """
 exceptions = ["InvalidRecordNameError"]
 languages = ["Kotlin"]
-values = ["Any", "IntArray", "LocalDate", "Map"]
+values = ["Any", "IntArray", "LinkedHashMap", "LocalDate", "Map"]
 
 [call]
 api = "constructor"

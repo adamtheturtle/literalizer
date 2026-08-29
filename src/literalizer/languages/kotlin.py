@@ -168,6 +168,7 @@ _KOTLIN_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
         "DoubleArray",
         "Int",
         "IntArray",
+        "LinkedHashMap",
         "List",
         "LocalDate",
         "LocalDateTime",
