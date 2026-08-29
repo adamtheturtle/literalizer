@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A case class named after a type the generated Scala itself uses either shadows that type or clashes with the import line bringing it in.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Scala"]
+values = ["List", "Map", "Set", "ZonedDateTime"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["a", "b"]], names = ["{value}"] },
+]

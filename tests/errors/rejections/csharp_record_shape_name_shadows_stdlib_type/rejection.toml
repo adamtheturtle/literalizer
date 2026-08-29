@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A record named after a type the generated C# itself uses either shadows that type or clashes with the using line bringing it in.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["CSharp"]
+values = ["DateOnly", "DateTime", "System"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["a", "b"]], names = ["{value}"] },
+]

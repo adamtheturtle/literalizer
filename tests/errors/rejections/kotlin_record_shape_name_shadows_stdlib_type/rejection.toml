@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A data class named after a type the generated Kotlin itself uses either shadows that type or clashes with the import line bringing it in.
+"""
+exceptions = ["InvalidRecordNameError"]
+languages = ["Kotlin"]
+values = ["Any", "IntArray", "LocalDate", "Map"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "record_shape_names", key_sets = [["a", "b"]], names = ["{value}"] },
+]

@@ -9,7 +9,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import ClassVar, Final, assert_never
 
 from beartype import beartype
 
@@ -155,6 +155,37 @@ _format_string_backslash_dollar_nul = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("$", r"\$"), ("\0", r"\u0000")],
 )
+
+
+_KOTLIN_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        "Any",
+        "Array",
+        "BigInteger",
+        "Boolean",
+        "BooleanArray",
+        "Double",
+        "DoubleArray",
+        "Int",
+        "IntArray",
+        "List",
+        "LocalDate",
+        "LocalDateTime",
+        "LocalTime",
+        "Long",
+        "Map",
+        "Pair",
+        "Set",
+        "String",
+        "Triple",
+    }
+)
+"""Type names the generated code can reference.
+
+A data class named after one of these either shadows the
+type the same file uses or clashes with what its import line brings
+in, so the compiler rejects the output (issue #4536).
+"""
 
 
 @beartype
@@ -1755,6 +1786,13 @@ class Kotlin(metaclass=LanguageCls):
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Kotlin "
                     f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in _KOTLIN_EMITTED_TYPE_NAMES:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which names a type the generated "
+                    f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
             if auto_name_pattern.match(string=name):

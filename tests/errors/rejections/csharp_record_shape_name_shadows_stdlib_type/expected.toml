@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+"CSharp['DateOnly']" = "record_shape_names entry for keys ['a', 'b'] maps to 'DateOnly', which names a type the generated code itself uses."
+"CSharp['DateTime']" = "record_shape_names entry for keys ['a', 'b'] maps to 'DateTime', which names a type the generated code itself uses."
+"CSharp['System']" = "record_shape_names entry for keys ['a', 'b'] maps to 'System', which names a type the generated code itself uses."
