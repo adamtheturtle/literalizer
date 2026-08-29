@@ -1,4 +1,9 @@
-"""Elm rendering for values supplied through reference bindings."""
+"""Elm rendering for values supplied through reference bindings.
+
+The golden harness reads a case's bound-reference values with
+``json.loads``, and JSON has no time, so the value here cannot be
+declared in a case file (issue #4699).
+"""
 
 import datetime
 

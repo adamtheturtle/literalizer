@@ -1,4 +1,8 @@
-"""Tests for retaining ruamel nodes used by comment rendering."""
+"""Tests for retaining ruamel nodes used by comment rendering.
+
+The subject is which parser nodes survive a walk, not any rendered
+output, so there is nothing for a golden file to hold (issue #4699).
+"""
 
 from collections.abc import Mapping
 from typing import TYPE_CHECKING

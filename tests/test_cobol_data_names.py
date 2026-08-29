@@ -1,4 +1,9 @@
-"""Tests for COBOL data-name disambiguation."""
+"""Tests for COBOL data-name disambiguation.
+
+These drive the name suffixing directly, a thousand collisions deep,
+which no document of a size worth keeping would reach through the
+public API (issue #4699).
+"""
 
 from literalizer.languages.cobol import (
     _NameScope,  # pyright: ignore[reportPrivateUsage]
