@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A readonly field is assigned where it is declared or in a constructor,
+so a later assignment to the same name has nowhere to go.
+"""
+exceptions = ["ImmutableVariableModifierError"]
+gates = [{ kind = "modifier_present", modifier = "READONLY" }]
+
+[call]
+api = "literalize"
+sources = ["[1, 2]"]
+input_format = "json"
+variable_form = "both"
+variable_name = "my_val"
+modifiers = ["READONLY"]
+wrap_in_file = true

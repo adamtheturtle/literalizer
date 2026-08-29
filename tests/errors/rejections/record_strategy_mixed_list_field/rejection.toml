@@ -1,0 +1,39 @@
+schema_version = 1
+summary = """
+A record field holding a list of mixed scalar types splits nothing --
+there is one dict -- so it reaches the heterogeneous-scalar gate that
+runs after shape computation.
+"""
+exceptions = ["HeterogeneousScalarCollectionError", "UnrepresentableInputError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ["\n- a:\n    - 1\n    - x\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = [
+  "C",
+  "CSharp",
+  "Cpp",
+  "Crystal",
+  "Go",
+  "Java",
+  "Kotlin",
+  "Odin",
+  "Python",
+  "Scala",
+  "Swift",
+  "Zig",
+]
+reason = """
+These give the list a widened element type -- an interface, an object
+or a variant -- so a mix of scalar types still has one element type to
+declare.
+"""

@@ -52,7 +52,7 @@ VALUE_PLACEHOLDER = "value"
 """The only placeholder a manifest's constructor arguments substitute."""
 
 type ApiName = Literal["literalize", "literalize_call", "constructor"]
-type VariableFormName = Literal["new", "existing"]
+type VariableFormName = Literal["new", "existing", "both"]
 
 
 def _bound_refs_items(

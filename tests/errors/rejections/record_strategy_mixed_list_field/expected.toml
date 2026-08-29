@@ -1,0 +1,9 @@
+# languages rejecting: 4; languages accepting: 12
+
+[HeterogeneousScalarCollectionError]
+Nim = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+Rust = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+V = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[UnrepresentableInputError]
+D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"

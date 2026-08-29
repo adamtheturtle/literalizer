@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+BothVariableForms writes a declaration and then an assignment to the
+same name, which a const binding makes impossible.
+"""
+exceptions = ["ImmutableVariableModifierError"]
+gates = [{ kind = "modifier_present", modifier = "CONST" }]
+
+[call]
+api = "literalize"
+sources = ["[1, 2]"]
+input_format = "json"
+variable_form = "both"
+variable_name = "my_val"
+modifiers = ["CONST"]
+wrap_in_file = true
