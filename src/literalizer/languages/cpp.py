@@ -1126,6 +1126,49 @@ def _render_cpp_tuple(
     )
 
 
+_CPP_RECORD_AS_MAP_VALUE_MSG = (
+    "Cpp cannot represent a record as the value of a mapping that is "
+    "not itself a record under the RECORD heterogeneous strategy: the "
+    "mapping's value type is inferred from the dict the record was "
+    "written from, so it would name a map where the literal writes a "
+    "struct"
+)
+
+
+@beartype
+def _check_cpp_record_naming(*, node: Value) -> None:
+    """Raise if a record is the direct value of a non-record mapping.
+
+    An enclosing mapping types its values itself: an ordered map of
+    lists of records writes ``std::vector<RecordN>`` and composes those
+    into a variant where the lists differ.  A record dict sitting
+    directly in that slot has no such type -- the opener infers the map
+    the dict was written from -- so the declaration would name a map
+    where the literal writes ``RecordN{...}`` (issue #4754).
+    """
+    match node:
+        case dict():
+            enclosing_is_record = record_shape_for_dict(
+                value=node
+            ) is not None and not isinstance(node, OrderedMap)
+            for value in node.values():
+                if (
+                    not enclosing_is_record
+                    and isinstance(value, dict)
+                    and not isinstance(value, OrderedMap)
+                    and record_shape_for_dict(value=value) is not None
+                ):
+                    raise UnrepresentableInputError(
+                        _CPP_RECORD_AS_MAP_VALUE_MSG
+                    )
+                _check_cpp_record_naming(node=value)
+        case list() | set():
+            for item in node:
+                _check_cpp_record_naming(node=item)
+        case _:
+            return
+
+
 _MIN_CPP_TUPLE_ARITY = 2
 
 
@@ -3178,6 +3221,8 @@ class Cpp(metaclass=LanguageCls):
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate C++-specific data/format combinations."""
+        if self._record_strategy_active:
+            _check_cpp_record_naming(node=data)
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
         if self._json_inline_document_active:
