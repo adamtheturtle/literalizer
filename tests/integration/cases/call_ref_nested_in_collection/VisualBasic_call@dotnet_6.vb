@@ -7,6 +7,6 @@ Module Check
         Dim big_list = New String() {
             "x"
         }
-        process(New Dictionary(Of String, Object) From {{"k", big_list}}, New Dictionary(Of String, Object) From {{"m", big_list}})
+        process(New Dictionary(Of String, Object) From {{"k", big_list}}, 2)
     End Sub
 End Module

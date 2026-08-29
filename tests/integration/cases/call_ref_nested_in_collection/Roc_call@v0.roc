@@ -1,6 +1,7 @@
 module [main]
 
 Val : [
+    RInt I128,
     RStr Str,
     RList (List Val),
     RDict (List (Str, Val)),
@@ -13,5 +14,5 @@ big_list = RList [
     RStr "x",
     ]
 main =
-    dbg (process (RDict [("k", big_list)]) (RDict [("m", big_list)]))
+    dbg (process (RDict [("k", big_list)]) (RInt 2i128))
     {}

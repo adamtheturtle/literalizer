@@ -1,7 +1,7 @@
-def process(a: Dict[String, List[String]], b: Dict[String, List[String]]):
+def process(a: Dict[String, List[String]], b: Int):
     pass
 def main():
     var big_list: List[String] = List([
         "x",
     ])
-    process({"k": big_list}, List([Tuple("m", big_list)]))
+    process({"k": big_list}, 2)

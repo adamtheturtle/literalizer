@@ -5,7 +5,7 @@ int main(void) {
 id big_list = @[
     @"x",
 ];
-process(@{@"k": big_list}, @{@"m": big_list});
+process(@{@"k": big_list}, @2);
 }
     return 0;
 }

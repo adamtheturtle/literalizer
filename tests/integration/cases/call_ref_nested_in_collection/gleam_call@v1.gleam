@@ -1,4 +1,5 @@
 pub type GVal {
+  GInt(Int)
   GStr(String)
   GList(List(GVal))
   GDict(List(#(String, GVal)))
@@ -9,5 +10,5 @@ pub fn main() {
   let big_list = GList([
     GStr("x"),
   ])
-  process(GDict([#("k", big_list)]), GDict([#("m", big_list)]))
+  process(GDict([#("k", big_list)]), GInt(2))
 }

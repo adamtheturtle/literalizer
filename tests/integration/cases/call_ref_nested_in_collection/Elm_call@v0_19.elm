@@ -2,7 +2,8 @@ module Check exposing (..)
 
 
 type Val
-    = EStr String
+    = EInt Int
+    | EStr String
     | EList (List Val)
     | EDict (List ( String, Val ))
 process : a -> b -> ()
@@ -16,7 +17,7 @@ main =
         big_list = EList [
             EStr "x"
             ]
-        _ = process (EDict [("k", big_list)]) (EDict [("m", big_list)])
+        _ = process (EDict [("k", big_list)]) (EInt 2)
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

@@ -5,5 +5,5 @@ func main() {
 big_list := []string{
 	"x",
 }
-process(map[string][]string{"k": big_list}, [][2]any{{"m", big_list}})
+process(map[string][]string{"k": big_list}, 2)
 }

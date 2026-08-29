@@ -15,6 +15,6 @@ initial begin
 static _VVal big_list[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "x"}
 };
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"k\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"big_list\"}}}"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"m\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"big_list\"}}}"});
+process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"k\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"big_list\"}}}"}, _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""});
 end
 endmodule

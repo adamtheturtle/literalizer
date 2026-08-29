@@ -4,6 +4,6 @@ defmodule Check do
     big_list = [
         "x",
     ]
-    process(%{"k" => big_list}, [{"m", big_list}])
+    process(%{"k" => big_list}, 2)
   end
 end

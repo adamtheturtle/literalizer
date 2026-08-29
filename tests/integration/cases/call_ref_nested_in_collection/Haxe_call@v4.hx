@@ -4,6 +4,6 @@ class Fixture_call_ref_nested_in_collection_Haxe_call {
         final big_list = ([
             "x",
         ] : Array<Dynamic>);
-        process((["k" => big_list] : Map<String, Dynamic>), (["m" => big_list] : Map<String, Dynamic>));
+        process((["k" => big_list] : Map<String, Dynamic>), 2);
     }
 }

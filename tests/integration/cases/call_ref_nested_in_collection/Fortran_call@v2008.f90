@@ -87,7 +87,7 @@ program main
     big_list = flist([fval_t :: &
         fstr('x') &
     ])
-    call process(fmap([fval_t :: fentry('k', big_list)]), fmap([fval_t :: fentry('m', big_list)]))
+    call process(fmap([fval_t :: fentry('k', big_list)]), fint(2_int64))
 contains
     subroutine process(a, b)
         implicit none

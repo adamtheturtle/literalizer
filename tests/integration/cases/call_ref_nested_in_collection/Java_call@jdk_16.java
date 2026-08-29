@@ -5,6 +5,6 @@ static Object process(Object... args) { return null; }
 var big_list = new String[]{
     "x"
 };
-process(Map.ofEntries(Map.entry("k", big_list)), new java.util.ArrayList<>(java.util.Arrays.asList(Map.entry("m", big_list))));
+process(Map.ofEntries(Map.entry("k", big_list)), 2);
     }
 }

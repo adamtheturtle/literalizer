@@ -4,7 +4,8 @@ module Check where
 import Prelude
 data Tuple a b = Tuple a b
 data Val
-    = PStr String
+    = PInt Int
+    | PStr String
     | PList (Array Val)
     | PDict (Array (Tuple String Val))
 process :: Val -> Val -> Unit
@@ -18,6 +19,6 @@ big_list = PList [
 main :: Unit
 main =
     let
-        _ = process (PDict [(Tuple "k" (big_list))]) (PDict [(Tuple "m" (big_list))])
+        _ = process (PDict [(Tuple "k" (big_list))]) (PInt 2)
     in
     unit

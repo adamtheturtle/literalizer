@@ -3,4 +3,4 @@ function process($a, $b) {}
 $big_list = [
     "x",
 ];
-process(a: ["k" => $big_list], b: ["m" => $big_list]);
+process(a: ["k" => $big_list], b: 2);

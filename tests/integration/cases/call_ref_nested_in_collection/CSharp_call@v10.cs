@@ -6,6 +6,6 @@ static object process(object a = null, object b = null) => null;
 var big_list = ValueTuple.Create(
     "x"
 );
-process(new Dictionary<string, object> {["k"] = big_list}, new Dictionary<string, object> {["m"] = big_list});
+process(new Dictionary<string, object> {["k"] = big_list}, 2);
     }
 }

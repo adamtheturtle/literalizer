@@ -6,5 +6,5 @@ main :: proc() {
 big_list := [dynamic]any{
 	"x",
 }
-process(map[string]any{"k" = big_list}, map[string]any{"m" = big_list});
+process(map[string]any{"k" = big_list}, 2);
 }

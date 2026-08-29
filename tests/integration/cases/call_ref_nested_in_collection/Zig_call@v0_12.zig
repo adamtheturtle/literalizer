@@ -15,5 +15,5 @@ pub fn main() void {
     const big_list: ZVal = .{ .arr = &.{
         .{ .str = "x" },
     }};
-    process(.{ .map = &.{.{ .key = "k", .val = big_list }}}, .{ .map = &.{.{ .key = "m", .val = big_list }}});
+    process(.{ .map = &.{.{ .key = "k", .val = big_list }}}, .{ .int = 2 });
 }

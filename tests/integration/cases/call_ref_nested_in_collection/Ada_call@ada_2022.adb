@@ -5,5 +5,5 @@ procedure Main is
         AStr ("x")
     ];
 begin
-    Process(a => AMap'[AEntry ("k", big_list)], b => AMap'[AEntry ("m", big_list)]);
+    Process(a => AMap'[AEntry ("k", big_list)], b => AInt (2));
 end Main;

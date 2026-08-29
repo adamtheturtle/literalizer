@@ -4,5 +4,5 @@ fn main() {
     let big_list = vec![
         "x",
     ];
-    process(HashMap::from([("k", big_list)]), HashMap::from([("m", big_list)]));
+    process(HashMap::from([("k", big_list)]), 2);
 }

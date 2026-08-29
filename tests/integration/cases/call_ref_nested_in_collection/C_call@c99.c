@@ -19,6 +19,6 @@ int main(void) {
 CVal big_list = ((CVal){.a = (CVal[]){
     ((CVal){.s = "x"}),
 }});
-process(((CVal){.m = (CKV[]){{"k", big_list}}}), ((CVal){.m = (CKV[]){{"m", big_list}}}));
+process(((CVal){.m = (CKV[]){{"k", big_list}}}), ((CVal){.i = 2}));
     return 0;
 }

@@ -6,4 +6,4 @@ var process = Process_.new()
 var big_list = [
     "x",
 ]
-process.call({"k": big_list}, {"m": big_list})
+process.call({"k": big_list}, 2)

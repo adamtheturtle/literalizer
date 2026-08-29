@@ -3,5 +3,5 @@ def process(a: Any = null, b: Any = null): Any = null
 val big_list = List[String](
     "x",
 )
-process(a = Map[String, List[String]]("k" -> big_list), b = scala.collection.immutable.ListMap("m" -> big_list))
+process(a = Map[String, List[String]]("k" -> big_list), b = 2)
 }
