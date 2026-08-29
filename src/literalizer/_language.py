@@ -1203,6 +1203,39 @@ class LanguageCls(type):
     or ``type: ignore``.
     """
 
+    explicit_language_attributes: ClassVar[frozenset[str]] = frozenset(
+        {
+            "accepts_type_name_call_target",
+            "call_parameter_shadowing",
+            "call_target_name_syntax",
+            "contextual_call_target_identifiers",
+            "declares_type_name_call_target",
+            "dotted_call_root_shares_entrypoint_namespace",
+            "immutable_variable_modifiers",
+            "max_variable_identifier_length",
+            "module_name_must_start_uppercase",
+            "module_name_shares_variable_scope",
+            "new_variable_name_syntax",
+            "pools_map_integer_width",
+            "reserved_bare_call_target_identifiers",
+            "reserved_call_parameter_identifier_pattern",
+            "reserved_call_parameter_identifiers",
+            "reserved_call_target_head_identifiers",
+            "reserved_call_target_keywords_case_sensitive",
+            "reserved_module_identifiers",
+            "reserved_variable_identifier_pattern",
+            "supports_multiline_dict_layout",
+            "wrap_in_file_tolerates_pre_indent",
+        }
+    )
+    """What every language says for itself rather than inheriting.
+
+    Each of these once carried a default here, which let a language
+    take a behavior nobody had considered for it.  A language now
+    declares each one, and a test holds every language to the list
+    (issue #4655).
+    """
+
     stringifies_nested_collections: bool
     """Whether nested collection syntax becomes string payload data."""
 
@@ -1274,8 +1307,8 @@ class LanguageCls(type):
     reserved_identifiers: frozenset[str]
     reserved_variable_identifiers: frozenset[str]
     reserved_variable_identifiers_case_sensitive: bool
-    reserved_module_identifiers: frozenset[str] = frozenset()
-    immutable_variable_modifiers: frozenset[enum.Enum] = frozenset()
+    reserved_module_identifiers: frozenset[str]
+    immutable_variable_modifiers: frozenset[enum.Enum]
     """Modifiers whose declaration cannot be assigned to afterwards.
 
     ``BothVariableForms`` emits a declaration and then an assignment to
@@ -1284,7 +1317,7 @@ class LanguageCls(type):
     (issue #4565).
     """
 
-    wrap_in_file_tolerates_pre_indent: bool = True
+    wrap_in_file_tolerates_pre_indent: bool
     """Whether a wrapped file survives being written at an indentation.
 
     ``pre_indent_level`` indents the value declaration but not the
@@ -1293,7 +1326,7 @@ class LanguageCls(type):
     parse that; one that reads braces does not care (issue #4535).
     """
 
-    module_name_shares_variable_scope: bool = False
+    module_name_shares_variable_scope: bool
     """Whether the wrapper name and the bound variable share a scope.
 
     A Fortran ``program`` unit and the variables it declares sit in one
@@ -1301,27 +1334,27 @@ class LanguageCls(type):
     twice.  Nearly every other wrapper introduces a scope of its own
     (issue #4530).
     """
-    reserved_variable_identifier_pattern: re.Pattern[str] | None = None
+    reserved_variable_identifier_pattern: re.Pattern[str] | None
     """A shape a declaration name cannot take, beyond the names listed
     in :attr:`~literalizer.Language.reserved_variable_identifiers`.
     Zig's arbitrary-width integer primitives (``u7``, ``i33``, ...) are
     an open set, so they are spelled as a pattern rather than
     enumerated.
     """
-    reserved_call_parameter_identifiers: frozenset[str] = frozenset()
+    reserved_call_parameter_identifiers: frozenset[str]
     """Names a call parameter cannot take even where a declaration can.
 
     Scala's ``using`` opens a parameter clause, and Crystal's ``_``
     cannot carry the default value a generated stub gives it.
     """
-    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None = None
+    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None
     """A shape a call parameter name cannot take.
 
     R identifiers cannot begin with an underscore and Dart named
     parameters cannot be private, so both are spelled as a pattern
     rather than enumerated (issue #3916, issue #3952).
     """
-    accepts_type_name_call_target: bool = True
+    accepts_type_name_call_target: bool
     """Whether a bare type name may be a ``target_function``.
 
     A constructor call target is spelled by the language, so its shape
@@ -1331,7 +1364,7 @@ class LanguageCls(type):
     wrong for Elixir, where a capitalized bare name parses as an alias
     rather than a function (issue #3914).
     """
-    declares_type_name_call_target: bool = True
+    declares_type_name_call_target: bool
     """Whether a wrapped file can declare a bare type-name call target.
 
     A constructor target is exempt from the identifier grammar because
@@ -1341,7 +1374,7 @@ class LanguageCls(type):
     a constructor the declaration syntax has no room for, so the
     exemption stops at the file scaffold (issue #4525).
     """
-    dotted_call_root_shares_entrypoint_namespace: bool = True
+    dotted_call_root_shares_entrypoint_namespace: bool
     """Whether a dotted call root is declared as the entry point is.
 
     A generated stub usually declares the root the same way the wrapper
@@ -1350,7 +1383,7 @@ class LanguageCls(type):
     ``static`` field beside the entry-point method, and a field and a
     method of one name coexist (issue #3914).
     """
-    reserved_bare_call_target_identifiers: frozenset[str] = frozenset()
+    reserved_bare_call_target_identifiers: frozenset[str]
     """Names only a call target with no dot in it cannot take.
 
     A PHP stub declares a plain ``function`` only for such a target;
@@ -1360,7 +1393,7 @@ class LanguageCls(type):
     leaving ``end.foo`` -- and a parameter or variable ``$end`` --
     alone (issue #4495).
     """
-    reserved_call_target_head_identifiers: frozenset[str] = frozenset()
+    reserved_call_target_head_identifiers: frozenset[str]
     """Names only the leading component of a call target cannot take.
 
     A Common Lisp dotted stub declares each prefix of the target, so
@@ -1370,7 +1403,7 @@ class LanguageCls(type):
     can name a package symbol, and a parameter or a variable never does
     (issue #4547).
     """
-    contextual_call_target_identifiers: frozenset[str] = frozenset()
+    contextual_call_target_identifiers: frozenset[str]
     """Reserved declaration names a call target may still lead with.
 
     The leading component of a ``target_function`` names a function, or
@@ -1381,9 +1414,7 @@ class LanguageCls(type):
     advanced-function body block) or Roc's ``app`` (a module header) --
     lists it here (issue #3905).
     """
-    call_parameter_shadowing: CallParameterShadowing = (
-        CallParameterShadowing.ALLOWED
-    )
+    call_parameter_shadowing: CallParameterShadowing
     """Which declarations a wrapped stub's parameter may not repeat.
 
     A wrapped file declares the target and its parameters in one
@@ -1394,7 +1425,7 @@ class LanguageCls(type):
     of`` for any file-scope declaration, which for a dotted target
     includes the helper each component declares (issue #4528).
     """
-    reserved_call_target_keywords_case_sensitive: bool = True
+    reserved_call_target_keywords_case_sensitive: bool
     """Whether a reserved word leading a call target matches by case.
 
     A language may spell identifiers case-sensitively while matching
@@ -1404,12 +1435,10 @@ class LanguageCls(type):
     :attr:`~literalizer.Language.reserved_variable_identifiers_case_sensitive`
     ``True`` (issue #3905).
     """
-    module_name_must_start_uppercase: bool = False
-    new_variable_name_syntax: NewVariableNameSyntax = (
-        NewVariableNameSyntax.ASCII
-    )
-    max_variable_identifier_length: int | None = None
-    call_target_name_syntax: NewVariableNameSyntax | None = None
+    module_name_must_start_uppercase: bool
+    new_variable_name_syntax: NewVariableNameSyntax
+    max_variable_identifier_length: int | None
+    call_target_name_syntax: NewVariableNameSyntax | None
     """The grammar each component of a ``target_function`` follows.
 
     ``None`` means the declaration grammar, which is what a call target
@@ -1425,7 +1454,7 @@ class LanguageCls(type):
     """Whether call-result bindings preserve an active JSON value type."""
     supports_zero_parameter_calls: bool
     max_call_parameters: int
-    supports_multiline_dict_layout: bool = True
+    supports_multiline_dict_layout: bool
     """Whether a mapping may be spread over several lines.
 
     TOML forbids a multi-line inline table, so a mapping there stays on
@@ -1442,7 +1471,7 @@ class LanguageCls(type):
     supports_default_dict_key_type: bool
     supports_non_string_dict_keys: bool
     checks_raw_control_dict_keys_separately: bool
-    pools_map_integer_width: bool = True
+    pools_map_integer_width: bool
     """Whether one integer width is chosen for a whole map's values.
 
     A map whose value slot is a single declared type needs every
