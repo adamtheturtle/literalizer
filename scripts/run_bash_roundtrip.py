@@ -50,18 +50,48 @@ _VAR_NAME = "myData"
 _LABEL = "Bash"
 
 # A minimal JSON string escaper: the round-trip must serialize the
-# *runtime* value, so escaping happens in Bash rather than being baked in
-# at code-generation time.  Backslash is replaced first so the escapes
-# added afterwards are not doubled.  The shared input carries no control
-# characters beyond these, and UTF-8 string bytes pass straight through.
-_JSON_STR_FN = """\
-_json_str() {
+# *runtime* value, so escaping happens in Bash rather than being baked
+# in at code-generation time.  Backslash is replaced first so the
+# escapes added afterwards are not doubled.  Every C0 control is
+# covered, not just the five with short escapes, because JSON forbids
+# all of them raw (issue #4545).  DEL and the C1 range are legal in a
+# JSON string without an escape and pass through as UTF-8 bytes do.
+_JSON_STR_FN = r"""_json_str() {
     local s=$1
-    s=${s//\\\\/\\\\\\\\}
-    s=${s//\\"/\\\\\\"}
-    s=${s//$'\\n'/\\\\n}
-    s=${s//$'\\r'/\\\\r}
-    s=${s//$'\\t'/\\\\t}
+    s=${s//\\/\\\\}
+    s=${s//\"/\\\"}
+    s=${s//$'\x00'/\\u0000}
+    s=${s//$'\x01'/\\u0001}
+    s=${s//$'\x02'/\\u0002}
+    s=${s//$'\x03'/\\u0003}
+    s=${s//$'\x04'/\\u0004}
+    s=${s//$'\x05'/\\u0005}
+    s=${s//$'\x06'/\\u0006}
+    s=${s//$'\x07'/\\u0007}
+    s=${s//$'\x08'/\\b}
+    s=${s//$'\x09'/\\t}
+    s=${s//$'\x0a'/\\n}
+    s=${s//$'\x0b'/\\u000b}
+    s=${s//$'\x0c'/\\f}
+    s=${s//$'\x0d'/\\r}
+    s=${s//$'\x0e'/\\u000e}
+    s=${s//$'\x0f'/\\u000f}
+    s=${s//$'\x10'/\\u0010}
+    s=${s//$'\x11'/\\u0011}
+    s=${s//$'\x12'/\\u0012}
+    s=${s//$'\x13'/\\u0013}
+    s=${s//$'\x14'/\\u0014}
+    s=${s//$'\x15'/\\u0015}
+    s=${s//$'\x16'/\\u0016}
+    s=${s//$'\x17'/\\u0017}
+    s=${s//$'\x18'/\\u0018}
+    s=${s//$'\x19'/\\u0019}
+    s=${s//$'\x1a'/\\u001a}
+    s=${s//$'\x1b'/\\u001b}
+    s=${s//$'\x1c'/\\u001c}
+    s=${s//$'\x1d'/\\u001d}
+    s=${s//$'\x1e'/\\u001e}
+    s=${s//$'\x1f'/\\u001f}
     printf '"%s"' "$s"
 }
 """
@@ -131,22 +161,43 @@ def _emit_object(
 ) -> None:
     """Append Bash statements emitting a JSON object from assoc *var*.
 
-    The shared ``roundtrip_input.json`` only has ASCII-identifier keys,
-    so each key is a literal Bash subscript and embeds cleanly in the
-    single-quoted JSON key fragment.
+    A key is carried through a shell variable rather than written into
+    the subscript itself, so a key containing a quote, a backtick or a
+    ``]`` indexes the array it names instead of breaking the script
+    (issue #4545).
     """
     lines.append("out+='{'")
     for index, (key, sub_value) in enumerate(iterable=entries.items()):
         if index:
             lines.append("out+=','")
-        lines.append(f"out+='{json.dumps(obj=key)}:'")
+        key_var = _next_var(counter=counter)
+        lines.append(f"{key_var}={_ansi_c_quoted(text=key)}")
+        lines.append(f"out+={_single_quoted(text=json.dumps(obj=key))}':'")
         _emit_value(
             value=sub_value,
-            ref=f"{var}[{key}]",
+            ref=f"{var}[${key_var}]",
             lines=lines,
             counter=counter,
         )
     lines.append("out+='}'")
+
+
+def _single_quoted(*, text: str) -> str:
+    """Return *text* as one single-quoted Bash word."""
+    escaped = text.replace("'", "'\\''")
+    return f"'{escaped}'"
+
+
+def _ansi_c_quoted(*, text: str) -> str:
+    """Return *text* as a Bash ``$'...'`` word.
+
+    ANSI-C quoting spells every byte as an escape, so a key holding a
+    quote, a backslash or a control character survives verbatim.
+    """
+    escaped = "".join(
+        f"\\x{byte:02x}" for byte in text.encode(encoding="utf-8")
+    )
+    return f"$'{escaped}'"
 
 
 def _next_var(*, counter: list[int]) -> str:

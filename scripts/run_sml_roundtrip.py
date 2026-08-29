@@ -46,7 +46,10 @@ passed through verbatim), so the UTF-8 sequence reconstitutes in the
 emitted JSON without ``\\uXXXX`` escaping.
 """
 
+import re
 import shutil
+from collections.abc import Mapping
+from types import MappingProxyType
 
 from literalizer.languages import Sml
 from scripts import roundtrip_common
@@ -86,21 +89,44 @@ fun jsonReal r =
     (List.map (fn #"~" => #"-" | c => c)
        (String.explode (Real.fmt (StringCvt.GEN (SOME 17)) r)))
 
-fun toJson v =
-  case v of
-    SBool true => "true"
-  | SBool false => "false"
-  | SInt i => jsonInt i
-  | SReal r => jsonReal r
-  | SStr s => jsonString s
-  | SList xs => "[" ^ String.concatWith "," (List.map toJson xs) ^ "]"
-  | SMap kvs =>
-      "{" ^ String.concatWith ","
-              (List.map (fn (k, v) => jsonString k ^ ":" ^ toJson v) kvs)
-        ^ "}"
-
-val () = print (toJson myData)
 """
+
+_PRINT = "val () = print (toJson myData)\n"
+
+# One ``toJson`` clause per constructor.  ``Sml`` declares only the
+# constructors the document actually uses, so a clause for an absent one
+# would not compile; the clauses are selected from the emitted
+# ``datatype`` rather than written out in full (issue #4545).
+_TO_JSON_CLAUSES: Mapping[str, str] = MappingProxyType(
+    mapping={
+        "SBool": '    SBool true => "true"\n  | SBool false => "false"',
+        "SInt": "    SInt i => jsonInt i",
+        "SReal": "    SReal r => jsonReal r",
+        "SStr": "    SStr s => jsonString s",
+        "SList": (
+            "    SList xs => "
+            '"[" ^ String.concatWith "," (List.map toJson xs) ^ "]"'
+        ),
+        "SMap": (
+            "    SMap kvs =>\n"
+            '      "{" ^ String.concatWith ","\n'
+            "              (List.map (fn (k, v) => "
+            'jsonString k ^ ":" ^ toJson v) kvs)\n'
+            '        ^ "}"'
+        ),
+    }
+)
+
+
+def _to_json(*, declaration: str) -> str:
+    """Return a ``toJson`` matching only the declared constructors."""
+    clauses = [
+        clause
+        for name, clause in _TO_JSON_CLAUSES.items()
+        if re.search(pattern=rf"\b{name}\b", string=declaration) is not None
+    ]
+    body = "\n  | ".join(clause.removeprefix("    ") for clause in clauses)
+    return f"\nfun toJson v =\n  case v of\n    {body}\n"
 
 
 def _build_program(json_text: str) -> str:
@@ -121,7 +147,8 @@ def _build_program(json_text: str) -> str:
     # Prepending ``body_preamble`` separately would duplicate the
     # ``val_t`` type and break compilation.
     preamble = "\n".join(result.preamble)
-    return f"{preamble}\n{result.code}\n{_TO_JSON}"
+    to_json = _to_json(declaration=result.code)
+    return f"{preamble}\n{result.code}\n{_TO_JSON}{to_json}\n{_PRINT}"
 
 
 def main() -> None:

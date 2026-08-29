@@ -46,7 +46,10 @@ final ``Text`` so the emitted JSON reaches stdout verbatim.
 """
 
 import json
+import re
 import shutil
+from collections.abc import Mapping, Sequence
+from types import MappingProxyType
 
 from literalizer.languages import Dhall
 from scripts import roundtrip_common
@@ -89,27 +92,82 @@ _VARIABLE_TAIL = f"in {_VAR_NAME}"
 # (``"`` and ``\``); the unicode and non-control characters in
 # ``string_unicode`` pass through unchanged because JSON allows them
 # verbatim in string literals.
-_VALUE_TO_JSON_HELPERS = """\
+_TEXT_HELPERS = """\
 let stripPlus : Text -> Text = \\(s : Text) -> Text/replace "+" "" s
 
 let jsonEscape : Text -> Text =
       \\(s : Text) ->
         Text/replace "\\"" "\\\\\\"" (Text/replace "\\\\" "\\\\\\\\" s)
 
-let valueToJson : Value -> Text =
-      \\(v : Value) ->
-        merge
-          { Int = \\(i : Integer) -> stripPlus (Integer/show i)
-          , Double = \\(d : Double) -> Double/show d
-          , Bool = \\(b : Bool) -> if b then "true" else "false"
-          , Str = \\(s : Text) -> "\\"" ++ jsonEscape s ++ "\\""
-          }
-          v
 """
 
+# ``valueToJson`` mentions ``Value``, which the ``UNION_TYPE`` strategy
+# declares only for a document whose scalars span more than one family,
+# and Dhall's ``merge`` wants exactly the handlers the union declares --
+# an extra one is an ``Unused handler`` error.  So the helper is emitted
+# only when the union exists, with the handlers its variants name, and
+# each entry is converted directly otherwise (issue #4545).
+_VALUE_HANDLERS: Mapping[str, str] = MappingProxyType(
+    mapping={
+        "Int": "Int = \\(i : Integer) -> stripPlus (Integer/show i)",
+        "Double": "Double = \\(d : Double) -> Double/show d",
+        "Bool": 'Bool = \\(b : Bool) -> if b then "true" else "false"',
+        "Str": 'Str = \\(s : Text) -> "\\"" ++ jsonEscape s ++ "\\""',
+    }
+)
 
-def _entry_line(key: str, *, is_first: bool) -> str:
-    r"""Return one ``"<sep>\"key\":" ++ valueToJson myData.key`` fragment.
+
+def _value_to_json(*, variants: Sequence[str]) -> str:
+    """Return ``valueToJson`` handling exactly *variants*."""
+    handlers = "\n          , ".join(
+        _VALUE_HANDLERS[variant] for variant in variants
+    )
+    return (
+        "let valueToJson : Value -> Text =\n"
+        "      \\(v : Value) ->\n"
+        "        merge\n"
+        f"          {{ {handlers}\n"
+        "          }\n"
+        "          v\n"
+    )
+
+
+def _union_variants(*, preamble: str) -> tuple[str, ...]:
+    """Return the variant names the emitted ``Value`` union declares."""
+    match = re.search(pattern=r"let Value = <([^>]*)>", string=preamble)
+    if match is None:
+        return ()
+    return tuple(
+        part.split(sep=":")[0].strip()
+        for part in match.group(1).split(sep="|")
+    )
+
+
+def _scalar_to_json(*, expression: str, value: object) -> str:
+    """Return the Dhall text conversion for one bare scalar.
+
+    Parenthesized because the result is spliced into a ``++`` chain,
+    where a bare ``if`` is a parse error.
+    """
+    match value:
+        case bool():
+            return f'(if {expression} then "true" else "false")'
+        case int():
+            return f"(stripPlus (Integer/show {expression}))"
+        case float():
+            return f"(Double/show {expression})"
+        case _:
+            return f'("\\"" ++ jsonEscape {expression} ++ "\\"")'
+
+
+def _entry_line(
+    key: str,
+    *,
+    is_first: bool,
+    value: object,
+    has_union: bool,
+) -> str:
+    r"""Return one ``"<sep>\"key\":" ++ <conversion>`` fragment.
 
     Trimmed-input keys are pure-ASCII identifiers, so the Dhall string
     literal for the key needs no escaping beyond the surrounding
@@ -121,7 +179,13 @@ def _entry_line(key: str, *, is_first: bool) -> str:
     ``lint-fast`` job does not need network or a populated import cache.
     """
     sep = "" if is_first else ","
-    return f'"{sep}\\"{key}\\":" ++ valueToJson {_VAR_NAME}.{key}'
+    expression = f"{_VAR_NAME}.{key}"
+    converted = (
+        f"valueToJson {expression}"
+        if has_union
+        else _scalar_to_json(expression=expression, value=value)
+    )
+    return f'"{sep}\\"{key}\\":" ++ {converted}'
 
 
 def _build_program(json_text: str) -> str:
@@ -158,15 +222,24 @@ def _build_program(json_text: str) -> str:
         )
         raise AssertionError(msg)
     binding_without_tail = binding[: -len(_VARIABLE_TAIL)]
-    keys = list(parsed)
+    variants = _union_variants(preamble=preamble_text)
+    has_union = bool(variants)
     entry_lines = "\n      ++ ".join(
-        _entry_line(key=key, is_first=index == 0)
-        for index, key in enumerate(iterable=keys)
+        _entry_line(
+            key=key,
+            is_first=index == 0,
+            value=value,
+            has_union=has_union,
+        )
+        for index, (key, value) in enumerate(iterable=parsed.items())
+    )
+    helpers = _TEXT_HELPERS + (
+        _value_to_json(variants=variants) if has_union else ""
     )
     return (
         f"{preamble_text}\n"
         f"{binding_without_tail}"
-        f"{_VALUE_TO_JSON_HELPERS}"
+        f"{helpers}"
         "in\n"
         '      "{"\n'
         f"      ++ {entry_lines}\n"
