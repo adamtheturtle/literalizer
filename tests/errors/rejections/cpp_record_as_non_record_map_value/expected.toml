@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Cpp['- id: 1\\n  m: !!omap\\n    - k:\\n        a: 1\\n- id: 2\\n  m: !!omap\\n    - k:\\n        a: 2\\n']" = "Cpp cannot represent a record as the value of a mapping that is not itself a record under the RECORD heterogeneous strategy: the mapping's value type is inferred from the dict the record was written from, so it would name a map where the literal writes a struct"
+"Cpp['- id: 1\\n  m: !!omap\\n    - k:\\n        a: 1\\n- id: 2\\n  m: !!omap\\n    - k:\\n        b: 1\\n']" = "Cpp cannot represent a record as the value of a mapping that is not itself a record under the RECORD heterogeneous strategy: the mapping's value type is inferred from the dict the record was written from, so it would name a map where the literal writes a struct"

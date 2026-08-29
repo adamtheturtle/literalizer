@@ -389,6 +389,7 @@ def _nested_record_tokens(
     *,
     field_value: Value,
     id_to_shape: Mapping[int, RecordShape],
+    recordizable_ids: frozenset[int],
     token_string_of: Mapping[int, str],
 ) -> tuple[str, ...]:
     """Return the refinement groups of the records inside a field.
@@ -410,13 +411,21 @@ def _nested_record_tokens(
         value = pending.pop()
         match value:
             case dict():
-                # A mapping that is not a record of its own is one the
-                # widening pass took out; what it holds is written as
-                # a value of that mapping rather than as a record, so
-                # the walk stops here rather than undoing the widening.
                 if id(value) in id_to_shape:
                     tokens.add(token_string_of[id(value)])
                     pending.extend(value.values())
+                elif id(value) not in recordizable_ids:
+                    # A mapping that was never a record candidate --
+                    # an ordered map, or one whose keys are not all
+                    # names -- still holds records that are written as
+                    # records and named in this field's type, so the
+                    # walk goes through it (issue #4754).
+                    pending.extend(value.values())
+                # A mapping that was a candidate and is absent from
+                # ``id_to_shape`` is one the widening pass took out;
+                # what it holds is written as a value of that mapping
+                # rather than as a record, so the walk stops rather
+                # than undoing the widening.
             case list() | set():
                 pending.extend(value)
             case _:
@@ -430,6 +439,7 @@ def _instance_signature(
     instance: dict[Scalar, Value],
     shape: RecordShape,
     id_to_shape: Mapping[int, RecordShape],
+    recordizable_ids: frozenset[int],
     token_string_of: Mapping[int, str],
     field_type: Callable[[RecordFieldType], str],
     field_type_names_nested_records: bool,
@@ -473,6 +483,7 @@ def _instance_signature(
                     _nested_record_tokens(
                         field_value=field_value,
                         id_to_shape=id_to_shape,
+                        recordizable_ids=recordizable_ids,
                         token_string_of=token_string_of,
                     )
                 )
@@ -485,6 +496,7 @@ def _regroup_by_field_signatures(
     *,
     instances: Sequence[dict[Scalar, Value]],
     id_to_shape: Mapping[int, RecordShape],
+    recordizable_ids: frozenset[int],
     group_of: Mapping[int, Hashable],
     field_type: Callable[[RecordFieldType], str],
     field_type_names_nested_records: bool,
@@ -512,6 +524,7 @@ def _regroup_by_field_signatures(
                 instance=member,
                 shape=id_to_shape[id(member)],
                 id_to_shape=id_to_shape,
+                recordizable_ids=recordizable_ids,
                 token_string_of=token_string_of,
                 field_type=field_type,
                 field_type_names_nested_records=(
@@ -592,6 +605,7 @@ def _refine_record_shapes(
     *,
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],
+    recordizable_ids: frozenset[int],
     field_type: Callable[[RecordFieldType], str],
     field_type_names_nested_records: bool,
 ) -> dict[int, RecordShape]:
@@ -624,6 +638,7 @@ def _refine_record_shapes(
         regrouped = _regroup_by_field_signatures(
             instances=instances,
             id_to_shape=shapes_by_id,
+            recordizable_ids=recordizable_ids,
             group_of=group_of,
             field_type=field_type,
             field_type_names_nested_records=field_type_names_nested_records,
@@ -941,6 +956,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             _refine_record_shapes(
                 data=data,
                 shapes_by_id=widened_shapes_by_id,
+                recordizable_ids=frozenset(raw_shapes_by_id),
                 field_type=renderer.field_type,
                 field_type_names_nested_records=(
                     renderer.field_type_names_nested_records

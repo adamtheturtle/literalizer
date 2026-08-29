@@ -1,0 +1,23 @@
+schema_version = 1
+summary = """
+An enclosing mapping types its own values, and for a record dict in
+that slot it infers the map the dict was written from, so the
+declaration would name a map where the literal writes a struct.  An
+ordered map holding lists of records is unaffected: the list gives the
+slot a std::vector<RecordN> type of its own (#4754).
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = [
+  "- id: 1\n  m: !!omap\n    - k:\n        a: 1\n- id: 2\n  m: !!omap\n    - k:\n        a: 2\n",
+  "- id: 1\n  m: !!omap\n    - k:\n        a: 1\n- id: 2\n  m: !!omap\n    - k:\n        b: 1\n",
+]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
