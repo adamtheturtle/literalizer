@@ -11,6 +11,7 @@ restriction stops.
 import re
 
 import pytest
+from beartype import beartype
 
 from literalizer import (
     InputFormat,
@@ -80,6 +81,21 @@ def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
     )
 
 
+@beartype
+def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
+    """Return the spellings of *name* the language must refuse.
+
+    A case-sensitive language reserves the one spelling it declares.
+    A case-insensitive one reads every casing of it as the same word,
+    so an upper-cased and a capitalized spelling have to be refused
+    too.
+    """
+    if language_cls.reserved_variable_identifiers_case_sensitive:
+        return (name,)
+    spellings = (name, name.upper(), name.capitalize())
+    return tuple(dict.fromkeys(spellings))
+
+
 # Jsonnet declares reserved identifiers for its call parameter and
 # call target names while naming no variable at all, so a
 # ``NewVariable`` there is refused for a different reason (issue
@@ -103,27 +119,34 @@ def test_all_declared_reserved_names_raise(
     """Every language-specific reserved declaration name is rejected.
 
     The message is asserted here rather than in a manifest because it
-    names the identifier, which differs for every language.
+    names the identifier, which differs for every language.  A language
+    whose reserved set is case-insensitive is fed each name in other
+    spellings too, so that dropping the fold would fail here rather
+    than let a differently-cased keyword through.
     """
     for reserved_name in sorted(language_cls.reserved_variable_identifiers):
-        expected_message = (
-            f"{language_cls.__name__} cannot use NewVariable name "
-            f"{reserved_name!r}: it is a reserved identifier"
-        )
-        with pytest.raises(
-            expected_exception=ReservedVariableNameError,
-            match=f"^{re.escape(pattern=expected_message)}$",
+        for spelling in _spellings(
+            name=reserved_name,
+            language_cls=language_cls,
         ):
-            literalize(
-                source="1",
-                input_format=InputFormat.JSON,
-                language=language_cls(),
-                variable_form=NewVariable(
-                    name=reserved_name,
-                    modifiers=frozenset(),
-                ),
-                wrap_in_file=True,
+            expected_message = (
+                f"{language_cls.__name__} cannot use NewVariable name "
+                f"{spelling!r}: it is a reserved identifier"
             )
+            with pytest.raises(
+                expected_exception=ReservedVariableNameError,
+                match=f"^{re.escape(pattern=expected_message)}$",
+            ):
+                literalize(
+                    source="1",
+                    input_format=InputFormat.JSON,
+                    language=language_cls(),
+                    variable_form=NewVariable(
+                        name=spelling,
+                        modifiers=frozenset(),
+                    ),
+                    wrap_in_file=True,
+                )
 
 
 _RECORD_PREFIX_LANGUAGES = tuple(
