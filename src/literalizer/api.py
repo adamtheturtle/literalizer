@@ -528,7 +528,10 @@ def literalize(
         record_null_substitutions=materialized_record_null_substitutions,
         collection_layout=collection_layout,
         wrap_in_file=wrap_in_file,
-        bound_ref_names=frozenset(materialized_bound_refs),
+        # A binding is emitted for a bound reference only where the
+        # result binds a variable of its own; the paths that do so
+        # returned above, so nothing declares one here (issue #4499).
+        bound_ref_names=frozenset(),
     )
     return literalize_apply_form(
         pre_form=pre_form,

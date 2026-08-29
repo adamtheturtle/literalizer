@@ -3580,7 +3580,7 @@ def literalize_pre_form(
         ref_key=ref_key,
         ref_case=ref_case,
         bound_ref_names=bound_ref_names,
-        language_name=type(language).__name__,
+        language=language,
         wrap_in_file=wrap_in_file,
     )
     return pre_form
@@ -4413,7 +4413,7 @@ def reject_unbound_refs_in_file(
     ref_key: str,
     ref_case: IdentifierCase | None,
     bound_ref_names: frozenset[str],
-    language_name: str,
+    language: Language,
     wrap_in_file: bool,
 ) -> None:
     """Reject a complete file that would name an undeclared reference.
@@ -4426,9 +4426,13 @@ def reject_unbound_refs_in_file(
     Both sides are read in *ref_case*, which is the spelling the
     emitted code uses, so a binding named in another case still
     answers for the marker.  An unwrapped result is a fragment the
-    caller places, so it is free to name what it does not declare.
+    caller places, so it is free to name what it does not declare, and
+    so is a language that binds no name at all.
     """
-    if not wrap_in_file:
+    if not wrap_in_file or not language.supports_variable_names:
+        # A language that binds no name declares no reference either:
+        # its wrapped output is the value itself, where a reference is
+        # written as the name and nothing more.
         return
 
     def _spelled(name: str, /) -> str:
@@ -4443,7 +4447,7 @@ def reject_unbound_refs_in_file(
     }
     if unbound:
         raise RefNotSelfContainedError(
-            language_name=language_name,
+            language_name=type(language).__name__,
             ref_names=frozenset(unbound),
         )
 
@@ -6722,7 +6726,7 @@ def literalize_call_parsed(
         ref_key=ref_key,
         ref_case=ref_case,
         bound_ref_names=frozenset(bound_refs or {}),
-        language_name=type(language).__name__,
+        language=language,
         wrap_in_file=wrap_in_file,
     )
     _validate_ref_case_is_injective(

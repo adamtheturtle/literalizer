@@ -1,4 +1,4 @@
 # languages rejecting: 1; languages accepting: 0
 
 [RefNotSelfContainedError]
-Go = "Go cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; pass the value in bound_refs so a binding is emitted for it"
+Go = "Go cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
