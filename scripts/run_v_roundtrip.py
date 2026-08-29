@@ -83,6 +83,20 @@ fn to_any(v IVal) json2.Any {
 \t\t}
 \t\treturn json2.Any(arr)
 \t}
+\tif v is []i64 {
+\t\tmut arr := []json2.Any{}
+\t\tfor item in v {
+\t\t\tarr << json2.Any(item)
+\t\t}
+\t\treturn json2.Any(arr)
+\t}
+\tif v is []string {
+\t\tmut arr := []json2.Any{}
+\t\tfor item in v {
+\t\t\tarr << json2.Any(item)
+\t\t}
+\t\treturn json2.Any(arr)
+\t}
 \tif v is map[string]IVal {
 \t\tmut m := map[string]json2.Any{}
 \t\tfor k, item in v {
@@ -97,7 +111,35 @@ fn to_any(v IVal) json2.Any {
 \t\t}
 \t\treturn json2.Any(m)
 \t}
-\treturn json2.Any(json2.null)
+\tif v is map[string]int {
+\t\tmut m := map[string]json2.Any{}
+\t\tfor k, item in v {
+\t\t\tm[k] = json2.Any(item)
+\t\t}
+\t\treturn json2.Any(m)
+\t}
+\tif v is map[string]i64 {
+\t\tmut m := map[string]json2.Any{}
+\t\tfor k, item in v {
+\t\t\tm[k] = json2.Any(item)
+\t\t}
+\t\treturn json2.Any(m)
+\t}
+\tif v is map[string]f64 {
+\t\tmut m := map[string]json2.Any{}
+\t\tfor k, item in v {
+\t\t\tm[k] = json2.Any(item)
+\t\t}
+\t\treturn json2.Any(m)
+\t}
+\tif v is map[string]string {
+\t\tmut m := map[string]json2.Any{}
+\t\tfor k, item in v {
+\t\t\tm[k] = json2.Any(item)
+\t\t}
+\t\treturn json2.Any(m)
+\t}
+\tpanic('to_any: unhandled IVal type')
 }
 """
 

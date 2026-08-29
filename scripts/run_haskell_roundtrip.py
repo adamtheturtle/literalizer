@@ -22,6 +22,10 @@ future expansion of ``roundtrip_input.json`` that adds a new scalar
 kind would fail compilation here until ``valToValue`` is extended.
 """
 
+import re
+from collections.abc import Mapping
+from types import MappingProxyType
+
 from literalizer.languages import Haskell
 from scripts import roundtrip_common
 
@@ -45,17 +49,38 @@ ghc-options: -Wall -Werror
 # encoder renders integer-valued Scientifics as plain digits regardless
 # of magnitude (turning ``1.7976e308`` into a 309-digit integer) and
 # (b) ``Scientific.fromFloatDigits (-0.0)`` collapses the sign.
-_VAL_TO_ENCODING = """\
-valToEncoding :: Val -> E.Encoding
-valToEncoding (HBool b) = E.bool b
-valToEncoding (HInt n) = E.integer n
-valToEncoding (HFloat d) = E.double d
-valToEncoding (HStr s) = E.string s
-valToEncoding (HList xs) = E.list valToEncoding xs
-valToEncoding (HMap kvs) =
-    E.pairs (mconcat [E.pair (K.fromString k) (valToEncoding v)
-                      | (k, v) <- kvs])
-"""
+# One ``valToEncoding`` equation per constructor.  ``Haskell`` declares
+# only the constructors the document actually uses, so an equation for
+# an absent one would not compile; the equations are selected from the
+# emitted ``data Val`` declaration rather than written out in full
+# (issue #4545).
+_VAL_TO_ENCODING_EQUATIONS: Mapping[str, str] = MappingProxyType(
+    mapping={
+        "HBool": "valToEncoding (HBool b) = E.bool b",
+        "HInt": "valToEncoding (HInt n) = E.integer n",
+        "HFloat": "valToEncoding (HFloat d) = E.double d",
+        "HStr": "valToEncoding (HStr s) = E.string s",
+        "HDate": "valToEncoding (HDate d) = E.string (show d)",
+        "HDatetime": "valToEncoding (HDatetime d) = E.string (show d)",
+        "HList": "valToEncoding (HList xs) = E.list valToEncoding xs",
+        "HMap": (
+            "valToEncoding (HMap kvs) =\n"
+            "    E.pairs (mconcat [E.pair (K.fromString k) (valToEncoding v)\n"
+            "                      | (k, v) <- kvs])"
+        ),
+    }
+)
+
+
+def _val_to_encoding(*, declaration: str) -> str:
+    """Return ``valToEncoding`` for the declared constructors alone."""
+    equations = [
+        equation
+        for name, equation in _VAL_TO_ENCODING_EQUATIONS.items()
+        if re.search(pattern=rf"\b{name}\b", string=declaration) is not None
+    ]
+    body = "\n".join(equations)
+    return f"valToEncoding :: Val -> E.Encoding\n{body}\n"
 
 
 def _build_program(json_text: str) -> str:
@@ -80,7 +105,7 @@ def _build_program(json_text: str) -> str:
         "import qualified Data.ByteString.Lazy as BL\n"
         f"{preamble}\n"
         f"{result.code}\n"
-        f"{_VAL_TO_ENCODING}"
+        f"{_val_to_encoding(declaration=result.code)}"
         "main :: IO ()\n"
         "main = BL.putStr (E.encodingToLazyByteString"
         f" (valToEncoding {_VAR_NAME}))\n"
