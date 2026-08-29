@@ -82,27 +82,45 @@ def is_tuple_eligible(*, value: list[Value]) -> bool:
 
 
 @beartype
+def _tuple_signature(*, items: list[Value]) -> tuple[str, ...]:
+    """Return the per-position element types a tuple would be written
+    with.
+    """
+    return tuple(type(item).__name__ for item in items)
+
+
+@beartype
 def _accumulate_tuple_lists(
     *,
     data: Value,
     out: list[list[Value]],
 ) -> None:
-    """Walk *data* recording each tuple-eligible dict-value list.
+    """Walk *data* recording each tuple-eligible list it holds.
 
-    Only lists reached as a dict value are recorded here; lists
-    reached as an element of another list are deliberately skipped
-    (the nested-list / sibling-list shapes stay out of scope) while
-    still being walked so deeper dict-value lists are found.
+    A heterogeneous scalar array is written as a tuple wherever it
+    sits: as a dict value, and equally as an element of another list,
+    which the strategy once passed over and left to be widened or
+    refused instead (issue #4555).
+
+    Inside a list the arrays are taken together: a tuple spells its
+    element types, so siblings that would become tuples of different
+    types leave the enclosing list nothing to hold them all, and those
+    are left where they were.
     """
     match data:
         case dict():
-            for child in data.values():
-                if isinstance(child, list) and is_tuple_eligible(
-                    value=child,
-                ):
-                    out.append(child)
-                _accumulate_tuple_lists(data=child, out=out)
+            for value in data.values():
+                if isinstance(value, list) and is_tuple_eligible(value=value):
+                    out.append(value)
+                _accumulate_tuple_lists(data=value, out=out)
         case list():
+            eligible = [
+                item
+                for item in data
+                if isinstance(item, list) and is_tuple_eligible(value=item)
+            ]
+            if len({_tuple_signature(items=item) for item in eligible}) == 1:
+                out.extend(eligible)
             for item in data:
                 _accumulate_tuple_lists(data=item, out=out)
         case _:

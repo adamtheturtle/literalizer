@@ -1,5 +1,5 @@
 const my_data = [
-  [[1, "Mainframe1"]],
-  [["Mainframe2", 2]],
+  [[1, "Mainframe1"] as const],
+  [["Mainframe2", 2] as const],
 ];
 export {};
