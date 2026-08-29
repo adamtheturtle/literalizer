@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+A fixed-size type spells a length at every level it nests, so two
+slots of the same outer length whose nested sequences differ have no
+common type.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"a": [[1], [2]], "b": [[1, 2], [3, 4]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "TUPLE" },
+]
