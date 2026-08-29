@@ -16,7 +16,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer.languages import OCaml, PureScript, Python, Rust
+from literalizer.languages import Cpp, OCaml, PureScript, Python, Rust
 
 if TYPE_CHECKING:
     from literalizer._types import Scalar, Value
@@ -132,3 +132,29 @@ def test_unresolved_ref_marker_leaves_no_preamble(
     )
     assert result.bare_code == "vec![\n    a,\n    1,\n]"
     assert not result.preamble
+
+
+def test_ordered_map_argument_types_from_its_reference() -> None:
+    """An ordered map takes the type its reference holds.
+
+    A marker stands for a value declared elsewhere, so the ordered map
+    around it is written with that value's type rather than with the
+    marker's own mapping shape (issue #4732).  A golden would have to
+    wrap the call in a file, where the generated stub's parameter type
+    for an ordered map is a separate gap, so this stays an ordinary
+    test.
+    """
+    result = literalize_call(
+        source="- - !!omap\n    - m:\n        $ref: big_list\n",
+        input_format=InputFormat.YAML,
+        language=Cpp(),
+        target_function="process",
+        parameter_names=["a"],
+        per_element=True,
+        ref_key="$ref",
+        ref_values={"big_list": ["x"]},
+    )
+    assert result.bare_code == (
+        "process(std::vector<std::pair<std::string, "
+        'std::vector<std::string>>>{{"m", big_list}});'
+    )
