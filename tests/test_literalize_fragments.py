@@ -16,7 +16,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer.languages import OCaml, PureScript, Python
+from literalizer.languages import OCaml, PureScript, Python, Rust
 
 if TYPE_CHECKING:
     from literalizer._types import Scalar, Value
@@ -104,3 +104,31 @@ def test_unwrapped_qualified_call_target(
         parameter_names=["a"],
     )
     assert result.code == expected
+
+
+@pytest.mark.parametrize(
+    argnames="ref_values",
+    argvalues=[
+        pytest.param(None, id="none"),
+        pytest.param({"zzz": 5}, id="unrelated"),
+    ],
+)
+def test_unresolved_ref_marker_leaves_no_preamble(
+    ref_values: dict[str, int] | None,
+) -> None:
+    """A marker with no value supplied asks for nothing of its own.
+
+    An unresolved marker is a bare identifier in the rendered code, so
+    the mapping it is written as must not reach preamble inference; and
+    an entry naming something else must not change what identical code
+    asks for (issue #4480).
+    """
+    result = literalize(
+        source='[{"$ref": "a"}, 1]',
+        input_format=InputFormat.JSON,
+        language=Rust(),
+        ref_key="$ref",
+        ref_values=ref_values,
+    )
+    assert result.bare_code == "vec![\n    a,\n    1,\n]"
+    assert not result.preamble

@@ -3523,10 +3523,14 @@ def _literalize_pre_form_impl(
             pass
 
     data_for_preamble: Value = data
-    if ref_values:
+    if active_ref_key is not disabled_ref_key():
+        # A marker with no value supplied is stripped rather than left
+        # in place, so preamble inference never sees the marker's own
+        # ``{str: str}`` shape and an unrelated ``ref_values`` entry
+        # cannot change the preamble of identical code (issue #4480).
         resolution = _resolve_ref_for_preamble(
             value=data,
-            ref_values=ref_values,
+            ref_values=ref_values or {},
             ref_key=active_ref_key,
         )
         data_for_preamble = resolution.value if resolution.include else []
