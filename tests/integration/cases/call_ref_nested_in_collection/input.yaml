@@ -1,0 +1,5 @@
+- - k:
+      $ref: big_list
+  - !!omap
+    - m:
+        $ref: big_list

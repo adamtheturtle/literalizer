@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+# The reference sits inside a mapping argument rather than being the
+# argument itself, so the mapping's value type has to come from what
+# the reference holds and not from the marker's own shape.
+[call]
+target_function = "process"
+parameter_names = ["a", "b"]
+per_element = true
+ref_declarations = { big_list = "[\"x\"]" }

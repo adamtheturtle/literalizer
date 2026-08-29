@@ -2233,23 +2233,81 @@ def _strip_direct_refs_for_opener(
 
 
 @beartype
+def _substitute_known_refs(
+    *,
+    value: Value,
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+) -> Value:
+    """Return *value* with each marker whose value is known replaced.
+
+    A marker whose value was not supplied stays as it is: there is no
+    type to read from it, and dropping it would leave the container it
+    sits in with nothing to take a type from (issue #4567).
+    """
+    ref_name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    if ref_name is not None:
+        return ref_values.get(ref_name, value)
+    match value:
+        case dict():
+            # An ordered map is a dict subclass whose tag decides how
+            # it is written, so the rebuilt tree keeps whichever it is.
+            return type(value)(
+                {
+                    key: _substitute_known_refs(
+                        value=item,
+                        ref_values=ref_values,
+                        ref_key=ref_key,
+                    )
+                    for key, item in value.items()
+                }
+            )
+        case list():
+            return [
+                _substitute_known_refs(
+                    value=item,
+                    ref_values=ref_values,
+                    ref_key=ref_key,
+                )
+                for item in value
+            ]
+        case _:
+            return value
+
+
+@beartype
+def _opener_inference_value(*, data: Value, ctx: _RenderContext) -> Value:
+    """Return what a container's opener reads its type from.
+
+    A marker stands for a value declared elsewhere, so the container
+    around it takes the type that reference holds rather than the
+    marker's own ``{str: str}`` shape (issue #4567).
+    """
+    if ctx.ref_key is _DISABLED_REF_KEY:
+        return data
+    if ctx.expand_refs:
+        substituted = _substitute_known_refs(
+            value=data,
+            ref_values=ctx.ref_values or {},
+            ref_key=ctx.ref_key,
+        )
+        return _strip_direct_refs_for_opener(
+            value=substituted,
+            ref_key=ctx.ref_key,
+        )
+    return _resolve_refs_for_inference(
+        value=data,
+        ref_values=ctx.ref_values,
+        ref_key=ctx.ref_key,
+    )
+
+
+@beartype
 def _dict_open_for_ref_inference(
     *, data: dict[Scalar, Value], ctx: _RenderContext
 ) -> str:
     """Return the dictionary opener using resolved refs when needed."""
-    inferred = (
-        (
-            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
-            if ctx.expand_refs
-            else _resolve_refs_for_inference(
-                value=data,
-                ref_values=ctx.ref_values,
-                ref_key=ctx.ref_key,
-            )
-        )
-        if ctx.ref_key is not _DISABLED_REF_KEY
-        else data
-    )
+    inferred = _opener_inference_value(data=data, ctx=ctx)
     return ctx.spec.dict_format_config.dict_open(
         inferred if isinstance(inferred, dict) and inferred else data
     )
@@ -2260,19 +2318,7 @@ def _sequence_open_for_ref_inference(
     *, data: list[Value], ctx: _RenderContext
 ) -> str:
     """Return the sequence opener using resolved refs when needed."""
-    inferred = (
-        (
-            _strip_direct_refs_for_opener(value=data, ref_key=ctx.ref_key)
-            if ctx.expand_refs
-            else _resolve_refs_for_inference(
-                value=data,
-                ref_values=ctx.ref_values,
-                ref_key=ctx.ref_key,
-            )
-        )
-        if ctx.ref_key is not _DISABLED_REF_KEY
-        else data
-    )
+    inferred = _opener_inference_value(data=data, ctx=ctx)
     return ctx.spec.sequence_open(
         inferred if isinstance(inferred, list) and inferred else data
     )
