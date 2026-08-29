@@ -1,2 +1,0 @@
-Raise ``UnrepresentableInputError`` for a subnormal Wren float.  The Wren lexer
-reports such a literal as out of range, so the emitted file did not compile.

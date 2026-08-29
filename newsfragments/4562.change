@@ -1,1 +1,0 @@
-A YAML alias that names the node containing it is now rejected with a message naming the alias, instead of being silently replaced with null or reported as excessive nesting depth.

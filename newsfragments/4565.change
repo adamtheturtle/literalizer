@@ -1,1 +1,0 @@
-BothVariableForms combined with a modifier that binds a name once, such as C++ const, Java final or C# readonly, is now rejected instead of emitting an assignment to an immutable binding.

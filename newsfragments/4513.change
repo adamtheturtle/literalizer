@@ -1,4 +1,0 @@
-Raise ``UnrepresentableStringError`` for a plain COBOL string value carrying a
-tab, newline or carriage return.  Such a character was silently replaced with a
-space; the ``json_type=CJSON`` backend, which splices it as an ``X"NN"``
-fragment, is unaffected.

@@ -1,3 +1,0 @@
-Reject a PHP declaration name that a function from the always-present ``Core``
-or ``standard`` extension already takes.  Declaring one of those names again is a fatal error, so
-the generated stub did not load.

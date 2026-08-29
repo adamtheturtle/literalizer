@@ -1,1 +1,0 @@
-A long COBOL string value is now carried by several quoted runs joined with ``&`` across continuation lines, rather than by one source line past the 512 bytes GnuCOBOL reads before truncating it.

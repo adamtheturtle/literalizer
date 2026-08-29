@@ -1,1 +1,0 @@
-PureScript no longer leaks a RecursionError for input the shared parse-depth guard admits: its value walks use an explicit stack instead of recursion.

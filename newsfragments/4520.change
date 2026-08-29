@@ -1,3 +1,0 @@
-Keep a JavaScript or TypeScript naive date in a year below 100 at that year.
-The numeric ``Date`` constructor maps a year argument of 0 to 99 to
-``1900 + year``, so such a value silently shifted by 1900 years.

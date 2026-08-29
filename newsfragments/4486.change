@@ -1,1 +1,0 @@
-Toml wrap_in_file no longer splits a string value on U+0085, U+2028 or U+2029, which produced an unparseable document.

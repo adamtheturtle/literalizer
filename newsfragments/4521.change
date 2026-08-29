@@ -1,3 +1,0 @@
-Accept a Julia datetime whose fraction is a whole number of milliseconds, which
-``Dates.DateTime`` stores exactly.  Any fraction was refused; only a
-sub-millisecond one is now.

@@ -1,3 +1,0 @@
-Reject the blank identifier ``_`` as a declaration name in Elixir, Haskell,
-Kotlin and Rust, and reject every all-underscore name in Kotlin, where such a
-name is reserved rather than bindable.

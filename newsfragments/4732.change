@@ -1,1 +1,0 @@
-An ordered map call argument now takes the type its reference holds, rather than the type the marker's own shape would suggest. Only the mapping and sequence openers read a reference-resolved view of their container.

@@ -1,1 +1,0 @@
-Comments written inside a TOML table, and before a later array-of-tables entry, are now preserved instead of being dropped.

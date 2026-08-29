@@ -1,1 +1,0 @@
-Raku single-element list literals now carry a trailing comma, so a one-element list holding a list or a map is no longer flattened by the single-argument rule.

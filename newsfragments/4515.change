@@ -1,1 +1,0 @@
-A C# array of maps is now declared with the element type the map opener writes, rather than one derived from the map's contents that the rendered element did not match.

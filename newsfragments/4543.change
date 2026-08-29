@@ -1,1 +1,0 @@
-The negative-zero rejection for the Haskell AESON, Elm and PureScript JSON value types now applies to call arguments as well as declared values.

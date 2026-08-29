@@ -1,2 +1,0 @@
-Make R's fixed float format fall back to scientific notation for extreme
-magnitudes that R's decimal parser would otherwise round incorrectly.
