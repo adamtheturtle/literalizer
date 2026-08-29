@@ -1442,6 +1442,7 @@ class Crystal(metaclass=LanguageCls):
             field_type=self._crystal_record_field_type,
             render_declaration=_crystal_render_record_declaration,
             render_literal=_crystal_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 

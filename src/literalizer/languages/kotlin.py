@@ -1935,6 +1935,7 @@ class Kotlin(metaclass=LanguageCls):
             field_type=self._kotlin_record_field_type,
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 

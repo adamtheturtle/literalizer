@@ -1,0 +1,1 @@
+``Cpp(heterogeneous_strategy=RECORD)`` now names a recordized mapping by its generated ``struct`` where the heterogeneous carrier lists it as an alternative. The carrier named the mapping type the value would have taken otherwise, which the recordized element did not match.
