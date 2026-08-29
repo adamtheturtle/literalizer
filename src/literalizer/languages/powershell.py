@@ -85,7 +85,7 @@ from literalizer.exceptions import InvalidDictKeyError
 
 
 @beartype
-def _powershell_call_arg(_raw_value: Value, formatted: str) -> str:
+def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
     """Return a call argument the command parser reads as one value.
 
     A command argument that opens with a type literal -- the
