@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"Rust['{\"a\": \"b\"}']" = "Rust CONST requires a constant-expression initializer, but the dict format produces a runtime ::from([…]) call which is not a constant expression."
+"Rust['{}']" = "Rust CONST requires a constant-expression initializer, but the dict format produces a runtime ::from([…]) call which is not a constant expression."

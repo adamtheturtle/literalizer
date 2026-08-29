@@ -1,0 +1,15 @@
+# languages rejecting: 4; languages accepting: 0
+
+[UnrepresentableSpecialFloatError]
+"Elixir['- -.inf\\n']" = "Elixir cannot represent special float -inf."
+"Elixir['- .inf\\n']" = "Elixir cannot represent special float inf."
+"Elixir['- .nan\\n']" = "Elixir cannot represent special float nan."
+"Erlang['- -.inf\\n']" = "Erlang cannot represent special float -inf."
+"Erlang['- .inf\\n']" = "Erlang cannot represent special float inf."
+"Erlang['- .nan\\n']" = "Erlang cannot represent special float nan."
+"Gleam['- -.inf\\n']" = "Gleam cannot represent special float -inf on the Erlang target."
+"Gleam['- .inf\\n']" = "Gleam cannot represent special float inf on the Erlang target."
+"Gleam['- .nan\\n']" = "Gleam cannot represent special float nan on the Erlang target."
+"Hcl['- -.inf\\n']" = "HCL cannot represent special float -inf."
+"Hcl['- .inf\\n']" = "HCL cannot represent special float inf."
+"Hcl['- .nan\\n']" = "HCL cannot represent special float nan."

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Java = "Java heterogeneous_strategy=RECORD requires sequence_format=ARRAY: a list-valued record component is typed from the array opener the value formatter emits, and other sequence formats (e.g. LIST -> List.of(...)) carry no element type. Use sequence_format=ARRAY."

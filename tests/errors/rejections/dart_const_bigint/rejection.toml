@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Dart CONST rejects the runtime BigInt.parse a wide integer needs."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Dart"]
+
+[call]
+api = "literalize"
+sources = ['{"big": 12345678901234567890123}']
+input_format = "json"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Dart = "Dart CONST requires a constant-expression initializer, but integers outside the signed 64-bit range produce a BigInt.parse(…) call which is not a constant expression. Use FINAL instead."

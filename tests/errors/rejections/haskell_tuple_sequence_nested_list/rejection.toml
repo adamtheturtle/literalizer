@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+The Haskell TUPLE sequence format has no form for a list nested where
+the value type is required.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize"
+sources = ['{"arr": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "TUPLE" },
+]

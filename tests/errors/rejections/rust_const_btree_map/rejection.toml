@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+Rust CONST rejects a dict under BTREE_MAP too: BTreeMap::from is as
+non-constant as HashMap::from.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"a": "b"}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "date_format", member = "ISO" },
+  { kind = "option_member", option = "datetime_format", member = "ISO" },
+  { kind = "option_member", option = "bytes_format", member = "HEX" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+  { kind = "option_member", option = "dict_format", member = "BTREE_MAP" },
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]

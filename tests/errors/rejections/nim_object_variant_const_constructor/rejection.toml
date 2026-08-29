@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Nim CONST rejects OBJECT_VARIANT at construction: the strategy renders
+runtime .toTable and @[] calls.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Nim"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+]

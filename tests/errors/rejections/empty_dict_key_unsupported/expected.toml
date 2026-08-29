@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidDictKeyError]
+Dhall = "Dhall does not support the dict key \"\". Backtick-quoted labels must be non-empty and contain only printable ASCII (no backticks or control characters)."
+R = "R does not support the dict key \"\". Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them as unnamed list elements instead."

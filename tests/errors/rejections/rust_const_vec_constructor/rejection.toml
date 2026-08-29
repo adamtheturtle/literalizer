@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Rust CONST rejects the VEC sequence format at construction:
+vec![...] is not a constant expression.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Rust"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "declaration_style", member = "CONST" },
+  { kind = "option_member", option = "sequence_format", member = "VEC" },
+]
