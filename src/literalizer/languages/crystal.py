@@ -1216,12 +1216,22 @@ class Crystal(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    @cached_property
+    def supports_scalar_before_comments(self) -> bool:
+        """Whether a comment can sit above the rendered value.
+
+        Under :attr:`json_type` the value is one JSON document
+        written into a string, so a comment placed above it lands
+        inside that string and the parser reads it as content; it
+        goes above the declaration instead (issue #4546).
+        """
+        return not self._uses_json_any
 
     @cached_property
     def supports_collection_comments(self) -> bool:

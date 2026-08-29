@@ -1,0 +1,1 @@
+Six back ends now write a document's comments above the declaration under ``json_type``, as the others already did. The comments were dropped, against the preservation the documentation promises, because a JSON document has nowhere to put one; one back end wrote a scalar document's comment into the string it parses, where the parser read it as content.

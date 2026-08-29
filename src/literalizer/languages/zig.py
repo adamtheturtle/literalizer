@@ -1190,7 +1190,6 @@ class Zig(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
@@ -1279,6 +1278,17 @@ class Zig(metaclass=LanguageCls):
             self.heterogeneous_strategy
             is type(self.heterogeneous_strategy).RECORD
         )
+
+    @cached_property
+    def supports_scalar_before_comments(self) -> bool:
+        """Whether a comment can sit above the rendered value.
+
+        Under :attr:`json_type` the declaration is built from the
+        document rather than from the formatted value, so a comment
+        written into that value never reaches the output; it goes
+        above the declaration instead (issue #4546).
+        """
+        return not self._json_type_active
 
     @cached_property
     def supports_collection_comments(self) -> bool:
