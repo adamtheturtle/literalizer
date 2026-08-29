@@ -1,0 +1,1 @@
+``CSharp``, ``Kotlin`` and ``Scala`` now refuse a ``record_shape_names`` entry naming a type their own output references, as ``Rust`` and ``Java`` already did. Such a name either shadows the type the same file uses or clashes with the line importing it.
