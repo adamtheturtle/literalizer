@@ -641,7 +641,24 @@ def _scala_render_tuple_literal(
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Scala(metaclass=LanguageCls):
-    """Scala language specification."""
+    """Scala language specification.
+
+    A rendered literal is one expression, and ``wrap_in_file`` puts it
+    in one method, so a large document runs into the 64KB cap the
+    virtual machine places on a single method's compiled size:
+    ``scalac`` then reports ``Method too large``. The ceiling is on the
+    whole document rather than on any one collection -- two 5000-element
+    lists overflow where one does not -- and it moves with shape, so
+    there is no single element count to quote. Measured with Scala 3.8,
+    a flat list stops compiling at about 8200 scalars, ten-element
+    nested lists at about 8000, and two-element nested lists at about
+    3500 (issue #4541).
+
+    An unwrapped result carries the same limit, because the caller
+    places the expression in a method or an initializer of their own.
+    Splitting the document and combining the parts at run time is the
+    way past it.
+    """
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True

@@ -938,6 +938,22 @@ class Java(metaclass=LanguageCls):
             values through Jackson's ``ObjectMapper.readTree(...)`` so the
             output produces a ``com.fasterxml.jackson.databind.JsonNode``
             instead of Java's narrow ``List`` / ``Map`` / array types.
+
+    A rendered literal is one expression, and ``wrap_in_file`` puts it
+    in one method, so a large document runs into the 64KB cap the
+    virtual machine places on a single method's compiled size: ``javac``
+    then reports ``code too large``. The ceiling is on the whole
+    document rather than on any one collection -- two 5000-element lists
+    overflow where one does not -- and it moves with shape, so there is
+    no single element count to quote. Measured with javac 21, a flat
+    list stops compiling at about 8200 scalars, two-element nested lists
+    at about 6500, and ten-element nested lists at about 11500 (issue
+    #4541).
+
+    An unwrapped result carries the same limit, because the caller
+    places the expression in a method or an initializer of their own.
+    Splitting the document and combining the parts at run time is the
+    way past it.
     """
 
     wrap_in_file_tolerates_pre_indent = True
