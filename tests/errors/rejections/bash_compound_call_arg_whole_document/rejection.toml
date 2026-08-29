@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+The Bash call-argument guard fires on the whole-document path too,
+where the list is the single argument rather than a row of them.
+"""
+exceptions = ["CallArgNotSupportedError"]
+languages = ["Bash"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2, 3]"]
+input_format = "json"
+target_function = "cmd"
+parameter_names = ["items"]
+per_element = false

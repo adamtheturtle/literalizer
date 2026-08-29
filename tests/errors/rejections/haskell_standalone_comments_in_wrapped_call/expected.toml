@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Haskell = "Haskell cannot represent this call shape: standalone comments cannot be preserved when wrapping calls in this language"

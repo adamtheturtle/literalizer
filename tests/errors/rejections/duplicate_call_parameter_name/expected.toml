@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+Python = "Python cannot use call parameter 'value': it is duplicated"

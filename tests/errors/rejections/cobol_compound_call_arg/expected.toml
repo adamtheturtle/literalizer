@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[CallArgNotSupportedError]
+Cobol = "COBOL cannot accept this value as a call argument: compound values are DATA DIVISION entries, not inline CALL arguments"

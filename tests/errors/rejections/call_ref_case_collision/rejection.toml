@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A call argument's reference names go through the same case rewrite, so
+two that collide after it are refused there too.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ['[{"a": {"$ref": "userId"}, "b": {"$ref": "user_id"}}]']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+ref_key = "$ref"
+ref_case = "SNAKE"

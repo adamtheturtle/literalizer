@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A COBOL compound value is a DATA DIVISION entry, so it cannot be
+written inline after USING.
+"""
+exceptions = ["CallArgNotSupportedError"]
+languages = ["Cobol"]
+
+[call]
+api = "literalize_call"
+sources = ['[1, "x"]']
+input_format = "json"
+target_function = "PROCESS"
+parameter_names = ["value"]
+per_element = false

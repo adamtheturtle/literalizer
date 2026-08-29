@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A reference name is rewritten into the case a caller asks for, so a
+case the language has no identifier form for is refused.
+"""
+exceptions = ["UnsupportedIdentifierCaseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ['[[{"$ref": "user_obj"}, 42]]']
+input_format = "json"
+target_function = "process"
+parameter_names = ["data", "count"]
+ref_key = "$ref"
+ref_case = "KEBAB"

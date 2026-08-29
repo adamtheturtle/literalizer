@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A data format names nothing, so a declaration form asking it to bind
+a name has nowhere to write one.
+"""
+exceptions = ["VariableNameNotSupportedError"]
+languages = ["Yaml"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "both"
+variable_name = "x"
+wrap_in_file = true

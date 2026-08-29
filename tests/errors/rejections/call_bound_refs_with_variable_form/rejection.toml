@@ -1,0 +1,21 @@
+schema_version = 1
+summary = """
+bound_refs declares the call's input references, not a binding for
+its result, and the composition path that writes the declarations
+cannot apply a language's call-result file scaffold.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ['{"$ref": "my_list"}']
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["data"]
+per_element = false
+wrap_in_file = true
+ref_key = "$ref"
+bound_refs = { my_list = 1 }
+variable_form = "new"
+variable_name = "result"

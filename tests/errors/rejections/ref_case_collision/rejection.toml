@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Two reference names that differ only in the case convention they are
+written in become one identifier once ref_case rewrites them, so the
+declarations they stand for would collide.  The second source reaches
+the same check through a call argument.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ['{"a": {"$ref": "userId"}, "b": {"$ref": "user_id"}}']
+input_format = "json"
+ref_key = "$ref"
+ref_case = "SNAKE"

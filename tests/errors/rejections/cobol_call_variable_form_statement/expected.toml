@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Cobol = "Cobol cannot represent this call shape: calls in this language are statements, not expressions, so the call result cannot be bound to a variable"

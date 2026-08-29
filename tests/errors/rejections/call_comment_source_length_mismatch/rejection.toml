@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+comment_source writes one comment beside each generated call, so a
+list of a different length has no call to pair its entries with.
+"""
+exceptions = ["CommentSourceLengthMismatchError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2, 3]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+comment_source = ["first", "second"]

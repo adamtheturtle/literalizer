@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedIdentifierCaseError]
+Python = "Python does not support identifier case 'KEBAB'"

@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Nix has function call syntax, but literalizer does not write calls in
+it, which is a different refusal from a language having none.
+"""
+exceptions = ["CallsNotSupportedByToolError"]
+languages = ["Nix"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]", "[1, 2]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["a"]
+per_element = false

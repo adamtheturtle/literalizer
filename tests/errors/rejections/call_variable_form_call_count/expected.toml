@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+"Python['[1, 2]']" = "Python cannot represent this call shape: variable_form binds a single call result, but this input produces 2 calls; supply exactly one call (per_element=False, or per_element=True with a single-element source)"
+"Python['[]']" = "Python cannot represent this call shape: variable_form binds a single call result, but this input produces 0 calls; supply exactly one call (per_element=False, or per_element=True with a single-element source)"

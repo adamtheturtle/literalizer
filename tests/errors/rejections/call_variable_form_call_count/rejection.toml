@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A single name binds one call result, so a per-element source that
+produces two calls -- or none -- leaves nothing unambiguous to bind.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2]", "[]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+variable_form = "new"
+variable_name = "result"

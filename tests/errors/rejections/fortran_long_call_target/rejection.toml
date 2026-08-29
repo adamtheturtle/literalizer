@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A constructor spelling is still a Fortran name, so it is held to the
+same 63-character limit.
+"""
+exceptions = ["InvalidCallTargetError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+parameter_names = ["value"]

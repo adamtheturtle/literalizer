@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[CallArgNotSupportedError]
+"Bash['[[[1, 2, 3]]]']" = "Bash cannot accept this value as a call argument: list values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a $ref marker instead"
+"Bash['[[{\"k\": 1}]]']" = "Bash cannot accept this value as a call argument: dict values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a $ref marker instead"

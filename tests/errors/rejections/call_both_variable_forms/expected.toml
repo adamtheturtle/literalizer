@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Python = "Python cannot represent this call shape: BothVariableForms is not supported for literalize_call: rendering both a declaration and an assignment would invoke the target function twice"

@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A stub cannot declare one parameter twice.  Ada compares identifiers
+without regard to case, so two spellings of one name collide there.
+"""
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["value", "value"]

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[VariableNameNotSupportedError]
+Jsonnet = "Jsonnet does not support variable names: 'result'"
