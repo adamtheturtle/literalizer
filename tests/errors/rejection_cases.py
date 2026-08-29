@@ -94,7 +94,7 @@ def _kwarg_values(
             resolved = {
                 option.kwarg: enum_member_by_name(
                     enum_cls=option.get_members(lang_cls()),
-                    name=kwarg.member,
+                    name=substituted(template=kwarg.member, value=value),
                 )
             }
         case OptionUnsetKwarg():

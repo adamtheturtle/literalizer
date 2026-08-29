@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableNullError]
+Bash = "Bash cannot represent null distinctly from the empty string"
+Tcl = "Tcl cannot represent null distinctly from the empty string"

@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableNullError]
+"Bash['null']" = "Bash cannot represent null distinctly from the empty string"
+"Bash['{\"outer\": [null]}']" = "Bash cannot represent null distinctly from the empty string"
+"Tcl['null']" = "Tcl cannot represent null distinctly from the empty string"
+"Tcl['{\"outer\": [null]}']" = "Tcl cannot represent null distinctly from the empty string"

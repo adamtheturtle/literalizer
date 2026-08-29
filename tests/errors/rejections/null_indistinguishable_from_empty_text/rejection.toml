@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Bash and Tcl write every value as text and have no spelling that is
+not also a string, so a null would come back as the empty string the
+input distinguishes it from.  The sources put the null at the
+document root and inside a nested collection.
+"""
+exceptions = ["UnrepresentableNullError"]
+languages = ["Bash", "Tcl"]
+
+[call]
+api = "literalize"
+sources = ["null", '{"outer": [null]}']
+input_format = "json"

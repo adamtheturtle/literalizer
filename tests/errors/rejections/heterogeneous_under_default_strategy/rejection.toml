@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+A language with an opt-in wrapping strategy still refuses
+heterogeneous input under its default ERROR strategy, rather than
+reaching for the wrapper nobody asked for.  The integration suite
+catches HeterogeneousCollectionError and skips, so this contract has no
+golden rendering to check.
+"""
+exceptions = [
+  "HeterogeneousScalarCollectionError",
+  "HeterogeneousSiblingListsError",
+]
+languages = ["Dhall", "Mojo", "Nim", "Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": "x"}', '[[1, 2], ["a", "b"]]']
+input_format = "json"

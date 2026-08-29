@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+C++'s dict opener builds a content-specific std::variant value type
+with no accepts-anything fallback, so sibling maps that widen the
+enclosing slot leave the narrower ones with nothing to convert to.  Go
+and Kotlin widen to map[string]any and Any? instead (issue #2878); C++
+refuses rather than emitting code that does not compile.  The
+integration suite catches HeterogeneousCollectionError and skips, so
+this has no golden rendering to check.
+"""
+exceptions = ["HeterogeneousSiblingMapsError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = [
+  "- input: {kind: add, item_id: item_1, urgent: true}\n  expected: {item_id: item_1, state: pending}\n- input: {kind: remove, item_id: item_9}\n  expected: {error: not_found}\n",
+  "a: {x: 1}\nb: {y: two}\n",
+]
+input_format = "yaml"

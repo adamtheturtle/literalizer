@@ -1,5 +1,7 @@
 No user-facing change: more error contracts are declared as rejection
 manifests rather than written as unit tests, so each is expanded across
 the languages its gates admit and its message is kept in a golden file.
-A manifest can now pass ``None`` for an option whose default is a member,
-which is how the narrow-typed D mode is selected.
+Several of those expansions found languages the hand-written lists had
+missed. A manifest can now pass ``None`` for an option whose default is
+a member, declare ``variable_form = "both"``, and take the case's value
+as an option member's name.

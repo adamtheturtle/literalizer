@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+'template' is a keyword in these three and not in the rest, so it
+shows that the refusal follows each language's own reserved set rather
+than one shared list.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp", "D", "Nim"]
+
+[call]
+api = "literalize"
+sources = ['[{"template": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

@@ -1,0 +1,7 @@
+# languages rejecting: 4; languages accepting: 0
+
+[UnrepresentableInputError]
+Cpp = "C++ record field name 'class' is reserved"
+D = "D record field name 'class' is reserved"
+Java = "Java record field name 'class' is reserved"
+Python = "Python record field name 'class' is reserved"

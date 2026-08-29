@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A generated record field takes its name from the key, and these
+languages have no escape that would let a declaration name a field
+'class'.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp", "D", "Java", "Python"]
+
+[call]
+api = "literalize"
+sources = ['[{"class": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

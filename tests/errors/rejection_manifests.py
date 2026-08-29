@@ -158,7 +158,12 @@ class OptionMemberKwarg(
     frozen=True,
     strict=True,
 ):
-    """Pass a named member of an option enum."""
+    """Pass a named member of an option enum.
+
+    ``member`` may be the case's value, which is how one manifest
+    covers several members of one option without naming a directory
+    apiece.
+    """
 
     kind: Literal["option_member"]
     option: Annotated[str, Field(min_length=1)]
@@ -519,7 +524,9 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
             templates = (kwarg.value,)
         case RecordShapeNamesKwarg():
             templates = tuple(kwarg.names)
-        case OptionMemberKwarg() | OptionUnsetKwarg():
+        case OptionMemberKwarg():
+            templates = (kwarg.member,)
+        case OptionUnsetKwarg():
             templates = ()
         case _ as unreachable:
             assert_never(unreachable)

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"Python['PY38']" = "union_format=PIPE is incompatible with eager annotations when targeting PY38; use union_format=AUTO or TYPING, or postponed annotations"
+"Python['PY39']" = "union_format=PIPE is incompatible with eager annotations when targeting PY39; use union_format=AUTO or TYPING, or postponed annotations"

@@ -1,0 +1,13 @@
+# languages rejecting: 4; languages accepting: 0
+
+[HeterogeneousScalarCollectionError]
+"Dhall['{\"a\": 1, \"b\": \"x\"}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Mojo['{\"a\": 1, \"b\": \"x\"}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Nim['{\"a\": 1, \"b\": \"x\"}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['{\"a\": 1, \"b\": \"x\"}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[HeterogeneousSiblingListsError]
+"Dhall['[[1, 2], [\"a\", \"b\"]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Mojo['[[1, 2], [\"a\", \"b\"]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Nim['[[1, 2], [\"a\", \"b\"]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['[[1, 2], [\"a\", \"b\"]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
