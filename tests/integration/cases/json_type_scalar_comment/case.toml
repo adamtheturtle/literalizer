@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "variant"
+
+# A scalar document under a json_type that embeds one JSON document
+# and parses it: the comment has nowhere inside to go either, and the
+# declaration is built from the document rather than from the
+# formatted value (issue #4546).
+
+[[variants]]
+axis = "json_type"
+suffix = "_scalar_comment"
