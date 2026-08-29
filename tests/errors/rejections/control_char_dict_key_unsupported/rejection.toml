@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+A control character has no form in a Dhall backtick-quoted label or a
+Nix attribute name.
+"""
+exceptions = ["InvalidDictKeyError"]
+languages = ["Dhall", "Nix"]
+
+[call]
+api = "literalize"
+sources = ['{"\u0001": "value"}']
+input_format = "json"

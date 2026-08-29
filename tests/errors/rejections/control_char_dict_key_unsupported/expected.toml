@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidDictKeyError]
+Dhall = "Dhall does not support the dict key \"\\u{0001}\". Backtick-quoted labels must be non-empty and contain only printable ASCII (no backticks or control characters)."
+Nix = "Nix does not support the dict key \"\u0001\". Attribute names must be non-empty and must not contain control characters."

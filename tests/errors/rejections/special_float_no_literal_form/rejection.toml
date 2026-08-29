@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+These back ends have no expression that evaluates to a non-finite
+float, so one is refused at literalize time rather than emitted as
+output that fails at run time.
+"""
+exceptions = ["UnrepresentableSpecialFloatError"]
+languages = ["Elixir", "Erlang", "Gleam", "Hcl"]
+
+[call]
+api = "literalize"
+sources = ["- -.inf\n", "- .inf\n", "- .nan\n"]
+input_format = "yaml"
