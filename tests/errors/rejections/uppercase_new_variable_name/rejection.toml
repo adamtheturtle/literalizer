@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+These grammars reserve an initial capital for a constructor, type or
+module name, so a variable cannot take one.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Crystal", "Elixir", "Gleam", "Haskell", "Sml"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "Value"
+wrap_in_file = true

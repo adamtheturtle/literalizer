@@ -1,52 +1,12 @@
-"""Errors for declaration modifiers that cannot be combined."""
+"""Declaration modifiers that combine, beside the pairs that do not.
 
-import re
-
-import pytest
+The conflicting pairs are declared in ``tests/errors/rejections`` and
+run by ``test_rejections.py``.  What is left here is the acceptance
+side, which no rejection manifest expresses.
+"""
 
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import ConflictingVariableModifiersError
 from literalizer.languages import CSharp, Java
-
-
-def test_java_rejects_two_visibilities() -> None:
-    """A field has one visibility, so ``public private`` would not compile."""
-    with pytest.raises(
-        expected_exception=ConflictingVariableModifiersError,
-        match=re.escape(
-            pattern=(
-                "Java accepts at most one visibility modifier; "
-                "received public, private"
-            )
-        ),
-    ):
-        literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=Java(),
-            variable_form=NewVariable(
-                name="value",
-                modifiers=frozenset(
-                    {Java.modifiers.PUBLIC, Java.modifiers.PRIVATE},
-                ),
-            ),
-        )
-
-
-def test_csharp_rejects_two_visibilities() -> None:
-    """C# fields have a single visibility too."""
-    with pytest.raises(expected_exception=ConflictingVariableModifiersError):
-        literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=CSharp(),
-            variable_form=NewVariable(
-                name="value",
-                modifiers=frozenset(
-                    {CSharp.modifiers.PUBLIC, CSharp.modifiers.PROTECTED},
-                ),
-            ),
-        )
 
 
 def test_csharp_accepts_private_protected() -> None:
@@ -64,56 +24,6 @@ def test_csharp_accepts_private_protected() -> None:
     )
 
     assert result.code == "private protected int value = 1;"
-
-
-def test_csharp_rejects_const_with_readonly() -> None:
-    """``const`` is already immutable, so ``readonly`` conflicts with
-    it.
-    """
-    with pytest.raises(
-        expected_exception=ConflictingVariableModifiersError,
-        match=re.escape(
-            pattern=(
-                "CSharp accepts at most one mutability modifier; "
-                "received const, readonly"
-            )
-        ),
-    ):
-        literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=CSharp(),
-            variable_form=NewVariable(
-                name="value",
-                modifiers=frozenset(
-                    {CSharp.modifiers.CONST, CSharp.modifiers.READONLY},
-                ),
-            ),
-        )
-
-
-def test_csharp_rejects_static_const() -> None:
-    """``const`` is implicitly static, so spelling both is invalid."""
-    with pytest.raises(
-        expected_exception=ConflictingVariableModifiersError,
-        match=re.escape(
-            pattern=(
-                "CSharp accepts at most one storage modifier; "
-                "received static, const"
-            )
-        ),
-    ):
-        literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=CSharp(),
-            variable_form=NewVariable(
-                name="value",
-                modifiers=frozenset(
-                    {CSharp.modifiers.STATIC, CSharp.modifiers.CONST},
-                ),
-            ),
-        )
 
 
 def test_one_modifier_per_group_is_accepted() -> None:

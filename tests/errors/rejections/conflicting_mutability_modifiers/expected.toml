@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ConflictingVariableModifiersError]
+CSharp = "CSharp accepts at most one mutability modifier; received const, readonly"

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Python['']" = "Python cannot use ExistingVariable name '': it is not a valid identifier"
+"Python['a.b[0]']" = "Python cannot use ExistingVariable name 'a.b[0]': it is not a valid identifier"

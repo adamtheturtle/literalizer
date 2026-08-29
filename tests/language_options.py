@@ -430,6 +430,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         )
     ),
     "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,
+    "supports_variable_names": (
+        lambda lang_cls: lang_cls.supports_variable_names
+    ),
     "supports_widened_integer_formatter": (
         lambda lang_cls: lang_cls().format_integer_widened is not None
     ),

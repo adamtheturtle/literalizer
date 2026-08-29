@@ -1,0 +1,42 @@
+schema_version = 1
+summary = """
+An empty dict field has no inferable field type, so a record built
+around it would name a type the language cannot write.
+"""
+exceptions = ["UnrepresentableInputError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ['{"title": "report", "extra": {}}']
+input_format = "json"
+variable_form = "new"
+variable_name = "my_data"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = [
+  "C",
+  "CSharp",
+  "Cpp",
+  "Crystal",
+  "Go",
+  "Java",
+  "Kotlin",
+  "Odin",
+  "Python",
+  "Scala",
+  "Swift",
+  "V",
+  "Zig",
+]
+reason = """
+These languages give the field a map type of its own rather than a
+struct type, so a field holding a dict that is not a record still has
+somewhere to go.
+"""

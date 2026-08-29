@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A declaration has one visibility, so naming two would not compile.
+"""
+exceptions = ["ConflictingVariableModifiersError"]
+gates = [
+  { kind = "modifier_present", modifier = "PUBLIC" },
+  { kind = "modifier_present", modifier = "PRIVATE" },
+]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+modifiers = ["PUBLIC", "PRIVATE"]

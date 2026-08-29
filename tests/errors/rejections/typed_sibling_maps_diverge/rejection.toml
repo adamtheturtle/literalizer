@@ -1,0 +1,21 @@
+schema_version = 1
+summary = """
+A list of maps declares one shared value slot, so maps whose values
+infer different types widen it beyond what a language with narrowly
+typed dicts can write.  The nested source keeps the divergence two
+levels down, where borrowing an empty sibling's type could otherwise
+hide it.
+"""
+exceptions = ["HeterogeneousSiblingMapsError", "MixedDictShapesError"]
+gates = [{ kind = "capability_flag", flag = "rejects_heterogeneous_dict_values" }]
+
+[call]
+api = "literalize"
+sources = [
+  '[{"s": "y"}, {"t": 3}]',
+  '[{"outer":{"inner":{"x":1}}},{"outer":{"inner":{"x":"different"}}}]',
+]
+input_format = "json"
+variable_form = "new"
+variable_name = "value"
+wrap_in_file = true

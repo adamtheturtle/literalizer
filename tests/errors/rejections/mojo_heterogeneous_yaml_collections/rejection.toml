@@ -1,0 +1,29 @@
+schema_version = 1
+summary = """
+YAML carries tagged binary, set and ordered-map values and native date
+and datetime scalars, which other input formats either cannot express
+or express only as strings.  A collection mixing one of those with a
+value of another type has no single element type, which Mojo needs.
+"""
+exceptions = ["HeterogeneousScalarCollectionError", "MixedDictValuesError"]
+languages = ["Mojo"]
+
+[call]
+api = "literalize"
+sources = [
+  "key1: !!binary |\n  SGVsbG8=\nkey2: 42\n",
+  "- 2024-01-15\n- 42\n",
+  "- 2024-01-15T12:30:00\n- 42\n",
+  "name: Alice\nroles: !!set\n  ? admin\n",
+  "--- !!omap\n  - name: Alice\n  - score: 42\n  - tags:\n    - admin\n",
+  "--- !!omap\n  - name: Alice\n  - age: 30\n",
+  "--- !!set\n? 1\n? \"hello\"\n",
+]
+input_format = "yaml"
+include_delimiters = true
+kwargs = [
+  { kind = "option_member", option = "date_format", member = "ISO" },
+  { kind = "option_member", option = "datetime_format", member = "ISO" },
+  { kind = "option_member", option = "bytes_format", member = "HEX" },
+  { kind = "option_member", option = "sequence_format", member = "LIST" },
+]

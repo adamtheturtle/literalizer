@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 1
+
+[ConflictingVariableModifiersError]
+CSharp = "CSharp accepts at most one storage modifier; received static, const"

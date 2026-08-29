@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Fortran 2018 limits a name to 63 characters, so a 64-character one is
+refused rather than truncated.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"

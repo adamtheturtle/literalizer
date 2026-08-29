@@ -1,0 +1,15 @@
+# languages rejecting: 5; languages accepting: 0
+
+[HeterogeneousSiblingMapsError]
+"Dhall['[{\"outer\":{\"inner\":{\"x\":1}}},{\"outer\":{\"inner\":{\"x\":\"different\"}}}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Mojo['[{\"s\": \"y\"}, {\"t\": 3}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Mojo['[{\"outer\":{\"inner\":{\"x\":1}}},{\"outer\":{\"inner\":{\"x\":\"different\"}}}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Nim['[{\"s\": \"y\"}, {\"t\": 3}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Nim['[{\"outer\":{\"inner\":{\"x\":1}}},{\"outer\":{\"inner\":{\"x\":\"different\"}}}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Rust['[{\"s\": \"y\"}, {\"t\": 3}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Rust['[{\"outer\":{\"inner\":{\"x\":1}}},{\"outer\":{\"inner\":{\"x\":\"different\"}}}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"V['[{\"s\": \"y\"}, {\"t\": 3}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"V['[{\"outer\":{\"inner\":{\"x\":1}}},{\"outer\":{\"inner\":{\"x\":\"different\"}}}]']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+
+[MixedDictShapesError]
+"Dhall['[{\"s\": \"y\"}, {\"t\": 3}]']" = "List contains dicts with different key sets that cannot be represented in the target language"

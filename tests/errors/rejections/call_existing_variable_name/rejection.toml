@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A call result bound to an existing name goes through the same target
+validation a value declaration does.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+variable_form = "existing"
+variable_name = "target.value"

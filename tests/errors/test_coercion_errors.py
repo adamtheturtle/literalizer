@@ -3,8 +3,15 @@
 These tests verify that ``literalize`` raises precise exceptions when
 input data cannot be represented in the target language's collection
 formats (e.g. heterogeneous scalar types in Mojo, non-uniform record
-shapes in Dhall).  Format-specific tests for ordered maps and sets
-live in :mod:`tests.errors.test_yaml_errors`.
+shapes in Dhall).
+
+The input format is the axis here: one datum is serialized into every
+format that can carry it, so the same shape is refused however it
+arrives.  A rejection manifest declares one format per file and writes
+its sources out by hand, which would turn that generated cross product
+into four hand-maintained copies, so these stay written out.  The
+rejections that need a YAML tag to express at all -- ordered maps,
+sets and binary -- are declared in ``tests/errors/rejections``.
 """
 
 import json

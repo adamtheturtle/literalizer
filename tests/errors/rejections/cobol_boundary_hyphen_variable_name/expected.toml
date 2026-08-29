@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Cobol['_x']" = "Cobol cannot use NewVariable name '_x': it is not a valid identifier"
+"Cobol['x-']" = "Cobol cannot use NewVariable name 'x-': it is not a valid identifier"
+"Cobol['x_']" = "Cobol cannot use NewVariable name 'x_': it is not a valid identifier"

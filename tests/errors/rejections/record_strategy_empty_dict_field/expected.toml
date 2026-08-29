@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 13
+
+[UnrepresentableInputError]
+D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+Nim = "Nim cannot represent a set or non-record-dict field under the RECORD heterogeneous strategy"
+Rust = "Rust cannot represent a non-record dict (empty, non-string-keyed, or an ordered map) as a field under the RECORD heterogeneous strategy"

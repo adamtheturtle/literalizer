@@ -1,0 +1,8 @@
+# languages rejecting: 5; languages accepting: 0
+
+[InvalidNewVariableNameError]
+Crystal = "Crystal cannot use NewVariable name 'Value': it is not a valid identifier"
+Elixir = "Elixir cannot use NewVariable name 'Value': it is not a valid identifier"
+Gleam = "Gleam cannot use NewVariable name 'Value': it is not a valid identifier"
+Haskell = "Haskell cannot use NewVariable name 'Value': it is not a valid identifier"
+Sml = "Sml cannot use NewVariable name 'Value': it is not a valid identifier"
