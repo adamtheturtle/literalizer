@@ -1,0 +1,25 @@
+schema_version = 1
+summary = """
+A dict key a Rust raw identifier cannot express has no compiling
+struct field name.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = [
+  "- \"1abc\": a\n  other: b\n",
+  "- \"Self\": a\n  other: b\n",
+  "- \"_\": a\n  other: b\n",
+  "- \"crate\": a\n  other: b\n",
+  "- \"foo-bar\": a\n  other: b\n",
+  "- \"has space\": a\n  other: b\n",
+  "- \"self\": a\n  other: b\n",
+  "- \"super\": a\n  other: b\n",
+]
+input_format = "yaml"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

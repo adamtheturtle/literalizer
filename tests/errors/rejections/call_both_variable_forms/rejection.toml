@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+BothVariableForms writes a declaration and an assignment, which for a
+call would invoke the target function twice.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["42"]
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "both"
+variable_name = "result"

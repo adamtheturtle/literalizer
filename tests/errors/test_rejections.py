@@ -41,7 +41,12 @@ def _variable_form(
     call: CallSpec,
     lang_cls: literalizer.LanguageCls,
     value: str | None,
-) -> literalizer.NewVariable | literalizer.ExistingVariable | None:
+) -> (
+    literalizer.NewVariable
+    | literalizer.ExistingVariable
+    | literalizer.BothVariableForms
+    | None
+):
     """Return the variable form a rendering case declares its value in.
 
     Modifiers are resolved against the language rather than declared as
@@ -50,6 +55,10 @@ def _variable_form(
     to renders the value on its own, which is the only form it has.
     """
     name = substituted(template=call.variable_name, value=value)
+    modifiers = frozenset(
+        enum_member_by_name(enum_cls=lang_cls.Modifiers, name=modifier_name)
+        for modifier_name in call.modifiers
+    )
     match call.variable_form:
         case "new":
             return literalizer.NewVariable(
@@ -58,13 +67,14 @@ def _variable_form(
             )
         case "existing":
             return literalizer.ExistingVariable(name=name)
+        case "both":
+            return literalizer.BothVariableForms(
+                name=name,
+                modifiers=modifiers,
+            )
         case None:
             if not lang_cls.supports_variable_names:
                 return None
-            modifiers = frozenset(
-                enum_member_by_name(enum_cls=lang_cls.Modifiers, name=name)
-                for name in call.modifiers
-            )
             return literalizer.NewVariable(
                 name="my_data",
                 modifiers=modifiers,

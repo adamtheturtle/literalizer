@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 0
+
+[HeterogeneousScalarCollectionError]
+"Mojo['key1: !!binary |\\n  SGVsbG8=\\nkey2: 42\\n']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: bytes, int)"
+"Mojo['- 2024-01-15\\n- 42\\n']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: date, int)"
+"Mojo['- 2024-01-15T12:30:00\\n- 42\\n']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: datetime, int)"
+"Mojo['--- !!omap\\n  - name: Alice\\n  - age: 30\\n']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Mojo['--- !!set\\n? 1\\n? \"hello\"\\n']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[MixedDictValuesError]
+"Mojo['name: Alice\\nroles: !!set\\n  ? admin\\n']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: set, str)"
+"Mojo['--- !!omap\\n  - name: Alice\\n  - score: 42\\n  - tags:\\n    - admin\\n']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: int, list, str)"

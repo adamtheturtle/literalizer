@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Jsonnet = "Jsonnet cannot represent this call shape: comment_source trailing comments cannot be preserved in this language's call-sequence form"

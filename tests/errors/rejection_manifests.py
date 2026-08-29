@@ -52,7 +52,7 @@ VALUE_PLACEHOLDER = "value"
 """The only placeholder a manifest's constructor arguments substitute."""
 
 type ApiName = Literal["literalize", "literalize_call", "constructor"]
-type VariableFormName = Literal["new", "existing"]
+type VariableFormName = Literal["new", "existing", "both"]
 
 
 def _bound_refs_items(
@@ -158,11 +158,34 @@ class OptionMemberKwarg(
     frozen=True,
     strict=True,
 ):
-    """Pass a named member of an option enum."""
+    """Pass a named member of an option enum.
+
+    ``member`` may be the case's value, which is how one manifest
+    covers several members of one option without naming a directory
+    apiece.
+    """
 
     kind: Literal["option_member"]
     option: Annotated[str, Field(min_length=1)]
     member: Annotated[str, Field(min_length=1)]
+
+
+class OptionUnsetKwarg(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Pass ``None`` for an option whose default is a member.
+
+    A few options select a mode by being left unset rather than by
+    naming a member -- ``D(json_type=None)`` is the narrow-typed mode,
+    and its default is ``STD_JSON_VALUE`` -- so no ``option_member``
+    can reach them (issue #4699).
+    """
+
+    kind: Literal["option_unset"]
+    option: Annotated[str, Field(min_length=1)]
 
 
 class TextKwarg(
@@ -208,7 +231,7 @@ class RecordShapeNamesKwarg(
 
 
 type RejectionKwarg = Annotated[
-    OptionMemberKwarg | TextKwarg | RecordShapeNamesKwarg,
+    OptionMemberKwarg | OptionUnsetKwarg | TextKwarg | RecordShapeNamesKwarg,
     Field(discriminator="kind"),
 ]
 
@@ -502,6 +525,8 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
         case RecordShapeNamesKwarg():
             templates = tuple(kwarg.names)
         case OptionMemberKwarg():
+            templates = (kwarg.member,)
+        case OptionUnsetKwarg():
             templates = ()
         case _ as unreachable:
             assert_never(unreachable)

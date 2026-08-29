@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"D['[1, \"two\"]']" = "D narrow-typed mode (json_type=None) cannot represent a heterogeneous list, a heterogeneous-valued dict, a non-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"
+"D['[]']" = "D narrow-typed mode (json_type=None) cannot represent a heterogeneous list, a heterogeneous-valued dict, a non-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"
+"D['{\"a\": 1, \"b\": \"two\"}']" = "D narrow-typed mode (json_type=None) cannot represent a heterogeneous list, a heterogeneous-valued dict, a non-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"
+"D['{}']" = "D narrow-typed mode (json_type=None) cannot represent a heterogeneous list, a heterogeneous-valued dict, a non-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"

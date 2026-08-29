@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Python = "cannot convert ref name 'user_id' to SNAKE: its identifier 'user_id' collides with ref name 'userId'"

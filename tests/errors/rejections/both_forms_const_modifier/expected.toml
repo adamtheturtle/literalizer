@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[ImmutableVariableModifierError]
+CSharp = "CSharp cannot combine BothVariableForms with _CSharpModifiers.CONST: the declaration binds the name once, so the assignment that follows it cannot compile"
+Cpp = "Cpp cannot combine BothVariableForms with _CppModifiers.CONST: the declaration binds the name once, so the assignment that follows it cannot compile"

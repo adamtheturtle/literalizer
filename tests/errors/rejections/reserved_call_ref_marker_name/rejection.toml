@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A call reference marker follows the reserved-word rules of the target."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ['{"$ref": "class"}']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_key = "$ref"

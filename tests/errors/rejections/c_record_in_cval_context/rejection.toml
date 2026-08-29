@@ -1,0 +1,23 @@
+schema_version = 1
+summary = """
+A C struct is not a member of the tagged CVal union, so a record
+reached only through a non-record container -- an ordered map, or a
+list whose elements are not all records -- would have to occupy a CVal
+slot.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["C"]
+
+[call]
+api = "literalize"
+sources = [
+  "--- !!omap\n- rec:\n    a: 1\n",
+  "field:\n- - a: 1\n",
+  "- - a: 1\n",
+]
+input_format = "yaml"
+variable_form = "new"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

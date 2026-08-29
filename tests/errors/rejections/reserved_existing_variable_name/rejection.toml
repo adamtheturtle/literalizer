@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+An assignment target carries the same reserved-word check a new
+declaration does.
+"""
+exceptions = ["ReservedVariableNameError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["[1]"]
+input_format = "json"
+variable_form = "existing"
+variable_name = "class"

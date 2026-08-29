@@ -1,0 +1,28 @@
+schema_version = 1
+summary = """
+Two dicts with the same key set share one generated declaration, so a
+field whose scalar type differs between them would take the first
+dict's type and leave the second's literal uncompilable.  Such dicts
+resolve to distinct record shapes instead, which the enclosing list
+then refuses to mix.
+"""
+exceptions = ["HeterogeneousSiblingListsError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ["\n- a: 1\n- a: hello\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = ["Python"]
+reason = """
+Python annotates a record field with the type it holds and does not
+declare the record ahead of its values, so two shapes sharing a key
+set need no single field type.
+"""

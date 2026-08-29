@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+An assignment target is a plain identifier, so an empty name or an
+expression that indexes into one is refused.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Python"]
+values = ["", "a.b[0]"]
+
+[call]
+api = "literalize"
+sources = ["[1]"]
+input_format = "json"
+variable_form = "existing"
+variable_name = "{value}"

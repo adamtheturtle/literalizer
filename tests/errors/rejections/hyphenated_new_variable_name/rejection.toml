@@ -1,0 +1,31 @@
+schema_version = 1
+summary = """
+A hyphen reads as subtraction in most grammars, so a declaration name
+carrying one is refused rather than quietly repaired into something
+the caller did not ask for.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+gates = [{ kind = "capability_flag", flag = "supports_variable_names" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "a-b"
+wrap_in_file = true
+
+[[accepts]]
+languages = [
+  "Clojure",
+  "Cobol",
+  "CommonLisp",
+  "Nix",
+  "Racket",
+  "Raku",
+  "Scheme",
+]
+reason = """
+A hyphen is an ordinary identifier character in these grammars, so
+a-b names one variable rather than subtracting b from a.
+"""

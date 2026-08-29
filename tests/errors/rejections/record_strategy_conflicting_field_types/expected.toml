@@ -1,0 +1,18 @@
+# languages rejecting: 15; languages accepting: 1
+
+[HeterogeneousSiblingListsError]
+C = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+CSharp = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Cpp = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Crystal = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+D = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Go = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Java = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Kotlin = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Nim = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Odin = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Rust = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Scala = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Swift = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+V = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Zig = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"

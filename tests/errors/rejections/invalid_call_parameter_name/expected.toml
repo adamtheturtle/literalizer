@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Python['2c']" = "Python cannot use call parameter '2c': it is not a valid identifier"
+"Python['a b']" = "Python cannot use call parameter 'a b': it is not a valid identifier"
+"Python['class']" = "Python cannot use call parameter 'class': it is a reserved identifier"

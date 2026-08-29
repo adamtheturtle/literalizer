@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A Bash list or map has no inline literal form, so neither can be
+written as a call argument.
+"""
+exceptions = ["CallArgNotSupportedError"]
+languages = ["Bash"]
+
+[call]
+api = "literalize_call"
+sources = ["[[[1, 2, 3]]]", '[[{"k": 1}]]']
+input_format = "json"
+target_function = "cmd"
+parameter_names = ["items"]

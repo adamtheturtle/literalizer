@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+Python = "Python cannot use reference name 'class': it is a reserved identifier"

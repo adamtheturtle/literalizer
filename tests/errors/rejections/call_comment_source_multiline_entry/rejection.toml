@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A comment written beside a call occupies one line, so an entry
+carrying a newline would break the statement it annotates.
+"""
+exceptions = ["CommentSourceMultilineError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+comment_source = ["fine", "broken\ncomment"]

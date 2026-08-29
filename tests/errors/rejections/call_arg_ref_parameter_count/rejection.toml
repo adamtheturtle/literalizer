@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A reference marker stands for one argument, so it counts toward the
+row length the parameter names are checked against.
+"""
+exceptions = ["ParameterCountMismatchError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ['[[{"$ref": "a"}, {"$ref": "b"}]]']
+input_format = "json"
+target_function = "f"
+parameter_names = ["only"]
+ref_key = "$ref"

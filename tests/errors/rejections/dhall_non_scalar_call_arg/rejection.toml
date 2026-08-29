@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+A Dhall call stub declares a scalar parameter type, so a collection
+argument has no type to declare.
+"""
+exceptions = ["CallArgNotSupportedError"]
+languages = ["Dhall"]
+
+[call]
+api = "literalize_call"
+sources = ["[[[]]]"]
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]

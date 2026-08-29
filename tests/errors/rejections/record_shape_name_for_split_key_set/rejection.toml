@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+A record_shape_names entry names one declaration for one key set, so a
+key set that splits into two field-type shapes has no single
+declaration to name.
+"""
+exceptions = ["UnrepresentableInputError"]
+gates = [
+  { kind = "capability_flag", flag = "supports_record_shape_names" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ["\nfirst:\n  a: 1\nsecond:\n  a: hello\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "record_shape_names", key_sets = [["a"]], names = ["Payload"] },
+]

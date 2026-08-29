@@ -1,0 +1,10 @@
+# languages rejecting: 7; languages accepting: 0
+
+[UnrepresentableInputError]
+CSharp = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"
+Cpp = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"
+Go = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"
+Java = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"
+Kotlin = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"
+Rust = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types or key order differ), so one custom name cannot identify one generated struct"
+Scala = "record_shape_names maps the key set {a} to 'Payload', but the data contains multiple distinct record shapes with that key set (their field types differ), so one custom name cannot identify one generated declaration"

@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A COBOL CALL is a statement, so there is no expression to bind to a
+name.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Cobol"]
+
+[call]
+api = "literalize_call"
+sources = ["42"]
+input_format = "json"
+target_function = "MAKE-WIDGET"
+parameter_names = ["count"]
+per_element = false
+variable_form = "new"
+variable_name = "RESULT"

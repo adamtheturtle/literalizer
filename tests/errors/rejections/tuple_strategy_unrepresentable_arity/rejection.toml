@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+Kotlin has only Pair and Triple, so a tuple-eligible array of another
+length has no native fixed-size tuple.
+"""
+exceptions = ["TupleArityNotRepresentableError"]
+languages = ["Kotlin"]
+
+[call]
+api = "literalize"
+sources = [
+  "- 1\n- email\n- a@gmail.com\n- 100\n- x\n",
+  "call: send\nargs:\n  - 1\n  - email\n  - a@gmail.com\n  - 100\n",
+]
+input_format = "yaml"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]

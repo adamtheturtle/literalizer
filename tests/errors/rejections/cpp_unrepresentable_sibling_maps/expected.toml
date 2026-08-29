@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[HeterogeneousSiblingMapsError]
+"Cpp['- input: {kind: add, item_id: item_1, urgent: true}\\n  expected: {item_id: item_1, state: pending}\\n- input: {kind: remove, item_id: item_9}\\n  expected: {error: not_found}\\n']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Cpp['a: {x: 1}\\nb: {y: two}\\n']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"

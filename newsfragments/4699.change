@@ -1,7 +1,7 @@
-No user-facing change: the declaration-style and format incompatibility
-contracts, the special-float rejections and the invalid-dict-key
-rejections are declared as rejection manifests rather than written as
-unit tests, so each is expanded across the languages its gates admit and
-its message is kept in a golden file.  Only the cases that call an option
-member's own callable, rather than going through ``literalize`` or a
-constructor, remain hand-written.
+No user-facing change: more error contracts are declared as rejection
+manifests rather than written as unit tests, so each is expanded across
+the languages its gates admit and its message is kept in a golden file.
+Several of those expansions found languages the hand-written lists had
+missed. A manifest can now pass ``None`` for an option whose default is
+a member, declare ``variable_form = "both"``, and take the case's value
+as an option member's name.

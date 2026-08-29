@@ -1,0 +1,22 @@
+schema_version = 1
+summary = """
+A call stub declares one parameter per argument, so a row whose length
+does not match the parameter names has no stub to call.  The second
+source puts the mismatch in a later row than the first.
+"""
+exceptions = ["ParameterCountMismatchError"]
+gates = [{ kind = "capability_flag", flag = "declares_call_styles" }]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]", "[[1, 2], [3]]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["a", "b"]
+
+[[accepts]]
+languages = ["Scheme"]
+reason = """
+A Scheme call takes its arguments positionally with no declared
+arity, so a row of any length reaches the target.
+"""

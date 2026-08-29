@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A const declaration is already immutable, so a second mutability
+modifier beside it says the same thing twice.
+"""
+exceptions = ["ConflictingVariableModifiersError"]
+gates = [
+  { kind = "modifier_present", modifier = "CONST" },
+  { kind = "modifier_present", modifier = "READONLY" },
+]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+modifiers = ["CONST", "READONLY"]

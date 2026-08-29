@@ -1,0 +1,12 @@
+schema_version = 1
+summary = """
+The same refusal is reached through a set member, which only YAML can
+write a null into.
+"""
+exceptions = ["UnrepresentableNullError"]
+languages = ["Bash", "Tcl"]
+
+[call]
+api = "literalize"
+sources = ["!!set\n? null\n"]
+input_format = "yaml"

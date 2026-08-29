@@ -1,0 +1,23 @@
+schema_version = 1
+summary = """
+A C# const is implicitly static, so spelling both is invalid.  C++
+takes the pair, where static is storage and const is mutability.
+"""
+exceptions = ["ConflictingVariableModifiersError"]
+gates = [
+  { kind = "modifier_present", modifier = "STATIC" },
+  { kind = "modifier_present", modifier = "CONST" },
+]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+modifiers = ["STATIC", "CONST"]
+
+[[accepts]]
+languages = ["Cpp"]
+reason = """
+static and const are different C++ specifiers, so a static const
+declaration is well formed.
+"""

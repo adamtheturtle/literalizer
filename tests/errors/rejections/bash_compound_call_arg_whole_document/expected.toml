@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[CallArgNotSupportedError]
+Bash = "Bash cannot accept this value as a call argument: list values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a $ref marker instead"

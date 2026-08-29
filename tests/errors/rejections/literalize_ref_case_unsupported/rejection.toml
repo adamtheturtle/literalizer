@@ -1,0 +1,13 @@
+schema_version = 1
+summary = """
+A value declaration applies the same reference-case check a call does.
+"""
+exceptions = ["UnsupportedIdentifierCaseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref": "my_var"}']
+input_format = "json"
+ref_key = "$ref"
+ref_case = "KEBAB"

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[CallsNotSupportedByToolError]
+"Nix['[[1, 2]]']" = "literalizer does not support function call rendering for Nix"
+"Nix['[1, 2]']" = "literalizer does not support function call rendering for Nix"

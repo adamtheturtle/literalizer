@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+per_element reads the top-level list as one call per element, so a
+document that is not a list has no elements to call with.
+"""
+exceptions = ["PerElementNotListError"]
+gates = [{ kind = "capability_flag", flag = "declares_call_styles" }]
+
+[call]
+api = "literalize_call"
+sources = ['"hello"']
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]

@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A Fortran name starts with a letter, so a leading underscore is not
+a name at all.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "_value"
+wrap_in_file = true

@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A language that names no variables cannot bind a call result to one.
+"""
+exceptions = ["VariableNameNotSupportedError"]
+languages = ["Jsonnet"]
+
+[call]
+api = "literalize_call"
+sources = ["42"]
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "new"
+variable_name = "result"

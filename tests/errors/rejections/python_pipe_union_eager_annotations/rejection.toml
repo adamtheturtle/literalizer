@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A pipe union is a runtime expression under eager annotations, and the
+type it builds does not exist before Python 3.10, so the two together
+name a version that cannot evaluate it.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Python"]
+values = ["PY38", "PY39"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_member", option = "annotation_evaluation", member = "EAGER" },
+  { kind = "option_member", option = "union_format", member = "PIPE" },
+  { kind = "option_member", option = "language_version", member = "{value}" },
+]

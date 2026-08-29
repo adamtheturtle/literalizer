@@ -1,0 +1,25 @@
+schema_version = 1
+summary = """
+Under TUPLE a tuple-eligible heterogeneous array is a fixed-size type,
+so a same-key-set sibling whose field is a homogeneous list declares a
+different field type and the two records cannot share a declaration.
+"""
+exceptions = ["HeterogeneousSiblingListsError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
+[call]
+api = "literalize"
+sources = ["\n- a:\n    - 1\n    - x\n- a:\n    - 2\n    - 3\n"]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
+[[accepts]]
+languages = ["Cpp", "TypeScript"]
+reason = """
+These write both fields as one type -- a variant sequence and a union
+element type -- so a fixed-size array and a list still share it.
+"""

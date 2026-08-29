@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A parameter label is written into the generated stub, so it has to be
+an identifier the language accepts.
+"""
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Python"]
+values = ["2c", "a b", "class"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["{value}"]

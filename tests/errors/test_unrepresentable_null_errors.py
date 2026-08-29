@@ -1,31 +1,15 @@
-"""Errors for languages that cannot distinguish null from empty text."""
+"""The empty string a null-refusing language still represents.
+
+The refusals are declared in ``tests/errors/rejections`` and run by
+``test_rejections.py``.  What is left here is the value they must not
+take with them: Bash and Tcl refuse a null because they cannot tell it
+from empty text, so the empty text itself has to keep working.
+"""
 
 import pytest
 
 from literalizer import InputFormat, Language, literalize
-from literalizer.exceptions import UnrepresentableNullError
 from literalizer.languages import Bash, Tcl
-
-
-@pytest.mark.parametrize(argnames="language", argvalues=[Bash(), Tcl()])
-@pytest.mark.parametrize(
-    argnames=("source", "input_format"),
-    argvalues=[
-        ("null", InputFormat.JSON),
-        ('{"outer": [null]}', InputFormat.JSON),
-        ("!!set\n? null\n", InputFormat.YAML),
-    ],
-)
-def test_null_is_rejected(
-    source: str, input_format: InputFormat, language: Language
-) -> None:
-    """Null is rejected at any reachable collection depth."""
-    with pytest.raises(expected_exception=UnrepresentableNullError):
-        literalize(
-            source=source,
-            input_format=input_format,
-            language=language,
-        )
 
 
 @pytest.mark.parametrize(argnames="language", argvalues=[Bash(), Tcl()])

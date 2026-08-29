@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A COBOL data name cannot begin or end with a hyphen, and an
+underscore is rendered as one, so a name touching either boundary is
+refused.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Cobol"]
+values = ["_x", "x-", "x_"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "{value}"
+wrap_in_file = true

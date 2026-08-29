@@ -1,0 +1,11 @@
+# languages rejecting: 4; languages accepting: 0
+
+[CallsNotSupportedByLanguageError]
+"Json5['[[1, 2]]']" = "Json5 has no function call syntax"
+"Json5['[1, 2]']" = "Json5 has no function call syntax"
+"Norg['[[1, 2]]']" = "Norg has no function call syntax"
+"Norg['[1, 2]']" = "Norg has no function call syntax"
+"Toml['[[1, 2]]']" = "Toml has no function call syntax"
+"Toml['[1, 2]']" = "Toml has no function call syntax"
+"Yaml['[[1, 2]]']" = "Yaml has no function call syntax"
+"Yaml['[1, 2]']" = "Yaml has no function call syntax"

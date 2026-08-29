@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Python = "Python cannot represent this call shape: variable_form cannot be combined with bound_refs; bound_refs declares the call's input refs, not a binding for the call result"

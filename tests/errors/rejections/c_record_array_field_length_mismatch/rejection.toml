@@ -1,0 +1,22 @@
+schema_version = 1
+summary = """
+Under C's RECORD strategy a field holding a list of one-shape records
+becomes a fixed-size struct array sized from the shape's first
+instance, so a later record of that shape whose list is a different
+length would overflow the array or silently under-fill it.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["C"]
+
+[call]
+api = "literalize"
+sources = [
+  "items:\n- sub:\n  - x: 1\n- sub:\n  - x: 2\n  - x: 3\n",
+  "- group:\n  - x: 1\n- group:\n  - x: 1\n  - x: 2\n",
+]
+input_format = "yaml"
+variable_form = "new"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

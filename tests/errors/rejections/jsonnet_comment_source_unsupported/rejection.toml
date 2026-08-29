@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A language with no comment syntax the call form can carry has nowhere
+to write a comment_source entry.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Jsonnet"]
+
+[call]
+api = "literalize_call"
+sources = ["[1, 2]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+comment_source = ["note", ""]

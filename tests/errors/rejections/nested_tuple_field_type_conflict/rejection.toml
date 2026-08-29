@@ -1,0 +1,27 @@
+schema_version = 1
+summary = """
+A tuple field's positional types are part of the record's identity, so
+inner records whose tuples differ in one position split, and the split
+propagates to the records enclosing them.
+"""
+exceptions = ["HeterogeneousSiblingListsError", "HeterogeneousSiblingMapsError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
+[call]
+api = "literalize"
+sources = [
+  "- outer:\n    pair:\n      - 1\n      - first\n- outer:\n    pair:\n      - false\n      - second\n",
+]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
+[[accepts]]
+languages = ["TypeScript"]
+reason = """
+A TypeScript tuple field takes a union element type, so the two
+positional shapes share one declaration.
+"""

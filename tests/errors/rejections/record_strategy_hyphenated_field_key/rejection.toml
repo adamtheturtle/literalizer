@@ -1,0 +1,29 @@
+schema_version = 1
+summary = """
+A hyphenated dict key has no lexical field identifier in most record
+renderers, and is refused before the target language is handed source
+it cannot compile.
+"""
+exceptions = ["UnrepresentableInputError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ['[{"a-b": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = ["CSharp", "Go", "Nim"]
+reason = """
+These derive a field name from the key rather than using it verbatim,
+so the hyphen is dropped or the following letter is capitalised.
+"""
+
+[[accepts]]
+languages = ["Zig"]
+reason = "Zig writes the field as the quoted identifier @\"a-b\"."

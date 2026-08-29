@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Go = "cannot represent the dict key 'a_b' under the RECORD heterogeneous strategy: its field identifier 'AB' collides with another key in the same record"

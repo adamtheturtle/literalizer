@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+Go derives a field name from each key, so two keys that derive the
+same name would produce one field.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Go"]
+
+[call]
+api = "literalize"
+sources = ['[{"a-b": 1, "a_b": 2}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A standalone comment has nowhere to sit in the file scaffold these
+languages wrap a call in, so it would be dropped rather than kept.
+"""
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize_call"
+sources = ["# header\n- 1\n- 2\n"]
+input_format = "yaml"
+target_function = "process"
+parameter_names = ["value"]
+wrap_in_file = true

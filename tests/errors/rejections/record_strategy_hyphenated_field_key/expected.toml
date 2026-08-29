@@ -1,0 +1,15 @@
+# languages rejecting: 12; languages accepting: 4
+
+[UnrepresentableInputError]
+C = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Cpp = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Crystal = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+D = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Java = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Kotlin = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Odin = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Python = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Rust = "Rust cannot represent the dict key 'a-b' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+Scala = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+Swift = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
+V = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"

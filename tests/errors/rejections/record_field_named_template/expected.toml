@@ -1,0 +1,6 @@
+# languages rejecting: 3; languages accepting: 0
+
+[UnrepresentableInputError]
+Cpp = "C++ record field name 'template' is reserved"
+D = "D record field name 'template' is reserved"
+Nim = "Nim record field name 'template' is reserved"

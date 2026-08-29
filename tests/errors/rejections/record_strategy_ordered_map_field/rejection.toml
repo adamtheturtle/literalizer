@@ -1,0 +1,42 @@
+schema_version = 1
+summary = """
+An ordered map renders as a sequence of pairs rather than as a
+record, so a record field holding one has no struct field type.
+"""
+exceptions = ["UnrepresentableInputError"]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[call]
+api = "literalize"
+sources = ["title: report\nordered: !!omap\n  - a: 1\n  - b: 2\n"]
+input_format = "yaml"
+variable_form = "new"
+variable_name = "my_data"
+wrap_in_file = true
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[[accepts]]
+languages = [
+  "C",
+  "CSharp",
+  "Cpp",
+  "Crystal",
+  "Go",
+  "Java",
+  "Kotlin",
+  "Odin",
+  "Python",
+  "Scala",
+  "Swift",
+  "V",
+  "Zig",
+]
+reason = """
+These languages give the field a map type of its own rather than a
+struct type, so a field holding a dict that is not a record still has
+somewhere to go.
+"""

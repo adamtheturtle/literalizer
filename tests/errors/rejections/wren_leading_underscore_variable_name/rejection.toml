@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Wren reserves a leading underscore for a field inside a class, so a
+top-level declaration cannot take one.
+"""
+exceptions = ["ReservedVariableNameError"]
+languages = ["Wren"]
+values = ["_", "_field"]
+
+[call]
+api = "literalize"
+sources = ["[1, 2]"]
+input_format = "json"
+variable_form = "new"
+variable_name = "{value}"
+wrap_in_file = true

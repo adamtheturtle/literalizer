@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A data format has no function call syntax, so there is nothing for a
+call to be written as.  The second source reaches the same refusal on
+the whole-document path.
+"""
+exceptions = ["CallsNotSupportedByLanguageError"]
+languages = ["Json5", "Norg", "Toml", "Yaml"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1, 2]]", "[1, 2]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["a"]
+per_element = false
