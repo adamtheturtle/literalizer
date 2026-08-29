@@ -1008,6 +1008,27 @@ class Odin(metaclass=LanguageCls):
             self._validate_json_value(data)
 
     @cached_property
+    def supports_collection_comments(self) -> bool:
+        """Whether a comment can sit inside the rendered value.
+
+        ``json.parse_string`` is handed one JSON document, and JSON has
+        no comments, so a comment written inside it would be text
+        the parser refuses.  The comments go before the
+        declaration instead (issue #4546).
+        """
+        return not self._json_type_active
+
+    @cached_property
+    def supports_scalar_before_comments(self) -> bool:
+        """Whether a comment can sit above the rendered value.
+
+        Under :attr:`json_type` the comments of the document
+        have nowhere else to go, so they go above the
+        declaration (issue #4546).
+        """
+        return self._json_type_active
+
+    @cached_property
     def _json_type_active(self) -> bool:
         """Return whether Odin should render via ``json.Value``."""
         return self.json_type is not None
@@ -1239,8 +1260,6 @@ class Odin(metaclass=LanguageCls):
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
-    supports_collection_comments: ClassVar[bool] = True
-    supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()

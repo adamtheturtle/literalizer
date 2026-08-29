@@ -1,1 +1,1 @@
-Haskell AESON_VALUE, Zig STD_JSON_VALUE, PureScript ARGONAUT_JSON and C CJSON now emit source comments before the declaration instead of dropping them.
+``Java``, ``Kotlin`` and ``Odin`` now write a document's comments above the declaration under ``json_type``, as the other embed-and-parse back ends already did. The comments were dropped, against the preservation the documentation promises, because JSON has nowhere to put them.
