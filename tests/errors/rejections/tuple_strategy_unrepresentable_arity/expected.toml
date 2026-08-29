@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TupleArityNotRepresentableError]
+"Kotlin['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = "a heterogeneous scalar array of 5 elements has no native fixed-size tuple in the target language"
+"Kotlin['call: send\\nargs:\\n  - 1\\n  - email\\n  - a@gmail.com\\n  - 100\\n']" = "a heterogeneous scalar array of 4 elements has no native fixed-size tuple in the target language"

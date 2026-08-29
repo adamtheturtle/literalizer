@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "D narrow-typed mode and the RECORD strategy are exclusive."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["D"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_unset", option = "json_type" },
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

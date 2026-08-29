@@ -165,6 +165,24 @@ class OptionMemberKwarg(
     member: Annotated[str, Field(min_length=1)]
 
 
+class OptionUnsetKwarg(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Pass ``None`` for an option whose default is a member.
+
+    A few options select a mode by being left unset rather than by
+    naming a member -- ``D(json_type=None)`` is the narrow-typed mode,
+    and its default is ``STD_JSON_VALUE`` -- so no ``option_member``
+    can reach them (issue #4699).
+    """
+
+    kind: Literal["option_unset"]
+    option: Annotated[str, Field(min_length=1)]
+
+
 class TextKwarg(
     BaseModel,
     extra="forbid",
@@ -208,7 +226,7 @@ class RecordShapeNamesKwarg(
 
 
 type RejectionKwarg = Annotated[
-    OptionMemberKwarg | TextKwarg | RecordShapeNamesKwarg,
+    OptionMemberKwarg | OptionUnsetKwarg | TextKwarg | RecordShapeNamesKwarg,
     Field(discriminator="kind"),
 ]
 
@@ -501,7 +519,7 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
             templates = (kwarg.value,)
         case RecordShapeNamesKwarg():
             templates = tuple(kwarg.names)
-        case OptionMemberKwarg():
+        case OptionMemberKwarg() | OptionUnsetKwarg():
             templates = ()
         case _ as unreachable:
             assert_never(unreachable)

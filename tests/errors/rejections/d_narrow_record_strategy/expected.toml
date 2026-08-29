@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+D = "D json_type=None (narrow typed) is mutually exclusive with heterogeneous_strategy=RECORD: both drop the JSONValue wrapper and render a record-shaped dict differently (associative-array literal vs generated struct). Pick one."

@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "A reference marker cannot name something that is not an identifier."
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"a": {"$ref": "9lives"}}',
+  '{"a": {"$ref": ""}}',
+  '{"a": {"$ref": "x; import os"}}',
+]
+input_format = "json"
+ref_key = "$ref"

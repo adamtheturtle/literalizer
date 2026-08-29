@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Rust['- \"1abc\": a\\n  other: b\\n']" = "Rust cannot represent the dict key '1abc' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"Self\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'Self' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"_\": a\\n  other: b\\n']" = "Rust cannot represent the dict key '_' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"crate\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'crate' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"foo-bar\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'foo-bar' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"has space\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'has space' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"self\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'self' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+"Rust['- \"super\": a\\n  other: b\\n']" = "Rust cannot represent the dict key 'super' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"

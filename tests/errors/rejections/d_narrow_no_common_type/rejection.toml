@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+D narrow-typed mode gives a collection one element or value type, which
+mixed values do not share and an empty collection does not supply.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["D"]
+
+[call]
+api = "literalize"
+sources = ['[1, "two"]', "[]", '{"a": 1, "b": "two"}', "{}"]
+input_format = "json"
+kwargs = [
+  { kind = "option_unset", option = "json_type" },
+]

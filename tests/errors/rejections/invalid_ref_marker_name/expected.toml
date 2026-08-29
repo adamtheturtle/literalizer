@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Python['{\"a\": {\"$ref\": \"9lives\"}}']" = "Python cannot use reference name '9lives': it is not a valid identifier"
+"Python['{\"a\": {\"$ref\": \"\"}}']" = "Python cannot use reference name '': it is not a valid identifier"
+"Python['{\"a\": {\"$ref\": \"x; import os\"}}']" = "Python cannot use reference name 'x; import os': it is not a valid identifier"

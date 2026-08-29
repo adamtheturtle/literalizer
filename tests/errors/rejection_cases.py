@@ -23,6 +23,7 @@ from tests.language_options import OPTIONS
 from .rejection_manifests import (
     LANGUAGES_BY_NAME,
     OptionMemberKwarg,
+    OptionUnsetKwarg,
     RecordShapeNamesKwarg,
     RejectionKwarg,
     RejectionManifest,
@@ -96,6 +97,8 @@ def _kwarg_values(
                     name=kwarg.member,
                 )
             }
+        case OptionUnsetKwarg():
+            resolved = {OPTIONS[kwarg.option].kwarg: None}
         case TextKwarg():
             resolved = {
                 kwarg.kwarg: substituted(template=kwarg.value, value=value)
