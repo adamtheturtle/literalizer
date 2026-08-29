@@ -2249,34 +2249,22 @@ def _substitute_known_refs(
     if ref_name is not None:
         return ref_values.get(ref_name, value)
     match value:
-        case dict():
-            # An ordered map is a dict subclass whose tag decides how
-            # it is written, so the rebuilt tree keeps whichever it is.
-            return type(value)(
-                {
-                    key: _substitute_known_refs(
-                        value=item,
-                        ref_values=ref_values,
-                        ref_key=ref_key,
-                    )
-                    for key, item in value.items()
-                }
+        case dict() | list():
+            return _substitute_known_refs_in_container(
+                data=value,
+                ref_values=ref_values,
+                ref_key=ref_key,
             )
-        case list():
-            return [
-                _substitute_known_refs(
-                    value=item,
-                    ref_values=ref_values,
-                    ref_key=ref_key,
-                )
-                for item in value
-            ]
         case _:
             return value
 
 
 @beartype
-def _opener_inference_value(*, data: Value, ctx: _RenderContext) -> Value:
+def _opener_inference_value(
+    *,
+    data: dict[Scalar, Value] | list[Value],
+    ctx: _RenderContext,
+) -> Value:
     """Return what a container's opener reads its type from.
 
     A marker stands for a value declared elsewhere, so the container
@@ -2286,19 +2274,49 @@ def _opener_inference_value(*, data: Value, ctx: _RenderContext) -> Value:
     if ctx.ref_key is _DISABLED_REF_KEY:
         return data
     if ctx.expand_refs:
-        substituted = _substitute_known_refs(
-            value=data,
-            ref_values=ctx.ref_values or {},
-            ref_key=ctx.ref_key,
-        )
         return _strip_direct_refs_for_opener(
-            value=substituted,
+            value=_substitute_known_refs_in_container(
+                data=data,
+                ref_values=ctx.ref_values or {},
+                ref_key=ctx.ref_key,
+            ),
             ref_key=ctx.ref_key,
         )
     return _resolve_refs_for_inference(
         value=data,
         ref_values=ctx.ref_values,
         ref_key=ctx.ref_key,
+    )
+
+
+@beartype
+def _substitute_known_refs_in_container(
+    *,
+    data: dict[Scalar, Value] | list[Value],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+) -> dict[Scalar, Value] | list[Value]:
+    """Return a container with each known marker inside it replaced."""
+    if isinstance(data, list):
+        return [
+            _substitute_known_refs(
+                value=item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            for item in data
+        ]
+    # An ordered map is a dict subclass whose tag decides how it is
+    # written, so the rebuilt container keeps whichever it is.
+    return type(data)(
+        {
+            key: _substitute_known_refs(
+                value=item,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+            for key, item in data.items()
+        }
     )
 
 
