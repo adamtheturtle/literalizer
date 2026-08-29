@@ -1,0 +1,1 @@
+Renamed 94 news fragments from ``.bugfix`` to ``.change`` so ``towncrier`` includes them, and added a ``prek`` hook that rejects any other suffix.
