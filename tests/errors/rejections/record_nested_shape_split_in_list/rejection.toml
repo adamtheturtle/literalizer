@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Two records that agree on their keys but whose nested records differ
+cannot share one declaration, so a list holding both is refused.
+"""
+exceptions = ["HeterogeneousSiblingListsError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ['[{"h": [1, {"k": 1}]}, {"h": [1, {"j": 2}]}]']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

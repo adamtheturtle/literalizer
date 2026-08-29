@@ -375,6 +375,42 @@ def _list_element_token(
 
 
 @beartype
+def _nested_record_tokens(
+    *,
+    field_value: Value,
+    id_to_shape: Mapping[int, RecordShape],
+    token_string_of: Mapping[int, str],
+) -> tuple[str, ...]:
+    """Return the refinement groups of the records inside a field.
+
+    A record dict can sit anywhere inside a field value, including
+    beside other types in a heterogeneous list, where the language's
+    field type names it only as the mapping it would otherwise be.
+    Two instances whose nested records fall in different groups cannot
+    share one declaration, so those groups join the signature (issue
+    #4500).
+
+    The groups are read as a set: how many records a field holds, and
+    in what order, is already part of the field type the language
+    itself returns.
+    """
+    tokens: set[str] = set()
+    pending: list[Value] = [field_value]
+    while pending:
+        value = pending.pop()
+        match value:
+            case dict():
+                if id(value) in id_to_shape:
+                    tokens.add(token_string_of[id(value)])
+                pending.extend(value.values())
+            case list() | set():
+                pending.extend(value)
+            case _:
+                continue
+    return tuple(sorted(tokens))
+
+
+@beartype
 def _instance_signature(
     *,
     instance: dict[Scalar, Value],
@@ -416,6 +452,15 @@ def _instance_signature(
             element_record_name=element_name,
         )
         signature.append(field_type(request))
+        signature.append(
+            repr(
+                _nested_record_tokens(
+                    field_value=field_value,
+                    id_to_shape=id_to_shape,
+                    token_string_of=token_string_of,
+                )
+            )
+        )
     return tuple(signature)
 
 
