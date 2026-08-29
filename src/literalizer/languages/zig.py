@@ -1460,6 +1460,7 @@ class Zig(metaclass=LanguageCls):
             field_type=self._zig_record_field_type,
             render_declaration=_zig_render_record_declaration,
             render_literal=_zig_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 

@@ -3785,6 +3785,7 @@ class Cpp(metaclass=LanguageCls):
                 if self._uses_cpp20
                 else _cpp_record_literal_positional
             ),
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=True,
         )
 

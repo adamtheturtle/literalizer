@@ -1332,6 +1332,7 @@ class D(metaclass=LanguageCls):
             field_type=self._d_record_field_type,
             render_declaration=_d_render_record_declaration,
             render_literal=_d_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 

@@ -1525,6 +1525,7 @@ class C(metaclass=LanguageCls):
             field_type=self._c_record_field_type,
             render_declaration=_c_render_record_declaration,
             render_literal=_c_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 

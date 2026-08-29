@@ -165,6 +165,16 @@ class RecordRenderer:
         [str, Sequence[RecordLiteralField]],
         RenderedRecordLiteral,
     ]
+    field_type_names_nested_records: bool
+    """Whether a field type spells the name of a record inside it.
+
+    A language that writes a heterogeneous list as one carrier type
+    (``[]any``, ``object[]``) types the field the same however the
+    records inside it are shaped, so two instances holding differently
+    shaped ones still share a declaration.  A language that spells the
+    record instead cannot, so its refinement reads those shapes as part
+    of the signature (issue #4500).
+    """
     suppress_custom_name_declarations: bool
     """Whether a shape named through ``record_shape_names`` is declared
     by the caller rather than emitted in this literal's preamble.
@@ -400,9 +410,13 @@ def _nested_record_tokens(
         value = pending.pop()
         match value:
             case dict():
+                # A mapping that is not a record of its own is one the
+                # widening pass took out; what it holds is written as
+                # a value of that mapping rather than as a record, so
+                # the walk stops here rather than undoing the widening.
                 if id(value) in id_to_shape:
                     tokens.add(token_string_of[id(value)])
-                pending.extend(value.values())
+                    pending.extend(value.values())
             case list() | set():
                 pending.extend(value)
             case _:
@@ -418,6 +432,7 @@ def _instance_signature(
     id_to_shape: Mapping[int, RecordShape],
     token_string_of: Mapping[int, str],
     field_type: Callable[[RecordFieldType], str],
+    field_type_names_nested_records: bool,
 ) -> tuple[str, ...]:
     """Return the per-key declared field types of *instance*, in
     shape-key order.
@@ -452,15 +467,16 @@ def _instance_signature(
             element_record_name=element_name,
         )
         signature.append(field_type(request))
-        signature.append(
-            repr(
-                _nested_record_tokens(
-                    field_value=field_value,
-                    id_to_shape=id_to_shape,
-                    token_string_of=token_string_of,
+        if field_type_names_nested_records:
+            signature.append(
+                repr(
+                    _nested_record_tokens(
+                        field_value=field_value,
+                        id_to_shape=id_to_shape,
+                        token_string_of=token_string_of,
+                    )
                 )
             )
-        )
     return tuple(signature)
 
 
@@ -471,6 +487,7 @@ def _regroup_by_field_signatures(
     id_to_shape: Mapping[int, RecordShape],
     group_of: Mapping[int, Hashable],
     field_type: Callable[[RecordFieldType], str],
+    field_type_names_nested_records: bool,
 ) -> dict[int, Hashable]:
     """Run one refinement round: split each group whose members'
     field-type signatures disagree, keeping agreeing groups whole.
@@ -497,6 +514,9 @@ def _regroup_by_field_signatures(
                 id_to_shape=id_to_shape,
                 token_string_of=token_string_of,
                 field_type=field_type,
+                field_type_names_nested_records=(
+                    field_type_names_nested_records
+                ),
             )
             for member in members
         ]
@@ -573,6 +593,7 @@ def _refine_record_shapes(
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],
     field_type: Callable[[RecordFieldType], str],
+    field_type_names_nested_records: bool,
 ) -> dict[int, RecordShape]:
     """Split record shapes whose dicts disagree on a field's declared
     type (issue #2888).
@@ -605,6 +626,7 @@ def _refine_record_shapes(
             id_to_shape=shapes_by_id,
             group_of=group_of,
             field_type=field_type,
+            field_type_names_nested_records=field_type_names_nested_records,
         )
         old_partition = _partition(instances=instances, group_of=group_of)
         new_partition = _partition(instances=instances, group_of=regrouped)
@@ -920,6 +942,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
                 data=data,
                 shapes_by_id=widened_shapes_by_id,
                 field_type=renderer.field_type,
+                field_type_names_nested_records=(
+                    renderer.field_type_names_nested_records
+                ),
             )
             if split_conflicting_field_types
             else widened_shapes_by_id

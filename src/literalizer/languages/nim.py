@@ -2007,6 +2007,7 @@ class Nim(metaclass=LanguageCls):
                 indent=self.indent,
             ),
             render_literal=_nim_record_literal,
+            field_type_names_nested_records=False,
             suppress_custom_name_declarations=False,
         )
 
