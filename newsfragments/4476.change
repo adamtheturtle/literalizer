@@ -1,3 +1,0 @@
-Raise ``UnrepresentableIntegerError`` for a Jsonnet integer outside the range a
-double holds exactly, rather than emitting a literal the evaluator silently
-rounds.

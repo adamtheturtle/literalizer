@@ -38,7 +38,7 @@ falling back to a homogeneous list).
 """
 
 import dataclasses
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 
 from beartype import beartype
 
@@ -82,29 +82,71 @@ def is_tuple_eligible(*, value: list[Value]) -> bool:
 
 
 @beartype
+def _element_signature(*, value: Value) -> Hashable:
+    """Return the type an element would be written with.
+
+    A tuple spells its element types, so two arrays that would become
+    tuples of different types cannot sit in one list.  A plain list is
+    read by what it holds rather than by how much, since its length is
+    no part of the type the elements share.
+    """
+    if isinstance(value, list):
+        if is_tuple_eligible(value=value):
+            return ("tuple", tuple(type(item).__name__ for item in value))
+        return (
+            "list",
+            frozenset(_element_signature(value=item) for item in value),
+        )
+    return (type(value).__name__,)
+
+
+@beartype
 def _accumulate_tuple_lists(
     *,
     data: Value,
     out: list[list[Value]],
+    inside_uniform_list: bool,
 ) -> None:
-    """Walk *data* recording each tuple-eligible dict-value list.
+    """Walk *data* recording each tuple-eligible list it holds.
 
-    Only lists reached as a dict value are recorded here; lists
-    reached as an element of another list are deliberately skipped
-    (the nested-list / sibling-list shapes stay out of scope) while
-    still being walked so deeper dict-value lists are found.
+    A heterogeneous scalar array is written as a tuple wherever it
+    sits: as a dict value, and equally as an element of another list,
+    which the strategy once passed over and left to be widened or
+    refused instead (issue #4555).
+
+    Inside a list the elements are taken together: a tuple spells its
+    element types, so a list whose elements would not all be written
+    with one type has nothing to hold them, and the arrays under it are
+    left where they were.
     """
     match data:
         case dict():
-            for child in data.values():
-                if isinstance(child, list) and is_tuple_eligible(
-                    value=child,
-                ):
-                    out.append(child)
-                _accumulate_tuple_lists(data=child, out=out)
+            # A mapping value stands on its own: what the list around
+            # the mapping holds says nothing about it.
+            for value in data.values():
+                if isinstance(value, list) and is_tuple_eligible(value=value):
+                    out.append(value)
+                _accumulate_tuple_lists(
+                    data=value,
+                    out=out,
+                    inside_uniform_list=True,
+                )
         case list():
+            uniform = inside_uniform_list and (
+                len({_element_signature(value=item) for item in data}) <= 1
+            )
+            if uniform:
+                out.extend(
+                    item
+                    for item in data
+                    if isinstance(item, list) and is_tuple_eligible(value=item)
+                )
             for item in data:
-                _accumulate_tuple_lists(data=item, out=out)
+                _accumulate_tuple_lists(
+                    data=item,
+                    out=out,
+                    inside_uniform_list=uniform,
+                )
         case _:
             return
 
@@ -120,7 +162,7 @@ def collect_tuple_lists(*, data: Value) -> list[list[Value]]:
     out: list[list[Value]] = []
     if isinstance(data, list) and is_tuple_eligible(value=data):
         out.append(data)
-    _accumulate_tuple_lists(data=data, out=out)
+    _accumulate_tuple_lists(data=data, out=out, inside_uniform_list=True)
     return out
 
 

@@ -1,1 +1,0 @@
-A Jsonnet call whose argument renders over several lines is no longer split into one array element per line, which produced doubled and leading commas.

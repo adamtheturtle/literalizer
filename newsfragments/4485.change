@@ -1,1 +1,0 @@
-Toml wrap_in_file no longer removes a comma from a string value that is followed by a hash or the end of the line.

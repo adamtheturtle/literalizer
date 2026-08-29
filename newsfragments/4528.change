@@ -1,3 +1,0 @@
-Reject a Fortran, Visual Basic or Zig call parameter named after the
-``target_function`` it belongs to.  The generated stub declared the name twice
-and the toolchain refused it.

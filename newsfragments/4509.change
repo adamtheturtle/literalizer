@@ -1,4 +1,0 @@
-Emit an embedded NUL in a Scheme string as the fixed-width ``\x00`` escape the
-default Guile reader implements.  The R6RS ``\x00;`` form the backend used
-needs a reader option the emitted code does not enable, so the terminating
-semicolon was read as a literal character.

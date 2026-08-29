@@ -1,1 +1,0 @@
-Declarations emitted for bound_refs now take the caller pre_indent_level, instead of sitting at column zero while the binding they precede is indented.

@@ -1,1 +1,0 @@
-A wrapped result whose data names a reference with no ``bound_refs`` entry is now refused. Only ``bound_refs`` emits a declaration for a reference, so the file named an identifier nothing gave a value, which a compiled target rejects.

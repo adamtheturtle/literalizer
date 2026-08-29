@@ -1,5 +1,5 @@
 const my_data = [
-  [1, "a"],
-  [2, "b"],
+  [1, "a"] as const,
+  [2, "b"] as const,
 ];
 export {};

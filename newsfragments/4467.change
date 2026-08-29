@@ -1,1 +1,0 @@
-The literalize_call docstring now describes where bound_refs and variable_form actually conflict: under wrap_in_file, where the declarations are composed, rather than in every mode.

@@ -1,3 +1,0 @@
-Raise ``UnrepresentableIntegerError`` for a Forth integer outside the signed
-64-bit range, rather than emitting a literal that a cell reads back negated or
-wrapped.

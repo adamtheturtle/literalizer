@@ -1,1 +1,0 @@
-A YAML standalone comment written at an indentation between the enclosing collection and the nested one it follows is no longer dropped; the innermost enclosing collection it is not outdented from now claims it.

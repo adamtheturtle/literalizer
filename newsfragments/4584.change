@@ -1,2 +1,0 @@
-Make Perl's fixed float format fall back to scientific notation for tiny
-values whose fixed-point spelling exceeds Perl's numeric-token limit.

@@ -1,1 +1,0 @@
-``Cpp(language_version=CPP14, heterogeneous_strategy=RECORD)`` now emits the carrier struct the rendered value refers to. A list written as a carrier-typed vector was counted as a tuple, which asks for no carrier, so the file named a type it never declared.

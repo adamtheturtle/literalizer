@@ -1,4 +1,0 @@
-Reject an Objective-C ``module_name`` that names a C library function.  A
-wrapped file imports Foundation, which brings the prototype into scope, so the
-generated wrapper declared it again with a different signature and clang refused
-the file.

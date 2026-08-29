@@ -1,3 +1,0 @@
-Raise ``DelimiterlessWrappedFileError`` when ``include_delimiters=False`` is
-combined with ``wrap_in_file=True``.  The pair produced a bare collection
-fragment presented as a complete source file.

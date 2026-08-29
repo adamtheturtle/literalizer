@@ -1,4 +1,0 @@
-Raise ``UnrepresentableIntegerError`` for a Nix integer outside the signed
-64-bit range.  Such a value was routed through ``builtins.fromJSON``, which
-parses one at or above ``2**64`` into a float and throws on evaluation between
-``2**63`` and ``2**64``.

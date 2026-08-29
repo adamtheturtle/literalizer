@@ -1,1 +1,0 @@
-``CSharp(heterogeneous_strategy=RECORD)`` now splits records whose same-named field takes conflicting types, as every other statically typed back end does. Records that could not compile were accepted instead.
