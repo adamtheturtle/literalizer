@@ -13,4 +13,4 @@ and so showed the widening; the fix is in the shared inference layer.
 """
 
 [ref.value_sources]
-r = '{"k": 2}'
+sibling_map = '{"k": 2}'
