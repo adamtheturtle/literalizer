@@ -1314,6 +1314,13 @@ class Scala(metaclass=LanguageCls):
                     f"identifier."
                 )
                 raise InvalidRecordNameError(msg)
+            if name in _SCALA_EMITTED_TYPE_NAMES:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which names a type the generated "
+                    f"code itself uses."
+                )
+                raise InvalidRecordNameError(msg)
             if auto_name_pattern.match(string=name):
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "

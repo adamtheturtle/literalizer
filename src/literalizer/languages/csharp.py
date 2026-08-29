@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, Final
 
 from beartype import beartype
 
@@ -144,6 +144,22 @@ _format_string_backslash_nul = make_backslash_string_formatter(
         ("\u2029", r"\u2029"),
     ],
 )
+
+
+_CSHARP_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        "DateOnly",
+        "DateTime",
+        "System",
+        "TimeOnly",
+    }
+)
+"""Type names the generated code can reference.
+
+A record named after one of these either shadows the
+type the same file uses or clashes with what its import line brings
+in, so the compiler rejects the output (issue #4536).
+"""
 
 
 @beartype
@@ -1248,6 +1264,13 @@ class CSharp(metaclass=LanguageCls):
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase C# "
                     f"identifier."
+                )
+                raise InvalidRecordNameError(msg)
+            if name in _CSHARP_EMITTED_TYPE_NAMES:
+                msg = (
+                    f"record_shape_names entry for keys {sorted(keys)!r} "
+                    f"maps to {name!r}, which names a type the generated "
+                    f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
             if auto_name_pattern.match(string=name):
