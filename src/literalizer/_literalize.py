@@ -996,7 +996,7 @@ def _format_ordered_map_value(
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
-    opening = ordered_map_cfg.ordered_map_open(value)
+    opening = _ordered_map_open_for_ref_inference(data=value, ctx=ctx)
     return opening + joined + ordered_map_cfg.close
 
 
@@ -2322,6 +2322,17 @@ def _substitute_known_refs_in_container(
 
 
 @beartype
+def _ordered_map_open_for_ref_inference(
+    *, data: dict[Scalar, Value], ctx: _RenderContext
+) -> str:
+    """Return the ordered-map opener using resolved refs when needed."""
+    inferred = _opener_inference_value(data=data, ctx=ctx)
+    return ctx.spec.ordered_map_format_config.ordered_map_open(
+        inferred if isinstance(inferred, dict) and inferred else data
+    )
+
+
+@beartype
 def _dict_open_for_ref_inference(
     *, data: dict[Scalar, Value], ctx: _RenderContext
 ) -> str:
@@ -2385,7 +2396,7 @@ def _collection_open_for_multiline_value(
     dict_open_for_wrap_ids = spec.heterogeneous_behavior.dict_open_for_wrap_ids
     match data:
         case dict() if is_ordered_map:
-            opener = spec.ordered_map_format_config.ordered_map_open(data)
+            opener = _ordered_map_open_for_ref_inference(data=data, ctx=ctx)
         case dict() if (
             id(data) in ctx.wrap_ids and dict_open_for_wrap_ids is not None
         ):
