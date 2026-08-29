@@ -1,0 +1,5 @@
+Keep source comments where ``Java(json_type=JACKSON_JSON_NODE)`` and
+``Odin(json_type=JSON_VALUE)`` embed one JSON document and parse it.  Both
+rendered the document on a single line, so the comments had no line to attach
+to and vanished; they now sit before the declaration, as the other
+embed-and-parse back ends already do.
