@@ -1,0 +1,18 @@
+schema_version = 1
+summary = """
+A Rust call argument is written by the same value formatting a declared
+value is, so it faces the same rules.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize_call"
+sources = [
+  "- - 2024-01-02T03:04:05+05:30\n",
+  "- - {1.5: a}\n",
+]
+input_format = "yaml"
+target_function = "process"
+parameter_names = ["x"]
+per_element = true

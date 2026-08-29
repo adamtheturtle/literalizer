@@ -123,7 +123,6 @@ from literalizer._language import (
     no_empty_container_literal_overrides,
     no_format_integer_widened,
     no_type_hint_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
 )
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
@@ -4113,10 +4112,15 @@ class Rust(metaclass=LanguageCls):
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        if self._json_type_active:
-            return self._validate_json_value_keys
-        return no_validate_call_arg
+        """Return call-argument validation for this language.
+
+        An argument is written by the same value formatting a declared
+        value is, so it faces the same rules: a float collection key
+        the map type cannot hash, a sequence the array format cannot
+        give one type, and an offset the native datetime drops
+        (issue #4492).
+        """
+        return self.validate_spec_for_data
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:

@@ -1,0 +1,1 @@
+A ``Rust`` call argument now faces the same per-language data rules a declared value does: an offset the native datetime drops, and a float collection key the map type cannot hash. The rules ran on the declaration path alone, so a call silently changed the value or emitted code ``rustc`` refuses.

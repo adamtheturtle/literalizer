@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Rust['- - 2024-01-02T03:04:05+05:30\\n']" = "Rust native datetime format cannot preserve UTC offset 5:30:00"
+"Rust['- - {1.5: a}\\n']" = "Rust map formats cannot use float keys"
