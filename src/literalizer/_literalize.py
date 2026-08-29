@@ -4629,7 +4629,13 @@ def _resolve_ref_for_preamble(
             )
             if resolved.include:
                 resolved_dict[key] = resolved.value
-        return _PreambleRefResolution(include=True, value=resolved_dict)
+        # An ordered map is a dict subclass whose tag decides how it is
+        # written and typed, so the rebuilt tree keeps whichever it is
+        # (issue #4735).
+        return _PreambleRefResolution(
+            include=True,
+            value=type(value)(resolved_dict),
+        )
     return _PreambleRefResolution(include=True, value=value)
 
 
