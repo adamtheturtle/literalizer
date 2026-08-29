@@ -1,0 +1,10 @@
+No user-facing change: the V, Standard ML, Haskell, Dhall, Bash and Wren
+round-trip drivers no longer depend on the exact shape of the shared corpus.
+The V walker covers every element and value type the interface strategy emits
+and aborts on an unhandled one instead of writing ``null``; the Standard ML and
+Haskell encoders take their clauses from the constructors the literalized type
+declares; the Dhall walker converts each entry directly when the document is
+single-family and declares no union; the Bash emitter indexes an associative
+array through a variable rather than an unquoted subscript and escapes every C0
+control; and the Wren driver computes which keys hold a number ``Num`` cannot
+re-print rather than listing them.
