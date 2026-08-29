@@ -1192,6 +1192,21 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
 
 
 @beartype
+def _is_cpp_ref_marker(*, value: Value) -> bool:
+    """Return whether *value* is a reference marker rather than a map.
+
+    A marker stands for a value declared elsewhere and is emitted as a
+    bare identifier, so it is not a map of its own however much its
+    ``{"$ref": name}`` shape looks like one.
+    """
+    return (
+        isinstance(value, dict)
+        and len(value) == 1
+        and isinstance(value.get("$ref"), str)
+    )
+
+
+@beartype
 def _cpp14_widened_sibling_map_ids(
     *,
     children: list[Value],
@@ -1204,12 +1219,18 @@ def _cpp14_widened_sibling_map_ids(
     with the carrier as their value type, so each of their values needs
     the explicit construction the carrier asks for.  Siblings appear
     under a list and equally under a mapping (issue #4569).
+
+    A reference marker beside them is not one of them: counting it
+    would pool the name it holds as though it were a map value, and
+    widen a container that is homogeneous once the reference resolves
+    (issue #4753).
     """
     siblings = [
         child
         for child in children
         if isinstance(child, dict)
         and not isinstance(child, OrderedMap)
+        and not _is_cpp_ref_marker(value=child)
         and id(child) not in excluded_ids
     ]
     sibling_values = [
@@ -1263,11 +1284,7 @@ def _cpp14_variant_parent_ids(
                 type_children = [
                     child
                     for child in children
-                    if not (
-                        isinstance(child, dict)
-                        and len(child) == 1
-                        and isinstance(child.get("$ref"), str)
-                    )
+                    if not _is_cpp_ref_marker(value=child)
                 ]
                 ids.update(
                     _cpp14_widened_sibling_map_ids(

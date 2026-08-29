@@ -1306,15 +1306,24 @@ def _compute_dict_open_override(
     *,
     items: list[Value],
     spec: Language,
+    ref_key: str,
 ) -> str | None:
     """Return a widened dict opener when dicts in a list infer
     different value types, or ``None`` when no widening is needed.
+
+    A reference marker is skipped for the reason
+    :func:`_gather_call_slot_values` gives on the call path: the marker
+    is rendered as the identifier it names rather than as a map of its
+    own, so pooling its ``{ref_key: name}`` shape would widen siblings
+    that agree once the reference resolves (issue #4753).
     """
     dict_open = spec.dict_format_config.dict_open
     dicts: list[dict[Scalar, Value]] = [
         item
         for item in items
-        if isinstance(item, dict) and not isinstance(item, OrderedMap)
+        if isinstance(item, dict)
+        and not isinstance(item, OrderedMap)
+        and _extract_call_arg_ref_name(value=item, ref_key=ref_key) is None
     ]
     # Widening compares openers across dicts, so we need at least two
     # to have anything to compare.
@@ -1409,6 +1418,7 @@ def _collect_dict_open_overrides(
     *,
     data: Value,
     spec: Language,
+    ref_key: str,
 ) -> dict[int, str]:
     """Compute widened dict openers for nested sibling map values.
 
@@ -1430,7 +1440,12 @@ def _collect_dict_open_overrides(
     """
     out: dict[int, str] = {}
     if _dict_widening_applies(spec=spec):
-        _accumulate_dict_open_overrides(data=data, spec=spec, out=out)
+        _accumulate_dict_open_overrides(
+            data=data,
+            spec=spec,
+            out=out,
+            ref_key=ref_key,
+        )
     return out
 
 
@@ -1486,6 +1501,7 @@ def _accumulate_dict_open_overrides(
     *,
     data: Value,
     spec: Language,
+    ref_key: str,
     out: dict[int, str],
 ) -> None:
     """Record widened openers for sibling maps reachable from *data*.
@@ -1502,13 +1518,26 @@ def _accumulate_dict_open_overrides(
     match data:
         case OrderedMap():
             for value in data.values():
-                _accumulate_dict_open_overrides(data=value, spec=spec, out=out)
+                _accumulate_dict_open_overrides(
+                    data=value,
+                    spec=spec,
+                    out=out,
+                    ref_key=ref_key,
+                )
         case dict():
             _widen_sibling_map_values(
-                pool=list(data.values()), spec=spec, out=out
+                pool=list(data.values()),
+                spec=spec,
+                out=out,
+                ref_key=ref_key,
             )
             for value in data.values():
-                _accumulate_dict_open_overrides(data=value, spec=spec, out=out)
+                _accumulate_dict_open_overrides(
+                    data=value,
+                    spec=spec,
+                    out=out,
+                    ref_key=ref_key,
+                )
         case list():
             min_dicts_for_widening = 2
             plain_dict_elements = [
@@ -1522,9 +1551,19 @@ def _accumulate_dict_open_overrides(
                     for element in plain_dict_elements
                     for value in element.values()
                 ]
-                _widen_sibling_map_values(pool=pooled, spec=spec, out=out)
+                _widen_sibling_map_values(
+                    pool=pooled,
+                    spec=spec,
+                    out=out,
+                    ref_key=ref_key,
+                )
             for item in data:
-                _accumulate_dict_open_overrides(data=item, spec=spec, out=out)
+                _accumulate_dict_open_overrides(
+                    data=item,
+                    spec=spec,
+                    out=out,
+                    ref_key=ref_key,
+                )
         case _:
             return
 
@@ -1535,6 +1574,7 @@ def _widen_sibling_map_values(
     pool: list[Value],
     spec: Language,
     out: dict[int, str],
+    ref_key: str,
 ) -> None:
     """Record the widened opener for the maps in one shared value slot.
 
@@ -1560,7 +1600,11 @@ def _widen_sibling_map_values(
         for item in pool
         if isinstance(item, dict) and not isinstance(item, OrderedMap)
     ]
-    override = _compute_dict_open_override(items=maps, spec=spec)
+    override = _compute_dict_open_override(
+        items=maps,
+        spec=spec,
+        ref_key=ref_key,
+    )
     if override is None:
         return
     for map_value in maps:
@@ -1568,7 +1612,12 @@ def _widen_sibling_map_values(
     child_pool = [
         value for m in maps if isinstance(m, dict) for value in m.values()
     ]
-    _widen_sibling_map_values(pool=child_pool, spec=spec, out=out)
+    _widen_sibling_map_values(
+        pool=child_pool,
+        spec=spec,
+        out=out,
+        ref_key=ref_key,
+    )
 
 
 @beartype
@@ -1616,7 +1665,11 @@ def _compute_call_slot_overrides(
     """
     slots = _gather_call_slot_values(elements=elements, ref_key=ref_key)
     return [
-        _compute_dict_open_override(items=slot_values, spec=spec)
+        _compute_dict_open_override(
+            items=slot_values,
+            spec=spec,
+            ref_key=ref_key,
+        )
         for slot_values in slots
     ]
 
@@ -1680,6 +1733,7 @@ def _compute_sequence_dict_override(
     items: list[Value],
     sequence_open_override: str | None,
     spec: Language,
+    ref_key: str,
 ) -> str | None:
     """Determine the dict opener override for dicts in a sequence.
 
@@ -1705,7 +1759,11 @@ def _compute_sequence_dict_override(
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
             return narrowed_open
-    return _compute_dict_open_override(items=items, spec=spec)
+    return _compute_dict_open_override(
+        items=items,
+        spec=spec,
+        ref_key=ref_key,
+    )
 
 
 @beartype
@@ -1974,6 +2032,7 @@ def _format_list_value(
         items=value,
         sequence_open_override=sequence_open_override,
         spec=spec,
+        ref_key=ctx.ref_key,
     )
     parent_id = id(value)
     int_formatter = ctx.list_int_formatters.get(
@@ -2779,6 +2838,7 @@ def _format_collection_lines(
                 items=list_data,
                 sequence_open_override=sequence_open_override,
                 spec=spec,
+                ref_key=ctx.ref_key,
             )
             list_int_formatter = ctx.list_int_formatters.get(
                 id(list_data)
@@ -3156,7 +3216,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         tuple_list_ids=tuple_list_ids,
         dict_open_overrides=_source_container_id_mapping(
             inferred_mapping=_collect_dict_open_overrides(
-                data=inference_data, spec=language
+                data=inference_data, spec=language, ref_key=ref_key
             ),
             id_map=inference_id_map,
         ),
@@ -6669,7 +6729,7 @@ def _render_zip_literal(
         wrap_ids=_compute_wrap_ids(data=value, spec=language),
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
-            data=value, spec=language
+            data=value, spec=language, ref_key=disabled_ref_key()
         ),
         dict_int_formatters=_collect_dict_int_formatters(
             data=value, spec=language

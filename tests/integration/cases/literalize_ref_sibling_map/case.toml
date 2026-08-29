@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-ref"
+
+# A reference marker beside a real map used to be pooled with it when
+# the sibling-map widening compared openers, so the list widened to an
+# "accepts anything" value type even though both maps agree once the
+# reference resolves (issue #4753).
+[ref]
+languages = ["Cpp", "Kotlin"]
+languages_reason = """
+Sampled: these two narrow a map's value type in the element position
+and so showed the widening; the fix is in the shared inference layer.
+"""
+
+[ref.value_sources]
+r = '{"k": 2}'
