@@ -1,0 +1,1 @@
+A reference nested inside a collection call argument now gives the container around it the type the reference holds, rather than the type the marker's own shape would suggest. A mapping holding a reference to a list was written as a mapping of mappings of strings, which no compiled target accepts.
