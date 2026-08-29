@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+A call wrapped in a whole file declares its bound references in the
+same program unit, so the collision is reached through the call API
+too.
+"""
+exceptions = ["ModuleNameVariableCollisionError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize_call"
+sources = ['[[{"$ref": "shared_name"}]]']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["arg"]
+wrap_in_file = true
+ref_key = "$ref"
+bound_refs = { shared_name = 1 }
+kwargs = [{ kind = "text", kwarg = "module_name", value = "shared_name" }]

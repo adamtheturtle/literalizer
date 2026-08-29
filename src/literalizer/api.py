@@ -117,33 +117,44 @@ def _validate_module_name_variable_collision(
     *,
     language: Language,
     variable_form: VariableForm | None,
+    bound_ref_names: Mapping[str, object],
+    ref_case: IdentifierCase | None,
     wrap_in_file: bool,
 ) -> None:
-    """Reject a wrapper named after the variable it would declare.
+    """Reject a wrapper named after a variable it would declare.
 
-    Only a language whose wrapper shares a scope with the value it
+    Only a language whose wrapper shares a scope with the values it
     binds is affected; nearly every other wrapper opens one of its own
-    (issue #4530).
+    (issue #4530).  Bound refs are declared in that same scope, so one
+    named after the wrapper collides exactly as the output binding does
+    (issue #4752), and it is compared under its ``ref_case`` conversion
+    for the reason ``_validate_bound_ref_output_name`` gives.
     """
     language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):  # pragma: no cover
         msg = "Module-name validation requires a LanguageCls language"
         raise TypeError(msg)
-    # ``BothVariableForms`` is exempt: its wrapper puts the binding in
-    # a subroutine named after the module rather than in the module's
-    # own scope, so the two names coexist (issue #4530).
+    # ``BothVariableForms`` is exempt: its wrapper puts everything it
+    # declares in a subroutine named after the module rather than in
+    # the module's own scope, so the names coexist (issue #4530).
     if (
         not wrap_in_file
-        or not isinstance(variable_form, NewVariable | ExistingVariable)
+        or isinstance(variable_form, BothVariableForms)
         or not language_cls.supports_module_name
         or not language_cls.module_name_shares_variable_scope
     ):
         return
+    declared = {
+        ref_case.convert(name=name) if ref_case is not None else name
+        for name in bound_ref_names
+    }
+    if isinstance(variable_form, NewVariable | ExistingVariable):
+        declared.add(variable_form.name)
     module_name = vars(language)["module_name"]
     if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
-        name=variable_form.name,
-        reserved_identifiers=frozenset({module_name}),
+        name=module_name,
+        reserved_identifiers=frozenset(declared),
     ):
         raise ModuleNameVariableCollisionError(
             language_name=language_cls.__name__,
@@ -214,6 +225,7 @@ def _validate_render_arguments(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: VariableForm | None,
+    bound_ref_names: Mapping[str, object],
     wrap_in_file: bool,
     ref_case: IdentifierCase | None,
 ) -> None:
@@ -247,6 +259,8 @@ def _validate_render_arguments(
     _validate_module_name_variable_collision(
         language=language,
         variable_form=variable_form,
+        bound_ref_names=bound_ref_names,
+        ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )
 
@@ -406,6 +420,7 @@ def literalize(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         variable_form=variable_form,
+        bound_ref_names=bound_refs or {},
         wrap_in_file=wrap_in_file,
         ref_case=ref_case,
     )
@@ -813,6 +828,8 @@ def literalize_call(
     _validate_module_name_variable_collision(
         language=language,
         variable_form=variable_form,
+        bound_ref_names=bound_refs or {},
+        ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )
     if isinstance(variable_form, BothVariableForms):

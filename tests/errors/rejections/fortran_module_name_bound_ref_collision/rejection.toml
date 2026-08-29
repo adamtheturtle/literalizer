@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+A bound reference is declared in the same program unit the wrapper
+names, so one named after the wrapper declares the name twice, exactly
+as the output binding does (#4752).
+"""
+exceptions = ["ModuleNameVariableCollisionError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize"
+sources = ['{"a": {"$ref": "shared_name"}}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "out"
+ref_key = "$ref"
+bound_refs = { shared_name = 1 }
+kwargs = [{ kind = "text", kwarg = "module_name", value = "shared_name" }]

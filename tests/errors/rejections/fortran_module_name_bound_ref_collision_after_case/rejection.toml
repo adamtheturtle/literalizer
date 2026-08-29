@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+A bound reference is declared under its ref_case conversion, so a name
+that does not match the wrapper as the caller spelled it can still
+match it as it is written.
+"""
+exceptions = ["ModuleNameVariableCollisionError"]
+languages = ["Fortran"]
+
+[call]
+api = "literalize"
+sources = ['{"a": {"$ref": "sharedName"}}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "out"
+ref_key = "$ref"
+ref_case = "SNAKE"
+bound_refs = { sharedName = 1 }
+kwargs = [{ kind = "text", kwarg = "module_name", value = "shared_name" }]
