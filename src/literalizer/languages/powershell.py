@@ -65,7 +65,6 @@ from literalizer._language import (
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_call_statement,
     identity_constructor_target,
     never_inhibits_consuming_form,
@@ -83,6 +82,20 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import InvalidDictKeyError
+
+
+@beartype
+def _powershell_call_arg(_raw_value: Value, formatted: str) -> str:
+    """Return a call argument the command parser reads as one value.
+
+    A command argument that opens with a type literal -- the
+    ``[ordered]`` an ordered map is written with -- is read as a cast
+    of what follows rather than as the argument, which the parser
+    then refuses.  Parentheses make it one value again (issue #4735).
+    """
+    if formatted.startswith("["):
+        return f"({formatted})"
+    return formatted
 
 
 @beartype
@@ -336,7 +349,7 @@ class PowerShell(metaclass=LanguageCls):
 
     format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
         staticmethod(
-            identity_call_arg,
+            _powershell_call_arg,
         )
     )
     """Callable that rewrites a formatted direct call argument."""
