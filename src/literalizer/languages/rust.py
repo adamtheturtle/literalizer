@@ -4099,6 +4099,11 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
+        # The element types of a tuple stand apart, so siblings inside
+        # a list written as one need no common type (issue #4663).
+        renders_list_as_tuple = (
+            self.sequence_format is type(self.sequence_format).TUPLE
+        )
         if self.sequence_format in {
             type(self.sequence_format).ARRAY,
             type(self.sequence_format).TUPLE,
@@ -4110,6 +4115,7 @@ class Rust(metaclass=LanguageCls):
                     self.heterogeneous_strategy
                     is type(self.heterogeneous_strategy).RECORD
                 ),
+                list_elements_are_independent=renders_list_as_tuple,
             )
         if self._json_type_active:
             self._validate_json_value_keys(data)

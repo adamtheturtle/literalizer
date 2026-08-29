@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Rust = "Rust renders a sequence as a fixed-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"

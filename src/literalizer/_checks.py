@@ -164,17 +164,66 @@ def guard_collection_nesting_depth(
 
 
 @beartype
+def _sequence_shape(value: Value, /) -> tuple[object, ...] | None:
+    """Return the nested lengths a sequence's type is built from.
+
+    A fixed-size type spells a length at every level it nests, so two
+    sequences share a type only where their whole shapes agree, not
+    only their outer lengths (issue #4728).  Anything that is not a
+    sequence has no shape of its own to compare.
+    """
+    if not isinstance(value, list):
+        return None
+    return (len(value), tuple(_sequence_shape(item) for item in value))
+
+
+@beartype
+def _reject_ragged_siblings(
+    *,
+    siblings: list[Value],
+    language_name: str,
+) -> None:
+    """Reject sequences beside each other that cannot share one type."""
+    lengths = {len(item) for item in siblings if isinstance(item, list)}
+    if len(lengths) > 1:
+        sizes = ", ".join(str(object=length) for length in sorted(lengths))
+        msg = (
+            f"{language_name} renders a sequence as a fixed-size "
+            "array, whose length is part of its type, so sibling "
+            f"sequences of lengths {sizes} have no common type"
+        )
+        raise UnrepresentableInputError(msg)
+    shapes = {
+        _sequence_shape(item) for item in siblings if isinstance(item, list)
+    }
+    if len(shapes) > 1:
+        msg = (
+            f"{language_name} renders a sequence as a fixed-size array, "
+            "whose length is part of its type at every level it nests, "
+            "so sibling sequences of the same outer length whose nested "
+            "sequences differ in length have no common type"
+        )
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def reject_ragged_nested_sequences(
     *,
     data: Value,
     language_name: str,
     record_fields_are_independent: bool,
+    list_elements_are_independent: bool,
 ) -> None:
     """Reject sibling lists of unequal length beside each other.
 
     A fixed-size array literal carries its length in its type, so two
     sibling arrays of different lengths have no common type and the
     generated file does not compile (issue #3924).
+
+    *list_elements_are_independent* says the enclosing list is itself
+    written as a tuple, whose element types stand apart, so siblings
+    inside one need no common type; a mapping value slot still takes
+    one type however its siblings are written (issue #4663).
     """
     match data:
         case dict():
@@ -184,21 +233,10 @@ def reject_ragged_nested_sequences(
                 and all(isinstance(key, str) for key in data)
             )
             if not (record_fields_are_independent and is_record):
-                lengths = {
-                    len(value)
-                    for value in data.values()
-                    if isinstance(value, list)
-                }
-                if len(lengths) > 1:
-                    sizes = ", ".join(
-                        str(object=length) for length in sorted(lengths)
-                    )
-                    msg = (
-                        f"{language_name} renders a sequence as a fixed-size "
-                        "array, whose length is part of its type, so sibling "
-                        f"sequences of lengths {sizes} have no common type"
-                    )
-                    raise UnrepresentableInputError(msg)
+                _reject_ragged_siblings(
+                    siblings=list(data.values()),
+                    language_name=language_name,
+                )
             for value in data.values():
                 reject_ragged_nested_sequences(
                     data=value,
@@ -206,25 +244,25 @@ def reject_ragged_nested_sequences(
                     record_fields_are_independent=(
                         record_fields_are_independent
                     ),
+                    list_elements_are_independent=(
+                        list_elements_are_independent
+                    ),
                 )
         case list():
-            lengths = {len(item) for item in data if isinstance(item, list)}
-            if len(lengths) > 1:
-                sizes = ", ".join(
-                    str(object=length) for length in sorted(lengths)
+            if not list_elements_are_independent:
+                _reject_ragged_siblings(
+                    siblings=data,
+                    language_name=language_name,
                 )
-                msg = (
-                    f"{language_name} renders a sequence as a fixed-size "
-                    "array, whose length is part of its type, so sibling "
-                    f"sequences of lengths {sizes} have no common type"
-                )
-                raise UnrepresentableInputError(msg)
             for item in data:
                 reject_ragged_nested_sequences(
                     data=item,
                     language_name=language_name,
                     record_fields_are_independent=(
                         record_fields_are_independent
+                    ),
+                    list_elements_are_independent=(
+                        list_elements_are_independent
                     ),
                 )
         case _:
