@@ -1,0 +1,5 @@
+A Fortran bound reference named after the ``module_name`` of the file
+it is wrapped in is now rejected.  A program unit and the variables it
+declares share one scope, so the two names collided and the emitted
+source did not compile.  The ``variable_form`` name was already held to
+this rule; the references declared beside it were not.
