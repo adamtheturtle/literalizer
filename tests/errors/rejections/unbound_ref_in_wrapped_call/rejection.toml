@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+A wrapped call is a complete file too, so a reference it passes along
+has to be declared in it.
+"""
+exceptions = ["RefNotSelfContainedError"]
+languages = ["Go"]
+
+[call]
+api = "literalize_call"
+sources = ['[[{"$ref": "myvar"}]]']
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+wrap_in_file = true
+ref_key = "$ref"
