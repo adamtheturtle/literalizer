@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Java RECORD types a list-valued component from the array opener the
+value formatter emits, and another sequence format carries no element
+type.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Java"]
+
+[call]
+api = "literalize"
+sources = ['{"name": "Alice", "scores": [1, 2, 3]}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "LIST" },
+]

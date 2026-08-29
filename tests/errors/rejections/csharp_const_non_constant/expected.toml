@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"CSharp['!!set {1, 2}']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['2024-01-15']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['2024-01-15T12:30:00']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['[1, 2, 3]']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['{a: 1}']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."

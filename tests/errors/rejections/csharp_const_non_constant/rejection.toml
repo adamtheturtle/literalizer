@@ -1,0 +1,20 @@
+schema_version = 1
+summary = """
+A C# const needs a compile-time constant initializer, which a
+collection literal and a date or datetime value are not.
+"""
+exceptions = ["IncompatibleFormatsError"]
+languages = ["CSharp"]
+
+[call]
+api = "literalize"
+sources = [
+  "!!set {1, 2}",
+  "2024-01-15",
+  "2024-01-15T12:30:00",
+  "[1, 2, 3]",
+  "{a: 1}",
+]
+input_format = "yaml"
+wrap_in_file = true
+modifiers = ["CONST"]

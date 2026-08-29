@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Rust = "Rust CONST requires a constant-expression initializer, but the VEC sequence format produces vec![…] which is not a constant expression. Use ARRAY or TUPLE instead."

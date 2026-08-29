@@ -1,0 +1,6 @@
+No user-facing change: the declaration-style and format incompatibility tests
+are declared as rejection manifests rather than written as unit tests, so each
+contract is expanded across the languages its gates admit and its message is
+kept in a golden file.  Only the two cases that call an option member's own
+callable, rather than going through ``literalize`` or a constructor, remain
+hand-written.
