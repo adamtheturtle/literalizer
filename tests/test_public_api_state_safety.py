@@ -1,4 +1,8 @@
-"""Public rendering boundaries remain safe under hostile shared state."""
+"""Public rendering boundaries remain safe under hostile shared state.
+
+These build a cyclic Python value, or render from several threads at
+once, neither of which a case file can declare (issue #4699).
+"""
 
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any

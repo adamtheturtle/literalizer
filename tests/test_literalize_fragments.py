@@ -1,4 +1,9 @@
-"""Tests for intentionally incomplete literal fragments."""
+"""Tests for intentionally incomplete literal fragments.
+
+Every golden case wraps its value in a whole file, so a fragment
+rendered without its delimiters has no golden surface (issue #4699,
+and #3557 for the same gap on ``LiteralizeResult``).
+"""
 
 # pylint: disable=import-private-name,protected-access,useless-suppression,wrong-spelling-in-comment
 # ruff: noqa: SLF001

@@ -1,4 +1,3 @@
-No user-facing change: the last convertible error contract, the Erlang
-module-name limit, is declared as a rejection manifest, and every error
-module that stays written out now says in its docstring what a manifest
-cannot express about it.
+No user-facing change: the test modules that stay written out rather
+than becoming golden-file or TOML-driven cases now each say why in
+their docstring.

@@ -1,4 +1,9 @@
-"""Focused tests for shared integer formatter composition."""
+"""Focused tests for shared integer formatter composition.
+
+These call the formatter factory with a pre-rendered string, so the
+composition they check is not reachable from an input document
+(issue #4699).
+"""
 
 import pytest
 

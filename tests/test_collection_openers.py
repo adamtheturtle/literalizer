@@ -1,4 +1,10 @@
-"""Tests for collection opener helpers."""
+"""Tests for collection opener helpers.
+
+These call an opener directly with values assembled in Python, which
+is what makes them useful: the typing they check has to hold for a
+shape the language then refuses, so there is no output for a golden
+file to hold (issue #4699).
+"""
 
 import pytest
 
