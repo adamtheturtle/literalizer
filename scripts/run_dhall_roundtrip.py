@@ -46,7 +46,10 @@ final ``Text`` so the emitted JSON reaches stdout verbatim.
 """
 
 import json
+import re
 import shutil
+from collections.abc import Mapping, Sequence
+from types import MappingProxyType
 
 from literalizer.languages import Dhall
 from scripts import roundtrip_common
@@ -99,21 +102,45 @@ let jsonEscape : Text -> Text =
 """
 
 # ``valueToJson`` mentions ``Value``, which the ``UNION_TYPE`` strategy
-# declares only for a document whose scalars span more than one family.
-# A single-family document binds a record of bare scalars instead, so
-# this helper is emitted only when the union exists and each entry is
-# converted directly otherwise (issue #4545).
-_VALUE_TO_JSON = """\
-let valueToJson : Value -> Text =
-      \\(v : Value) ->
-        merge
-          { Int = \\(i : Integer) -> stripPlus (Integer/show i)
-          , Double = \\(d : Double) -> Double/show d
-          , Bool = \\(b : Bool) -> if b then "true" else "false"
-          , Str = \\(s : Text) -> "\\"" ++ jsonEscape s ++ "\\""
-          }
-          v
-"""
+# declares only for a document whose scalars span more than one family,
+# and Dhall's ``merge`` wants exactly the handlers the union declares --
+# an extra one is an ``Unused handler`` error.  So the helper is emitted
+# only when the union exists, with the handlers its variants name, and
+# each entry is converted directly otherwise (issue #4545).
+_VALUE_HANDLERS: Mapping[str, str] = MappingProxyType(
+    mapping={
+        "Int": "Int = \\(i : Integer) -> stripPlus (Integer/show i)",
+        "Double": "Double = \\(d : Double) -> Double/show d",
+        "Bool": 'Bool = \\(b : Bool) -> if b then "true" else "false"',
+        "Str": 'Str = \\(s : Text) -> "\\"" ++ jsonEscape s ++ "\\""',
+    }
+)
+
+
+def _value_to_json(*, variants: Sequence[str]) -> str:
+    """Return ``valueToJson`` handling exactly *variants*."""
+    handlers = "\n          , ".join(
+        _VALUE_HANDLERS[variant] for variant in variants
+    )
+    return (
+        "let valueToJson : Value -> Text =\n"
+        "      \\(v : Value) ->\n"
+        "        merge\n"
+        f"          {{ {handlers}\n"
+        "          }\n"
+        "          v\n"
+    )
+
+
+def _union_variants(*, preamble: str) -> tuple[str, ...]:
+    """Return the variant names the emitted ``Value`` union declares."""
+    match = re.search(pattern=r"let Value = <([^>]*)>", string=preamble)
+    if match is None:
+        return ()
+    return tuple(
+        part.split(sep=":")[0].strip()
+        for part in match.group(1).split(sep="|")
+    )
 
 
 def _scalar_to_json(*, expression: str, value: object) -> str:
@@ -195,7 +222,8 @@ def _build_program(json_text: str) -> str:
         )
         raise AssertionError(msg)
     binding_without_tail = binding[: -len(_VARIABLE_TAIL)]
-    has_union = "Value" in preamble_text
+    variants = _union_variants(preamble=preamble_text)
+    has_union = bool(variants)
     entry_lines = "\n      ++ ".join(
         _entry_line(
             key=key,
@@ -205,7 +233,9 @@ def _build_program(json_text: str) -> str:
         )
         for index, (key, value) in enumerate(iterable=parsed.items())
     )
-    helpers = _TEXT_HELPERS + (_VALUE_TO_JSON if has_union else "")
+    helpers = _TEXT_HELPERS + (
+        _value_to_json(variants=variants) if has_union else ""
+    )
     return (
         f"{preamble_text}\n"
         f"{binding_without_tail}"
