@@ -9,3 +9,4 @@ target_function = "process"
 parameter_names = ["a", "b"]
 per_element = true
 ref_declarations = { big_list = "[\"x\"]" }
+consumable_refs = ["big_list"]
