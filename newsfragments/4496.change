@@ -1,5 +1,0 @@
-Drop the map-type import from a document whose maps are all recordized.  The
-import decision was made from the pre-recordization shape, so a
-``heterogeneous_strategy=RECORD`` file that renders only structs still carried
-an unused ``HashMap``, ``std::map``, ``java.util.Map`` or
-``System.Collections.Generic`` line.

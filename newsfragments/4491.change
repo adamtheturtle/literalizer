@@ -1,1 +1,0 @@
-YAML comments that ruamel stores in slots the extractor never read are now preserved: a flow collection's inner and closing comments, a comment between a mapping key and its value, a block scalar header comment, and a comment on a trailing alias node.

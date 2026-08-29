@@ -1,4 +1,0 @@
-Reject keywords that were missing from the reserved declaration-name lists of
-Crystal, JavaScript, Nim, Odin, R, Ruby, Rust, Swift and V.  Each named a
-declaration the target toolchain refuses, and in R the typed ``NA`` constants
-silently discarded the data instead.

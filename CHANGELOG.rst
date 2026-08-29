@@ -3,6 +3,308 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.29.1
+------------
+
+- Preserve a carriage return in a Bash string value.  Trailing-whitespace
+  trimming removed the carriage return of a ``\r\n`` pair, silently changing the
+  value.
+
+- Raise ``UnrepresentableStringError`` for a Bash string value carrying U+007F
+  inside a collection.  Bash inserts a spurious ``\x01`` before that byte in the
+  compound assignment an array or associative array uses, silently changing the
+  value; a lone scalar, which uses a simple assignment, is unaffected.
+
+- Without wrap_in_file, a bound ref sharing a name with the output binding is no longer rejected as a redeclaration: no declaration is emitted there, so it behaves as ref_values does.
+
+- Declarations emitted for bound_refs now take the caller pre_indent_level, instead of sitting at column zero while the binding they precede is indented.
+
+- An assignment that reads as one of a language declaration styles, such as an F# let rebind under LET_MUTABLE, is no longer refused as leaving the name undeclared.
+
+- An inline comment ending in a backslash no longer splices the following line into itself in C-family output; the guard that standalone comments already carried now applies to every inline comment.
+
+- The literalize_call docstring now describes where bound_refs and variable_form actually conflict: under wrap_in_file, where the declarations are composed, rather than in every mode.
+
+- literalize_call with ExistingVariable and wrap_in_file now raises instead of emitting an assignment to an undeclared name.
+
+- The C and Cobol CJSON backends now reject integers beyond the exact double range, embedded nulls, and floats whose printed form falls outside double range, all of which cJSON silently changed.
+
+- A long COBOL string value is now carried by several quoted runs joined with ``&`` across continuation lines, rather than by one source line past the 512 bytes GnuCOBOL reads before truncating it.
+
+- Cpp INLINE_DOCUMENT and Crystal JSON_ANY now place comments before the declaration instead of inside the JSON document they hand to the parser, which rejected them.
+
+- A deeply nested Fortran list now continues at a bracket where it has no comma to continue at, instead of running past the 132-column limit on one physical line.
+
+- A long Fortran string now leaves room for the entry prefix in front of its first chunk, which had pushed the first physical line past the 132-column limit.
+
+- Raise ``UnrepresentableIntegerError`` for a Haxe integer outside the range a
+  double holds exactly, rather than emitting a literal the target silently
+  rounds.
+
+- Raise ``UnrepresentableIntegerError`` for a Jsonnet integer outside the range a
+  double holds exactly, rather than emitting a literal the evaluator silently
+  rounds.
+
+- ``Odin(json_type=JSON_VALUE)`` now refuses an integer outside the signed 64-bit range, which the runtime parser wrapped around, and an object name that is empty, which it discarded along with its value.
+
+- Emit a bidirectional formatting character in an R string as its ``\uXXXX``
+  escape.  The R parser refuses a raw one with "bidi formatting not allowed, use
+  escapes instead".
+
+- Spell an R float in the widest exponent as a hexadecimal literal, which the R
+  parser reads exactly.  Its decimal parser is several units in the last place
+  out at that magnitude and overflows a value near the maximum to ``Inf``.
+
+- A reference marker with no value supplied no longer reaches preamble inference as the mapping it is written as, so the rendered code no longer asks for imports and type machinery for a map it never contains. An ``ref_values`` entry naming something else no longer changes the preamble of identical code either.
+
+- Inline comments on TOML dotted-key entries are now preserved instead of being dropped.
+
+- A comment on a TOML key that follows a multiline value is now placed on that key rather than inside the value above it.
+
+- Comments written inside a TOML table, and before a later array-of-tables entry, are now preserved instead of being dropped.
+
+- Toml wrap_in_file no longer removes a comma from a string value that is followed by a hash or the end of the line.
+
+- Toml wrap_in_file no longer splits a string value on U+0085, U+2028 or U+2029, which produced an unparseable document.
+
+- Spell the minimum ``Long`` as ``Long.MinValue`` inside a Visual Basic typed
+  array, as the scalar form already did.  Visual Basic reads the raw literal as a
+  negation of a value one past ``Long.MaxValue`` and refuses it with ``BC30036``.
+
+- Render each Visual Basic map value on its own terms instead of pooling one
+  integer width across the map.  A document mixing a value beyond the signed
+  64-bit range with an ordinary negative one was refused, though the map's value
+  slot is ``Object`` and each value carries its own type.
+
+- Raise ``UnrepresentableInputError`` for a subnormal Wren float.  The Wren lexer
+  reports such a literal as out of range, so the emitted file did not compile.
+
+- A YAML standalone comment written at an indentation between the enclosing collection and the nested one it follows is no longer dropped; the innermost enclosing collection it is not outdented from now claims it.
+
+- YAML comments that ruamel stores in slots the extractor never read are now preserved: a flow collection's inner and closing comments, a comment between a mapping key and its value, a block scalar header comment, and a comment on a trailing alias node.
+
+- Reject ``init`` as a Go declaration name.  A generated stub for it neither
+  declares nor calls: ``init`` must take no arguments and return nothing, and
+  cannot be referenced.
+
+- Reject a PHP declaration name that a function from the always-present ``Core``
+  or ``standard`` extension already takes.  Declaring one of those names again is a fatal error, so
+  the generated stub did not load.
+
+- Drop the map-type import from a document whose maps are all recordized.  The
+  import decision was made from the pre-recordization shape, so a
+  ``heterogeneous_strategy=RECORD`` file that renders only structs still carried
+  an unused ``HashMap``, ``std::map``, ``java.util.Map`` or
+  ``System.Collections.Generic`` line.
+
+- A comment_source entry ending in a backslash no longer comments out the call written on the following line in C-family output and in Tcl.
+
+- A Tcl call statement whose argument renders over several lines now carries the backslash continuations Tcl needs, instead of being read as separate commands.
+
+- A wrapped result whose data names a reference with no ``bound_refs`` entry is now refused. Only ``bound_refs`` emits a declaration for a reference, so the file named an identifier nothing gave a value, which a compiled target rejects.
+
+- ``Cpp(heterogeneous_strategy=RECORD)`` now names a recordized mapping by its generated ``struct`` where the heterogeneous carrier lists it as an alternative. The carrier named the mapping type the value would have taken otherwise, which the recordized element did not match.
+
+- Raise ``UnrepresentableIntegerError`` for a Forth integer outside the signed
+  64-bit range, rather than emitting a literal that a cell reads back negated or
+  wrapped.
+
+- Raise ``UnrepresentableIntegerError`` for a Matlab integer outside the range a
+  double holds exactly, rather than emitting a literal the runtime silently
+  rounds.
+
+- Raise ``UnrepresentableIntegerError`` for a Nix integer outside the signed
+  64-bit range.  Such a value was routed through ``builtins.fromJSON``, which
+  parses one at or above ``2**64`` into a float and throws on evaluation between
+  ``2**63`` and ``2**64``.
+
+- Reject R ``NewVariable`` names that begin with an underscore: an R symbol
+  begins with a letter, so the emitted file was a syntax error.
+
+- Six ``RECORD`` back ends now refuse a dict key their compiler cannot take as a field name, or escape it where the language has a spelling for it. Go refuses the blank identifier, Nim a name that is not a Nim identifier or that folds onto a keyword, V an uppercase letter or a leading underscore, Odin a builtin type name, and Scala the wildcard; Kotlin and Scala write the rest in backticks.
+
+- Raise ``RefOutputCollisionError`` when a ref identifier is the name the output
+  binding declares.  The emitted code read the binding being declared, which was
+  either a guaranteed runtime error or a silent self-reference.
+
+- Reject keywords that were missing from the reserved declaration-name lists of
+  Crystal, JavaScript, Nim, Odin, R, Ruby, Rust, Swift and V.  Each named a
+  declaration the target toolchain refuses, and in R the typed ``NA`` constants
+  silently discarded the data instead.
+
+- Raise ``UnrepresentableIntegerError`` for a Roc integer outside the ``I128``
+  range, rather than emitting an ``i128`` literal the compiler rejects as out of
+  range.
+
+- Emit an embedded NUL in a Scheme string as the fixed-width ``\x00`` escape the
+  default Guile reader implements.  The R6RS ``\x00;`` form the backend used
+  needs a reader option the emitted code does not enable, so the terminating
+  semicolon was read as a literal character.
+
+- Reject the blank identifier ``_`` as a declaration name in Elixir, Haskell,
+  Kotlin and Rust, and reject every all-underscore name in Kotlin, where such a
+  name is reserved rather than bindable.
+
+- A YAML comment on its own line after a scalar document is now emitted as a standalone comment rather than being attached to the value as an inline comment.
+
+- Raise ``UnrepresentableStringError`` for a plain COBOL string value carrying a
+  tab, newline or carriage return.  Such a character was silently replaced with a
+  space; the ``json_type=CJSON`` backend, which splices it as an ``X"NN"``
+  fragment, is unaffected.
+
+- Preserve a carriage return in a string value for the back ends that embed one
+  literally: Bash, Common Lisp and Raku.  Trailing-whitespace trimming removed
+  the carriage return of a ``\r\n`` pair, silently changing the value.
+
+- A C# array of maps is now declared with the element type the map opener writes, rather than one derived from the map's contents that the rendered element did not match.
+
+- Emit a bidirectional formatting character in a D string as its ``\uXXXX``
+  escape, in the WYSIWYG string format as well as the quoted one.  The D compiler refuses a
+  raw one with "Bidirectional control characters are disallowed for security
+  reasons".
+
+- Java datetimes whose offset exceeds the 18 hours ZoneOffset accepts now render as the equivalent UTC instant instead of code that throws at run time.
+
+- JSON5 input now accepts a raw U+2028 or U+2029 inside a string, which the JSON5 specification allows so that every JSON document is also a JSON5 document.
+
+- Accept a surrogate-pair escape in JSON5 input.  The pair was left uncombined
+  and then refused as an unpaired surrogate, so a JSON document containing a
+  default-serialized astral character failed on the JSON5 path.
+
+- Keep a JavaScript or TypeScript naive date in a year below 100 at that year.
+  The numeric ``Date`` constructor maps a year argument of 0 to 99 to
+  ``1900 + year``, so such a value silently shifted by 1900 years.
+
+- Accept a Julia datetime whose fraction is a whole number of milliseconds, which
+  ``Dates.DateTime`` stores exactly.  Any fraction was refused; only a
+  sub-millisecond one is now.
+
+- HCL and Raku now reject a string that is not in Unicode NFC form, which both targets silently normalized with no escape spelling that avoided it.
+
+- Spell a ``__proto__`` dict key as a computed property in JavaScript and
+  TypeScript.  A quoted ``__proto__`` key in an object literal sets the prototype
+  instead of defining a property, so the entry was silently lost.
+
+- Raku single-element list literals now carry a trailing comma, so a one-element list holding a list or a map is no longer flattened by the single-argument rule.
+
+- Reject a capitalized ``target_function`` for Elm, Gleam, Haskell, OCaml and
+  PureScript when ``wrap_in_file`` is set: the generated file declares the target
+  as a function, which a name those languages read as a constructor cannot be.
+  Elm also rejects a leading-underscore name, which its grammar has no place for.
+
+- Wrapped call statements whose argument renders over several lines now keep their continuation lines: Haskell, Elm, PureScript and Roc no longer repeat the binding prefix on each line, and Fortran emits the ampersand continuations such a statement needs.
+
+- Reject a Fortran, Visual Basic or Zig call parameter named after the
+  ``target_function`` it belongs to.  The generated stub declared the name twice
+  and the toolchain refused it.
+
+- Raise ``DelimiterlessWrappedFileError`` when ``include_delimiters=False`` is
+  combined with ``wrap_in_file=True``.  The pair produced a bare collection
+  fragment presented as a complete source file.
+
+- Reject two Fortran ``module_name`` values that produce a file gfortran refuses:
+  ``fval_m``, the support module every wrapped file emits, and a name equal to
+  the variable the file binds, which a program unit cannot declare twice.
+
+- Hoist the imports of a wrapped Haskell call above its target-function stub.
+  An argument value needing a preamble import, such as a datetime, produced a
+  file GHC rejects with ``parse error on input 'import'``.
+
+- ``Haxe`` and ``Crystal`` now refuse a ``module_name`` that names a standard library type. A Haxe type declaration shadows the type it is named after, and a Crystal class or struct cannot be reopened as a module, so neither wrapper compiled.
+
+- Reject an Objective-C ``module_name`` that names a C library function.  A
+  wrapped file imports Foundation, which brings the prototype into scope, so the
+  generated wrapper declared it again with a different signature and clang refused
+  the file.
+
+- pre_indent_level combined with wrap_in_file is now rejected for languages that read indentation as structure, where it produced a file the target cannot parse.
+
+- Rust and Java record_shape_names entries that name a type the generated code itself uses, such as Vec or String, are now rejected instead of producing output the compiler refuses.
+
+- A Swift call binding no longer annotates its variable with the input data type, which did not match the call result and failed to compile.
+
+- Keep a TOML inline table on one line under the multiline collection layout.
+  TOML forbids a multi-line inline table, so the emitted document did not parse.
+
+- Reject Gleam `NewVariable` names that are not snake_case: an uppercase letter
+  anywhere, or a leading underscore, produces a file the Gleam compiler rejects.
+
+- The negative-zero rejection for the Haskell AESON, Elm and PureScript JSON value types now applies to call arguments as well as declared values.
+
+- Raise ``UnrepresentableNullError`` for a null Perl hash key.  A Perl hash key
+  is always a string, so such a key was emitted as the bareword ``undef``, which
+  the fat comma quoted into the ordinary string key ``"undef"``.
+
+- Haskell AESON_VALUE, Zig STD_JSON_VALUE, PureScript ARGONAUT_JSON and C CJSON now emit source comments before the declaration instead of dropping them.
+
+- Reject reserved words and locked builtin names that seven languages accepted
+  as a call target, a call parameter name or a declaration name: Ada, Cobol,
+  Mojo, Standard ML, SystemVerilog, V and Wren.  A Common Lisp call target may
+  no longer name a symbol of the locked ``COMMON-LISP`` package, in any
+  spelling.
+
+- A Jsonnet call whose argument renders over several lines is no longer split into one array element per line, which produced doubled and leading commas.
+
+- Reject Jsonnet keywords as call target components and call parameter names:
+  every one of them named a binding or a field the Jsonnet parser refuses.
+
+- An integer with more decimal digits than the interpreter converts to text now raises ExcessiveIntegerDigitsError from every input format and from the renderer, instead of a bare ValueError on the JSON and rendering paths.
+
+- PureScript no longer leaks a RecursionError for input the shared parse-depth guard admits: its value walks use an explicit stack instead of recursion.
+
+- A YAML alias that names the node containing it is now rejected with a message naming the alias, instead of being silently replaced with null or reported as excessive nesting depth.
+
+- A MATLAB string holding a null is now built by concatenating character vectors rather than by splicing through ``sprintf``, whose ``%s`` conversion copies only up to the first null and so dropped the rest of the value.
+
+- BothVariableForms combined with a modifier that binds a name once, such as C++ const, Java final or C# readonly, is now rejected instead of emitting an assignment to an immutable binding.
+
+- A reference nested inside a collection call argument now gives the container around it the type the reference holds, rather than the type the marker's own shape would suggest. A mapping holding a reference to a list was written as a mapping of mappings of strings, which no compiled target accepts.
+
+- ``Cpp(language_version=CPP14, heterogeneous_strategy=RECORD)`` now emits the carrier struct the rendered value refers to. A list written as a carrier-typed vector was counted as a tuple, which asks for no carrier, so the file named a type it never declared.
+
+- Sibling maps under a mapping now get the explicit carrier construction their widened value type requires under ``Cpp(language_version=CPP14)``. Only siblings under a list did, so the mapping case emitted an initializer the explicit carrier constructor refuses.
+
+- A C++ collection mixing a negative integer with one above the signed 64-bit range is now rejected instead of declaring an unsigned element type the negative value cannot narrow to.
+
+- The eager Python 3.8 preamble now imports the typing aliases an unconditional variable annotation names, not only the ones an empty collection forces.
+
+- ``CSharp(heterogeneous_strategy=RECORD)`` now splits records whose same-named field takes conflicting types, as every other statically typed back end does. Records that could not compile were accepted instead.
+
+- Make Perl's fixed float format fall back to scientific notation for tiny
+  values whose fixed-point spelling exceeds Perl's numeric-token limit.
+
+- Make R's fixed float format fall back to scientific notation for extreme
+  magnitudes that R's decimal parser would otherwise round incorrectly.
+
+- Preserve nested scalar inline comments and following standalone comments in
+  per-element calls generated from YAML.
+
+- Preserve an inline comment on the last scalar of a nested YAML collection when
+  it is followed by an outdented comment for the next parent element.
+
+- ``Rust(sequence_format=TUPLE)`` now accepts sibling sequences of different lengths inside a list. A tuple's element types stand apart, so such siblings need no common type; a mapping value slot still takes one type and is unchanged.
+
+- An inline comment on a scalar inside a call element now reaches the generated call line even when no standalone comment follows the element.
+  A separator or terminator written after an inline call comment now goes before it, so Erlang, Jsonnet and Roc no longer put the clause terminator, array comma or dbg closer inside the comment.
+
+- Two sequences of the same outer length whose nested sequences differ in length are now refused where a fixed-size type spells a length at every level it nests. Only the outer length was compared, so the two took different types and the file did not compile.
+
+- An ordered map call argument now takes the type its reference holds, rather than the type the marker's own shape would suggest. Only the mapping and sequence openers read a reference-resolved view of their container.
+
+- Renamed 94 news fragments from ``.bugfix`` to ``.change`` so ``towncrier`` includes them, and added a ``prek`` hook that rejects any other suffix.
+
+- Narrow and complete the name rejections added alongside the recent call and
+  declaration fixes, following review: a module-qualified call target is accepted
+  again for OCaml and PureScript, only the leading component of a Common Lisp
+  dotted target is measured against the locked package, a Fortran or Visual Basic
+  parameter may repeat a dotted target's earlier component, and a Fortran
+  ``BothVariableForms`` binding may share the wrapper's name.  The Cobol
+  control-character rejection now covers call arguments, the ref-versus-output
+  collision check honours the target language's identifier case sensitivity, the
+  Fortran wrapper-name collision is caught on ``literalize_call`` too, and two
+  JSON5 keys that differ only in surrogate spelling are refused as duplicates
+  rather than silently collapsing.
+
 2026.08.29
 ----------
 

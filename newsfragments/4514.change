@@ -1,3 +1,0 @@
-Preserve a carriage return in a string value for the back ends that embed one
-literally: Bash, Common Lisp and Raku.  Trailing-whitespace trimming removed
-the carriage return of a ``\r\n`` pair, silently changing the value.

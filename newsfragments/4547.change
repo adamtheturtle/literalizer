@@ -1,5 +1,0 @@
-Reject reserved words and locked builtin names that seven languages accepted
-as a call target, a call parameter name or a declaration name: Ada, Cobol,
-Mojo, Standard ML, SystemVerilog, V and Wren.  A Common Lisp call target may
-no longer name a symbol of the locked ``COMMON-LISP`` package, in any
-spelling.

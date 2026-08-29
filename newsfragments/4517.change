@@ -1,1 +1,0 @@
-Java datetimes whose offset exceeds the 18 hours ZoneOffset accepts now render as the equivalent UTC instant instead of code that throws at run time.

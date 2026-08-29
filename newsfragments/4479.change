@@ -1,3 +1,0 @@
-Spell an R float in the widest exponent as a hexadecimal literal, which the R
-parser reads exactly.  Its decimal parser is several units in the last place
-out at that magnitude and overflows a value near the maximum to ``Inf``.

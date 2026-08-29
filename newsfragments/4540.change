@@ -1,2 +1,0 @@
-Reject Gleam `NewVariable` names that are not snake_case: an uppercase letter
-anywhere, or a leading underscore, produces a file the Gleam compiler rejects.

@@ -1,1 +1,0 @@
-``Rust(sequence_format=TUPLE)`` now accepts sibling sequences of different lengths inside a list. A tuple's element types stand apart, so such siblings need no common type; a mapping value slot still takes one type and is unchanged.

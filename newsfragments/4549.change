@@ -1,2 +1,0 @@
-Reject Jsonnet keywords as call target components and call parameter names:
-every one of them named a binding or a field the Jsonnet parser refuses.

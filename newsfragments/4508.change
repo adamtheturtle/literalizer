@@ -1,3 +1,0 @@
-Raise ``UnrepresentableIntegerError`` for a Roc integer outside the ``I128``
-range, rather than emitting an ``i128`` literal the compiler rejects as out of
-range.

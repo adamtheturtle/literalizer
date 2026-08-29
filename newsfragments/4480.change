@@ -1,1 +1,0 @@
-A reference marker with no value supplied no longer reaches preamble inference as the mapping it is written as, so the rendered code no longer asks for imports and type machinery for a map it never contains. An ``ref_values`` entry naming something else no longer changes the preamble of identical code either.

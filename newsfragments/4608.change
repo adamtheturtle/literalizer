@@ -1,2 +1,0 @@
-Preserve nested scalar inline comments and following standalone comments in
-per-element calls generated from YAML.

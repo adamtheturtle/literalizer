@@ -1,1 +1,0 @@
-Two sequences of the same outer length whose nested sequences differ in length are now refused where a fixed-size type spells a length at every level it nests. Only the outer length was compared, so the two took different types and the file did not compile.
