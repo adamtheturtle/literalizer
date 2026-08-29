@@ -1,4 +1,9 @@
-"""Validation for timezone-aware ``datetime.time`` values."""
+"""Validation for timezone-aware ``datetime.time`` values.
+
+A manifest spells ``bound_refs`` as a TOML inline table, and TOML has
+no offset-carrying time, so the value these bind cannot be written in
+one.
+"""
 
 import datetime
 

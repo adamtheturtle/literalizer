@@ -1,4 +1,10 @@
-"""Unpaired UTF-16 surrogate input is rejected before rendering."""
+"""Unpaired UTF-16 surrogate input is rejected before rendering.
+
+Half of these sources carry a raw lone surrogate, which is not valid
+UTF-8 and so cannot be written into a manifest's TOML at all.  The
+escaped half is generated from the same factories, so it stays beside
+the raw half rather than being split across two places.
+"""
 
 from collections.abc import Callable
 

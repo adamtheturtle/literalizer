@@ -1,20 +1,11 @@
-"""Validation tests for target-language module names."""
+"""The module-name boundary that is still valid.
 
-import pytest
+The rejection is declared in ``tests/errors/rejections`` and run by
+``test_rejections.py``.  What is left here is the acceptance side, which
+no rejection manifest expresses.
+"""
 
-from literalizer.exceptions import InvalidModuleNameError
 from literalizer.languages import Erlang
-
-
-def test_erlang_rejects_module_name_beyond_atom_limit() -> None:
-    """An Erlang module name must fit in the virtual machine atom
-    limit.
-    """
-    with pytest.raises(
-        expected_exception=InvalidModuleNameError,
-        match="Erlang cannot use module_name",
-    ):
-        Erlang(module_name="a" * 256)
 
 
 def test_erlang_accepts_module_name_at_atom_limit() -> None:

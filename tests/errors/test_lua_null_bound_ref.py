@@ -1,4 +1,8 @@
-"""Lua errors for invalid table keys supplied through refs."""
+"""Lua errors for invalid table keys supplied through refs.
+
+A manifest spells ``bound_refs`` as a TOML inline table, which has no
+null, so the ``None`` these bind cannot be written in one.
+"""
 
 from __future__ import annotations
 

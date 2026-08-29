@@ -1,4 +1,9 @@
-"""Errors for declaration modifiers from another language."""
+"""Errors for declaration modifiers from another language.
+
+A manifest names a modifier and the runner resolves it against the
+language under test, which is the opposite of what these need: a
+modifier belonging to some other language.
+"""
 
 import re
 from collections.abc import Callable

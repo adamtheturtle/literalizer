@@ -1,4 +1,9 @@
-"""Negative-path checks for wrap-mode preamble scoping."""
+"""Negative-path checks for wrap-mode preamble scoping.
+
+These call an internal helper with a malformed spec to reach its
+guard, which no public entry point can be made to do, so a rejection
+manifest cannot declare them.
+"""
 
 import importlib
 import inspect
