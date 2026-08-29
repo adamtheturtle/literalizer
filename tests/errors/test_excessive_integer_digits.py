@@ -1,5 +1,8 @@
 """Rejection tests for integers too wide for the interpreter to write out.
 
+The refusal only happens while a fixture has lowered the interpreter's
+conversion limit, which a rejection manifest has no way to install.
+
 CPython caps ``int``-to-``str`` conversion at
 ``sys.get_int_max_str_digits()`` decimal digits.  The limit is lowered
 here rather than written into a fixture so the inputs stay small and the

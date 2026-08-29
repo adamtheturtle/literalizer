@@ -1,4 +1,8 @@
-"""Tests for Literalizer's public exception hierarchy."""
+"""Tests for Literalizer's public exception hierarchy.
+
+These make no call and raise nothing, so there is no rejection for a
+manifest to declare: the subject is which class inherits from which.
+"""
 
 import literalizer.exceptions
 from literalizer import LiteralizerError

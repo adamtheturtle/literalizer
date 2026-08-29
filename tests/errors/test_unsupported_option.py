@@ -1,4 +1,10 @@
-"""Tests for typed failures from unsupported language options."""
+"""Tests for typed failures from unsupported language options.
+
+The subject is the structured ``language_name`` and ``option``
+attributes rather than the message a rejection manifest keeps in a
+golden file, and the second case asserts a bare ``TypeError``, which
+is not a name in ``literalizer.exceptions`` for a manifest to spell.
+"""
 
 import pytest
 

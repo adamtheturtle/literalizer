@@ -1,4 +1,8 @@
-"""Validation of Rust empty-container type hints."""
+"""Validation of Rust empty-container type hints.
+
+The option these drive is a mapping keyed by tuples, which no kind of
+declared constructor argument spells.
+"""
 
 from collections.abc import Mapping
 

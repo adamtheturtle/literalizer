@@ -1,7 +1,4 @@
-No user-facing change: more error contracts are declared as rejection
-manifests rather than written as unit tests, so each is expanded across
-the languages its gates admit and its message is kept in a golden file.
-Several of those expansions found languages the hand-written lists had
-missed. A manifest can now pass ``None`` for an option whose default is
-a member, declare ``variable_form = "both"``, and take the case's value
-as an option member's name.
+No user-facing change: the last convertible error contract, the Erlang
+module-name limit, is declared as a rejection manifest, and every error
+module that stays written out now says in its docstring what a manifest
+cannot express about it.

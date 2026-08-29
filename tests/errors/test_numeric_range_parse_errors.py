@@ -1,4 +1,8 @@
-"""Numeric parser behavior that cannot share the cached YAML runner."""
+"""Numeric parser behavior that cannot share the cached YAML runner.
+
+The refusal comes from a parser the test has to configure itself, so
+it is not reachable through the call a rejection manifest declares.
+"""
 
 import pytest
 

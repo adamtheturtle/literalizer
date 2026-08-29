@@ -1,4 +1,9 @@
-"""Negative-path checks for nested collection rendering context."""
+"""Negative-path checks for nested collection rendering context.
+
+These call an internal helper with a malformed object to reach its
+guard, which no public entry point can be made to do, so a rejection
+manifest cannot declare them.
+"""
 
 import importlib
 import inspect

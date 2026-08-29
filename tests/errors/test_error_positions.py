@@ -1,4 +1,9 @@
-"""Structured source positions on public errors."""
+"""Structured source positions on public errors.
+
+The subject is the ``line``, ``column`` and ``path`` attributes an
+error carries, not the message a rejection manifest keeps in a golden
+file.
+"""
 
 import json
 

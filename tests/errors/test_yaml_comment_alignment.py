@@ -1,4 +1,8 @@
-"""Tests for YAML comment alignment errors."""
+"""Tests for YAML comment alignment errors.
+
+The input is built by patching what the YAML parser hands back, so
+there is no source string a rejection manifest could declare.
+"""
 
 import importlib
 
