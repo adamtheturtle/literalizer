@@ -347,12 +347,10 @@ class PowerShell(metaclass=LanguageCls):
     supports_non_string_dict_keys = True
     checks_raw_control_dict_keys_separately = False
 
-    format_call_arg: ClassVar["staticmethod[[Value, str], str]"] = (
-        staticmethod(
-            _powershell_call_arg,
-        )
-    )
-    """Callable that rewrites a formatted direct call argument."""
+    @cached_property
+    def format_call_arg(self) -> Callable[[Value, str], str]:
+        """Return the rewriting a formatted call argument goes through."""
+        return _powershell_call_arg
 
     class DateFormats(enum.Enum):
         """Date format options for PowerShell."""
