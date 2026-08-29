@@ -685,6 +685,27 @@ class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
         self.language_name = language_name
 
 
+class RefNotSelfContainedError(InvalidRenderArgumentError):
+    """Raised when a complete file would name an undeclared reference."""
+
+    def __init__(
+        self,
+        *,
+        language_name: str,
+        ref_names: frozenset[str],
+    ) -> None:
+        """Create a ``RefNotSelfContainedError``."""
+        names = ", ".join(sorted(ref_names))
+        super().__init__(
+            f"{language_name} cannot combine wrap_in_file=True with the "
+            f"unbound reference {names} because a complete file has to "
+            "declare every name it uses; pass the value in bound_refs so "
+            "a binding is emitted for it"
+        )
+        self.language_name = language_name
+        self.ref_names = ref_names
+
+
 class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 

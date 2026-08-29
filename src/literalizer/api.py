@@ -527,6 +527,8 @@ def literalize(
         ref_key=effective_ref_key,
         record_null_substitutions=materialized_record_null_substitutions,
         collection_layout=collection_layout,
+        wrap_in_file=wrap_in_file,
+        bound_ref_names=frozenset(materialized_bound_refs),
     )
     return literalize_apply_form(
         pre_form=pre_form,

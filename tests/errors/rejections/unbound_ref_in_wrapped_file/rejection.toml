@@ -1,0 +1,15 @@
+schema_version = 1
+summary = """
+A complete file has to declare every name it uses, and only bound_refs
+emits a declaration for a reference.
+"""
+exceptions = ["RefNotSelfContainedError"]
+languages = ["Go"]
+
+[call]
+api = "literalize"
+sources = ['{"a": {"$ref": "myvar"}}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+ref_key = "$ref"

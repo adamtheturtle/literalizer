@@ -99,6 +99,7 @@ from literalizer.exceptions import (
     LiteralizerError,
     ParameterCountMismatchError,
     PerElementNotListError,
+    RefNotSelfContainedError,
     RefOutputCollisionError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
@@ -3555,10 +3556,12 @@ def literalize_pre_form(
     ref_key: str,
     record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
+    wrap_in_file: bool,
+    bound_ref_names: frozenset[str],
 ) -> _PreFormState:
     """Run pre-form rendering with typed recursion failures."""
     try:
-        return _literalize_pre_form_impl(
+        pre_form = _literalize_pre_form_impl(
             source=source,
             input_format=input_format,
             language=language,
@@ -3572,6 +3575,15 @@ def literalize_pre_form(
         )
     except RecursionError as exc:
         raise recursion_parse_error(input_format=input_format) from exc
+    reject_unbound_refs_in_file(
+        data=pre_form.data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        bound_ref_names=bound_ref_names,
+        language_name=type(language).__name__,
+        wrap_in_file=wrap_in_file,
+    )
+    return pre_form
 
 
 @beartype
@@ -3934,6 +3946,8 @@ def literalize_both_forms(
         ref_key=ref_key,
         record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
+        wrap_in_file=True,
+        bound_ref_names=frozenset(bound_refs),
     )
     declaration = literalize_apply_form(
         pre_form=pre_form,
@@ -4037,6 +4051,8 @@ def literalize_bound_refs(
         ref_key=ref_key,
         record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
+        wrap_in_file=True,
+        bound_ref_names=frozenset(bound_refs),
     )
     declaration_form = (
         NewVariable(
@@ -4363,6 +4379,73 @@ def _contains_ref_marker(*, value: Value, ref_key: str) -> bool:
             )
         case _:
             return False
+
+
+@beartype
+def _collect_ref_names(*, value: Value, ref_key: str) -> frozenset[str]:
+    """Return every reference name a value names."""
+    name = _extract_call_arg_ref_name(value=value, ref_key=ref_key)
+    if name is not None:
+        return frozenset({name})
+    match value:
+        case dict():
+            return frozenset[str]().union(
+                *(
+                    _collect_ref_names(value=item, ref_key=ref_key)
+                    for item in value.values()
+                )
+            )
+        case list():
+            return frozenset[str]().union(
+                *(
+                    _collect_ref_names(value=item, ref_key=ref_key)
+                    for item in value
+                )
+            )
+        case _:
+            return frozenset()
+
+
+@beartype
+def reject_unbound_refs_in_file(
+    *,
+    data: Value,
+    ref_key: str,
+    ref_case: IdentifierCase | None,
+    bound_ref_names: frozenset[str],
+    language_name: str,
+    wrap_in_file: bool,
+) -> None:
+    """Reject a complete file that would name an undeclared reference.
+
+    A wrapped result is a whole file, so every name it uses has to be
+    declared in it.  ``bound_refs`` is what emits those declarations;
+    a reference with no entry there leaves the file naming an
+    identifier nothing gives a value (issue #4499).
+
+    Both sides are read in *ref_case*, which is the spelling the
+    emitted code uses, so a binding named in another case still
+    answers for the marker.  An unwrapped result is a fragment the
+    caller places, so it is free to name what it does not declare.
+    """
+    if not wrap_in_file:
+        return
+
+    def _spelled(name: str, /) -> str:
+        """Return *name* as the emitted code spells it."""
+        return name if ref_case is None else ref_case.convert(name=name)
+
+    bound = {_spelled(name) for name in bound_ref_names}
+    unbound = {
+        name
+        for name in _collect_ref_names(value=data, ref_key=ref_key)
+        if _spelled(name) not in bound
+    }
+    if unbound:
+        raise RefNotSelfContainedError(
+            language_name=language_name,
+            ref_names=frozenset(unbound),
+        )
 
 
 @beartype
@@ -6634,6 +6717,14 @@ def literalize_call_parsed(
     entry point.
     """
     data = parsed.data
+    reject_unbound_refs_in_file(
+        data=data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        bound_ref_names=frozenset(bound_refs or {}),
+        language_name=type(language).__name__,
+        wrap_in_file=wrap_in_file,
+    )
     _validate_ref_case_is_injective(
         value=data,
         ref_key=ref_key,
