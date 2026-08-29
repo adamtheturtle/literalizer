@@ -3,6 +3,13 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.29
+----------
+
+- Every language now declares for itself what it once inherited from a default held one level up, so nothing takes a behavior nobody considered for it. A meta-test holds every language to the list.
+
+- No user-facing change: the ``strict-kwargs`` development dependency is updated, its pre-commit hook entry is corrected for the current CLI, and the calls the updated checker reports are respelled with keyword arguments.
+
 2026.08.27
 ----------
 
