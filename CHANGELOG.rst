@@ -81,7 +81,7 @@ Changelog
 
 - A YAML standalone comment written at an indentation between the enclosing collection and the nested one it follows is no longer dropped; the innermost enclosing collection it is not outdented from now claims it.
 
-- YAML comments that ruamel stores in slots the extractor never read are now preserved: a flow collection's inner and closing comments, a comment between a mapping key and its value, a block scalar header comment, and a comment on a trailing alias node.
+- Preserve four more YAML comments that ruamel stores in slots the extractor never read: the inner and closing comments of a flow collection, the comment between a mapping key and its value, the header comment of a block scalar, and the comment on a trailing alias node.
 
 - Reject ``init`` as a Go declaration name.  A generated stub for it neither
   declares nor calls: ``init`` must take no arguments and return nothing, and
@@ -226,7 +226,7 @@ Changelog
 - Keep a TOML inline table on one line under the multiline collection layout.
   TOML forbids a multi-line inline table, so the emitted document did not parse.
 
-- Reject Gleam `NewVariable` names that are not snake_case: an uppercase letter
+- Reject Gleam ``NewVariable`` names that are not snake_case: an uppercase letter
   anywhere, or a leading underscore, produces a file the Gleam compiler rejects.
 
 - The negative-zero rejection for the Haskell AESON, Elm and PureScript JSON value types now applies to call arguments as well as declared values.
