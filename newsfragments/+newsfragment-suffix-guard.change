@@ -1,0 +1,1 @@
+Restored 94 news fragments that used the ``.bugfix`` suffix, which ``towncrier`` silently ignored, and added a ``prek`` hook that rejects any fragment whose suffix is not ``.change``.

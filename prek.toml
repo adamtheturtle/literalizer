@@ -140,6 +140,21 @@ hooks = [
 repo = "local"
 hooks = [
   {
+    id = "newsfragment-suffix",
+    name = "newsfragment-suffix",
+    # ``change`` is the only fragment type ``[tool.towncrier]`` declares,
+    # so a fragment with any other suffix is silently dropped at release
+    # time rather than rejected.  Documenting the rule in the
+    # contributing guide did not stop it happening, so fail here instead.
+    entry = "News fragments must use the .change suffix; towncrier ignores every other suffix.",
+    language = "fail",
+    files = "^newsfragments/",
+    exclude = '\.change$|^newsfragments/\.gitkeep$',
+    priority = 500,
+    stages = ["pre-commit"],
+    groups = ["fast"]
+  },
+  {
     id = "actionlint",
     name = "actionlint",
     entry = "uv run --extra=dev actionlint",
