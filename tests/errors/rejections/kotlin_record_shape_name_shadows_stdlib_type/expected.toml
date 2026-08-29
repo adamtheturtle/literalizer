@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+"Kotlin['Any']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Any', which names a type the generated code itself uses."
+"Kotlin['IntArray']" = "record_shape_names entry for keys ['a', 'b'] maps to 'IntArray', which names a type the generated code itself uses."
+"Kotlin['LinkedHashMap']" = "record_shape_names entry for keys ['a', 'b'] maps to 'LinkedHashMap', which names a type the generated code itself uses."
+"Kotlin['LocalDate']" = "record_shape_names entry for keys ['a', 'b'] maps to 'LocalDate', which names a type the generated code itself uses."
+"Kotlin['Map']" = "record_shape_names entry for keys ['a', 'b'] maps to 'Map', which names a type the generated code itself uses."
