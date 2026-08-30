@@ -1,6 +1,9 @@
 """Nested-shape scope tests for Rust tuple-with-Vec rendering."""
 
+import pytest
+
 import literalizer
+from literalizer.exceptions import MixedListValuesError
 from literalizer.languages import Rust
 
 
@@ -32,6 +35,14 @@ def test_populated_vec_slots_do_not_need_empty_vec_inference() -> None:
     rendered = _render(source="[[1, [2]], [3, [4]]]")
     assert "(1, vec![2])" in rendered
     assert "(3, vec![4])" in rendered
+
+
+def test_empty_vec_does_not_mask_conflicting_populated_siblings() -> None:
+    """An empty Vec is a wildcard, not evidence that all siblings
+    agree.
+    """
+    with pytest.raises(expected_exception=MixedListValuesError):
+        _render(source='[[1, []], [2, [3]], [4, ["x"]]]')
 
 
 def test_tuple_inside_tuple_is_collected_independently() -> None:

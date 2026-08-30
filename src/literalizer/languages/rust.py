@@ -2505,8 +2505,10 @@ def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
 
     def _uniform_siblings(value: list[Value], /) -> bool:
         """Return whether every item has one compatible Rust type."""
-        return not value or all(
-            _compatible(value[0], sibling) for sibling in value[1:]
+        return all(
+            _compatible(left, right)
+            for index, left in enumerate(iterable=value)
+            for right in value[index + 1 :]
         )
 
     def _walk(value: Value, *, inside_uniform_list: bool) -> None:
