@@ -8,3 +8,4 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["ops"]
 per_element = true
+requires_standalone_wrapped_comments = true
