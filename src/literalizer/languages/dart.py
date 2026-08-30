@@ -214,9 +214,7 @@ def _validate_dart_mixed_numeric_data(
     """
     if isinstance(data, dict):
         items = list(data.values())
-    elif isinstance(data, set) or (
-        isinstance(data, list) and not sequence_is_tuple
-    ):
+    elif isinstance(data, list) and not sequence_is_tuple:
         items = list(data)
     else:
         items = []
