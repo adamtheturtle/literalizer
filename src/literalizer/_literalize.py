@@ -3682,9 +3682,9 @@ def _literalize_pre_form_impl(
     data_for_preamble: Value = data
     data_for_declaration: Value = data
     if active_ref_key is not disabled_ref_key():
-        data_for_declaration = _resolve_refs_for_inference(
+        data_for_declaration = _substitute_known_refs(
             value=data,
-            ref_values=ref_values,
+            ref_values=ref_values or {},
             ref_key=active_ref_key,
         )
         # A marker with no value supplied is stripped rather than left
