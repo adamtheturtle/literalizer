@@ -2463,7 +2463,7 @@ def _rust_tuple_nested_vec_format(default_type: str) -> SequenceFormatConfig:
 
 
 @beartype
-def _rust_tuple_list_ids(  # noqa: C901
+def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
     data: Value, /
 ) -> frozenset[int]:
     """Return scalar and mixed-shape lists rendered as Rust tuples.
@@ -2484,19 +2484,30 @@ def _rust_tuple_list_ids(  # noqa: C901
             }
         ) > 1 and any(isinstance(item, (dict, list, set)) for item in value)
 
-    def _signature(value: Value, /) -> Hashable:
-        """Return the Rust type-shape used for sibling uniformity."""
-        if isinstance(value, list):
-            if _eligible(value):
-                return (
-                    "tuple",
-                    tuple(_signature(item) for item in value),
-                )
-            return (
-                "list",
-                frozenset(_signature(item) for item in value),
+    def _compatible(left: Value, right: Value, /) -> bool:
+        """Return whether two values can occupy one Vec slot."""
+        if not isinstance(left, list) or not isinstance(right, list):
+            return type(left) is type(right)
+        if not left:
+            return not _eligible(right)
+        if not right:
+            return not _eligible(left)
+        left_tuple = _eligible(left)
+        right_tuple = _eligible(right)
+        if left_tuple != right_tuple:
+            return False
+        if left_tuple:
+            return len(left) == len(right) and all(
+                _compatible(left_item, right_item)
+                for left_item, right_item in zip(left, right, strict=True)
             )
-        return (type(value).__name__,)
+        return _compatible(left[0], right[0])
+
+    def _uniform_siblings(value: list[Value], /) -> bool:
+        """Return whether every item has one compatible Rust type."""
+        return not value or all(
+            _compatible(value[0], sibling) for sibling in value[1:]
+        )
 
     def _walk(value: Value, *, inside_uniform_list: bool) -> None:
         """Collect mixed scalar/collection lists recursively."""
@@ -2507,10 +2518,13 @@ def _rust_tuple_list_ids(  # noqa: C901
                         found.add(id(item))
                     _walk(value=item, inside_uniform_list=True)
             case list():
-                uniform = (
-                    inside_uniform_list
-                    and len({_signature(item) for item in value}) <= 1
-                )
+                if _eligible(value):
+                    for item in value:
+                        if isinstance(item, list) and _eligible(item):
+                            found.add(id(item))
+                        _walk(value=item, inside_uniform_list=True)
+                    return
+                uniform = inside_uniform_list and _uniform_siblings(value)
                 if uniform:
                     found.update(
                         id(item)
