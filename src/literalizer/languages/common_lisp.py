@@ -1263,6 +1263,7 @@ class CommonLisp(metaclass=LanguageCls):
     )
     # The reader folds a symbol name to upper case, so a reserved name
     # is reserved in every spelling.
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = (
         _COMMON_LISP_SPECIAL_VARIABLES

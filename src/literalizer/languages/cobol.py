@@ -1049,11 +1049,16 @@ class Cobol(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    # A COBOL stub takes its arguments positionally and writes
+    # no parameter names, so a name reserved as a data name
+    # cannot collide with anything in the file (issue #4771).
+    declares_call_parameter_names = False
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "accept",
             "add",
+            "all",
             "alter",
             "call",
             "cancel",
@@ -1063,7 +1068,11 @@ class Cobol(metaclass=LanguageCls):
             "comp-5",
             "compute",
             "continue",
+            "copy",
+            "count",
             "data",
+            "date",
+            "day",
             "delete",
             "display",
             "divide",
@@ -1076,6 +1085,7 @@ class Cobol(metaclass=LanguageCls):
             "exec",
             "exit",
             "filler",
+            "first",
             "from",
             "function",
             "giving",
@@ -1086,6 +1096,9 @@ class Cobol(metaclass=LanguageCls):
             "if",
             "initialize",
             "inspect",
+            "key",
+            "last",
+            "length",
             "low-value",
             "low-values",
             "move",
@@ -1093,6 +1106,8 @@ class Cobol(metaclass=LanguageCls):
             "next",
             "not",
             "null",
+            "number",
+            "object",
             "occurs",
             "open",
             "perform",
@@ -1112,17 +1127,23 @@ class Cobol(metaclass=LanguageCls):
             "run",
             "search",
             "section",
+            "self",
             "set",
+            "size",
             "sort",
             "space",
             "spaces",
             "start",
             "stop",
+            "string",
             "subtract",
+            "test",
             "then",
             "times",
+            "time",
             "to",
             "transform",
+            "type",
             "usage",
             "use",
             "using",

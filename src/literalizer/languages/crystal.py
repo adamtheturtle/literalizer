@@ -512,6 +512,7 @@ class Crystal(metaclass=LanguageCls):
         # (issue #3918).
         frozenset({"_"})
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(
         {"self"}

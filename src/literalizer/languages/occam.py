@@ -203,6 +203,7 @@ class Occam(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

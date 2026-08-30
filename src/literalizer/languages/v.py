@@ -690,6 +690,7 @@ class V(metaclass=LanguageCls):
     call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

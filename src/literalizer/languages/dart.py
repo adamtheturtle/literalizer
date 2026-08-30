@@ -504,6 +504,7 @@ class Dart(metaclass=LanguageCls):
     reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
         _DART_PRIVATE_NAME
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         # The keywords, then the type names the backend writes into its

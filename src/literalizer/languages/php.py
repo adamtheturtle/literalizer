@@ -927,6 +927,7 @@ class Php(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_call_target_keywords_case_sensitive = False
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(

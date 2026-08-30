@@ -628,6 +628,7 @@ class Fortran(metaclass=LanguageCls):
     call_parameter_shadowing: ClassVar[CallParameterShadowing] = (
         CallParameterShadowing.TARGET_NAME
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

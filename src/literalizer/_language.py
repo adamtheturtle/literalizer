@@ -255,7 +255,7 @@ def validate_call_parameter_names(
                 parameter_name=name,
                 reason="it is reserved in a call parameter list",
             )
-        if reject_reserved:
+        if reject_reserved and language_cls.declares_call_parameter_names:
             if language.reserved_variable_identifiers_case_sensitive:
                 reserved = name in language.reserved_variable_identifiers
             else:
@@ -1225,6 +1225,7 @@ class LanguageCls(type):
             "call_parameter_shadowing",
             "call_target_name_syntax",
             "contextual_call_target_identifiers",
+            "declares_call_parameter_names",
             "declares_type_name_call_target",
             "dotted_call_root_shares_entrypoint_namespace",
             "immutable_variable_modifiers",
@@ -1369,6 +1370,15 @@ class LanguageCls(type):
     R identifiers cannot begin with an underscore and Dart named
     parameters cannot be private, so both are spelled as a pattern
     rather than enumerated (issue #3916, issue #3952).
+    """
+
+    declares_call_parameter_names: bool
+    """Whether a wrapped stub writes its parameter names into the file.
+
+    A COBOL stub takes its arguments positionally and names none of
+    them, so a parameter name reserved as a data name cannot collide
+    with anything: there is nothing in the output to collide with
+    (issue #4771).
     """
     accepts_type_name_call_target: bool
     """Whether a bare type name may be a ``target_function``.

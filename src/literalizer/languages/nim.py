@@ -1073,6 +1073,7 @@ class Nim(metaclass=LanguageCls):
         # is refused as well (issue #4770).
         NewVariableNameSyntax.ASCII_SEPARATING_UNDERSCORE
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

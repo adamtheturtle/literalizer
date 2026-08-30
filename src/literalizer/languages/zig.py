@@ -736,6 +736,7 @@ class Zig(metaclass=LanguageCls):
     call_parameter_shadowing: ClassVar[CallParameterShadowing] = (
         CallParameterShadowing.ANY_DECLARATION
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
         _ZIG_RESERVED_VARIABLE_IDENTIFIERS
