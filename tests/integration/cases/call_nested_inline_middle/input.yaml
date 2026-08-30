@@ -1,0 +1,11 @@
+---
+- - - - DEL
+      - b
+      - "10"  # note
+    - - ADD
+      - a
+      - x
+# next call
+- - - - ADD
+      - c
+      - y
