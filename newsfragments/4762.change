@@ -1,2 +1,2 @@
-Go now leaves integer constants untyped when ``numeric_literal_suffix=AUTO``
+Go now leaves integer constants inferred when ``numeric_literal_suffix=AUTO``
 widens their surrounding collection to ``float64``.

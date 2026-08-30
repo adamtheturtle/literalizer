@@ -1602,7 +1602,8 @@ class Go(metaclass=LanguageCls):
     def format_integer_in_mixed_numeric_collection(
         self,
     ) -> Callable[[int], str] | None:
-        """Leave integers untyped when their collection is ``float64``.
+        """Leave integer constants inferred when their collection is
+        ``float64``.
 
         ``AUTO`` normally writes ``int64(...)``.  Go cannot use that typed
         value in a ``float64`` slice or map literal, whereas the same bare
