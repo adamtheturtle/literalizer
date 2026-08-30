@@ -240,27 +240,14 @@ def _kotlin_tuple_open(items: list[Value]) -> str:
 @beartype
 def _kotlin_list_sequence_open(
     *,
-    cfg: TypedOpenerConfig,
-    date_type: str | None,
-    datetime_type: str | None,
-    dict_key_type: str,
+    dict_resolver: Callable[[type | ListType | DictType], str | None],
 ) -> Callable[[list[Value]], str]:
     """Build a typed sequence opener for the Kotlin List format.
 
     Delegates to ``_kotlin_type_to_opener`` for scalars and lists
     (preserving specialized openers like ``intArrayOf``), and falls
-    through to the config resolver for ``DictType`` so that nested
-    types and date/datetime formats are handled correctly.
+    through to the renderer-matched resolver for ``DictType``.
     """
-    dict_resolver = cfg.element_to_type(
-        dict_value_to_type=None,
-        list_template="List<{inner}>",
-        enable_list_type=True,
-        date_type=date_type,
-        datetime_type=datetime_type,
-        enable_dict_type=True,
-        dict_key_type=dict_key_type,
-    )
 
     def _combined_opener(
         element_type: type | ListType | DictType,
@@ -2282,10 +2269,7 @@ class Kotlin(metaclass=LanguageCls):
             base = fmt.sequence_open
         else:
             base = _kotlin_list_sequence_open(
-                cfg=self._opener_config,
-                date_type=self._date_type_name,
-                datetime_type=self._dt_type_name,
-                dict_key_type=self.default_dict_key_type,
+                dict_resolver=self._kotlin_dict_value_type,
             )
         # ``RECORD`` and ``TUPLE`` (which composes ``RECORD``) both set
         # ``render_record_literal``; ``ERROR`` does not.  Keying off the

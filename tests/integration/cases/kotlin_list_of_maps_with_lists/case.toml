@@ -1,0 +1,10 @@
+schema_version = 1
+languages = ["Kotlin"]
+languages_reason = "Kotlin-specific: a list of maps must type nested sequence values exactly as their literals render."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "dict_format"
