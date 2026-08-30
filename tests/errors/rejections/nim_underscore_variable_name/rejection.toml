@@ -1,0 +1,16 @@
+schema_version = 1
+summary = """
+Nim's lexer takes an underscore only between two alphanumerics, so a
+trailing or doubled one is not part of a name.
+"""
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Nim"]
+values = ["a__b", "trailing_"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+variable_form = "new"
+variable_name = "{value}"
+wrap_in_file = true

@@ -89,7 +89,10 @@ def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
         lang_cls
         for lang_cls in sorted_languages()
         if lang_cls.new_variable_name_syntax
-        is NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
+        in {
+            NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX,
+            NewVariableNameSyntax.LOWER_LETTER_ASCII_PRIME_SUFFIX,
+        }
     )
 
 

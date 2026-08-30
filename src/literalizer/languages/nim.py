@@ -1067,9 +1067,11 @@ class Nim(metaclass=LanguageCls):
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
-        # Nim identifiers may not begin with an underscore
-        # (issue #3914).
-        NewVariableNameSyntax.ASCII_LETTER_START
+        # A Nim identifier may not begin with an underscore
+        # (issue #3914), and its lexer takes an underscore only
+        # between two letters or digits, so a trailing or doubled one
+        # is refused as well (issue #4770).
+        NewVariableNameSyntax.ASCII_SEPARATING_UNDERSCORE
     )
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(

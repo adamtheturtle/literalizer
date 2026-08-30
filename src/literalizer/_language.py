@@ -72,6 +72,22 @@ class NewVariableNameSyntax(enum.Enum):
     ASCII_LETTER_START = r"[A-Za-z][A-Za-z0-9_]*"
     """An ASCII identifier that must begin with a letter."""
 
+    ASCII_SEPARATING_UNDERSCORE = r"[A-Za-z](?:_?[A-Za-z0-9])*"
+    """An ASCII identifier whose underscores each separate two characters.
+
+    Nim's lexer takes an underscore only between two letters or digits,
+    so a trailing or doubled one is not part of a name at all
+    (issue #4770).
+    """
+
+    LOWER_LETTER_ASCII_PRIME_SUFFIX = r"[a-z][A-Za-z0-9_']*"
+    """A lower-letter ASCII identifier, primes allowed.
+
+    Like :attr:`LOWER_ASCII_PRIME_SUFFIX` but with no leading
+    underscore: Standard ML reads one as the wildcard pattern rather
+    than as the start of a name (issue #4772).
+    """
+
     LOWER_LETTER_ASCII = r"[a-z][A-Za-z0-9_]*"
     """An ASCII identifier beginning with a lowercase letter.
 
