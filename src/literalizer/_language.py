@@ -3293,6 +3293,21 @@ def wrap_in_file_noop(
 
 
 @beartype
+def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
+    """Return *content* readable as an expression at statement scope.
+
+    A file that binds no name holds the value on its own, and in the
+    ECMAScript grammar a statement opening with ``{`` is a block, so an
+    object literal there does not parse.  Parentheses force the
+    expression reading; every other value already is one, and a name to
+    bind to makes the question moot (issue #4774).
+    """
+    if variable_name or not content.lstrip().startswith("{"):
+        return content
+    return f"({content})"
+
+
+@beartype
 def wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
