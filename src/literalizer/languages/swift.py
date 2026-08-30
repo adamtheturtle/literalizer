@@ -700,6 +700,7 @@ class Swift(metaclass=LanguageCls):
     supports_non_ascii_string_literals = True
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
+    uses_resolved_ref_declaration_data = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "swift"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(

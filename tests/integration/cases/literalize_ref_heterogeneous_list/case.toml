@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Swift"]
+languages_reason = "Swift-specific: heterogeneous referenced values require an explicit Any element type."
+
+[ref]
+languages = ["Swift"]
+languages_reason = "Swift-specific: heterogeneous referenced values require an explicit Any element type."
+
+[ref.value_sources]
+one = "1"
+two = '"s"'

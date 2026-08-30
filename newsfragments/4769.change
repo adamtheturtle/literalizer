@@ -1,0 +1,1 @@
+Use resolved reference values when deriving variable declaration type hints.
