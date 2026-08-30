@@ -3556,10 +3556,14 @@ class _PreFormState:
     ``ref_values`` (or stripped when the value is not supplied), so
     preamble inference sees the types actually flowing through the
     rendered code -- not the marker's ``{str: str}`` shape.
+
+    ``data_for_declaration`` resolves known markers while retaining unknown
+    ones, so annotations describe the values behind emitted identifiers.
     """
 
     data: Value
     data_for_preamble: Value
+    data_for_declaration: Value
     result: str
     resolved: ResolvedComments | None
     line_prefix: str
@@ -3567,6 +3571,23 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+
+
+@runtime_checkable
+class _ResolvedRefDeclarationLanguage(Protocol):
+    """A language opting into resolved-reference declaration hints."""
+
+    uses_resolved_ref_declaration_data: bool
+
+
+@beartype
+def _declaration_data(*, pre_form: _PreFormState, language: Language) -> Value:
+    """Return the source tree a language uses for declaration hints."""
+    uses_resolved = (
+        isinstance(language, _ResolvedRefDeclarationLanguage)
+        and language.uses_resolved_ref_declaration_data
+    )
+    return pre_form.data_for_declaration if uses_resolved else pre_form.data
 
 
 @beartype
@@ -3659,7 +3680,13 @@ def _literalize_pre_form_impl(
             pass
 
     data_for_preamble: Value = data
+    data_for_declaration: Value = data
     if active_ref_key is not disabled_ref_key():
+        data_for_declaration = _resolve_refs_for_inference(
+            value=data,
+            ref_values=ref_values,
+            ref_key=active_ref_key,
+        )
         # A marker with no value supplied is stripped rather than left
         # in place, so preamble inference never sees the marker's own
         # ``{str: str}`` shape and an unrelated ``ref_values`` entry
@@ -3674,6 +3701,7 @@ def _literalize_pre_form_impl(
     return _PreFormState(
         data=data,
         data_for_preamble=data_for_preamble,
+        data_for_declaration=data_for_declaration,
         result=result,
         resolved=resolved,
         line_prefix=line_prefix,
@@ -3904,7 +3932,7 @@ def reject_undeclared_assignment(
     assignment = _apply_variable_wrapper(
         result=pre_form.result,
         language=language,
-        data=pre_form.data,
+        data=_declaration_data(pre_form=pre_form, language=language),
         variable_form=variable_form,
         line_prefix=pre_form.line_prefix,
         is_call_binding=False,
@@ -3915,7 +3943,7 @@ def reject_undeclared_assignment(
         return _apply_variable_wrapper(
             result=pre_form.result,
             language=styled,
-            data=pre_form.data,
+            data=_declaration_data(pre_form=pre_form, language=styled),
             variable_form=NewVariable(
                 name=variable_form.name,
                 modifiers=frozenset(),
@@ -3962,7 +3990,7 @@ def literalize_apply_form(
     result = _apply_variable_wrapper(
         result=pre_form.result,
         language=language,
-        data=pre_form.data,
+        data=_declaration_data(pre_form=pre_form, language=language),
         variable_form=variable_form,
         line_prefix=pre_form.line_prefix,
         is_call_binding=False,
