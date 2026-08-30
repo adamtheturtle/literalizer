@@ -595,6 +595,7 @@ class Swift(metaclass=LanguageCls):
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(
         {"self"}

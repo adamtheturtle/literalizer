@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A COBOL reserved word cannot name a data item.  The list is GnuCOBOL's
+own reserved table restricted to what cobc actually refuses as an 01
+name, so these five stand for the whole of it (#4771).
+"""
+exceptions = ["ReservedVariableNameError"]
+languages = ["Cobol"]
+values = ["all", "length", "string", "test", "type"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+variable_form = "new"
+variable_name = "{value}"
+wrap_in_file = true

@@ -270,6 +270,7 @@ class Wren(metaclass=LanguageCls):
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
         re.compile(pattern=r"_.*")
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {

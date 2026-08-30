@@ -1071,6 +1071,7 @@ class Nim(metaclass=LanguageCls):
         # (issue #3914).
         NewVariableNameSyntax.ASCII_LETTER_START
     )
+    declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
