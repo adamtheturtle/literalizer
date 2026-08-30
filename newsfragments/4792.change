@@ -1,0 +1,1 @@
+Moved bare-value, rebound-anchor, and round-trip capability test matrices from Python parameter lists into validated TOML case files.

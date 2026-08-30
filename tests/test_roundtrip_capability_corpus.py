@@ -1,49 +1,49 @@
-"""Tests for capability-selected round-trip inputs."""
+"""TOML-driven tests for capability-selected round-trip inputs."""
 
 import json
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 from literalizer import RoundTripCapability
 from literalizer.languages import ALL_LANGUAGES
-from scripts.roundtrip_common import (
-    input_for_capabilities,
+from scripts.roundtrip_common import input_for_capabilities
+from tests.toml_cases import load_toml_cases
+
+
+class _CapabilityCase(BaseModel, extra="forbid", frozen=True):
+    """One capability and the corpus keys it contributes."""
+
+    capability: RoundTripCapability
+    expected_keys: frozenset[str]
+
+
+class _RoundTripCases(BaseModel, extra="forbid", frozen=True):
+    """The complete declarative round-trip capability audit."""
+
+    capability_cases: tuple[_CapabilityCase, ...]
+    audited_languages: dict[str, frozenset[RoundTripCapability]]
+
+
+_CASES = TypeAdapter(type=_RoundTripCases).validate_python(
+    load_toml_cases(name="roundtrip_capabilities")
 )
 
 
 @pytest.mark.parametrize(
-    argnames=("capability", "expected_keys"),
-    argvalues=[
-        (
-            RoundTripCapability.I64_BOUNDARIES,
-            {"i64_min", "i64_min_adjacent", "i64_max_adjacent", "i64_max"},
-        ),
-        (
-            RoundTripCapability.INTERPOLATION_STRINGS,
-            {
-                "string_hash_interpolation",
-                "string_braced_dollar_interpolation",
-                "string_dollar_interpolation",
-                "string_backticks",
-                "string_at",
-            },
-        ),
-        (RoundTripCapability.CONTROL_STRINGS, {"string_controls"}),
-        (RoundTripCapability.EMBEDDED_NUL, {"string_embedded_nul"}),
-    ],
+    argnames="case",
+    argvalues=_CASES.capability_cases,
+    ids=lambda case: case.capability.value,
 )
-def test_capability_adds_only_its_cases(
-    capability: RoundTripCapability,
-    expected_keys: set[str],
-) -> None:
+def test_capability_adds_only_its_cases(case: _CapabilityCase) -> None:
     """Selecting one capability neither skips nor leaks another group."""
     base = json.loads(
         s=input_for_capabilities(capabilities=frozenset()),
     )
     selected = json.loads(
-        s=input_for_capabilities(capabilities=frozenset({capability})),
+        s=input_for_capabilities(capabilities=frozenset({case.capability})),
     )
-    assert selected.keys() - base.keys() == expected_keys
+    assert selected.keys() - base.keys() == case.expected_keys
 
 
 def test_integer_boundaries_are_exact() -> None:
@@ -70,87 +70,9 @@ def test_every_language_declares_round_trip_capabilities() -> None:
 
 
 def test_audited_languages_declare_their_supported_groups() -> None:
-    """Each audited backend declares exactly the groups its runner passes.
-
-    This table is the audited record behind the per-language
-    declarations: every entry was verified by running the language's
-    ``scripts/run_<lang>_roundtrip.py`` against the group's corpus on a
-    real toolchain.  A language absent from the table has not been
-    audited yet and must declare no capabilities.
-
-    Exclusions are one of these verified failure classes:
-
-    * ``control_strings`` -- most formatters would emit a raw C0 byte,
-      so ``literalize`` fails hard with ``UnrepresentableStringError``
-      (covered by ``tests/errors`` ``string_raw_control_character``).
-    * ``i64_boundaries`` -- a runtime whose only number type is an IEEE
-      double (JavaScript-hosted Elm, the 32-bit Haxe ``Int`` plus
-      ``Float`` fallback, Jsonnet, PureScript, Wren, cJSON-backed C)
-      collapses 64-bit endpoints; TypeScript fails hard with
-      ``UnrepresentableIntegerError``.
-    * ``embedded_nul`` -- a language that cannot escape a zero byte
-      fails hard (``string_nul_byte`` in ``tests/errors``); the
-      ``dhall-to-json`` and Haxe JSON printers emit the byte raw, Wren
-      truncates the emitted document, the SystemVerilog string type
-      drops the byte, and cJSON truncates at the terminator.
-    * ``interpolation_strings`` -- Crystal's ``%(...)`` percent literal
-      and Odin's backtick raw string cannot carry their own delimiters,
-      so their ``json_type`` renderings fail-hard with
-      ``UnrepresentableInputError``.
-    """
-    i64 = RoundTripCapability.I64_BOUNDARIES
-    interpolation = RoundTripCapability.INTERPOLATION_STRINGS
-    controls = RoundTripCapability.CONTROL_STRINGS
-    nul = RoundTripCapability.EMBEDDED_NUL
-    audited: dict[str, frozenset[RoundTripCapability]] = {
-        "Bash": frozenset({i64, interpolation}),
-        "C": frozenset({interpolation}),
-        "CSharp": frozenset({i64, interpolation, nul}),
-        "Clojure": frozenset({i64, interpolation, nul}),
-        "Cpp": frozenset({i64, interpolation, nul}),
-        "Crystal": frozenset({i64, nul}),
-        "D": frozenset({i64, interpolation, nul}),
-        "Dart": frozenset({i64, interpolation, nul}),
-        "Dhall": frozenset({i64, interpolation}),
-        "Elixir": frozenset({i64, interpolation, nul}),
-        "Elm": frozenset({interpolation, controls, nul}),
-        "Erlang": frozenset({i64, interpolation, nul}),
-        "FSharp": frozenset({i64, interpolation, nul}),
-        "Fortran": frozenset({i64, interpolation, controls, nul}),
-        "Go": frozenset({i64, interpolation, nul}),
-        "Groovy": frozenset({i64, interpolation, nul}),
-        "Haskell": frozenset({i64, interpolation, controls, nul}),
-        "Haxe": frozenset({interpolation}),
-        "Java": frozenset({i64, interpolation, nul}),
-        "JavaScript": frozenset({interpolation, nul}),
-        "Json5": frozenset({i64, interpolation, controls, nul}),
-        "Jsonnet": frozenset({interpolation, controls, nul}),
-        "Kotlin": frozenset({i64, interpolation, nul}),
-        "Lua": frozenset({i64, interpolation, nul}),
-        "Mojo": frozenset({i64, interpolation, nul}),
-        "Nim": frozenset({i64, interpolation, nul}),
-        "ObjectiveC": frozenset({i64, interpolation, nul}),
-        "Odin": frozenset({i64, nul}),
-        "Perl": frozenset({i64, interpolation, nul}),
-        "Php": frozenset({i64, interpolation, nul}),
-        "PureScript": frozenset({interpolation, controls, nul}),
-        "Racket": frozenset({i64, interpolation, nul}),
-        "Ruby": frozenset({i64, interpolation, nul}),
-        "Rust": frozenset({i64, interpolation, nul}),
-        "Scala": frozenset({i64, interpolation, nul}),
-        "Sml": frozenset({i64, interpolation, controls, nul}),
-        "Swift": frozenset({i64, interpolation, controls, nul}),
-        "SystemVerilog": frozenset({i64, interpolation}),
-        "Tcl": frozenset({i64, interpolation, nul}),
-        "Toml": frozenset({i64, interpolation, controls, nul}),
-        "TypeScript": frozenset({interpolation, nul}),
-        "V": frozenset({i64, interpolation, nul}),
-        "VisualBasic": frozenset({i64, interpolation, controls, nul}),
-        "Wren": frozenset({interpolation}),
-        "Yaml": frozenset({i64, interpolation, controls, nul}),
-    }
+    """Each audited backend declares exactly its TOML-recorded groups."""
     for language_cls in ALL_LANGUAGES:
         name = language_cls.__name__
-        expected = audited.get(name, frozenset())
+        expected = _CASES.audited_languages.get(name, frozenset())
         declared = language_cls.variant_metadata.round_trip_capabilities
         assert declared == expected, name

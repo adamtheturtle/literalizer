@@ -1,0 +1,95 @@
+[[cases]]
+id = "JavaScript-bare-object-opener"
+language = "JavaScript"
+source = '{"a": 1}'
+variable_form = "none"
+assertion = "starts_with"
+expected = "({"
+
+[[cases]]
+id = "JavaScript-bare-object-closer"
+language = "JavaScript"
+source = '{"a": 1}'
+variable_form = "none"
+assertion = "contains"
+expected = "})"
+
+[[cases]]
+id = "TypeScript-bare-object-opener"
+language = "TypeScript"
+source = '{"a": 1}'
+variable_form = "none"
+assertion = "starts_with"
+expected = "({"
+
+[[cases]]
+id = "TypeScript-bare-object-closer"
+language = "TypeScript"
+source = '{"a": 1}'
+variable_form = "none"
+assertion = "contains"
+expected = "})"
+
+[[cases]]
+id = "JavaScript-bare-list"
+language = "JavaScript"
+source = "[1, 2]"
+variable_form = "none"
+assertion = "starts_with"
+expected = "["
+
+[[cases]]
+id = "JavaScript-bare-number"
+language = "JavaScript"
+source = "42"
+variable_form = "none"
+assertion = "starts_with"
+expected = "42"
+
+[[cases]]
+id = "JavaScript-bare-string"
+language = "JavaScript"
+source = '"text"'
+variable_form = "none"
+assertion = "starts_with"
+expected = '"text"'
+
+[[cases]]
+id = "TypeScript-bare-list"
+language = "TypeScript"
+source = "[1, 2]"
+variable_form = "none"
+assertion = "starts_with"
+expected = "["
+
+[[cases]]
+id = "TypeScript-bare-number"
+language = "TypeScript"
+source = "42"
+variable_form = "none"
+assertion = "starts_with"
+expected = "42"
+
+[[cases]]
+id = "TypeScript-bare-string"
+language = "TypeScript"
+source = '"text"'
+variable_form = "none"
+assertion = "starts_with"
+expected = '"text"'
+
+[[cases]]
+id = "JavaScript-bound-object"
+language = "JavaScript"
+source = '{"a": 1}'
+variable_form = "new"
+assertion = "excludes"
+expected = "({"
+
+[[cases]]
+id = "TypeScript-bound-object"
+language = "TypeScript"
+source = '{"a": 1}'
+variable_form = "new"
+assertion = "excludes"
+expected = "({"

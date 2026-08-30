@@ -1,0 +1,20 @@
+[[cases]]
+id = "rebound-to-scalar"
+source = "a: &x [1, &x 2, *x]"
+expected = '''v = {
+    "a": (1, 2, 2),
+}'''
+
+[[cases]]
+id = "rebound-to-collection"
+source = "a: &x [1, &x [2], *x]"
+expected = '''v = {
+    "a": (1, (2,), (2,)),
+}'''
+
+[[cases]]
+id = "rebound-inside-nested-collection"
+source = "a: &x [1, [&x 2], *x]"
+expected = '''v = {
+    "a": (1, (2,), 2),
+}'''
