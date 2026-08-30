@@ -36,6 +36,7 @@ from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
+    MixedNumeric,
     WideInt,
     infer_element_type,
     int_widening_tier,
@@ -466,11 +467,7 @@ def _widened_int_formatter(
     )
     if (
         mixed_numeric is not None
-        and any(isinstance(item, float) for item in items)
-        and any(
-            isinstance(item, int) and not isinstance(item, bool)
-            for item in items
-        )
+        and infer_element_type(items=items) is MixedNumeric
     ):
         return mixed_numeric
     beyond = spec.format_integer_beyond_i64
