@@ -603,7 +603,7 @@ def _format_kotlin_typed_declaration(
     sequence_format_name: str,
 ) -> str:
     """Format a Kotlin variable declaration with an explicit type."""
-    hint = _kotlin_type_hint(
+    hint = _kotlin_explicit_initializer_type(value) or _kotlin_type_hint(
         data=data,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
@@ -666,6 +666,7 @@ def _kotlin_call_stub(
 # generic collection opener the value formatter emits (e.g.
 # ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
 _KOTLIN_COLLECTION_TYPE: dict[str, str] = {
+    "arrayOf": "Array",
     "listOf": "List",
     "mapOf": "Map",
     "hashMapOf": "HashMap",
@@ -690,6 +691,18 @@ def _kotlin_opener_to_type(opener: str, /) -> str:
     name = opener[: opener.index("<")]
     generics = opener[opener.index("<") : opener.rindex(">") + 1]
     return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
+
+
+@beartype
+def _kotlin_explicit_initializer_type(value: str, /) -> str | None:
+    """Return the type argument explicitly carried by an initializer."""
+    opener = value.lstrip().splitlines()[0]
+    if "<" not in opener or ">" not in opener:
+        return None
+    name = opener[: opener.index("<")]
+    if name not in _KOTLIN_COLLECTION_TYPE:
+        return None
+    return _kotlin_opener_to_type(opener)
 
 
 @beartype

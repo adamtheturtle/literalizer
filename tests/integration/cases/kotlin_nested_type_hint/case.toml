@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Kotlin"]
+languages_reason = "Kotlin-specific: explicit declaration hints must match collection initializer type arguments."
+suites = ["base"]
+
+[[variants]]
+axis = "type_hints"
