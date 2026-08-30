@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Java"]
+languages_reason = "Java-specific: nested ordered maps render as ArrayLists of Map.Entry values."
+suites = ["base"]
+
+[[variants]]
+axis = "type_hints"
