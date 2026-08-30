@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: std::array requires a value-derived type at every nesting depth."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
