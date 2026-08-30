@@ -407,7 +407,10 @@ class Sml(metaclass=LanguageCls):
     pools_map_integer_width = True
 
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
-        NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX
+        # ``_`` is the wildcard pattern, so a name beginning with one
+        # is read as the wildcard applied to what follows it
+        # (issue #4772).
+        NewVariableNameSyntax.LOWER_LETTER_ASCII_PRIME_SUFFIX
     )
 
     format_integer_widened = no_format_integer_widened

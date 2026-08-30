@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Nim['a__b']" = "Nim cannot use NewVariable name 'a__b': it is not a valid identifier"
+"Nim['trailing_']" = "Nim cannot use NewVariable name 'trailing_': it is not a valid identifier"
