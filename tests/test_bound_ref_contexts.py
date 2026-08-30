@@ -1,7 +1,5 @@
 """Focused coverage for bound-reference parent context analysis."""
 
-# pylint: disable=import-private-name
-
 import json
 
 from literalizer._literalize import (
