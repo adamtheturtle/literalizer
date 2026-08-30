@@ -1,0 +1,20 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+"Cobol['all']" = "Cobol cannot use NewVariable name 'all': it is a reserved identifier"
+"Cobol['copy']" = "Cobol cannot use NewVariable name 'copy': it is a reserved identifier"
+"Cobol['count']" = "Cobol cannot use NewVariable name 'count': it is a reserved identifier"
+"Cobol['date']" = "Cobol cannot use NewVariable name 'date': it is a reserved identifier"
+"Cobol['day']" = "Cobol cannot use NewVariable name 'day': it is a reserved identifier"
+"Cobol['first']" = "Cobol cannot use NewVariable name 'first': it is a reserved identifier"
+"Cobol['key']" = "Cobol cannot use NewVariable name 'key': it is a reserved identifier"
+"Cobol['last']" = "Cobol cannot use NewVariable name 'last': it is a reserved identifier"
+"Cobol['length']" = "Cobol cannot use NewVariable name 'length': it is a reserved identifier"
+"Cobol['number']" = "Cobol cannot use NewVariable name 'number': it is a reserved identifier"
+"Cobol['object']" = "Cobol cannot use NewVariable name 'object': it is a reserved identifier"
+"Cobol['self']" = "Cobol cannot use NewVariable name 'self': it is a reserved identifier"
+"Cobol['size']" = "Cobol cannot use NewVariable name 'size': it is a reserved identifier"
+"Cobol['string']" = "Cobol cannot use NewVariable name 'string': it is a reserved identifier"
+"Cobol['test']" = "Cobol cannot use NewVariable name 'test': it is a reserved identifier"
+"Cobol['time']" = "Cobol cannot use NewVariable name 'time': it is a reserved identifier"
+"Cobol['type']" = "Cobol cannot use NewVariable name 'type': it is a reserved identifier"

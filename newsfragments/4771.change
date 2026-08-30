@@ -1,7 +1,6 @@
 COBOL now refuses the reserved words it was accepting as declaration
-names, such as ``string``, ``length`` and ``type``.  The list is
-GnuCOBOL own reserved table, restricted to the words its compiler
-refuses as a data name, which is 510 rather than the 81 it held.
+names, such as ``string``, ``length`` and ``type``.  Seventeen words
+confirmed by GnuCOBOL have been added to the existing list.
 
 A COBOL call stub takes its arguments positionally and writes no
 parameter names, so a reserved word is still accepted there.
