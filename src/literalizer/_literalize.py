@@ -821,13 +821,21 @@ def _accumulate_sibling_list_empty_overrides(
         non_empty = [item for item in value if isinstance(item, list) and item]
         empty = [item for item in value if isinstance(item, list) and not item]
         sibling_openers = {spec.sequence_open(item) for item in non_empty}
-        if empty and len(sibling_openers) == 1:
+        widened_opener = _compute_sequence_open_override(
+            items=non_empty,
+            spec=spec,
+        )
+        sibling_opener = (
+            next(iter(sibling_openers))
+            if len(sibling_openers) == 1
+            else widened_opener
+        )
+        if empty and sibling_opener is not None:
             narrowed = spec.sequence_format_config.narrowed_empty_form
             replacement = (
                 narrowed(non_empty)
-                if narrowed is not None
-                else next(iter(sibling_openers))
-                + spec.sequence_format_config.close
+                if narrowed is not None and widened_opener is None
+                else sibling_opener + spec.sequence_format_config.close
             )
             for item in empty:
                 out.setdefault(id(item), replacement)

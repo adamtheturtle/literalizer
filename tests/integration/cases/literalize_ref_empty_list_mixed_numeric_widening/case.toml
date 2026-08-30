@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Kotlin"]
+languages_reason = "Kotlin's widened outer list accepts the distinct primitive-array siblings while requiring an empty referenced list to use the same Any fallback."
+
+[ref.value_sources]
+empty_values = "[]"
+integer_values = "[1]"
+float_values = "[1.5]"
