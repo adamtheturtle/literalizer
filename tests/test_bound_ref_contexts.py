@@ -42,17 +42,17 @@ def test_bound_ref_parent_contexts_recurses_through_containers() -> None:
     contexts = _bound_ref_parent_contexts(
         source=json.loads(
             s=(
-                '[[{"$ref":"list_value"},0],'
-                '{"nested":{"$ref":"map_value"},"scalar":0}]'
+                '[[0,{"$ref":"list_value"}],'
+                '{"scalar":0,"nested":{"$ref":"map_value"}}]'
             )
         ),
-        resolved=json.loads(s='[[1,0],{"nested":2,"scalar":0}]'),
+        resolved=json.loads(s='[[0,1],{"scalar":0,"nested":2}]'),
         bound_refs={"list_value": 10, "map_value": 20},
         ref_key="$ref",
     )
     assert contexts == {
-        "list_value": [10, 0],
-        "map_value": {"nested": 20, "scalar": 0},
+        "list_value": [0, 10],
+        "map_value": {"scalar": 0, "nested": 20},
     }
 
 
