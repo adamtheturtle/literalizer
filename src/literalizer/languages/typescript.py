@@ -103,6 +103,7 @@ from literalizer._language import (
     no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
+    parenthesize_bare_object,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value
@@ -1104,9 +1105,11 @@ class TypeScript(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
-        del variable_name
         content = prepend_body_preamble(
-            content=content,
+            content=parenthesize_bare_object(
+                content=content,
+                variable_name=variable_name,
+            ),
             body_preamble=body_preamble,
         )
         return f"{content}\nexport {{}};"
