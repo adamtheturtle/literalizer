@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go AUTO emits typed integer conversions that cannot inhabit a float64 collection."
+
+[[variants]]
+axis = "numeric_literal_suffix"

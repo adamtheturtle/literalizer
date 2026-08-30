@@ -427,6 +427,18 @@ def _format_scalar(
     return result
 
 
+@runtime_checkable
+class _MixedNumericIntegerFormatter(Protocol):
+    """Optional capability for typed integer literal backends."""
+
+    @property
+    def format_integer_in_mixed_numeric_collection(
+        self,
+    ) -> Callable[[int], str] | None:
+        """Return the integer formatter for a float-widened collection."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 @beartype
 def _widened_int_formatter(
     *,
@@ -447,6 +459,20 @@ def _widened_int_formatter(
     Otherwise :func:`int_widening_tier` selects the tier without full
     element-type inference.
     """
+    mixed_numeric = (
+        spec.format_integer_in_mixed_numeric_collection
+        if isinstance(spec, _MixedNumericIntegerFormatter)
+        else None
+    )
+    if (
+        mixed_numeric is not None
+        and any(isinstance(item, float) for item in items)
+        and any(
+            isinstance(item, int) and not isinstance(item, bool)
+            for item in items
+        )
+    ):
+        return mixed_numeric
     beyond = spec.format_integer_beyond_i64
     widened = spec.format_integer_widened
     if beyond is None and widened is None:
