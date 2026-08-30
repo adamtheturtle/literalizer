@@ -797,6 +797,11 @@ def _empty_container_literal_overrides(
     overrides = dict(
         spec.heterogeneous_behavior.empty_container_literal_overrides(data)
     )
+    _accumulate_sibling_list_empty_overrides(
+        value=data,
+        spec=spec,
+        out=overrides,
+    )
     narrowed_empty_dict = spec.dict_format_config.narrowed_empty_form
     if narrowed_empty_dict is not None:
         _accumulate_cousin_empty_dict_overrides(
@@ -805,6 +810,36 @@ def _empty_container_literal_overrides(
             out=overrides,
         )
     return overrides
+
+
+@beartype
+def _accumulate_sibling_list_empty_overrides(
+    *, value: Value, spec: Language, out: dict[int, str]
+) -> None:
+    """Type empty lists from homogeneous non-empty list siblings."""
+    if isinstance(value, list):
+        non_empty = [item for item in value if isinstance(item, list) and item]
+        empty = [item for item in value if isinstance(item, list) and not item]
+        sibling_openers = {spec.sequence_open(item) for item in non_empty}
+        if empty and len(sibling_openers) == 1:
+            narrowed = spec.sequence_format_config.narrowed_empty_form
+            replacement = (
+                narrowed(non_empty)
+                if narrowed is not None
+                else next(iter(sibling_openers))
+                + spec.sequence_format_config.close
+            )
+            for item in empty:
+                out.setdefault(id(item), replacement)
+        for child in value:
+            _accumulate_sibling_list_empty_overrides(
+                value=child, spec=spec, out=out
+            )
+    elif isinstance(value, dict):
+        for child in value.values():
+            _accumulate_sibling_list_empty_overrides(
+                value=child, spec=spec, out=out
+            )
 
 
 @beartype
@@ -2051,8 +2086,9 @@ def _format_list_value(
             sequence_open_override=sequence_open_override,
             ctx=ctx,
         )
+    inferred_value = _opener_inference_value(data=value, ctx=ctx)
     dict_open_override = _compute_sequence_dict_override(
-        items=value,
+        items=inferred_value if isinstance(inferred_value, list) else value,
         sequence_open_override=sequence_open_override,
         spec=spec,
         ref_key=ctx.ref_key,
@@ -2262,6 +2298,7 @@ def _wrap_body(
     data: list[Value] | dict[Scalar, Value] | set[Scalar],
     spec: Language,
     line_prefix: str,
+    dict_open_override: str | None,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = spec.indent if spec.indent_closing_delimiter else ""
@@ -2272,6 +2309,10 @@ def _wrap_body(
             open_str = ordered_map_cfg.ordered_map_open(data)
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{ordered_map_cfg.close}"
+        case dict() if dict_open_override is not None:
+            dict_cfg = spec.dict_format_config
+            opening = f"{line_prefix}{dict_open_override}"
+            closing = f"{close_prefix}{dict_cfg.close}"
         case dict():
             dict_cfg = spec.dict_format_config
             opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
@@ -2857,8 +2898,15 @@ def _format_collection_lines(
                 trailing_comma
                 and spec.sequence_format_config.supports_trailing_comma
             )
+            inferred_list_data = _opener_inference_value(
+                data=list_data, ctx=ctx
+            )
             dict_open_override = _compute_sequence_dict_override(
-                items=list_data,
+                items=(
+                    inferred_list_data
+                    if isinstance(inferred_list_data, list)
+                    else list_data
+                ),
                 sequence_open_override=sequence_open_override,
                 spec=spec,
                 ref_key=ctx.ref_key,
@@ -3082,7 +3130,7 @@ def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
+def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
     *,
     data: Value,
     language: Language,
@@ -3233,30 +3281,102 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         id_map=inference_id_map,
     )
     source_empty_ids = _empty_source_container_ids(data)
+    context_wrap_ids: frozenset[int] = (
+        _compute_wrap_ids(data=record_context_data, spec=language)
+        if record_context_data is not None
+        else frozenset[int]()
+    )
+    context_tuple_list_ids: frozenset[int] = (
+        _compute_tuple_list_ids(data=record_context_data, spec=language)
+        if record_context_data is not None
+        else frozenset[int]()
+    )
+    context_dict_open_overrides: dict[int, str] = {}
+    if record_context_data is not None:
+        # A bound map is emitted as a separate declaration, so it needs
+        # the exact widened opener of the container that consumes it even
+        # for variant-based languages without a universal map fallback.
+        _accumulate_dict_open_overrides(
+            data=record_context_data,
+            spec=language,
+            out=context_dict_open_overrides,
+            ref_key=ref_key,
+        )
+        context_children = (
+            list(record_context_data)
+            if isinstance(record_context_data, list)
+            else (
+                list(record_context_data.values())
+                if isinstance(record_context_data, dict)
+                else []
+            )
+        )
+        direct_dict_override = _compute_dict_open_override(
+            items=context_children,
+            spec=language,
+            ref_key=ref_key,
+        )
+        if direct_dict_override is not None:
+            for child in context_children:
+                if isinstance(child, dict) and not isinstance(
+                    child, OrderedMap
+                ):
+                    context_dict_open_overrides.setdefault(
+                        id(child), direct_dict_override
+                    )
+    context_dict_int_formatters: Mapping[int, Callable[[int], str]] = (
+        _collect_dict_int_formatters(data=record_context_data, spec=language)
+        if record_context_data is not None
+        else dict[int, Callable[[int], str]]()
+    )
+    context_empty_overrides: Mapping[int, str] = (
+        _empty_container_literal_overrides(
+            data=record_context_data, spec=language
+        )
+        if record_context_data is not None
+        else dict[int, str]()
+    )
+    context_list_int_formatters = (
+        _collect_list_int_formatters(data=record_context_data, spec=language)
+        if record_context_data is not None
+        else {}
+    )
+    if record_context_data is not None:
+        check_data(data=record_context_data, spec=language)
     ctx = _RenderContext(
         spec=language,
-        wrap_ids=wrap_ids,
-        tuple_list_ids=tuple_list_ids,
-        dict_open_overrides=_source_container_id_mapping(
-            inferred_mapping=_collect_dict_open_overrides(
-                data=inference_data, spec=language, ref_key=ref_key
+        wrap_ids=wrap_ids | context_wrap_ids,
+        tuple_list_ids=tuple_list_ids | context_tuple_list_ids,
+        dict_open_overrides={
+            **_source_container_id_mapping(
+                inferred_mapping=_collect_dict_open_overrides(
+                    data=inference_data, spec=language, ref_key=ref_key
+                ),
+                id_map=inference_id_map,
             ),
-            id_map=inference_id_map,
-        ),
-        dict_int_formatters=_source_container_id_mapping(
-            inferred_mapping=_collect_dict_int_formatters(
-                data=inference_data, spec=language
+            **context_dict_open_overrides,
+        },
+        dict_int_formatters={
+            **_source_container_id_mapping(
+                inferred_mapping=_collect_dict_int_formatters(
+                    data=inference_data, spec=language
+                ),
+                id_map=inference_id_map,
             ),
-            id_map=inference_id_map,
-        ),
+            **context_dict_int_formatters,
+        },
         empty_container_overrides={
             container_id: literal
-            for container_id, literal in inferred_empty_overrides.items()
+            for container_id, literal in {
+                **inferred_empty_overrides,
+                **context_empty_overrides,
+            }.items()
             if container_id in source_empty_ids
         },
-        list_int_formatters=_collect_list_int_formatters(
-            data=data, spec=language
-        ),
+        list_int_formatters={
+            **_collect_list_int_formatters(data=data, spec=language),
+            **context_list_int_formatters,
+        },
         ref_case=ref_case,
         ref_values=ref_values,
         expand_refs=False,
@@ -3379,6 +3499,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-com
         ),
         spec=language,
         line_prefix=line_prefix,
+        dict_open_override=ctx.dict_open_overrides.get(id(data)),
     )
 
 
@@ -4196,6 +4317,115 @@ class _BoundRefComposition:
 
 
 @beartype
+def _contextual_bound_ref_values(  # noqa: C901
+    *,
+    source: Value,
+    resolved: Value,
+    bound_refs: Mapping[str, Value],
+    ref_key: str,
+) -> dict[str, Value]:
+    """Widen scalar ref bindings to the numeric type their use
+    requires.
+    """
+    contextual = dict(bound_refs)
+
+    def _visit(  # noqa: C901, PLR0912
+        *, raw: Value, inferred: Value
+    ) -> None:
+        """Find markers whose resolved siblings require float bindings."""
+        if isinstance(raw, list) and isinstance(inferred, list):
+            if any(isinstance(item, float) for item in inferred):
+                for child in raw:
+                    name = _extract_call_arg_ref_name(
+                        value=child, ref_key=ref_key
+                    )
+                    if name in contextual:
+                        value = contextual[name]
+                        if isinstance(value, int) and not isinstance(
+                            value, bool
+                        ):
+                            contextual[name] = float(value)
+            for raw_child, inferred_child in zip(raw, inferred, strict=False):
+                if (
+                    _extract_call_arg_ref_name(
+                        value=raw_child, ref_key=ref_key
+                    )
+                    is None
+                ):
+                    _visit(raw=raw_child, inferred=inferred_child)
+        elif isinstance(raw, dict) and isinstance(inferred, dict):
+            inferred_values = list(inferred.values())
+            if any(isinstance(item, float) for item in inferred_values):
+                for child in raw.values():
+                    name = _extract_call_arg_ref_name(
+                        value=child, ref_key=ref_key
+                    )
+                    if name in contextual:
+                        value = contextual[name]
+                        if isinstance(value, int) and not isinstance(
+                            value, bool
+                        ):
+                            contextual[name] = float(value)
+            for key in raw.keys() & inferred.keys():
+                raw_child = raw[key]
+                if (
+                    _extract_call_arg_ref_name(
+                        value=raw_child, ref_key=ref_key
+                    )
+                    is None
+                ):
+                    _visit(raw=raw_child, inferred=inferred[key])
+
+    _visit(raw=source, inferred=resolved)
+    return contextual
+
+
+@beartype
+def _bound_ref_parent_contexts(  # noqa: C901
+    *,
+    source: Value,
+    resolved: Value,
+    bound_refs: Mapping[str, Value],
+    ref_key: str,
+) -> dict[str, Value]:
+    """Return each bound ref inside the resolved container that uses
+    it.
+    """
+    contexts: dict[str, Value] = {}
+
+    def _visit(*, raw: Value, inferred: Value) -> None:
+        """Pair each marker with a resolved copy of its parent."""
+        if isinstance(raw, list) and isinstance(inferred, list):
+            for index, raw_child in enumerate(iterable=raw):
+                if index >= len(inferred):
+                    break
+                name = _extract_call_arg_ref_name(
+                    value=raw_child, ref_key=ref_key
+                )
+                if name is not None and name in bound_refs:
+                    list_parent = list(inferred)
+                    list_parent[index] = bound_refs[name]
+                    contexts.setdefault(name, list_parent)
+                elif name is None:
+                    _visit(raw=raw_child, inferred=inferred[index])
+        elif isinstance(raw, dict) and isinstance(inferred, dict):
+            for key in raw.keys() & inferred.keys():
+                raw_child = raw[key]
+                name = _extract_call_arg_ref_name(
+                    value=raw_child, ref_key=ref_key
+                )
+                if name is not None and name in bound_refs:
+                    dict_parent: dict[Scalar, Value] = dict(inferred)
+                    dict_parent[key] = bound_refs[name]
+                    contexts.setdefault(name, dict_parent)
+                elif name is None:
+                    _visit(raw=raw_child, inferred=inferred[key])
+
+    _visit(raw=source, inferred=resolved)
+    return contexts
+
+
+@beartype
 def literalize_bound_refs(
     *,
     source: str,
@@ -4276,21 +4506,36 @@ def literalize_bound_refs(
         if isinstance(variable_form, BothVariableForms)
         else None
     )
+    contextual_bound_refs = _contextual_bound_ref_values(
+        source=pre_form.data,
+        resolved=pre_form.data_for_preamble,
+        bound_refs=bound_refs,
+        ref_key=ref_key,
+    )
+    bound_ref_contexts = _bound_ref_parent_contexts(
+        source=pre_form.data,
+        resolved=pre_form.data_for_preamble,
+        bound_refs=contextual_bound_refs,
+        ref_key=ref_key,
+    )
     decl_results: list[LiteralizeResult] = []
     for name in ordered_names:
-        language.validate_spec_for_data(data=bound_refs[name])
+        bound_value = contextual_bound_refs[name]
+        language.validate_spec_for_data(data=bound_value)
         converted_name = (
             ref_case.convert(name=name) if ref_case is not None else name
         )
         decl_results.append(
             _literalize_value_binding(
-                value=bound_refs[name],
+                value=bound_value,
                 language=language,
                 variable_form=NewVariable(
                     name=converted_name, modifiers=frozenset()
                 ),
                 collection_layout=collection_layout,
-                record_context_data=pre_form.data_for_preamble,
+                record_context_data=bound_ref_contexts.get(
+                    name, pre_form.data_for_preamble
+                ),
                 line_prefix=pre_form.line_prefix,
             )
         )
