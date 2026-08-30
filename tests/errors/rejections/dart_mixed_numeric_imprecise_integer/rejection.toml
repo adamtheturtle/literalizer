@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Dart rejects imprecise integer literals in double-typed containers."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Dart"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"f": 1.5, "n": 9007199254740993}',
+  '[1.5, -9007199254740993]',
+]
+input_format = "json"

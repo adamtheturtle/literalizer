@@ -49,6 +49,10 @@ from literalizer._formatters.format_strings import (
     bidi_escape_replacements,
     make_backslash_string_formatter,
 )
+from literalizer._formatters.type_inference import (
+    MixedNumeric,
+    infer_element_type,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -94,13 +98,13 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_type_hint_preamble,
-    no_validate_call_arg,
     value_contains,
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
+    UnrepresentableIntegerError,
     WrapCombinedInFileNotSupportedError,
 )
 
@@ -188,6 +192,60 @@ def _format_dart_bigint_literal(value: int) -> str:
     runtime.
     """
     return f'BigInt.parse("{value}")'
+
+
+@beartype
+def _dart_integer_is_exact_double(value: int) -> bool:
+    """Return whether Dart can use *value* in a ``double`` context."""
+    try:
+        return int(float(value)) == value
+    except OverflowError:
+        return False
+
+
+@beartype
+def _validate_dart_mixed_numeric_data(
+    *,
+    data: Value,
+    sequence_is_tuple: bool,
+) -> None:
+    """Reject integers that cannot inhabit an inferred ``double``
+    container.
+    """
+    if isinstance(data, dict):
+        items = list(data.values())
+    elif isinstance(data, set) or (
+        isinstance(data, list) and not sequence_is_tuple
+    ):
+        items = list(data)
+    else:
+        items = []
+
+    if items and infer_element_type(items=items) is MixedNumeric:
+        for item in items:
+            if (
+                isinstance(item, int)
+                and not isinstance(item, bool)
+                and not _dart_integer_is_exact_double(value=item)
+            ):
+                msg = (
+                    f"Dart cannot represent integer {item} in a double-typed "
+                    "container without loss of precision."
+                )
+                raise UnrepresentableIntegerError(msg)
+
+    if isinstance(data, dict):
+        for child in data.values():
+            _validate_dart_mixed_numeric_data(
+                data=child,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+    elif isinstance(data, list | set):
+        for child in data:
+            _validate_dart_mixed_numeric_data(
+                data=child,
+                sequence_is_tuple=sequence_is_tuple,
+            )
 
 
 @beartype
@@ -1102,7 +1160,16 @@ class Dart(metaclass=LanguageCls):
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
-        return no_validate_call_arg
+        sequence_is_tuple = self.sequence_format.name == "TUPLE"
+
+        def validate(data: Value) -> None:
+            """Validate one direct call argument."""
+            _validate_dart_mixed_numeric_data(
+                data=data,
+                sequence_is_tuple=sequence_is_tuple,
+            )
+
+        return validate
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
@@ -1116,6 +1183,10 @@ class Dart(metaclass=LanguageCls):
         ``DateTime.parse(...)``, which is a runtime call and not a
         constant expression, so they are incompatible with ``CONST``.
         """
+        _validate_dart_mixed_numeric_data(
+            data=data,
+            sequence_is_tuple=self.sequence_format.name == "TUPLE",
+        )
         _decl_cls = type(self.declaration_style)
         if self.declaration_style is not _decl_cls.CONST:
             return
