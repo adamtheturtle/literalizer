@@ -534,10 +534,12 @@ def _java_type_hint(
         set_outer=set_outer,
     )
     match data:
+        case OrderedMap():
+            val_type = common(elements=list(data.values()), boxed=True)
+            hint = f"java.util.ArrayList<Map.Entry<String, {val_type}>>"
         case dict():
             val_type = common(elements=list(data.values()), boxed=True)
-            outer = "Map" if isinstance(data, OrderedMap) else dict_outer
-            hint = f"{outer}<String, {val_type}>"
+            hint = f"{dict_outer}<String, {val_type}>"
         case set():
             elem_type = common(elements=list(data), boxed=True)
             hint = f"{set_outer}<{elem_type}>"
