@@ -1932,10 +1932,7 @@ class Scala(metaclass=LanguageCls):
                     element_to_type=self._opener_config.element_to_type(
                         dict_value_to_type=None,
                         list_template=(
-                            "List[{inner}]"
-                            if self.sequence_format
-                            is self.sequence_formats.LIST
-                            else None
+                            f"{self.sequence_format.name.title()}[{{inner}}]"
                         ),
                         enable_list_type=True,
                         date_type=self._date_type_name,

@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Scala"]
+languages_reason = "Scala-specific: nested map annotations name the configured sequence type."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
