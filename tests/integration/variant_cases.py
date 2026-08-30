@@ -124,7 +124,7 @@ def build_json_type_variable_form_cases(
                 )
             )
             continue
-        for index, declaration_style in enumerate(iterable=redef_styles):
+        for declaration_style in redef_styles:
             lang_cls = json_variant.lang_cls
             kwargs: dict[str, object] = {
                 "json_type": spec.json_type,
@@ -145,11 +145,6 @@ def build_json_type_variable_form_cases(
             # style; that path activates from metadata when such a
             # language is added.
             name = f"{json_variant.name}_combined"
-            if index > 0:
-                name = (  # pragma: no cover
-                    f"{name}_declaration_style_"
-                    f"{declaration_style.name.lower()}"
-                )
             variant = compact_variant(
                 name=name,
                 spec=make_spec(lang_cls=json_variant.lang_cls, **kwargs),

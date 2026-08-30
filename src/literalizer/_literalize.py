@@ -5,7 +5,8 @@ import datetime
 import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
-from typing import Final, Protocol, assert_never, runtime_checkable
+from contextlib import suppress
+from typing import Any, Final, Protocol, assert_never, runtime_checkable
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import (
@@ -494,10 +495,7 @@ def _map_widened_int_formatter(
     value its own type, so there is nothing to pool and a mixed-width
     document renders each value on its own terms (issue #4488).
     """
-    language_cls = type(spec)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Map width pooling requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(spec)
     if not language_cls.pools_map_integer_width:
         return None
     return _widened_int_formatter(items=items, spec=spec)
@@ -715,7 +713,7 @@ def _nested_collection_context(
     """Keep nested collection payload strings layout-independent."""
     if not isinstance(value, (dict, list, set)):
         return ctx
-    language_cls = type(ctx.spec)
+    language_cls: Any = type(ctx.spec)
     if not isinstance(language_cls, LanguageCls):
         msg = "nested collection rendering requires a LanguageCls language"
         raise TypeError(msg)
@@ -2164,10 +2162,7 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
     """
     if not isinstance(value, dict | OrderedMap):
         return ctx
-    language_cls = type(ctx.spec)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Layout selection requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(ctx.spec)
     if language_cls.supports_multiline_dict_layout:
         return ctx
     return ctx.compact()
@@ -3325,14 +3320,16 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
             ref_key=ref_key,
         )
         if direct_dict_override is not None:
-            for child in context_children:
-                if (  # pragma: no branch
-                    isinstance(child, dict)
-                    and not isinstance(child, OrderedMap)
-                ):
-                    context_dict_open_overrides.setdefault(
-                        id(child), direct_dict_override
-                    )
+            plain_dict_children = [
+                child
+                for child in context_children
+                if isinstance(child, dict)
+                and not isinstance(child, OrderedMap)
+            ]
+            for child in plain_dict_children:
+                context_dict_open_overrides.setdefault(
+                    id(child), direct_dict_override
+                )
     context_dict_int_formatters: Mapping[int, Callable[[int], str]] = (
         _collect_dict_int_formatters(data=record_context_data, spec=language)
         if record_context_data is not None
@@ -3542,36 +3539,35 @@ def _literalize_child_path(
         case _:
             return ()
     for component, child in children:
-        try:
-            _literalize_impl(
-                data=child,
-                language=language,
-                line_prefix="",
-                include_delimiters=True,
-                ref_case=ref_case,
-                ref_values=ref_values,
-                ref_key=ref_key,
-                collection_layout=collection_layout,
-                raw_yaml_data=None,
-                toml_comment_doc=None,
-                validate_data=True,
-                record_context_data=None,
-            )
-        except error_type:
-            return (
-                component,
-                *_literalize_child_path(
+        with suppress(LiteralizerError):
+            try:
+                _literalize_impl(
                     data=child,
-                    error_type=error_type,
                     language=language,
+                    line_prefix="",
+                    include_delimiters=True,
                     ref_case=ref_case,
                     ref_values=ref_values,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
-                ),
-            )
-        except LiteralizerError:  # pragma: no cover - defensive probe
-            continue
+                    raw_yaml_data=None,
+                    toml_comment_doc=None,
+                    validate_data=True,
+                    record_context_data=None,
+                )
+            except error_type:
+                return (
+                    component,
+                    *_literalize_child_path(
+                        data=child,
+                        error_type=error_type,
+                        language=language,
+                        ref_case=ref_case,
+                        ref_values=ref_values,
+                        ref_key=ref_key,
+                        collection_layout=collection_layout,
+                    ),
+                )
     return ()
 
 
@@ -3983,7 +3979,7 @@ def _scope_preamble_for_wrap(
     ``case class`` declarations) inside the wrapped body rather than at
     file scope; everything stays at file scope for the rest.
     """
-    language_cls = type(language)
+    language_cls: Any = type(language)
     if not isinstance(language_cls, LanguageCls):
         msg = "preamble scoping requires a LanguageCls language"
         raise TypeError(msg)
@@ -4050,10 +4046,7 @@ def _declaration_spellings(
     styles of the same declaration, and the second is what the
     assignment form emits, so it stands on its own (issue #4465).
     """
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Declaration-style lookup requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     styles = language_cls.DeclarationStyles
     spellings: set[str] = set()
     for style in styles:
@@ -5488,15 +5481,13 @@ def _format_call_args(
                 formatted=formatted,
             )
             result = sep.join(formatted)
-        case PrefixCallStyle(arg_separator=sep, keyword_prefix=kw_prefix):
+        case _:
             result = _format_prefix_call_args(
                 formatted=formatted,
                 params=params,
-                sep=sep,
-                kw_prefix=kw_prefix,
+                sep=style.arg_separator,
+                kw_prefix=style.keyword_prefix,
             )
-        case _ as unreachable:
-            assert_never(unreachable)
     return result
 
 
@@ -6217,10 +6208,7 @@ def _validate_call_target(
         language=language,
         target_function=target_function,
     )
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Call-target validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     # A bare constructor target is just the class name, which some
     # languages do not admit as a function name at all (issue #3914).
     # Sliced rather than measured by ``len``: a length test narrows the
@@ -6392,7 +6380,7 @@ def _validate_wrapped_call_parameter_shadowing(
             declared_parts = target_function_parts[-1:]
         case CallParameterShadowing.ANY_DECLARATION:
             declared_parts = target_function_parts
-        case _ as unreachable:  # pragma: no cover
+        case _ as unreachable:
             assert_never(unreachable)
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
     declared = {
@@ -6435,10 +6423,7 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Call-scaffold validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     _validate_wrapped_call_entrypoint(
         language=language,
         language_cls=language_cls,
@@ -6915,7 +6900,7 @@ def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
     def materialize(item: ValueInput) -> Value:
         """Materialize one node while tracking its active ancestors."""
         if _is_value_mapping(item):
-            mapping = item
+            mapping: ValueItemsMap[Scalar, ValueInput] | None = item
             sequence: Sequence[ValueInput] | None = None
         elif _is_value_sequence(item):
             mapping = None
@@ -6932,9 +6917,8 @@ def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
                     key: materialize(item=child)
                     for key, child in mapping.items()
                 }
-            if sequence is None:  # pragma: no cover - narrowed above
-                raise InvalidValueInputError(argument_name=argument_name)
-            return [materialize(item=child) for child in sequence]
+            sequence_values: Any = sequence
+            return [materialize(item=child) for child in sequence_values]
         finally:
             active.remove(identity)
 
@@ -6985,27 +6969,28 @@ def _preamble_data_with_zip(
     # literals.  Preserve the existing data shape for general preamble
     # and body-type inference, while giving container-sensitive language
     # preambles the precise values that appear as call arguments.
-    if not isinstance(data_for_preamble, list):  # pragma: no cover
-        msg = "per-element call preamble data must be a list"
-        raise TypeError(msg)
+    untyped_rows: Any = data_for_preamble
+    rows: list[Value] = untyped_rows
     argument_values = tuple(
         argument
-        for row in data_for_preamble
+        for row in rows
         for argument in (row if isinstance(row, list) else [row])
     )
-    rows = tuple(
-        row if isinstance(row, list) else [row] for row in data_for_preamble
+    normalized_rows = tuple(
+        row if isinstance(row, list) else [row] for row in rows
     )
     argument_slots = tuple(
-        [row[index] for row in rows if index < len(row)]
-        for index in range(max((len(row) for row in rows), default=0))
+        [row[index] for row in normalized_rows if index < len(row)]
+        for index in range(
+            max((len(row) for row in normalized_rows), default=0)
+        )
     )
     if zip_resolution is not None:
         argument_values += tuple(zip_resolution.values)
         argument_slots += tuple([value] for value in zip_resolution.values)
-        preamble_data = [data_for_preamble, *zip_resolution.values]
+        preamble_data: Any = [rows, *zip_resolution.values]
     else:
-        preamble_data = data_for_preamble
+        preamble_data = rows
     return CallPreambleData(
         data=preamble_data,
         argument_values=argument_values,

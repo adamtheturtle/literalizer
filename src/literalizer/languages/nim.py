@@ -171,15 +171,6 @@ def _format_nim_json_call_arg(_raw_value: Value, formatted: str) -> str:
 
 
 @beartype
-def _nim_json_non_scalar_child(  # pragma: no cover
-    _raw_value: Value,
-    formatted: str,
-) -> str:
-    """Identity wrapper signaling JSON can hold non-scalar children."""
-    return formatted
-
-
-@beartype
 def _format_nim_json_assignment(name: str, value: str, _data: Value) -> str:
     """Assign a rendered literal to a Nim ``JsonNode`` binding."""
     return f"{name} = {_nim_json_value_expression(value)}"
@@ -1915,7 +1906,7 @@ class Nim(metaclass=LanguageCls):
             return dataclasses.replace(
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
-                wrap_non_scalar=_nim_json_non_scalar_child,
+                wrap_non_scalar=passthrough_sequence_entry,
             )
         if self._uses_record:
             return self._record_strategy.behavior

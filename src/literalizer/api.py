@@ -8,6 +8,7 @@ package root as :func:`literalizer.literalize` and
 
 import dataclasses
 from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 from beartype import beartype
 
@@ -15,7 +16,6 @@ from literalizer._language import (
     CollectionLayout,
     IdentifierCase,
     Language,
-    LanguageCls,
     is_reserved_identifier,
 )
 from literalizer._literalize import (
@@ -130,10 +130,7 @@ def _validate_module_name_variable_collision(
     (issue #4752), and it is compared under its ``ref_case`` conversion
     for the reason ``_validate_bound_ref_output_name`` gives.
     """
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Module-name validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     # ``BothVariableForms`` is exempt: its wrapper puts everything it
     # declares in a subroutine named after the module rather than in
     # the module's own scope, so the names coexist (issue #4530).
@@ -176,10 +173,7 @@ def _validate_immutable_both_forms(
     """
     if not isinstance(variable_form, BothVariableForms):
         return
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Modifier validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     immutable = sorted(
         variable_form.modifiers & language_cls.immutable_variable_modifiers,
         key=lambda modifier: modifier.name,
@@ -204,10 +198,7 @@ def _validate_pre_indented_wrap(
     around it, so the file carries two margins.  Only a language that
     reads indentation as structure minds (issue #4535).
     """
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "Pre-indent validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     if (
         pre_indent_level
         and wrap_in_file

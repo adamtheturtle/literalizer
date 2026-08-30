@@ -180,10 +180,7 @@ def validate_new_variable_name(
             name_source=name_source,
             variable_name=name,
         )
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):  # pragma: no cover
-        msg = "NewVariable validation requires a LanguageCls language"
-        raise TypeError(msg)
+    language_cls: Any = type(language)
     pattern = language_cls.reserved_variable_identifier_pattern
     if pattern is not None and pattern.fullmatch(string=name) is not None:
         raise ReservedVariableNameError(

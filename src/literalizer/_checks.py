@@ -7,7 +7,7 @@ import datetime
 import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from beartype import beartype
 
@@ -55,12 +55,11 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
             result = spec.format_bytes(value)
         case datetime.datetime():
             result = spec.format_datetime(value)
-        # No supported input syntax can put a time-only value in a mapping
-        # key or set, the only positions whose scalar identities are checked.
-        case datetime.time():  # pragma: no cover
+        case datetime.time():
             result = spec.format_time(value)
         case _:
-            result = spec.format_date(value)
+            date_value: Any = value
+            result = spec.format_date(date_value)
     return result
 
 
@@ -1744,10 +1743,9 @@ def check_data(*, data: Value, spec: Language) -> None:
     try:
         _check_data(data=data, spec=spec)
     except LiteralizerError as exc:
-        if exc.path is None:  # pragma: no branch - entry lacks a location
-            exc.path = _locate_error(
-                data=data,
-                spec=spec,
-                error_type=type(exc),
-            )
+        exc.path = _locate_error(
+            data=data,
+            spec=spec,
+            error_type=type(exc),
+        )
         raise

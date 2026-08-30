@@ -1,7 +1,6 @@
 """YAML and TOML comment extraction and formatting."""
 
 import dataclasses
-import datetime
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, assert_never, runtime_checkable
@@ -12,7 +11,6 @@ from ruamel.yaml.comments import (
     CommentedMap,
     CommentedSeq,
     CommentedSet,
-    TaggedScalar,
 )
 from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import AoT, Comment, Item, Table, Whitespace
@@ -95,23 +93,9 @@ class ElementComments:
 @beartype
 def _yaml_set_sort_key(value: object) -> tuple[str, str]:
     """Return the rendering sort key for a wrapped YAML set member."""
-    match value:
-        case (
-            bool()
-            | int()
-            | float()
-            | str()
-            | datetime.datetime()
-            | datetime.date()
-            | datetime.time()
-            | bytes()
-            | TaggedScalar()
-            | None
-        ):
-            unwrapped = unwrap_yaml_scalar(value=value)
-            return type(unwrapped).__name__, repr(unwrapped)
-        case _:  # pragma: no cover - CommentedSet only accepts scalars
-            return type(value).__name__, repr(value)
+    scalar: Any = value
+    unwrapped = unwrap_yaml_scalar(value=scalar)
+    return type(unwrapped).__name__, repr(unwrapped)
 
 
 @beartype

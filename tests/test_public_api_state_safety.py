@@ -4,6 +4,7 @@ These build a cyclic Python value, or render from several threads at
 once, neither of which a case file can declare (issue #4699).
 """
 
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -12,6 +13,20 @@ import pytest
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import InvalidValueInputError
 from literalizer.languages import Python, Rust
+
+
+def test_time_key_in_public_substitution_uses_time_formatter() -> None:
+    """Supplemental mappings preserve time-only scalar keys."""
+    result = literalize(
+        source='{"value": null}',
+        input_format=InputFormat.JSON,
+        language=Python(),
+        record_null_substitutions={
+            "value": {datetime.time(hour=1, minute=2, second=3): 1}
+        },
+    )
+
+    assert "datetime.time(hour=1, minute=2, second=3): 1" in result.bare_code
 
 
 def test_cyclic_supplemental_values_raise_typed_error() -> None:

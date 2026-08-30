@@ -235,7 +235,7 @@ def _format_string_multiline(value: str) -> str:
             return f'r{hashes}"{value}"{hashes}'
     # Rust reserves raw strings with more than 255 hashes. Reaching this
     # requires a value containing every legal raw-string closing delimiter.
-    return format_string_backslash(value=value)  # pragma: no cover
+    return format_string_backslash(value=value)
 
 
 class _RustModifiers(enum.Enum):
@@ -800,15 +800,6 @@ def _rust_json_value_expression(value: str, /) -> str:
 def _format_rust_json_call_arg(_raw_value: Value, formatted: str) -> str:
     """Format a direct Rust call argument as ``serde_json::Value``."""
     return _rust_json_value_expression(formatted)
-
-
-@beartype
-def _rust_json_non_scalar_child(  # pragma: no cover
-    _raw_value: Value,
-    formatted: str,
-) -> str:
-    """Identity wrapper signaling JSON can hold non-scalar children."""
-    return formatted
 
 
 @beartype
@@ -4062,7 +4053,7 @@ class Rust(metaclass=LanguageCls):
             return dataclasses.replace(
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
-                wrap_non_scalar=_rust_json_non_scalar_child,
+                wrap_non_scalar=passthrough_sequence_entry,
             )
         base = self.heterogeneous_strategy.value.build_behavior(
             self._strategy_params,
