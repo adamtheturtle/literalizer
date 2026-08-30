@@ -1600,6 +1600,26 @@ class Go(metaclass=LanguageCls):
         )
 
     @cached_property
+    def format_integer_in_mixed_numeric_collection(
+        self,
+    ) -> Callable[[int], str] | None:
+        """Leave integer constants inferred when their collection is
+        ``float64``.
+
+        ``AUTO`` normally writes ``int64(...)``.  Go cannot use that typed
+        value in a ``float64`` slice or map literal, whereas the same bare
+        integer constant converts to ``float64`` in context (issue #4762).
+        """
+        if (
+            self.numeric_literal_suffix
+            is not type(self.numeric_literal_suffix).AUTO
+        ):
+            return None
+        return self.integer_format.get_formatter(
+            numeric_separator=self.numeric_separator,
+        )
+
+    @cached_property
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Formatter for collections whose integers exceed signed 64-bit
         range.

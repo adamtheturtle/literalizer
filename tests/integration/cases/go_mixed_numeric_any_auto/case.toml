@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go AUTO keeps int64 conversions when a heterogeneous collection widens to any."
+
+[[variants]]
+axis = "numeric_literal_suffix"
