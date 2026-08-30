@@ -27,6 +27,13 @@ def test_trailing_empty_vec_is_compatible_with_populated_sibling() -> None:
     assert "(2, Vec::<i32>::new())" in rendered
 
 
+def test_populated_vec_slots_do_not_need_empty_vec_inference() -> None:
+    """The tuple scan also handles slots where every Vec is populated."""
+    rendered = _render(source="[[1, [2]], [3, [4]]]")
+    assert "(1, vec![2])" in rendered
+    assert "(3, vec![4])" in rendered
+
+
 def test_tuple_inside_tuple_is_collected_independently() -> None:
     """A nested mixed-shape tuple is valid in its outer tuple slot."""
     assert '("x", (1, (2, vec![3])))' in _render(source='{"x": [1, [2, [3]]]}')
