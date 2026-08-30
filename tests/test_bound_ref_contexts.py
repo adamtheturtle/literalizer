@@ -6,6 +6,7 @@ from literalizer._literalize import (
     _bound_ref_parent_contexts,  # pyright: ignore[reportPrivateUsage]
     _contextual_bound_ref_values,  # pyright: ignore[reportPrivateUsage]
 )
+from literalizer._types import OrderedMap, Scalar, Value
 
 
 def test_contextual_bound_ref_values_widens_nested_mapping_value() -> None:
@@ -64,6 +65,21 @@ def test_bound_ref_parent_contexts_stops_at_short_resolved_list() -> None:
         bound_refs={"value": 1},
         ref_key="$ref",
     )
+
+
+def test_bound_ref_parent_contexts_preserves_ordered_map() -> None:
+    """An ordered-map parent remains ineligible for record widening."""
+    marker: dict[Scalar, Value] = {"$ref": "bound"}
+    source: dict[Scalar, Value] = {"value": marker}
+    contexts = _bound_ref_parent_contexts(
+        source=source,
+        resolved=OrderedMap({"value": 1}),
+        bound_refs={"bound": 2},
+        ref_key="$ref",
+    )
+
+    assert isinstance(contexts["bound"], OrderedMap)
+    assert contexts["bound"] == {"value": 2}
 
 
 def test_bound_ref_parent_contexts_ignores_unknown_markers() -> None:

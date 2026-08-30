@@ -4416,7 +4416,11 @@ def _bound_ref_parent_contexts(  # noqa: C901  # pylint: disable=too-complex
                     value=raw_child, ref_key=ref_key
                 )
                 if name is not None and name in bound_refs:
-                    dict_parent: dict[Scalar, Value] = dict(inferred)
+                    dict_parent: dict[Scalar, Value] = (
+                        OrderedMap(inferred)
+                        if isinstance(inferred, OrderedMap)
+                        else dict(inferred)
+                    )
                     dict_parent[key] = bound_refs[name]
                     contexts.setdefault(name, dict_parent)
                 elif name is None:
