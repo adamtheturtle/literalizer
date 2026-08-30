@@ -908,6 +908,7 @@ plan = "cross_product"
 name_template = "{lang}_sequence_{format}_{tag}_{secondary}"
 primary = "sequence_format"
 secondaries = [{ tag = "decl", option = "declaration_style" }]
+skip_incompatible_formats = true
 
 [axes.set]
 plan = "every_non_default_member"
