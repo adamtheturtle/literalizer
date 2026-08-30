@@ -1,0 +1,5 @@
+A Nim declaration bound to a reference now names it rather than
+converting it with the JSON macro.  The conversion needed an import
+that a referenced sequence never asked for, so a document whose root
+was a reference to a list emitted a file Nim refused, and it retyped a
+sequence the caller had bound deliberately.

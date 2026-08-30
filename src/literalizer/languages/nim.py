@@ -208,6 +208,20 @@ def _nim_json_declaration_formatter(
 
 
 @beartype
+def _is_nim_reference_marker(*, value: Value) -> bool:
+    """Return whether *value* stands for a binding declared elsewhere.
+
+    A marker is emitted as the bare identifier it names rather than as
+    a literal, so the declaration binding it needs no conversion.
+    """
+    return (
+        isinstance(value, dict)
+        and len(value) == 1
+        and isinstance(value.get("$ref"), str)
+    )
+
+
+@beartype
 def _apply_nim_variable_declaration(
     *,
     name: str,
@@ -238,6 +252,13 @@ def _apply_nim_variable_declaration(
     if use_sequence:
         return f"{keyword} {name} = @{value}"
     if force_sequence or not uses_json_wrap:
+        return f"{keyword} {name} = {value}"
+    if _is_nim_reference_marker(value=_data):
+        # The value names a binding declared above, whose own
+        # declaration already chose its type.  Converting it with
+        # ``%*`` would need an ``import json`` that nothing else in
+        # the file asks for, and would retype a sequence the caller
+        # bound deliberately (issue #4768).
         return f"{keyword} {name} = {value}"
     return f"{keyword} {name} = %* {value}"
 
