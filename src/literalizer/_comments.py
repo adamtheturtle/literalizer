@@ -440,6 +440,27 @@ def _collection_column(
 
 
 @beartype
+def _nested_inline_comment(*, value: object) -> str:
+    """Return the last inline comment anywhere inside *value*."""
+    if not isinstance(value, CommentedSeq | CommentedMap | CommentedSet):
+        return ""
+
+    targets = _collection_targets(ruamel_data=value)
+    ca = _comment_association(ruamel_data=value)
+    for key in reversed(targets.keys):
+        child = _collection_element_value(ruamel_data=value, key=key)
+        deeper = _nested_inline_comment(value=child)
+        parsed = _element_after_comments(
+            ca=ca,
+            key=key,
+            token_idx=targets.token_idx,
+        )
+        if parsed.inline or deeper:
+            return parsed.inline or deeper
+    return ""
+
+
+@beartype
 def _outdented_trailing_comments(
     *,
     value: object,
@@ -512,7 +533,7 @@ def _outdented_trailing_comments(
     if hoist_inline:
         return ElementComments(
             before=deeper.before,
-            inline=parsed.inline or deeper.inline,
+            inline=_nested_inline_comment(value=value) or deeper.inline,
         )
     return deeper
 

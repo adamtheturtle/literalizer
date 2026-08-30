@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+# An inline comment on a non-final nested child must reach the one-line
+# call produced for its enclosing element (issue #4777).
+
+[call]
+target_function = "f"
+parameter_names = ["ops"]
+per_element = true

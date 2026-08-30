@@ -1,0 +1,6 @@
+with A_Stub; use A_Stub;
+procedure Main is
+    procedure F (Ops : A_Val) is begin null; end F;
+begin
+    F(ops => AList'[AList'[AStr ("DEL"), AStr ("b"), AStr ("10")], AList'[AStr ("ADD"), AStr ("a"), AStr ("x")]]);  -- note
+end Main;
