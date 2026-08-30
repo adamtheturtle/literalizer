@@ -1,5 +1,7 @@
 """Focused tests for Kotlin initializer type extraction."""
 
+import pytest
+
 from literalizer.languages.kotlin import (
     _kotlin_explicit_initializer_type,  # pyright: ignore[reportPrivateUsage]
 )
@@ -13,3 +15,12 @@ def test_compact_nested_initializer_uses_outer_generics() -> None:
         )
         == "List<Map<String, Int>>"
     )
+
+
+def test_unbalanced_initializer_type_is_rejected() -> None:
+    """Malformed generic initializer openers fail explicitly."""
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="Unbalanced Kotlin initializer type",
+    ):
+        _kotlin_explicit_initializer_type("listOf<Map<String, Int>(")

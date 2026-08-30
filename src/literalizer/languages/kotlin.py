@@ -703,6 +703,9 @@ def _kotlin_opener_to_type(opener: str, /) -> str:
             depth -= 1
             if depth == 0:
                 break
+    if depth != 0:
+        msg = f"Unbalanced Kotlin initializer type: {opener!r}"
+        raise ValueError(msg)
     generics = opener[generic_start : generic_end + 1]
     return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
 
