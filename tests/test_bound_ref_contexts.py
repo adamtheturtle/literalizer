@@ -64,3 +64,18 @@ def test_bound_ref_parent_contexts_stops_at_short_resolved_list() -> None:
         bound_refs={"value": 1},
         ref_key="$ref",
     )
+
+
+def test_bound_ref_parent_contexts_ignores_unknown_markers() -> None:
+    """Unknown markers in lists and mappings do not create contexts."""
+    assert not _bound_ref_parent_contexts(
+        source=json.loads(
+            s=(
+                '[{"$ref":"first"},{"a":{"$ref":"second"},'
+                '"b":{"$ref":"third"}}]'
+            )
+        ),
+        resolved=json.loads(s='[1,{"a":2,"b":3}]'),
+        bound_refs={},
+        ref_key="$ref",
+    )
