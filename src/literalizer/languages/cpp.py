@@ -493,6 +493,37 @@ class _CppTypeCtx:
 
 
 @beartype
+def _cpp_array_type(
+    *,
+    items: list[Value],
+    type_ctx: _CppTypeCtx,
+) -> str | None:
+    """Return the recursive ``std::array`` type for *items*."""
+    if not items:
+        return "std::array<std::nullptr_t, 0>"
+    int_type = type_ctx.int_resolver(
+        [
+            item
+            for item in items
+            if isinstance(item, int) and not isinstance(item, bool)
+        ],
+    )
+    element_to_type = type_ctx.element_to_type(int_type=int_type)
+    element_types = [
+        (
+            _cpp_array_type(items=item, type_ctx=type_ctx)
+            if isinstance(item, list)
+            else element_to_type(type(item))
+        )
+        for item in items
+    ]
+    first = element_types[0]
+    if first is None or any(item != first for item in element_types):
+        return None
+    return type_ctx.sequence_type(inner=first, length=len(items))
+
+
+@beartype
 def _build_cpp_array_open(
     *,
     type_ctx: _CppTypeCtx,
@@ -505,22 +536,10 @@ def _build_cpp_array_open(
         """Return the typed ``std::array`` opener, or ``{`` on
         fallback.
         """
-        if not items:
-            return "std::array<std::nullptr_t, 0>{"
-        int_type = type_ctx.int_resolver(
-            [
-                item
-                for item in items
-                if isinstance(item, int) and not isinstance(item, bool)
-            ],
-        )
-        element_to_type = type_ctx.element_to_type(int_type=int_type)
-        type_name = element_to_type(type(items[0]))
-        if type_name is None or not all(
-            element_to_type(type(i)) == type_name for i in items
-        ):
+        type_name = _cpp_array_type(items=items, type_ctx=type_ctx)
+        if type_name is None:
             return "{"
-        return f"std::array<{type_name}, {len(items)}>{{"
+        return f"{type_name}{{"
 
     return _open
 
