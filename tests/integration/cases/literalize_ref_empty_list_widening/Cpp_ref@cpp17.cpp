@@ -2,13 +2,13 @@
 #include <vector>
 #include <cstddef>
 int main() {
-auto a = std::vector<int>{};
-auto b = std::vector<int>{
+auto empty_values = std::vector<int>{};
+auto integer_values = std::vector<int>{
     1,
 };
 auto my_data = std::vector<std::vector<int>>{
-    std::move(a),
-    std::move(b),
+    std::move(empty_values),
+    std::move(integer_values),
 };
     (void)my_data;
     return 0;

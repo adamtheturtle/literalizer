@@ -1,8 +1,8 @@
-final a = <int>[];
-final b = <int>[
+final emptyValues = <int>[];
+final integerValues = <int>[
     1,
 ];
 final my_data = <List<int>>[
-    a,
-    b,
+    emptyValues,
+    integerValues,
 ];

@@ -6,5 +6,5 @@ languages = ["Cpp", "Dart", "Go", "Java", "Swift"]
 languages_reason = "These statically typed back ends widen an int reference beside a float but require the binding to widen too."
 
 [ref.value_sources]
-a = "1.5"
-b = "2"
+floating_value = "1.5"
+integer_value = "2"

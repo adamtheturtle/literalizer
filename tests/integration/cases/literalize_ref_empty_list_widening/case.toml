@@ -6,5 +6,5 @@ languages = ["Cpp", "Dart", "Go", "Java", "Rust"]
 languages_reason = "These statically typed back ends require an empty referenced list to borrow its sibling element type."
 
 [ref.value_sources]
-a = "[]"
-b = "[1]"
+empty_values = "[]"
+integer_values = "[1]"

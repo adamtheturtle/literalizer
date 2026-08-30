@@ -1,11 +1,11 @@
 package main
 
 func main() {
-A := 1.5
-B := 2.0
+FloatingValue := 1.5
+IntegerValue := 2.0
 my_data := []float64{
-	A,
-	B,
+	FloatingValue,
+	IntegerValue,
 }
 _ = my_data
 }

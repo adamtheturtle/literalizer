@@ -43,11 +43,11 @@ struct Value {
   } // get const
 };
 int main() {
-auto a = std::map<std::string, Value>{
+auto string_map = std::map<std::string, Value>{
     {"k", Value{"s"}},
 };
 auto my_data = std::vector<std::map<std::string, Value>>{
-    std::move(a),
+    std::move(string_map),
     std::map<std::string, Value>{{"k", Value{1}}},
 };
     (void)my_data;

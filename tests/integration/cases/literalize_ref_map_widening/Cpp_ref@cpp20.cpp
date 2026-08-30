@@ -4,11 +4,11 @@
 #include <vector>
 #include <variant>
 int main() {
-auto a = std::map<std::string, std::variant<std::string, int>>{
+auto string_map = std::map<std::string, std::variant<std::string, int>>{
     {"k", "s"},
 };
 auto my_data = std::vector<std::map<std::string, std::variant<std::string, int>>>{
-    std::move(a),
+    std::move(string_map),
     std::map<std::string, std::variant<std::string, int>>{{"k", 1}},
 };
     (void)my_data;

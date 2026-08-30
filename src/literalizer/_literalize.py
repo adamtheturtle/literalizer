@@ -4317,7 +4317,7 @@ class _BoundRefComposition:
 
 
 @beartype
-def _contextual_bound_ref_values(  # noqa: C901
+def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
     *,
     source: Value,
     resolved: Value,
@@ -4329,7 +4329,7 @@ def _contextual_bound_ref_values(  # noqa: C901
     """
     contextual = dict(bound_refs)
 
-    def _visit(  # noqa: C901, PLR0912
+    def _visit(  # noqa: C901, PLR0912  # pylint: disable=too-many-branches
         *, raw: Value, inferred: Value
     ) -> None:
         """Find markers whose resolved siblings require float bindings."""
@@ -4381,7 +4381,7 @@ def _contextual_bound_ref_values(  # noqa: C901
 
 
 @beartype
-def _bound_ref_parent_contexts(  # noqa: C901
+def _bound_ref_parent_contexts(  # noqa: C901  # pylint: disable=too-complex
     *,
     source: Value,
     resolved: Value,

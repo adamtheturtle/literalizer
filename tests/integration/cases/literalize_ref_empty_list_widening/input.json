@@ -1,1 +1,1 @@
-[{"$ref":"a"},{"$ref":"b"}]
+[{"$ref":"empty_values"},{"$ref":"integer_values"}]

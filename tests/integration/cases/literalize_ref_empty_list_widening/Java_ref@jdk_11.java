@@ -1,12 +1,12 @@
 class Main {
     public static void main() {
-var a = new int[]{};
-var b = new int[]{
+var emptyValues = new int[]{};
+var integerValues = new int[]{
     1
 };
 var my_data = new int[][]{
-    a,
-    b
+    emptyValues,
+    integerValues
 };
     }
 }

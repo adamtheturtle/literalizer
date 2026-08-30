@@ -1,11 +1,11 @@
 #include <initializer_list>
 #include <vector>
 int main() {
-auto a = 1.5;
-auto b = 2.0;
+auto floating_value = 1.5;
+auto integer_value = 2.0;
 auto my_data = std::vector<double>{
-    a,
-    b,
+    floating_value,
+    integer_value,
 };
     (void)my_data;
     return 0;

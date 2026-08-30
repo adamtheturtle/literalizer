@@ -1,13 +1,13 @@
 package main
 
 func main() {
-A := []int{}
-B := []int{
+EmptyValues := []int{}
+IntegerValues := []int{
 	1,
 }
 my_data := [][]int{
-	A,
-	B,
+	EmptyValues,
+	IntegerValues,
 }
 _ = my_data
 }

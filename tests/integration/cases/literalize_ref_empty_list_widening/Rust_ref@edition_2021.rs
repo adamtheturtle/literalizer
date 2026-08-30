@@ -1,11 +1,11 @@
 fn main() {
-    let a = vec![];
-    let b = vec![
+    let empty_values = vec![];
+    let integer_values = vec![
         1,
     ];
     let my_data = vec![
-        a,
-        b,
+        empty_values,
+        integer_values,
     ];
     let _ = my_data;
 }

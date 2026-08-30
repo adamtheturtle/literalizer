@@ -1,6 +1,6 @@
-final a = 1.5;
-final b = 2.0;
+final floatingValue = 1.5;
+final integerValue = 2.0;
 final my_data = <double>[
-    a,
-    b,
+    floatingValue,
+    integerValue,
 ];
