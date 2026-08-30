@@ -3318,8 +3318,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         )
         if direct_dict_override is not None:
             for child in context_children:
-                if isinstance(child, dict) and not isinstance(
-                    child, OrderedMap
+                if (  # pragma: no branch
+                    isinstance(child, dict)
+                    and not isinstance(child, OrderedMap)
                 ):
                     context_dict_open_overrides.setdefault(
                         id(child), direct_dict_override
