@@ -1234,9 +1234,15 @@ def _rust_infer_tuple_empty_vecs(
         for position in range(len(sequences[0])):
             values = [sequence[position] for sequence in sequences]
             empty = [value for value in values if value == []]
+            non_empty = [value for value in values if value != []]
             populated = [
                 value for value in values if isinstance(value, list) and value
             ]
+            if len(populated) != len(non_empty) or any(
+                not all(_rust_is_scalar(item) for item in value)
+                for value in populated
+            ):
+                continue
             scalar_types = {
                 _rust_scalar_type(
                     data=item,
@@ -2457,7 +2463,9 @@ def _rust_tuple_nested_vec_format(default_type: str) -> SequenceFormatConfig:
 
 
 @beartype
-def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
+def _rust_tuple_list_ids(  # noqa: C901
+    data: Value, /
+) -> frozenset[int]:
     """Return scalar and mixed-shape lists rendered as Rust tuples.
 
     The shared collector handles heterogeneous scalar lists. Rust can
@@ -2467,27 +2475,56 @@ def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     """
     found = set(collect_tuple_list_ids(data=data))
 
-    def _walk(value: Value) -> None:
+    def _eligible(value: list[Value], /) -> bool:
+        """Return whether one list needs a tuple around mixed shapes."""
+        return len(
+            {
+                "list" if isinstance(item, list) else type(item)
+                for item in value
+            }
+        ) > 1 and any(isinstance(item, (dict, list, set)) for item in value)
+
+    def _signature(value: Value, /) -> Hashable:
+        """Return the Rust type-shape used for sibling uniformity."""
+        if isinstance(value, list):
+            if _eligible(value):
+                return (
+                    "tuple",
+                    tuple(_signature(item) for item in value),
+                )
+            return (
+                "list",
+                frozenset(_signature(item) for item in value),
+            )
+        return (type(value).__name__,)
+
+    def _walk(value: Value, *, inside_uniform_list: bool) -> None:
         """Collect mixed scalar/collection lists recursively."""
         match value:
             case dict():
                 for item in value.values():
-                    _walk(value=item)
+                    if isinstance(item, list) and _eligible(item):
+                        found.add(id(item))
+                    _walk(value=item, inside_uniform_list=True)
             case list():
-                families = {
-                    "list" if isinstance(item, list) else type(item)
-                    for item in value
-                }
-                if len(families) > 1 and any(
-                    isinstance(item, (dict, list, set)) for item in value
-                ):
-                    found.add(id(value))
+                uniform = (
+                    inside_uniform_list
+                    and len({_signature(item) for item in value}) <= 1
+                )
+                if uniform:
+                    found.update(
+                        id(item)
+                        for item in value
+                        if isinstance(item, list) and _eligible(item)
+                    )
                 for item in value:
-                    _walk(value=item)
+                    _walk(value=item, inside_uniform_list=uniform)
             case _:
                 return
 
-    _walk(value=data)
+    if isinstance(data, list) and _eligible(data):
+        found.add(id(data))
+    _walk(value=data, inside_uniform_list=True)
     return frozenset(found)
 
 
@@ -4011,18 +4048,15 @@ class Rust(metaclass=LanguageCls):
                 skip_scalar_checks=True,
                 wrap_non_scalar=_rust_json_non_scalar_child,
             )
-        base = (
-            dataclasses.replace(
-                NO_HETEROGENEOUS_BEHAVIOR,
+        base = self.heterogeneous_strategy.value.build_behavior(
+            self._strategy_params,
+        )
+        if self.sequence_format is type(self.sequence_format).TUPLE_NESTED_VEC:
+            base = dataclasses.replace(
+                base,
                 render_tuple_literal=_render_rust_tuple,
                 compute_tuple_list_ids=_rust_tuple_list_ids,
             )
-            if self.sequence_format
-            is type(self.sequence_format).TUPLE_NESTED_VEC
-            else self.heterogeneous_strategy.value.build_behavior(
-                self._strategy_params,
-            )
-        )
         return dataclasses.replace(
             base,
             empty_container_literal_overrides=(
@@ -4156,14 +4190,18 @@ class Rust(metaclass=LanguageCls):
                 "LAZY_STATIC instead."
             )
             raise IncompatibleFormatsError(msg)
-        if (
-            self.declaration_style in {_decl_cls.CONST, _decl_cls.STATIC}
-            and self.sequence_format is _seq_cls.VEC
-        ):
+        if self.declaration_style in {
+            _decl_cls.CONST,
+            _decl_cls.STATIC,
+        } and self.sequence_format in {
+            _seq_cls.VEC,
+            _seq_cls.TUPLE_NESTED_VEC,
+        }:
             msg = (
                 f"Rust {self.declaration_style.name} requires a "
                 f"constant-expression initializer, but the "
-                f"VEC sequence format produces vec![…] which "
+                f"{self.sequence_format.name} sequence format produces "
+                f"vec![…] which "
                 f"is not a constant expression. "
                 f"Use ARRAY or TUPLE instead."
             )
