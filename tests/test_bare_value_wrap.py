@@ -1,76 +1,55 @@
-"""A whole file holding a value that binds no name.
+"""TOML-driven tests for whole files holding values that bind no name."""
 
-``wrap_in_file=True`` with ``variable_form=None`` is a surface no
-golden-file case reaches: every case owner declares a variable form, so
-the value is always bound to a name.  These check the shapes that need
-the file to read the value as an expression rather than as a statement
-(issue #4774).
-"""
+from typing import Literal
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
-from literalizer import InputFormat, LanguageCls, NewVariable, literalize
+from literalizer import InputFormat, NewVariable, VariableForm, literalize
 from literalizer.languages import JavaScript, TypeScript
+from tests.toml_cases import load_toml_cases
+
+
+class _BareValueCase(BaseModel, extra="forbid", frozen=True):
+    """One declarative whole-file rendering assertion."""
+
+    id: str
+    language: Literal["JavaScript", "TypeScript"]
+    source: str
+    variable_form: Literal["new", "none"]
+    assertion: Literal["contains", "excludes", "starts_with"]
+    expected: str
+
+
+_CASES = TypeAdapter(type=tuple[_BareValueCase, ...]).validate_python(
+    load_toml_cases(name="bare_value_wrap")["cases"]
+)
+_LANGUAGES = {"JavaScript": JavaScript, "TypeScript": TypeScript}
 
 
 @pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=[JavaScript, TypeScript],
-    ids=lambda language_cls: language_cls.__name__,
+    argnames="case",
+    argvalues=_CASES,
+    ids=lambda case: case.id,
 )
-def test_bare_object_is_parenthesized(language_cls: LanguageCls) -> None:
-    """An object at statement scope would open a block, not a literal."""
+def test_bare_value_wrap(case: _BareValueCase) -> None:
+    """A declared bare or bound root has its declared code shape."""
+    variable_form: VariableForm | None = (
+        NewVariable(name="my_data", modifiers=frozenset())
+        if case.variable_form == "new"
+        else None
+    )
     result = literalize(
-        source='{"a": 1}',
+        source=case.source,
         input_format=InputFormat.JSON,
-        language=language_cls(),
+        language=_LANGUAGES[case.language](),
         wrap_in_file=True,
-        variable_form=None,
+        variable_form=variable_form,
     )
 
-    assert result.code.startswith("({")
-    assert "})" in result.code
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=[JavaScript, TypeScript],
-    ids=lambda language_cls: language_cls.__name__,
-)
-@pytest.mark.parametrize(
-    argnames=("source", "opening"),
-    argvalues=[("[1, 2]", "["), ("42", "42"), ('"text"', '"text"')],
-)
-def test_other_bare_roots_are_left_alone(
-    language_cls: LanguageCls,
-    source: str,
-    opening: str,
-) -> None:
-    """Every other root already reads as an expression."""
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=language_cls(),
-        wrap_in_file=True,
-        variable_form=None,
-    )
-
-    assert result.code.startswith(opening)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=[JavaScript, TypeScript],
-    ids=lambda language_cls: language_cls.__name__,
-)
-def test_bound_object_is_not_parenthesized(language_cls: LanguageCls) -> None:
-    """A name to bind to makes the statement reading impossible."""
-    result = literalize(
-        source='{"a": 1}',
-        input_format=InputFormat.JSON,
-        language=language_cls(),
-        wrap_in_file=True,
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-    )
-
-    assert "({" not in result.code
+    if case.assertion == "starts_with":
+        assert result.code.startswith(case.expected)
+    elif case.assertion == "contains":
+        assert case.expected in result.code
+    else:
+        assert case.expected not in result.code
