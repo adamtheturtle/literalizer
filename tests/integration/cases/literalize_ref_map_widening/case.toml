@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp", "Go"]
+languages_reason = "These back ends infer a widened map value type for the containing list and require the referenced map binding to match it."
+
+[ref.value_sources]
+string_map = '{"k":"s"}'

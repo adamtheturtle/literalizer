@@ -1,0 +1,1 @@
+Widen bound-reference declarations to the type required by their containing collection.

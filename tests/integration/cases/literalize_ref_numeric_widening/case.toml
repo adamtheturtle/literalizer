@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp", "Dart", "Go", "Java", "Swift"]
+languages_reason = "These statically typed back ends widen an int reference beside a float but require the binding to widen too."
+
+[ref.value_sources]
+floating_value = "1.5"
+integer_value = "2"
