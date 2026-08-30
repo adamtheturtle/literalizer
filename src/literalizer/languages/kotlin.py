@@ -603,7 +603,7 @@ def _format_kotlin_typed_declaration(
     sequence_format_name: str,
 ) -> str:
     """Format a Kotlin variable declaration with an explicit type."""
-    hint = _kotlin_explicit_initializer_type(value) or _kotlin_type_hint(
+    inferred_hint = _kotlin_type_hint(
         data=data,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
@@ -614,6 +614,7 @@ def _format_kotlin_typed_declaration(
         set_outer=set_outer,
         sequence_format_name=sequence_format_name,
     )
+    hint = _kotlin_explicit_initializer_type(value) or inferred_hint
     return f"{keyword} {name}: {hint} = {value}"
 
 
