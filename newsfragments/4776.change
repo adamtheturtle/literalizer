@@ -1,0 +1,1 @@
+Allow Rust tuple sequences to contain nested homogeneous sequences rendered as ``Vec`` values.

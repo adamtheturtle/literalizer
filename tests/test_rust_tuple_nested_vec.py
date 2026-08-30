@@ -20,6 +20,13 @@ def test_empty_vec_is_compatible_with_populated_tuple_sibling() -> None:
     assert "(2, vec![3])" in rendered
 
 
+def test_trailing_empty_vec_is_compatible_with_populated_sibling() -> None:
+    """Compatibility is symmetric when the empty Vec comes second."""
+    rendered = _render(source="[[1, [3]], [2, []]]")
+    assert "(1, vec![3])" in rendered
+    assert "(2, Vec::<i32>::new())" in rendered
+
+
 def test_tuple_inside_tuple_is_collected_independently() -> None:
     """A nested mixed-shape tuple is valid in its outer tuple slot."""
     assert '("x", (1, (2, vec![3])))' in _render(source='{"x": [1, [2, [3]]]}')
