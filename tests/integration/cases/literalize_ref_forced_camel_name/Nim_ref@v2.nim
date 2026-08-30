@@ -2,4 +2,4 @@ import json
 var userObj = %* {
     "_": "_"
 }
-var my_data = %* userObj
+var my_data = userObj

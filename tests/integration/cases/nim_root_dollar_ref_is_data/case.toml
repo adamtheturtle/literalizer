@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Nim"]
+languages_reason = "Nim distinguishes an ordinary root $ref object from a resolved reference binding."

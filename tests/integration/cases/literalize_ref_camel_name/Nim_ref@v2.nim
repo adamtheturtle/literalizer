@@ -2,4 +2,4 @@ import json
 var myVar = %* {
     "_": "_"
 }
-var my_data = %* myVar
+var my_data = myVar

@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+
+# A reference at the document root bound to a sequence: the binding
+# names it rather than converting it, so Nim needs no ``import json``
+# for a value its own declaration wrote as ``@[...]`` (issue #4768).
+[ref]
+languages = ["Nim"]
+languages_reason = """
+Sampled: Nim is where the binding chose a JSON conversion the
+referenced sequence did not need.
+"""
+
+[ref.value_sources]
+whole = '[1, 2]'
