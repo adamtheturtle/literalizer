@@ -11,6 +11,7 @@ from types import MappingProxyType
 from typing import ClassVar, Final, assert_never
 
 from beartype import beartype
+from typing_extensions import TypeIs
 
 from literalizer._checks import (
     reject_aware_datetimes,
@@ -1007,7 +1008,7 @@ def _rust_is_empty_container(*, value: Value) -> bool:
 
 
 @beartype
-def _rust_is_scalar(*, value: object) -> bool:
+def _rust_is_scalar(value: object, /) -> TypeIs[Scalar]:
     """Return whether *value* is a scalar rather than a ref/container."""
     return value is None or isinstance(
         value,
@@ -1038,7 +1039,7 @@ def _rust_visit_container_wrap_ids(*, item: Value, ids: set[int]) -> None:
         _rust_visit_container_wrap_ids(item=child, ids=ids)
     if not isinstance(item, list):
         return
-    has_scalar = any(_rust_is_scalar(value=child) for child in children)
+    has_scalar = any(_rust_is_scalar(child) for child in children)
     has_container = any(isinstance(child, (list, dict)) for child in children)
     has_set = any(isinstance(child, set) for child in children)
     if has_scalar and has_container and not has_set:
@@ -1208,6 +1209,77 @@ def _rust_empty_container_literal_override_hook(
             data=data,
             hints=params.empty_container_type_hints,
         )
+
+    return _overrides
+
+
+@beartype
+def _rust_infer_tuple_empty_vecs(
+    *,
+    data: Value,
+    params: _StrategyParams,
+    overrides: dict[int, str],
+) -> None:
+    """Add inferred empty ``Vec`` literals found at tuple positions."""
+    children: list[Value]
+    match data:
+        case dict():
+            children = list(data.values())
+        case list():
+            children = data
+        case _:
+            return
+    sequences = [child for child in children if isinstance(child, list)]
+    if len(sequences) > 1 and len({len(item) for item in sequences}) == 1:
+        for position in range(len(sequences[0])):
+            values = [sequence[position] for sequence in sequences]
+            empty = [value for value in values if value == []]
+            populated = [
+                value for value in values if isinstance(value, list) and value
+            ]
+            scalar_types = {
+                _rust_scalar_type(
+                    data=item,
+                    date_type=params.date_type,
+                    datetime_type=params.datetime_type,
+                )
+                for value in populated
+                for item in value
+                if _rust_is_scalar(item)
+            }
+            if empty and populated and len(scalar_types) == 1:
+                element_type = next(iter(scalar_types))
+                for value in empty:
+                    overrides[id(value)] = f"Vec::<{element_type}>::new()"
+    for child in children:
+        _rust_infer_tuple_empty_vecs(
+            data=child,
+            params=params,
+            overrides=overrides,
+        )
+
+
+@beartype
+def _rust_tuple_nested_vec_empty_override_hook(
+    params: _StrategyParams,
+    /,
+) -> Callable[[Value], Mapping[int, str]]:
+    """Build the nested-tuple empty-``Vec`` inference hook."""
+
+    def _overrides(data: Value, /) -> Mapping[int, str]:
+        """Combine configured and sibling-inferred empty types."""
+        overrides = dict(
+            _rust_empty_container_literal_overrides(
+                data=data,
+                hints=params.empty_container_type_hints,
+            )
+        )
+        _rust_infer_tuple_empty_vecs(
+            data=data,
+            params=params,
+            overrides=overrides,
+        )
+        return overrides
 
     return _overrides
 
@@ -2368,11 +2440,55 @@ def _render_rust_tuple(
 
 
 @beartype
+def _rust_tuple_nested_vec_format(default_type: str) -> SequenceFormatConfig:
+    """Build the ``TUPLE_NESTED_VEC`` sequence syntax configuration."""
+    return sequence_format_factory(
+        open_template="vec![",
+        close="]",
+        supports_heterogeneity=False,
+        single_element_trailing_comma=False,
+        single_element_template=None,
+        supports_trailing_comma=True,
+        empty_template="Vec::<{type}>::new()",
+        preamble_lines=(),
+        format_entry=passthrough_sequence_entry,
+        typed_opener_fallback_template=None,
+    )(default_type)
+
+
+@beartype
 def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
-    """Adapt :func:`collect_tuple_list_ids` to the positional
-    ``compute_tuple_list_ids`` hook signature.
+    """Return scalar and mixed-shape lists rendered as Rust tuples.
+
+    The shared collector handles heterogeneous scalar lists. Rust can
+    additionally use a tuple for a list mixing scalar and collection
+    elements, leaving homogeneous nested lists to the configured ``Vec``
+    renderer (issue #4776).
     """
-    return collect_tuple_list_ids(data=data)
+    found = set(collect_tuple_list_ids(data=data))
+
+    def _walk(value: Value) -> None:
+        """Collect mixed scalar/collection lists recursively."""
+        match value:
+            case dict():
+                for item in value.values():
+                    _walk(value=item)
+            case list():
+                families = {
+                    "list" if isinstance(item, list) else type(item)
+                    for item in value
+                }
+                if len(families) > 1 and any(
+                    isinstance(item, (dict, list, set)) for item in value
+                ):
+                    found.add(id(value))
+                for item in value:
+                    _walk(value=item)
+            case _:
+                return
+
+    _walk(value=data)
+    return frozenset(found)
 
 
 @beartype
@@ -2827,6 +2943,9 @@ class Rust(metaclass=LanguageCls):
               homogeneous, heterogeneous-scalar inputs raise.
             * ``sequence_formats.TUPLE`` — tuple literal,
               e.g. ``(1, 2, 3)``.
+            * ``sequence_formats.TUPLE_NESTED_VEC`` — heterogeneous
+              sequences become tuples while their homogeneous nested
+              sequences remain ``Vec`` values.
 
         default_sequence_element_type: Type name used for empty
             ``Vec`` literals, e.g. ``Vec::<String>::new()``.
@@ -3110,10 +3229,12 @@ class Rust(metaclass=LanguageCls):
                 typed_opener_fallback_template=None,
             )
         )
+        TUPLE_NESTED_VEC = enum.member(value=_rust_tuple_nested_vec_format)
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self.value(default_type)
+            config: SequenceFormatConfig = self.value(default_type)
+            return config
 
         def format_type_annotation(
             self,
@@ -3125,7 +3246,7 @@ class Rust(metaclass=LanguageCls):
             if self is cls.TUPLE:
                 msg = "Use per-element types for tuples"
                 raise IncompatibleFormatsError(msg)
-            if self is cls.VEC:
+            if self in {cls.VEC, cls.TUPLE_NESTED_VEC}:
                 return f"Vec<{element_type}>"
             return f"[{element_type}; {length}]"
 
@@ -3890,12 +4011,27 @@ class Rust(metaclass=LanguageCls):
                 skip_scalar_checks=True,
                 wrap_non_scalar=_rust_json_non_scalar_child,
             )
-        return dataclasses.replace(
-            self.heterogeneous_strategy.value.build_behavior(
+        base = (
+            dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                render_tuple_literal=_render_rust_tuple,
+                compute_tuple_list_ids=_rust_tuple_list_ids,
+            )
+            if self.sequence_format
+            is type(self.sequence_format).TUPLE_NESTED_VEC
+            else self.heterogeneous_strategy.value.build_behavior(
                 self._strategy_params,
-            ),
+            )
+        )
+        return dataclasses.replace(
+            base,
             empty_container_literal_overrides=(
-                _rust_empty_container_literal_override_hook(
+                _rust_tuple_nested_vec_empty_override_hook(
+                    self._strategy_params
+                )
+                if self.sequence_format
+                is type(self.sequence_format).TUPLE_NESTED_VEC
+                else _rust_empty_container_literal_override_hook(
                     self._strategy_params
                 )
             ),

@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Rust"]
+languages_reason = "Rust-specific: the TUPLE heterogeneous strategy can pair a scalar with a nested Vec."
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"
