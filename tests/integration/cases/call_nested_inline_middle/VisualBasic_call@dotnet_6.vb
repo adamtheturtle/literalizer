@@ -5,5 +5,7 @@ Module Check
     End Function
     Sub _calls()
         f(New String()() {New String() {"DEL", "b", "10"}, New String() {"ADD", "a", "x"}})  ' note
+        ' next call
+        f(New String()() {New String() {"ADD", "c", "y"}})
     End Sub
 End Module

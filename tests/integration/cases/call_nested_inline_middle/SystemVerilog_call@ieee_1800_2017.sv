@@ -13,5 +13,7 @@ module main;
 task f(input _VVal ops); endtask
 initial begin
 f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"DEL\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"b\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"10\\\"}}\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"ADD\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"a\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"x\\\"}}\"}}"});  // note
+// next call
+f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"ADD\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"c\\\"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"y\\\"}}\"}}"});
 end
 endmodule

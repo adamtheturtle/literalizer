@@ -3,6 +3,8 @@ static void f(id _a0) { (void)_a0; }
 int main(void) {
 @autoreleasepool {
 f(@[@[@"DEL", @"b", @"10"], @[@"ADD", @"a", @"x"]]);  // note
+// next call
+f(@[@[@"ADD", @"c", @"y"]]);
 }
     return 0;
 }

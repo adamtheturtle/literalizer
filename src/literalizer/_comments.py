@@ -528,7 +528,11 @@ def _outdented_trailing_comments(
     if claimed:
         return ElementComments(
             before=(*deeper.before, *parsed.before_next),
-            inline=parsed.inline or deeper.inline,
+            inline=(
+                _nested_inline_comment(value=value)
+                if hoist_inline
+                else parsed.inline or deeper.inline
+            ),
         )
     if hoist_inline:
         return ElementComments(

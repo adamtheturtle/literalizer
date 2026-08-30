@@ -86,6 +86,8 @@ program main
     implicit none
     call f(flist([fval_t :: flist([fval_t :: fstr('DEL'), fstr('b'), fstr('10')]), flist([fval_t :: fstr('ADD'), &
     & fstr('a'), fstr('x')])]))  ! note
+    ! next call
+    call f(flist([fval_t :: flist([fval_t :: fstr('ADD'), fstr('c'), fstr('y')])]))
 contains
     subroutine f(ops)
         implicit none

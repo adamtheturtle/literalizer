@@ -16,6 +16,8 @@ PROC f (VAL MOBILE LIT ops)
 :
 PROC main ()
     f(MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "DEL"), MOBILE LIT(lit.str; MOBILE []BYTE "b"), MOBILE LIT(lit.str; MOBILE []BYTE "10")]), MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "ADD"), MOBILE LIT(lit.str; MOBILE []BYTE "a"), MOBILE LIT(lit.str; MOBILE []BYTE "x")])]))  -- note
+    -- next call
+    f(MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.str; MOBILE []BYTE "ADD"), MOBILE LIT(lit.str; MOBILE []BYTE "c"), MOBILE LIT(lit.str; MOBILE []BYTE "y")])]))
     SEQ
         SKIP
 :
