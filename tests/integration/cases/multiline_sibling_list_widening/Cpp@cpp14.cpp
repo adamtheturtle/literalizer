@@ -45,7 +45,7 @@ struct Value {
 int main() {
 auto my_data = std::map<std::string, Value>{
     {"omap_value", Value{std::vector<std::pair<std::string, int>>{{"first", 1}}}},
-    {"sibling_lists", Value{std::map<std::string, Value>{{"numbers", Value{std::vector<int>{1, 2}}}, {"strings", Value{std::vector<std::string>{"x", "y"}}}}}},
+    {"sibling_lists", Value{std::map<std::string, std::vector<Value>>{{"numbers", std::vector<int>{1, 2}}, {"strings", std::vector<std::string>{"x", "y"}}}}},
     {"ref_marker_present", Value{std::vector<std::string>{"$keep", "z"}}},
 };
     (void)my_data;

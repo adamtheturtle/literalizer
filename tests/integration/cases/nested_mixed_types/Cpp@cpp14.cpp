@@ -42,9 +42,9 @@ struct Value {
   } // get const
 };
 int main() {
-auto my_data = std::vector<Value>{
-    Value{std::vector<int>{1, 2}},
-    Value{std::vector<std::string>{"a", "b"}},
+auto my_data = std::vector<std::vector<Value>>{
+    std::vector<int>{1, 2},
+    std::vector<std::string>{"a", "b"},
 };
     (void)my_data;
     return 0;

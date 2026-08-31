@@ -564,7 +564,9 @@ def _make_initializer_list_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=None,
+        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
+            siblings=siblings, type_ctx=type_ctx
+        ),
     )
 
 
@@ -588,8 +590,21 @@ def _make_array_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=None,
+        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
+            siblings=siblings, type_ctx=type_ctx
+        ),
     )
+
+
+@beartype
+def _cpp_narrowed_empty_sequence(
+    *, siblings: Sequence[list[Value]], type_ctx: _CppTypeCtx
+) -> str:
+    """Render an empty sequence with its non-empty cousin's type."""
+    inner = _compute_element_type_for_items(
+        items=siblings[0], type_ctx=type_ctx
+    )
+    return type_ctx.sequence_type(inner=inner, length=0) + "{}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -740,11 +755,26 @@ def _collect_unique_cpp_types(
     """Collect unique C++ type names for each item, preserving order."""
     unique_cpp_types: list[str] = []
     seen: set[str] = set()
-    for item in items:
-        item_type = _compute_cpp_type(
+    non_empty_list_types = {
+        _compute_cpp_type(
             item=item,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
+        )
+        for item in items
+        if isinstance(item, list) and item
+    }
+    for item in items:
+        item_type = (
+            next(iter(non_empty_list_types))
+            if isinstance(item, list)
+            and not item
+            and len(non_empty_list_types) == 1
+            else _compute_cpp_type(
+                item=item,
+                element_to_type=element_to_type,
+                type_ctx=type_ctx,
+            )
         )
         if item_type not in seen:
             seen.add(item_type)
@@ -800,6 +830,27 @@ def _compute_element_type_for_items(
                 cpp_type = element_to_type(element_type)
                 if cpp_type is not None:
                     return cpp_type
+    sibling_lists = [item for item in items if isinstance(item, list)]
+    if (
+        not type_ctx.tuple_strategy
+        and len(sibling_lists) == len(items)
+        and len({len(item) for item in sibling_lists}) == 1
+    ):
+        positional_types = [
+            _compute_element_type_for_items(
+                items=list(position), type_ctx=type_ctx
+            )
+            for position in zip(*sibling_lists, strict=True)
+        ]
+        inner = (
+            positional_types[0]
+            if len(set(positional_types)) == 1
+            else type_ctx.variant_type(positional_types)
+        )
+        return type_ctx.sequence_type(
+            inner=inner,
+            length=len(sibling_lists[0]),
+        )
     variant_int_type = type_ctx.int_resolver(
         _collect_direct_ints(items=items),
     )
