@@ -27,7 +27,7 @@ def test_ordered_map_nested_tuple_record_is_rejected() -> None:
 
 
 def test_scalar_has_no_nested_tuple_record() -> None:
-    """The recursive validator accepts a scalar leaf."""
+    """The recursive validation accepts a scalar leaf."""
     literalize(
         source="1",
         input_format=InputFormat.JSON,
