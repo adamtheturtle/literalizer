@@ -113,9 +113,13 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._types import OrderedMap, Scalar, Value
-from literalizer.exceptions import TargetScalarCollisionError
+from literalizer.exceptions import (
+    TargetScalarCollisionError,
+    UnrepresentableInputError,
+)
 
 _CONTROL_CHAR_THRESHOLD = 32
+_NESTED_TUPLE_RECORD_DEPTH = 2
 
 
 def _reject_date_midnight_collisions(data: Value) -> None:
@@ -422,6 +426,40 @@ def _swift_type_hint(
                 datetime_hint=datetime_hint,
             )
     return hint
+
+
+@beartype
+def _has_record_below_nested_list(*, data: Value, list_depth: int) -> bool:
+    """Return whether a record dict occurs below two list levels."""
+    match data:
+        case OrderedMap():
+            return any(
+                _has_record_below_nested_list(
+                    data=value, list_depth=list_depth
+                )
+                for value in data.values()
+            )
+        case dict():
+            if (
+                list_depth >= _NESTED_TUPLE_RECORD_DEPTH
+                and record_shape_for_dict(value=data) is not None
+            ):
+                return True
+            return any(
+                _has_record_below_nested_list(
+                    data=value, list_depth=list_depth
+                )
+                for value in data.values()
+            )
+        case list():
+            return any(
+                _has_record_below_nested_list(
+                    data=item, list_depth=list_depth + 1
+                )
+                for item in data
+            )
+        case _:
+            return False
 
 
 @beartype
@@ -1156,10 +1194,22 @@ class Swift(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    @staticmethod
-    def validate_spec_for_data(data: Value) -> None:
-        """Reject target-induced collisions between temporal keys."""
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject target collisions and unsupported tuple record
+        fields.
+        """
         _reject_date_midnight_collisions(data=data)
+        cls = type(self.heterogeneous_strategy)
+        if (
+            self.heterogeneous_strategy is cls.RECORD
+            and self.sequence_format is type(self.sequence_format).TUPLE
+            and _has_record_below_nested_list(data=data, list_depth=0)
+        ):
+            msg = (
+                "Swift RECORD tuple fields cannot declare generated record "
+                "types nested below multiple tuple levels"
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
