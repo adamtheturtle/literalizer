@@ -1,0 +1,21 @@
+schema_version = 1
+summary = """
+Nim native sequences require a single inferable element type. Mixed scalar
+types and scalar/container positions otherwise produce code rejected by Nim.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = [
+  '[[1, []], [2, [3]]]',
+  '{"x": [[1, "a"], [2, "b"]]}',
+]
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]

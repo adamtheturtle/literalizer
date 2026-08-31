@@ -134,6 +134,31 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
 @beartype
+def _reject_uninferrable_native_sequences(*, data: Value) -> None:
+    """Reject native Nim sequences whose element type is ambiguous."""
+    match data:
+        case dict():
+            for child in data.values():
+                _reject_uninferrable_native_sequences(data=child)
+        case list():
+            all_empty_lists = bool(data) and all(item == [] for item in data)
+            if (
+                data
+                and not all_empty_lists
+                and infer_element_type(items=data) is None
+            ):
+                msg = (
+                    "Nim native sequences require one inferable element "
+                    "type; this sequence contains incompatible elements"
+                )
+                raise UnrepresentableInputError(msg)
+            for child in data:
+                _reject_uninferrable_native_sequences(data=child)
+        case _:
+            return
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a raw Nim triple-quoted string when safe."""
     if value.startswith(("\n", '"')) or value.endswith('"'):
@@ -1624,6 +1649,8 @@ class Nim(metaclass=LanguageCls):
                 record_fields_are_independent=False,
                 list_elements_are_independent=False,
             )
+        if self._uses_record:
+            _reject_uninferrable_native_sequences(data=data)
         if (
             self._uses_native_nim_collections
             and isinstance(data, list)
