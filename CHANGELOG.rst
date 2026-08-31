@@ -6,7 +6,10 @@ Changelog
 2026.08.31
 ----------
 
-- A ``Rust`` call argument now faces the same per-language data rules a declared value does: an offset the native datetime drops, and a float collection key the map type cannot hash. The rules ran on the declaration path alone, so a call silently changed the value or emitted code ``rustc`` refuses.
+- A ``Rust`` call argument is now subject to the same per-language data rules as
+  a declared value: an offset the native datetime drops, and a float collection
+  key the map type cannot hash. The rules ran on the declaration path alone, so
+  a call silently changed the value or emitted code ``rustc`` refuses.
 
 - ``CSharp``, ``Kotlin`` and ``Scala`` now refuse a ``record_shape_names`` entry naming a type their own output references, as ``Rust`` and ``Java`` already did. Such a name either shadows the type the same file uses or clashes with the line importing it.
 
