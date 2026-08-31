@@ -1,4 +1,4 @@
-val emptyValues = listOf<Any?>()
+val emptyValues = arrayOf<Any?>()
 val integerValues = intArrayOf(
     1,
 )

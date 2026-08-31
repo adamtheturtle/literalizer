@@ -257,10 +257,18 @@ def _kotlin_list_sequence_open(
             element_type=element_type, dict_resolver=dict_resolver
         )
 
-    return typed_collection_open(
+    typed_open = typed_collection_open(
         type_to_opener=_combined_opener,
         fallback="listOf<Any?>(",
     )
+
+    def _open(items: list[Value], /) -> str:
+        """Keep empty LIST values in Kotlin's array container family."""
+        if not items:
+            return "arrayOf<Any?>("
+        return typed_open(items)
+
+    return _open
 
 
 @beartype

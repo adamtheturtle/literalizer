@@ -1,4 +1,4 @@
 val my_data = mapOf<String, Any?>(
-    "a" to listOf<Any?>(),
-    "b" to listOf<Any?>(),
+    "a" to arrayOf<Any?>(),
+    "b" to arrayOf<Any?>(),
 )
