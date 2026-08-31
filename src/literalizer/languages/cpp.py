@@ -782,6 +782,11 @@ def _collect_unique_cpp_types(
     return unique_cpp_types
 
 
+def _is_cpp_value_list(value: Value, /) -> TypeGuard[list[Value]]:
+    """Narrow a parsed value to a recursively typed list."""
+    return isinstance(value, list)
+
+
 @beartype
 def _compute_element_type_for_items(
     *,
@@ -835,6 +840,12 @@ def _compute_element_type_for_items(
         not type_ctx.tuple_strategy
         and len(sibling_lists) == len(items)
         and len({len(item) for item in sibling_lists}) == 1
+        and bool(sibling_lists[0])
+        and any(
+            any(_is_cpp_value_list(item) and not item for item in position)
+            and any(_is_cpp_value_list(item) and item for item in position)
+            for position in zip(*sibling_lists, strict=True)
+        )
     ):
         positional_types = [
             _compute_element_type_for_items(

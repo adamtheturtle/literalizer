@@ -2,7 +2,7 @@
 #include <vector>
 #include <cstddef>
 int main() {
-auto my_data = std::vector<std::vector<Value>>{
+auto my_data = std::vector<std::vector<std::nullptr_t>>{
     std::vector<std::nullptr_t>{},
     std::vector<std::nullptr_t>{},
 };
