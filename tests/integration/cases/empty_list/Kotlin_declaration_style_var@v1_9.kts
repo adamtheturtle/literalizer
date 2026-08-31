@@ -1,1 +1,1 @@
-var my_data = listOf<Any?>()
+var my_data = arrayOf<Any?>()
