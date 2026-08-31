@@ -1036,7 +1036,11 @@ class Swift(metaclass=LanguageCls):
                     )
                     needs_context = data is None or (
                         bool(data)
-                        and ("Record0(" not in value or hint == "[Any]")
+                        and (
+                            isinstance(data, OrderedMap)
+                            or "Record0(" not in value
+                            or hint == "[Any]"
+                        )
                     )
                     if isinstance(data, dict) and any(
                         not isinstance(key, str) for key in data
