@@ -340,6 +340,18 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
 
+[axes.cpp14_heterogeneous_strategy_tuple]
+plan = "fixed_overrides"
+name_template = "{lang}_cpp14_heterogeneous_strategy_tuple"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "CPP14" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "CPP14" },
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
 [axes.heterogeneous_value_enum_name]
 plan = "fixed_overrides"
 name_template = "{lang}_heterogeneous_value_enum_name_{value}"
@@ -901,6 +913,16 @@ gates = [
 ]
 overrides = [
   { kind = "enum_member", option = "sequence_format", member = "TUPLE" },
+]
+
+[axes.sequence_tuple_nested_vec]
+plan = "fixed_overrides"
+name_template = "{lang}_sequence_tuple_nested_vec"
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "TUPLE_NESTED_VEC" },
+]
+overrides = [
+  { kind = "enum_member", option = "sequence_format", member = "TUPLE_NESTED_VEC" },
 ]
 
 [axes.sequence_decl]

@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+roles = ["no-variable-form-input"]
+languages = ["JavaScript", "TypeScript"]
+languages_reason = "ECMAScript object expressions need parentheses when emitted as bare file-scope values."

@@ -12,6 +12,7 @@ from literalizer.languages import Rust
     argvalues=[
         "[[1, [2]], [3, 4]]",
         "[[1, []], [2, [3, [4]]]]",
+        '[[1, []], [2, [3]], [4, ["x"]]]',
     ],
 )
 def test_nested_vec_tuple_rejects_nonuniform_siblings(source: str) -> None:

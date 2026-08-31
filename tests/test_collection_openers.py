@@ -65,6 +65,9 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
 def test_cpp_record_ordered_map_falls_back_for_distinct_record_types() -> None:
     """Unlike uniform record lists, distinct list types use the base
     opener.
+
+    The wider rendered value is intentionally not a compiling golden
+    surface, so this remains focused on the internal fallback contract.
     """
     language = Cpp(
         heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
@@ -78,26 +81,6 @@ def test_cpp_record_ordered_map_falls_back_for_distinct_record_types() -> None:
     )
 
     assert "std::vector<std::pair<std::string, std::variant<" in result.code
-
-
-def test_cpp14_tuple_ordered_map_uses_rendered_record_value_type() -> None:
-    """C++14 tuple records and their ordered-map type agree."""
-    language = Cpp(
-        language_version=Cpp.version_formats.CPP14,
-        heterogeneous_strategy=Cpp.heterogeneous_strategies.TUPLE,
-    )
-
-    result = literalize(
-        source="!!omap\n- entries:\n  - id: 1\n",
-        input_format=InputFormat.YAML,
-        language=language,
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-    )
-
-    assert (
-        "std::vector<std::pair<std::string, std::vector<Record0>>>"
-        in result.code
-    )
 
 
 @pytest.mark.parametrize(

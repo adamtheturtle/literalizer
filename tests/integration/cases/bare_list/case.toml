@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "variant"
+roles = ["no-variable-form-input"]
+languages = ["JavaScript", "TypeScript"]
+languages_reason = "Migrated public whole-file coverage for bare ECMAScript list expressions."

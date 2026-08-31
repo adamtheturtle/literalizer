@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Rust"]
+languages_reason = "Rust-specific independent nested tuple scope under its tuple sequence format."
+
+[[variants]]
+axis = "sequence_tuple_nested_vec"
