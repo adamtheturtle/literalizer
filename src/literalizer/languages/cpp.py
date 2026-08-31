@@ -164,7 +164,9 @@ def _cpp_record_value_shape(value: Value, /) -> object:
     if isinstance(value, list):
         return (
             "list",
-            tuple(dict.fromkeys(map(_cpp_record_value_shape, value))),
+            tuple(
+                dict.fromkeys(_cpp_record_value_shape(item) for item in value)
+            ),
         )
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
         return (
