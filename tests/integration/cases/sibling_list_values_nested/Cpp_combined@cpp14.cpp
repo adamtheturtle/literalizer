@@ -44,12 +44,12 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, std::vector<Value>>{
-    {"lint", std::vector<Value>{Value{2}, Value{std::vector<std::nullptr_t>{}}}},
+    {"lint", std::vector<Value>{Value{2}, Value{std::vector<std::string>{}}}},
     {"test", std::vector<Value>{Value{5}, Value{std::vector<std::string>{"compile"}}}},
 };
 (void)my_data;
 my_data = std::map<std::string, std::vector<Value>>{
-    {"lint", std::vector<Value>{Value{2}, Value{std::vector<std::nullptr_t>{}}}},
+    {"lint", std::vector<Value>{Value{2}, Value{std::vector<std::string>{}}}},
     {"test", std::vector<Value>{Value{5}, Value{std::vector<std::string>{"compile"}}}},
 };
     (void)my_data;

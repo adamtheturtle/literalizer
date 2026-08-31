@@ -144,6 +144,58 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 )
 
 
+def _rust_nested_type_shape(value: Value, /) -> Hashable:
+    """Return a structural Rust type signature for nested collections."""
+    if isinstance(value, list):
+        return (
+            "list",
+            tuple(
+                dict.fromkeys(_rust_nested_type_shape(item) for item in value)
+            ),
+        )
+    if isinstance(value, dict):
+        return (
+            "map",
+            tuple(
+                dict.fromkeys(_rust_nested_type_shape(key) for key in value)
+            ),
+            tuple(
+                dict.fromkeys(
+                    _rust_nested_type_shape(item) for item in value.values()
+                )
+            ),
+        )
+    return type(value).__name__
+
+
+@beartype
+def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
+    """Reject sibling lists whose concrete Rust element types differ."""
+    if isinstance(data, list):
+        sibling_lists = [item for item in data if isinstance(item, list)]
+        all_are_record_lists = all(
+            item and all(isinstance(element, dict) for element in item)
+            for item in sibling_lists
+        )
+        if (
+            len(sibling_lists) == len(data)
+            and len(sibling_lists) > 1
+            and all_are_record_lists
+        ):
+            shapes = {_rust_nested_type_shape(item) for item in sibling_lists}
+            if len(shapes) > 1:
+                msg = (
+                    "Rust nested sibling lists require one concrete "
+                    "element type; these siblings are incompatible"
+                )
+                raise UnrepresentableInputError(msg)
+        for child in data:
+            _reject_incompatible_nested_sibling_lists(child)
+    elif isinstance(data, dict):
+        for child in data.values():
+            _reject_incompatible_nested_sibling_lists(child)
+
+
 def _reject_float_collection_keys(data: Value) -> None:
     """Reject floats requiring unavailable Rust
     equality, hashing, and ordering traits.
@@ -4070,8 +4122,12 @@ class Rust(metaclass=LanguageCls):
                 _rust_tuple_nested_vec_empty_override_hook(
                     self._strategy_params
                 )
-                if self.sequence_format
-                is type(self.sequence_format).TUPLE_NESTED_VEC
+                if (
+                    self.sequence_format
+                    is type(self.sequence_format).TUPLE_NESTED_VEC
+                    or self.heterogeneous_strategy
+                    is type(self.heterogeneous_strategy).TUPLE
+                )
                 else _rust_empty_container_literal_override_hook(
                     self._strategy_params
                 )
@@ -4312,6 +4368,12 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
+        if (
+            not self._json_type_active
+            and self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).ERROR
+        ):
+            _reject_incompatible_nested_sibling_lists(data)
         # The element types of a tuple stand apart, so siblings inside
         # a list written as one need no common type (issue #4663).
         renders_list_as_tuple = (

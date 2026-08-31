@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+Go RECORD cannot currently declare one nested slice type for a generated
+record list and its empty sibling.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Go"]
+
+[call]
+api = "literalize"
+sources = ['{"groups": [[{"id": 1}], []]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

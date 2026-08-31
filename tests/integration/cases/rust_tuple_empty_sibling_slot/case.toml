@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Rust"]
+languages_reason = "Rust-specific: tuple slots shared by sibling tuple values must use one vector element type."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy"

@@ -177,6 +177,24 @@ def _cpp_record_value_shape(value: Value, /) -> object:
     return type(value).__name__
 
 
+def _cpp_array_nested_shape(value: Value, /) -> object:
+    """Return a structural type shape for a nested C++ array value."""
+    if isinstance(value, list):
+        return (
+            "array",
+            len(value),
+            tuple(
+                dict.fromkeys(_cpp_array_nested_shape(item) for item in value)
+            ),
+        )
+    if isinstance(value, dict):
+        return (
+            "map",
+            tuple(_cpp_array_nested_shape(item) for item in value.values()),
+        )
+    return type(value).__name__
+
+
 @beartype
 def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
     """Reject ordered-map values requiring different C++ record lists."""
@@ -201,6 +219,26 @@ def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
     elif isinstance(data, list | set):
         for child in data:
             _reject_distinct_record_list_ordered_map_values(child)
+
+
+@beartype
+def _reject_incompatible_nested_cpp_arrays(data: Value, /) -> None:
+    """Reject nested arrays whose elements need distinct variant arms."""
+    if isinstance(data, list):
+        nested = [item for item in data if isinstance(item, list)]
+        if len(nested) == len(data) and len(nested) > 1:
+            shapes = {_cpp_array_nested_shape(item) for item in nested}
+            if len(shapes) > 1:
+                msg = (
+                    "C++ ARRAY cannot construct nested heterogeneous "
+                    "values with incompatible element types"
+                )
+                raise UnrepresentableInputError(msg)
+        for child in data:
+            _reject_incompatible_nested_cpp_arrays(child)
+    elif isinstance(data, dict):
+        for child in data.values():
+            _reject_incompatible_nested_cpp_arrays(child)
 
 
 @beartype
@@ -608,7 +646,9 @@ def _make_initializer_list_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=None,
+        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
+            siblings=siblings, type_ctx=type_ctx
+        ),
     )
 
 
@@ -634,6 +674,17 @@ def _make_array_config(
         declared_type=None,
         narrowed_empty_form=None,
     )
+
+
+@beartype
+def _cpp_narrowed_empty_sequence(
+    *, siblings: Sequence[list[Value]], type_ctx: _CppTypeCtx
+) -> str:
+    """Render an empty sequence with its non-empty cousin's type."""
+    inner = _compute_element_type_for_items(
+        items=siblings[0], type_ctx=type_ctx
+    )
+    return type_ctx.sequence_type(inner=inner, length=0) + "{}"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -796,6 +847,11 @@ def _collect_unique_cpp_types(
     return unique_cpp_types
 
 
+def _is_cpp_value_list(value: Value, /) -> TypeGuard[list[Value]]:
+    """Narrow a parsed value to a recursively typed list."""
+    return isinstance(value, list)
+
+
 @beartype
 def _compute_element_type_for_items(
     *,
@@ -844,6 +900,33 @@ def _compute_element_type_for_items(
                 cpp_type = element_to_type(element_type)
                 if cpp_type is not None:
                     return cpp_type
+    sibling_lists = [item for item in items if isinstance(item, list)]
+    if (
+        not type_ctx.tuple_strategy
+        and len(sibling_lists) == len(items)
+        and len({len(item) for item in sibling_lists}) == 1
+        and bool(sibling_lists[0])
+        and any(
+            any(_is_cpp_value_list(item) and not item for item in position)
+            and any(_is_cpp_value_list(item) and item for item in position)
+            for position in zip(*sibling_lists, strict=True)
+        )
+    ):
+        positional_types = [
+            _compute_element_type_for_items(
+                items=list(position), type_ctx=type_ctx
+            )
+            for position in zip(*sibling_lists, strict=True)
+        ]
+        inner = (
+            positional_types[0]
+            if len(set(positional_types)) == 1
+            else type_ctx.variant_type(positional_types)
+        )
+        return type_ctx.sequence_type(
+            inner=inner,
+            length=len(sibling_lists[0]),
+        )
     variant_int_type = type_ctx.int_resolver(
         _collect_direct_ints(items=items),
     )
@@ -3288,6 +3371,8 @@ class Cpp(metaclass=LanguageCls):
         if self._record_strategy_active:
             _check_cpp_record_naming(node=data)
             _reject_distinct_record_list_ordered_map_values(data)
+        if self.sequence_format is type(self.sequence_format).ARRAY:
+            _reject_incompatible_nested_cpp_arrays(data)
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
         if self._json_inline_document_active:
