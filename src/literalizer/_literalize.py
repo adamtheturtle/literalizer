@@ -1980,8 +1980,6 @@ def _replace_positional_empty_lists(
 ) -> list[list[Value]]:
     """Replace empty positional cousins with a non-empty type exemplar."""
     normalized = [list(items) for items in lists]
-    if len({len(items) for items in normalized}) != 1:
-        return normalized
     for position in range(len(normalized[0])):
         cousins = [items[position] for items in normalized]
         exemplar = next(
