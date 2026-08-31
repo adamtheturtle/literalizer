@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Rust ordered maps use one concrete value type, so values with incompatible
+nested collection types must be rejected before emitting invalid Rust.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ["!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"

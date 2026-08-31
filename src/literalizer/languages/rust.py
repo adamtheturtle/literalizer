@@ -144,6 +144,53 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 )
 
 
+def _rust_native_type_shape(value: Value, /) -> Hashable:
+    """Return the concrete Rust collection-type shape of *value*."""
+    if isinstance(value, list):
+        return (
+            "list",
+            tuple(dict.fromkeys(map(_rust_native_type_shape, value))),
+        )
+    if isinstance(value, dict):
+        return (
+            "map",
+            tuple(
+                dict.fromkeys(_rust_native_type_shape(key) for key in value)
+            ),
+            tuple(
+                dict.fromkeys(
+                    _rust_native_type_shape(item) for item in value.values()
+                )
+            ),
+        )
+    if isinstance(value, set):
+        return (
+            "set",
+            tuple(dict.fromkeys(map(_rust_native_type_shape, value))),
+        )
+    return type(value).__name__
+
+
+@beartype
+def _reject_heterogeneous_ordered_map_values(data: Value, /) -> None:
+    """Reject ordered maps whose values require distinct Rust types."""
+    if isinstance(data, OrderedMap):
+        shapes = {_rust_native_type_shape(value) for value in data.values()}
+        if len(shapes) > 1:
+            msg = (
+                "Rust ordered maps require one concrete value type; "
+                "these values have incompatible collection types"
+            )
+            raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        for child in data.values():
+            _reject_heterogeneous_ordered_map_values(child)
+        return
+    if isinstance(data, list | set):
+        for child in data:
+            _reject_heterogeneous_ordered_map_values(child)
+
+
 def _reject_float_collection_keys(data: Value) -> None:
     """Reject floats requiring unavailable Rust
     equality, hashing, and ordering traits.
@@ -4312,6 +4359,8 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
+        if not self._json_type_active:
+            _reject_heterogeneous_ordered_map_values(data)
         # The element types of a tuple stand apart, so siblings inside
         # a list written as one need no common type (issue #4663).
         renders_list_as_tuple = (
