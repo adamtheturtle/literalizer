@@ -1952,8 +1952,9 @@ def _compute_sequence_open_override(
             for position in zip(*lists, strict=True)
         )
         if has_positional_empty_mix:
+            normalized_lists = _replace_positional_empty_lists(lists=lists)
             return spec.sequence_open(
-                [item for sibling in lists for item in sibling]
+                [item for sibling in normalized_lists for item in sibling]
             )
         return None
     return fallback
@@ -1971,6 +1972,32 @@ _FALLBACK_PROBE: list[Value] = [1, "probe"]
 def _is_value_list(value: Value, /) -> TypeGuard[list[Value]]:
     """Narrow a parsed value to its recursively typed list form."""
     return isinstance(value, list)
+
+
+@beartype
+def _replace_positional_empty_lists(
+    *, lists: Sequence[list[Value]]
+) -> list[list[Value]]:
+    """Replace empty positional cousins with a non-empty type exemplar."""
+    normalized = [list(items) for items in lists]
+    if len({len(items) for items in normalized}) != 1:
+        return normalized
+    for position in range(len(normalized[0])):
+        cousins = [items[position] for items in normalized]
+        exemplar = next(
+            (
+                cousin
+                for cousin in cousins
+                if _is_value_list(cousin) and cousin
+            ),
+            None,
+        )
+        if exemplar is None:
+            continue
+        for items in normalized:
+            if _is_value_list(items[position]) and not items[position]:
+                items[position] = exemplar
+    return normalized
 
 
 @beartype
