@@ -1,7 +1,7 @@
 schema_version = 1
 languages = ["Swift"]
 languages_reason = "Swift-specific: heterogeneous ordered-map values require an explicit [String: Any] annotation."
-suites = ["base"]
+owner = "variant"
 
 [[variants]]
-axis = "heterogeneous_strategy"
+axis = "heterogeneous_strategy_record"
