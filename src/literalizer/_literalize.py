@@ -6,7 +6,14 @@ import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
-from typing import Any, Final, Protocol, assert_never, runtime_checkable
+from typing import (
+    Any,
+    Final,
+    Protocol,
+    TypeGuard,
+    assert_never,
+    runtime_checkable,
+)
 
 from beartype import BeartypeConf, beartype
 from ruamel.yaml.comments import (
@@ -800,6 +807,13 @@ def _empty_container_literal_overrides(
         spec=spec,
         out=overrides,
     )
+    narrowed_empty_sequence = spec.sequence_format_config.narrowed_empty_form
+    if narrowed_empty_sequence is not None:
+        _accumulate_cousin_empty_list_overrides(
+            value=data,
+            narrowed_empty_sequence=narrowed_empty_sequence,
+            out=overrides,
+        )
     narrowed_empty_dict = spec.dict_format_config.narrowed_empty_form
     if narrowed_empty_dict is not None:
         _accumulate_cousin_empty_dict_overrides(
@@ -808,6 +822,65 @@ def _empty_container_literal_overrides(
             out=overrides,
         )
     return overrides
+
+
+@beartype
+def _accumulate_cousin_empty_list_overrides(
+    *,
+    value: Value,
+    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
+    out: dict[int, str],
+) -> None:
+    """Type empty lists at corresponding paths through sibling lists."""
+    children: Sequence[Value]
+    if isinstance(value, list):
+        children = value
+    elif isinstance(value, dict):
+        children = list(value.values())
+    else:
+        return
+    sibling_lists = [child for child in children if isinstance(child, list)]
+    if len(sibling_lists) == len(children) and sibling_lists:
+        _accumulate_positional_empty_list_overrides(
+            sibling_lists=sibling_lists,
+            narrowed_empty_sequence=narrowed_empty_sequence,
+            out=out,
+        )
+    for child in children:
+        _accumulate_cousin_empty_list_overrides(
+            value=child,
+            narrowed_empty_sequence=narrowed_empty_sequence,
+            out=out,
+        )
+
+
+@beartype
+def _accumulate_positional_empty_list_overrides(
+    *,
+    sibling_lists: Sequence[list[Value]],
+    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
+    out: dict[int, str],
+) -> None:
+    """Walk equal-length sibling lists and type corresponding empties."""
+    lengths = {len(sibling) for sibling in sibling_lists}
+    if len(lengths) != 1:
+        return
+    for cousins in zip(*sibling_lists, strict=True):
+        lists = [cousin for cousin in cousins if _is_value_list(cousin)]
+        if len(lists) != len(cousins):
+            continue
+        empty_lists = [item for item in lists if not item]
+        non_empty_lists = [item for item in lists if item]
+        if empty_lists and non_empty_lists:
+            replacement = narrowed_empty_sequence(non_empty_lists)
+            for empty_list in empty_lists:
+                out.setdefault(id(empty_list), replacement)
+        if non_empty_lists:
+            _accumulate_positional_empty_list_overrides(
+                sibling_lists=non_empty_lists,
+                narrowed_empty_sequence=narrowed_empty_sequence,
+                out=out,
+            )
 
 
 @beartype
@@ -1848,14 +1921,9 @@ def _compute_sequence_open_override(
     "accepts anything" type instead of narrowing one branch to its
     concrete element type.
 
-    Languages that use variant-based typing (e.g. C++'s
-    ``std::variant``) expose an element-specific opener for every
-    shape — their empty-sequence opener is not a true fallback, so
-    applying this widening would cascade type mismatches into the
-    containing declaration.  Detect that case by comparing the
-    empty-sequence opener with the opener for a mixed list; if they
-    differ the language has no stable fallback and no widening is
-    applied.
+    Languages that use content-specific union typing expose no stable
+    fallback opener.  For those, infer one opener from the sibling
+    lists together so each literal agrees with the containing type.
     """
     # An empty list has no contents to infer a type from, so its
     # opener is the language's "accepts anything" one.  That says
@@ -1877,6 +1945,17 @@ def _compute_sequence_open_override(
 
     fallback = spec.sequence_open([])
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
+        same_length = len({len(sibling) for sibling in lists}) == 1
+        has_positional_empty_mix = same_length and any(
+            any(_is_value_list(item) and not item for item in position)
+            and any(_is_value_list(item) and bool(item) for item in position)
+            for position in zip(*lists, strict=True)
+        )
+        if has_positional_empty_mix:
+            normalized_lists = _replace_positional_empty_lists(lists=lists)
+            return spec.sequence_open(
+                [item for sibling in normalized_lists for item in sibling]
+            )
         return None
     return fallback
 
@@ -1888,6 +1967,35 @@ def _compute_sequence_open_override(
 # a content-specific type (variant, union, etc.) that we must leave
 # alone to avoid cascading type mismatches.
 _FALLBACK_PROBE: list[Value] = [1, "probe"]
+
+
+def _is_value_list(value: Value, /) -> TypeGuard[list[Value]]:
+    """Narrow a parsed value to its recursively typed list form."""
+    return isinstance(value, list)
+
+
+@beartype
+def _replace_positional_empty_lists(
+    *, lists: Sequence[list[Value]]
+) -> list[list[Value]]:
+    """Replace empty positional cousins with a non-empty type exemplar."""
+    normalized = [list(items) for items in lists]
+    for position in range(len(normalized[0])):
+        cousins = [items[position] for items in normalized]
+        exemplar = next(
+            (
+                cousin
+                for cousin in cousins
+                if _is_value_list(cousin) and cousin
+            ),
+            None,
+        )
+        if exemplar is None:
+            continue
+        for items in normalized:
+            if _is_value_list(items[position]) and not items[position]:
+                items[position] = exemplar
+    return normalized
 
 
 @beartype

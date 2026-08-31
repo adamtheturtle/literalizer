@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++-specific: its nested sequence declarations use content-derived std::variant types and must borrow the element type of an empty positional sibling."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"

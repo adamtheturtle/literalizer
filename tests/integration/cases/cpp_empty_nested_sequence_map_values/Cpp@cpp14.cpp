@@ -44,8 +44,8 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, std::vector<Value>>{
-    {"lint", std::vector<Value>{Value{2}, Value{std::vector<std::string>{}}}},
-    {"test", std::vector<Value>{Value{5}, Value{std::vector<std::string>{"compile"}}}},
+    {"alpha", std::vector<Value>{Value{2}, Value{std::vector<std::string>{}}}},
+    {"beta", std::vector<Value>{Value{5}, Value{std::vector<std::string>{"x"}}}},
 };
     (void)my_data;
     return 0;
