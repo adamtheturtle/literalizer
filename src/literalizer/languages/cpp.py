@@ -590,9 +590,7 @@ def _make_array_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
-            siblings=siblings, type_ctx=type_ctx
-        ),
+        narrowed_empty_form=None,
     )
 
 
@@ -755,26 +753,11 @@ def _collect_unique_cpp_types(
     """Collect unique C++ type names for each item, preserving order."""
     unique_cpp_types: list[str] = []
     seen: set[str] = set()
-    non_empty_list_types = {
-        _compute_cpp_type(
+    for item in items:
+        item_type = _compute_cpp_type(
             item=item,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
-        )
-        for item in items
-        if isinstance(item, list) and item
-    }
-    for item in items:
-        item_type = (
-            next(iter(non_empty_list_types))
-            if isinstance(item, list)
-            and not item
-            and len(non_empty_list_types) == 1
-            else _compute_cpp_type(
-                item=item,
-                element_to_type=element_to_type,
-                type_ctx=type_ctx,
-            )
         )
         if item_type not in seen:
             seen.add(item_type)

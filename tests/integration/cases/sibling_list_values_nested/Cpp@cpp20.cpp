@@ -6,8 +6,8 @@
 #include <variant>
 int main() {
 auto my_data = std::map<std::string, std::vector<std::variant<int, std::vector<std::string>>>>{
-    {"lint", std::vector<std::variant<int, std::vector<std::string>>>{2, std::vector<std::string>{}}},
-    {"test", std::vector<std::variant<int, std::vector<std::string>>>{5, std::vector<std::string>{"compile"}}},
+    {"lint", std::vector<std::variant<int, std::vector<std::nullptr_t>, std::vector<std::string>>>{2, std::vector<std::string>{}}},
+    {"test", std::vector<std::variant<int, std::vector<std::nullptr_t>, std::vector<std::string>>>{5, std::vector<std::string>{"compile"}}},
 };
     (void)my_data;
     return 0;
