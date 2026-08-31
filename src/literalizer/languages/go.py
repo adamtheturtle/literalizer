@@ -136,7 +136,9 @@ _format_string_go = make_backslash_string_formatter(
 
 @beartype
 def _reject_record_lists_with_empty_siblings(data: Value, /) -> None:
-    """Reject Go record lists paired with an untyped empty sibling."""
+    """Reject Go record lists paired with an empty sibling without type
+    information.
+    """
     if isinstance(data, list):
         sibling_lists = [item for item in data if isinstance(item, list)]
         has_empty = any(not item for item in sibling_lists)
