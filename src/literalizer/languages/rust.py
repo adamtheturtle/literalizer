@@ -171,7 +171,15 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
     """Reject sibling lists whose concrete Rust element types differ."""
     if isinstance(data, list):
         sibling_lists = [item for item in data if isinstance(item, list)]
-        if len(sibling_lists) == len(data) and len(sibling_lists) > 1:
+        all_are_record_lists = all(
+            item and all(isinstance(element, dict) for element in item)
+            for item in sibling_lists
+        )
+        if (
+            len(sibling_lists) == len(data)
+            and len(sibling_lists) > 1
+            and all_are_record_lists
+        ):
             shapes = {_rust_nested_type_shape(item) for item in sibling_lists}
             if len(shapes) > 1:
                 msg = (
