@@ -165,13 +165,6 @@ def _rust_native_type_shape(value: Value, /) -> Hashable:
                 )
             ),
         )
-    if isinstance(value, set):
-        return (
-            "set",
-            tuple(
-                dict.fromkeys(_rust_native_type_shape(item) for item in value)
-            ),
-        )
     return type(value).__name__
 
 
