@@ -12,7 +12,7 @@ from literalizer._formatters.collection_openers import (
     sequence_surrogate_set_open,
 )
 from literalizer._language import Language
-from literalizer._types import Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.languages import Cpp, Haxe, Nim, Raku
 
 
@@ -59,6 +59,28 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     assert cpp14.heterogeneous_behavior.compute_wrap_ids(outer) == frozenset(
         {id(outer)}
     )
+
+
+def test_cpp_record_ordered_map_opener_falls_back_without_one_record() -> None:
+    """The opener retains its base fallback for unresolved record
+    lists.
+    """
+    language = Cpp(
+        heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+    )
+    value = OrderedMap()
+    first_record: dict[Scalar, Value] = {"id": 1}
+    second_record: dict[Scalar, Value] = {"name": "example"}
+    first: list[Value] = []
+    second: list[Value] = []
+    first.append(first_record)
+    second.append(second_record)
+    value["first"] = first
+    value["second"] = second
+
+    opener = language.ordered_map_format_config.ordered_map_open(value)
+
+    assert opener.startswith("std::vector<std::pair<std::string, ")
 
 
 @pytest.mark.parametrize(
