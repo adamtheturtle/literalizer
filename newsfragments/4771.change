@@ -1,6 +1,0 @@
-COBOL now refuses the reserved words it was accepting as declaration
-names, such as ``string``, ``length`` and ``type``.  Seventeen words
-confirmed by GnuCOBOL have been added to the existing list.
-
-A COBOL call stub takes its arguments positionally and writes no
-parameter names, so a reserved word is still accepted there.

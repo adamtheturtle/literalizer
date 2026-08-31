@@ -1,5 +1,0 @@
-Nim now refuses a declaration name with a trailing or doubled
-underscore, and Standard ML one beginning with an underscore.  Nim
-takes an underscore only between two letters or digits, and in Standard
-ML a leading underscore is the wildcard pattern, so both emitted source
-the compiler refused.

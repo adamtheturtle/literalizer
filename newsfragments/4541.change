@@ -1,6 +1,0 @@
-Document the method-size ceiling on the ``Scala`` and ``Java`` back
-ends.  A rendered literal is one expression placed in one method, and the
-virtual machine caps a method at 64KB of compiled size, so a large document does not
-compile.  The limit applies to the whole document rather than to any one
-collection, and it moves with the document's shape, so each language
-records measured figures rather than a single element count.

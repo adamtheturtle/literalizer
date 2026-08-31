@@ -1,5 +1,0 @@
-A reference marker beside a map is no longer pooled with it when a
-container widens its sibling maps to a shared value type.  The marker
-stands for a value declared elsewhere, so pooling its own shape widened
-containers that agree once the reference resolves, and C++ and Kotlin
-emitted an element whose type did not match the container declaring it.

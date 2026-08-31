@@ -1,3 +1,0 @@
-Removed all coverage-ignore directives, deleted unreachable defensive paths,
-and moved the remaining boundary coverage into a shared cross-language
-integration fixture.

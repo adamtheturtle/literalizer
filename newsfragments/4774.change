@@ -1,4 +1,0 @@
-JavaScript and TypeScript now wrap a whole file holding an unbound
-object in parentheses.  A statement opening with a brace is a block, so
-the file did not parse.  Every other root already reads as an
-expression and is unchanged.

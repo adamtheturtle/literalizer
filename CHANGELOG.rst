@@ -3,6 +3,112 @@ Changelog
 
 .. towncrier release notes start
 
+2026.08.31
+----------
+
+- A ``Rust`` call argument now faces the same per-language data rules a declared value does: an offset the native datetime drops, and a float collection key the map type cannot hash. The rules ran on the declaration path alone, so a call silently changed the value or emitted code ``rustc`` refuses.
+
+- ``CSharp``, ``Kotlin`` and ``Scala`` now refuse a ``record_shape_names`` entry naming a type their own output references, as ``Rust`` and ``Java`` already did. Such a name either shadows the type the same file uses or clashes with the line importing it.
+
+- Document the method-size ceiling on the ``Scala`` and ``Java`` back
+  ends.  A rendered literal is one expression placed in one method, and the
+  virtual machine caps a method at 64KB of compiled size, so a large document does not
+  compile.  The limit applies to the whole document rather than to any one
+  collection, and it moves with the document's shape, so each language
+  records measured figures rather than a single element count.
+
+- No user-facing change: the V, Standard ML, Haskell, Dhall, Bash and Wren
+  round-trip drivers no longer depend on the exact shape of the shared corpus.
+  The V walker covers every element and value type the interface strategy emits
+  and aborts on an unhandled one instead of writing ``null``; the Standard ML and
+  Haskell encoders take their clauses from the constructors the literalized type
+  declares; the Dhall walker converts each entry directly when the document is
+  single-family and declares no union; the Bash emitter indexes an associative
+  array through a variable rather than an unquoted subscript and escapes every C0
+  control; and the Wren driver computes which keys hold a number ``Num`` cannot
+  re-print rather than listing them.
+
+- Six back ends now write a document's comments above the declaration under ``json_type``, as the others already did. The comments were dropped, against the preservation the documentation promises, because a JSON document has nowhere to put one; one back end wrote a scalar document's comment into the string it parses, where the parser read it as content.
+
+- The ``TUPLE`` strategy now writes a heterogeneous scalar array nested inside a list as the language's tuple, as it already did at the top level and in a record field. Such an array was widened to a homogeneous list or refused instead, which is what the strategy documents itself as avoiding. A list whose elements would not all be written with one type is left as it was, since it has nothing to hold them.
+
+- No user-facing change: the test modules that stay written out rather
+  than becoming golden-file or TOML-driven cases now each say why in
+  their docstring.
+
+- A ``Mojo`` call stub no longer declares an ordered map argument as a ``Dict``, which the list of tuples it is written as does not match. Resolving a reference also no longer turns an ordered map into a plain mapping, which is what let the wrong type through.
+
+- A Fortran bound reference named after the ``module_name`` of the file
+  it is wrapped in is now rejected.  A program unit and the variables it
+  declares share one scope, so the two names collided and the emitted
+  source did not compile.  The ``variable_form`` name was already held to
+  this rule; the references declared beside it were not.
+
+- A reference marker beside a map is no longer pooled with it when a
+  container widens its sibling maps to a shared value type.  The marker
+  stands for a value declared elsewhere, so pooling its own shape widened
+  containers that agree once the reference resolves, and C++ and Kotlin
+  emitted an element whose type did not match the container declaring it.
+
+- A record reached through a container that is not itself a record no
+  longer has its refinement stopped there.  The walk stopped at every
+  mapping outside the record shapes, which was right for one the widening
+  pass had removed but wrong for an ordered map or a mapping whose keys
+  are not names: the records below those are still written as records, so
+  two instances differing only there kept one declaration.
+
+  C++ now refuses a record written as the value of such a mapping.  The
+  mapping infers its value type from the dict the record was written
+  from, so the declaration named a map where the literal wrote a struct
+  and the emitted source did not compile.  An ordered map holding lists
+  of records is unaffected, since the list gives that slot a vector of
+  the record type.
+
+- Go now leaves integer constants inferred when ``numeric_literal_suffix=AUTO``
+  widens their surrounding collection to ``float64``.
+
+- Fix Kotlin nested map type hints so sequence value types match their rendered literals.
+
+- Fix Java type hints for ordered maps to match their rendered lists of entries.
+
+- Align Kotlin explicit variable hints with the type arguments carried by collection initializers.
+
+- A Nim declaration bound to a reference now names it rather than
+  converting it with the JSON macro.  The conversion needed an import
+  that a referenced sequence never asked for, so a document whose root
+  was a reference to a list emitted a file Nim refused, and it retyped a
+  sequence the caller had bound deliberately.
+
+- Use resolved reference values when deriving variable declaration type hints.
+
+- Nim now refuses a declaration name with a trailing or doubled
+  underscore, and Standard ML one beginning with an underscore.  Nim
+  takes an underscore only between two letters or digits, and in Standard
+  ML a leading underscore is the wildcard pattern, so both emitted source
+  the compiler refused.
+
+- COBOL now refuses the reserved words it was accepting as declaration
+  names, such as ``string``, ``length`` and ``type``.  Seventeen words
+  confirmed by GnuCOBOL have been added to the existing list.
+
+  A COBOL call stub takes its arguments positionally and writes no
+  parameter names, so a reserved word is still accepted there.
+
+- Widen bound-reference declarations to the type required by their containing collection.
+
+- JavaScript and TypeScript now wrap a whole file holding an unbound
+  object in parentheses.  A statement opening with a brace is a block, so
+  the file did not parse.  Every other root already reads as an
+  expression and is unchanged.
+
+- Allow Rust tuple sequences to contain nested homogeneous sequences rendered as ``Vec`` values.
+
+- Moved bare-value, rebound-anchor, and round-trip capability test matrices from Python parameter lists into validated TOML case files.
+
+- Removed all coverage-ignore directives, deleted unreachable defensive paths,
+  and moved the remaining boundary coverage into a shared cross-language
+  integration fixture.
+
 2026.08.29.1
 ------------
 

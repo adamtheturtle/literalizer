@@ -1,3 +1,0 @@
-No user-facing change: the test modules that stay written out rather
-than becoming golden-file or TOML-driven cases now each say why in
-their docstring.
