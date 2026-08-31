@@ -1,0 +1,19 @@
+schema_version = 1
+summary = """
+Swift tuple field inference sees raw dictionaries while RECORD rendering emits
+generated structs below nested tuple levels, so the declaration and value types
+cannot agree.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Swift"]
+
+[call]
+api = "literalize"
+sources = ['{"groups": [[{"id": 1}], [{"name": "x"}]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "TUPLE" },
+]
