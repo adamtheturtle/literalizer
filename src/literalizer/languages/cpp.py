@@ -165,7 +165,9 @@ def _cpp_array_nested_shape(value: Value, /) -> object:
         return (
             "array",
             len(value),
-            tuple(dict.fromkeys(map(_cpp_array_nested_shape, value))),
+            tuple(
+                dict.fromkeys(_cpp_array_nested_shape(item) for item in value)
+            ),
         )
     if isinstance(value, dict):
         return (
