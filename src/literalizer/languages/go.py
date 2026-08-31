@@ -114,7 +114,6 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
@@ -133,6 +132,30 @@ _format_string_go = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00"), ("\ufeff", "\\uFEFF")],
 )
+
+
+@beartype
+def _reject_record_lists_with_empty_siblings(data: Value, /) -> None:
+    """Reject Go record lists paired with an untyped empty sibling."""
+    if isinstance(data, list):
+        sibling_lists = [item for item in data if isinstance(item, list)]
+        has_empty = any(not item for item in sibling_lists)
+        populated = [item for item in sibling_lists if item]
+        has_record_list = any(
+            all(isinstance(element, dict) for element in item)
+            for item in populated
+        )
+        if len(sibling_lists) == len(data) and has_empty and has_record_list:
+            msg = (
+                "Go RECORD cannot give a nested record list and its empty "
+                "sibling one compatible declared type"
+            )
+            raise UnrepresentableInputError(msg)
+        for child in data:
+            _reject_record_lists_with_empty_siblings(child)
+    elif isinstance(data, dict):
+        for child in data.values():
+            _reject_record_lists_with_empty_siblings(child)
 
 
 @beartype
@@ -922,7 +945,13 @@ class Go(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Reject Go format/data combinations that cannot type-check."""
+        if (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        ):
+            _reject_record_lists_with_empty_siblings(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
