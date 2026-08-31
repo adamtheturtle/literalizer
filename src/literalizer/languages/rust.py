@@ -4070,8 +4070,12 @@ class Rust(metaclass=LanguageCls):
                 _rust_tuple_nested_vec_empty_override_hook(
                     self._strategy_params
                 )
-                if self.sequence_format
-                is type(self.sequence_format).TUPLE_NESTED_VEC
+                if (
+                    self.sequence_format
+                    is type(self.sequence_format).TUPLE_NESTED_VEC
+                    or self.heterogeneous_strategy
+                    is type(self.heterogeneous_strategy).TUPLE
+                )
                 else _rust_empty_container_literal_override_hook(
                     self._strategy_params
                 )
