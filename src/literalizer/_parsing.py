@@ -448,11 +448,8 @@ class _FiniteFloatRangeError(ValueError):
 def _parse_finite_float(value: str) -> float:
     """Convert *value* without silent overflow or underflow."""
     normalized = value.replace("_", "")
-    try:
-        exact = decimal.Decimal(value=normalized)
-        converted = float(normalized)
-    except (decimal.InvalidOperation, ValueError):  # pragma: no cover
-        return float(normalized)
+    exact = decimal.Decimal(value=normalized)
+    converted = float(normalized)
     if exact.is_finite() and (
         math.isinf(converted) or (converted == 0 and exact != 0)
     ):

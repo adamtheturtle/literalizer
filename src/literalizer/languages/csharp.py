@@ -453,15 +453,6 @@ def _format_csharp_json_call_arg(_raw_value: Value, formatted: str) -> str:
 
 
 @beartype
-def _csharp_json_non_scalar_child(  # pragma: no cover
-    _raw_value: Value,
-    formatted: str,
-) -> str:
-    """Identity wrapper for non-scalar JSON children."""
-    return formatted
-
-
-@beartype
 def _format_csharp_json_assignment(name: str, value: str, _data: Value) -> str:
     """Assign a rendered literal to a C# ``JsonNode?`` binding."""
     return f"{name} = {_csharp_json_value_expression(value)};"
@@ -1858,7 +1849,7 @@ class CSharp(metaclass=LanguageCls):
             return dataclasses.replace(
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
-                wrap_non_scalar=_csharp_json_non_scalar_child,
+                wrap_non_scalar=passthrough_sequence_entry,
             )
         if self._record_strategy_active:
             return self._record_strategy.behavior

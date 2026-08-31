@@ -6,7 +6,6 @@ import enum
 import functools
 import json
 import math
-import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -1159,42 +1158,17 @@ class Odin(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    @staticmethod
     def wrap_in_file(
-        self,
         content: str,
         variable_name: str,
         body_preamble: tuple[str, ...],
     ) -> str:
-        """Wrap an Odin declaration in a main procedure.
-
-        Under :attr:`json_type` an :class:`ExistingVariable` form
-        produces a bare ``my_data = _json_parse(...)`` line, which the
-        Odin compiler rejects (the name is undeclared); inject a
-        zero-valued ``my_data: any`` declaration ahead of the
-        assignment so the wrapped file still compiles.  Typed ``any``
-        (not ``json.Value``): the assignment may bind either a
-        ``_json_parse`` value or a call result whose stub returns
-        ``any``, and only ``any`` accepts both.
-        """
+        """Wrap an Odin declaration in a main procedure."""
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
         )
-        if (
-            self._json_type_active
-            and variable_name
-            and re.search(
-                pattern=rf"^[ \t]*{re.escape(pattern=variable_name)} = ",
-                string=content,
-                flags=re.MULTILINE,
-            )
-            and not re.search(
-                pattern=rf"^[ \t]*{re.escape(pattern=variable_name)} := ",
-                string=content,
-                flags=re.MULTILINE,
-            )
-        ):
-            content = f"{variable_name}: any\n{content}"  # pragma: no cover
         use_line = f"\n_ = {variable_name}" if variable_name else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 

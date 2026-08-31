@@ -105,60 +105,58 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         )
         assert isinstance(resolved_ref_case, literalizer.IdentifierCase)
         ref_case = resolved_ref_case
-    match call.api:
-        case "constructor":
-            lang_cls(**case.kwargs)
-        case "literalize":
-            assert case.source is not None
-            assert call.input_format is not None
-            literalizer.literalize(
-                source=case.source,
-                input_format=call.input_format,
-                language=lang_cls(**case.kwargs),
-                variable_form=variable_form,
-                wrap_in_file=call.wrap_in_file,
-                pre_indent_level=call.pre_indent_level,
-                include_delimiters=call.include_delimiters,
-                ref_key=call.ref_key,
-                ref_case=ref_case,
-                bound_refs=dict(call.bound_refs) or None,
-            )
-        case "literalize_call":
-            assert case.source is not None
-            assert call.input_format is not None
-            assert call.target_function is not None
-            if "parameter_names_bare" in call.model_fields_set:
-                parameter_names: Any = call.parameter_names_bare
-            else:
-                parameter_names = [
-                    substituted(template=name, value=case.value)
-                    for name in call.parameter_names
-                ]
-            if "comment_source_bare" in call.model_fields_set:
-                comment_source: Any = call.comment_source_bare
-            else:
-                comment_source = call.comment_source
-            literalizer.literalize_call(
-                source=case.source,
-                input_format=call.input_format,
-                language=lang_cls(**case.kwargs),
-                target_function=substituted(
-                    template=call.target_function,
-                    value=case.value,
-                ),
-                parameter_names=parameter_names,
-                per_element=call.per_element,
-                wrap_in_file=call.wrap_in_file,
-                ref_key=call.ref_key,
-                ref_case=ref_case,
-                bound_refs=dict(call.bound_refs) or None,
-                comment_source=comment_source,
-                variable_form=(
-                    variable_form if call.variable_form is not None else None
-                ),
-            )
-        case _ as unreachable_call:  # pragma: no cover
-            assert_never(unreachable_call)
+    if call.api == "constructor":
+        lang_cls(**case.kwargs)
+        return
+    if call.api == "literalize":
+        assert case.source is not None
+        assert call.input_format is not None
+        literalizer.literalize(
+            source=case.source,
+            input_format=call.input_format,
+            language=lang_cls(**case.kwargs),
+            variable_form=variable_form,
+            wrap_in_file=call.wrap_in_file,
+            pre_indent_level=call.pre_indent_level,
+            include_delimiters=call.include_delimiters,
+            ref_key=call.ref_key,
+            ref_case=ref_case,
+            bound_refs=dict(call.bound_refs) or None,
+        )
+        return
+    assert case.source is not None
+    assert call.input_format is not None
+    assert call.target_function is not None
+    if "parameter_names_bare" in call.model_fields_set:
+        parameter_names: Any = call.parameter_names_bare
+    else:
+        parameter_names = [
+            substituted(template=name, value=case.value)
+            for name in call.parameter_names
+        ]
+    if "comment_source_bare" in call.model_fields_set:
+        comment_source: Any = call.comment_source_bare
+    else:
+        comment_source = call.comment_source
+    literalizer.literalize_call(
+        source=case.source,
+        input_format=call.input_format,
+        language=lang_cls(**case.kwargs),
+        target_function=substituted(
+            template=call.target_function,
+            value=case.value,
+        ),
+        parameter_names=parameter_names,
+        per_element=call.per_element,
+        wrap_in_file=call.wrap_in_file,
+        ref_key=call.ref_key,
+        ref_case=ref_case,
+        bound_refs=dict(call.bound_refs) or None,
+        comment_source=comment_source,
+        variable_form=(
+            variable_form if call.variable_form is not None else None
+        ),
+    )
 
 
 @pytest.mark.parametrize(

@@ -152,13 +152,13 @@ def _format_string_multiline(value: str) -> str:
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_lua_escaped(value=value)
-    for level in range(100_000):
+    level = 0
+    while True:
         equals = "=" * level
         closer = f"]{equals}]"
         if f"{value}{closer}".find(closer) == len(value):
             return f"[{equals}[{value}]{equals}]"
-    # Reaching this requires every one of 100,000 candidate closers.
-    return _format_string_lua_escaped(value=value)  # pragma: no cover
+        level += 1
 
 
 @beartype
