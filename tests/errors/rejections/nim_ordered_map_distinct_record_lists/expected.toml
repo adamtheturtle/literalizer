@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Nim = "Nim ordered tables require one value type; record-list values with distinct record shapes have no common type"

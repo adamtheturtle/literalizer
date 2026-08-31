@@ -1,0 +1,14 @@
+schema_version = 1
+summary = """
+Rust nested sibling lists require one concrete element type under the default
+ERROR strategy and must reject incompatible record-map shapes.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = ['{"groups": [[{"id": 1}], [{"name": "x"}]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"

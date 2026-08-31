@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+A Nim ordered table has one value type, so it cannot contain sequences of
+different generated record types as sibling values.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Nim"]
+
+[call]
+api = "literalize"
+sources = ["!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
