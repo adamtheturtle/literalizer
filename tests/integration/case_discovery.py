@@ -643,24 +643,37 @@ class NoVariableFormCase:
 @functools.cache
 @beartype
 def build_no_variable_form_cases() -> list[NoVariableFormCase]:
-    """Build one ``no_variable_form`` case per opt-in language.
+    """Build every declared ``no_variable_form`` case.
 
-    The fixture declaring the role is a bare integer, because that is
-    the minimum input that exercises the bare-value-at-file-scope shape
-    and matches every opt-in language's value vocabulary.
+    Each role-owning fixture selects the languages that can represent
+    its input at file-statement scope.  The historical scalar fixture
+    retains its original golden names; additional shapes include their
+    case name so several fixtures can share the role.
     """
-    case_dir_name = case_dir_name_for_role(
-        cases_dir=_CASES_DIR,
-        role=NO_VARIABLE_FORM_ROLE,
-    )
+    manifests = {
+        manifest.case_dir.name: manifest
+        for manifest in load_case_manifests(cases_dir=_CASES_DIR)
+    }
     return [
         NoVariableFormCase(
-            name=f"{lang_cls.__name__}_no_variable_form",
+            name=(
+                f"{lang_cls.__name__}_no_variable_form"
+                if case_dir_name == "scalar_int"
+                else (f"{lang_cls.__name__}_no_variable_form_{case_dir_name}")
+            ),
             lang_cls=lang_cls,
             case_dir_name=case_dir_name,
         )
+        for case_dir_name in case_dir_names_for_role(
+            cases_dir=_CASES_DIR,
+            role=NO_VARIABLE_FORM_ROLE,
+        )
         for lang_cls in sorted_languages()
         if lang_cls.supports_no_variable_wrap_in_file
+        and manifest_admits_language(
+            manifest=manifests[case_dir_name],
+            lang_cls=lang_cls,
+        )
     ]
 
 

@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++14 tuple records and their ordered-map value type must use the same rendered record declaration."
+
+[[variants]]
+axis = "cpp14_heterogeneous_strategy_tuple"
