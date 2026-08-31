@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+C++ ARRAY nested heterogeneous values require explicit variant-arm
+construction that the array renderer cannot currently represent.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ['{"groups": [[{"id": 1}], [{"name": "x"}]]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]
