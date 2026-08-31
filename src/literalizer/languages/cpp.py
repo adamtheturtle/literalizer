@@ -179,8 +179,15 @@ def _cpp_record_value_shape(value: Value, /) -> object:
 def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
     """Reject ordered-map values requiring different C++ record lists."""
     if isinstance(data, OrderedMap):
-        shapes = {_cpp_record_value_shape(value) for value in data.values()}
-        if len(shapes) > 1:
+        values = list(data.values())
+        all_are_record_lists = all(
+            isinstance(value, list)
+            and value
+            and all(isinstance(element, dict) for element in value)
+            for value in values
+        )
+        shapes = {_cpp_record_value_shape(value) for value in values}
+        if all_are_record_lists and len(shapes) > 1:
             msg = (
                 "C++ RECORD ordered maps require one compatible value "
                 "type; these record-list values have distinct shapes"
