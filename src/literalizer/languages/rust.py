@@ -149,7 +149,9 @@ def _rust_nested_type_shape(value: Value, /) -> Hashable:
     if isinstance(value, list):
         return (
             "list",
-            tuple(dict.fromkeys(map(_rust_nested_type_shape, value))),
+            tuple(
+                dict.fromkeys(_rust_nested_type_shape(item) for item in value)
+            ),
         )
     if isinstance(value, dict):
         return (
