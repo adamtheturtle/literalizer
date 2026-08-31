@@ -159,6 +159,40 @@ def _reject_uninferrable_native_sequences(*, data: Value) -> None:
 
 
 @beartype
+def _reject_distinct_record_list_ordered_map_values(*, data: Value) -> None:
+    """Reject ordered maps whose record-list values have distinct
+    types.
+    """
+    match data:
+        case OrderedMap():
+            record_shapes = {
+                shape
+                for value in data.values()
+                if isinstance(value, list)
+                for item in value
+                if isinstance(item, dict)
+                and not isinstance(item, OrderedMap)
+                and (shape := record_shape_for_dict(value=item)) is not None
+            }
+            if len(record_shapes) > 1:
+                msg = (
+                    "Nim ordered tables require one value type; record-list "
+                    "values with distinct record shapes have no common type"
+                )
+                raise UnrepresentableInputError(msg)
+            for child in data.values():
+                _reject_distinct_record_list_ordered_map_values(data=child)
+        case dict():
+            for child in data.values():
+                _reject_distinct_record_list_ordered_map_values(data=child)
+        case list():
+            for child in data:
+                _reject_distinct_record_list_ordered_map_values(data=child)
+        case _:
+            return
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a raw Nim triple-quoted string when safe."""
     if value.startswith(("\n", '"')) or value.endswith('"'):
@@ -1651,6 +1685,7 @@ class Nim(metaclass=LanguageCls):
             )
         if self._uses_record:
             _reject_uninferrable_native_sequences(data=data)
+            _reject_distinct_record_list_ordered_map_values(data=data)
         if (
             self._uses_native_nim_collections
             and isinstance(data, list)

@@ -1,1 +1,1 @@
-val my_data = listOf<Any?>()
+val my_data = arrayOf<Any?>()
