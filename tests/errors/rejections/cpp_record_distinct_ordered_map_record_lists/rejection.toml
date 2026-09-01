@@ -1,0 +1,17 @@
+schema_version = 1
+summary = """
+C++ RECORD ordered maps cannot use one carrier type for record-list values
+whose generated record shapes differ.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ["!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

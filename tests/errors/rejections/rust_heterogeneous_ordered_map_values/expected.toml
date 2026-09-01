@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Rust = "Rust ordered maps require one concrete value type; these values have incompatible collection types"
