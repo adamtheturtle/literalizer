@@ -144,28 +144,48 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 )
 
 
-def _rust_nested_type_shape(value: Value, /) -> Hashable:
-    """Return a structural Rust type signature for nested collections."""
+def _rust_native_type_shape(value: Value, /) -> Hashable:
+    """Return the concrete Rust collection-type shape of *value*."""
     if isinstance(value, list):
         return (
             "list",
             tuple(
-                dict.fromkeys(_rust_nested_type_shape(item) for item in value)
+                dict.fromkeys(_rust_native_type_shape(item) for item in value)
             ),
         )
     if isinstance(value, dict):
         return (
             "map",
             tuple(
-                dict.fromkeys(_rust_nested_type_shape(key) for key in value)
+                dict.fromkeys(_rust_native_type_shape(key) for key in value)
             ),
             tuple(
                 dict.fromkeys(
-                    _rust_nested_type_shape(item) for item in value.values()
+                    _rust_native_type_shape(item) for item in value.values()
                 )
             ),
         )
     return type(value).__name__
+
+
+@beartype
+def _reject_heterogeneous_ordered_map_values(data: Value, /) -> None:
+    """Reject ordered maps whose values require distinct Rust types."""
+    if isinstance(data, OrderedMap):
+        shapes = {_rust_native_type_shape(value) for value in data.values()}
+        if len(shapes) > 1:
+            msg = (
+                "Rust ordered maps require one concrete value type; "
+                "these values have incompatible collection types"
+            )
+            raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        for child in data.values():
+            _reject_heterogeneous_ordered_map_values(child)
+        return
+    if isinstance(data, list | set):
+        for child in data:
+            _reject_heterogeneous_ordered_map_values(child)
 
 
 @beartype
@@ -182,7 +202,7 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
             and len(sibling_lists) > 1
             and all_are_record_lists
         ):
-            shapes = {_rust_nested_type_shape(item) for item in sibling_lists}
+            shapes = {_rust_native_type_shape(item) for item in sibling_lists}
             if len(shapes) > 1:
                 msg = (
                     "Rust nested sibling lists require one concrete "
@@ -4368,6 +4388,8 @@ class Rust(metaclass=LanguageCls):
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
         _reject_float_collection_keys(data=data)
+        if not self._json_type_active:
+            _reject_heterogeneous_ordered_map_values(data)
         if (
             not self._json_type_active
             and self.heterogeneous_strategy

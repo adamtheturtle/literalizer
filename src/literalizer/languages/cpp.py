@@ -159,6 +159,88 @@ _CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
 )
 
 
+def _cpp_record_value_shape(value: Value, /) -> object:
+    """Return the generated-record shape required by *value*."""
+    if isinstance(value, list):
+        return (
+            "list",
+            tuple(
+                dict.fromkeys(_cpp_record_value_shape(item) for item in value)
+            ),
+        )
+    if isinstance(value, dict) and not isinstance(value, OrderedMap):
+        return (
+            "record",
+            tuple(value),
+            tuple(_cpp_record_value_shape(item) for item in value.values()),
+        )
+    return type(value).__name__
+
+
+def _cpp_array_nested_shape(value: Value, /) -> object:
+    """Return a structural type shape for a nested C++ array value."""
+    if isinstance(value, list):
+        return (
+            "array",
+            len(value),
+            tuple(
+                dict.fromkeys(_cpp_array_nested_shape(item) for item in value)
+            ),
+        )
+    if isinstance(value, dict):
+        return (
+            "map",
+            tuple(_cpp_array_nested_shape(item) for item in value.values()),
+        )
+    return type(value).__name__
+
+
+@beartype
+def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
+    """Reject ordered-map values requiring different C++ record lists."""
+    if isinstance(data, OrderedMap):
+        values = list(data.values())
+        all_are_record_lists = all(
+            isinstance(value, list)
+            and value
+            and all(isinstance(element, dict) for element in value)
+            for value in values
+        )
+        shapes = {_cpp_record_value_shape(value) for value in values}
+        if all_are_record_lists and len(shapes) > 1:
+            msg = (
+                "C++ RECORD ordered maps require one compatible value "
+                "type; these record-list values have distinct shapes"
+            )
+            raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        for child in data.values():
+            _reject_distinct_record_list_ordered_map_values(child)
+    elif isinstance(data, list | set):
+        for child in data:
+            _reject_distinct_record_list_ordered_map_values(child)
+
+
+@beartype
+def _reject_incompatible_nested_cpp_arrays(data: Value, /) -> None:
+    """Reject nested arrays whose elements need distinct variant arms."""
+    if isinstance(data, list):
+        nested = [item for item in data if isinstance(item, list)]
+        if len(nested) == len(data) and len(nested) > 1:
+            shapes = {_cpp_array_nested_shape(item) for item in nested}
+            if len(shapes) > 1:
+                msg = (
+                    "C++ ARRAY cannot construct nested heterogeneous "
+                    "values with incompatible element types"
+                )
+                raise UnrepresentableInputError(msg)
+        for child in data:
+            _reject_incompatible_nested_cpp_arrays(child)
+    elif isinstance(data, dict):
+        for child in data.values():
+            _reject_incompatible_nested_cpp_arrays(child)
+
+
 @beartype
 def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
@@ -3288,6 +3370,9 @@ class Cpp(metaclass=LanguageCls):
         """Validate C++-specific data/format combinations."""
         if self._record_strategy_active:
             _check_cpp_record_naming(node=data)
+            _reject_distinct_record_list_ordered_map_values(data)
+        if self.sequence_format is type(self.sequence_format).ARRAY:
+            _reject_incompatible_nested_cpp_arrays(data)
         if self._json_type_active:
             self._validate_json_value_keys(data=data)
         if self._json_inline_document_active:
