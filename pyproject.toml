@@ -63,7 +63,7 @@ optional-dependencies.dev = [
     "interrogate==1.7.0",
     "mypy[faster-cache]==2.3.1",
     "mypy-strict-kwargs==2026.8.25.1",
-    "no-defaults==2.1.0",
+    "no-defaults==2.3.0",
     # Keep in sync with the ``prek-version`` inputs to the
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
