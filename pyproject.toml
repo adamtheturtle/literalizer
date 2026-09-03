@@ -240,7 +240,9 @@ lint.unfixable = [ "ERA001" ]
 # ``NOD`` codes come from ``no-defaults``, so ``RUF100`` is told about
 # them rather than treating their ``noqa`` directives as unknown.
 lint.external = [ "NOD" ]
-lint.flake8-tidy-imports.banned-api."typing.cast".msg = "typing.cast is banned: use explicit type narrowing or a typed variable instead."
+lint.flake8-tidy-imports.banned-api."typing.cast".msg = """\
+    typing.cast is banned: use explicit type narrowing or a typed variable instead.\
+    """
 lint.pydocstyle.convention = "google"
 per-file-target-version = { "tests/integration/cases/**/Python*@py38.py" = "py38" }
 
@@ -604,6 +606,7 @@ module = [
 ignore_errors = true
 
 [tool.pyrefly]
+project-excludes = [ "repro.py" ]
 search_path = [ ".", "src" ]
 errors.non-exhaustive-match = "error"
 errors.unused-ignore = "error"
@@ -613,7 +616,6 @@ errors.unused-ignore = "error"
 # match our entire include pattern (`**/*.py*`), causing pyrefly to report
 # "no files matched" and fail the pre-push hook.
 disable-project-excludes-heuristics = true
-project-excludes = [ "repro.py" ]
 
 [tool.pyright]
 typeCheckingMode = "strict"
