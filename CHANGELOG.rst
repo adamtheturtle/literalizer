@@ -3,6 +3,13 @@ Changelog
 
 .. towncrier release notes start
 
+2026.09.04
+----------
+
+- TypeScript now annotates a top-level homogeneous map rendered as an object literal with ``Record<string, V>`` under the default ``NEVER`` and ``SAFE`` variable type hint modes, so the value can be indexed with a ``string`` key under ``--strict``. ``tsc`` infers a bare object literal as a closed type with no index signature. Dicts whose values differ in type and one-entry dicts stay inferred, and the ``MAP`` dict format is unaffected.
+
+- TypeScript golden files are now type-checked under ``tsc --strict`` with a consumer probe appended after each declaration, so a literal that compiles on its own but cannot be indexed, looked up or iterated the way its shape invites fails CI.
+
 2026.09.01.1
 ------------
 
