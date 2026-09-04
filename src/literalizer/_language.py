@@ -1674,8 +1674,11 @@ class Language(Protocol):
         ``SAFE``.  ``SAFE`` annotates only when the language's own
         inference would widen the variable to a permissive type (e.g.
         ``unknown[]`` for an empty TypeScript array, ``Object[]`` for an
-        empty Java array); for languages without a custom predicate it
-        produces the same output as ``NEVER``.
+        empty Java array) or narrow it to a type its consumers cannot
+        use as intended (a homogeneous TypeScript object-literal map,
+        which ``--strict`` refuses to index with a ``string`` key
+        unless annotated ``Record<string, V>``); for languages without a
+        custom predicate it produces the same output as ``NEVER``.
         """
         ...  # pylint: disable=unnecessary-ellipsis
 

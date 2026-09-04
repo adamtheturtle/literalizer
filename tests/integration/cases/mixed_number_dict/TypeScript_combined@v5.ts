@@ -1,4 +1,4 @@
-let my_data = {
+let my_data: Record<string, number> = {
   "a": 1,
   "b": 2.5,
   "c": 3,

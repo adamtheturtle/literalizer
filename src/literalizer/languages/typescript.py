@@ -329,17 +329,43 @@ def _ts_type_hint(
 
 
 @beartype
-def _ts_inference_widens_unsafely(*, data: Value) -> bool:
-    """Return True if TypeScript inference for *data* would widen to a
-    permissive type (e.g. ``unknown[]`` for ``[]``) where downstream
-    consumption can no longer rely on a concrete element type.
+def _ts_inference_widens_unsafely(
+    *,
+    data: Value,
+    dict_is_object_literal: bool,
+    value_hint: Callable[[Value], str],
+) -> bool:
+    """Return True if TypeScript inference for *data* would settle on a
+    type that downstream consumption cannot rely on.
 
-    Empty collection literals are the canonical trigger: the inferred
-    element type cannot be pinned down, so :func:`_ts_type_hint`
+    Empty collection literals widen: the inferred element type cannot
+    be pinned down (``unknown[]`` for ``[]``), so :func:`_ts_type_hint`
     falls back to ``unknown``.
+
+    A non-empty homogeneous map rendered as an object literal narrows
+    the other way: ``tsc`` infers a closed object type with one property
+    per key and no index signature, so indexing it with a ``string``
+    variable is a ``TS7053`` error under ``--strict``.  Annotating it
+    ``Record<string, V>`` restores the map contract every other typed
+    language writes into the literal.  Record-shaped dicts (values of
+    differing types) stay inferred, since a closed type is what property
+    access wants there, and so does a one-entry dict: it is as likely a
+    record wrapper (``{"cases": [...]}``) as a map, and the closed type
+    serves property access while the annotation would drag in the long
+    union hint of whatever it wraps.  Only object literals qualify: the
+    ``MAP`` dict format already infers ``Map<string, unknown>`` from its
+    opener.  Ordered maps always render as object literals regardless
+    of the dict format, so they qualify unconditionally.
     """
     match data:
-        case list() | set() | dict():
+        case dict() if not data:
+            return True
+        case dict() if dict_is_object_literal or isinstance(data, OrderedMap):
+            return (
+                len(data) > 1
+                and len({value_hint(value) for value in data.values()}) == 1
+            )
+        case list() | set():
             return not data
         case _:
             return False
@@ -955,6 +981,7 @@ class TypeScript(metaclass=LanguageCls):
             date_hint: str,
             datetime_hint: str,
             dict_hint_template: str,
+            dict_is_object_literal: bool,
             sequence_is_tuple: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
@@ -989,16 +1016,35 @@ class TypeScript(metaclass=LanguageCls):
                 data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
-                """Annotate only when inference would widen unsafely.
+                """Annotate only when inference would go wrong.
 
                 Applies to both NEVER and SAFE: empty collection
                 literals are inferred as evolving ``any[]`` / ``{}`` /
                 ``Set<unknown>`` and break under ``--noImplicitAny``
-                once the variable is consumed elsewhere, so the
-                annotation is unavoidable even when callers asked to
-                suppress hints.
+                once the variable is consumed elsewhere, and a
+                homogeneous object-literal map is inferred as a closed
+                type that ``--strict`` refuses to index with a
+                ``string`` key, so the annotation is unavoidable even
+                when callers asked to suppress hints.
                 """
-                if _ts_inference_widens_unsafely(data=data):
+
+                def _value_hint(value: Value) -> str:
+                    """Type hint for one map value, for the
+                    homogeneity check.
+                    """
+                    return _ts_type_hint(
+                        data=value,
+                        date_hint=date_hint,
+                        datetime_hint=datetime_hint,
+                        dict_hint_template=dict_hint_template,
+                        sequence_is_tuple=sequence_is_tuple,
+                    )
+
+                if _ts_inference_widens_unsafely(
+                    data=data,
+                    dict_is_object_literal=dict_is_object_literal,
+                    value_hint=_value_hint,
+                ):
                     return _typed_formatter(
                         name=name,
                         value=value,
@@ -1426,6 +1472,9 @@ class TypeScript(metaclass=LanguageCls):
                 "Map<string, {val}>"
                 if self.dict_format is type(self.dict_format).MAP
                 else "Record<string, {val}>"
+            ),
+            dict_is_object_literal=(
+                self.dict_format is type(self.dict_format).OBJECT
             ),
             sequence_is_tuple=(
                 self.sequence_format is type(self.sequence_format).TUPLE

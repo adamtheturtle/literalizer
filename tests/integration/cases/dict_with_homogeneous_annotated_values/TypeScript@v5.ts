@@ -1,4 +1,4 @@
-const my_data = {
+const my_data: Record<string, unknown[]> = {
   "a": [],
   "b": [],
 };

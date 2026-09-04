@@ -1,4 +1,4 @@
-let my_data = {
+let my_data: Record<string, (number | number[])[]> = {
   "lint": [2, [1]],
   "test": [5, [7]],
 };

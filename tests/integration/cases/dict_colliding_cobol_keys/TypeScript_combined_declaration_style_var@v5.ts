@@ -1,4 +1,4 @@
-var my_data = {
+var my_data: Record<string, number> = {
   "user_name": 1,
   "user.name": 2,
   "user-name": 3,
