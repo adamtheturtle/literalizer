@@ -904,9 +904,10 @@ jobs:
       - name: Hcl roundtrip
         run: uv run python -m scripts.run_hcl_roundtrip
 
-  # Json5 + Norg + TypeScript syntax check. The Run-TypeScript and Elm
-  # passes are split into sibling jobs (`lint-typescript-run`, `lint-elm`)
-  # so each long-running per-fixture loop fans out instead of serializing.
+  # Json5 + Norg + TypeScript strict type-check. The Run-TypeScript and
+  # Elm passes are split into sibling jobs (`lint-typescript-run`,
+  # `lint-elm`) so each long-running per-fixture loop fans out instead of
+  # serializing.
   lint-npm-installed:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -968,16 +969,22 @@ jobs:
           LITERALIZER_NORG_PARSER: /tmp/norg.so
         run: uv run --with 'tree-sitter==0.25.2' python -m scripts.run_norg_roundtrip
 
-      # ``tsc`` parses these ``.ts`` fixtures at
+      # ``tsc --strict`` type-checks these ``.ts`` fixtures with a
+      # shape-driven consumer probe appended to each one (issue 4837), so
+      # a literal that compiles but cannot be indexed, looked up or
+      # iterated fails here. The ``tsc`` flags live in
+      # ``scripts/check_typescript_consumers.py``: they pin
       # ``TypeScript.language_version`` (``V5``) in
-      # ``src/literalizer/languages/typescript.py``; ``--target es2015
+      # ``src/literalizer/languages/typescript.py`` and ``--target es2015
       # --lib es2015`` matches ``JavaScript.language_version`` (``ES2015``)
       # in ``src/literalizer/languages/javascript.py``. Keep all three in
-      # sync.
+      # sync. ``uv run --no-project`` suffices because the helper only
+      # drives ``tsc``; every fixture is a module, so one ``tsc`` process
+      # checks them all.
       - name: Lint TypeScript
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 -P "$(nproc)" -n1 tsc --noEmit --noResolve --skipLibCheck --target es2015 --lib es2015 < /tmp/files-ts
+          xargs -0 uv run --no-project python -m scripts.check_typescript_consumers < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax
