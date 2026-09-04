@@ -1,4 +1,4 @@
-const my_data = {
+const my_data: Record<string, Record<string, number>> = {
   "metrics": {"count": 100, "rate": 50},
   "flags": {"retries": 3, "timeout": 30},
 };

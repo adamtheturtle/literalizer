@@ -1,4 +1,4 @@
-const my_data = {
+const my_data: Record<string, number> = {
   "assert": 1,
   "else": 1,
   "error": 1,

@@ -1,4 +1,4 @@
-let my_data = {
+let my_data: Record<string, string> = {
   "description": "# not a comment\n",
   "name": "foo",
 };

@@ -1,0 +1,10 @@
+schema_version = 1
+languages = ["TypeScript"]
+languages_reason = "TypeScript is the only back end whose default map rendering is a bare object literal that the compiler infers as a closed type with no index signature; the nested maps here share one hint despite differing keys, which is what makes the outer map homogeneous."
+suites = ["base"]
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "language_version"

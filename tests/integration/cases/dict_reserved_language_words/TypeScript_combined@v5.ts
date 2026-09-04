@@ -1,4 +1,4 @@
-let my_data = {
+let my_data: Record<string, number> = {
   "assert": 1,
   "else": 1,
   "error": 1,
