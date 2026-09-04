@@ -1,0 +1,1 @@
+TypeScript golden files are now type-checked under ``tsc --strict`` with a consumer probe appended after each declaration, so a literal that compiles on its own but cannot be indexed, looked up or iterated the way its shape invites fails CI.
