@@ -67,7 +67,7 @@ optional-dependencies.dev = [
     # Keep in sync with the ``prek-version`` inputs to the
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
-    "prek==0.5.0",
+    "prek==0.5.1",
     "pydantic==2.13.5",
     "pydocstringformatter==1.0.0",
     "pygments==2.21.0",
