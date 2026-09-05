@@ -452,7 +452,11 @@ class _OwnedCaseSpec(
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
-class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
+class RefCaseSpec(  # noqa: NOD001
+    _OwnedCaseSpec,
+    LanguageSelection,
+    frozen=True,
+):
     """Everything a case declares about driving a ``$ref`` golden.
 
     When *value_sources* is supplied, each entry maps a
@@ -490,7 +494,11 @@ class RefCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
         return _VARIABLE_FORMS_BY_NAME[self.variable_form]
 
 
-class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
+class CallCaseSpec(  # noqa: NOD001
+    _OwnedCaseSpec,
+    LanguageSelection,
+    frozen=True,
+):
     """Everything a case declares about driving ``literalize_call``.
 
     A manifest spells enum- and type-valued arguments as strings, which
@@ -637,7 +645,7 @@ class CallCaseSpec(_OwnedCaseSpec, LanguageSelection, frozen=True):
 
 
 # Defaults stand in for omitted keys, as above.
-class _CaseManifestData(
+class _CaseManifestData(  # noqa: NOD001
     LanguageSelection,
     frozen=True,
 ):
