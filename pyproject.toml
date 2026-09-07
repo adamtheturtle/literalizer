@@ -108,7 +108,7 @@ optional-dependencies.dev = [
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.8.28.post2",
-    "towncrier==25.8.0",
+    "towncrier==26.9.0",
     # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
     # ``Norg roundtrip`` check (``scripts/run_norg_roundtrip.py``);
     # listed here so the type checkers resolve its (``py.typed``) imports.
@@ -124,7 +124,7 @@ optional-dependencies.dev = [
 ]
 optional-dependencies.release = [
     "check-wheel-contents==0.6.3",
-    "towncrier==25.8.0",
+    "towncrier==26.9.0",
 ]
 urls.Documentation = "https://adamtheturtle.github.io/literalizer/"
 urls.Source = "https://github.com/adamtheturtle/literalizer"
