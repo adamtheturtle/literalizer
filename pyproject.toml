@@ -606,16 +606,16 @@ module = [
 ignore_errors = true
 
 [tool.pyrefly]
-project-excludes = [ "repro.py" ]
+project-excludes = [ "repro.py", "tests/integration/cases" ]
 search_path = [ ".", "src" ]
 errors.non-exhaustive-match = "error"
-errors.unused-ignore = "error"
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
 # `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
 # appended to ours and combine with the `.gitignore`-based ignore files to
 # match our entire include pattern (`**/*.py*`), causing pyrefly to report
 # "no files matched" and fail the pre-push hook.
 disable-project-excludes-heuristics = true
+preset = "strict"
 
 [tool.pyright]
 typeCheckingMode = "strict"

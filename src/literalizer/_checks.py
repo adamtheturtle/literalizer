@@ -149,7 +149,7 @@ def guard_collection_nesting_depth(
     pending: list[tuple[Value, int]] = [(data, 0)]
     while pending:
         value, parent_depth = pending.pop()
-        if not isinstance(value, dict | list | set):
+        if not isinstance(value, (dict, list, set)):
             continue
         depth = parent_depth + 1
         if depth > maximum_depth:
@@ -1698,7 +1698,7 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
 
 def _path_key(key: Scalar) -> str | int:
     """Return a stable public path component for a mapping key."""
-    if isinstance(key, str | int) and not isinstance(key, bool):
+    if isinstance(key, (str, int)) and not isinstance(key, bool):
         return key
     return repr(key)
 

@@ -2,6 +2,7 @@
 
 import enum
 import inspect
+import operator
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
@@ -16,7 +17,7 @@ from literalizer.languages import Python, Raku
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
-    key=lambda c: c.__name__,
+    key=operator.attrgetter("__name__"),
 )
 
 _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [

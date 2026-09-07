@@ -3,10 +3,11 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never
+from typing import ClassVar, assert_never, override
 
 from beartype import beartype
 
@@ -219,7 +220,7 @@ def _gather_mojo_call_slots(
 @beartype
 def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
     """Return ``True`` when every value at this slot is a scalar."""
-    return all(not isinstance(v, list | dict | set) for v in slot_values)
+    return all(not isinstance(v, (list, dict, set)) for v in slot_values)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -965,6 +966,7 @@ class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered maps in Mojo use a list-of-pairs representation."""
 
     @property
+    @override
     def empty_ordered_map(self) -> str:
         """Render an empty ordered map as an empty list."""
         return "List[Tuple[String, String]]()"
@@ -986,9 +988,13 @@ class Mojo(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -1002,8 +1008,8 @@ class Mojo(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

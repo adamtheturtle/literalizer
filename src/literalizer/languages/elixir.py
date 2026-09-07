@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections import Counter
 from collections.abc import Callable, Sequence
@@ -282,9 +283,13 @@ class Elixir(metaclass=LanguageCls):
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
@@ -297,8 +302,8 @@ class Elixir(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

@@ -182,6 +182,14 @@ def _format_string_raw(value: str) -> str:
 
 
 @beartype
+def _escape_trailing_whitespace(match: re.Match[str]) -> str:
+    r"""Return one ``\x20`` escape per character of the whitespace run
+    *match*.
+    """
+    return r"\x20" * len(match[0])
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Python triple-quoted string.
 
@@ -198,7 +206,7 @@ def _format_string_multiline(value: str) -> str:
     for character, escape in _BIDI_REPLACEMENTS:
         escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
-        repl=lambda match: r"\x20" * len(match[0]),
+        repl=_escape_trailing_whitespace,
         string=escaped,
     )
     return f'"""\\\n{escaped}"""'
@@ -406,13 +414,19 @@ def _join_union_typing(types: list[str]) -> str:
 
 
 @beartype
+def _none_last_sort_key(type_name: str) -> bool:
+    """Return a sort key that orders ``None`` after every other type name."""
+    return type_name == "None"
+
+
+@beartype
 def _element_union(
     *, types: list[str], join_union: Callable[[list[str]], str]
 ) -> str:
     """Remove duplicate *types* and join them into a union."""
     unique: list[str] = sorted(
         dict.fromkeys(types),
-        key=lambda type_name: type_name == "None",
+        key=_none_last_sort_key,
     )
     match unique:
         case [only]:
@@ -938,9 +952,13 @@ class Python(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -955,8 +973,8 @@ class Python(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

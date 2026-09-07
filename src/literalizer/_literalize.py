@@ -49,6 +49,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
     int_widening_tier,
     record_shape_for_dict,
+    set_sort_key,
 )
 from literalizer._language import (
     CallParameterShadowing,
@@ -1017,7 +1018,7 @@ def _format_set_value(
 
     if not value and set_cfg.empty_set is not None:
         return set_cfg.empty_set
-    sorted_items = sorted(value, key=lambda v: (type(v).__name__, repr(v)))
+    sorted_items = sorted(value, key=set_sort_key)
     items_as_values: list[Value] = list(sorted_items)
     parent_id = id(value)
     int_formatter = _widened_int_formatter(items=items_as_values, spec=spec)
@@ -2268,7 +2269,7 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
     renders a mapping -- and everything under it -- on one line even
     when the caller asked for the multiline layout (issue #4538).
     """
-    if not isinstance(value, dict | OrderedMap):
+    if not isinstance(value, (dict, OrderedMap)):
         return ctx
     language_cls: Any = type(ctx.spec)
     if language_cls.supports_multiline_dict_layout:
@@ -2431,7 +2432,7 @@ def _wrap_body(
         case set():
             sorted_set: list[Value] = sorted(
                 data,
-                key=lambda v: (type(v).__name__, repr(v)),
+                key=set_sort_key,
             )
             set_cfg = spec.set_format_config
             opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
@@ -2644,7 +2645,7 @@ def _collection_open_for_multiline_value(
         case set():
             sorted_set: list[Value] = sorted(
                 data,
-                key=lambda v: (type(v).__name__, repr(v)),
+                key=set_sort_key,
             )
             opener = spec.set_format_config.set_open(sorted_set)
         case _ if sequence_open_override is not None:
@@ -2967,7 +2968,7 @@ def _format_collection_lines(
         case set() as set_data:
             sorted_items = sorted(
                 set_data,
-                key=lambda v: (type(v).__name__, repr(v)),
+                key=set_sort_key,
             )
             set_parent_id = id(set_data)
             set_int_formatter = _widened_int_formatter(
@@ -3636,7 +3637,8 @@ def _literalize_child_path(
             children = [
                 (
                     key
-                    if isinstance(key, str | int) and not isinstance(key, bool)
+                    if isinstance(key, (str, int))
+                    and not isinstance(key, bool)
                     else repr(key),
                     value,
                 )
@@ -6729,7 +6731,7 @@ def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
     """Narrow ``value`` to the ``Sequence`` arm of ``ValueInput``,
     excluding the ``str``/``bytes`` scalars that are also sequences.
     """
-    return isinstance(value, Sequence) and not isinstance(value, str | bytes)
+    return isinstance(value, Sequence) and not isinstance(value, (str, bytes))
 
 
 @beartype
