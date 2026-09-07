@@ -415,7 +415,9 @@ def _join_union_typing(types: list[str]) -> str:
 
 @beartype
 def _none_last_sort_key(type_name: str) -> bool:
-    """Return a sort key that orders ``None`` after every other type name."""
+    """Return a sort key that orders ``None`` after every other type
+    name.
+    """
     return type_name == "None"
 
 

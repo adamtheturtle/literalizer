@@ -320,7 +320,9 @@ def _format_integer_decimal(value: int) -> str:
 
 @beartype
 def _nil_last_sort_key(part: str) -> tuple[bool, str]:
-    """Return a sort key that orders ``Nil`` after every other type name."""
+    """Return a sort key that orders ``Nil`` after every other type
+    name.
+    """
     return part == "Nil", part
 
 
