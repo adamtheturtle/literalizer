@@ -183,7 +183,7 @@ def _reject_heterogeneous_ordered_map_values(data: Value, /) -> None:
         for child in data.values():
             _reject_heterogeneous_ordered_map_values(child)
         return
-    if isinstance(data, list | set):
+    if isinstance(data, (list, set)):
         for child in data:
             _reject_heterogeneous_ordered_map_values(child)
 
@@ -3092,9 +3092,13 @@ class Rust(metaclass=LanguageCls):
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -3108,8 +3112,8 @@ class Rust(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -3988,12 +3992,16 @@ class Rust(metaclass=LanguageCls):
     heterogeneous_value_enum_name: str = "Value"
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType(mapping={}),
+        default_factory=lambda: MappingProxyType[frozenset[str], str](
+            mapping={}
+        ),
         hash=False,
     )
     empty_container_type_hints: Mapping[EmptyContainerPath, str] = (
         dataclasses.field(
-            default_factory=lambda: MappingProxyType(mapping={}),
+            default_factory=lambda: MappingProxyType[EmptyContainerPath, str](
+                mapping={}
+            ),
             hash=False,
         )
     )

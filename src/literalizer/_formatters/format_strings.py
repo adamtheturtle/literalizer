@@ -1,5 +1,6 @@
 """String formatting functions."""
 
+import functools
 import re
 from collections.abc import Callable, Sequence
 from typing import Protocol, runtime_checkable
@@ -299,6 +300,12 @@ def _apply_concat_control(
 
 
 @beartype
+def _format_control_char(match: re.Match[str], *, fmt: str) -> str:
+    """Return the escape sequence for the control character in *match*."""
+    return fmt.format(ord(match.group()))
+
+
+@beartype
 def escape_control_chars(*, value: str, fmt: str, escape_delete: bool) -> str:
     r"""Replace C0 control characters (U+0000-U+001F) with escape sequences.
 
@@ -315,7 +322,7 @@ def escape_control_chars(*, value: str, fmt: str, escape_delete: bool) -> str:
     pattern = r"[\x00-\x1f\x7f]" if escape_delete else r"[\x00-\x1f]"
     return re.sub(
         pattern=pattern,
-        repl=lambda m: fmt.format(ord(m.group())),
+        repl=functools.partial(_format_control_char, fmt=fmt),
         string=value,
     )
 

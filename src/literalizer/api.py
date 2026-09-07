@@ -7,6 +7,7 @@ package root as :func:`literalizer.literalize` and
 """
 
 import dataclasses
+import enum
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
@@ -160,6 +161,12 @@ def _validate_module_name_variable_collision(
 
 
 @beartype
+def _modifier_name(modifier: enum.Enum) -> str:
+    """Return the name of *modifier*, for a deterministic ordering."""
+    return modifier.name
+
+
+@beartype
 def _validate_immutable_both_forms(
     *,
     language: Language,
@@ -176,7 +183,7 @@ def _validate_immutable_both_forms(
     language_cls: Any = type(language)
     immutable = sorted(
         variable_form.modifiers & language_cls.immutable_variable_modifiers,
-        key=lambda modifier: modifier.name,
+        key=_modifier_name,
     )
     for modifier in immutable:
         raise ImmutableVariableModifierError(

@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -194,7 +194,7 @@ def _data_has_empty_string_value(data: Value) -> bool:
         return any(
             _data_has_empty_string_value(data=value) for value in data.values()
         )
-    if isinstance(data, list | set):
+    if isinstance(data, (list, set)):
         return any(_data_has_empty_string_value(data=value) for value in data)
     return data == ""
 
@@ -211,7 +211,7 @@ def _first_cobol_placeholder(data: Value) -> str | None:
         if not data:
             return "an empty mapping"
         values = data.values()
-    elif isinstance(data, list | set):
+    elif isinstance(data, (list, set)):
         if not data:
             return "an empty container"
         values = data
@@ -500,6 +500,7 @@ def _disambiguate_data_names(content: str) -> str:
 class _CobolDictFormatConfig(DictFormatConfig):
     """COBOL mapping config that makes normalized sibling names unique."""
 
+    @override
     def postprocess_entries(self, lines: list[str], /) -> list[str]:
         """Disambiguate one mapping even without a variable wrapper."""
         rooted = "\n".join(("00 ROOT.", *lines))
@@ -562,7 +563,7 @@ def _cobol_format_call_arg(value: Value, formatted: str, /) -> str:
     expressions that can appear after ``USING BY CONTENT``.  Callers must
     bind those values before passing them to a program.
     """
-    if isinstance(value, list | dict | set):
+    if isinstance(value, (list, dict, set)):
         raise CallArgNotSupportedError(
             language_name="COBOL",
             reason=(
@@ -989,9 +990,13 @@ class Cobol(metaclass=LanguageCls):
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -1005,8 +1010,8 @@ class Cobol(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -1408,6 +1413,7 @@ class Cobol(metaclass=LanguageCls):
         """
 
         @property
+        @override
         def string_literals_escape_null_byte(self) -> bool:
             """Return whether this JSON type faithfully encodes null
             bytes.

@@ -171,6 +171,14 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
+def _escape_spaces(match: re.Match[str]) -> str:
+    r"""Return one ``\s`` escape per character of the whitespace run
+    *match*.
+    """
+    return r"\s" * len(match[0])
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Java text block."""
     escaped = (
@@ -182,12 +190,12 @@ def _format_string_multiline(value: str) -> str:
     )
     escaped = re.sub(
         pattern=r" +(?=\n)",
-        repl=lambda match: r"\s" * len(match[0]),
+        repl=_escape_spaces,
         string=escaped,
     )
     escaped = re.sub(
         pattern=r"(?m)^ +",
-        repl=lambda match: r"\s" * len(match[0]),
+        repl=_escape_spaces,
         string=escaped,
     )
     return f'"""\n{escaped}"""'
@@ -960,9 +968,13 @@ class Java(metaclass=LanguageCls):
 
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
@@ -976,8 +988,8 @@ class Java(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -1968,7 +1980,9 @@ class Java(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.JDK_11
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType(mapping={}),
+        default_factory=lambda: MappingProxyType[frozenset[str], str](
+            mapping={}
+        ),
         hash=False,
     )
     indent: str = "    "

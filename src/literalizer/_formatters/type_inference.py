@@ -1,5 +1,6 @@
 """Type inference for homogeneous collections."""
 
+import functools
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
@@ -592,6 +593,22 @@ def _partition_shapes_by_shared_keys(
 
 
 @beartype
+def _key_position(key: str, *, key_order: Mapping[str, int]) -> int:
+    """Return the document-order position of *key* in *key_order*."""
+    return key_order[key]
+
+
+@beartype
+def set_sort_key(value: Value) -> tuple[str, str]:
+    """Return the deterministic rendering order key for a set member.
+
+    Members sort by type name and then by ``repr`` so that mixed-type
+    sets render in a stable order.
+    """
+    return type(value).__name__, repr(value)
+
+
+@beartype
 def _build_unified_shape(
     *,
     group: Sequence[RecordShape],
@@ -613,7 +630,9 @@ def _build_unified_shape(
     for member_keys in member_key_sets[1:]:
         required_keys.intersection_update(member_keys)
     ordered_keys: tuple[str, ...] = tuple(
-        sorted(all_keys, key=lambda key: key_order[key])
+        sorted(
+            all_keys, key=functools.partial(_key_position, key_order=key_order)
+        )
     )
     optional_keys: frozenset[str] = frozenset(all_keys - required_keys)
     return RecordShape(keys=ordered_keys, optional_keys=optional_keys)

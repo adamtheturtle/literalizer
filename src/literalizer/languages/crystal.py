@@ -313,6 +313,20 @@ _CRYSTAL_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
 
 
 @beartype
+def _format_integer_decimal(value: int) -> str:
+    """Format an integer as a plain decimal literal."""
+    return str(object=value)
+
+
+@beartype
+def _nil_last_sort_key(part: str) -> tuple[bool, str]:
+    """Return a sort key that orders ``Nil`` after every other type
+    name.
+    """
+    return part == "Nil", part
+
+
+@beartype
 def _crystal_union(parts: set[str], /) -> str:
     """Join Crystal type names into a union the way the compiler prints
     one for an inferred container literal.
@@ -325,7 +339,7 @@ def _crystal_union(parts: set[str], /) -> str:
     literal's inferred one exactly.
     """
     return " | ".join(
-        sorted(parts, key=lambda part: (part == "Nil", part)),
+        sorted(parts, key=_nil_last_sort_key),
     )
 
 
@@ -461,8 +475,12 @@ class Crystal(metaclass=LanguageCls):
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
-    reserved_call_parameter_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -474,8 +492,8 @@ class Crystal(metaclass=LanguageCls):
     )
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -885,7 +903,7 @@ class Crystal(metaclass=LanguageCls):
 
         DECIMAL = MappingProxyType(
             mapping={
-                "NONE": lambda value: str(object=value),
+                "NONE": _format_integer_decimal,
                 "UNDERSCORE": format_integer_underscore,
             }
         )

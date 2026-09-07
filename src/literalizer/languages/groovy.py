@@ -145,6 +145,14 @@ class _GroovyDictEntryWithSeparator(DictEntryWithSeparator):
 
 
 @beartype
+def _escape_trailing_whitespace(match: re.Match[str]) -> str:
+    r"""Return one ``\u0020`` escape per character of the whitespace run
+    *match*.
+    """
+    return r"\u0020" * len(match[0])
+
+
+@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Groovy triple-single-quoted string."""
     escaped = (
@@ -155,7 +163,7 @@ def _format_string_multiline(value: str) -> str:
         .replace("'", "\\'")
     )
     escaped = _TRAILING_LINE_WHITESPACE.sub(
-        repl=lambda match: r"\u0020" * len(match[0]),
+        repl=_escape_trailing_whitespace,
         string=escaped,
     )
     return f"'''{escaped}'''"
@@ -229,9 +237,13 @@ class Groovy(metaclass=LanguageCls):
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -246,8 +258,8 @@ class Groovy(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

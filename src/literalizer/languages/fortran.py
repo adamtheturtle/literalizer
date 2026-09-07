@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
@@ -574,9 +575,13 @@ class Fortran(metaclass=LanguageCls):
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -589,7 +594,7 @@ class Fortran(metaclass=LanguageCls):
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    call_target_name_syntax = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

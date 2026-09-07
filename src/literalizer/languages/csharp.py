@@ -388,7 +388,7 @@ def _format_csharp_declaration(
     """
     if _CSharpModifiers.CONST in modifiers and isinstance(
         data,
-        list | dict | set | datetime.date | datetime.datetime,
+        (list, dict, set, datetime.date, datetime.datetime),
     ):
         msg = (
             "C# 'const' requires a compile-time constant initializer, "
@@ -679,9 +679,13 @@ class CSharp(metaclass=LanguageCls):
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -696,8 +700,8 @@ class CSharp(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -1508,7 +1512,9 @@ class CSharp(metaclass=LanguageCls):
         HeterogeneousStrategies.ERROR
     )
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType(mapping={}),
+        default_factory=lambda: MappingProxyType[frozenset[str], str](
+            mapping={}
+        ),
         hash=False,
     )
     json_type: JsonTypes | None = None

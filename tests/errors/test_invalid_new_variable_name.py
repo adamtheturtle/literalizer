@@ -8,6 +8,7 @@ itself -- together with the acceptances that show where each
 restriction stops.
 """
 
+import operator
 import re
 
 import pytest
@@ -102,7 +103,9 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
 # #4549).
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
     language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    for language_cls in sorted(
+        ALL_LANGUAGES, key=operator.attrgetter("__name__")
+    )
     if language_cls.reserved_variable_identifiers
     and language_cls.supports_variable_names
 )
@@ -151,7 +154,9 @@ def test_all_declared_reserved_names_raise(
 
 _RECORD_PREFIX_LANGUAGES = tuple(
     language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    for language_cls in sorted(
+        ALL_LANGUAGES, key=operator.attrgetter("__name__")
+    )
     if language_cls.supports_record_struct_name_prefix
 )
 

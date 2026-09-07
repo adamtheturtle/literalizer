@@ -79,6 +79,7 @@ from literalizer._formatters.type_inference import (
     collect_record_shapes,
     infer_element_type,
     record_shape_for_dict,
+    set_sort_key,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._json_native_document import (
@@ -216,7 +217,7 @@ def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
     if isinstance(data, dict):
         for child in data.values():
             _reject_distinct_record_list_ordered_map_values(child)
-    elif isinstance(data, list | set):
+    elif isinstance(data, (list, set)):
         for child in data:
             _reject_distinct_record_list_ordered_map_values(child)
 
@@ -807,7 +808,7 @@ def _compute_cpp_type(  # noqa: PLR0911
         case set():
             sorted_items: list[Value] = sorted(
                 item,
-                key=lambda v: (type(v).__name__, repr(v)),
+                key=set_sort_key,
             )
             inner_type = _compute_element_type_for_items(
                 items=sorted_items,
@@ -1028,7 +1029,7 @@ def _needs_variant_type(
         case set():
             sorted_items: list[Value] = sorted(
                 data,
-                key=lambda v: (type(v).__name__, repr(v)),
+                key=set_sort_key,
             )
             return _items_need_variant(
                 items=sorted_items,
@@ -1479,7 +1480,7 @@ def _cpp14_variant_parent_ids(
                 children.extend(
                     sorted(
                         value,
-                        key=lambda child: (type(child).__name__, repr(child)),
+                        key=set_sort_key,
                     )
                 )
                 type_children = children
@@ -2630,9 +2631,13 @@ class Cpp(metaclass=LanguageCls):
 
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
-    reserved_variable_identifier_pattern = None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
+        None
+    )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
-    reserved_call_parameter_identifier_pattern = None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ] = None
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True
@@ -2647,8 +2652,8 @@ class Cpp(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length = None
-    call_target_name_syntax = None
+    max_variable_identifier_length: ClassVar[int | None] = None
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
@@ -3583,7 +3588,9 @@ class Cpp(metaclass=LanguageCls):
     json_rendering: JsonRenderings | None = None
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType(mapping={}),
+        default_factory=lambda: MappingProxyType[frozenset[str], str](
+            mapping={}
+        ),
         hash=False,
     )
     record_map_value_typing: RecordMapValueTypings = (
@@ -3815,7 +3822,7 @@ class Cpp(metaclass=LanguageCls):
             """Wrap the identifier in ``std::move()`` unless *value* is
             a ``trivially-copyable`` scalar.
             """
-            if isinstance(value, bool | int | float):
+            if isinstance(value, (bool, int, float)):
                 return name
             return f"std::move({name})"
 
