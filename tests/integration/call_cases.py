@@ -7,7 +7,7 @@ those declarations into per-language cases.  The runner
 ``test_call_variant_golden_file``.
 """
 
-# pylint: disable=import-private-name
+# pylint: disable=import-private-name,useless-suppression
 
 import dataclasses
 import enum

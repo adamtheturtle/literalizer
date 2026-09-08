@@ -1,6 +1,6 @@
 """Focused tests for Kotlin initializer type extraction."""
 
-# pylint: disable=import-private-name
+# pylint: disable=import-private-name,useless-suppression
 
 import pytest
 

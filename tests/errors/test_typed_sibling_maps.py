@@ -6,7 +6,7 @@ which no rejection manifest expresses -- and the one call that reaches
 the pooling check directly, for a shape ``literalize`` cannot build.
 """
 
-# pylint: disable=import-private-name
+# pylint: disable=import-private-name,useless-suppression
 
 from __future__ import annotations
 
