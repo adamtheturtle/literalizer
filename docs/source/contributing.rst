@@ -41,8 +41,7 @@ Running tests
 Changelog entries
 -----------------
 
-Describe each user-facing change in a news fragment at :file:`newsfragments/<issue>.change`.
-The ``.change`` suffix is the only fragment type towncrier is configured to consume; a fragment with any other suffix (such as ``.fix`` or ``.feature``) is silently ignored at release time.
+Describe each user-facing change in a news fragment at :file:`newsfragments/<issue>.change`. The ``.change`` suffix is the only fragment type towncrier is configured to consume; a fragment with any other suffix (such as ``.fix`` or ``.feature``) is silently ignored at release time.
 The release workflow assembles the fragments into ``CHANGELOG.rst`` and the GitHub release notes, then deletes them.
 Do not re-add a fragment that a release has already consumed, for example when merging ``main`` into a long-running branch.
 
@@ -51,8 +50,7 @@ Golden case manifests
 
 Every directory under :file:`tests/integration/cases/` contains a versioned
 :file:`case.toml`.  The manifest is the source of truth for the input's suite,
-variant-axis and ``literalize_call`` coverage; language capability checks and
-expansion remain in the typed Python runner.
+variant-axis and ``literalize_call`` coverage; language capability checks and expansion remain in the typed Python runner.
 
 An ordinary case participates in the base and combined suites.
 Its ``input.yaml`` is inferred because it is the directory's sole input:
@@ -160,13 +158,9 @@ The loader rejects unknown fields or axes, missing inputs, duplicate logical cas
 Rejection manifests
 -------------------
 
-A rejection that holds for a family of languages -- every language with a
-``json_type`` refusing a non-string dict key, every language taking
-``record_shape_names`` refusing a name that is not PascalCase -- is declared
-once under :file:`tests/errors/rejections/`.  Each directory holds a
+A rejection that holds for a family of languages -- every language with a ``json_type`` refusing a non-string dict key, every language taking ``record_shape_names`` refusing a name that is not PascalCase -- is declared once under :file:`tests/errors/rejections/`.  Each directory holds a
 :file:`rejection.toml` and an :file:`expected.toml` golden file.  The golden
-opens with the split of the languages the manifest selected, then groups what
-each raised under a table per exception type:
+opens with the split of the languages the manifest selected, then groups what each raised under a table per exception type:
 
 .. code-block:: toml
 
