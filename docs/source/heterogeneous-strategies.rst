@@ -97,14 +97,11 @@ The generated type's name is configurable (for example ``Rust.heterogeneous_valu
 Rust empty-container type hints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Rust's ``TAGGED_ENUM`` strategy normally represents an empty map beside a
-scalar as ``Value::Map(HashMap::new())``. When the caller has schema knowledge,
-pass ``empty_container_type_hints`` to ``Rust`` to supply the concrete type at
-an input path. Paths consist of mapping keys and list indexes; ``()`` is the
-document root. For example, ``{(1,): "HashMap<String, String>"}`` renders the
-empty map in ``[1, {}]`` as ``Value::Map(<HashMap<String, String>>::new())``
-and makes the matching enum variant carry ``HashMap<String, String>``. Omitting
-the hint preserves the default ``HashMap<&'static str, Value>`` variant.
+Rust's ``TAGGED_ENUM`` strategy normally represents an empty map beside a scalar as ``Value::Map(HashMap::new())``.
+When the caller has schema knowledge, pass ``empty_container_type_hints`` to ``Rust`` to supply the concrete type at an input path.
+Paths consist of mapping keys and list indexes; ``()`` is the document root.
+For example, ``{(1,): "HashMap<String, String>"}`` renders the empty map in ``[1, {}]`` as ``Value::Map(<HashMap<String, String>>::new())`` and makes the matching enum variant carry ``HashMap<String, String>``.
+Omitting the hint preserves the default ``HashMap<&'static str, Value>`` variant.
 
 A tagged enum cannot wrap container values, so it does not help a record-shaped dict whose fields mix scalars with a list or another dict.
 Use ``RECORD`` for that.
@@ -216,11 +213,9 @@ The default is ``record_map_value_typings.NARROW``.
 Render a fixed-length heterogeneous **scalar** array (all elements scalar, spanning at least two scalar types) as the language's native fixed-length tuple instead of rejecting it or widening it to a homogeneous list.
 Where the language also has ``RECORD``, ``TUPLE`` composes with it, so a record field whose value is such an array becomes a tuple-typed field.
 Some languages cap the tuple length (:class:`~literalizer.Kotlin` has only ``Pair`` and ``Triple`` and raises :class:`~literalizer.exceptions.TupleArityNotRepresentableError` otherwise); :class:`~literalizer.Rust` and :class:`~literalizer.Scala` impose no length limit.
-For C++14, heterogeneous standard-library collections use a generated
-``Value`` carrier by default (configurable with
-``heterogeneous_value_variant_name``). Its ``is<T>()`` and ``get<T>()``
-methods inspect and retrieve the active value without requiring C++17's
-``std::variant``. ``TUPLE`` remains available for fixed-length scalar lists.
+For C++14, heterogeneous standard-library collections use a generated ``Value`` carrier by default (configurable with ``heterogeneous_value_variant_name``).
+Its ``is<T>()`` and ``get<T>()`` methods inspect and retrieve the active value without requiring C++17's ``std::variant``.
+``TUPLE`` remains available for fixed-length scalar lists.
 
 Which should I use? Heterogeneous strategies vs. JSON value types
 -----------------------------------------------------------------
@@ -281,7 +276,9 @@ The strategies that synthesize a declaration accept a constructor argument that 
    * - ``heterogeneous_value_variant_name`` (default ``"Value"``)
      - ``VARIANT`` on Mojo, ``OBJECT_VARIANT`` on Nim
 
-Rust, Go, Java, Kotlin, Scala, and CSharp additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name. Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration. This is useful when documentation starter code already defines the domain type.
+Rust, Go, Java, Kotlin, Scala, and CSharp additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name.
+Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration.
+This is useful when documentation starter code already defines the domain type.
 
 C and CSharp do not accept ``record_struct_name_prefix``, despite supporting the ``RECORD`` strategy.
 

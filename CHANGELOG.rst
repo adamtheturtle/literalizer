@@ -6,7 +6,9 @@ Changelog
 2026.09.04
 ----------
 
-- TypeScript now annotates a top-level homogeneous map rendered as an object literal with ``Record<string, V>`` under the default ``NEVER`` and ``SAFE`` variable type hint modes, so the value can be indexed with a ``string`` key under ``--strict``. ``tsc`` infers a bare object literal as a closed type with no index signature. Dicts whose values differ in type and one-entry dicts stay inferred, and the ``MAP`` dict format is unaffected.
+- TypeScript now annotates a top-level homogeneous map rendered as an object literal with ``Record<string, V>`` under the default ``NEVER`` and ``SAFE`` variable type hint modes, so the value can be indexed with a ``string`` key under ``--strict``.
+  ``tsc`` infers a bare object literal as a closed type with no index signature.
+  Dicts whose values differ in type and one-entry dicts stay inferred, and the ``MAP`` dict format is unaffected.
 
 - TypeScript golden files are now type-checked under ``tsc --strict`` with a consumer probe appended after each declaration, so a literal that compiles on its own but cannot be indexed, looked up or iterated the way its shape invites fails CI.
 
@@ -23,69 +25,47 @@ No significant changes.
 2026.08.31
 ----------
 
-- A ``Rust`` call argument is now subject to the same per-language data rules as
-  a declared value: an offset the native datetime drops, and a float collection
-  key the map type cannot hash. The rules ran on the declaration path alone, so
-  a call silently changed the value or emitted code ``rustc`` refuses.
+- A ``Rust`` call argument now follows the per-language data rules for a declared value.
+  These rules reject an offset the native datetime drops and a float collection key the map type cannot hash.
+  The rules ran on the declaration path alone, so a call silently changed the value or emitted code ``rustc`` refuses.
 
-- ``CSharp``, ``Kotlin`` and ``Scala`` now refuse a ``record_shape_names`` entry naming a type their own output references, as ``Rust`` and ``Java`` already did. Such a name either shadows the type the same file uses or clashes with the line importing it.
+- ``CSharp``, ``Kotlin`` and ``Scala`` now refuse a ``record_shape_names`` entry naming a type their own output references, as ``Rust`` and ``Java`` already did.
+  Such a name either shadows the type the same file uses or clashes with the line importing it.
 
-- Document the method-size ceiling on the ``Scala`` and ``Java`` back
-  ends.  A rendered literal is one expression placed in one method, and the
-  virtual machine caps a method at 64KB of compiled size, so a large document does not
-  compile.  The limit applies to the whole document rather than to any one
-  collection, and it moves with the document's shape, so each language
-  records measured figures rather than a single element count.
+- Document the method-size ceiling on the ``Scala`` and ``Java`` back ends.
+  A rendered literal is one expression placed in one method, and the virtual machine caps a method at 64KB of compiled size, so a large document does not compile.
+  The limit applies to the whole document rather than to any one collection, and it moves with the document's shape, so each language records measured figures rather than a single element count.
 
-- No user-facing change: the V, Standard ML, Haskell, Dhall, Bash and Wren
-  round-trip drivers no longer depend on the exact shape of the shared corpus.
-  The V walker covers every element and value type the interface strategy emits
-  and aborts on an unhandled one instead of writing ``null``; the Standard ML and
-  Haskell encoders take their clauses from the constructors the literalized type
-  declares; the Dhall walker converts each entry directly when the document is
-  single-family and declares no union; the Bash emitter indexes an associative
-  array through a variable rather than an unquoted subscript and escapes every C0
-  control; and the Wren driver computes which keys hold a number ``Num`` cannot
-  re-print rather than listing them.
+- No user-facing change: the V, Standard ML, Haskell, Dhall, Bash and Wren round-trip drivers no longer depend on the exact shape of the shared corpus.
+  The V walker covers every element and value type the interface strategy emits and aborts on an unhandled one instead of writing ``null``; the Standard ML and Haskell encoders take their clauses from the constructors the literalized type declares; the Dhall walker converts each entry directly when the document is single-family and declares no union; the Bash emitter indexes an associative array through a variable rather than an unquoted subscript and escapes every C0 control; and the Wren driver computes which keys hold a number ``Num`` cannot re-print rather than listing them.
 
-- Six back ends now write a document's comments above the declaration under ``json_type``, as the others already did. The comments were dropped, against the preservation the documentation promises, because a JSON document has nowhere to put one; one back end wrote a scalar document's comment into the string it parses, where the parser read it as content.
+- Six back ends now write a document's comments above the declaration under ``json_type``, as the others already did.
+  The comments were dropped, against the preservation the documentation promises, because a JSON document has nowhere to put one; one back end wrote a scalar document's comment into the string it parses, where the parser read it as content.
 
-- The ``TUPLE`` strategy now writes a heterogeneous scalar array nested inside a list as the language's tuple, as it already did at the top level and in a record field. Such an array was widened to a homogeneous list or refused instead, which is what the strategy documents itself as avoiding. A list whose elements would not all be written with one type is left as it was, since it has nothing to hold them.
+- The ``TUPLE`` strategy now writes a heterogeneous scalar array nested inside a list as the language's tuple, as it already did at the top level and in a record field.
+  Such an array was widened to a homogeneous list or refused instead, which is what the strategy documents itself as avoiding.
+  A list whose elements would not all be written with one type is left as it was, since it has nothing to hold them.
 
-- No user-facing change: the test modules that stay written out rather
-  than becoming golden-file or TOML-driven cases now each say why in
-  their docstring.
+- No user-facing change: the test modules that stay written out rather than becoming golden-file or TOML-driven cases now each say why in their docstring.
 
-- A ``Mojo`` call stub no longer declares an ordered map argument as a ``Dict``, which the list of tuples it is written as does not match. Resolving a reference also no longer turns an ordered map into a plain mapping, which is what let the wrong type through.
+- A ``Mojo`` call stub no longer declares an ordered map argument as a ``Dict``, which the list of tuples it is written as does not match.
+  Resolving a reference also no longer turns an ordered map into a plain mapping, which is what let the wrong type through.
 
-- A Fortran bound reference named after the ``module_name`` of the file
-  it is wrapped in is now rejected.  A program unit and the variables it
-  declares share one scope, so the two names collided and the emitted
-  source did not compile.  The ``variable_form`` name was already held to
-  this rule; the references declared beside it were not.
+- A Fortran bound reference named after the ``module_name`` of the file it is wrapped in is now rejected.
+  A program unit and the variables it declares share one scope, so the two names collided and the emitted source did not compile.
+  The ``variable_form`` name was already held to this rule; the references declared beside it were not.
 
-- A reference marker beside a map is no longer pooled with it when a
-  container widens its sibling maps to a shared value type.  The marker
-  stands for a value declared elsewhere, so pooling its own shape widened
-  containers that agree once the reference resolves, and C++ and Kotlin
-  emitted an element whose type did not match the container declaring it.
+- A reference marker beside a map is no longer pooled with it when a container widens its sibling maps to a shared value type.
+  The marker stands for a value declared elsewhere, so pooling its own shape widened containers that agree once the reference resolves, and C++ and Kotlin emitted an element whose type did not match the container declaring it.
 
-- A record reached through a container that is not itself a record no
-  longer has its refinement stopped there.  The walk stopped at every
-  mapping outside the record shapes, which was right for one the widening
-  pass had removed but wrong for an ordered map or a mapping whose keys
-  are not names: the records below those are still written as records, so
-  two instances differing only there kept one declaration.
+- A record reached through a container that is not itself a record no longer has its refinement stopped there.
+  The walk stopped at every mapping outside the record shapes, which was right for one the widening pass had removed but wrong for an ordered map or a mapping whose keys are not names: the records below those are still written as records, so two instances differing only there kept one declaration.
 
-  C++ now refuses a record written as the value of such a mapping.  The
-  mapping infers its value type from the dict the record was written
-  from, so the declaration named a map where the literal wrote a struct
-  and the emitted source did not compile.  An ordered map holding lists
-  of records is unaffected, since the list gives that slot a vector of
-  the record type.
+  C++ now refuses a record written as the value of such a mapping.
+  The mapping infers its value type from the dict the record was written from, so the declaration named a map where the literal wrote a struct and the emitted source did not compile.
+  An ordered map holding lists of records is unaffected, since the list gives that slot a vector of the record type.
 
-- Go now leaves integer constants inferred when ``numeric_literal_suffix=AUTO``
-  widens their surrounding collection to ``float64``.
+- Go now leaves integer constants inferred when ``numeric_literal_suffix=AUTO`` widens their surrounding collection to ``float64``.
 
 - Fix Kotlin nested map type hints so sequence value types match their rendered literals.
 
@@ -93,53 +73,39 @@ No significant changes.
 
 - Align Kotlin explicit variable hints with the type arguments carried by collection initializers.
 
-- A Nim declaration bound to a reference now names it rather than
-  converting it with the JSON macro.  The conversion needed an import
-  that a referenced sequence never asked for, so a document whose root
-  was a reference to a list emitted a file Nim refused, and it retyped a
-  sequence the caller had bound deliberately.
+- A Nim declaration bound to a reference now names it rather than converting it with the JSON macro.
+  The conversion needed an import that a referenced sequence never asked for, so a document whose root was a reference to a list emitted a file Nim refused, and it retyped a sequence the caller had bound deliberately.
 
 - Use resolved reference values when deriving variable declaration type hints.
 
-- Nim now refuses a declaration name with a trailing or doubled
-  underscore, and Standard ML one beginning with an underscore.  Nim
-  takes an underscore only between two letters or digits, and in Standard
-  ML a leading underscore is the wildcard pattern, so both emitted source
-  the compiler refused.
+- Nim now refuses a declaration name with a trailing or doubled underscore, and Standard ML one beginning with an underscore.
+  Nim takes an underscore only between two letters or digits, and in Standard ML a leading underscore is the wildcard pattern, so both emitted source the compiler refused.
 
-- COBOL now refuses the reserved words it was accepting as declaration
-  names, such as ``string``, ``length`` and ``type``.  Seventeen words
-  confirmed by GnuCOBOL have been added to the existing list.
+- COBOL now refuses the reserved words it was accepting as declaration names, such as ``string``, ``length`` and ``type``.
+  Seventeen words confirmed by GnuCOBOL have been added to the existing list.
 
-  A COBOL call stub takes its arguments positionally and writes no
-  parameter names, so a reserved word is still accepted there.
+  A COBOL call stub takes its arguments positionally and writes no parameter names, so a reserved word is still accepted there.
 
 - Widen bound-reference declarations to the type required by their containing collection.
 
-- JavaScript and TypeScript now wrap a whole file holding an unbound
-  object in parentheses.  A statement opening with a brace is a block, so
-  the file did not parse.  Every other root already reads as an
-  expression and is unchanged.
+- JavaScript and TypeScript now wrap a whole file holding an unbound object in parentheses.
+  A statement opening with a brace is a block, so the file did not parse.
+  Every other root already reads as an expression and is unchanged.
 
 - Allow Rust tuple sequences to contain nested homogeneous sequences rendered as ``Vec`` values.
 
 - Moved bare-value, rebound-anchor, and round-trip capability test matrices from Python parameter lists into validated TOML case files.
 
-- Removed all coverage-ignore directives, deleted unreachable defensive paths,
-  and moved the remaining boundary coverage into a shared cross-language
-  integration fixture.
+- Removed all coverage-ignore directives, deleted unreachable defensive paths, and moved the remaining boundary coverage into a shared cross-language integration fixture.
 
 2026.08.29.1
 ------------
 
-- Preserve a carriage return in a Bash string value.  Trailing-whitespace
-  trimming removed the carriage return of a ``\r\n`` pair, silently changing the
-  value.
+- Preserve a carriage return in a Bash string value.
+  Trailing-whitespace trimming removed the carriage return of a ``\r\n`` pair, silently changing the value.
 
-- Raise ``UnrepresentableStringError`` for a Bash string value carrying U+007F
-  inside a collection.  Bash inserts a spurious ``\x01`` before that byte in the
-  compound assignment an array or associative array uses, silently changing the
-  value; a lone scalar, which uses a simple assignment, is unaffected.
+- Raise ``UnrepresentableStringError`` for a Bash string value carrying U+007F inside a collection.
+  Bash inserts a spurious ``\x01`` before that byte in the compound assignment an array or associative array uses, silently changing the value; a lone scalar, which uses a simple assignment, is unaffected.
 
 - Without wrap_in_file, a bound ref sharing a name with the output binding is no longer rejected as a redeclaration: no declaration is emitted there, so it behaves as ref_values does.
 
@@ -163,25 +129,20 @@ No significant changes.
 
 - A long Fortran string now leaves room for the entry prefix in front of its first chunk, which had pushed the first physical line past the 132-column limit.
 
-- Raise ``UnrepresentableIntegerError`` for a Haxe integer outside the range a
-  double holds exactly, rather than emitting a literal the target silently
-  rounds.
+- Raise ``UnrepresentableIntegerError`` for a Haxe integer outside the range a double holds exactly, rather than emitting a literal the target silently rounds.
 
-- Raise ``UnrepresentableIntegerError`` for a Jsonnet integer outside the range a
-  double holds exactly, rather than emitting a literal the evaluator silently
-  rounds.
+- Raise ``UnrepresentableIntegerError`` for a Jsonnet integer outside the range a double holds exactly, rather than emitting a literal the evaluator silently rounds.
 
 - ``Odin(json_type=JSON_VALUE)`` now refuses an integer outside the signed 64-bit range, which the runtime parser wrapped around, and an object name that is empty, which it discarded along with its value.
 
-- Emit a bidirectional formatting character in an R string as its ``\uXXXX``
-  escape.  The R parser refuses a raw one with "bidi formatting not allowed, use
-  escapes instead".
+- Emit a bidirectional formatting character in an R string as its ``\uXXXX`` escape.
+  The R parser refuses a raw one with "bidi formatting not allowed, use escapes instead".
 
-- Spell an R float in the widest exponent as a hexadecimal literal, which the R
-  parser reads exactly.  Its decimal parser is several units in the last place
-  out at that magnitude and overflows a value near the maximum to ``Inf``.
+- Spell an R float in the widest exponent as a hexadecimal literal, which the R parser reads exactly.
+  Its decimal parser is several units in the last place out at that magnitude and overflows a value near the maximum to ``Inf``.
 
-- A reference marker with no value supplied no longer reaches preamble inference as the mapping it is written as, so the rendered code no longer asks for imports and type machinery for a map it never contains. An ``ref_values`` entry naming something else no longer changes the preamble of identical code either.
+- A reference marker with no value supplied no longer reaches preamble inference as the mapping it is written as, so the rendered code no longer asks for imports and type machinery for a map it never contains.
+  An ``ref_values`` entry naming something else no longer changes the preamble of identical code either.
 
 - Inline comments on TOML dotted-key entries are now preserved instead of being dropped.
 
@@ -193,155 +154,117 @@ No significant changes.
 
 - Toml wrap_in_file no longer splits a string value on U+0085, U+2028 or U+2029, which produced an unparseable document.
 
-- Spell the minimum ``Long`` as ``Long.MinValue`` inside a Visual Basic typed
-  array, as the scalar form already did.  Visual Basic reads the raw literal as a
-  negation of a value one past ``Long.MaxValue`` and refuses it with ``BC30036``.
+- Spell the minimum ``Long`` as ``Long.MinValue`` inside a Visual Basic typed array, as the scalar form already did.
+  Visual Basic reads the raw literal as a negation of a value one past ``Long.MaxValue`` and refuses it with ``BC30036``.
 
-- Render each Visual Basic map value on its own terms instead of pooling one
-  integer width across the map.  A document mixing a value beyond the signed
-  64-bit range with an ordinary negative one was refused, though the map's value
-  slot is ``Object`` and each value carries its own type.
+- Render each Visual Basic map value on its own terms instead of pooling one integer width across the map.
+  A document mixing a value beyond the signed 64-bit range with an ordinary negative one was refused, though the map's value slot is ``Object`` and each value carries its own type.
 
-- Raise ``UnrepresentableInputError`` for a subnormal Wren float.  The Wren lexer
-  reports such a literal as out of range, so the emitted file did not compile.
+- Raise ``UnrepresentableInputError`` for a subnormal Wren float.
+  The Wren lexer reports such a literal as out of range, so the emitted file did not compile.
 
 - A YAML standalone comment written at an indentation between the enclosing collection and the nested one it follows is no longer dropped; the innermost enclosing collection it is not outdented from now claims it.
 
 - Preserve four more YAML comments that ruamel stores in slots the extractor never read: the inner and closing comments of a flow collection, the comment between a mapping key and its value, the header comment of a block scalar, and the comment on a trailing alias node.
 
-- Reject ``init`` as a Go declaration name.  A generated stub for it neither
-  declares nor calls: ``init`` must take no arguments and return nothing, and
-  cannot be referenced.
+- Reject ``init`` as a Go declaration name.
+  A generated stub for it neither declares nor calls: ``init`` must take no arguments and return nothing, and cannot be referenced.
 
-- Reject a PHP declaration name that a function from the always-present ``Core``
-  or ``standard`` extension already takes.  Declaring one of those names again is a fatal error, so
-  the generated stub did not load.
+- Reject a PHP declaration name that a function from the always-present ``Core`` or ``standard`` extension already takes.
+  Declaring one of those names again is a fatal error, so the generated stub did not load.
 
-- Drop the map-type import from a document whose maps are all recordized.  The
-  import decision was made from the pre-recordization shape, so a
-  ``heterogeneous_strategy=RECORD`` file that renders only structs still carried
-  an unused ``HashMap``, ``std::map``, ``java.util.Map`` or
-  ``System.Collections.Generic`` line.
+- Drop the map-type import from a document whose maps are all recordized.
+  The import decision was made from the pre-recordization shape, so a ``heterogeneous_strategy=RECORD`` file that renders only structs still carried an unused ``HashMap``, ``std::map``, ``java.util.Map`` or ``System.Collections.Generic`` line.
 
 - A comment_source entry ending in a backslash no longer comments out the call written on the following line in C-family output and in Tcl.
 
 - A Tcl call statement whose argument renders over several lines now carries the backslash continuations Tcl needs, instead of being read as separate commands.
 
-- A wrapped result whose data names a reference with no ``bound_refs`` entry is now refused. Only ``bound_refs`` emits a declaration for a reference, so the file named an identifier nothing gave a value, which a compiled target rejects.
+- A wrapped result whose data names a reference with no ``bound_refs`` entry is now refused.
+  Only ``bound_refs`` emits a declaration for a reference, so the file named an identifier nothing gave a value, which a compiled target rejects.
 
-- ``Cpp(heterogeneous_strategy=RECORD)`` now names a recordized mapping by its generated ``struct`` where the heterogeneous carrier lists it as an alternative. The carrier named the mapping type the value would have taken otherwise, which the recordized element did not match.
+- ``Cpp(heterogeneous_strategy=RECORD)`` now names a recordized mapping by its generated ``struct`` where the heterogeneous carrier lists it as an alternative.
+  The carrier named the mapping type the value would have taken otherwise, which the recordized element did not match.
 
-- Raise ``UnrepresentableIntegerError`` for a Forth integer outside the signed
-  64-bit range, rather than emitting a literal that a cell reads back negated or
-  wrapped.
+- Raise ``UnrepresentableIntegerError`` for a Forth integer outside the signed 64-bit range, rather than emitting a literal that a cell reads back negated or wrapped.
 
-- Raise ``UnrepresentableIntegerError`` for a Matlab integer outside the range a
-  double holds exactly, rather than emitting a literal the runtime silently
-  rounds.
+- Raise ``UnrepresentableIntegerError`` for a Matlab integer outside the range a double holds exactly, rather than emitting a literal the runtime silently rounds.
 
-- Raise ``UnrepresentableIntegerError`` for a Nix integer outside the signed
-  64-bit range.  Such a value was routed through ``builtins.fromJSON``, which
-  parses one at or above ``2**64`` into a float and throws on evaluation between
-  ``2**63`` and ``2**64``.
+- Raise ``UnrepresentableIntegerError`` for a Nix integer outside the signed 64-bit range.
+  Such a value was routed through ``builtins.fromJSON``, which parses one at or above ``2**64`` into a float and throws on evaluation between ``2**63`` and ``2**64``.
 
-- Reject R ``NewVariable`` names that begin with an underscore: an R symbol
-  begins with a letter, so the emitted file was a syntax error.
+- Reject R ``NewVariable`` names that begin with an underscore: an R symbol begins with a letter, so the emitted file was a syntax error.
 
-- Six ``RECORD`` back ends now refuse a dict key their compiler cannot take as a field name, or escape it where the language has a spelling for it. Go refuses the blank identifier, Nim a name that is not a Nim identifier or that folds onto a keyword, V an uppercase letter or a leading underscore, Odin a builtin type name, and Scala the wildcard; Kotlin and Scala write the rest in backticks.
+- Six ``RECORD`` back ends now refuse a dict key their compiler cannot take as a field name, or escape it where the language has a spelling for it.
+  Go refuses the blank identifier, Nim a name that is not a Nim identifier or that folds onto a keyword, V an uppercase letter or a leading underscore, Odin a builtin type name, and Scala the wildcard; Kotlin and Scala write the rest in backticks.
 
-- Raise ``RefOutputCollisionError`` when a ref identifier is the name the output
-  binding declares.  The emitted code read the binding being declared, which was
-  either a guaranteed runtime error or a silent self-reference.
+- Raise ``RefOutputCollisionError`` when a ref identifier is the name the output binding declares.
+  The emitted code read the binding being declared, which was either a guaranteed runtime error or a silent self-reference.
 
-- Reject keywords that were missing from the reserved declaration-name lists of
-  Crystal, JavaScript, Nim, Odin, R, Ruby, Rust, Swift and V.  Each named a
-  declaration the target toolchain refuses, and in R the typed ``NA`` constants
-  silently discarded the data instead.
+- Reject keywords that were missing from the reserved declaration-name lists of Crystal, JavaScript, Nim, Odin, R, Ruby, Rust, Swift and V.
+  Each named a declaration the target toolchain refuses, and in R the typed ``NA`` constants silently discarded the data instead.
 
-- Raise ``UnrepresentableIntegerError`` for a Roc integer outside the ``I128``
-  range, rather than emitting an ``i128`` literal the compiler rejects as out of
-  range.
+- Raise ``UnrepresentableIntegerError`` for a Roc integer outside the ``I128`` range, rather than emitting an ``i128`` literal the compiler rejects as out of range.
 
-- Emit an embedded NUL in a Scheme string as the fixed-width ``\x00`` escape the
-  default Guile reader implements.  The R6RS ``\x00;`` form the backend used
-  needs a reader option the emitted code does not enable, so the terminating
-  semicolon was read as a literal character.
+- Emit an embedded NUL in a Scheme string as the fixed-width ``\x00`` escape the default Guile reader implements.
+  The R6RS ``\x00;`` form the backend used needs a reader option the emitted code does not enable, so the terminating semicolon was read as a literal character.
 
-- Reject the blank identifier ``_`` as a declaration name in Elixir, Haskell,
-  Kotlin and Rust, and reject every all-underscore name in Kotlin, where such a
-  name is reserved rather than bindable.
+- Reject the blank identifier ``_`` as a declaration name in Elixir, Haskell, Kotlin and Rust, and reject every all-underscore name in Kotlin, where such a name is reserved rather than bindable.
 
 - A YAML comment on its own line after a scalar document is now emitted as a standalone comment rather than being attached to the value as an inline comment.
 
-- Raise ``UnrepresentableStringError`` for a plain COBOL string value carrying a
-  tab, newline or carriage return.  Such a character was silently replaced with a
-  space; the ``json_type=CJSON`` backend, which splices it as an ``X"NN"``
-  fragment, is unaffected.
+- Raise ``UnrepresentableStringError`` for a plain COBOL string value carrying a tab, newline or carriage return.
+  Such a character was silently replaced with a space; the ``json_type=CJSON`` backend, which splices it as an ``X"NN"`` fragment, is unaffected.
 
-- Preserve a carriage return in a string value for the back ends that embed one
-  literally: Bash, Common Lisp and Raku.  Trailing-whitespace trimming removed
-  the carriage return of a ``\r\n`` pair, silently changing the value.
+- Preserve a carriage return in a string value for the back ends that embed one literally: Bash, Common Lisp and Raku.
+  Trailing-whitespace trimming removed the carriage return of a ``\r\n`` pair, silently changing the value.
 
 - A C# array of maps is now declared with the element type the map opener writes, rather than one derived from the map's contents that the rendered element did not match.
 
-- Emit a bidirectional formatting character in a D string as its ``\uXXXX``
-  escape, in the WYSIWYG string format as well as the quoted one.  The D compiler refuses a
-  raw one with "Bidirectional control characters are disallowed for security
-  reasons".
+- Emit a bidirectional formatting character in a D string as its ``\uXXXX`` escape, in the WYSIWYG string format as well as the quoted one.
+  The D compiler refuses a raw one with "Bidirectional control characters are disallowed for security reasons".
 
 - Java datetimes whose offset exceeds the 18 hours ZoneOffset accepts now render as the equivalent UTC instant instead of code that throws at run time.
 
 - JSON5 input now accepts a raw U+2028 or U+2029 inside a string, which the JSON5 specification allows so that every JSON document is also a JSON5 document.
 
-- Accept a surrogate-pair escape in JSON5 input.  The pair was left uncombined
-  and then refused as an unpaired surrogate, so a JSON document containing a
-  default-serialized astral character failed on the JSON5 path.
+- Accept a surrogate-pair escape in JSON5 input.
+  The pair was left uncombined and then refused as an unpaired surrogate, so a JSON document containing a default-serialized astral character failed on the JSON5 path.
 
 - Keep a JavaScript or TypeScript naive date in a year below 100 at that year.
-  The numeric ``Date`` constructor maps a year argument of 0 to 99 to
-  ``1900 + year``, so such a value silently shifted by 1900 years.
+  The numeric ``Date`` constructor maps a year argument of 0 to 99 to ``1900 + year``, so such a value silently shifted by 1900 years.
 
-- Accept a Julia datetime whose fraction is a whole number of milliseconds, which
-  ``Dates.DateTime`` stores exactly.  Any fraction was refused; only a
-  sub-millisecond one is now.
+- Accept a Julia datetime whose fraction is a whole number of milliseconds, which ``Dates.DateTime`` stores exactly.
+  Any fraction was refused; only a sub-millisecond one is now.
 
 - HCL and Raku now reject a string that is not in Unicode NFC form, which both targets silently normalized with no escape spelling that avoided it.
 
-- Spell a ``__proto__`` dict key as a computed property in JavaScript and
-  TypeScript.  A quoted ``__proto__`` key in an object literal sets the prototype
-  instead of defining a property, so the entry was silently lost.
+- Spell a ``__proto__`` dict key as a computed property in JavaScript and TypeScript.
+  A quoted ``__proto__`` key in an object literal sets the prototype instead of defining a property, so the entry was silently lost.
 
 - Raku single-element list literals now carry a trailing comma, so a one-element list holding a list or a map is no longer flattened by the single-argument rule.
 
-- Reject a capitalized ``target_function`` for Elm, Gleam, Haskell, OCaml and
-  PureScript when ``wrap_in_file`` is set: the generated file declares the target
-  as a function, which a name those languages read as a constructor cannot be.
+- Reject a capitalized ``target_function`` for Elm, Gleam, Haskell, OCaml and PureScript when ``wrap_in_file`` is set: the generated file declares the target as a function, which a name those languages read as a constructor cannot be.
   Elm also rejects a leading-underscore name, which its grammar has no place for.
 
 - Wrapped call statements whose argument renders over several lines now keep their continuation lines: Haskell, Elm, PureScript and Roc no longer repeat the binding prefix on each line, and Fortran emits the ampersand continuations such a statement needs.
 
-- Reject a Fortran, Visual Basic or Zig call parameter named after the
-  ``target_function`` it belongs to.  The generated stub declared the name twice
-  and the toolchain refused it.
+- Reject a Fortran, Visual Basic or Zig call parameter named after the ``target_function`` it belongs to.
+  The generated stub declared the name twice and the toolchain refused it.
 
-- Raise ``DelimiterlessWrappedFileError`` when ``include_delimiters=False`` is
-  combined with ``wrap_in_file=True``.  The pair produced a bare collection
-  fragment presented as a complete source file.
+- Raise ``DelimiterlessWrappedFileError`` when ``include_delimiters=False`` is combined with ``wrap_in_file=True``.
+  The pair produced a bare collection fragment presented as a complete source file.
 
-- Reject two Fortran ``module_name`` values that produce a file gfortran refuses:
-  ``fval_m``, the support module every wrapped file emits, and a name equal to
-  the variable the file binds, which a program unit cannot declare twice.
+- Reject two Fortran ``module_name`` values that produce a file gfortran refuses: ``fval_m``, the support module every wrapped file emits, and a name equal to the variable the file binds, which a program unit cannot declare twice.
 
 - Hoist the imports of a wrapped Haskell call above its target-function stub.
-  An argument value needing a preamble import, such as a datetime, produced a
-  file GHC rejects with ``parse error on input 'import'``.
+  An argument value needing a preamble import, such as a datetime, produced a file GHC rejects with ``parse error on input 'import'``.
 
-- ``Haxe`` and ``Crystal`` now refuse a ``module_name`` that names a standard library type. A Haxe type declaration shadows the type it is named after, and a Crystal class or struct cannot be reopened as a module, so neither wrapper compiled.
+- ``Haxe`` and ``Crystal`` now refuse a ``module_name`` that names a standard library type.
+  A Haxe type declaration shadows the type it is named after, and a Crystal class or struct cannot be reopened as a module, so neither wrapper compiled.
 
-- Reject an Objective-C ``module_name`` that names a C library function.  A
-  wrapped file imports Foundation, which brings the prototype into scope, so the
-  generated wrapper declared it again with a different signature and clang refused
-  the file.
+- Reject an Objective-C ``module_name`` that names a C library function.
+  A wrapped file imports Foundation, which brings the prototype into scope, so the generated wrapper declared it again with a different signature and clang refused the file.
 
 - pre_indent_level combined with wrap_in_file is now rejected for languages that read indentation as structure, where it produced a file the target cannot parse.
 
@@ -352,27 +275,21 @@ No significant changes.
 - Keep a TOML inline table on one line under the multiline collection layout.
   TOML forbids a multi-line inline table, so the emitted document did not parse.
 
-- Reject Gleam ``NewVariable`` names that are not snake_case: an uppercase letter
-  anywhere, or a leading underscore, produces a file the Gleam compiler rejects.
+- Reject Gleam ``NewVariable`` names that are not snake_case: an uppercase letter anywhere, or a leading underscore, produces a file the Gleam compiler rejects.
 
 - The negative-zero rejection for the Haskell AESON, Elm and PureScript JSON value types now applies to call arguments as well as declared values.
 
-- Raise ``UnrepresentableNullError`` for a null Perl hash key.  A Perl hash key
-  is always a string, so such a key was emitted as the bareword ``undef``, which
-  the fat comma quoted into the ordinary string key ``"undef"``.
+- Raise ``UnrepresentableNullError`` for a null Perl hash key.
+  A Perl hash key is always a string, so such a key was emitted as the bareword ``undef``, which the fat comma quoted into the ordinary string key ``"undef"``.
 
 - Haskell AESON_VALUE, Zig STD_JSON_VALUE, PureScript ARGONAUT_JSON and C CJSON now emit source comments before the declaration instead of dropping them.
 
-- Reject reserved words and locked builtin names that seven languages accepted
-  as a call target, a call parameter name or a declaration name: Ada, Cobol,
-  Mojo, Standard ML, SystemVerilog, V and Wren.  A Common Lisp call target may
-  no longer name a symbol of the locked ``COMMON-LISP`` package, in any
-  spelling.
+- Reject reserved words and locked builtin names that seven languages accepted as a call target, a call parameter name or a declaration name: Ada, Cobol, Mojo, Standard ML, SystemVerilog, V and Wren.
+  A Common Lisp call target may no longer name a symbol of the locked ``COMMON-LISP`` package, in any spelling.
 
 - A Jsonnet call whose argument renders over several lines is no longer split into one array element per line, which produced doubled and leading commas.
 
-- Reject Jsonnet keywords as call target components and call parameter names:
-  every one of them named a binding or a field the Jsonnet parser refuses.
+- Reject Jsonnet keywords as call target components and call parameter names: every one of them named a binding or a field the Jsonnet parser refuses.
 
 - An integer with more decimal digits than the interpreter converts to text now raises ExcessiveIntegerDigitsError from every input format and from the renderer, instead of a bare ValueError on the JSON and rendering paths.
 
@@ -384,57 +301,52 @@ No significant changes.
 
 - BothVariableForms combined with a modifier that binds a name once, such as C++ const, Java final or C# readonly, is now rejected instead of emitting an assignment to an immutable binding.
 
-- A reference nested inside a collection call argument now gives the container around it the type the reference holds, rather than the type the marker's own shape would suggest. A mapping holding a reference to a list was written as a mapping of mappings of strings, which no compiled target accepts.
+- A reference nested inside a collection call argument now gives the container around it the type the reference holds, rather than the type the marker's own shape would suggest.
+  A mapping holding a reference to a list was written as a mapping of mappings of strings, which no compiled target accepts.
 
-- ``Cpp(language_version=CPP14, heterogeneous_strategy=RECORD)`` now emits the carrier struct the rendered value refers to. A list written as a carrier-typed vector was counted as a tuple, which asks for no carrier, so the file named a type it never declared.
+- ``Cpp(language_version=CPP14, heterogeneous_strategy=RECORD)`` now emits the carrier struct the rendered value refers to.
+  A list written as a carrier-typed vector was counted as a tuple, which asks for no carrier, so the file named a type it never declared.
 
-- Sibling maps under a mapping now get the explicit carrier construction their widened value type requires under ``Cpp(language_version=CPP14)``. Only siblings under a list did, so the mapping case emitted an initializer the explicit carrier constructor refuses.
+- Sibling maps under a mapping now get the explicit carrier construction their widened value type requires under ``Cpp(language_version=CPP14)``.
+  Only siblings under a list did, so the mapping case emitted an initializer the explicit carrier constructor refuses.
 
 - A C++ collection mixing a negative integer with one above the signed 64-bit range is now rejected instead of declaring an unsigned element type the negative value cannot narrow to.
 
 - The eager Python 3.8 preamble now imports the typing aliases an unconditional variable annotation names, not only the ones an empty collection forces.
 
-- ``CSharp(heterogeneous_strategy=RECORD)`` now splits records whose same-named field takes conflicting types, as every other statically typed back end does. Records that could not compile were accepted instead.
+- ``CSharp(heterogeneous_strategy=RECORD)`` now splits records whose same-named field takes conflicting types, as every other statically typed back end does.
+  Records that could not compile were accepted instead.
 
-- Make Perl's fixed float format fall back to scientific notation for tiny
-  values whose fixed-point spelling exceeds Perl's numeric-token limit.
+- Make Perl's fixed float format fall back to scientific notation for tiny values whose fixed-point spelling exceeds Perl's numeric-token limit.
 
-- Make R's fixed float format fall back to scientific notation for extreme
-  magnitudes that R's decimal parser would otherwise round incorrectly.
+- Make R's fixed float format fall back to scientific notation for extreme magnitudes that R's decimal parser would otherwise round incorrectly.
 
-- Preserve nested scalar inline comments and following standalone comments in
-  per-element calls generated from YAML.
+- Preserve nested scalar inline comments and following standalone comments in per-element calls generated from YAML.
 
-- Preserve an inline comment on the last scalar of a nested YAML collection when
-  it is followed by an outdented comment for the next parent element.
+- Preserve an inline comment on the last scalar of a nested YAML collection when it is followed by an outdented comment for the next parent element.
 
-- ``Rust(sequence_format=TUPLE)`` now accepts sibling sequences of different lengths inside a list. A tuple's element types stand apart, so such siblings need no common type; a mapping value slot still takes one type and is unchanged.
+- ``Rust(sequence_format=TUPLE)`` now accepts sibling sequences of different lengths inside a list.
+  A tuple's element types stand apart, so such siblings need no common type; a mapping value slot still takes one type and is unchanged.
 
 - An inline comment on a scalar inside a call element now reaches the generated call line even when no standalone comment follows the element.
   A separator or terminator written after an inline call comment now goes before it, so Erlang, Jsonnet and Roc no longer put the clause terminator, array comma or dbg closer inside the comment.
 
-- Two sequences of the same outer length whose nested sequences differ in length are now refused where a fixed-size type spells a length at every level it nests. Only the outer length was compared, so the two took different types and the file did not compile.
+- Two sequences of the same outer length whose nested sequences differ in length are now refused where a fixed-size type spells a length at every level it nests.
+  Only the outer length was compared, so the two took different types and the file did not compile.
 
-- An ordered map call argument now takes the type its reference holds, rather than the type the marker's own shape would suggest. Only the mapping and sequence openers read a reference-resolved view of their container.
+- An ordered map call argument now takes the type its reference holds, rather than the type the marker's own shape would suggest.
+  Only the mapping and sequence openers read a reference-resolved view of their container.
 
 - Renamed 94 news fragments from ``.bugfix`` to ``.change`` so ``towncrier`` includes them, and added a ``prek`` hook that rejects any other suffix.
 
-- Narrow and complete the name rejections added alongside the recent call and
-  declaration fixes, following review: a module-qualified call target is accepted
-  again for OCaml and PureScript, only the leading component of a Common Lisp
-  dotted target is measured against the locked package, a Fortran or Visual Basic
-  parameter may repeat a dotted target's earlier component, and a Fortran
-  ``BothVariableForms`` binding may share the wrapper's name.  The Cobol
-  control-character rejection now covers call arguments, the ref-versus-output
-  collision check honours the target language's identifier case sensitivity, the
-  Fortran wrapper-name collision is caught on ``literalize_call`` too, and two
-  JSON5 keys that differ only in surrogate spelling are refused as duplicates
-  rather than silently collapsing.
+- Narrow and complete the name rejections added alongside the recent call and declaration fixes, following review: a module-qualified call target is accepted again for OCaml and PureScript, only the leading component of a Common Lisp dotted target is measured against the locked package, a Fortran or Visual Basic parameter may repeat a dotted target's earlier component, and a Fortran ``BothVariableForms`` binding may share the wrapper's name.
+  The Cobol control-character rejection now covers call arguments, the ref-versus-output collision check honours the target language's identifier case sensitivity, the Fortran wrapper-name collision is caught on ``literalize_call`` too, and two JSON5 keys that differ only in surrogate spelling are refused as duplicates rather than silently collapsing.
 
 2026.08.29
 ----------
 
-- Every language now declares for itself what it once inherited from a default held one level up, so nothing takes a behavior nobody considered for it. A meta-test holds every language to the list.
+- Every language now declares for itself what it once inherited from a default held one level up, so nothing takes a behavior nobody considered for it.
+  A meta-test holds every language to the list.
 
 - No user-facing change: the ``strict-kwargs`` development dependency is updated, its pre-commit hook entry is corrected for the current CLI, and the calls the updated checker reports are respelled with keyword arguments.
 
@@ -482,7 +394,8 @@ No significant changes.
 
 - Make COBOL data-name collision suffixing run in linear rather than quadratic time.
 
-- Empty list values in maps now borrow the element type of a non-empty sibling in Go, Rust, and C++ output. Length-bearing Rust and Nim formats reject incompatible empty and non-empty siblings instead of emitting code that does not compile.
+- Empty list values in maps now borrow the element type of a non-empty sibling in Go, Rust, and C++ output.
+  Length-bearing Rust and Nim formats reject incompatible empty and non-empty siblings instead of emitting code that does not compile.
 
 - C, C++, and D non-decimal integer formats now keep negative values at and below the signed 32-bit boundary signed instead of wrapping them to positive values.
 
@@ -498,11 +411,9 @@ No significant changes.
 
 - Allow same-shaped heterogeneous lists to be used as sibling map values.
 
-- Reject declaration modifiers that cannot be combined. Java and C# accept one
-  visibility modifier except for ``private protected``, and a C# ``const`` field
-  cannot also be declared ``static`` or ``readonly``.
-  Emitting every modifier produced source such as ``public private int x``, which
-  does not compile.
+- Reject declaration modifiers that cannot be combined.
+  Java and C# accept one visibility modifier except for ``private protected``, and a C# ``const`` field cannot also be declared ``static`` or ``readonly``.
+  Emitting every modifier produced source such as ``public private int x``, which does not compile.
 
 2026.08.23
 ----------
@@ -520,8 +431,7 @@ No significant changes.
 
 - Reject dotted call components that differ only in case where the generated helper type names normalize that case, so the two components would share one declaration.
 
-- Mojo sequence and ordered-map output now uses explicit ``List([...])``
-  construction, preserving dynamic-list semantics with Mojo 1.0.
+- Mojo sequence and ordered-map output now uses explicit ``List([...])`` construction, preserving dynamic-list semantics with Mojo 1.0.
 
 - Reject Lua integers outside the signed 64-bit range in every integer format, not only hexadecimal: Lua's lexer turns such a numeral into a float, so the emitted literal denoted a different value.
 
@@ -688,13 +598,21 @@ No significant changes.
 2026.08.13.1
 ------------
 
-- Under the C++ ``RECORD`` heterogeneous strategy, nested sibling maps that fall back to a plain map no longer wrap every value in a ``LiteralizerRecordValue`` alias when all of their scalars share one concrete C++ type.  The maps now render as ``std::map<std::string, T>`` with bare values, and the alias (with its per-value wrappers) is only emitted when the widened scalars genuinely mix types.  On C++14, whose fallback carrier wraps every widened value, the alias now always names the carrier type; it previously named the shared scalar type while the values were still carrier-wrapped, which emitted code that failed to compile.
+- Under the C++ ``RECORD`` heterogeneous strategy, nested sibling maps that fall back to a plain map no longer wrap every value in a ``LiteralizerRecordValue`` alias when all of their scalars share one concrete C++ type.
+  The maps now render as ``std::map<std::string, T>`` with bare values, and the alias (with its per-value wrappers) is only emitted when the widened scalars genuinely mix types.
+  On C++14, whose fallback carrier wraps every widened value, the alias now always names the carrier type; it previously named the shared scalar type while the values were still carrier-wrapped, which emitted code that failed to compile.
 
-- Under the Rust, Go, Kotlin, and Scala ``RECORD`` heterogeneous strategies, nested sibling maps that fall back to a widened plain map now narrow to the concrete value type when all of their scalars share one type.  Rust drops the generated single-variant value enum and renders ``HashMap<&'static str, T>`` with bare values, Go renders ``map[string]T``, Kotlin renders ``Map<String, T>`` / ``mapOf<String, T>(...)``, and Scala renders ``Map[String, T]``.  The widened ``any`` / ``Any?`` / ``Any`` / value-enum forms remain for widened maps whose scalars genuinely mix types.
+- Under the Rust, Go, Kotlin, and Scala ``RECORD`` heterogeneous strategies, nested sibling maps that fall back to a widened plain map now narrow to the concrete value type when all of their scalars share one type.
+  Rust drops the generated single-variant value enum and renders ``HashMap<&'static str, T>`` with bare values, Go renders ``map[string]T``, Kotlin renders ``Map<String, T>`` / ``mapOf<String, T>(...)``, and Scala renders ``Map[String, T]``.
+  The widened ``any`` / ``Any?`` / ``Any`` / value-enum forms remain for widened maps whose scalars genuinely mix types.
 
-- The Scala ``RECORD`` heterogeneous strategy now returns its generated ``case class`` declarations via ``LiteralizeResult.preamble``, matching every other ``RECORD``-capable language, so ``LiteralizeResult.code`` holds just the record literal and can be spliced into a surrounding collection literal.  Previously the declarations were prepended to ``code``, which produced a syntax error in that embedding.  ``wrap_in_file=True`` output is unchanged: the declarations still land inside the generated ``object``.
+- The Scala ``RECORD`` heterogeneous strategy now returns its generated ``case class`` declarations via ``LiteralizeResult.preamble``, matching every other ``RECORD``-capable language, so ``LiteralizeResult.code`` holds just the record literal and can be spliced into a surrounding collection literal.
+  Previously the declarations were prepended to ``code``, which produced a syntax error in that embedding.
+  ``wrap_in_file=True`` output is unchanged: the declarations still land inside the generated ``object``.
 
-- Under the Go, Java, and Kotlin ``RECORD`` heterogeneous strategies, a list whose every element is rendered as one shared record type now uses that type as the list's element type instead of widening: Go renders ``[]RecordN{...}``, Java renders ``new RecordN[]{...}``, and Kotlin renders ``listOf<RecordN>(...)``.  This applies both to a top-level list and to a list-valued record field, and to externally supplied ``record_shape_names`` types.  The widened ``[]any`` / ``Object[]`` / ``listOf<Any?>`` forms remain for lists that mix records with other values.
+- Under the Go, Java, and Kotlin ``RECORD`` heterogeneous strategies, a list whose every element is rendered as one shared record type now uses that type as the list's element type instead of widening: Go renders ``[]RecordN{...}``, Java renders ``new RecordN[]{...}``, and Kotlin renders ``listOf<RecordN>(...)``.
+  This applies both to a top-level list and to a list-valued record field, and to externally supplied ``record_shape_names`` types.
+  The widened ``[]any`` / ``Object[]`` / ``listOf<Any?>`` forms remain for lists that mix records with other values.
 
 - Narrow empty nested maps from corresponding maps in sibling records.
 
@@ -716,7 +634,9 @@ No significant changes.
 
 - Use Apache's canonical archive to install the pinned Groovy release in lint CI.
 
-- ``Rust``, ``Go`` and ``Cpp`` accept a ``record_map_value_typing`` constructor argument choosing the value type of a ``RECORD`` strategy field whose dict has no record shape of its own and so renders as a plain map.  The default ``record_map_value_typings.NARROW`` keeps today's behavior, spelling the concrete type every widened scalar in that input shares.  ``record_map_value_typings.WIDE`` always spells the strategy's value carrier instead -- ``HashMap<&'static str, Value>``, ``map[string]any``, or ``std::map<std::string, LiteralizerRecordValue>`` -- so two inputs sharing one record shape declare the field identically and one input's literals compile against the other input's declaration.
+- ``Rust``, ``Go`` and ``Cpp`` accept a ``record_map_value_typing`` constructor argument choosing the value type of a ``RECORD`` strategy field whose dict has no record shape of its own and so renders as a plain map.
+  The default ``record_map_value_typings.NARROW`` keeps today's behavior, spelling the concrete type every widened scalar in that input shares.
+  ``record_map_value_typings.WIDE`` always spells the strategy's value carrier instead -- ``HashMap<&'static str, Value>``, ``map[string]any``, or ``std::map<std::string, LiteralizerRecordValue>`` -- so two inputs sharing one record shape declare the field identically and one input's literals compile against the other input's declaration.
 
 2026.08.13
 ----------
@@ -749,47 +669,82 @@ No significant changes.
 
 - Escape non-ASCII characters in Perl double-quoted string literals as ``\x{HHHH}``, so the output no longer requires ``use utf8;`` in the surrounding source file.
 
-- Under the Rust ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.
+- Under the Rust ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.
 
-- Under the Go ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.  This ports the Rust field-type split to the shared record strategy behind an opt-in flag; the remaining ``RECORD`` languages follow in later increments.
+- Under the Go ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated struct, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate struct that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated struct.
+  This ports the Rust field-type split to the shared record strategy behind an opt-in flag; the remaining ``RECORD`` languages follow in later increments.
 
-- Under the Java ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile (``incompatible types: String cannot be converted to int``).  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Java.
+- Under the Java ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile (``incompatible types: String cannot be converted to int``).
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.
+  This ports the shared field-type split (issue #2888) to Java.
 
-- Under the Swift ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Swift as part of issue #2961.
+- Under the Swift ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to Swift as part of issue #2961.
 
-- Under the Zig ``RECORD`` heterogeneous strategy, dict keys that collide with a Zig keyword (for example ``error`` or ``switch``) now render as quoted identifiers (``@"error"``) in both the generated ``struct`` declaration and its literals, so the output compiles instead of failing with ``error: expected '.', found ':'``.  A key that is not identifier-shaped text is escaped the same way.
+- Under the Zig ``RECORD`` heterogeneous strategy, dict keys that collide with a Zig keyword (for example ``error`` or ``switch``) now render as quoted identifiers (``@"error"``) in both the generated ``struct`` declaration and its literals, so the output compiles instead of failing with ``error: expected '.', found ':'``.
+  A key that is not identifier-shaped text is escaped the same way.
 
-- Under the Zig ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A record field key that is a Zig keyword (such as ``error``) is now quoted as ``@"error"`` so the generated ``struct`` compiles.  This ports the shared field-type split (issue #2888) to Zig as part of issue #2961.
+- Under the Zig ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A record field key that is a Zig keyword (such as ``error``) is now quoted as ``@"error"`` so the generated ``struct`` compiles.
+  This ports the shared field-type split (issue #2888) to Zig as part of issue #2961.
 
-- Add explicit C++ language-version targets: ``Cpp.version_formats.CPP14``,
-  ``CPP17``, and ``CPP20``.  ``CPP20`` remains the default; callers can select
-  an older target with ``Cpp(language_version=Cpp.version_formats.CPP17)``.
+- Add explicit C++ language-version targets: ``Cpp.version_formats.CPP14``, ``CPP17``, and ``CPP20``.
+  ``CPP20`` remains the default; callers can select an older target with ``Cpp(language_version=Cpp.version_formats.CPP17)``.
 
-- Under the Kotlin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``data class``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``data class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Kotlin as part of issue #2961.
+- Under the Kotlin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``data class``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``data class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.
+  This ports the shared field-type split (issue #2888) to Kotlin as part of issue #2961.
 
-- Under the Scala ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``case class``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``case class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.  This ports the shared field-type split (issue #2888) to Scala as part of issue #2961.
+- Under the Scala ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``case class``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``case class`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  A ``record_shape_names`` entry whose key set splits this way raises ``UnrepresentableInputError``, since one custom name cannot identify one generated declaration.
+  This ports the shared field-type split (issue #2888) to Scala as part of issue #2961.
 
-- The shared ``RECORD`` renderer now rejects a dict key whose backend field-name mapping is not a lexical identifier before returning target source.  This prevents invalid declarations and literals for keys such as ``a-b``; Zig continues to use its quoted ``@"a-b"`` identifier form consistently.
+- The shared ``RECORD`` renderer now rejects a dict key whose backend field-name mapping is not a lexical identifier before returning target source.
+  This prevents invalid declarations and literals for keys such as ``a-b``; Zig continues to use its quoted ``@"a-b"`` identifier form consistently.
 
-- Under the C ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to C as part of issue #2961.
+- Under the C ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to C as part of issue #2961.
 
-- Under the C++ ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to C++ as part of issue #2961.
+- Under the C++ ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to C++ as part of issue #2961.
 
-- Under the Crystal ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Crystal as part of issue #2961.
+- Under the Crystal ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``record``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``record`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to Crystal as part of issue #2961.
 
-- Under the D ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to D as part of issue #2961.
+- Under the D ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to D as part of issue #2961.
 
-- Under the Nim ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``object``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``object`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Nim as part of issue #2961.
+- Under the Nim ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``object``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``object`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to Nim as part of issue #2961.
 
-- Under the Odin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to Odin as part of issue #2961.
+- Under the Odin ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to Odin as part of issue #2961.
 
-- Under the V ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.  This ports the shared field-type split (issue #2888) to V as part of issue #2961.
+- Under the V ``RECORD`` heterogeneous strategy, dicts with the same key set but conflicting field types (for example a nested record with different fields, or a differing scalar type under one key) no longer share one generated ``struct``, which silently emitted field types that failed to compile.
+  Such dicts now resolve to distinct record shapes: conflicting groups that never share a list each render as a separate ``struct`` that compiles, while sibling lists spanning them raise ``HeterogeneousSiblingListsError``.
+  This ports the shared field-type split (issue #2888) to V as part of issue #2961.
 
 - Handle embedded null bytes without emitting invalid target-language string literals.
 
 - Type an empty Rust map from its non-empty sibling so a list mixing empty and non-empty maps compiles.
 
-- Under V's default strategy, an empty map beside a non-empty map sibling was emitted at the ``map[string]IVal{}`` interface fallback type, which the V compiler rejected because the sibling's concrete value could not coerce to ``IVal``.  The empty map now borrows the sibling's value type (for example ``map[string]int{}``) so the list compiles.
+- Under V's default strategy, an empty map beside a non-empty map sibling was emitted at the ``map[string]IVal{}`` interface fallback type, which the V compiler rejected because the sibling's concrete value could not coerce to ``IVal``.
+  The empty map now borrows the sibling's value type (for example ``map[string]int{}``) so the list compiles.
 
 - V and Zig now reject positive integers above ``u64::MAX`` with ``UnrepresentableIntegerError`` instead of emitting overflowing fixed-width literals or union payloads.
 
@@ -819,27 +774,19 @@ No significant changes.
 
 - Make C++14's default heterogeneous rendering native-only: use tuples and records where possible, retain standard maps for non-identifier keys, and reject shapes that would require ``LiteralizerVariant``.
 
-- Add C++14 heterogeneous ``Value`` carriers with configurable names, usable
-  ``is<T>()`` / ``get<T>()`` accessors, and self-contained generated preambles.
+- Add C++14 heterogeneous ``Value`` carriers with configurable names, usable ``is<T>()`` / ``get<T>()`` accessors, and self-contained generated preambles.
 
-- C++14 heterogeneous value carriers now store rendered string literals as
-  owning ``std::string`` values, so ``is<std::string>()`` and
-  ``get<std::string>()`` match the source data model instead of exposing a
-  decayed ``const char*``.
+- C++14 heterogeneous value carriers now store rendered string literals as owning ``std::string`` values, so ``is<std::string>()`` and ``get<std::string>()`` match the source data model instead of exposing a decayed ``const char*``.
 
-- C++14 sequences now use a matching external ``record_shape_names`` type under
-  the ``ERROR`` heterogeneous strategy while retaining native ``std::map``
-  element literals.
+- C++14 sequences now use a matching external ``record_shape_names`` type under the ``ERROR`` heterogeneous strategy while retaining native ``std::map`` element literals.
 
-- Include constructors used only by emitted ref declarations in composed Gleam
-  ``GVal`` preambles.
+- Include constructors used only by emitted ref declarations in composed Gleam ``GVal`` preambles.
 
 - Import ``Union`` when explicit Python type hints use the ``typing`` union format.
 
 - Prevent source comments from terminating suffix-delimited target comments.
 
-- Reject unpaired UTF-16 surrogates in parsed strings before rendering target
-  source.
+- Reject unpaired UTF-16 surrogates in parsed strings before rendering target source.
 
 - Add a shared ``StringFormats.MULTILINE`` option for Python, Java, C++, C#, Go, JavaScript, TypeScript, Dart, Kotlin, Ruby, Scala, Rust, and Lua, preserving exact string values with native multiline syntax and safe escaped fallbacks.
 
@@ -861,9 +808,8 @@ No significant changes.
 
 - Allow callers to configure the fallback delimiter base for C++ multiline raw-string literals.
 
-- Golden input coverage now lives in validated, versioned ``case.toml``
-  manifests beside each fixture.  The migration also removes the redundant
-  ``simple_sequence`` sequence-variable-name golden cases.
+- Golden input coverage now lives in validated, versioned ``case.toml`` manifests beside each fixture.
+  The migration also removes the redundant ``simple_sequence`` sequence-variable-name golden cases.
 
 - Fortran and V byte strings now pass hexadecimal and base64 payloads through each language's normal string formatter, keeping quoting and escaping consistent with ordinary strings.
 
@@ -883,11 +829,9 @@ No significant changes.
 
 - MATLAB now rejects dictionary keys that are not valid struct field names instead of emitting code that fails at runtime.
 
-- Raise ``UnrepresentableSpecialFloatError`` consistently when Odin JSON values
-  contain NaN or infinity.
+- Raise ``UnrepresentableSpecialFloatError`` consistently when Odin JSON values contain NaN or infinity.
 
-- Add ``LiteralizerError`` as the common base for every public exception so
-  callers can handle all Literalizer failures without maintaining an allowlist.
+- Add ``LiteralizerError`` as the common base for every public exception so callers can handle all Literalizer failures without maintaining an allowlist.
 
 - Exercise Bash's default string format in its round-trip check.
 
@@ -911,23 +855,39 @@ No significant changes.
 2026.08.12
 ----------
 
-- Custom language classes now declare a stable ``language_id`` string, and ``VariantMetadata`` carries only renderer capability and option-compatibility facts.  Fields that existed solely to name or host golden fixtures, along with ``empty_container_type_hint_variant_kwargs``, have moved to the test suite's own language metadata files.
+- Custom language classes now declare a stable ``language_id`` string, and ``VariantMetadata`` carries only renderer capability and option-compatibility facts.
+  Fields that existed solely to name or host golden fixtures, along with ``empty_container_type_hint_variant_kwargs``, have moved to the test suite's own language metadata files.
 
-- Language classes no longer declare ``non_default_kwargs`` or ``declaration_style_sequence_format_overrides``.  Neither described what a language can render: both named sample values the golden test suite passes in, and both now live in that suite's own per-language metadata instead.  A custom language class no longer has to declare them.  The compatibility rule they sat next to is unaffected, since it was always enforced in production: Rust still rejects a ``CONST`` or ``STATIC`` declaration style combined with the ``VEC`` sequence format.
+- Language classes no longer declare ``non_default_kwargs`` or ``declaration_style_sequence_format_overrides``.
+  Neither described what a language can render: both named sample values the golden test suite passes in, and both now live in that suite's own per-language metadata instead.
+  A custom language class no longer has to declare them.
+  The compatibility rule they sat next to is unaffected, since it was always enforced in production: Rust still rejects a ``CONST`` or ``STATIC`` declaration style combined with the ``VEC`` sequence format.
 
-- Golden variant-axis expansion is now declared in a validated, versioned ``tests/integration/axes.toml`` registry.  Each axis names one of two typed plans and supplies that plan's parameters; the closed vocabulary of gates and overrides is resolved against registries in Python, so an unknown plan, gate kind, option, or name-template placeholder fails when the registry loads.  Fifty-one axes moved off hand-written builders, the irregular tail stays as a registered set of typed builders that a meta-test holds to its current size, and the golden files themselves are unchanged.
+- Golden variant-axis expansion is now declared in a validated, versioned ``tests/integration/axes.toml`` registry.
+  Each axis names one of two typed plans and supplies that plan's parameters; the closed vocabulary of gates and overrides is resolved against registries in Python, so an unknown plan, gate kind, option, or name-template placeholder fails when the registry loads.
+  Fifty-one axes moved off hand-written builders, the irregular tail stays as a registered set of typed builders that a meta-test holds to its current size, and the golden files themselves are unchanged.
 
-- Each ``literalize_call`` golden case now declares the language-variant axes that drive it in its own ``case.toml``, through ``[[call.variants]]`` tables, instead of a central list pairing case directories to builder functions by name.  Axis names resolve against the same closed registry that already gates ordinary variant declarations, so a misspelled name fails when the manifest loads.  The registry gained a ``filtered`` plan, which narrows another axis to the languages a gate admits, replacing the call-only wrappers that filtered a general builder in Python.  The golden files are unchanged.
+- Each ``literalize_call`` golden case now declares the language-variant axes that drive it in its own ``case.toml``, through ``[[call.variants]]`` tables, instead of a central list pairing case directories to builder functions by name.
+  Axis names resolve against the same closed registry that already gates ordinary variant declarations, so a misspelled name fails when the manifest loads.
+  The registry gained a ``filtered`` plan, which narrows another axis to the languages a gate admits, replacing the call-only wrappers that filtered a general builder in Python.
+  The golden files are unchanged.
 
-- The golden variant-axis registry now carries one entry per formatter option.  The ``date_format``, ``datetime_format`` and ``bytes_format`` options each read the value the language constructor took rather than the formatter the language derived from it, so an axis over one of them no longer expands a language default under a non-default variant name.  The eighty-two golden files that re-pinned the Haskell, OCaml and SML default date, datetime and bytes rendering are gone; every other golden file is unchanged.
+- The golden variant-axis registry now carries one entry per formatter option.
+  The ``date_format``, ``datetime_format`` and ``bytes_format`` options each read the value the language constructor took rather than the formatter the language derived from it, so an axis over one of them no longer expands a language default under a non-default variant name.
+  The eighty-two golden files that re-pinned the Haskell, OCaml and SML default date, datetime and bytes rendering are gone; every other golden file is unchanged.
 
-- The whole-document fast path that Rust's ``json_type`` mode gained is now one shared renderer, parameterized entirely by the existing language hooks rather than re-deriving any language's delimiters, key formatting or scalar dispatch.  Thirteen more languages opt into it: C, C++, Crystal, Elm, Erlang, Gleam, Haskell, Kotlin, OCaml, Odin, PureScript, Scala and Zig, each roughly twice as fast on a large flat record array.  Eligibility is re-checked per call against the configured hooks, so any value the fast path does not model -- a non-JSON scalar, an integer wide enough to swap the collection's integer formatter, an ordered map, a multiline nested layout -- still falls back to the shared renderer, and the rendered output is unchanged everywhere.
+- The whole-document fast path that Rust's ``json_type`` mode gained is now one shared renderer, parameterized entirely by the existing language hooks rather than re-deriving any language's delimiters, key formatting or scalar dispatch.
+  Thirteen more languages opt into it: C, C++, Crystal, Elm, Erlang, Gleam, Haskell, Kotlin, OCaml, Odin, PureScript, Scala and Zig, each roughly twice as fast on a large flat record array.
+  Eligibility is re-checked per call against the configured hooks, so any value the fast path does not model -- a non-JSON scalar, an integer wide enough to swap the collection's integer formatter, an ordered map, a multiline nested layout -- still falls back to the shared renderer, and the rendered output is unchanged everywhere.
 
-- Speed up literalizing large documents.  The preamble phase, which every language pays regardless of its rendering strategy, now walks the parsed document with an explicit stack and stops as soon as it has seen every type it can report, rather than making a recursive call for every node twice over.  Generated output is unchanged.
+- Speed up literalizing large documents.
+  The preamble phase, which every language pays regardless of its rendering strategy, now walks the parsed document with an explicit stack and stops as soon as it has seen every type it can report, rather than making a recursive call for every node twice over.
+  Generated output is unchanged.
 
 - R now rejects empty-string dictionary keys by default instead of silently emitting unnamed list elements.
 
-- C++ ``json_type=NLOHMANN_JSON`` now emits native ``nlohmann::json::array`` and ``nlohmann::json::object`` initializers instead of parsing an embedded JSON document at runtime. Empty containers and nested arrays retain their intended JSON types, malformed hand-edits fail during compilation, and values containing the former raw-string terminator are now supported.
+- C++ ``json_type=NLOHMANN_JSON`` now emits native ``nlohmann::json::array`` and ``nlohmann::json::object`` initializers instead of parsing an embedded JSON document at runtime.
+  Empty containers and nested arrays retain their intended JSON types, malformed hand-edits fail during compilation, and values containing the former raw-string terminator are now supported.
 
 2026.08.02
 ----------
@@ -987,11 +947,8 @@ No significant changes.
 2026.07.20.1
 ------------
 
-- Add ``literalize(record_null_substitutions=...)`` for replacing null-valued
-  record fields by name before validation, type inference, and rendering. This
-  lets a single language-neutral fixture use target-appropriate sentinels (for
-  example C++ ``-1`` integers and empty strings) while unconfigured fields and
-  languages retain their existing null behavior (issue #3143).
+- Add ``literalize(record_null_substitutions=...)`` for replacing null-valued record fields by name before validation, type inference, and rendering.
+  This lets a single language-neutral fixture use target-appropriate sentinels (for example C++ ``-1`` integers and empty strings) while unconfigured fields and languages retain their existing null behavior (issue #3143).
 
 2026.07.20
 ----------
@@ -1001,11 +958,15 @@ No significant changes.
 2026.07.15
 ----------
 
-- Under the Rust ``RECORD`` heterogeneous strategy, a list of records whose uniform top-level keys hold nested maps of divergent or disjoint shape under one key no longer raises ``HeterogeneousSiblingListsError``.  A shared inference pass detects a nested sibling-map family that cannot share one record shape and widens it to ``HashMap<&'static str, Value>``, wrapping the map's scalar leaves in the generated ``Value`` enum, so the enclosing record survives and the sibling list renders as compiling Rust.  This is the reference implementation; the remaining ``RECORD`` languages gain the same widening in later increments.
+- Under the Rust ``RECORD`` heterogeneous strategy, a list of records whose uniform top-level keys hold nested maps of divergent or disjoint shape under one key no longer raises ``HeterogeneousSiblingListsError``.
+  A shared inference pass detects a nested sibling-map family that cannot share one record shape and widens it to ``HashMap<&'static str, Value>``, wrapping the map's scalar leaves in the generated ``Value`` enum, so the enclosing record survives and the sibling list renders as compiling Rust.
+  This is the reference implementation; the remaining ``RECORD`` languages gain the same widening in later increments.
 
-- Under Go's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``map[string]any`` instead of raising ``HeterogeneousSiblingListsError``.  Their uniform enclosing records remain generated structs, and the result compiles with the standard Go toolchain.
+- Under Go's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``map[string]any`` instead of raising ``HeterogeneousSiblingListsError``.
+  Their uniform enclosing records remain generated structs, and the result compiles with the standard Go toolchain.
 
-- Under Java's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``java.util.Map<String, Object>`` instead of emitting incompatible generated record types.  Their uniform enclosing records remain generated records, and the result compiles with the standard Java toolchain.
+- Under Java's ``RECORD`` heterogeneous strategy, nested sibling maps with divergent or disjoint record shapes now widen to ``java.util.Map<String, Object>`` instead of emitting incompatible generated record types.
+  Their uniform enclosing records remain generated records, and the result compiles with the standard Java toolchain.
 
 - C#'s ``RECORD`` heterogeneous strategy now widens incompatible nested sibling maps to ``Dictionary<string, object>`` while preserving the uniform outer record.
 
@@ -1042,21 +1003,25 @@ No significant changes.
 
 - Move the language-definition (extension) API reference out of the consumer-facing API reference page and into the ``Languages`` guide, co-locating the ``Language`` protocol, the ``LanguageCls`` class, the ``*FormatConfig`` building blocks, and ``fixed_open`` with the narrative "Custom language implementations" how-to that already explains them.
 
-- Add a public ``LiteralizeResult.sections`` accessor (a tuple of the new ``FileSection`` dataclass) that exposes the file regions of a multi-section language's ``wrap_in_file=False`` output, so a caller can compose each region into its own program template instead of parsing a language-internal marker.  COBOL under ``json_type=CJSON`` is the first such language, surfacing its ``WORKING-STORAGE`` and ``PROCEDURE`` regions (named by the ``Cobol.CJSON_WORKING_STORAGE_SECTION`` / ``Cobol.CJSON_PROCEDURE_SECTION`` constants); its CI round-trip helper now composes those regions directly rather than splicing into a wrapped program.
+- Add a public ``LiteralizeResult.sections`` accessor (a tuple of the new ``FileSection`` dataclass) that exposes the file regions of a multi-section language's ``wrap_in_file=False`` output, so a caller can compose each region into its own program template instead of parsing a language-internal marker.
+  COBOL under ``json_type=CJSON`` is the first such language, surfacing its ``WORKING-STORAGE`` and ``PROCEDURE`` regions (named by the ``Cobol.CJSON_WORKING_STORAGE_SECTION`` / ``Cobol.CJSON_PROCEDURE_SECTION`` constants); its CI round-trip helper now composes those regions directly rather than splicing into a wrapped program.
 
 - Fold the resolution guidance for each exception into its class description (a "To resolve, ..." sentence) and render the remaining stages of the "Common errors" documentation page with ``autoexception`` directives instead of hand-maintained Cause / How-to-resolve tables, so each exception's meaning and recommended fix are single-sourced from ``literalizer.exceptions`` and can no longer drift between the page and the API reference.
 
-- Generate the per-language heterogeneous-strategy support matrix in the documentation from the language registry at build time (rendered with the ``sphinx-jinja`` extension), so it can no longer drift from the ``heterogeneous_strategies`` enum on each language class.  This also corrects the previously stale matrix, which omitted several languages that now expose ``RECORD``.
+- Generate the per-language heterogeneous-strategy support matrix in the documentation from the language registry at build time (rendered with the ``sphinx-jinja`` extension), so it can no longer drift from the ``heterogeneous_strategies`` enum on each language class.
+  This also corrects the previously stale matrix, which omitted several languages that now expose ``RECORD``.
 
 - Fix Go output for nested maps whose sibling dict values have different value types: each inner map is now widened to ``map[string]any`` so the literal matches the enclosing container's declared type and compiles, instead of narrowing each inner map to its own value type (issue #2878).
 
 - Fix Rust ``TAGGED_ENUM`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` enum so each inner map is ``HashMap<&str, Value>`` and the sibling maps share one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2879).
 
-- Under the Rust ``RECORD`` heterogeneous strategy, dict keys that collide with Rust keywords (e.g. ``type``, ``match``) now render as raw identifiers (``r#type``) in both the generated struct declarations and the struct literals, so the output compiles. Keys that no struct field name can express (``crate``, ``self``, ``super``, ``Self``, ``_``, or keys that are not identifier-shaped text) raise ``UnrepresentableInputError`` instead of emitting code that fails to compile.
+- Under the Rust ``RECORD`` heterogeneous strategy, dict keys that collide with Rust keywords (e.g. ``type``, ``match``) now render as raw identifiers (``r#type``) in both the generated struct declarations and the struct literals, so the output compiles.
+  Keys that no struct field name can express (``crate``, ``self``, ``super``, ``Self``, ``_``, or keys that are not identifier-shaped text) raise ``UnrepresentableInputError`` instead of emitting code that fails to compile.
 
 - Fix Kotlin output for nested maps used where a nested map type is declared: a map value now keeps its ``Map<String, ...>`` type instead of collapsing to the ``Any?`` fallback, so an element map matches the declared ``mapOf<String, Map<String, Any?>>`` type and compiles (issue #2890).
 
-- Raise ``HeterogeneousSiblingMapsError`` when a C++ container holds sibling maps whose value types force a widened dict slot the language cannot represent, instead of silently emitting a ``std::variant`` map literal that does not compile. Go and Kotlin widen these maps to their ``map[string]any`` / ``Any?`` fallback, but C++'s variant typing has no single value type every sibling map converts to, so ``literalize`` now rejects the input (use the ``RECORD`` strategy or a ``json_type`` to represent it).
+- Raise ``HeterogeneousSiblingMapsError`` when a C++ container holds sibling maps whose value types force a widened dict slot the language cannot represent, instead of silently emitting a ``std::variant`` map literal that does not compile.
+  Go and Kotlin widen these maps to their ``map[string]any`` / ``Any?`` fallback, but C++'s variant typing has no single value type every sibling map converts to, so ``literalize`` now rejects the input (use the ``RECORD`` strategy or a ``json_type`` to represent it).
 
 - Fix Mojo ``VARIANT`` output for nested maps whose sibling dict values have different value types: the scalar leaves of every sibling map are now wrapped in the ``Value`` alias so each inner ``Dict`` shares one value type, instead of leaving individually homogeneous maps at their own narrower type and emitting code that does not compile (issue #2895).
 
@@ -1069,47 +1034,62 @@ No significant changes.
 2026.06.02
 ----------
 
-- Add a Bash JSON round-trip check to CI using the shared round-trip fixture, driven by the pinned ``bash`` interpreter. Because Bash associative arrays cannot nest, the check walks the known JSON shape and runs ``eval`` on each nested-collection string to rebuild a fresh array before re-emitting JSON.
+- Add a Bash JSON round-trip check to CI using the shared round-trip fixture, driven by the pinned ``bash`` interpreter.
+  Because Bash associative arrays cannot nest, the check walks the known JSON shape and runs ``eval`` on each nested-collection string to rebuild a fresh array before re-emitting JSON.
 
 - Add a C JSON round-trip check to CI using the shared round-trip fixture; because the literalizer's ``CVal`` union carries no run-time discriminator, the helper builds a parallel ``cJSON`` tree whose shape is generated from the parsed input (one ``cJSON_Create*`` call per node, reading the ``CVal`` slot that matches the original JSON type) and prints it with ``cJSON_PrintUnformatted``.
 
-- Add a COBOL JSON round-trip check to CI using the shared round-trip fixture, compiled and run with GnuCOBOL and re-emitting JSON via the standard ``JSON GENERATE`` statement.  ``JSON GENERATE`` skips ``FILLER`` items (so the literalizer's ``FILLER``-group arrays cannot be reconstructed), has no JSON boolean and no floating-point support, and mangles keys to COBOL data names, so the helper renames the recoverable top-level scalars back to their original keys with a ``NAME OF`` clause and excludes the array/object/boolean/float fields plus the integer-overflowing ``biginteger`` and the width-truncated ``string_empty`` / ``string_unicode`` values.
+- Add a COBOL JSON round-trip check to CI using the shared round-trip fixture, compiled and run with GnuCOBOL and re-emitting JSON via the standard ``JSON GENERATE`` statement.
+  ``JSON GENERATE`` skips ``FILLER`` items (so the literalizer's ``FILLER``-group arrays cannot be reconstructed), has no JSON boolean and no floating-point support, and mangles keys to COBOL data names, so the helper renames the recoverable top-level scalars back to their original keys with a ``NAME OF`` clause and excludes the array/object/boolean/float fields plus the integer-overflowing ``biginteger`` and the width-truncated ``string_empty`` / ``string_unicode`` values.
 
 - Add a Fortran JSON round-trip check to CI using the shared round-trip fixture, and switch the Fortran language module to emit ``real(real64)`` literals (with the matching ``freal`` constructor signature in the ``fval_m`` preamble) so that double-precision values like ``1.7976931348623157e+308`` are no longer silently truncated to single precision.
 
 - Add a MATLAB JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``myData`` value with the built-in ``jsonencode``; the 26-digit ``biginteger`` field is excluded because MATLAB's only numeric type is the IEEE 754 ``double``, which re-emits it as ``1e26``.
 
-- Add a Mojo JSON round-trip check to CI using the shared round-trip fixture, run with ``mojo run``.  The shared input's mixed-type top-level object is literalized with the ``VARIANT`` heterogeneous strategy and re-emitted by copying each value out of its ``Variant`` slot into a CPython ``dict`` and calling ``json.dumps`` on it through Mojo's ``std.python`` bridge to CPython (Mojo has no JSON encoder of its own).  The wide ``biginteger`` field (which overflows Mojo's 64-bit ``Int``) and the array/object fields (which the ``VARIANT`` strategy cannot place alongside scalars in one dict) are excluded.
+- Add a Mojo JSON round-trip check to CI using the shared round-trip fixture, run with ``mojo run``.
+  The shared input's mixed-type top-level object is literalized with the ``VARIANT`` heterogeneous strategy and re-emitted by copying each value out of its ``Variant`` slot into a CPython ``dict`` and calling ``json.dumps`` on it through Mojo's ``std.python`` bridge to CPython (Mojo has no JSON encoder of its own).
+  The wide ``biginteger`` field (which overflows Mojo's 64-bit ``Int``) and the array/object fields (which the ``VARIANT`` strategy cannot place alongside scalars in one dict) are excluded.
 
 - Add a Nix JSON round-trip check to CI using the shared round-trip fixture, evaluating the literalized expression with ``nix-instantiate --eval --strict --json`` so that Nix's built-in JSON printer re-emits the value.
 
-- Add a Norg JSON round-trip check to CI using the shared round-trip fixture.  The literalizer stores the value inside a ``@code json`` ranged verbatim tag, so the check parses the generated document with the ``tree-sitter-norg`` grammar, pulls the embedded code block back out, and re-parses it with the standard library ``json`` module.
+- Add a Norg JSON round-trip check to CI using the shared round-trip fixture.
+  The literalizer stores the value inside a ``@code json`` ranged verbatim tag, so the check parses the generated document with the ``tree-sitter-norg`` grammar, pulls the embedded code block back out, and re-parses it with the standard library ``json`` module.
 
 - Add a PowerShell JSON round-trip check to CI using the shared round-trip fixture, serializing the literalized ``$myData`` value with the built-in ``ConvertTo-Json -Depth 100 -Compress``; the 26-digit ``biginteger`` field is excluded because PowerShell parses it as a ``[double]`` and re-emits it with a fractional part.
 
 - Add a Scheme JSON round-trip check to CI using the shared round-trip fixture, driven by Guile 3 and the ``guile-json`` library.
 
-- Add a SystemVerilog JSON round-trip check to CI using the shared round-trip fixture, built and run with ``verilator --binary``.  Because the literalizer's ``_VVal`` is a flat tagged record (it has no recursive component and no boolean tag), nested containers are serialized to opaque strings and booleans share the integer slot, so the helper generates the re-emitting walk from the parsed input's shape (one expression per top-level key, reading the ``_VVal`` slot that matches the original JSON type) and excludes the array/object fields, which cannot be walked back into at run time.
+- Add a SystemVerilog JSON round-trip check to CI using the shared round-trip fixture, built and run with ``verilator --binary``.
+  Because the literalizer's ``_VVal`` is a flat tagged record (it has no recursive component and no boolean tag), nested containers are serialized to opaque strings and booleans share the integer slot, so the helper generates the re-emitting walk from the parsed input's shape (one expression per top-level key, reading the ``_VVal`` slot that matches the original JSON type) and excludes the array/object fields, which cannot be walked back into at run time.
 
-- Rework the Forth language to emit a structured visitor stream. The literalized ``: my_data ... ;`` definition now calls small constructor words (``+obj``/``-obj``/``+arr``/``-arr``/``+key``/``+int``/``+float``/``+str``/``+bool``/``+null``) that preserve the document structure, instead of the previous flat sequence of stack pushes that dropped all array and object boundaries.  The constructor words are a protocol the caller binds: literalizer ships a default binding (``src/literalizer/languages/forth_prelude.fs``) that writes JSON through the Forth Foundation Library ``jos`` module, so a literalized definition prints the document as JSON out of the box, while a caller can redefine any word to build a Forth-side structure or emit another format.
+- Rework the Forth language to emit a structured visitor stream.
+  The literalized ``: my_data ... ;`` definition now calls small constructor words (``+obj``/``-obj``/``+arr``/``-arr``/``+key``/``+int``/``+float``/``+str``/``+bool``/``+null``) that preserve the document structure, instead of the previous flat sequence of stack pushes that dropped all array and object boundaries.
+  The constructor words are a protocol the caller binds: literalizer ships a default binding (``src/literalizer/languages/forth_prelude.fs``) that writes JSON through the Forth Foundation Library ``jos`` module, so a literalized definition prints the document as JSON out of the box, while a caller can redefine any word to build a Forth-side structure or emit another format.
 
-- Add ``Odin(json_type=Odin.json_types.JSON_VALUE)``, the Odin sibling of the existing Zig / C++ / Haskell / OCaml / PureScript JSON-value modes, so output renders the literalized document as a single ``json.parse_string`` call against an embedded JSON text rather than the default ``map[string]any`` / ``[dynamic]any`` shape.  The rendered binding therefore has the static type ``json.Value`` (the ``core:encoding/json`` sum type), so the value flows directly through ``json.marshal`` instead of needing a hand-rolled ``any``-walker, and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the single parsed value.
+- Add ``Odin(json_type=Odin.json_types.JSON_VALUE)``, the Odin sibling of the existing Zig / C++ / Haskell / OCaml / PureScript JSON-value modes, so output renders the literalized document as a single ``json.parse_string`` call against an embedded JSON text rather than the default ``map[string]any`` / ``[dynamic]any`` shape.
+  The rendered binding therefore has the static type ``json.Value`` (the ``core:encoding/json`` sum type), so the value flows directly through ``json.marshal`` instead of needing a hand-rolled ``any``-walker, and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the single parsed value.
 
-- Expose the nested ``JsonTypes`` and ``BoolFormats`` enum classes (plus their snake_case ``json_types`` / ``bool_formats`` aliases) on every ``Language`` subclass, using an empty enum for languages that do not support these options. Consumers can now enumerate these options uniformly across languages without reflection helpers.
+- Expose the nested ``JsonTypes`` and ``BoolFormats`` enum classes (plus their snake_case ``json_types`` / ``bool_formats`` aliases) on every ``Language`` subclass, using an empty enum for languages that do not support these options.
+  Consumers can now enumerate these options uniformly across languages without reflection helpers.
 
 - Add a ``json_type=Scheme.json_types.GUILE_JSON`` option to the Scheme language that renders objects as Scheme association lists, arrays as vectors, and null as ``'null`` so the literalized binding can be handed directly to guile-json's ``scm->json`` without an intermediate shape walker.
 
-- Change the default ``Scheme`` dict and ordered-map rendering from a flat alternating ``(list "k" v "k" v ...)`` to an association list of cons pairs (``(list (cons "k" v) ...)``). Each entry is now a ``pair?`` rather than a bare scalar, so a non-empty mapping is locally distinguishable from a heterogeneous sequence, and the form is what ``assoc`` / ``alist->hash-table`` expect. The empty case stays ``(list)`` for both an empty dict and an empty sequence.
+- Change the default ``Scheme`` dict and ordered-map rendering from a flat alternating ``(list "k" v "k" v ...)`` to an association list of cons pairs (``(list (cons "k" v) ...)``).
+  Each entry is now a ``pair?`` rather than a bare scalar, so a non-empty mapping is locally distinguishable from a heterogeneous sequence, and the form is what ``assoc`` / ``alist->hash-table`` expect.
+  The empty case stays ``(list)`` for both an empty dict and an empty sequence.
 
-- Add ``C(json_type=C.json_types.CJSON)``, which renders the literalized document as a portable ``cJSON_Create*(...)`` node tree (one ``cJSON *`` statement per node, composed with ``cJSON_AddItemToArray`` / ``cJSON_AddItemToObject``) under ``#include <cjson/cJSON.h>`` instead of the default tagged ``CVal`` union. Integers are widened to ``double`` (``cJSON`` has no integer constructor) and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the ``cJSON`` value type.
+- Add ``C(json_type=C.json_types.CJSON)``, which renders the literalized document as a portable ``cJSON_Create*(...)`` node tree (one ``cJSON *`` statement per node, composed with ``cJSON_AddItemToArray`` / ``cJSON_AddItemToObject``) under ``#include <cjson/cJSON.h>`` instead of the default tagged ``CVal`` union.
+  Integers are widened to ``double`` (``cJSON`` has no integer constructor) and ``heterogeneous_strategy=RECORD`` is rejected because the generated ``struct`` declarations cannot coexist with the ``cJSON`` value type.
 
-- Rewrite the C JSON round-trip CI check to literalize the shared fixture through ``C(json_type=C.json_types.CJSON)`` and print it with ``cJSON_PrintUnformatted``, dropping the Python-side walker that previously built a parallel ``cJSON`` tree from the parsed input. The check still reports ``C round-trip OK`` with the same two excluded fields.
+- Rewrite the C JSON round-trip CI check to literalize the shared fixture through ``C(json_type=C.json_types.CJSON)`` and print it with ``cJSON_PrintUnformatted``, dropping the Python-side walker that previously built a parallel ``cJSON`` tree from the parsed input.
+  The check still reports ``C round-trip OK`` with the same two excluded fields.
 
 - Size COBOL ``PIC X(n)`` alphanumeric clauses by the UTF-8 byte length of the string rather than its character count, so that string literals containing characters that take more than one UTF-8 byte are no longer given an undersized picture and silently truncated by GnuCOBOL at runtime.
 
 - Give colliding COBOL data names a numeric suffix so that two distinct JSON object keys that map to the same COBOL data name (because the character rewriting or the 30-character name limit collapses them together) no longer produce two sibling items with the same name in one group, which GnuCOBOL rejects as ambiguous when the name is referenced.
 
-- Add ``Cobol(json_type=CJSON)``, which renders a document as a ``cJSON`` node tree built through COBOL's C ``CALL`` interface (``cJSON_Create*`` composed with ``cJSON_AddItemTo*``) rather than a WORKING-STORAGE record, so arbitrary string keys, JSON booleans, real numbers, heterogeneous arrays, nested objects, and the empty string are all represented faithfully.  The COBOL JSON round-trip now uses this mode with ``cJSON_PrintUnformatted``, so it reproduces every field of the shared input except ``biginteger`` and ``float_large_exponent``.
+- Add ``Cobol(json_type=CJSON)``, which renders a document as a ``cJSON`` node tree built through COBOL's C ``CALL`` interface (``cJSON_Create*`` composed with ``cJSON_AddItemTo*``) rather than a WORKING-STORAGE record, so arbitrary string keys, JSON booleans, real numbers, heterogeneous arrays, nested objects, and the empty string are all represented faithfully.
+  The COBOL JSON round-trip now uses this mode with ``cJSON_PrintUnformatted``, so it reproduces every field of the shared input except ``biginteger`` and ``float_large_exponent``.
 
 - Lead the README and documentation home page with a minimal ``literalize`` call so that the required arguments are obvious at a glance, and move the format-option configuration into a follow-up example instead of mixing default-valued arguments into the first example.
 
@@ -1123,7 +1103,8 @@ No significant changes.
 
 - Restructured the API reference into labeled sections (core functions, result type, variable forms, identifier cases, function calls, formatting configuration, language definition and exceptions) and stopped surfacing undocumented internals on the page.
 
-- Remove the incomplete custom-language sketch from the "Custom language implementations" documentation; it imported private, underscore-prefixed modules.  The section now points readers to the built-in language modules as the worked example.
+- Remove the incomplete custom-language sketch from the "Custom language implementations" documentation; it imported private, underscore-prefixed modules.
+  The section now points readers to the built-in language modules as the worked example.
 
 2026.05.28
 ----------
@@ -1132,7 +1113,8 @@ No significant changes.
 
 - Add ``Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)`` to render values through ``serde_json::json!`` instead of Rust's narrow collection types.
 
-- Add ``Perl(bool_format=...)`` so booleans can round-trip through JSON and YAML libraries.  The default ``Perl.BoolFormats.INTEGER`` keeps the historic bare ``1`` / ``0`` output; ``JSON_PP_REF`` renders ``\1`` / ``\0`` scalar references (the conventional form used by ``JSON::PP``, ``JSON::XS``, ``Cpanel::JSON::XS``, and ``Mojo::JSON``); ``JSON_PP_SINGLETON`` renders the ``JSON::PP::true`` / ``JSON::PP::false`` blessed singletons with a ``use JSON::PP;`` preamble.
+- Add ``Perl(bool_format=...)`` so booleans can round-trip through JSON and YAML libraries.
+  The default ``Perl.BoolFormats.INTEGER`` keeps the historic bare ``1`` / ``0`` output; ``JSON_PP_REF`` renders ``\1`` / ``\0`` scalar references (the conventional form used by ``JSON::PP``, ``JSON::XS``, ``Cpanel::JSON::XS``, and ``Mojo::JSON``); ``JSON_PP_SINGLETON`` renders the ``JSON::PP::true`` / ``JSON::PP::false`` blessed singletons with a ``use JSON::PP;`` preamble.
 
 - Add ``Cpp(json_type=Cpp.json_types.NLOHMANN_JSON)`` to render values through ``nlohmann::json::parse`` instead of C++'s narrow ``std::vector`` / ``std::map`` / ``std::unordered_map`` collection types.
 
@@ -1152,7 +1134,8 @@ No significant changes.
 
 - Add ``Crystal(json_type=Crystal.json_types.JSON_ANY)`` to render values through ``JSON.parse(%(...))`` into Crystal's standard-library ``JSON::Any`` instead of native ``Array`` and ``Hash`` collections.
 
-- Add ``D(json_type=None)`` to render D data through narrow native collections (raw scalars, ``T[]`` arrays, ``V[K]`` associative arrays) instead of the default ``std.json.JSONValue`` wrapper, giving D users the same two-mode choice the other ``json_type``-supporting languages have.  D's polarity is reversed: ``json_type=D.json_types.STD_JSON_VALUE`` (the default) matches the other languages' opt-in JSON value rendering, while ``json_type=None`` matches their typed-collection defaults.
+- Add ``D(json_type=None)`` to render D data through narrow native collections (raw scalars, ``T[]`` arrays, ``V[K]`` associative arrays) instead of the default ``std.json.JSONValue`` wrapper, giving D users the same two-mode choice the other ``json_type``-supporting languages have.
+  D's polarity is reversed: ``json_type=D.json_types.STD_JSON_VALUE`` (the default) matches the other languages' opt-in JSON value rendering, while ``json_type=None`` matches their typed-collection defaults.
 
 - Add an opt-in ``Perl.string_formats.DOUBLE_UTF8`` variant that emits non-ASCII characters literally in double-quoted strings and contributes ``use utf8;`` to the file preamble whenever the literalized value contains a non-ASCII string.
 
@@ -1208,19 +1191,25 @@ No significant changes.
 
 - The Kotlin JSON round-trip CI check now serializes via Jackson's ``ObjectMapper`` instead of a hand-rolled ``toJsonElement`` walker over heterogeneous ``Any?`` plus primitive-array types.
 
-- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Lua, PHP, and R language specifications.  These languages have a single runtime collection type that cannot distinguish an empty mapping from an empty sequence, so emitting an empty-table literal would silently lose the mapping/sequence distinction on round-trip through any JSON encoder.  The new exception is exposed from :mod:`literalizer.exceptions`.
+- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Lua, PHP, and R language specifications.
+  These languages have a single runtime collection type that cannot distinguish an empty mapping from an empty sequence, so emitting an empty-table literal would silently lose the mapping/sequence distinction on round-trip through any JSON encoder.
+  The new exception is exposed from :mod:`literalizer.exceptions`.
 
-- Raise ``UnrepresentableIntegerError`` at literalize time for integers outside the target language's representable range on the Go, TypeScript, Rust, D, and C++ language specifications, replacing silent emission of literals the target compiler would reject or silently truncate.  Go and D now emit a ``UL``/``uint64(...)`` literal for positives up to ``ulong.max``/``math.MaxUint64`` and raise above that; C++ retains its existing ``ULL`` fallback and now raises above ``ULLONG_MAX``; Rust raises above the ``i128`` range; TypeScript raises above ``Number.MAX_SAFE_INTEGER`` (``2**53 - 1``).
+- Raise ``UnrepresentableIntegerError`` at literalize time for integers outside the target language's representable range on the Go, TypeScript, Rust, D, and C++ language specifications, replacing silent emission of literals the target compiler would reject or silently truncate.
+  Go and D now emit a ``UL``/``uint64(...)`` literal for positives up to ``ulong.max``/``math.MaxUint64`` and raise above that; C++ retains its existing ``ULL`` fallback and now raises above ``ULLONG_MAX``; Rust raises above the ``i128`` range; TypeScript raises above ``Number.MAX_SAFE_INTEGER`` (``2**53 - 1``).
 
-- Always emit a dotted mantissa in float scientific-notation literals (``1.0e+16`` rather than ``1e+16``) so the output parses as a float in Ada, Cobol, Elixir, Erlang, Gleam, Nix, and YAML.  Gleam additionally strips the ``+`` from positive exponents to satisfy its parser, which lets ``Gleam``'s JSON round-trip handle the full IEEE 754 ``double`` range.
+- Always emit a dotted mantissa in float scientific-notation literals (``1.0e+16`` rather than ``1e+16``) so the output parses as a float in Ada, Cobol, Elixir, Erlang, Gleam, Nix, and YAML.
+  Gleam additionally strips the ``+`` from positive exponents to satisfy its parser, which lets ``Gleam``'s JSON round-trip handle the full IEEE 754 ``double`` range.
 
-- Internal: rewrite the Kotlin and Zig JSON round-trip scripts on top of the ``KOTLINX_JSON_ELEMENT`` and ``STD_JSON_VALUE`` ``json_type`` strategies, dropping the bespoke ``Any?``-to-``JsonElement`` and ``ZVal``-to-``std.json.Value`` walkers.  ``std.json.Value.number_string`` preserves the 26-digit ``biginteger`` field end-to-end on Zig, so that exclusion is dropped there; ``kotlinx.serialization``'s ``parseToJsonElement`` still collapses it to a ``Double``, so the Kotlin exclusion is retained.
+- Internal: rewrite the Kotlin and Zig JSON round-trip scripts on top of the ``KOTLINX_JSON_ELEMENT`` and ``STD_JSON_VALUE`` ``json_type`` strategies, dropping the bespoke ``Any?``-to-``JsonElement`` and ``ZVal``-to-``std.json.Value`` walkers.
+  ``std.json.Value.number_string`` preserves the 26-digit ``biginteger`` field end-to-end on Zig, so that exclusion is dropped there; ``kotlinx.serialization``'s ``parseToJsonElement`` still collapses it to a ``Double``, so the Kotlin exclusion is retained.
 
 - Add ``Erlang(json_type=Erlang.json_types.OTP_JSON)`` to render strings, ISO dates, datetimes, times, and base64-encoded bytes as UTF-8 binary literals (``<<"..."/utf8>>``), null as the bare atom ``null``, and sets as JSON arrays, so the rendered value feeds straight into Erlang's built-in ``json:encode/1`` (available since ``OTP_27``) without a normalization pass.
 
 - Add ``OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T)`` to render values directly as ``Yojson.Safe.t`` polymorphic-variant literals (``Bool``, ``Int``, ``Float``, ``String``, ``Null``, ``List``, ``Assoc``, ``Intlit``) so the binding has the static type ``Yojson.Safe.t`` instead of OCaml's generated ``val_t`` algebraic type; arbitrary-precision integers route through the ``Intlit`` escape hatch.
 
-- Document the F# ``Val`` discriminated union's JSON serialization limitations: the ``FMap`` tuple-list shape (chosen to preserve insertion order) and ``FSharp.SystemTextJson``'s ``Untagged`` encoding both prevent ``System.Text.Json.JsonSerializer.Serialize`` from producing valid JSON without a custom converter.  The ``FSharp`` language module now describes both pitfalls and points users at the ``writeVal`` helper in ``scripts/run_fsharp_roundtrip.py`` as a starting template.
+- Document the F# ``Val`` discriminated union's JSON serialization limitations: the ``FMap`` tuple-list shape (chosen to preserve insertion order) and ``FSharp.SystemTextJson``'s ``Untagged`` encoding both prevent ``System.Text.Json.JsonSerializer.Serialize`` from producing valid JSON without a custom converter.
+  The ``FSharp`` language module now describes both pitfalls and points users at the ``writeVal`` helper in ``scripts/run_fsharp_roundtrip.py`` as a starting template.
 
 - Add ``Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE)`` to render values as idiomatic ``elm/json`` ``Json.Encode.*`` calls producing a ``Json.Encode.Value`` directly, replacing the per-fixture ``Val`` ADT.
 
@@ -1230,12 +1219,16 @@ No significant changes.
 
 - Add ``PureScript(json_type=PureScript.json_types.ARGONAUT_JSON)`` to render values through a ``fromRight jsonNull (jsonParser "...")`` expression so the binding has the static type ``Data.Argonaut.Core.Json`` instead of PureScript's narrow custom ``Val`` algebraic type.
 
-- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Ada language specification.  The Ada literalizer's unified ``A_Val`` aggregate cannot distinguish an empty ``AMap'[]`` from an empty ``AList'[]`` at run time, so emitting an empty-mapping literal would silently lose the mapping/sequence distinction on round-trip.  Ada now joins Lua, PHP, and R in raising rather than emitting an ambiguous literal.
+- Raise ``UnrepresentableEmptyDictError`` at literalize time when an empty mapping appears anywhere in the input for the Ada language specification.
+  The Ada literalizer's unified ``A_Val`` aggregate cannot distinguish an empty ``AMap'[]`` from an empty ``AList'[]`` at run time, so emitting an empty-mapping literal would silently lose the mapping/sequence distinction on round-trip.
+  Ada now joins Lua, PHP, and R in raising rather than emitting an ambiguous literal.
 
 2026.05.21.1
 ------------
 
-- Added ``format_constructor_target`` to the :class:`~literalizer.Language` protocol. It returns the language-specific target string for a zero-argument constructor call, suitable for passing to :func:`~literalizer.literalize_call` as ``target_function``. The default is ``ClassName``; Java, JavaScript, TypeScript, C#, Scala, Go, Ruby, and Rust override it for their common constructor forms (``new ClassName``, ``NewClassName``, ``ClassName.new``, and ``ClassName::new``).
+- Added ``format_constructor_target`` to the :class:`~literalizer.Language` protocol.
+  It returns the language-specific target string for a zero-argument constructor call, suitable for passing to :func:`~literalizer.literalize_call` as ``target_function``.
+  The default is ``ClassName``; Java, JavaScript, TypeScript, C#, Scala, Go, Ruby, and Rust override it for their common constructor forms (``new ClassName``, ``NewClassName``, ``ClassName.new``, and ``ClassName::new``).
 
 2026.05.21
 ----------
@@ -1256,15 +1249,9 @@ No significant changes.
 ------------
 
 
-- :class:`~literalizer.languages.rust.Rust` now exposes a non-empty
-  ``Modifiers`` enum with a single ``MUT`` member.  Passing
-  ``NewVariable(name=..., modifiers={Rust.Modifiers.MUT})`` (or the same
-  via :func:`~literalizer.literalize_call`) renders a mutable binding
-  (``let mut name = ...;``) instead of the immutable default
-  (``let name = ...;``), so a value constructed and bound through the
-  variable form can then be mutated through that binding.  The modifier
-  applies to the default ``LET`` declaration style; other declaration
-  styles ignore it.
+- :class:`~literalizer.languages.rust.Rust` now exposes a non-empty ``Modifiers`` enum with a single ``MUT`` member.
+  Passing ``NewVariable(name=..., modifiers={Rust.Modifiers.MUT})`` (or the same via :func:`~literalizer.literalize_call`) renders a mutable binding (``let mut name = ...;``) instead of the immutable default (``let name = ...;``), so a value constructed and bound through the variable form can then be mutated through that binding.
+  The modifier applies to the default ``LET`` declaration style; other declaration styles ignore it.
 
 - Added two metadata properties to the :class:`~literalizer.Language`
   protocol: ``supports_multi_param_call_wrapper_stub`` (whether the
@@ -1300,43 +1287,25 @@ No significant changes.
   the call result with a plain ``name = value`` and the annotation-only
   preamble it would have required is no longer emitted.
 
-- :func:`~literalizer.literalize_call` now honors
-  ``collection_layout=CollectionLayout.COMPACT`` for the ``$zipped``
-  literal exposed on :class:`~literalizer.CallContext`.  Previously a
-  mapping paired through ``zip_source`` always rendered multi-line,
-  even though the call-argument mapping rendered by the same call was
-  single-line under the same setting, which split a one-line
-  ``call_transform`` across several physical lines.  The ``$zipped``
-  literal is now rendered through the same whole-value path as call
-  arguments, so a compact mapping stays on one line.
+- :func:`~literalizer.literalize_call` now honors ``collection_layout=CollectionLayout.COMPACT`` for the ``$zipped`` literal exposed on :class:`~literalizer.CallContext`.
+  Previously a mapping paired through ``zip_source`` always rendered multi-line, even though the call-argument mapping rendered by the same call was single-line under the same setting, which split a one-line ``call_transform`` across several physical lines.
+  The ``$zipped`` literal is now rendered through the same whole-value path as call arguments, so a compact mapping stays on one line.
 
-- Added support for Haxe as a new output language.  ``Haxe`` renders
-  every collection literal with an explicit ``(... : Array<Dynamic>)``
-  or ``(... : Map<String, Dynamic>)`` cast, so heterogeneous and empty
-  collections type-check without per-variable annotations.  Maps use
-  Haxe's ``["key" => value]`` literal syntax and strings use the
-  double-quoted form (no interpolation).  Calls use positional syntax
-  with local-function and anonymous-structure-closure stubs emitted
-  inside ``static function main()``.  A new ``lint-haxe`` job in
-  ``.github/workflows/lint.yml`` compiles and runs every ``.hx``
-  fixture in a single ``haxe --interp`` invocation.
+- Added support for Haxe as a new output language.
+  ``Haxe`` renders every collection literal with an explicit ``(... : Array<Dynamic>)`` or ``(... : Map<String, Dynamic>)`` cast, so heterogeneous and empty collections type-check without per-variable annotations.
+  Maps use Haxe's ``["key" => value]`` literal syntax and strings use the double-quoted form (no interpolation).
+  Calls use positional syntax with local-function and anonymous-structure-closure stubs emitted inside ``static function main()``.
+  A new ``lint-haxe`` job in ``.github/workflows/lint.yml`` compiles and runs every ``.hx`` fixture in a single ``haxe --interp`` invocation.
 
 2026.05.17.1
 ------------
 
 
-- :class:`~literalizer.CSharp` array sequence-format no longer emits
-  ``using System;`` or ``using System.Collections.Generic;``.  A C#
-  array literal (``new T[] {...}``) is a built-in language feature and
-  requires no ``using`` directives, so those lines were dead noise on
-  the array path (for example a ``Dictionary`` whose values are arrays
-  picked up a spurious ``using System;``).  ``using
-  System.Collections.Generic;`` is still emitted for the collection
-  types that need it (``List<T>``, ``Dictionary<TKey, TValue>``, and
-  the set types), and ``using System;`` for ``System`` scalar types
-  such as ``DateOnly``.  The array empty form is now the typed
-  literal ``new T[] {}`` rather than ``Array.Empty<T>()``, keeping the
-  array path free of any ``System`` reference.  See #2524.
+- :class:`~literalizer.CSharp` array sequence-format no longer emits ``using System;`` or ``using System.Collections.Generic;``.
+  A C# array literal (``new T[] {...}``) is a built-in language feature and requires no ``using`` directives, so those lines were dead noise on the array path (for example a ``Dictionary`` whose values are arrays picked up a spurious ``using System;``).
+  ``using System.Collections.Generic;`` is still emitted for the collection types that need it (``List<T>``, ``Dictionary<TKey, TValue>``, and the set types), and ``using System;`` for ``System`` scalar types such as ``DateOnly``.
+  The array empty form is now the typed literal ``new T[] {}`` rather than ``Array.Empty<T>()``, keeping the array path free of any ``System`` reference.
+  See #2524.
 - :func:`~literalizer.literalize_call` now accepts a ``bound_refs``
   argument, the call-side counterpart of
   :func:`~literalizer.literalize`'s own ``bound_refs``.  With
@@ -1492,13 +1461,10 @@ No significant changes.
   ``supports_call_variable_binding`` language-class flag is now
   ``True``; existing literal-binding and call-without-binding output is
   unchanged.  Follow-up to #1961.  See #2226.
-- :class:`~literalizer.Python` now emits ``from __future__ import
-  annotations`` only when the rendered code actually contains an
-  annotation: a ``RECORD``-strategy ``@dataclasses.dataclass`` block
-  or an inline variable type hint (an empty-collection helper hint, or
-  any declaration under ``variable_type_hints=ALWAYS``).  Call-only
-  output and annotation-free literals no longer carry the unused
-  future import.  See #2495.
+- :class:`~literalizer.Python` now emits ``from __future__ import annotations`` only when the rendered code contains an annotation.
+  An annotation comes from a ``RECORD``-strategy ``@dataclasses.dataclass`` block or an inline variable type hint (an empty-collection helper hint, or any declaration under ``variable_type_hints=ALWAYS``).
+  Call-only output and annotation-free literals no longer carry the unused future import.
+  See #2495.
 - :class:`~literalizer.Forth` now accepts ``variable_form`` on
   :func:`~literalizer.literalize_call` for both
   :class:`~literalizer.NewVariable` and
@@ -1550,11 +1516,8 @@ No significant changes.
   ``record_struct_name_prefix`` constructor parameter and its
   ``supports_record_struct_name_prefix`` language-class flag is now
   ``True``.  See #2477.
-- Fixed the :class:`~literalizer.Zig` ``RECORD`` field type of an
-  integer-list record field whose first element is small but a later
-  element exceeds the signed 64-bit range: it is now ``[]const u64``
-  (typed from the widest element) instead of the ``[]const i64`` that
-  inferring from the first element alone produced.  See #2488.
+- Fixed the :class:`~literalizer.Zig` ``RECORD`` field type of an integer-list record field whose first element is small but a later element exceeds the signed 64-bit range: it is now ``[]const u64`` (typed from the widest element) instead of the ``[]const i64`` that inferring from the first element alone produced.
+  See #2488.
 - :class:`~literalizer.Odin` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`,
   :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
@@ -1779,13 +1742,8 @@ No significant changes.
 ------------
 
 
-- The mapping arm of the public ``ValueInput`` type (accepted by
-  ``ref_values`` and ``bound_refs``) is now a covariant-key read-only
-  ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so
-  nested ``dict`` literals with any scalar key type (``str``, ``int``,
-  mixed, ...) are accepted by type checkers without an explicit
-  annotation.  This is a type-only relaxation that accepts strictly
-  more inputs; runtime behavior is unchanged.
+- The mapping arm of the public ``ValueInput`` type (accepted by ``ref_values`` and ``bound_refs``) is now a covariant-key read-only ``ValueItemsMap`` protocol instead of an invariant ``Mapping``, so nested ``dict`` literals with any scalar key type (``str``, ``int``, mixed, ...) are accepted by type checkers without an explicit annotation.
+  This is a type-only relaxation that accepts strictly more inputs; runtime behavior is unchanged.
 - :class:`~literalizer.Scala` gains the same ``record_shape_names``
   constructor parameter, a ``Mapping[frozenset[str], str]`` from a
   record shape's key-set to a custom ``case class`` name.  A mapped
@@ -1837,34 +1795,17 @@ No significant changes.
   A ``wrap_in_file=True`` Elm scaffold places the binding inside the
   ``main`` ``let`` block so the call is still exercised when the
   module is run.  See #2245.
-- :class:`~literalizer.Cpp` now supports the ``TUPLE``
-  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
-  that is a dict value or the document root is rendered as
-  ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with
-  ``#include <tuple>`` emitted by the data-dependent preamble) instead
-  of ``std::vector<std::variant<...>>``.  C++'s ``TUPLE`` strategy
-  does not compose ``RECORD``, so the preamble fires off the tuple ids
-  alone, even when the data has no record-shaped dicts.  The default
-  (``ERROR``) ``std::variant`` output is unchanged.  See #2329.
-- :class:`~literalizer.Scala` now supports the ``TUPLE``
-  ``heterogeneous_strategy``, which composes ``RECORD``: a
-  fixed-length heterogeneous scalar array that is a record field,
-  another dict value, or the document root is rendered as a native
-  tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued
-  ``case class`` field is declared with the tuple type) instead of
-  raising or widening to ``List[Any]``.  Scala 3 (the only version
-  this language targets) imposes no tuple-length limit -- lengths past
-  22 are transparently backed by ``TupleXXL`` -- so every fixed-length
-  heterogeneous scalar array is representable.  The default
-  (``ERROR``) output is unchanged.  See #2330.
-- :class:`~literalizer.TypeScript` now supports the ``TUPLE``
-  ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array
-  that is a dict value or the document root is rendered as an
-  ``[e0, e1, ...] as const`` tuple literal, which TypeScript infers as
-  a ``readonly [T0, T1, ...]`` tuple type, instead of a widened
-  ``(T0 | T1)[]`` array.  TypeScript has no ``RECORD`` strategy and
-  ``as const`` needs no imports, so there is no data-dependent
-  preamble.  The default (``ERROR``) union-array output is unchanged.
+- :class:`~literalizer.Cpp` now supports the ``TUPLE`` ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array that is a dict value or the document root is rendered as ``std::make_tuple(...)`` typed ``std::tuple<T0, ...>`` (with ``#include <tuple>`` emitted by the data-dependent preamble) instead of ``std::vector<std::variant<...>>``.
+  C++'s ``TUPLE`` strategy does not compose ``RECORD``, so the preamble fires off the tuple ids alone, even when the data has no record-shaped dicts.
+  The default (``ERROR``) ``std::variant`` output is unchanged.
+  See #2329.
+- :class:`~literalizer.Scala` now supports the ``TUPLE`` ``heterogeneous_strategy``, which composes ``RECORD``: a fixed-length heterogeneous scalar array that is a record field, another dict value, or the document root is rendered as a native tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` (a tuple-valued ``case class`` field is declared with the tuple type) instead of raising or widening to ``List[Any]``.
+  Scala 3 (the only version this language targets) imposes no tuple-length limit -- lengths past 22 are transparently backed by ``TupleXXL`` -- so every fixed-length heterogeneous scalar array is representable.
+  The default (``ERROR``) output is unchanged.
+  See #2330.
+- :class:`~literalizer.TypeScript` now supports the ``TUPLE`` ``heterogeneous_strategy``: a fixed-length heterogeneous scalar array that is a dict value or the document root is rendered as an ``[e0, e1, ...] as const`` tuple literal, which TypeScript infers as a ``readonly [T0, T1, ...]`` tuple type, instead of a widened ``(T0 | T1)[]`` array.
+  TypeScript has no ``RECORD`` strategy and ``as const`` needs no imports, so there is no data-dependent preamble.
+  The default (``ERROR``) union-array output is unchanged.
   See #2328.
 - :class:`~literalizer.Kotlin` now supports the ``TUPLE``
   ``heterogeneous_strategy``, composing ``RECORD``: a fixed-length
@@ -1957,15 +1898,11 @@ No significant changes.
   (``long`` / ``Long``) once the value leaves signed 32-bit range, so
   the declared component type always matches the rendered literal.
   In-range epochs are unaffected.  See #2338.
-- :class:`~literalizer.Go` no longer emits output that fails to compile
-  for a record field holding a positive integer beyond the signed
-  64-bit range under the ``RECORD`` ``heterogeneous_strategy``.  Such a
-  value renders through the ``uint64(...)`` overflow fallback, and the
-  generated struct field is now typed ``uint64`` to match it instead
-  of ``int`` / ``int64``.  Record integer fields formatted with a
-  non-default ``integer_format``, ``numeric_separator`` or
-  ``numeric_literal_suffix`` keep their value-derived field type.
-  In-range integers are unaffected.  See #2306.
+- :class:`~literalizer.Go` no longer emits output that fails to compile for a record field holding a positive integer beyond the signed 64-bit range under the ``RECORD`` ``heterogeneous_strategy``.
+  Such a value renders through the ``uint64(...)`` overflow fallback, and the generated struct field is now typed ``uint64`` to match it instead of ``int`` / ``int64``.
+  Record integer fields formatted with a non-default ``integer_format``, ``numeric_separator`` or ``numeric_literal_suffix`` keep their value-derived field type.
+  In-range integers are unaffected.
+  See #2306.
 - :class:`~literalizer.Kotlin`, :class:`~literalizer.Java` and
   :class:`~literalizer.Scala` no longer emit output that fails to
   compile for a record field holding an integer beyond the signed
@@ -1987,16 +1924,11 @@ No significant changes.
 
 
 - :class:`~literalizer.Rust` gains the ``TUPLE`` ``heterogeneous_strategy``.
-  A fixed-length heterogeneous **scalar** array that is a dict value, a
-  record field value, or the document root (every element scalar,
-  spanning at least two scalar buckets) is rendered as a native tuple
-  ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` instead of raising.  It
-  composes with ``RECORD``: a record field whose value is such an array
-  becomes a tuple-typed struct field.  Heterogeneous arrays nested
-  inside another list, or containing a non-scalar element, stay out of
-  scope and still raise.  This lands the shared, language-agnostic
-  machinery with Rust as the reference implementation; one
-  language port follows per PR.  See #2327.
+  A fixed-length heterogeneous **scalar** array that is a dict value, a record field value, or the document root (every element scalar, spanning at least two scalar buckets) is rendered as a native tuple ``(e0, e1, ...)`` typed ``(T0, T1, ...)`` instead of raising.
+  It composes with ``RECORD``: a record field whose value is such an array becomes a tuple-typed struct field.
+  Heterogeneous arrays nested inside another list, or containing a non-scalar element, stay out of scope and still raise.
+  This lands the shared, language-agnostic machinery with Rust as the reference implementation; one language port follows per PR.
+  See #2327.
 - :func:`~literalizer.literalize_call`'s ``zip_values`` parameter is
   replaced by a ``zip_source`` / ``zip_input_format`` pair, mirroring
   the primary ``source`` / ``input_format``.  ``zip_source`` is parsed
@@ -2042,28 +1974,19 @@ No significant changes.
   ``supports_record_shape_names`` language-class flag is now ``True``.
   See #2324.
 
-- :class:`~literalizer.Kotlin` now declares a ``data class`` field
-  whose value is a custom-named nested record with that nested
-  record's ``record_shape_names`` name (e.g. ``Entry``).  Previously
-  such a field fell through to ``Double`` because the custom name does
-  not match the auto-generated ``{prefix}{N}`` head, so the generated
-  Kotlin did not compile.  See #2348.
+- :class:`~literalizer.Kotlin` now declares a ``data class`` field whose value is a custom-named nested record with that nested record's ``record_shape_names`` name (e.g. ``Entry``).
+  Previously such a field fell through to ``Double`` because the custom name does not match the auto-generated ``{prefix}{N}`` head, so the generated Kotlin did not compile.
+  See #2348.
 
 2026.05.15.1
 ------------
 
 
-- :class:`~literalizer.Java` gains the ``RECORD`` ``heterogeneous_strategy``
-  (already on :class:`~literalizer.Rust` and :class:`~literalizer.Go`).
-  Each record-shaped dict (non-empty, string-keyed) becomes a generated
-  top-level ``record RecordN(type field, ...) {}`` declaration plus a
-  matching positional ``new RecordN(value, ...)`` literal, so a dict
-  whose values mix scalars and containers is representable instead of
-  raising.  Component names keep the original keys and the
-  record-name prefix is configurable via the new
-  ``record_struct_name_prefix`` constructor parameter.  Generated
-  ``record`` declarations require Java 16, so a ``RECORD`` spec pins
-  ``language_version`` to ``JDK_16``.  See #2300.
+- :class:`~literalizer.Java` gains the ``RECORD`` ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and :class:`~literalizer.Go`).
+  Each record-shaped dict (non-empty, string-keyed) becomes a generated top-level ``record RecordN(type field, ...) {}`` declaration plus a matching positional ``new RecordN(value, ...)`` literal, so a dict whose values mix scalars and containers is representable instead of raising.
+  Component names keep the original keys and the record-name prefix is configurable via the new ``record_struct_name_prefix`` constructor parameter.
+  Generated ``record`` declarations require Java 16, so a ``RECORD`` spec pins ``language_version`` to ``JDK_16``.
+  See #2300.
 
 - :func:`~literalizer.literalize_call`'s ``call_transform`` now receives
   a :class:`~literalizer.CallContext` instead of the bare call string.
@@ -2101,22 +2024,14 @@ No significant changes.
   representable instead of raising.  Field names keep the original
   dict keys and the data-class-name prefix is configurable via the new
   ``record_struct_name_prefix`` constructor parameter.  See #2298.
-- :class:`~literalizer._language.LanguageCls` now exposes a
-  ``supports_record_struct_name_prefix`` flag alongside the existing
-  ``supports_*`` family.  Runtime-dispatched callers that look up a
-  language by name can use it to decide whether to pass the
-  ``record_struct_name_prefix`` constructor keyword argument without
-  inspecting dataclass fields or the ``__init__`` signature.  It is
-  ``True`` on :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`,
-  and :class:`~literalizer.Rust`, and ``False`` on every other language.
+- :class:`~literalizer._language.LanguageCls` now exposes a ``supports_record_struct_name_prefix`` flag alongside the existing ``supports_*`` family.
+  Runtime-dispatched callers that look up a language by name can use it to decide whether to pass the ``record_struct_name_prefix`` constructor keyword argument without inspecting dataclass fields or the ``__init__`` signature.
+  It is ``True`` on :class:`~literalizer.Go`, :class:`~literalizer.Kotlin`, and :class:`~literalizer.Rust`, and ``False`` on every other language.
 
-- :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16``
-  alongside ``VersionFormats.JDK_11`` (still the default), selected
-  via ``language_version``.  Generated code is currently identical for
-  both targets; the member exists so a future Java ``RECORD``
-  ``heterogeneous_strategy`` (whose ``record`` declarations require
-  Java 16) can gate on it.  The golden harness emits a parallel
-  ``@jdk_16`` fixture set.  See #2313.
+- :class:`~literalizer.Java` now offers ``VersionFormats.JDK_16`` alongside ``VersionFormats.JDK_11`` (still the default), selected via ``language_version``.
+  Generated code is currently identical for both targets; the member exists so a future Java ``RECORD`` ``heterogeneous_strategy`` (whose ``record`` declarations require Java 16) can gate on it.
+  The golden harness emits a parallel ``@jdk_16`` fixture set.
+  See #2313.
 
 2026.05.15
 ----------
@@ -2138,15 +2053,10 @@ No significant changes.
   harness now drives every case through one ``literalize`` call,
   retiring its regex-based stub-stitching helpers.  See #2294.
 
-- :class:`~literalizer.Go` gains the ``RECORD`` ``heterogeneous_strategy``
-  (already on :class:`~literalizer.Rust`).  Each record-shaped dict
-  (non-empty, string-keyed) becomes a generated ``type RecordN struct
-  { ... }`` declared in the preamble plus a matching ``RecordN{Field:
-  value, ...}`` literal, so a dict whose values mix scalars and
-  containers is representable instead of raising.  Field names are
-  exported (PascalCase) and the struct-name prefix is configurable via
-  the new ``record_struct_name_prefix`` constructor parameter.  See
-  #2297.
+- :class:`~literalizer.Go` gains the ``RECORD`` ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust`).
+  Each record-shaped dict (non-empty, string-keyed) becomes a generated ``type RecordN struct { ... }`` declared in the preamble plus a matching ``RecordN{Field: value, ...}`` literal, so a dict whose values mix scalars and containers is representable instead of raising.
+  Field names are exported (PascalCase) and the struct-name prefix is configurable via the new ``record_struct_name_prefix`` constructor parameter.
+  See #2297.
 
 - :class:`~literalizer.Scala` gains the ``RECORD``
   ``heterogeneous_strategy`` (already on :class:`~literalizer.Rust` and
@@ -2159,28 +2069,15 @@ No significant changes.
   is configurable via the new ``record_struct_name_prefix``
   constructor parameter.  See #2299.
 
-- :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor
-  parameter, a mapping from each record's key-set
-  (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name,
-  so the ``RECORD`` heterogeneous strategy can emit
-  ``struct Entry { ... }`` instead of the auto-generated ``Record0``,
-  ``Record1``, ... names.  Shape names that are not PascalCase Rust
-  identifiers, that collide with ``heterogeneous_value_enum_name``,
-  that duplicate another mapped name, or that match a Rust reserved
-  keyword raise the new :class:`~literalizer.exceptions.InvalidRecordNameError`.
+- :class:`~literalizer.Rust` accepts a ``record_shape_names`` constructor parameter, a mapping from each record's key-set (:class:`frozenset` [:class:`str`]) to a user-chosen ``struct`` name, so the ``RECORD`` heterogeneous strategy can emit ``struct Entry { ... }`` instead of the auto-generated ``Record0``, ``Record1``, ... names.
+  Shape names that are not PascalCase Rust identifiers, that collide with ``heterogeneous_value_enum_name``, that duplicate another mapped name, or that match a Rust reserved keyword raise the new :class:`~literalizer.exceptions.InvalidRecordNameError`.
   The existing ``record_struct_name_prefix`` is validated the same way.
   See #2236.
 
-- :class:`~literalizer.Fortran` now offers
-  ``VersionFormats.V2003`` alongside ``VersionFormats.V2008``
-  (the default).  The 2003 target defines the ``int64`` kind via
-  ``selected_int_kind(18)`` instead of importing it from the intrinsic
-  ``iso_fortran_env`` module (whose ``int64`` constant is a Fortran
-  2008 addition), so generated code is otherwise identical and the
-  ``_int64`` literal suffix is unchanged.  The golden harness emits a
-  parallel ``@v2003`` / ``@v2008`` fixture set and CI lints each with
-  the matching ``gfortran -std=f2003`` / ``-std=f2008`` flag.  See
-  #1931.
+- :class:`~literalizer.Fortran` now offers ``VersionFormats.V2003`` alongside ``VersionFormats.V2008`` (the default).
+  The 2003 target defines the ``int64`` kind via ``selected_int_kind(18)`` instead of importing it from the intrinsic ``iso_fortran_env`` module (whose ``int64`` constant is a Fortran 2008 addition), so generated code is otherwise identical and the ``_int64`` literal suffix is unchanged.
+  The golden harness emits a parallel ``@v2003`` / ``@v2008`` fixture set and CI lints each with the matching ``gfortran -std=f2003`` / ``-std=f2008`` flag.
+  See #1931.
 
 - The integration golden-file harness now accepts ``input.toml`` next to
   the existing ``input.yaml`` for cases whose input contains a value
@@ -2228,35 +2125,19 @@ No significant changes.
   to the language's time type (e.g. ``TimeOnly[]`` /
   ``Array<LocalTime>``) instead of falling back to a generic
   ``Object``/``Any`` opener.
-- Golden files for languages whose compiler version is pinned (Elixir,
-  Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the
-  filename: ``{stem}@{version}{extension}`` (e.g.
-  ``Odin@dev-2026-04.odin``).  Every fixture is explicitly tied to
-  the compiler version it was generated against.  Each ``lint.yml``
-  job sets a job-scoped environment variable once and feeds it to
-  both the install action and
-  ``python -m tests.integration.list_fixtures``; the test code
-  auto-discovers the same version from sibling filenames so no
-  separate registry file is needed.
+- Golden files for languages whose compiler version is pinned (Elixir, Erlang, Gleam, Kotlin, Odin, Zig) now carry the version in the filename: ``{stem}@{version}{extension}`` (e.g. ``Odin@dev-2026-04.odin``).
+  Every fixture is explicitly tied to the compiler version it was generated against.
+  Each ``lint.yml`` job sets a job-scoped environment variable once and feeds it to both the install action and ``python -m tests.integration.list_fixtures``; the test code auto-discovers the same version from sibling filenames so no separate registry file is needed.
 
-- :class:`~literalizer.Fortran`'s ``language_version`` default is now
-  ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the
-  Fortran 2008 features the generator actually emits (e.g. ``int64``
-  from ``iso_fortran_env``). ``V2003`` has been removed from
-  ``Fortran.VersionFormats``.
+- :class:`~literalizer.Fortran`'s ``language_version`` default is now ``Fortran.VersionFormats.V2008`` (was ``V2003``) so it matches the Fortran 2008 features the generator actually emits (e.g. ``int64`` from ``iso_fortran_env``).
+  ``V2003`` has been removed from ``Fortran.VersionFormats``.
 
-- ``lint-fast`` CI job now syntax-checks and runs the Python fixtures
-  under ``tests/integration/cases``, matching the per-language gate
-  already in place for Bash, Ruby, JavaScript, and other fixture
-  languages.  See #1921.
+- ``lint-fast`` CI job now syntax-checks and runs the Python fixtures under ``tests/integration/cases``, matching the per-language gate already in place for Bash, Ruby, JavaScript, and other fixture languages.
+  See #1921.
 
-- ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime
-  errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
-  The ``laytan/setup-odin`` action is pinned to ``dev-2026-04``, the
-  last Odin release where ``odin run .`` did not segfault on these
-  fixtures; ``release: latest`` (``dev-2026-05``) crashes at runtime, and
-  the compiler itself segfaults on some fixtures under
-  ``odin build .``.  See #1745.
+- ``lint-odin`` CI job now uses ``odin run .`` again to catch runtime errors that ``odin build .`` cannot detect (e.g. nil-proc calls).
+  The ``laytan/setup-odin`` action is pinned to ``dev-2026-04``, the last Odin release where ``odin run .`` did not segfault on these fixtures; ``release: latest`` (``dev-2026-05``) crashes at runtime, and the compiler itself segfaults on some fixtures under ``odin build .``.
+  See #1745.
 
 2026.05.14.1
 ------------
@@ -2334,25 +2215,11 @@ No significant changes.
   parsers still produce only string-keyed dicts, so behavior is
   unchanged.
 
-- :func:`~literalizer.literalize` now accepts a ``ref_values`` mapping
-  from ref identifier to the value declared elsewhere for that ref.
-  Languages whose ``$ref`` rendering depends on the referenced type
-  (V's ``.clone()`` for arrays and maps, Mojo's ``^`` for non-trivial
-  values, C++'s ``std::move`` for ``non-trivially-copyable`` values)
-  consult it to choose the right form; when omitted these languages
-  keep their type-agnostic default.  ``V`` now emits a bare identifier
-  for scalar refs (``int``, ``bool``, ``f64``) because ``int.clone()``
-  is rejected by the V compiler; ``Mojo`` drops ``^`` for
-  register-trivial scalars where it is a hard error under ``--Werror``;
-  ``Cpp`` drops ``std::move`` for ``trivially-copyable`` scalars where
-  clang-tidy's ``hicpp-move-const-arg`` rejects it.  Preamble inference
-  also walks the resolved ``ref_values`` so sum-type body declarations
-  (Haskell's ``data Val``, OCaml's ``val_t``, Roc's ``Val``, …) include
-  the variants needed by the referenced types.
-  ``SystemVerilog``'s :func:`literalize` rejects scalar ``$ref`` markers
-  via :exc:`~literalizer.exceptions.CallArgNotSupportedError`: SV keys
-  the variable declaration off the marker dict's shape (``_VKV name[]``)
-  and cannot produce a coherent declaration for a scalar referent.
+- :func:`~literalizer.literalize` now accepts a ``ref_values`` mapping from ref identifier to the value declared elsewhere for that ref.
+  Languages whose ``$ref`` rendering depends on the referenced type (V's ``.clone()`` for arrays and maps, Mojo's ``^`` for non-trivial values, C++'s ``std::move`` for ``non-trivially-copyable`` values) consult it to choose the right form; when omitted these languages keep their type-agnostic default.
+  ``V`` now emits a bare identifier for scalar refs (``int``, ``bool``, ``f64``) because ``int.clone()`` is rejected by the V compiler; ``Mojo`` drops ``^`` for register-trivial scalars where it is a hard error under ``--Werror``; ``Cpp`` drops ``std::move`` for ``trivially-copyable`` scalars where clang-tidy's ``hicpp-move-const-arg`` rejects it.
+  Preamble inference also walks the resolved ``ref_values`` so sum-type body declarations (Haskell's ``data Val``, OCaml's ``val_t``, Roc's ``Val``, …) include the variants needed by the referenced types.
+  ``SystemVerilog``'s :func:`literalize` rejects scalar ``$ref`` markers via :exc:`~literalizer.exceptions.CallArgNotSupportedError`: SV keys the variable declaration off the marker dict's shape (``_VKV name[]``) and cannot produce a coherent declaration for a scalar referent.
 
 - The
   :attr:`~literalizer._language.Language.format_call_ref_identifier`,
@@ -2365,33 +2232,16 @@ No significant changes.
   implementations that override these hooks; most overrides ignore the
   new argument.
 
-- :class:`~literalizer.V` now defaults
-  ``heterogeneous_strategy`` to
-  ``V.heterogeneous_strategies.ERROR`` and reports
-  ``dict_supports_heterogeneous_values=False`` and
-  ``supports_heterogeneity=False`` on its sequence and set formats.
-  V is statically typed and rejects unwrapped heterogeneous
-  collections, so rendering them now raises rather than emitting
-  code the V compiler will not accept.  Callers that want to
-  materialize heterogeneous data must opt in to
-  ``V.heterogeneous_strategies.INTERFACE``, which wraps values with
-  ``IVal(...)`` and emits the ``interface IVal {}`` declaration as
-  before.
+- :class:`~literalizer.V` now defaults ``heterogeneous_strategy`` to ``V.heterogeneous_strategies.ERROR`` and reports ``dict_supports_heterogeneous_values=False`` and ``supports_heterogeneity=False`` on its sequence and set formats.
+  V is statically typed and rejects unwrapped heterogeneous collections, so rendering them now raises rather than emitting code the V compiler will not accept.
+  Callers that want to materialize heterogeneous data must opt in to ``V.heterogeneous_strategies.INTERFACE``, which wraps values with ``IVal(...)`` and emits the ``interface IVal {}`` declaration as before.
 
 2026.05.13.1
 ------------
 
 
-- :class:`~literalizer._language.LanguageCls` now exposes
-  ``supports_empty_dict_key``, ``supports_call_style``,
-  ``supports_default_dict_key_type``, ``supports_default_dict_value_type``,
-  ``supports_default_sequence_element_type``,
-  ``supports_default_set_element_type``, and
-  ``supports_default_ordered_map_value_type`` flags alongside the existing
-  ``supports_module_name``.  Runtime-dispatched callers that look up a
-  language by name can use these to decide whether to pass the matching
-  constructor keyword argument without inspecting dataclass fields or the
-  ``__init__`` signature.
+- :class:`~literalizer._language.LanguageCls` now exposes ``supports_empty_dict_key``, ``supports_call_style``, ``supports_default_dict_key_type``, ``supports_default_dict_value_type``, ``supports_default_sequence_element_type``, ``supports_default_set_element_type``, and ``supports_default_ordered_map_value_type`` flags alongside the existing ``supports_module_name``.
+  Runtime-dispatched callers that look up a language by name can use these to decide whether to pass the matching constructor keyword argument without inspecting dataclass fields or the ``__init__`` signature.
 
 2026.05.13
 ----------
@@ -2427,14 +2277,8 @@ No significant changes.
   curried application is the idiomatic call form in Haskell; F#, OCaml,
   and SML keep ``POSITIONAL`` as the default.
 
-- :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now
-  emits curried-application calls (``process (EInt 1) (EInt 2)``) with
-  curried type stubs (``process : a -> b -> ()``) in place of the prior
-  tuple-form (``process (EInt 1, EInt 2)``).  Elm tuple literals cap at
-  three elements, so the tuple form had no representation for calls
-  with four or more parameters; the curried form composes naturally
-  with ``|>`` and matches the convention used by ``elm-format`` and the
-  standard library.
+- :class:`~literalizer.Elm` :func:`~literalizer.literalize_call` now emits curried-application calls (``process (EInt 1) (EInt 2)``) with curried type stubs (``process : a -> b -> ()``) in place of the prior tuple-form (``process (EInt 1, EInt 2)``).
+  Elm tuple literals cap at three elements, so the tuple form had no representation for calls with four or more parameters; the curried form composes naturally with ``|>`` and matches the convention used by ``elm-format`` and the standard library.
 
 - The ``Language.max_call_parameters`` attribute has been removed.  No
   remaining language sets a maximum parameter count, so the
@@ -2443,11 +2287,8 @@ No significant changes.
   ``language_cls.max_call_parameters`` introspection no longer have a
   load-bearing caller.
 
-- The ``supports_commented_dict_call_args`` flag has been removed from
-  ``Language``.  Every (language, shape) pair previously dropped by the
-  test-discovery filter on this flag is either already short-circuited
-  by an earlier exception path or now renders cleanly, leaving the flag
-  with no load-bearing callers.
+- The ``supports_commented_dict_call_args`` flag has been removed from ``Language``.
+  Every (language, shape) pair previously dropped by the test-discovery filter on this flag is either already short-circuited by an earlier exception path or now renders cleanly, leaving the flag with no load-bearing callers.
 
 - :func:`~literalizer.literalize_call` now raises
   :class:`~literalizer.exceptions.UnsupportedCallShapeError` when the
@@ -2462,32 +2303,16 @@ No significant changes.
   is ``False``).  The wrapper cannot consume the call as a value in
   that case, and the renderer previously emitted invalid output.
 
-- :func:`~literalizer.literalize_call` no longer rejects identity
-  ``call_transform`` values on Ada, Fortran, and SystemVerilog.  Bare
-  procedure-call statements (``Process(x);``, ``call process(x)``,
-  ``process(x);``) are valid in all three languages, so the prior
-  rejection encoded a constraint that does not exist.  The
-  ``Language.allows_bare_call_statement`` flag introduced alongside that
-  check has been removed.
+- :func:`~literalizer.literalize_call` no longer rejects identity ``call_transform`` values on Ada, Fortran, and SystemVerilog.
+  Bare procedure-call statements (``Process(x);``, ``call process(x)``, ``process(x);``) are valid in all three languages, so the prior rejection encoded a constraint that does not exist.
+  The ``Language.allows_bare_call_statement`` flag introduced alongside that check has been removed.
 
-- The PureScript, Roc, and Elm wrapped-call indent helpers no longer
-  carry defensive branches for blank or whitespace-leading lines.
-  These helpers only ever receive single-line call expressions from
-  ``literalize_call`` (which uses :attr:`CollectionLayout.COMPACT` for
-  wrapped calls and rejects standalone comments in that path), so the
-  empty-line and continuation arms were unreachable via the golden
-  integration cases.  Four unit tests in ``tests/test_languages.py``
-  that drove the Elm helpers directly with constructed multi-line
-  input have been removed in favor of the existing golden-file
-  contract.
+- The PureScript, Roc, and Elm wrapped-call indent helpers no longer carry defensive branches for blank or whitespace-leading lines.
+  These helpers only ever receive single-line call expressions from ``literalize_call`` (which uses :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects standalone comments in that path), so the empty-line and continuation arms were unreachable via the golden integration cases.
+  Four unit tests in ``tests/test_languages.py`` that drove the Elm helpers directly with constructed multi-line input have been removed in favor of the existing golden-file contract.
 
-- ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested
-  inside dict literals and commented dict-literal call arguments.  The
-  typed-stub work landed in #1972 made both shapes compile cleanly under
-  ``mojo run --Werror``, so the corresponding
-  ``supports_call_refs_in_dict_literals`` and
-  ``supports_commented_dict_call_args`` flags flip to ``True`` for Mojo
-  and two new ``call_*`` golden cases are exercised.
+- ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested inside dict literals and commented dict-literal call arguments.
+  The typed-stub work landed in #1972 made both shapes compile cleanly under ``mojo run --Werror``, so the corresponding ``supports_call_refs_in_dict_literals`` and ``supports_commented_dict_call_args`` flags flip to ``True`` for Mojo and two new ``call_*`` golden cases are exercised.
 
 - ``Mojo`` and ``C++`` :func:`~literalizer.literalize_call` no longer
   wrap a consumable ``$ref`` in the language's consume form when the
@@ -2507,33 +2332,17 @@ No significant changes.
   default (:data:`~literalizer._language.never_inhibits_consuming_form`)
   preserves the existing behavior.
 
-- Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for
-  every language.  The behavior is unchanged; the new name describes
-  the option (no annotation, defer to the language's inference) rather
-  than implying intent, and pairs symmetrically with ``ALWAYS``.
+- Renamed ``VariableTypeHints.AUTO`` to ``VariableTypeHints.NEVER`` for every language.
+  The behavior is unchanged; the new name describes the option (no annotation, defer to the language's inference) rather than implying intent, and pairs symmetrically with ``ALWAYS``.
 
-- Every language's ``VariableTypeHints`` enum now exposes a third value,
-  ``SAFE``, alongside ``NEVER`` and ``ALWAYS``.  ``SAFE`` annotates only
-  when the language's own inference would widen the variable to a
-  permissive type (e.g. ``unknown[]`` for an empty TypeScript array,
-  ``Object[]`` for an empty Java array), making downstream consumption
-  safer than ``NEVER`` without the noise of ``ALWAYS``.  The predicate is
-  per-language: ``TypeScript`` and ``Java`` annotate empty list / set /
-  dict literals; for every other language ``SAFE`` currently produces
-  the same output as ``NEVER`` while leaving room for a future
-  per-language predicate.
+- Every language's ``VariableTypeHints`` enum now exposes a third value, ``SAFE``, alongside ``NEVER`` and ``ALWAYS``.
+  ``SAFE`` annotates only when the language's own inference would widen the variable to a permissive type (e.g. ``unknown[]`` for an empty TypeScript array, ``Object[]`` for an empty Java array), making downstream consumption safer than ``NEVER`` without the noise of ``ALWAYS``.
+  The predicate is per-language: ``TypeScript`` and ``Java`` annotate empty list / set / dict literals; for every other language ``SAFE`` currently produces the same output as ``NEVER`` while leaving room for a future per-language predicate.
 
-- ``Nim`` :func:`~literalizer.literalize_call` now emits the
-  object-variant ``type`` declaration when the ``OBJECT_VARIANT``
-  heterogeneous strategy is active, so the rendered call references a
-  defined wrapping type.
+- ``Nim`` :func:`~literalizer.literalize_call` now emits the object-variant ``type`` declaration when the ``OBJECT_VARIANT`` heterogeneous strategy is active, so the rendered call references a defined wrapping type.
 
-- ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``,
-  ``date``, and ``datetime`` argument values (mapped to ``Bool``,
-  ``Float64``, and ``String`` respectively), and apply to dotted-method
-  stubs as well as free-function stubs.  The generic
-  ``[*Ts: AnyType](*args: *Ts)`` form is still emitted when scalar
-  types disagree across calls or any argument is non-scalar.
+- ``Mojo`` typed call stubs now cover ``bool``, ``float``, ``bytes``, ``date``, and ``datetime`` argument values (mapped to ``Bool``, ``Float64``, and ``String`` respectively), and apply to dotted-method stubs as well as free-function stubs.
+  The generic ``[*Ts: AnyType](*args: *Ts)`` form is still emitted when scalar types disagree across calls or any argument is non-scalar.
 
 - ``Mojo`` :meth:`~literalizer.Language.format_call_preamble_stub` now
   raises
@@ -2564,11 +2373,7 @@ No significant changes.
   ``Jsonnet``, and ``Yaml``).  The capability flag is now enforced
   rather than declarative.
 
-- ``supports_variable_names`` is now ``True`` on ``Clojure``,
-  ``CommonLisp``, ``Julia``, ``Racket``, ``Ruby``, and ``Scheme``,
-  reflecting that these languages do support named variable wrapping
-  via ``literalize``'s ``variable_form`` argument (and have golden
-  files exercising that behavior).
+- ``supports_variable_names`` is now ``True`` on ``Clojure``, ``CommonLisp``, ``Julia``, ``Racket``, ``Ruby``, and ``Scheme``, reflecting that these languages do support named variable wrapping via ``literalize``'s ``variable_form`` argument (and have golden files exercising that behavior).
 
 - Separated syntactic ``ref_case`` validity from stylistic preference.
   :class:`~literalizer.Language` now exposes
@@ -2603,20 +2408,11 @@ No significant changes.
   ``has_free_function_calls = False`` (currently only ``Wren``).  The
   capability flag is now enforced rather than declarative.
 
-- Removed the redundant ``supports_default_set_element_type``,
-  ``supports_default_sequence_element_type``,
-  ``supports_default_dict_value_type``, ``supports_default_dict_key_type``,
-  and ``supports_default_ordered_map_value_type`` class attributes from
-  ``LanguageCls`` and all language implementations.  Direct constructor
-  calls already surface unsupported ``default_*_type`` keyword arguments
-  through type checking, making these probe flags unnecessary.
+- Removed the redundant ``supports_default_set_element_type``, ``supports_default_sequence_element_type``, ``supports_default_dict_value_type``, ``supports_default_dict_key_type``, and ``supports_default_ordered_map_value_type`` class attributes from ``LanguageCls`` and all language implementations.
+  Direct constructor calls already surface unsupported ``default_*_type`` keyword arguments through type checking, making these probe flags unnecessary.
 
-- :func:`~literalizer.literalize_call` accepts a new ``ref_values``
-  mapping from ``{"$ref": "name"}`` identifiers to the source values
-  declared elsewhere.  Supplied ref values now participate in
-  data-driven preamble inference, so generated body declarations such
-  as Haskell's ``data Val = ...`` include types reachable only through
-  refs while the rendered call still emits the bare identifier.
+- :func:`~literalizer.literalize_call` accepts a new ``ref_values`` mapping from ``{"$ref": "name"}`` identifiers to the source values declared elsewhere.
+  Supplied ref values now participate in data-driven preamble inference, so generated body declarations such as Haskell's ``data Val = ...`` include types reachable only through refs while the rendered call still emits the bare identifier.
 
 2026.05.01.1
 ------------
@@ -2638,44 +2434,23 @@ No significant changes.
 ------------
 
 
-- :func:`~literalizer.literalize_call` accepts a new ``consumable_refs``
-  parameter listing the ref identifiers the call may move from.  In C++,
-  only refs in this set -- and only when they appear in exactly one call
-  argument across the rendered calls -- are wrapped in ``std::move(...)``;
-  all other refs emit as the bare identifier so the variable remains
-  valid for any subsequent use (whether in a later per-element call
-  within the same ``literalize_call`` block, or elsewhere in the
-  surrounding source).  Mojo's ``^`` transfer operator is treated the
-  same way.  This is a breaking change: previously C++ unconditionally
-  wrapped every call-argument ref in ``std::move(...)``, which produced
-  use-after-move when the same variable was referenced by more than
-  one per-element call.  Pass ``consumable_refs={"my_var"}`` to
-  restore the previous behavior for ``my_var``.
-- :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call`
-  now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).  The
-  marker key used to identify variable-reference mappings in the input data
-  is now user-configurable: a single-key dict whose key equals *ref_key*
-  and whose value is a string is treated as a ref marker.  Pass
-  ``ref_case`` only when the identifier name should be converted before
-  rendering.
-- Every built-in language class now exposes a ``VersionFormats`` enum and a
-  configurable ``language_version`` constructor parameter that selects which
-  version of the target language the generated code is written for.  For
-  example, ``Ada().language_version`` defaults to
-  ``Ada.version_formats.ADA_2022``, whose ``.value`` is ``"Ada 2022"``.
-  Each language currently defines a single version; additional versions
-  may be added in future releases.  Both ``version_formats`` and
-  ``language_version`` are part of the :class:`~literalizer.Language`
-  protocol, so custom language implementations must also define them.
+- :func:`~literalizer.literalize_call` accepts a new ``consumable_refs`` parameter listing the ref identifiers the call may move from.
+  In C++, only refs in this set -- and only when they appear in exactly one call argument across the rendered calls -- are wrapped in ``std::move(...)``; all other refs emit as the bare identifier so the variable remains valid for any subsequent use (whether in a later per-element call within the same ``literalize_call`` block, or elsewhere in the surrounding source).
+  Mojo's ``^`` transfer operator is treated the same way.
+  This is a breaking change: previously C++ unconditionally wrapped every call-argument ref in ``std::move(...)``, which produced use-after-move when the same variable was referenced by more than one per-element call.
+  Pass ``consumable_refs={"my_var"}`` to restore the previous behavior for ``my_var``.
+- :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call` now accept a ``ref_key`` parameter (``str``, default ``"$ref"``).
+  The marker key used to identify variable-reference mappings in the input data is now user-configurable: a single-key dict whose key equals *ref_key* and whose value is a string is treated as a ref marker.
+  Pass ``ref_case`` only when the identifier name should be converted before rendering.
+- Every built-in language class now exposes a ``VersionFormats`` enum and a configurable ``language_version`` constructor parameter that selects which version of the target language the generated code is written for.
+  For example, ``Ada().language_version`` defaults to ``Ada.version_formats.ADA_2022``, whose ``.value`` is ``"Ada 2022"``.
+  Each language currently defines a single version; additional versions may be added in future releases.
+  Both ``version_formats`` and ``language_version`` are part of the :class:`~literalizer.Language` protocol, so custom language implementations must also define them.
 
 2026.04.30
 ----------
 
-- :func:`~literalizer.literalize_call` now expands ``{"$ref": "name"}``
-  markers that appear nested inside list elements or dict values of an
-  argument, in addition to the existing support for top-level argument
-  refs.  ``ref_case`` conversion and preamble stripping apply recursively
-  to nested refs just as they do to top-level ones.
+- :func:`~literalizer.literalize_call` now expands ``{"$ref": "name"}`` markers that appear nested inside list elements or dict values of an argument, in addition to the existing support for top-level argument refs.  ``ref_case`` conversion and preamble stripping apply recursively to nested refs just as they do to top-level ones.
 
 2026.04.29
 ----------
@@ -2692,98 +2467,40 @@ No significant changes.
   preserving backwards compatibility.  Passing a case not in
   ``language.identifier_cases`` raises
   :exc:`~literalizer.exceptions.UnsupportedIdentifierCaseError`.
-- Added support for Roc as a new output language.  ``Roc`` emits a
-  ``Val`` tag-union type alias (``RNull``, ``RBool``, ``RInt``,
-  ``RFloat``, ``RStr``, ``RList``, ``RDict``, ``RSet``) inside the
-  module body, exposing the generated value via ``module [my_data]``.
-  Calls use the space-separated command syntax with each argument
-  wrapped in parentheses (``process (RInt 1) (RInt 2)``), with
-  module-level stubs of the form ``name : a, b -> {}``.  A new
-  ``lint-roc`` job in ``.github/workflows/lint.yml`` runs ``roc check``
-  against every ``.roc`` fixture using the upstream nightly tarball.
-- C, C++, Objective-C, and D fixtures now emit a ``main`` entry point
-  directly (``int main(void)``/``int main()``/``void main()``) instead
-  of a ``check_()``/``_check()`` function that required a separate
-  per-language driver script.  Haskell non-call fixtures now append
-  ``main = seq my_data (return ())`` to the module, and SML fixtures
-  are emitted as top-level declarations ending with ``val _ = my_data``
-  instead of inside a ``structure Check = struct … end`` wrapper.  All
-  six driver scripts (``c_main.c``, ``cpp_main.cpp``, ``objc_main.m``,
-  ``d_main.d``, ``sml_force.sml``, ``sml_main.mlb``,
-  ``sml_call_main.mlb``) have been removed.  CI now compiles and runs
-  each fixture directly without a linking step against a driver object.
-  ``run_haskell.py`` has been removed; the CI now copies each Haskell
-  fixture to a temporary workspace (renaming to match its unique module
-  name), generates a ``Main.hs`` driver that imports every fixture
-  qualified and calls its ``main``, and compiles and runs them all in a
-  single ``ghc`` invocation.
-- Ada output now uses Ada 2022 container aggregates (``AList'[...]``,
-  ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use
-  A_Stub;`` context clause so each fixture compiles and runs against
-  a checked-in stub package.  The lint workflow gained a "Run Ada
-  files" step that builds and executes every fixture, replacing the
-  previous syntax-only check.  The combined declaration + assignment
-  wrapper now keeps both forms in a single procedure scope so the
-  assignment can reach ``my_data``.
-- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local``
-  bindings before the call expressions, so call-mode output with
-  ``ref_declarations`` is supported.  Previously the integration
-  harness skipped ``Jsonnet`` for ref-declaration cases because the
-  array-wrapped output had no place for variable bindings.  The
-  ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to
-  ``local {name} = {value};``, and ``Jsonnet`` now overrides
-  ``wrap_calls_with_declarations`` to emit those bindings before
-  ``wrap_in_file`` wraps the calls in ``[ … ]``.
-- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted
-  as ``static`` definitions with a stub body instead of bare forward
-  declarations, so generated fixtures can be linked and run.  The lint
-  workflow now compiles each C fixture against a small ``c_main.c``
-  driver and executes the resulting binary, surfacing runtime errors
-  that the previous ``-fsyntax-only`` check missed.
-- ``Crystal.wrap_in_file`` now wraps content in a
-  ``module Check ... end`` block with ``extend self``, matching what
-  Erlang, Scala, and Haskell already do.  ``Crystal`` gains a
-  ``module_name`` constructor argument (default ``"Check"``) to
-  control the wrapper name.  Callers that relied on
-  ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare
-  content will now receive a ``module`` block.
-- Java sets and dicts no longer emit a trailing comma when
-  ``trailing_comma=TrailingCommas.YES`` is requested.  ``Set.of(...)``
-  and ``Map.ofEntries(...)`` are method calls and the previous output
-  was rejected by ``javac``.  ``SetFormatConfig`` and
-  ``DictFormatConfig`` gain a ``supports_trailing_comma`` field
-  (defaults to ``True``) mirroring ``SequenceFormatConfig``; formats
-  built around method-call syntax can opt out.
-- Added ``CallStyleEnum`` as the base class for per-language
-  ``CallStyles`` enums.  Its :attr:`config` accessor returns the
-  enum member's value typed as the :data:`CallStyle` union, removing
-  the ``cast("CallStyle", self.call_style.value)`` boilerplate
-  previously duplicated in every multi-style language module.
-- ``module_name`` has moved from a parameter on ``literalize`` and
-  ``literalize_call`` to a constructor argument on the ten languages
-  whose ``wrap_in_file`` introduces a named scope: ``C``, ``Cpp``,
-  ``D``, ``Erlang``, ``Fortran``, ``FSharp``, ``Java``, ``ObjectiveC``,
-  ``Occam`` and ``SystemVerilog``.  Pass it when constructing the
-  language (e.g. ``Java(module_name="Foo")``); it defaults to
-  ``"Module"``.  Languages whose wrappers do not introduce a named
-  scope no longer accept ``module_name`` at all, so passing it where
-  it has no effect is now a ``TypeError`` instead of being silently
-  ignored.  ``Language.wrap_in_file`` and
-  ``Language.wrap_combined_in_file`` lose the ``module_name``
-  parameter; the named-scope languages read ``self.module_name``
-  instead.  Languages must now be instantiated before being passed to
-  ``literalize`` (``language=Python()`` rather than
-  ``language=Python``).
-- OCaml integer values outside the signed 64-bit range now raise
-  ``UnrepresentableIntegerError`` instead of emitting an
-  ``int_of_string`` fallback that overflowed OCaml's 63-bit native
-  ``int`` at runtime and silently misrepresented the data.
-- ``literalize_call`` now supports Visual Basic.  The default style is
-  positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables
-  VB's named-argument syntax (``foo(x:=1, y:=2)``).  Generated stubs
-  are emitted as module-level ``Class`` and ``Function`` blocks and
-  the call body is placed inside ``Sub _calls()`` because VB does not
-  allow bare expression statements at module scope.
+- Added support for Roc as a new output language.
+  ``Roc`` emits a ``Val`` tag-union type alias (``RNull``, ``RBool``, ``RInt``, ``RFloat``, ``RStr``, ``RList``, ``RDict``, ``RSet``) inside the module body, exposing the generated value via ``module [my_data]``.
+  Calls use the space-separated command syntax with each argument wrapped in parentheses (``process (RInt 1) (RInt 2)``), with module-level stubs of the form ``name : a, b -> {}``.
+  A new ``lint-roc`` job in ``.github/workflows/lint.yml`` runs ``roc check`` against every ``.roc`` fixture using the upstream nightly tarball.
+- C, C++, Objective-C, and D fixtures now emit a ``main`` entry point directly (``int main(void)``/``int main()``/``void main()``) instead of a ``check_()``/``_check()`` function that required a separate per-language driver script.
+  Haskell non-call fixtures now append ``main = seq my_data (return ())`` to the module, and SML fixtures are emitted as top-level declarations ending with ``val _ = my_data`` instead of inside a ``structure Check = struct … end`` wrapper.
+  All six driver scripts (``c_main.c``, ``cpp_main.cpp``, ``objc_main.m``, ``d_main.d``, ``sml_force.sml``, ``sml_main.mlb``, ``sml_call_main.mlb``) have been removed.
+  CI now compiles and runs each fixture directly without a linking step against a driver object.
+  ``run_haskell.py`` has been removed; the CI now copies each Haskell fixture to a temporary workspace (renaming to match its unique module name), generates a ``Main.hs`` driver that imports every fixture qualified and calls its ``main``, and compiles and runs them all in a single ``ghc`` invocation.
+- Ada output now uses Ada 2022 container aggregates (``AList'[...]``, ``AMap'[...]``, ``ASet'[...]``) and emits a ``with A_Stub; use A_Stub;`` context clause so each fixture compiles and runs against a checked-in stub package.
+  The lint workflow gained a "Run Ada files" step that builds and executes every fixture, replacing the previous syntax-only check.
+  The combined declaration + assignment wrapper now keeps both forms in a single procedure scope so the assignment can reach ``my_data``.
+- ``Jsonnet`` now emits ``$ref`` declarations as top-level ``local`` bindings before the call expressions, so call-mode output with ``ref_declarations`` is supported.
+  Previously the integration harness skipped ``Jsonnet`` for ref-declaration cases because the array-wrapped output had no place for variable bindings.
+  The ``DeclarationStyles.ASSIGN`` template changed from ``{value}`` to ``local {name} = {value};``, and ``Jsonnet`` now overrides ``wrap_calls_with_declarations`` to emit those bindings before ``wrap_in_file`` wraps the calls in ``[ … ]``.
+- C single-name call stubs (e.g. ``emit``, ``process``) are now emitted as ``static`` definitions with a stub body instead of bare forward declarations, so generated fixtures can be linked and run.
+  The lint workflow now compiles each C fixture against a small ``c_main.c`` driver and executes the resulting binary, surfacing runtime errors that the previous ``-fsyntax-only`` check missed.
+- ``Crystal.wrap_in_file`` now wraps content in a ``module Check ... end`` block with ``extend self``, matching what Erlang, Scala, and Haskell already do.
+  ``Crystal`` gains a ``module_name`` constructor argument (default ``"Check"``) to control the wrapper name.
+  Callers that relied on ``literalize(language=Crystal(), wrap_in_file=True)`` returning bare content will now receive a ``module`` block.
+- Java sets and dicts no longer emit a trailing comma when ``trailing_comma=TrailingCommas.YES`` is requested.
+  ``Set.of(...)`` and ``Map.ofEntries(...)`` are method calls and the previous output was rejected by ``javac``.
+  ``SetFormatConfig`` and ``DictFormatConfig`` gain a ``supports_trailing_comma`` field (defaults to ``True``) mirroring ``SequenceFormatConfig``; formats built around method-call syntax can opt out.
+- Added ``CallStyleEnum`` as the base class for per-language ``CallStyles`` enums.
+  Its :attr:`config` accessor returns the enum member's value typed as the :data:`CallStyle` union, removing the ``cast("CallStyle", self.call_style.value)`` boilerplate previously duplicated in every multi-style language module.
+- ``module_name`` has moved from a parameter on ``literalize`` and ``literalize_call`` to a constructor argument on the ten languages whose ``wrap_in_file`` introduces a named scope: ``C``, ``Cpp``, ``D``, ``Erlang``, ``Fortran``, ``FSharp``, ``Java``, ``ObjectiveC``, ``Occam`` and ``SystemVerilog``.
+  Pass it when constructing the language (e.g. ``Java(module_name="Foo")``); it defaults to ``"Module"``.
+  Languages whose wrappers do not introduce a named scope no longer accept ``module_name`` at all, so passing it where it has no effect is now a ``TypeError`` instead of being silently ignored.
+  ``Language.wrap_in_file`` and ``Language.wrap_combined_in_file`` lose the ``module_name`` parameter; the named-scope languages read ``self.module_name`` instead.
+  Languages must now be instantiated before being passed to ``literalize`` (``language=Python()`` rather than ``language=Python``).
+- OCaml integer values outside the signed 64-bit range now raise ``UnrepresentableIntegerError`` instead of emitting an ``int_of_string`` fallback that overflowed OCaml's 63-bit native ``int`` at runtime and silently misrepresented the data.
+- ``literalize_call`` now supports Visual Basic.
+  The default style is positional (``foo(1, 2)``); ``VisualBasic.CallStyles.NAMED`` enables VB's named-argument syntax (``foo(x:=1, y:=2)``).
+  Generated stubs are emitted as module-level ``Class`` and ``Function`` blocks and the call body is placed inside ``Sub _calls()`` because VB does not allow bare expression statements at module scope.
 - Added ``literalize_call`` support for ``Zig``.  ``Zig.CallStyles``
   now exposes a ``POSITIONAL`` member backed by
   :class:`PositionalCallStyle`, and ``format_call_preamble_stub``
@@ -2793,109 +2510,42 @@ No significant changes.
   a module-level constant, and call arguments are wrapped in the
   ``ZVal`` union so anonymous union literals coerce to a concrete
   type at the call site.
-- ``literalize_call`` now emits R stub declarations
-  (``name <- function(...) NULL``) for the called function and any
-  call-transform wrappers, so generated R call output runs cleanly
-  under ``Rscript`` without ``could not find function`` errors.
-- Removed ``R.TrailingCommas.YES``: R's ``list()`` rejects empty
-  arguments, so ``list(1, 2,)`` parses but raises at runtime.  Only
-  ``R.TrailingCommas.NO`` remains.
-- Fixed Dhall typed-empty literals for doubly-nested lists.  Input like
-  ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as
-  ``[] : List List Integer``, which is invalid Dhall (parses as
-  ``(List List) Integer``).  The inner ``List`` type is now
-  parenthesized, producing ``[] : List (List Integer)``.
-- ``infer_element_type`` no longer gives up when a nested list is empty
-  alongside non-empty homogeneous siblings: empty inner lists are now
-  skipped during inference, so input like ``[[1, 2], [], [3, 4]]``
-  resolves to ``ListType(inner=int)`` instead of falling back to
-  ``None`` (mixed types).  When the rendered list literal contains an
-  empty inner list beside non-empty list siblings, the empty inner now
-  inherits the typed sequence opener of its siblings, so generated
-  literals type-check cleanly under strongly typed languages
-  (``new int[]{}`` instead of ``new Object[]{}`` for Java,
-  ``std::vector<int>{}`` for C++, ``[]int{}`` for Go, ``vec![]`` for
-  Rust, ``New Integer() {}`` for Visual Basic, etc.).
-- Documented the preamble-duplication sharp edge that arises when a
-  caller composes :func:`literalize` (declaring a ``{"$ref": "name"}``
-  variable) with :func:`literalize_call` (referencing it) into a
-  single source file: each call independently computes its own
-  ``preamble`` and ``body_preamble``, so the combined output contains
-  duplicates that strict compilers reject and a linter flags.  The
-  ``literalize_call`` reference now points at the new
-  "Composing declarations and calls" section in
-  ``docs/source/function-call-use-case.rst``, which shows a worked
-  Haskell example with the combined ``body_preamble`` blocks already
-  deduplicated.
-- ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs
-  (``*name*``) at the call site so they resolve to the matching
-  ``defparameter`` declaration.  ``CommonLisp`` is no longer skipped by
-  the ``literalize_call`` reference-argument integration tests, which
-  now lint cleanly under SBCL.
-- ``Erlang`` now capitalizes ``{"$ref": "name"}`` call arguments so
-  they reference the declared variable instead of parsing as a
-  lowercase atom, matching the existing ``My_var = ...`` capitalization
-  on the declaration site.  ``Erlang.format_variable_declaration`` now
-  emits the trailing ``,`` separator itself so multiple declarations can
-  precede a call; :meth:`Erlang.wrap_in_file` is adjusted accordingly
-  and the rendered output is unchanged for the single-declaration case.
-- ``Perl`` ``literalize_call`` output now emits Perl's scalar ``$``
-  sigil before each ``{"$ref": "name"}`` identifier via a
-  ``format_call_ref_identifier`` override, so a ref to ``my_var``
-  renders as ``$my_var`` at the call site and lines up with the
-  ``my $my_var = ...`` declaration site.  Generated files now pass
-  ``perl -c`` under ``use strict`` and ``Perl`` is no longer excluded
-  from the integration suite's ref-declaration golden cases.
-- Added ``literalize_call`` support for ``Matlab``.  ``Matlab.CallStyles``
-  now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`,
-  and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so
-  every target (including dotted paths like ``app.client.fetch``) is a
-  bound function handle before it is invoked.  MATLAB's auto-vivifying
-  struct-field assignment means a single line defines the entire chain
-  regardless of depth, so the stub is one statement per call target.
-- ``lint-purescript`` in ``.github/workflows/lint.yml`` now runs each
-  PureScript fixture end-to-end.  A new ``Run PureScript files`` step
-  compiles each fixture with ``purs compile`` and loads the resulting
-  ``Check`` module in Node so its top-level ``my_data`` binding is
-  evaluated, catching foreign-implementation failures and other
-  load-time crashes that the existing ``check_purescript_syntax.py``
-  compile-only check would miss.  The shared Prelude stub used by both
-  steps lives in a new ``purescript_common.py`` module.
-- Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs
-  the ``tests/benchmarks/`` suite under `CodSpeed
-  <https://codspeed.io>`_ via ``pytest-codspeed``.  The job posts a
-  per-benchmark performance delta on every pull request, making it
-  easier to spot regressions in the YAML fast path, JSON formatting,
-  and heterogeneous-widening logic.
-- ``C``, ``Cpp``, and ``ObjectiveC``
-  ``wrap_in_file`` / ``wrap_combined_in_file`` output now emits
-  ``(void)<variable_name>;`` after the declaration (and between the
-  declaration and the re-assignment in the combined form) so the
-  initial value is read before it is overwritten.  clang-tidy's
-  ``clang-analyzer-deadcode.DeadStores`` check, previously suppressed
-  in ``.clang-tidy`` because the combined form and unused C++ scalars
-  triggered dead-store warnings, is now enforced.
+- ``literalize_call`` now emits R stub declarations (``name <- function(...)
+  NULL``) for the called function and any call-transform wrappers, so generated R call output runs cleanly under ``Rscript`` without ``could not find function`` errors.
+- Removed ``R.TrailingCommas.YES``: R's ``list()`` rejects empty arguments, so ``list(1, 2,)`` parses but raises at runtime.
+  Only ``R.TrailingCommas.NO`` remains.
+- Fixed Dhall typed-empty literals for doubly-nested lists.
+  Input like ``[[[1, 2]], [], [[3, 4]]]`` previously rendered the empty sibling as ``[] : List List Integer``, which is invalid Dhall (parses as ``(List List) Integer``).
+  The inner ``List`` type is now parenthesized, producing ``[] : List (List Integer)``.
+- ``infer_element_type`` no longer gives up when a nested list is empty alongside non-empty homogeneous siblings: empty inner lists are now skipped during inference, so input like ``[[1, 2], [], [3, 4]]`` resolves to ``ListType(inner=int)`` instead of falling back to ``None`` (mixed types).
+  When the rendered list literal contains an empty inner list beside non-empty list siblings, the empty inner now inherits the typed sequence opener of its siblings, so generated literals type-check cleanly under strongly typed languages (``new int[]{}`` instead of ``new Object[]{}`` for Java, ``std::vector<int>{}`` for C++, ``[]int{}`` for Go, ``vec![]`` for Rust, ``New Integer() {}`` for Visual Basic, etc.).
+- Documented the preamble-duplication sharp edge that arises when a caller composes :func:`literalize` (declaring a ``{"$ref": "name"}`` variable) with :func:`literalize_call` (referencing it) into a single source file: each call independently computes its own ``preamble`` and ``body_preamble``, so the combined output contains duplicates that strict compilers reject and a linter flags.
+  The ``literalize_call`` reference now points at the new "Composing declarations and calls" section in ``docs/source/function-call-use-case.rst``, which shows a worked Haskell example with the combined ``body_preamble`` blocks already deduplicated.
+- ``CommonLisp`` now wraps ``{"$ref": "name"}`` identifiers in earmuffs (``*name*``) at the call site so they resolve to the matching ``defparameter`` declaration.
+  ``CommonLisp`` is no longer skipped by the ``literalize_call`` reference-argument integration tests, which now lint cleanly under SBCL.
+- ``Erlang`` now capitalizes ``{"$ref": "name"}`` call arguments so they reference the declared variable instead of parsing as a lowercase atom, matching the existing ``My_var = ...`` capitalization on the declaration site.
+  ``Erlang.format_variable_declaration`` now emits the trailing ``,`` separator itself so multiple declarations can precede a call; :meth:`Erlang.wrap_in_file` is adjusted accordingly and the rendered output is unchanged for the single-declaration case.
+- ``Perl`` ``literalize_call`` output now emits Perl's scalar ``$`` sigil before each ``{"$ref": "name"}`` identifier via a ``format_call_ref_identifier`` override, so a ref to ``my_var`` renders as ``$my_var`` at the call site and lines up with the ``my $my_var = ...`` declaration site.
+  Generated files now pass ``perl -c`` under ``use strict`` and ``Perl`` is no longer excluded from the integration suite's ref-declaration golden cases.
+- Added ``literalize_call`` support for ``Matlab``.
+  ``Matlab.CallStyles`` now has a ``POSITIONAL`` member backed by a :class:`PositionalCallStyle`, and ``format_call_stub`` emits ``name = @(varargin) [];`` assignments so every target (including dotted paths like ``app.client.fetch``) is a bound function handle before it is invoked.
+  MATLAB's auto-vivifying struct-field assignment means a single line defines the entire chain regardless of depth, so the stub is one statement per call target.
+- ``lint-purescript`` in ``.github/workflows/lint.yml`` now runs each PureScript fixture end-to-end.
+  A new ``Run PureScript files`` step compiles each fixture with ``purs compile`` and loads the resulting ``Check`` module in Node so its top-level ``my_data`` binding is evaluated, catching foreign-implementation failures and other load-time crashes that the existing ``check_purescript_syntax.py`` compile-only check would miss.
+  The shared Prelude stub used by both steps lives in a new ``purescript_common.py`` module.
+- Added a ``benchmarks`` job to ``.github/workflows/ci.yml`` that runs the ``tests/benchmarks/`` suite under `CodSpeed <https://codspeed.io>`_ via ``pytest-codspeed``.
+  The job posts a per-benchmark performance delta on every pull request, making it easier to spot regressions in the YAML fast path, JSON formatting, and heterogeneous-widening logic.
+- ``C``, ``Cpp``, and ``ObjectiveC`` ``wrap_in_file`` / ``wrap_combined_in_file`` output now emits ``(void)<variable_name>;`` after the declaration (and between the declaration and the re-assignment in the combined form) so the initial value is read before it is overwritten.  clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check, previously suppressed in ``.clang-tidy`` because the combined form and unused C++ scalars triggered dead-store warnings, is now enforced.
 
 2026.04.24.1
 ------------
 
 
-- ``Gleam`` now emits a ``pub type GVal`` declaration containing only
-  the constructors actually needed for the data, rather than always
-  emitting all eight variants.  Scalar-only inputs (e.g.  ``GInt(42)``)
-  now produce a one-constructor type, bringing Gleam in line with Elm
-  and Haskell.
-- ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua
-  fixture end-to-end via ``lua``, catching runtime errors (calls to
-  undefined functions, missing module imports, failed assertions)
-  that the existing ``luac -p`` parse-only step let through,
-  mirroring ``lint-bash`` / ``lint-javascript`` / ``lint-perl`` etc.
-- ``literalize_call(..., wrap_in_file=True)`` now injects a no-op
-  stub for the ``target_function`` into the wrapped file, so the
-  generated source compiles against strict checkers on its own.
-  Callers that supply a ``call_transform`` are still responsible for
-  providing a definition for the wrapper function the transform
-  introduces.
+- ``Gleam`` now emits a ``pub type GVal`` declaration containing only the constructors actually needed for the data, rather than always emitting all eight variants.
+  Scalar-only inputs (e.g.  ``GInt(42)``) now produce a one-constructor type, bringing Gleam in line with Elm and Haskell.
+- ``lint-lua`` in ``.github/workflows/lint.yml`` now runs each Lua fixture end-to-end via ``lua``, catching runtime errors (calls to undefined functions, missing module imports, failed assertions) that the existing ``luac -p`` parse-only step let through, mirroring ``lint-bash`` / ``lint-javascript`` / ``lint-perl`` etc.
+- ``literalize_call(..., wrap_in_file=True)`` now injects a no-op stub for the ``target_function`` into the wrapped file, so the generated source compiles against strict checkers on its own.
+  Callers that supply a ``call_transform`` are still responsible for providing a definition for the wrapper function the transform introduces.
 - Added ``literalize_call`` support for ``Bash``.  A new
   :class:`CommandCallStyle` tagged-union member renders calls as
   ``target arg1 arg2`` with space-separated arguments and no
@@ -2912,339 +2562,126 @@ No significant changes.
   ``(...)`` child-process group) would leave users with a broken
   script; callers must declare the collection as a variable and
   pass a ``$ref`` marker instead.
-- ``literalize_call`` gains a ``ref_case`` keyword argument that
-  converts ``{"$ref": "name"}`` identifiers to the target language's
-  idiomatic case at render time via ``pyhumps``.  Pass
-  ``IdentifierCase.SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or
-  ``KEBAB`` to drive one YAML source through multiple languages
-  without re-authoring the ref names (e.g. the same ``user_obj`` ref
-  renders as ``user_obj`` for Python, ``userObj`` for JavaScript,
-  ``UserObj`` for Go).  Each language exposes the subset it
-  understands via its ``identifier_cases`` tuple; passing an
-  unsupported case raises ``UnsupportedIdentifierCaseError``.  When
-  ``ref_case=None`` (the default) ref names are emitted verbatim,
-  preserving existing behavior.
-- ``Mojo`` now supports an opt-in
-  ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an
-  auto-generated ``comptime Value = Variant[...]`` over only the Mojo
-  types actually present in the data, with a
-  ``from std.utils.variant import Variant`` preamble line.  Each
-  wrapped scalar renders as ``Value(...)`` (with an explicit
-  ``String(...)`` or ``Float64(...)`` cast when needed to select the
-  intended Variant alternative, and ``NoneType()`` for nulls), so
-  heterogeneous dicts and lists become homogeneous in the Variant
-  type.  The alias name is configurable via
-  ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
+- ``literalize_call`` gains a ``ref_case`` keyword argument that converts ``{"$ref": "name"}`` identifiers to the target language's idiomatic case at render time via ``pyhumps``.
+  Pass ``IdentifierCase.SNAKE``, ``CAMEL``, ``PASCAL``, ``UPPER_SNAKE``, or ``KEBAB`` to drive one YAML source through multiple languages without re-authoring the ref names (e.g. the same ``user_obj`` ref renders as ``user_obj`` for Python, ``userObj`` for JavaScript, ``UserObj`` for Go).
+  Each language exposes the subset it understands via its ``identifier_cases`` tuple; passing an unsupported case raises ``UnsupportedIdentifierCaseError``.
+  When ``ref_case=None`` (the default) ref names are emitted verbatim, preserving existing behavior.
+- ``Mojo`` now supports an opt-in ``HeterogeneousStrategies.VARIANT`` that wraps mixed scalars in an auto-generated ``comptime Value = Variant[...]`` over only the Mojo types actually present in the data, with a ``from std.utils.variant import Variant`` preamble line.
+  Each wrapped scalar renders as ``Value(...)`` (with an explicit ``String(...)`` or ``Float64(...)`` cast when needed to select the intended Variant alternative, and ``NoneType()`` for nulls), so heterogeneous dicts and lists become homogeneous in the Variant type.
+  The alias name is configurable via ``Mojo.heterogeneous_value_variant_name`` (default ``"Value"``).
   The default ``ERROR`` strategy still raises on heterogeneous input.
-- ``C`` generated output now routes positive integers above
-  ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long``
-  union field instead of narrowing them into the signed ``long long``
-  field.  The ``CVal`` union gains a ``u`` member alongside ``i``, and
-  a new ``uint_field`` constructor argument lets users rename it.
-  clang-tidy's ``bugprone-narrowing-conversions`` and
-  ``cppcoreguidelines-narrowing-conversions`` checks, previously
-  suppressed in ``.clang-tidy`` because the union-initializer literal
-  silently truncated those values, are now enforced for both ``C``
-  and ``Cpp`` output.
-- ``Cpp`` generated output now wraps the ``INFINITY`` and ``NAN``
-  ``<cmath>`` macros in ``static_cast<double>`` (with the negation
-  applied outside the cast for ``-INFINITY``) so that brace-init of
-  ``std::vector<double>`` does not trip clang-tidy's
-  narrowing-conversions check on the implicit ``float``-to-``double``
-  conversion.
-- ``Erlang`` now supports ``literalize_call``.  Calls use positional
-  argument syntax (``f(A, B)``); dotted targets like
-  ``app.client.fetch`` are emitted as quoted-atom function names
-  (``'app.client.fetch'(...)``) since Erlang atoms do not allow
-  unquoted dots.  Call stubs are emitted as module-level function
-  definitions placed between ``-export`` and ``x()``, and ``x()``
-  separates call statements with ``,`` terminated by ``.``.
-- Added ``literalize_call`` support for Gleam:
-  ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn``
-  declarations with fresh type variables per parameter and a
-  ``panic`` body, and ``Gleam.format_call_target`` flattens dotted
-  targets (e.g. ``app.client.fetch``) to underscored identifiers
-  (``app_client_fetch``) because Gleam identifiers cannot contain
-  ``.``.  ``Gleam.CallStyles.POSITIONAL`` renders calls as
-  ``func(arg1, arg2)``.
-- ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root
-  names for the ``static const struct`` globals that back dotted call
-  targets, so a user-written ``throttler.check(...)`` is rendered as
-  ``kThrottler.check(...)`` (and ``app.client.fetch`` to
-  ``kApp.client.fetch``).  clang-tidy's
-  ``google-objc-global-variable-declaration`` check, previously
-  suppressed in ``.clang-tidy`` because the bare root names did not
-  conform, is now enforced.
+- ``C`` generated output now routes positive integers above ``LLONG_MAX`` (e.g. ``2**63``) through a new ``unsigned long long`` union field instead of narrowing them into the signed ``long long`` field.
+  The ``CVal`` union gains a ``u`` member alongside ``i``, and a new ``uint_field`` constructor argument lets users rename it. clang-tidy's ``bugprone-narrowing-conversions`` and ``cppcoreguidelines-narrowing-conversions`` checks, previously suppressed in ``.clang-tidy`` because the union-initializer literal silently truncated those values, are now enforced for both ``C`` and ``Cpp`` output.
+- ``Cpp`` generated output now wraps the ``INFINITY`` and ``NAN`` ``<cmath>`` macros in ``static_cast<double>`` (with the negation applied outside the cast for ``-INFINITY``) so that brace-init of ``std::vector<double>`` does not trip clang-tidy's narrowing-conversions check on the implicit ``float``-to-``double`` conversion.
+- ``Erlang`` now supports ``literalize_call``.
+  Calls use positional argument syntax (``f(A, B)``); dotted targets like ``app.client.fetch`` are emitted as quoted-atom function names (``'app.client.fetch'(...)``) since Erlang atoms do not allow unquoted dots.
+  Call stubs are emitted as module-level function definitions placed between ``-export`` and ``x()``, and ``x()`` separates call statements with ``,`` terminated by ``.``.
+- Added ``literalize_call`` support for Gleam: ``Gleam.format_call_preamble_stub`` emits module-level ``pub fn`` declarations with fresh type variables per parameter and a ``panic`` body, and ``Gleam.format_call_target`` flattens dotted targets (e.g. ``app.client.fetch``) to underscored identifiers (``app_client_fetch``) because Gleam identifiers cannot contain ``.``.
+  ``Gleam.CallStyles.POSITIONAL`` renders calls as ``func(arg1, arg2)``.
+- ``ObjectiveC`` call stubs now emit ``k``-prefixed, title-cased root names for the ``static const struct`` globals that back dotted call targets, so a user-written ``throttler.check(...)`` is rendered as ``kThrottler.check(...)`` (and ``app.client.fetch`` to ``kApp.client.fetch``).  clang-tidy's ``google-objc-global-variable-declaration`` check, previously suppressed in ``.clang-tidy`` because the bare root names did not conform, is now enforced.
 
 2026.04.24
 ----------
 
 
-- ``literalize_call`` with ``per_element=True`` now widens Rust's
-  ``TAGGED_ENUM`` scalar wrapping across sibling calls at matching
-  argument slots.  Previously the wrap analysis ran per call, so a
-  locally-homogeneous sibling dict would emit unwrapped scalars
-  even when another call at the same slot was heterogeneous: a
-  second ``m.process(HashMap::from([("a", "x")]))`` would not match
-  the ``&HashMap<&'static str, Value>`` parameter implied by the
-  first heterogeneous call.  Mirrors the dict-opener widening
-  already applied for typed dict languages on the per-element call
-  path.
-- ``lint-erlang`` in ``.github/workflows/lint.yml`` now passes
-  ``-Werror`` to ``erlc``, so warnings such as ``evaluation of operator
-  '-'/1 will fail with a 'badarith' exception`` fail the job instead of
-  being silently logged.  ``Erlang`` generated output for negative
-  infinity is now the quoted atom ``'-inf'`` instead of the bare
-  ``-inf``, which the compiler treated as unary negation of the atom
-  ``inf`` and flagged as a guaranteed runtime ``badarith``.
+- ``literalize_call`` with ``per_element=True`` now widens Rust's ``TAGGED_ENUM`` scalar wrapping across sibling calls at matching argument slots.
+  Previously the wrap analysis ran per call, so a locally-homogeneous sibling dict would emit unwrapped scalars even when another call at the same slot was heterogeneous: a second ``m.process(HashMap::from([("a", "x")]))`` would not match the ``&HashMap<&'static str, Value>`` parameter implied by the first heterogeneous call.
+  Mirrors the dict-opener widening already applied for typed dict languages on the per-element call path.
+- ``lint-erlang`` in ``.github/workflows/lint.yml`` now passes ``-Werror`` to ``erlc``, so warnings such as ``evaluation of operator '-'/1 will fail with a 'badarith' exception`` fail the job instead of being silently logged.
+  ``Erlang`` generated output for negative infinity is now the quoted atom ``'-inf'`` instead of the bare ``-inf``, which the compiler treated as unary negation of the atom ``inf`` and flagged as a guaranteed runtime ``badarith``.
 
 2026.04.23
 ----------
 
 
-- Sibling sequences that appear as values of the same dict now widen
-  to a common element type at each matching position, so a caller
-  iterating the dict values tuple-style sees a consistent element
-  type at each positional slot instead of one branch narrowed to a
-  concrete type and another collapsed to the fallback.  The widening
-  uses the language's fallback sequence opener when the inferred
-  types diverge and is skipped for variant-typed languages (e.g.
-  C++) whose fallback opener is element-specific rather than
-  universally accepting.
-- ``lint-haskell`` in ``.github/workflows/lint.yml`` now passes
-  ``-Wall -Werror`` to both the syntax check and the end-to-end build,
-  so warnings such as ``-Wunused-matches``, ``-Woverlapping-patterns``,
-  and ``-Wtype-defaults`` fail the job instead of being silently
-  logged.  ``Haskell`` generated output was updated to compile clean
-  under ``-Wall``: the ``Num`` / ``Fractional`` instances use ``_``
-  for unused parameters, the catch-all ``negate _`` clause is now
-  omitted when ``Val`` has only numeric constructors, tuple-sequence
-  bindings carry a ``(Val, Val, ...)`` annotation, call stubs get
-  explicit type signatures, transform-wrapper stubs use a polymorphic
-  argument type, ``main`` binds each call result with ``_ <-``, and
-  the ``Data.Time`` import set drops ``secondsToDiffTime`` when every
-  datetime has microseconds.
-- ``Java`` declarations and reassignments whose value ends in a ``//``
-  line comment now place the terminating ``;`` on the code line rather
-  than on the comment line, where ``javac`` previously parsed it as
-  part of the comment and rejected the program with ``';' expected``.
-- ``Mojo.skip_null_dict_values`` is now ``True`` so dicts containing
-  null values render as the empty ``Dict[String, String]()`` literal
-  (previously they emitted ``{"k": None, ...}``, which the Mojo
-  compiler rejects because ``NoneType`` is not a usable dict value
-  type).  Mixed-type inputs continue to raise
-  ``HeterogeneousScalarCollectionError`` as before; this only affects
-  dicts whose values are entirely ``null``.
-- ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at
-  argument positions, emitting ``name`` as a bare identifier instead
-  of formatting the value as a literal.  Refs and literals can be
-  mixed in the same call, and the marker is detected across all four
-  input formats (JSON, JSON5, YAML, TOML).  Ref dicts are excluded
-  from data-shape validation and data-driven preamble inference so
-  they do not drag in imports for the ``{str: str}`` shape of the
-  marker itself.
-- ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes
-  ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end
-  ``clang`` compile step so warnings such as
-  ``-Wimplicitly-unsigned-literal`` fail the job instead of being
-  silently logged.  ``ObjectiveC.format_integer`` now appends a
-  ``ULL`` suffix to values above ``LLONG_MAX`` (matching the C
-  fallback) and raises ``UnrepresentableIntegerError`` for values
-  below ``LLONG_MIN``, so emitted fixtures compile cleanly under the
-  stricter workflow.
-- Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT``
-  option that auto-generates a Nim object variant in the preamble
-  whenever a dict, list, or sibling-list pair contains scalar values
-  of more than one Nim type.  Each heterogeneous value is wrapped at
-  the call site as ``{VariantName}(kind: vkX, xVal: value)``; only
-  the branches actually present in the data are emitted.  The
-  strategy switches the dict syntax from ``%* {key: value}`` to
-  ``{key: value}.toTable`` (importing ``tables`` instead of ``json``)
-  so the object variants can be stored directly, and nested sequences
-  render as ``@[...]`` at every level.  The variant-type name
-  defaults to ``Value`` and is configurable via the new
-  ``heterogeneous_value_variant_name`` constructor argument.
-  ``OBJECT_VARIANT`` is incompatible with
-  ``DeclarationStyles.CONST`` because ``.toTable`` and ``@[]`` are
-  runtime constructors; the constructor raises
-  ``IncompatibleFormatsError`` for that combination.  The default
-  remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
-- The ``heterogeneous_strategy`` variant case list now includes the
-  ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall
-  ``UNION_TYPE`` rendering on ``!!omap`` inputs.
-- ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its
-  ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing
-  the previous serial ``while`` loop so the job no longer cold-starts
-  the compiler one fixture at a time.
-- ``lint-swift`` in ``.github/workflows/lint.yml`` now runs each
-  Swift fixture end-to-end via ``swift`` in script mode, catching
-  runtime errors that ``swiftc -typecheck`` alone could miss
-  (for example, integer literals that overflow ``Int``).  So that
-  every emitted fixture compiles, ``Swift.format_integer`` now
-  raises ``UnrepresentableIntegerError`` for values outside the
-  signed 64-bit range, matching the behavior of other languages
-  without native arbitrary-precision integer support.
-- ``lint-groovy`` in ``.github/workflows/lint.yml`` now runs each
-  Groovy fixture end-to-end, catching runtime errors (calls to
-  undefined functions, missing module imports, failed assertions)
-  that the existing ``groovyc`` compile-only step let through.
-  ``Groovy.format_call_stub`` now emits a single ``Map _args`` method
-  parameter when ``call_style`` is ``KEYWORD``.  Previously the
-  ``call_keyword_args`` fixture tripped ``MissingMethodException``
-  because Groovy passes named arguments as a single ``LinkedHashMap``
-  that a positional parameter list rejects.  ``POSITIONAL`` stubs
-  keep the concrete parameter list unchanged.
-- ``lint-objectivec`` now executes each fixture end-to-end instead of
-  only syntax-checking it, mirroring ``lint-bash`` /
-  ``lint-javascript`` / ``lint-perl`` etc.  To make this possible,
-  Objective-C declarations and reassignments now box primitive
-  scalars the same way collection entries do
-  (``id x = 42;`` → ``id x = @(42);``), single-name call stubs emit a
-  ``static`` definition so fixtures link, and
-  ``ObjectiveC.supports_scalar_inline_comments`` is now ``False``.
-  Previously the trailing ``//`` comment swallowed the statement
-  terminator.  A pre-existing casing bug in the workflow's
-  ``lang_patterns`` (``objective_c*.m`` instead of ``ObjectiveC*.m``)
-  that silently skipped every fixture is also fixed.
-- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm
-  fixture end-to-end.  A new ``Run Elm files`` step compiles each
-  fixture alongside a small ``Main.elm`` wrapper whose
-  ``Platform.worker`` init forces ``Check.my_data``, emits
-  JavaScript via ``elm make``, and executes it with Node so
-  runtime crashes such as ``Debug.todo`` surface in CI.  The
-  ``scalar_int_very_negative_large`` fixture is skipped because
-  the Elm 0.19.1 code generator emits ``--<digits>`` (two unary
-  minuses) for integers at the int64 boundary, which JavaScript
-  rejects as a prefix-decrement syntax error.
-- ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each
-  Standard ML fixture end-to-end.  Because ``MLton`` never evaluates
-  a ``structure``'s body unless a top-level expression forces it,
-  the new step compiles each fixture via an ML Basis file that
-  concatenates the fixture with a small ``val _ = Check.my_data``
-  snippet and runs the resulting binary, catching runtime errors
-  such as references to undefined names, missing module imports,
-  or failed assertions.
-- Removed the K&R-style empty-prototype suppression directives from
-  C and Objective-C call stubs.
-  ``C.format_call_preamble_stub`` and
-  ``ObjectiveC.format_call_preamble_stub`` now emit concrete
-  prototypes (``CVal`` parameters for C, ``id`` parameters for
-  Objective-C) sized to the call's parameter list, and an internal
-  ``format_call_arg`` hook wraps each call argument so the call site
-  matches the prototype.  Generated C and Objective-C call code now
-  compiles cleanly under ``-Wstrict-prototypes
-  -Wdeprecated-non-prototype -Werror`` without suppression.
-- C++ container types now pick the narrowest integer type that holds
-  the actual values in each collection: ``int`` when every value fits
-  in 32 bits, otherwise ``long long``.  This mirrors the existing
-  per-value suffix logic in Rust and fixes a case where
-  ``std::variant<int, …>`` could not hold literals above ``INT_MAX``.
-  ``Cpp.NumericLiteralSuffixes.AUTO`` still emits ``long`` + ``L``
-  suffix for every integer.
-- Added ``Dhall.HeterogeneousStrategies`` with a ``UNION_TYPE`` option
-  that auto-generates a Dhall union type in the preamble whenever a
-  dict, list, or sibling-list pair contains scalar values of more
-  than one Dhall type.  Each heterogeneous value is wrapped at the
-  call site as ``{UnionName}.{Variant} payload``; only the variants
-  actually present in the data are emitted.  The union name defaults
-  to ``Value`` and is configurable via the new
-  ``heterogeneous_value_union_name`` constructor argument.  The
-  default remains ``HeterogeneousStrategies.ERROR`` (unchanged
-  behavior).
-- Added ``literalize_call`` support for Clojure:
-  ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]``
-  so generated definitions accept any mix of positional and keyword
-  arguments, and ``Clojure.CallStyles.PREFIX_KEYWORD`` renders calls
-  as ``(func :name value)``.
-- Added ``literalize_call`` support for Objective-C:
-  ``ObjectiveC.format_call_preamble_stub`` emits C-style forward
-  declarations and nested ``struct`` chains with function-pointer
-  leaves for dotted targets, and ``ObjectiveC.CallStyles.POSITIONAL``
-  renders calls as ``func(arg1, arg2)``.
-- Added ``literalize_call`` support for Perl:
-  ``Perl.format_call_stub`` emits an empty ``sub {}`` declaration for
-  each dot-separated part of the target name, so call expressions
-  (including dotted targets, where ``.`` is Perl's string
-  concatenation operator) compile cleanly under ``perl -c``.
+- Sibling sequences that appear as values of the same dict now widen to a common element type at each matching position, so a caller iterating the dict values tuple-style sees a consistent element type at each positional slot instead of one branch narrowed to a concrete type and another collapsed to the fallback.
+  The widening uses the language's fallback sequence opener when the inferred types diverge and is skipped for variant-typed languages (e.g. C++) whose fallback opener is element-specific rather than universally accepting.
+- ``lint-haskell`` in ``.github/workflows/lint.yml`` now passes ``-Wall -Werror`` to both the syntax check and the end-to-end build, so warnings such as ``-Wunused-matches``, ``-Woverlapping-patterns``, and ``-Wtype-defaults`` fail the job instead of being silently logged.
+  ``Haskell`` generated output was updated to compile clean under ``-Wall``: the ``Num`` / ``Fractional`` instances use ``_`` for unused parameters, the catch-all ``negate _`` clause is now omitted when ``Val`` has only numeric constructors, tuple-sequence bindings carry a ``(Val, Val, ...)`` annotation, call stubs get explicit type signatures, transform-wrapper stubs use a polymorphic argument type, ``main`` binds each call result with ``_ <-``, and the ``Data.Time`` import set drops ``secondsToDiffTime`` when every datetime has microseconds.
+- ``Java`` declarations and reassignments whose value ends in a ``//`` line comment now place the terminating ``;`` on the code line rather than on the comment line, where ``javac`` previously parsed it as part of the comment and rejected the program with ``';' expected``.
+- ``Mojo.skip_null_dict_values`` is now ``True`` so dicts containing null values render as the empty ``Dict[String, String]()`` literal (previously they emitted ``{"k": None, ...}``, which the Mojo compiler rejects because ``NoneType`` is not a usable dict value type).
+  Mixed-type inputs continue to raise ``HeterogeneousScalarCollectionError`` as before; this only affects dicts whose values are entirely ``null``.
+- ``literalize_call`` now accepts ``{"$ref": "name"}`` markers at argument positions, emitting ``name`` as a bare identifier instead of formatting the value as a literal.
+  Refs and literals can be mixed in the same call, and the marker is detected across all four input formats (JSON, JSON5, YAML, TOML).
+  Ref dicts are excluded from data-shape validation and data-driven preamble inference so they do not drag in imports for the ``{str: str}`` shape of the marker itself.
+- ``lint-objectivec`` in ``.github/workflows/lint.yml`` now passes ``-Werror`` to both ``clang -fsyntax-only`` and the end-to-end ``clang`` compile step so warnings such as ``-Wimplicitly-unsigned-literal`` fail the job instead of being silently logged.
+  ``ObjectiveC.format_integer`` now appends a ``ULL`` suffix to values above ``LLONG_MAX`` (matching the C fallback) and raises ``UnrepresentableIntegerError`` for values below ``LLONG_MIN``, so emitted fixtures compile cleanly under the stricter workflow.
+- Added ``Nim.HeterogeneousStrategies`` with an ``OBJECT_VARIANT`` option that auto-generates a Nim object variant in the preamble whenever a dict, list, or sibling-list pair contains scalar values of more than one Nim type.
+  Each heterogeneous value is wrapped at the call site as ``{VariantName}(kind: vkX, xVal: value)``; only the branches actually present in the data are emitted.
+  The strategy switches the dict syntax from ``%* {key: value}`` to ``{key: value}.toTable`` (importing ``tables`` instead of ``json``) so the object variants can be stored directly, and nested sequences render as ``@[...]`` at every level.
+  The variant-type name defaults to ``Value`` and is configurable via the new ``heterogeneous_value_variant_name`` constructor argument.
+  ``OBJECT_VARIANT`` is incompatible with ``DeclarationStyles.CONST`` because ``.toTable`` and ``@[]`` are runtime constructors; the constructor raises ``IncompatibleFormatsError`` for that combination.
+  The default remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
+- The ``heterogeneous_strategy`` variant case list now includes the ``ordered_map`` fixture, covering Rust ``TAGGED_ENUM`` and Dhall ``UNION_TYPE`` rendering on ``!!omap`` inputs.
+- ``lint-swift`` in ``.github/workflows/lint.yml`` now runs its ``swiftc -typecheck`` step in parallel via ``xargs -P``, replacing the previous serial ``while`` loop so the job no longer cold-starts the compiler one fixture at a time.
+- ``lint-swift`` in ``.github/workflows/lint.yml`` now runs each Swift fixture end-to-end via ``swift`` in script mode, catching runtime errors that ``swiftc -typecheck`` alone could miss (for example, integer literals that overflow ``Int``).
+  So that every emitted fixture compiles, ``Swift.format_integer`` now raises ``UnrepresentableIntegerError`` for values outside the signed 64-bit range, matching the behavior of other languages without native arbitrary-precision integer support.
+- ``lint-groovy`` in ``.github/workflows/lint.yml`` now runs each Groovy fixture end-to-end, catching runtime errors (calls to undefined functions, missing module imports, failed assertions) that the existing ``groovyc`` compile-only step let through.
+  ``Groovy.format_call_stub`` now emits a single ``Map _args`` method parameter when ``call_style`` is ``KEYWORD``.
+  Previously the ``call_keyword_args`` fixture tripped ``MissingMethodException`` because Groovy passes named arguments as a single ``LinkedHashMap`` that a positional parameter list rejects.
+  ``POSITIONAL`` stubs keep the concrete parameter list unchanged.
+- ``lint-objectivec`` now executes each fixture end-to-end instead of only syntax-checking it, mirroring ``lint-bash`` / ``lint-javascript`` / ``lint-perl`` etc.  To make this possible, Objective-C declarations and reassignments now box primitive scalars the same way collection entries do (``id x = 42;`` → ``id x = @(42);``), single-name call stubs emit a ``static`` definition so fixtures link, and ``ObjectiveC.supports_scalar_inline_comments`` is now ``False``.
+  Previously the trailing ``//`` comment swallowed the statement terminator.
+  A pre-existing casing bug in the workflow's ``lang_patterns`` (``objective_c*.m`` instead of ``ObjectiveC*.m``) that silently skipped every fixture is also fixed.
+- ``lint-elm`` in ``.github/workflows/lint.yml`` now runs each Elm fixture end-to-end.
+  A new ``Run Elm files`` step compiles each fixture alongside a small ``Main.elm`` wrapper whose ``Platform.worker`` init forces ``Check.my_data``, emits JavaScript via ``elm make``, and executes it with Node so runtime crashes such as ``Debug.todo`` surface in CI.
+  The ``scalar_int_very_negative_large`` fixture is skipped because the Elm 0.19.1 code generator emits ``--<digits>`` (two unary minuses) for integers at the int64 boundary, which JavaScript rejects as a prefix-decrement syntax error.
+- ``lint-sml`` in ``.github/workflows/lint.yml`` now runs each Standard ML fixture end-to-end.
+  Because ``MLton`` never evaluates a ``structure``'s body unless a top-level expression forces it, the new step compiles each fixture via an ML Basis file that concatenates the fixture with a small ``val _ = Check.my_data`` snippet and runs the resulting binary, catching runtime errors such as references to undefined names, missing module imports, or failed assertions.
+- Removed the K&R-style empty-prototype suppression directives from C and Objective-C call stubs.
+  ``C.format_call_preamble_stub`` and ``ObjectiveC.format_call_preamble_stub`` now emit concrete prototypes (``CVal`` parameters for C, ``id`` parameters for Objective-C) sized to the call's parameter list, and an internal ``format_call_arg`` hook wraps each call argument so the call site matches the prototype.
+  Generated C and Objective-C call code now compiles cleanly under ``-Wstrict-prototypes -Wdeprecated-non-prototype -Werror`` without suppression.
+- C++ container types now pick the narrowest integer type that holds the actual values in each collection: ``int`` when every value fits in 32 bits, otherwise ``long long``.
+  This mirrors the existing per-value suffix logic in Rust and fixes a case where ``std::variant<int, …>`` could not hold literals above ``INT_MAX``.
+  ``Cpp.NumericLiteralSuffixes.AUTO`` still emits ``long`` + ``L`` suffix for every integer.
+- Added ``Dhall.HeterogeneousStrategies`` with a ``UNION_TYPE`` option that auto-generates a Dhall union type in the preamble whenever a dict, list, or sibling-list pair contains scalar values of more than one Dhall type.
+  Each heterogeneous value is wrapped at the call site as ``{UnionName}.{Variant} payload``; only the variants actually present in the data are emitted.
+  The union name defaults to ``Value`` and is configurable via the new ``heterogeneous_value_union_name`` constructor argument.
+  The default remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
+- Added ``literalize_call`` support for Clojure: ``Clojure.format_call_stub`` emits ``defn`` stubs with ``[& _args]`` so generated definitions accept any mix of positional and keyword arguments, and ``Clojure.CallStyles.PREFIX_KEYWORD`` renders calls as ``(func :name value)``.
+- Added ``literalize_call`` support for Objective-C: ``ObjectiveC.format_call_preamble_stub`` emits C-style forward declarations and nested ``struct`` chains with function-pointer leaves for dotted targets, and ``ObjectiveC.CallStyles.POSITIONAL`` renders calls as ``func(arg1, arg2)``.
+- Added ``literalize_call`` support for Perl: ``Perl.format_call_stub`` emits an empty ``sub {}`` declaration for each dot-separated part of the target name, so call expressions (including dotted targets, where ``.`` is Perl's string concatenation operator) compile cleanly under ``perl -c``.
 
 2026.04.21.5
 ------------
 
 
-- Added ``Rust.DeclarationStyles.LAZY_STATIC``, which wraps the
-  initializer in ``std::sync::LazyLock`` so module-level
-  declarations can hold runtime-initialized collections such as
-  ``HashMap``, ``BTreeMap``, and ``Vec``.  Unlike ``CONST`` and
-  ``STATIC``, ``LAZY_STATIC`` composes with every dict, set, and
-  sequence format.  ``use std::sync::LazyLock;`` is added to the
-  preamble automatically.
-- Added ``literalize_call`` support for Common Lisp:
-  ``CommonLisp.format_call_stub`` emits ``defun`` stubs with
-  ``&rest args`` so generated definitions accept any mix of positional
-  and keyword arguments, and ``CommonLisp.CallStyles.PREFIX_KEYWORD``
-  renders calls as ``(func :name value)``.
-- Added ``literalize_call`` support for Racket:
-  ``Racket.format_call_stub`` now generates
-  ``make-keyword-procedure`` stub definitions, and a new
-  ``PrefixCallStyle`` call-style variant handles S-expression call
-  assembly ``(func arg1 arg2)`` for Lisp-family languages.
+- Added ``Rust.DeclarationStyles.LAZY_STATIC``, which wraps the initializer in ``std::sync::LazyLock`` so module-level declarations can hold runtime-initialized collections such as ``HashMap``, ``BTreeMap``, and ``Vec``.
+  Unlike ``CONST`` and ``STATIC``, ``LAZY_STATIC`` composes with every dict, set, and sequence format.
+  ``use std::sync::LazyLock;`` is added to the preamble automatically.
+- Added ``literalize_call`` support for Common Lisp: ``CommonLisp.format_call_stub`` emits ``defun`` stubs with ``&rest args`` so generated definitions accept any mix of positional and keyword arguments, and ``CommonLisp.CallStyles.PREFIX_KEYWORD`` renders calls as ``(func :name value)``.
+- Added ``literalize_call`` support for Racket: ``Racket.format_call_stub`` now generates ``make-keyword-procedure`` stub definitions, and a new ``PrefixCallStyle`` call-style variant handles S-expression call assembly ``(func arg1 arg2)`` for Lisp-family languages.
 
 2026.04.21.4
 ------------
 
 
-- Fixed ``pre_indent_level`` interaction with ``NewVariable`` and
-  ``ExistingVariable``: a multi-line value no longer inserts the
-  pre-indent between ``=`` and the value (and no longer doubly
-  indents continuation lines).  Every line of the wrapped declaration
-  or assignment is now uniformly offset by ``pre_indent_level``.
-- **Breaking:** Replaced the three public collection-opener helpers
-  ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open``
-  with a single ``fixed_open``.  They had identical implementations
-  and differed only in the type hint of the unused parameter.  Replace
-  each call with ``fixed_open(open_str=...)``.
-- ``literalize_call`` now raises ``ParameterCountMismatchError`` with
-  a descriptive ``Expected N parameters but got M values`` message
-  when ``parameter_names`` does not match a row's value count,
-  replacing the opaque ``ValueError`` from ``zip(strict=True)``.
+- Fixed ``pre_indent_level`` interaction with ``NewVariable`` and ``ExistingVariable``: a multi-line value no longer inserts the pre-indent between ``=`` and the value (and no longer doubly indents continuation lines).
+  Every line of the wrapped declaration or assignment is now uniformly offset by ``pre_indent_level``.
+- **Breaking:** Replaced the three public collection-opener helpers ``fixed_set_open``, ``fixed_sequence_open``, and ``fixed_dict_open`` with a single ``fixed_open``.
+  They had identical implementations and differed only in the type hint of the unused parameter.
+  Replace each call with ``fixed_open(open_str=...)``.
+- ``literalize_call`` now raises ``ParameterCountMismatchError`` with a descriptive ``Expected N parameters but got M values`` message when ``parameter_names`` does not match a row's value count, replacing the opaque ``ValueError`` from ``zip(strict=True)``.
 
 2026.04.21.3
 ------------
 
 
-- Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option
-  that auto-generates a small tagged ``enum`` in the preamble whenever
-  a dict, list, or sibling-list pair contains scalar values of more
-  than one Rust type.  Each heterogeneous value is wrapped at the
-  call site as ``{EnumName}::{Variant}(value)``; only the variants
-  actually present in the data are emitted, with integer variants
-  using Rust's narrowest-width names (``I32``, ``I64``, ``I128``).
-  The enum name defaults to ``Value`` and is configurable via the new
-  ``heterogeneous_value_enum_name`` constructor argument.  The
-  default remains ``HeterogeneousStrategies.ERROR`` (unchanged
-  behavior).
-- The ``lint-julia`` CI job now executes Julia golden files instead
-  of only parsing them, catching ``UndefVarError`` and other runtime
-  errors.
-- ``literalize_call`` now distinguishes two reasons a language has no
-  call support.  The single ``UnsupportedCallStyleError`` has been
-  replaced by ``CallsNotSupportedByLanguageError`` (raised for
-  data/markup formats like YAML, TOML, JSON5, Norg that have no
-  function call syntax) and ``CallsNotSupportedByToolError`` (raised
-  for programming languages whose call rendering literalizer has not
-  yet implemented).  The new ``CallSupport`` enum on a language's
-  ``call_style_config`` attribute captures which case applies.
-- Lint workflow now runs pre-commit hooks against the full supported
-  Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch
-  version-specific lint issues.
+- Added ``Rust.HeterogeneousStrategies`` with a ``TAGGED_ENUM`` option that auto-generates a small tagged ``enum`` in the preamble whenever a dict, list, or sibling-list pair contains scalar values of more than one Rust type.
+  Each heterogeneous value is wrapped at the call site as ``{EnumName}::{Variant}(value)``; only the variants actually present in the data are emitted, with integer variants using Rust's narrowest-width names (``I32``, ``I64``, ``I128``).
+  The enum name defaults to ``Value`` and is configurable via the new ``heterogeneous_value_enum_name`` constructor argument.
+  The default remains ``HeterogeneousStrategies.ERROR`` (unchanged behavior).
+- The ``lint-julia`` CI job now executes Julia golden files instead of only parsing them, catching ``UndefVarError`` and other runtime errors.
+- ``literalize_call`` now distinguishes two reasons a language has no call support.
+  The single ``UnsupportedCallStyleError`` has been replaced by ``CallsNotSupportedByLanguageError`` (raised for data/markup formats like YAML, TOML, JSON5, Norg that have no function call syntax) and ``CallsNotSupportedByToolError`` (raised for programming languages whose call rendering literalizer has not yet implemented).
+  The new ``CallSupport`` enum on a language's ``call_style_config`` attribute captures which case applies.
+- Lint workflow now runs pre-commit hooks against the full supported Python matrix (3.12, 3.13, 3.14) instead of 3.13 only, to catch version-specific lint issues.
 
 2026.04.21.2
 ------------
 
 
-- Added ``literalize_call`` support for PHP: ``Php.format_call_stub``
-  now generates function, class, and nested-object stubs for a call
-  expression.
+- Added ``literalize_call`` support for PHP: ``Php.format_call_stub`` now generates function, class, and nested-object stubs for a call expression.
 
 2026.04.21.1
 ------------
@@ -3254,29 +2691,15 @@ No significant changes.
 ----------
 
 
-- Added a per-language ``Modifiers`` enum exposed on each language
-  class (alongside ``DateFormats``, ``SequenceFormats``, etc.).
-  ``Java.Modifiers`` has ``PUBLIC``/``PRIVATE``/``PROTECTED``/
-  ``STATIC``/``FINAL``; ``CSharp.Modifiers`` adds ``CONST`` and
-  ``READONLY``; ``Cpp.Modifiers`` has ``STATIC``/``CONST``.  Languages
-  without modifier vocabulary expose an empty ``Modifiers`` enum.
-- ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers``
-  keyword argument.  Values that are not members of the target
-  language's ``Modifiers`` enum are silently ignored, matching how
-  other language format enums behave.
-- Removed automatic coercion of heterogeneous data to strings.  The
-  ``error_on_coercion`` parameter has been removed from ``literalize``;
-  ``literalize`` now always raises a subclass of
-  ``HeterogeneousCollectionError`` when the data cannot be represented
-  in the target language's collection formats.
-- Replaced ``HeterogeneousCoercionError`` with precise exceptions:
-  ``HeterogeneousCollectionError`` (base class),
-  ``HeterogeneousScalarCollectionError``,
-  ``HeterogeneousSiblingListsError``, ``MixedDictValuesError``,
-  ``MixedListValuesError``, ``MixedDictShapesError``, and
-  ``HeterogeneousSetError``.
-- Renamed ``SetFormatConfig.coerce_mixed_to_str`` to
-  ``SetFormatConfig.supports_heterogeneity`` (with inverted semantics).
+- Added a per-language ``Modifiers`` enum exposed on each language class (alongside ``DateFormats``, ``SequenceFormats``, etc.).
+  ``Java.Modifiers`` has ``PUBLIC``/``PRIVATE``/``PROTECTED``/ ``STATIC``/``FINAL``; ``CSharp.Modifiers`` adds ``CONST`` and ``READONLY``; ``Cpp.Modifiers`` has ``STATIC``/``CONST``.
+  Languages without modifier vocabulary expose an empty ``Modifiers`` enum.
+- ``NewVariable`` and ``BothVariableForms`` now accept a ``modifiers`` keyword argument.
+  Values that are not members of the target language's ``Modifiers`` enum are silently ignored, matching how other language format enums behave.
+- Removed automatic coercion of heterogeneous data to strings.
+  The ``error_on_coercion`` parameter has been removed from ``literalize``; ``literalize`` now always raises a subclass of ``HeterogeneousCollectionError`` when the data cannot be represented in the target language's collection formats.
+- Replaced ``HeterogeneousCoercionError`` with precise exceptions: ``HeterogeneousCollectionError`` (base class), ``HeterogeneousScalarCollectionError``, ``HeterogeneousSiblingListsError``, ``MixedDictValuesError``, ``MixedListValuesError``, ``MixedDictShapesError``, and ``HeterogeneousSetError``.
+- Renamed ``SetFormatConfig.coerce_mixed_to_str`` to ``SetFormatConfig.supports_heterogeneity`` (with inverted semantics).
 
 2026.04.18
 ----------
@@ -3351,7 +2774,8 @@ No significant changes.
 ----------
 
 
-- Removed ``LanguageSpec`` dataclass. Use the ``Language`` protocol directly to define custom languages.
+- Removed ``LanguageSpec`` dataclass.
+  Use the ``Language`` protocol directly to define custom languages.
 
 2026.03.20.3
 ------------
@@ -3381,7 +2805,8 @@ No significant changes.
 ----------
 
 
-- Added ``format_sequence_entry`` to the ``Language`` protocol, mirroring the existing ``format_set_entry`` field. All built-in languages use the new ``passthrough_sequence_entry`` formatter.
+- Added ``format_sequence_entry`` to the ``Language`` protocol, mirroring the existing ``format_set_entry`` field.
+  All built-in languages use the new ``passthrough_sequence_entry`` formatter.
 
 2026.03.17.2
 ------------
