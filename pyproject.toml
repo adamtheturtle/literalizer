@@ -84,7 +84,6 @@ dev = [
     # use it to lint shell commands in GitHub workflow files.
     "shellcheck-py==0.11.0.1",
     "shfmt-py==4.1.0",
-    "snapper-fmt @ git+https://github.com/TurtleTech-ehf/snapper.git@bcd3458e27e4156ce4e0a0b55a227400328fb3b1",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
     # ``sphinx-jinja`` renders the heterogeneous-strategy support matrix in
@@ -130,6 +129,9 @@ benchmark = [
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
+]
+snapper = [
+    "snapper-fmt @ git+https://github.com/TurtleTech-ehf/snapper.git@bcd3458e27e4156ce4e0a0b55a227400328fb3b1",
 ]
 
 [tool.setuptools]
