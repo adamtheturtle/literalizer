@@ -1,7 +1,5 @@
 """Test class-level format Enum access via the LanguageCls meta-class."""
 
-import operator
-
 import pytest
 
 from literalizer import LanguageCls
@@ -9,7 +7,7 @@ from literalizer.languages import ALL_LANGUAGES
 
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES,
-    key=operator.attrgetter("__name__"),
+    key=lambda language_cls: language_cls.__name__,
 )
 
 
