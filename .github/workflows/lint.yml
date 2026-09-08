@@ -1833,7 +1833,7 @@ jobs:
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} uv run --extra=dev clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} uv run --group=dev clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   lint-cpp-tidy:
     strategy:
@@ -1900,7 +1900,7 @@ jobs:
           done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 uv run --extra=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 uv run --group=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-latest

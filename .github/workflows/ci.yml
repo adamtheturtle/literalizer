@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run --extra=dev pytest -s -vvv --cov-fail-under 100 --cov-report=term-missing --cov=src/ --cov=tests --ignore=tests/benchmarks .
+          uv run --group=dev pytest -s -vvv --cov-fail-under 100 --cov-report=term-missing --cov=src/ --cov=tests --ignore=tests/benchmarks .
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
@@ -117,11 +117,12 @@ jobs:
           path: dist
 
       - name: Create the benchmark environment
-        # Installing the wheel with its ``benchmark`` extra brings in the
-        # pinned test dependencies without building the project again.
+        # Install the wheel and the pinned benchmark dependency group without
+        # building the project again.
         run: |
           uv venv
-          uv pip install "$(echo dist/*.whl)[benchmark]"
+          uv pip install "$(echo dist/*.whl)"
+          uv pip install --group=benchmark
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5.2.1
