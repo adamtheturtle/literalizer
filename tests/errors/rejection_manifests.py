@@ -72,9 +72,14 @@ class RejectionManifestError(ValueError):
     """A rejection manifest is invalid or internally inconsistent."""
 
 
+def _language_class_name(language_cls: literalizer.LanguageCls, /) -> str:
+    """Return the language class name."""
+    return language_cls.__name__
+
+
 LANGUAGES_BY_NAME: Mapping[str, literalizer.LanguageCls] = {
     lang_cls.__name__: lang_cls
-    for lang_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    for lang_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
 }
 
 _EXCEPTIONS_BY_NAME: Mapping[str, type[Exception]] = {

@@ -31,6 +31,11 @@ from literalizer.languages import (
 )
 
 
+def _language_class_name(language_cls: LanguageCls, /) -> str:
+    """Return the language class name."""
+    return language_cls.__name__
+
+
 def test_fortran_accepts_variable_name_at_standard_limit() -> None:
     """The 63-character Fortran name boundary remains valid."""
     _ = literalize(
@@ -102,7 +107,7 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
 # #4549).
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
     language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
     if language_cls.reserved_variable_identifiers  # pyrefly: ignore [implicit-bool]
     and language_cls.supports_variable_names
 )
@@ -151,7 +156,7 @@ def test_all_declared_reserved_names_raise(
 
 _RECORD_PREFIX_LANGUAGES = tuple(
     language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
     if language_cls.supports_record_struct_name_prefix
 )
 
