@@ -58,7 +58,7 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
         case datetime.time():
             result = spec.format_time(value)
         case _:
-            date_value: Any = value
+            date_value: Any = value  # pyrefly: ignore [explicit-any]
             result = spec.format_date(date_value)
     return result
 
@@ -108,7 +108,7 @@ def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
                 if ord(character) < _C0_UPPER_BOUND
                 and character not in "\0\t\n\r"
             )
-            if not candidates:
+            if not candidates:  # pyrefly: ignore [implicit-bool]
                 return
             formatted = spec.format_string(data)
             unsafe_control = next(
@@ -147,7 +147,7 @@ def guard_collection_nesting_depth(
 ) -> None:
     """Raise before rendering a collection deeper than *maximum_depth*."""
     pending: list[tuple[Value, int]] = [(data, 0)]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value, parent_depth = pending.pop()
         if not isinstance(value, (dict, list, set)):
             continue
@@ -276,7 +276,7 @@ def reject_aware_datetimes(
     lose.
     """
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         match value:
             case datetime.datetime() if value.utcoffset() is not None and not (
@@ -320,7 +320,7 @@ def reject_cjson_unrepresentable(*, data: Value, language_name: str) -> None:
     the descent share one walk rather than calling out per value.
     """
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         match value:
             case bool():
@@ -366,7 +366,7 @@ def reject_negative_zero(*, data: Value, language_name: str) -> None:
     rather than silently dropped (issue #4543).
     """
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         match value:
             case float() if value == 0.0 and math.copysign(1.0, value) < 0:
@@ -395,7 +395,7 @@ def reject_non_nfc_strings(*, data: Value, language_name: str) -> None:
     refused rather than silently altered (issue #4522).
     """
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         match value:
             case str() if not unicodedata.is_normalized("NFC", value):
@@ -419,7 +419,7 @@ def reject_non_nfc_strings(*, data: Value, language_name: str) -> None:
 def _reject_unpreserved_aware_times(*, data: Value, spec: Language) -> None:
     """Reject aware times when the selected formatter drops the offset."""
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         match value:
             case datetime.time() if value.utcoffset() is not None:
@@ -644,7 +644,7 @@ def _list_nesting_depths(*, value: list[Value]) -> frozenset[int]:
     for item in value:
         if isinstance(item, list):
             inner = _list_nesting_depths(value=item)
-            depths |= {depth + 1 for depth in inner} or {2}
+            depths |= {depth + 1 for depth in inner} or {2}  # pyrefly: ignore [implicit-bool]
         else:
             depths.add(1)
     return frozenset(depths)
@@ -664,7 +664,7 @@ def _values_mixed_list_depths(*, values: Sequence[Value]) -> bool:
     depth_shapes = {
         depths
         for value in lists
-        if (depths := _list_nesting_depths(value=value))
+        if (depths := _list_nesting_depths(value=value))  # pyrefly: ignore [implicit-bool]
     }
     return len(depth_shapes) > 1
 
@@ -726,7 +726,7 @@ def _find_first_mixed_values(
             data=child,
             container_type=container_type,
         )
-        if result:
+        if result:  # pyrefly: ignore [implicit-bool]
             return result
     return []
 
@@ -879,7 +879,7 @@ def _has_empty_sibling_sequence(*, data: Value) -> bool:
     if (
         len(sibling_sequences) == len(children)
         and any(sibling_sequences)
-        and any(not value for value in sibling_sequences)
+        and any(not value for value in sibling_sequences)  # pyrefly: ignore [implicit-bool]
     ):
         return True
     return any(_has_empty_sibling_sequence(data=value) for value in children)
@@ -898,7 +898,7 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
             key_sets = {frozenset(d.keys()) for d in dicts_in_list}
             has_mixed = (
                 not all(ks == next(iter(key_sets)) for ks in key_sets)
-                if key_sets
+                if key_sets  # pyrefly: ignore [implicit-bool]
                 else False
             )
             if has_mixed:
@@ -979,7 +979,7 @@ def _find_first_mixed_keys(*, data: Value) -> Sequence[Value]:
             return []
     for child in children:
         result = _find_first_mixed_keys(data=child)
-        if result:
+        if result:  # pyrefly: ignore [implicit-bool]
             return result
     return []
 
@@ -1369,8 +1369,8 @@ def _fill_nested_empty_map_siblings(
         owners = [sibling for sibling in maps if key in sibling]
         cousins = [owner[key] for owner in owners]
         cousin_maps = _plain_maps(values=cousins)
-        if cousins and len(cousin_maps) == len(cousins):
-            replacement = next((cousin for cousin in cousins if cousin), None)
+        if cousins and len(cousin_maps) == len(cousins):  # pyrefly: ignore [implicit-bool]
+            replacement = next((cousin for cousin in cousins if cousin), None)  # pyrefly: ignore [implicit-bool]
             if replacement is not None:
                 for owner in owners:
                     if owner[key] == {}:
@@ -1383,7 +1383,7 @@ def _fill_nested_empty_map_siblings(
         for cousin in cousins:
             if isinstance(cousin, list):
                 nested_maps = _plain_maps(values=cousin)
-                if nested_maps:
+                if nested_maps:  # pyrefly: ignore [implicit-bool]
                     _fill_nested_empty_map_siblings(maps=nested_maps)
 
 
@@ -1428,7 +1428,9 @@ def _sibling_maps_diverge(
         if spec.dict_format_config.narrowed_empty_form is not None:
             _fill_nested_empty_map_siblings(maps=filtered)
         inferred_value_types = {
-            infer_element_type(items=list(d.values())) for d in filtered if d
+            infer_element_type(items=list(d.values()))
+            for d in filtered
+            if d  # pyrefly: ignore [implicit-bool]
         }
         if len(inferred_value_types) > 1:
             return True

@@ -308,7 +308,7 @@ def _build_sml_call_stub_lines(
     """
     method = parts[-1]
     if curried:
-        if not params:
+        if not params:  # pyrefly: ignore [implicit-bool]
             lines: list[str] = [f"val {method} = ()"]
         else:
             wildcards = " ".join("_" for _ in params)
@@ -551,7 +551,7 @@ class Sml(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Standard ML."""
@@ -579,7 +579,7 @@ class Sml(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -589,7 +589,7 @@ class Sml(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Standard ML."""
@@ -830,7 +830,7 @@ class Sml(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        force_line = f"\nval _ = {variable_name}" if variable_name else ""
+        force_line = f"\nval _ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         return content + force_line
 
     @staticmethod

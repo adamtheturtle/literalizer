@@ -721,7 +721,7 @@ class Odin(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Odin."""
@@ -740,7 +740,7 @@ class Odin(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -750,7 +750,7 @@ class Odin(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Odin."""
@@ -789,7 +789,7 @@ class Odin(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1123,7 +1123,7 @@ class Odin(metaclass=LanguageCls):
     @staticmethod
     def _reject_empty_key(key: str) -> None:
         """Raise if *key* is the empty name Odin's parser discards."""
-        if not key:
+        if not key:  # pyrefly: ignore [implicit-bool]
             msg = (
                 "Odin json_type parses the embedded JSON text at runtime, "
                 "and its parser drops an object member whose name is "
@@ -1174,7 +1174,7 @@ class Odin(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n_ = {variable_name}" if variable_name else ""
+        use_line = f"\n_ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
     @staticmethod

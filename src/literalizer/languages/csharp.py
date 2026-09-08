@@ -269,7 +269,7 @@ def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """
     _reject_conflicting_csharp_modifiers(modifiers=modifiers)
     keywords = [m.value for m in _CSharpModifiers if m in modifiers]
-    if not keywords:
+    if not keywords:  # pyrefly: ignore [implicit-bool]
         return ""
     return " ".join(keywords) + " "
 
@@ -311,7 +311,7 @@ def _csharp_common_element_type(
     dict_value_type: str,
 ) -> str:
     """Return the common C# type for a list of elements."""
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return "object"
     types = {
         _csharp_type_hint(
@@ -397,7 +397,7 @@ def _format_csharp_declaration(
         )
         raise IncompatibleFormatsError(msg)
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
-    if not prefix:
+    if not prefix:  # pyrefly: ignore [implicit-bool]
         return f"var {name} = {value};"
     hint = _csharp_type_hint(
         data=data,
@@ -516,7 +516,7 @@ def _csharp_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root.title()}Type_"
         return (
             (
@@ -895,7 +895,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C#."""
@@ -923,7 +923,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -933,7 +933,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for C#."""
@@ -973,7 +973,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class SetFormats(enum.Enum):
         """Set type options for C#."""
@@ -1003,7 +1003,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1116,7 +1116,7 @@ class CSharp(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1255,7 +1255,7 @@ class CSharp(metaclass=LanguageCls):
         auto_name_pattern = re.compile(pattern=r"^Record\d+$")
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase C# "
@@ -1269,7 +1269,7 @@ class CSharp(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1385,7 +1385,7 @@ class CSharp(metaclass=LanguageCls):
         """
         first_token = (
             content.lstrip().split(sep=" ", maxsplit=1)[0]
-            if content.strip()
+            if content.strip()  # pyrefly: ignore [implicit-bool]
             else ""
         )
         is_class_field = first_token in {
@@ -1397,7 +1397,7 @@ class CSharp(metaclass=LanguageCls):
         }
         if is_class_field:
             preamble_block = (
-                "\n".join(body_preamble) + "\n" if body_preamble else ""
+                "\n".join(body_preamble) + "\n" if body_preamble else ""  # pyrefly: ignore [implicit-bool]
             )
             return (
                 f"{preamble_block}class Check {{\n"
@@ -1414,7 +1414,7 @@ class CSharp(metaclass=LanguageCls):
             for line in body_preamble
             if not line.startswith(stub_prefixes)
         )
-        if stub_lines:
+        if stub_lines:  # pyrefly: ignore [implicit-bool]
             stub_block = "\n".join(stub_lines) + "\n"
             body = prepend_body_preamble(
                 content=content,
@@ -1701,7 +1701,7 @@ class CSharp(metaclass=LanguageCls):
                 opener = self.sequence_open(value)
             case _:
                 return (
-                    self._csharp_record_scalar_resolver(type(value))
+                    self._csharp_record_scalar_resolver(type(value))  # pyrefly: ignore [implicit-bool]
                     or "object"
                 )
         return opener.removeprefix("new ").removesuffix(" {")
@@ -1744,7 +1744,7 @@ class CSharp(metaclass=LanguageCls):
 
         def _widened_map_open() -> str:
             """Return the fallback-map opener for the current pass."""
-            value_type = narrowing.value_type or "object"
+            value_type = narrowing.value_type or "object"  # pyrefly: ignore [implicit-bool]
             return f"new Dictionary<string, {value_type}> {{"
 
         return dataclasses.replace(
@@ -1758,7 +1758,7 @@ class CSharp(metaclass=LanguageCls):
 
     def _csharp_derecordized_map_field_type(self) -> str:
         """Return the component type for a widened fallback map."""
-        value_type = self._derecordized_map_narrowing.value_type or "object"
+        value_type = self._derecordized_map_narrowing.value_type or "object"  # pyrefly: ignore [implicit-bool]
         return f"Dictionary<string, {value_type}>"
 
     def _csharp_narrow_derecordized_map_type(
@@ -1792,7 +1792,7 @@ class CSharp(metaclass=LanguageCls):
         if contains_wrapped_non_scalar(value=data):
             return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:
+        if not scalars:  # pyrefly: ignore [implicit-bool]
             return None
         scalar_types = {
             self._csharp_record_field_type(
@@ -1972,7 +1972,7 @@ class CSharp(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
             set_opener_template=(
-                self._base_set_format_config.set_opener_template or None
+                self._base_set_format_config.set_opener_template or None  # pyrefly: ignore [implicit-bool]
             ),
             narrow_dict_values=False,
             narrow_list_values=True,

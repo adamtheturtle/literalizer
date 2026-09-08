@@ -488,7 +488,7 @@ class Erlang(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Erlang."""
@@ -512,7 +512,7 @@ class Erlang(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -522,7 +522,7 @@ class Erlang(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Erlang."""
@@ -750,7 +750,7 @@ class Erlang(metaclass=LanguageCls):
 
     def __post_init__(self) -> None:
         """Validate that the module name is an unquoted Erlang atom."""
-        if len(self.module_name) <= _MAX_ATOM_LENGTH and re.fullmatch(
+        if len(self.module_name) <= _MAX_ATOM_LENGTH and re.fullmatch(  # pyrefly: ignore [implicit-bool]
             pattern=r"[a-z][A-Za-z0-9_@]*",
             string=self.module_name,
         ):
@@ -789,7 +789,7 @@ class Erlang(metaclass=LanguageCls):
         :attr:`statement_terminator` and the trailing ``,`` is
         rewritten to ``.`` so ``x()`` ends on a valid clause.
         """
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             body = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
@@ -816,7 +816,7 @@ class Erlang(metaclass=LanguageCls):
         code = last[:comment_start].rstrip()
         gap = last[len(code) : comment_start]
         trimmed_last = f"{code.removesuffix(',')}{gap}{last[comment_start:]}"
-        trimmed = f"{head}\n{trimmed_last}" if head else trimmed_last
+        trimmed = f"{head}\n{trimmed_last}" if head else trimmed_last  # pyrefly: ignore [implicit-bool]
         indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)

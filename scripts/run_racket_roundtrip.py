@@ -63,7 +63,7 @@ def main() -> None:
         capabilities=Racket.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    racket = shutil.which(cmd="racket") or "racket"
+    racket = shutil.which(cmd="racket") or "racket"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rkt",

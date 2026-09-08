@@ -62,7 +62,7 @@ def input_for_capabilities(
     )
     for capability in sorted(capabilities):
         overlap = document.keys() & groups[capability].keys()
-        if overlap:
+        if overlap:  # pyrefly: ignore [implicit-bool]
             msg = f"duplicate round-trip corpus keys: {sorted(overlap)!r}"
             raise ValueError(msg)
         document.update(groups[capability])
@@ -108,15 +108,15 @@ def verify(
     try:
         got: dict[str, object] = json.loads(s=produced_json)
     except json.JSONDecodeError as exc:
-        sys.stderr.write(
+        _ = sys.stderr.write(
             f"{label}: produced invalid JSON ({exc})\n{produced_json!r}\n",
         )
         sys.exit(1)
     for key in exclude_keys:
-        want.pop(key, None)
-        got.pop(key, None)
+        _ = want.pop(key, None)
+        _ = got.pop(key, None)
     if got != want:
-        sys.stderr.write(
+        _ = sys.stderr.write(
             f"{label}: round-trip mismatch\n"
             f"  expected: {want!r}\n"
             f"  got:      {got!r}\n",
@@ -135,7 +135,7 @@ def trim_keys(json_text: str, excluded_keys: tuple[str, ...]) -> str:
     """
     parsed: dict[str, object] = json.loads(s=json_text)
     for key in excluded_keys:
-        parsed.pop(key, None)
+        _ = parsed.pop(key, None)
     return json.dumps(obj=parsed)
 
 
@@ -200,17 +200,17 @@ def execute(
     line is written to stdout.  Callers do not need to emit that line
     themselves.
     """
-    extras = extra_files or {}
+    extras = extra_files or {}  # pyrefly: ignore [implicit-bool]
     last_stdout = ""
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
         source_path = tmpdir / source_filename
         source_path.parent.mkdir(parents=True, exist_ok=True)
-        source_path.write_text(data=program, encoding="utf-8")
+        _ = source_path.write_text(data=program, encoding="utf-8")
         for rel_path, content in extras.items():
             extra_path = tmpdir / rel_path
             extra_path.parent.mkdir(parents=True, exist_ok=True)
-            extra_path.write_text(data=content, encoding="utf-8")
+            _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
             result = subprocess.run(
                 args=list(step.args),
@@ -221,11 +221,11 @@ def execute(
                 encoding="utf-8",
             )
             if result.returncode != 0:
-                sys.stderr.write(
+                _ = sys.stderr.write(
                     f"{label}: {step.failure_label}\n"
                     f"{result.stdout}{result.stderr}",
                 )
-                sys.stderr.write(f"\nProgram:\n{program}\n")
+                _ = sys.stderr.write(f"\nProgram:\n{program}\n")
                 sys.exit(1)
             last_stdout = result.stdout
     verify(
@@ -234,4 +234,4 @@ def execute(
         exclude_keys=excluded_keys,
         expected_json=expected_json,
     )
-    sys.stdout.write(f"{label} round-trip OK\n")
+    _ = sys.stdout.write(f"{label} round-trip OK\n")

@@ -37,7 +37,7 @@ def _run_fixture(
 ) -> bool:
     """Compile and run one fixture.  Return True on failure."""
     src = Path(filename)
-    check_path.write_text(
+    _ = check_path.write_text(
         data=src.read_text(encoding="utf-8"),
         encoding="utf-8",
     )
@@ -57,7 +57,7 @@ def _run_fixture(
     if compile_result.returncode != 0:
         msg = f"{filename}: purs compile failed\n"
         msg += compile_result.stderr + compile_result.stdout
-        sys.stderr.write(msg)
+        _ = sys.stderr.write(msg)
         return True
     run_result = subprocess.run(
         args=[node_path, "--input-type=module", "-e", _NODE_DRIVER],
@@ -69,7 +69,7 @@ def _run_fixture(
     if run_result.returncode != 0:
         msg = f"{filename}: node run failed\n"
         msg += run_result.stderr + run_result.stdout
-        sys.stderr.write(msg)
+        _ = sys.stderr.write(msg)
         return True
     return False
 
@@ -77,8 +77,8 @@ def _run_fixture(
 def main() -> None:
     """Run each PureScript golden file end-to-end."""
     filenames = sys.argv[1:]
-    purs_path = shutil.which(cmd="purs") or "purs"
-    node_path = shutil.which(cmd="node") or "node"
+    purs_path = shutil.which(cmd="purs") or "purs"  # pyrefly: ignore [implicit-bool]
+    node_path = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
     failed = False
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)

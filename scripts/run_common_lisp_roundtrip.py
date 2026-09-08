@@ -146,7 +146,7 @@ def main() -> None:
         excluded_keys=_EXCLUDED_KEYS,
     )
     program = _build_program(json_text=trimmed_json)
-    ros = shutil.which(cmd="ros") or "ros"
+    ros = shutil.which(cmd="ros") or "ros"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.lisp",

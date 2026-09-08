@@ -127,7 +127,7 @@ _INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
 def _reject_numeric_string_keys(data: Value) -> None:
     """Reject mapping keys that PHP arrays coerce from strings to integers."""
     stack = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         value = stack.pop()
         if isinstance(value, dict):
             for key, child in value.items():
@@ -231,7 +231,7 @@ def _php_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = root.capitalize() + "Type"
         return (
             f"class {cls} {{ function {method}({param_list}) {{}} }}",
@@ -1080,7 +1080,7 @@ class Php(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Php."""
@@ -1104,7 +1104,7 @@ class Php(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1114,7 +1114,7 @@ class Php(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for PHP."""
@@ -1268,7 +1268,7 @@ class Php(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

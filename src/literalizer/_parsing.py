@@ -255,11 +255,11 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
         value = _unwrap_yaml_tagged_scalar(value=value)
     match value:
         case bool():
-            return bool(value)
+            return bool(value)  # pyrefly: ignore [unnecessary-type-conversion]
         case int():
-            return int(value)
+            return int(value)  # pyrefly: ignore [unnecessary-type-conversion]
         case float():
-            return float(value)
+            return float(value)  # pyrefly: ignore [unnecessary-type-conversion]
         case str():
             return str(object=value)
         case datetime.datetime():
@@ -398,15 +398,15 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
                     for k, v in omap_src.items()
                 ]
             )
-        case dict():
+        case dict():  # pyrefly: ignore [unreachable-match-case]
             unwrapped: dict[Scalar, Value] = {
                 unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
                 for k, v in data.items()
             }
             return unwrapped
-        case list():
+        case list():  # pyrefly: ignore [unreachable-match-case]
             return [_unwrap_yaml_data(data=item) for item in data]
-        case tuple():
+        case tuple():  # pyrefly: ignore [unreachable-match-case]
             # A ``!!pairs`` node resolves to a list of two-tuples.  The
             # tag is defined as a sequence of single-key mappings, and
             # unlike ``!!omap`` it admits a repeated key, so each pair
@@ -418,10 +418,10 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
                     data=pair_value
                 )
             }
-        case CommentedSet():
+        case CommentedSet():  # pyrefly: ignore [unreachable-match-case]
             members: set[Scalar | TaggedScalar] = set(data)
             return {unwrap_yaml_scalar(value=item) for item in members}
-        case (
+        case (  # pyrefly: ignore [unreachable-match-case]
             bool()
             | int()
             | float()
@@ -477,12 +477,12 @@ def reject_excessive_integer_digits(*, value: int) -> None:
     describes the interpreter rather than the input (issue #4558).
     """
     limit = sys.get_int_max_str_digits()
-    if not limit:
+    if not limit:  # pyrefly: ignore [implicit-bool]
         return
     if value.bit_length() <= limit * _BITS_PER_DECIMAL_DIGIT_FLOOR:
         return
     try:
-        str(object=value)
+        _ = str(object=value)
     except ValueError as exc:
         raise ExcessiveIntegerDigitsError(limit=limit) from exc
 
@@ -499,7 +499,7 @@ def reject_excessive_decimal_token(*, token: str) -> None:
     """
     limit = sys.get_int_max_str_digits()
     digits = token.lstrip("+-").replace("_", "").lstrip("0")
-    if limit and len(digits) > limit and digits.isdigit():
+    if limit and len(digits) > limit and digits.isdigit():  # pyrefly: ignore [implicit-bool]
         raise ExcessiveIntegerDigitsError(limit=limit)
 
 
@@ -549,7 +549,7 @@ def _validate_yaml_float_tokens(*, source: str) -> None:
             )
             is not None
         ):
-            _parse_finite_float(value=value)
+            _ = _parse_finite_float(value=value)
 
 
 @beartype
@@ -858,7 +858,7 @@ def _record_anchor_binding(
     latest_binding: dict[str, int],
 ) -> None:
     """Note that *anchor* now names the node numbered *binding*."""
-    if anchor:
+    if anchor:  # pyrefly: ignore [implicit-bool]
         latest_binding[anchor] = binding
 
 
@@ -1030,16 +1030,16 @@ def _validate_toml_float_tokens(*, data: object) -> None:
         # rather than a binary64 range complaint (issue #4558).
         reject_excessive_decimal_token(token=data.as_string())
     if isinstance(data, TomlFloat):
-        _parse_finite_float(value=data.as_string())
+        _ = _parse_finite_float(value=data.as_string())
     elif isinstance(data, Mapping):
         for value in data.values():  # pyright: ignore[reportUnknownVariableType]
             _validate_toml_float_tokens(
-                data=value  # pyright: ignore[reportUnknownArgumentType]
+                data=value  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
             )
     elif isinstance(data, list):
         for value in data:  # pyright: ignore[reportUnknownVariableType]
             _validate_toml_float_tokens(
-                data=value  # pyright: ignore[reportUnknownArgumentType]
+                data=value  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
             )
 
 
@@ -1055,7 +1055,7 @@ def _preserve_toml_negative_zero(
         return {
             key: _preserve_toml_negative_zero(
                 data=value,
-                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]
+                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
             )
             for key, value in data.items()
         }
@@ -1063,7 +1063,7 @@ def _preserve_toml_negative_zero(
         return [
             _preserve_toml_negative_zero(
                 data=value,
-                raw_data=raw_data[index],  # pyright: ignore[reportUnknownArgumentType]
+                raw_data=raw_data[index],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
             )
             for index, value in enumerate(iterable=data)
         ]

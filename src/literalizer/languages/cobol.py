@@ -208,11 +208,11 @@ def _first_cobol_placeholder(data: Value) -> str | None:
     if data is None:
         return "null"
     if isinstance(data, dict):
-        if not data:
+        if not data:  # pyrefly: ignore [implicit-bool]
             return "an empty mapping"
         values = data.values()
     elif isinstance(data, (list, set)):
-        if not data:
+        if not data:  # pyrefly: ignore [implicit-bool]
             return "an empty container"
         values = data
     else:
@@ -323,7 +323,7 @@ def _pic_from_value(value: str) -> str:
     if value.startswith('"') and value.endswith('"'):
         inner = value[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
-    if re.match(pattern=r"^-?\d+$", string=value):
+    if re.match(pattern=r"^-?\d+$", string=value):  # pyrefly: ignore [implicit-bool]
         return "PIC S9(18) COMP-5"
     # Float or other numeric
     return "COMP-2"
@@ -401,7 +401,7 @@ def _key_to_cobol_name(key_str: str) -> str:
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
-    name = name[:28].strip("-") or "FILLER"
+    name = name[:28].strip("-") or "FILLER"  # pyrefly: ignore [implicit-bool]
     return f"F-{name}"
 
 
@@ -481,10 +481,10 @@ def _disambiguate_data_names(content: str) -> str:
             out_lines.append(line)
             continue
         level = int(match["level"])
-        while scopes and scopes[-1].level >= level:
-            scopes.pop()
+        while scopes and scopes[-1].level >= level:  # pyrefly: ignore [implicit-bool]
+            _ = scopes.pop()
         name = match["name"]
-        if name == "FILLER" or not scopes:
+        if name == "FILLER" or not scopes:  # pyrefly: ignore [implicit-bool]
             new_name = name
         else:
             new_name = _unique_cobol_name(base=name, scope=scopes[-1])
@@ -716,11 +716,11 @@ def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
                 tokens.append(f'"{run}"')
                 run = ""
             continue
-        if run:
+        if run:  # pyrefly: ignore [implicit-bool]
             tokens.append(f'"{run}"')
             run = ""
         tokens.append(f'X"{byte:02X}"')
-    if run:
+    if run:  # pyrefly: ignore [implicit-bool]
         tokens.append(f'"{run}"')
     tokens.append('X"00"')
     return _CobolStringLiteral(tokens=tuple(tokens), size=len(data) + 1)
@@ -1206,7 +1206,7 @@ class Cobol(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Cobol."""
@@ -1225,7 +1225,7 @@ class Cobol(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1235,7 +1235,7 @@ class Cobol(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for COBOL."""
@@ -1515,7 +1515,7 @@ class Cobol(metaclass=LanguageCls):
         the node pointers and literal items and its PROCEDURE half the
         ``CALL`` statements that build the tree.
         """
-        if decode_file_sections(content):
+        if decode_file_sections(content):  # pyrefly: ignore [implicit-bool]
             sections = _split_cjson_payload(content)
             indented = textwrap.indent(
                 text=sections.procedure,
@@ -1528,7 +1528,7 @@ class Cobol(metaclass=LanguageCls):
                 + f"{indented}\n"
                 + f"{self.indent}STOP RUN."
             )
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
@@ -1565,7 +1565,7 @@ class Cobol(metaclass=LanguageCls):
         stays a :func:`staticmethod`.
         """
         del variable_name
-        if decode_file_sections(declaration):
+        if decode_file_sections(declaration):  # pyrefly: ignore [implicit-bool]
             decl_sections = _split_cjson_payload(declaration)
             assign_sections = _split_cjson_payload(assignment)
             working_storage = (

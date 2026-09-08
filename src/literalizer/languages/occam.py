@@ -117,7 +117,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
 @beartype
 def _occam_stub_parameters(params: Sequence[str], /) -> str:
     """Return an Occam parameter list for a generated call stub."""
-    if not params:
+    if not params:  # pyrefly: ignore [implicit-bool]
         return "()"
     formatted = ", ".join(f"VAL MOBILE LIT {param}" for param in params)
     return f"({formatted})"
@@ -304,7 +304,7 @@ class Occam(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Occam."""
@@ -323,7 +323,7 @@ class Occam(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -333,7 +333,7 @@ class Occam(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Occam."""
@@ -556,7 +556,7 @@ class Occam(metaclass=LanguageCls):
         """Wrap an occam-pi VAL declaration in a PROC."""
         del variable_name
         top_level_preamble = (
-            "\n".join(body_preamble) + "\n" if body_preamble else ""
+            "\n".join(body_preamble) + "\n" if body_preamble else ""  # pyrefly: ignore [implicit-bool]
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (

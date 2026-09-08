@@ -141,8 +141,8 @@ def _reject_record_lists_with_empty_siblings(data: Value, /) -> None:
     """
     if isinstance(data, list):
         sibling_lists = [item for item in data if isinstance(item, list)]
-        has_empty = any(not item for item in sibling_lists)
-        populated = [item for item in sibling_lists if item]
+        has_empty = any(not item for item in sibling_lists)  # pyrefly: ignore [implicit-bool]
+        populated = [item for item in sibling_lists if item]  # pyrefly: ignore [implicit-bool]
         has_record_list = any(
             all(isinstance(element, dict) for element in item)
             for item in populated
@@ -170,7 +170,7 @@ def _is_negative_zero(value: float) -> bool:
 def _data_has_negative_zero(*, data: Value) -> bool:
     """Return whether a rendered value contains negative zero."""
     pending: list[Value] = [data]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case float():
@@ -262,7 +262,7 @@ def _go_call_preamble_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root}Type_"
         return (
             f"type {type_name} struct{{}}",
@@ -655,7 +655,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Go."""
@@ -679,7 +679,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -689,7 +689,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Go."""
@@ -728,7 +728,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -849,7 +849,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -892,7 +892,7 @@ class Go(metaclass=LanguageCls):
         @property
         def statement_terminator(self) -> str:
             """Terminator appended to complete call statements."""
-            return self.value
+            return self.value  # pyrefly: ignore [no-any-return-explicit]
 
     statement_terminator_styles = StatementTerminatorStyles
 
@@ -987,7 +987,7 @@ class Go(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n_ = {variable_name}" if variable_name else ""
+        use_line = f"\n_ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         return f"\nfunc main() {{\n{content}{use_line}\n}}"
 
     @staticmethod
@@ -1089,14 +1089,14 @@ class Go(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Go "
                     f"identifier."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1160,7 +1160,7 @@ class Go(metaclass=LanguageCls):
         ``any`` (documented best effort), which the rendered literal
         still assigns into.
         """
-        nested_type = request.record_name or (
+        nested_type = request.record_name or (  # pyrefly: ignore [implicit-bool]
             f"[]{request.element_record_name}"
             if request.element_record_name is not None
             else None
@@ -1201,7 +1201,7 @@ class Go(metaclass=LanguageCls):
                     )
                 )
             case _:
-                return self._init_element_to_type(type(value)) or "any"
+                return self._init_element_to_type(type(value)) or "any"  # pyrefly: ignore [implicit-bool]
         return opener[: -len("{")]
 
     def _go_render_declaration(
@@ -1264,7 +1264,7 @@ class Go(metaclass=LanguageCls):
         if self.record_map_value_typing is RecordMapValueTypings.WIDE:
             return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:
+        if not scalars:  # pyrefly: ignore [implicit-bool]
             return None
         scalar_types = {
             self._go_record_field_type(

@@ -39,7 +39,7 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
         expected_exception=ValueError,
         match=r"^_SampleEnum has no member named 'SECOND'$",
     ):
-        enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
+        _ = enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
 
 
 def test_manifest_variant_context_overrides_collection_layout() -> None:
@@ -66,17 +66,17 @@ def test_special_axis_requires_one_manifest_input() -> None:
         expected_exception=CaseManifestError,
         match="requires exactly one manifest input",
     ):
-        _one_special_input(entries=[], axis="modifiers")
+        _ = _one_special_input(entries=[], axis="modifiers")
 
 
 def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
     """Grouped cases stay aligned with the key language."""
     groups = group_variant_cases_by_language()
 
-    assert groups
+    assert groups  # pyrefly: ignore [implicit-bool]
     assert Python in groups
     for lang_cls, cases in groups.items():
-        assert cases
+        assert cases  # pyrefly: ignore [implicit-bool]
         misgrouped = [
             case for case in cases if case.variant.lang_cls is not lang_cls
         ]
@@ -142,7 +142,7 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
         capability="empty_sibling_sequence_type_hints",
     )
 
-    assert cases
+    assert cases  # pyrefly: ignore [implicit-bool]
     assert not Kotlin.supports_empty_sibling_sequence_type_hints
     incapable = [
         case
@@ -157,7 +157,7 @@ def test_typed_dict_null_filtering_follows_capability() -> None:
     """Null-filtering variants select typed dict languages explicitly."""
     variants = list(build_typed_dict_null_filtering_variants())
 
-    assert variants
+    assert variants  # pyrefly: ignore [implicit-bool]
     incapable = [
         variant
         for variant in variants
@@ -180,7 +180,7 @@ def test_multiline_string_variants_follow_capability(
         axis="multiline_string",
     )
 
-    assert case_dir_names
+    assert case_dir_names  # pyrefly: ignore [implicit-bool]
     for case_dir_name in case_dir_names:
         actual = {
             case.variant.lang_cls
@@ -243,9 +243,9 @@ def test_multiline_context_cases_follow_capabilities(
         for case in cases
         if isinstance(case.variable_form, literalizer.BothVariableForms)
     ]
-    indented_cases = [case for case in cases if case.pre_indent_level]
+    indented_cases = [case for case in cases if case.pre_indent_level]  # pyrefly: ignore [implicit-bool]
 
-    assert combined_cases
+    assert combined_cases  # pyrefly: ignore [implicit-bool]
     misnamed_combined = [
         case
         for case in combined_cases
@@ -262,7 +262,7 @@ def test_multiline_context_cases_follow_capabilities(
             for style in lang_cls.DeclarationStyles
         )
     }
-    assert indented_cases
+    assert indented_cases  # pyrefly: ignore [implicit-bool]
     misnamed_indented = [
         case
         for case in indented_cases

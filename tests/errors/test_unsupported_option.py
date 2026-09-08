@@ -30,7 +30,7 @@ def test_known_unsupported_option_raises_typed_error(
 ) -> None:
     """Known options use the public Literalizer error hierarchy."""
     with pytest.raises(expected_exception=UnsupportedOptionError) as caught:
-        language_cls(**{option: value})
+        _ = language_cls(**{option: value})
 
     assert caught.value.language_name == language_cls.__name__
     assert caught.value.option == option
@@ -40,4 +40,4 @@ def test_unknown_option_remains_type_error() -> None:
     """Typos are not misreported as unsupported public options."""
     language_cls: LanguageCls = Cpp
     with pytest.raises(expected_exception=TypeError):
-        language_cls(definitely_not_an_option=True)
+        _ = language_cls(definitely_not_an_option=True)

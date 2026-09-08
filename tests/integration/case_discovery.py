@@ -107,7 +107,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
     produce rendered output.
     """
     try:
-        literalizer.literalize(
+        _ = literalizer.literalize(
             source='{"key\\u0001": 2}',
             input_format=literalizer.InputFormat.JSON,
             language=lang_cls(),
@@ -164,7 +164,7 @@ def _is_object_list(value: object, /) -> TypeIs[list[object]]:
 def _demote_yaml_tags(*, value: object) -> object:
     """Demote round-trip-only tagged scalar wrappers for discovery."""
     if isinstance(value, TaggedScalar):
-        return vars(value)["value"]
+        return vars(value)["value"]  # pyrefly: ignore [no-any-return-explicit]
     if _is_object_dict(value):
         return {
             _demote_yaml_tags(value=key): _demote_yaml_tags(value=item)
@@ -209,7 +209,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # loader. Mirror that choice so discovery can inspect the same
             # valid fixtures as the public API.
             yaml = YAML() if "=" in source else YAML(typ="safe")
-            yaml_parsed: Any = _demote_yaml_tags(
+            yaml_parsed: Any = _demote_yaml_tags(  # pyrefly: ignore [explicit-any]
                 value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
                     stream=source,
                 )
@@ -220,7 +220,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
             # keys are invariant, so route it through an ``Any`` so it
             # widens to ``CaseData`` like the rest.
-            toml_parsed: Any = tomllib.loads(source)
+            toml_parsed: Any = tomllib.loads(source)  # pyrefly: ignore [explicit-any]
             parsed = toml_parsed
         case _ as unreachable:
             assert_never(unreachable)
@@ -232,8 +232,8 @@ def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
     match data:
         case dict():
             for key in data:
-                if isinstance(key, str) and (
-                    key and (not key.isprintable() or not key.isascii())
+                if isinstance(key, str) and (  # pyrefly: ignore [implicit-bool]
+                    key and (not key.isprintable() or not key.isascii())  # pyrefly: ignore [implicit-bool]
                 ):
                     return True
             return any(
@@ -515,7 +515,7 @@ def build_statement_terminator_combined_cases() -> list[
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
-        if not find_redefinition_styles(spec=spec):
+        if not find_redefinition_styles(spec=spec):  # pyrefly: ignore [implicit-bool]
             continue
         default_statement_terminator_style = spec.statement_terminator_style
         for statement_terminator_style in spec.statement_terminator_styles:
@@ -564,7 +564,7 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
-        if not find_redefinition_styles(spec=spec):
+        if not find_redefinition_styles(spec=spec):  # pyrefly: ignore [implicit-bool]
             continue
         default_strategy = spec.heterogeneous_strategy
         for strategy in spec.heterogeneous_strategies:

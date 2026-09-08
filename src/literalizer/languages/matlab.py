@@ -105,7 +105,7 @@ def _format_matlab_string(value: str) -> str:
     control_char_threshold = 32
     parts: list[str] = []
     for segment in re.split(pattern=r"([\\\x00-\x1f])", string=value):
-        if not segment:
+        if not segment:  # pyrefly: ignore [implicit-bool]
             continue
         if len(segment) == 1 and (
             segment == "\\" or ord(segment) < control_char_threshold
@@ -113,7 +113,7 @@ def _format_matlab_string(value: str) -> str:
             parts.append(f"char({ord(segment)})")
         else:
             parts.append(f'"{segment.replace(chr(34), chr(34) * 2)}"')
-    if not parts:
+    if not parts:  # pyrefly: ignore [implicit-bool]
         return '""'
     if len(parts) == 1 and parts[0].startswith('"'):
         return parts[0]
@@ -141,9 +141,9 @@ def _decode_matlab_string_expr(expr: str) -> str:
         if char_code:
             raw.append(chr(int(char_code)))
         elif single_seg:
-            raw.append(single_seg.replace("''", "'"))
+            raw.append(single_seg.replace("''", "'"))  # pyrefly: ignore [unknown-argument-type]
         else:
-            raw.append(double_seg.replace('""', '"'))
+            raw.append(double_seg.replace('""', '"'))  # pyrefly: ignore [unknown-argument-type]
     return "".join(raw)
 
 
@@ -159,14 +159,14 @@ def _matlab_char_vector(s: str) -> str:
     control_char_threshold = 32
     parts: list[str] = []
     for segment in re.split(pattern=r"([\x00-\x1f])", string=s):
-        if not segment:
+        if not segment:  # pyrefly: ignore [implicit-bool]
             continue
         if len(segment) == 1 and ord(segment) < control_char_threshold:
             parts.append(f"char({ord(segment)})")
         else:
             escaped = segment.replace("'", "''")
             parts.append(f"'{escaped}'")
-    if not parts:
+    if not parts:  # pyrefly: ignore [implicit-bool]
         return "''"
     if len(parts) == 1:
         return parts[0]
@@ -210,7 +210,7 @@ def _format_matlab_dict_entry(
 def _format_datetime_matlab(value: datetime.datetime) -> str:
     """Format a datetime as a MATLAB ``datetime`` expression."""
     seconds = str(object=value.second)
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         fraction = f"{value.microsecond:06d}".rstrip("0")
         seconds += f".{fraction}"
     return (
@@ -410,7 +410,7 @@ class Matlab(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Matlab."""
@@ -434,7 +434,7 @@ class Matlab(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -444,7 +444,7 @@ class Matlab(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for MATLAB."""

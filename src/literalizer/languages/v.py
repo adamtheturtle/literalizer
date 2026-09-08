@@ -246,7 +246,7 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
             _visit(item=child)
         if id(item) in wrap_ids:
             return
-        if not children or any(v is None for v in children):
+        if not children or any(v is None for v in children):  # pyrefly: ignore [implicit-bool]
             wrap_ids.add(id(item))
             return
         python_types = {type(v) for v in children if v is not None}
@@ -256,9 +256,9 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
         container_children = [
             v for v in children if isinstance(v, (list, dict, set))
         ]
-        if container_children:
+        if container_children:  # pyrefly: ignore [implicit-bool]
             wrapped = [v for v in container_children if id(v) in wrap_ids]
-            if wrapped and len(wrapped) < len(container_children):
+            if wrapped and len(wrapped) < len(container_children):  # pyrefly: ignore [implicit-bool]
                 wrap_ids.add(id(item))
 
     _visit(item=data)
@@ -323,7 +323,7 @@ def _build_v_interface_preamble(
         wrapping.
         """
         wrap_ids = compute_wrap_ids(data)
-        if not wrap_ids:
+        if not wrap_ids:  # pyrefly: ignore [implicit-bool]
             return ()
         return (_V_IFACE_DECL,)
 
@@ -342,11 +342,11 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
         """
         match item:
             case dict():
-                return not item or any(
+                return not item or any(  # pyrefly: ignore [implicit-bool]
                     _has_empty_container(item=v) for v in item.values()
                 )
             case list() | set():
-                return not item or any(
+                return not item or any(  # pyrefly: ignore [implicit-bool]
                     _has_empty_container(item=v) for v in item
                 )
             case _:
@@ -381,7 +381,7 @@ def _has_null_only_container(item: Value) -> bool:
             children = list(item)
         case _:
             return False
-    if children and all(child is None for child in children):
+    if children and all(child is None for child in children):  # pyrefly: ignore [implicit-bool]
         return True
     return any(_has_null_only_container(item=child) for child in children)
 
@@ -422,7 +422,7 @@ def _v_call_preamble_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    receiver_type = _cap_type(fields[-1]) if fields else _cap_type(root)
+    receiver_type = _cap_type(fields[-1]) if fields else _cap_type(root)  # pyrefly: ignore [implicit-bool]
 
     if stub_return is StubReturn.VOID:
         method_line = (
@@ -436,7 +436,7 @@ def _v_call_preamble_stub(
 
     lines: list[str] = [iface, f"struct {receiver_type} {{}}", method_line]
 
-    if fields:
+    if fields:  # pyrefly: ignore [implicit-bool]
         prev_type = receiver_type
         for i in range(len(fields) - 2, -1, -1):
             curr_type = _cap_type(fields[i])
@@ -542,7 +542,7 @@ def _v_inner_type(items: list[Value], /) -> str:
     """
     inner = infer_element_type(items=items)
     resolved = _v_element_to_type(inner) if inner is not None else None
-    return resolved or _V_IFACE_NAME
+    return resolved or _V_IFACE_NAME  # pyrefly: ignore [implicit-bool]
 
 
 @beartype
@@ -809,7 +809,7 @@ class V(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for V."""
@@ -828,7 +828,7 @@ class V(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -838,7 +838,7 @@ class V(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for V."""
@@ -1159,7 +1159,7 @@ class V(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         use_line = (
-            f"\n{self.indent}_ = {variable_name}" if variable_name else ""
+            f"\n{self.indent}_ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         )
         return f"\nfn main() {{\n{indented}{use_line}\n}}"
 
@@ -1309,7 +1309,7 @@ class V(metaclass=LanguageCls):
             case list():
                 return f"[]{_v_inner_type(value)}"
             case _:
-                return _V_SCALAR_FIELD_TYPE.get(type(value)) or _V_IFACE_NAME
+                return _V_SCALAR_FIELD_TYPE.get(type(value)) or _V_IFACE_NAME  # pyrefly: ignore [implicit-bool]
 
     def _v_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the V ``struct`` field type for a record field.

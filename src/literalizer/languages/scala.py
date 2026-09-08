@@ -223,7 +223,7 @@ def _format_scala_bigint_literal(value: int) -> str:
 @beartype
 def _format_datetime_scala(value: datetime.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
-    timezone_name = value.tzname() or "UTC"
+    timezone_name = value.tzname() or "UTC"  # pyrefly: ignore [implicit-bool]
     nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
@@ -340,7 +340,7 @@ def _scala_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = f"_{root.capitalize()}Type"
         return (
             f"class {cls} {{ def {method}({param_list}): Any = null }}",
@@ -813,7 +813,7 @@ class Scala(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Scala."""
@@ -840,7 +840,7 @@ class Scala(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -850,7 +850,7 @@ class Scala(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Scala."""
@@ -1069,7 +1069,7 @@ class Scala(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1329,7 +1329,7 @@ class Scala(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Scala "
@@ -1343,7 +1343,7 @@ class Scala(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1431,7 +1431,7 @@ class Scala(metaclass=LanguageCls):
         element_type: type = (
             int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt
         )
-        return self._scalar_field_type_resolver(element_type) or "Any"
+        return self._scalar_field_type_resolver(element_type) or "Any"  # pyrefly: ignore [implicit-bool]
 
     def _scala_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
@@ -1492,13 +1492,13 @@ class Scala(metaclass=LanguageCls):
             case list():
                 opener = self.sequence_open(value)
             case bool():
-                return self._scalar_field_type_resolver(bool) or "Any"
+                return self._scalar_field_type_resolver(bool) or "Any"  # pyrefly: ignore [implicit-bool]
             case int() if not I64_MIN <= value <= I64_MAX:
                 return "BigInt"
             case int():
                 return self._scala_int_magnitude_field_type(value)
             case _:
-                return self._scalar_field_type_resolver(type(value)) or "Any"
+                return self._scalar_field_type_resolver(type(value)) or "Any"  # pyrefly: ignore [implicit-bool]
         head = opener[: -len("(")]
         return _SCALA_UNTYPED_OPENERS.get(head, head)
 
@@ -1581,7 +1581,7 @@ class Scala(metaclass=LanguageCls):
         has the ``Any`` top type (a ``null`` value).
         """
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:
+        if not scalars:  # pyrefly: ignore [implicit-bool]
             return None
         scalar_types = {
             self._scala_record_field_type(
@@ -1813,7 +1813,7 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
             set_opener_template=(
-                self.set_format.value.set_opener_template or None
+                self.set_format.value.set_opener_template or None  # pyrefly: ignore [implicit-bool]
             ),
             narrow_dict_values=False,
             narrow_list_values=True,

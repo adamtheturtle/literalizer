@@ -82,7 +82,7 @@ def _run_fixture(
         tmpdir = Path(tmpdir_str)
         src_dir = tmpdir / "src"
         src_dir.mkdir()
-        (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
+        _ = (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
         main_path = src_dir / "Main.elm"
         env = {**os.environ, "ELM_HOME": str(object=worker_elm_home())}
         check_path = src_dir / "Check.elm"
@@ -92,11 +92,11 @@ def _run_fixture(
         # checking for the ``_call`` suffix that selects the call-mode driver.
         logical_stem = src.stem.split(sep="@", maxsplit=1)[0]
         is_call = logical_stem.endswith("_call")
-        main_path.write_text(
+        _ = main_path.write_text(
             data=_CALL_MAIN_ELM if is_call else _MAIN_ELM,
             encoding="utf-8",
         )
-        check_path.write_text(
+        _ = check_path.write_text(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
@@ -113,7 +113,7 @@ def _run_fixture(
         if compile_result.returncode != 0:
             msg = f"{filename}: elm make failed\n"
             msg += compile_result.stderr + compile_result.stdout
-            sys.stderr.write(msg)
+            _ = sys.stderr.write(msg)
             return True
         run_result = subprocess.run(
             args=[node_path, str(object=output_js)],
@@ -125,7 +125,7 @@ def _run_fixture(
         return False
     msg = f"{filename}: node run failed\n"
     msg += run_result.stderr + run_result.stdout
-    sys.stderr.write(msg)
+    _ = sys.stderr.write(msg)
     return True
 
 
@@ -136,8 +136,8 @@ def main() -> None:
         for f in sys.argv[1:]
         if not any(f.endswith(suffix) for suffix in _SKIP_SUFFIXES)
     ]
-    elm_path = shutil.which(cmd="elm") or "elm"
-    node_path = shutil.which(cmd="node") or "node"
+    elm_path = shutil.which(cmd="elm") or "elm"  # pyrefly: ignore [implicit-bool]
+    node_path = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
     with (
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str,
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as worker_homes_str,

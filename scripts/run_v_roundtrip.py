@@ -181,7 +181,7 @@ def main() -> None:
         capabilities=V.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    v = shutil.which(cmd="v") or "v"
+    v = shutil.which(cmd="v") or "v"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.v",

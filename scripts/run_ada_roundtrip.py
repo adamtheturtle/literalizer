@@ -108,7 +108,7 @@ def main() -> None:
         capabilities=Ada.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    gprbuild = shutil.which(cmd="gprbuild") or "gprbuild"
+    gprbuild = shutil.which(cmd="gprbuild") or "gprbuild"  # pyrefly: ignore [implicit-bool]
     extras = {
         "a_stub.ads": _STUB_ADS_SRC.read_text(encoding="utf-8"),
         "a_stub.adb": _STUB_ADB_SRC.read_text(encoding="utf-8"),

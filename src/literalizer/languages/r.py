@@ -134,7 +134,7 @@ def _format_datetime_r(value: datetime.datetime, /) -> str:
     if aware:
         value = normalize_datetime_utc(value=value, language_name="R")
     rendered = value.strftime(format="%Y-%m-%d %H:%M:%S")
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         rendered += f".{value.microsecond:06d}"
     if aware:
         rendered += "+0000"
@@ -412,7 +412,7 @@ class R(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for R."""
@@ -436,7 +436,7 @@ class R(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class EmptyDictKey(enum.Enum):
         """How to handle empty-string dict keys in R.
@@ -456,7 +456,7 @@ class R(metaclass=LanguageCls):
             /,
         ) -> str:
             """Format a dict entry."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 key=key,
                 _raw_value=raw_value,
                 formatted_value=formatted_value,
@@ -470,7 +470,7 @@ class R(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for R."""

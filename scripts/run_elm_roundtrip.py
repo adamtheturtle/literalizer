@@ -106,8 +106,8 @@ def main() -> None:
         capabilities=Elm.variant_metadata.round_trip_capabilities,
     )
     program = _build_main(json_text=json_text)
-    elm = shutil.which(cmd="elm") or "elm"
-    node = shutil.which(cmd="node") or "node"
+    elm = shutil.which(cmd="elm") or "elm"  # pyrefly: ignore [implicit-bool]
+    node = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="src/Main.elm",

@@ -25,7 +25,7 @@ def test_lua_rejects_null_set_member_supplied_by_bound_ref() -> None:
         expected_exception=UnrepresentableInputError,
         match="Lua cannot use null as a set member table key",
     ):
-        literalize(
+        _ = literalize(
             source='[{"$ref": "items"}]',
             input_format=InputFormat.JSON,
             language=Lua(),

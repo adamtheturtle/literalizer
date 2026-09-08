@@ -10,4 +10,4 @@ from literalizer.languages import Erlang
 
 def test_erlang_accepts_module_name_at_atom_limit() -> None:
     """The 255-character atom boundary remains valid."""
-    Erlang(module_name="a" * 255)
+    _ = Erlang(module_name="a" * 255)

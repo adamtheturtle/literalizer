@@ -68,7 +68,7 @@ def selected_languages(
     ones it records as accepting the input are drawn from here, so a
     golden file can state the whole population it was built from.
     """
-    if manifest.languages:
+    if manifest.languages:  # pyrefly: ignore [implicit-bool]
         return tuple(
             LANGUAGES_BY_NAME[name] for name in sorted(manifest.languages)
         )
@@ -184,8 +184,8 @@ def _cases_for_languages(
     lang_classes: Sequence[literalizer.LanguageCls],
 ) -> tuple[RejectionCase, ...]:
     """Return every case *lang_classes* contribute to *manifest*."""
-    values: tuple[str | None, ...] = manifest.values or (None,)
-    sources: tuple[str | None, ...] = manifest.call.sources or (None,)
+    values: tuple[str | None, ...] = manifest.values or (None,)  # pyrefly: ignore [implicit-bool]
+    sources: tuple[str | None, ...] = manifest.call.sources or (None,)  # pyrefly: ignore [implicit-bool]
     cases: list[RejectionCase] = []
     for lang_cls in lang_classes:
         for member in _option_members(manifest=manifest, lang_cls=lang_cls):

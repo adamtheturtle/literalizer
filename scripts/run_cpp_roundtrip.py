@@ -64,7 +64,7 @@ def main() -> None:
         capabilities=Cpp.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    clangxx = shutil.which(cmd="clang++") or "clang++"
+    clangxx = shutil.which(cmd="clang++") or "clang++"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.cpp",

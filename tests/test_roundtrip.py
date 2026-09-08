@@ -235,7 +235,7 @@ ERLANG_LANG = Erlang()
 def test_roundtrip_bytes_erlang_binary(data: bytes) -> None:
     """Erlang binary literal round-trips."""
     result = ERLANG_LANG.format_bytes(data)
-    if not data:
+    if not data:  # pyrefly: ignore [implicit-bool]
         assert result == "<<>>"
         return
     match = re.fullmatch(pattern=r"<<(.+)>>", string=result)

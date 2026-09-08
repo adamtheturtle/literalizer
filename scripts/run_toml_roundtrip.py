@@ -45,7 +45,7 @@ def _build_document(json_text: str) -> str:
         wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    return f"{preamble}\n{result.code}\n" if preamble else f"{result.code}\n"
+    return f"{preamble}\n{result.code}\n" if preamble else f"{result.code}\n"  # pyrefly: ignore [implicit-bool]
 
 
 def main() -> None:
@@ -66,7 +66,7 @@ def main() -> None:
         exclude_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

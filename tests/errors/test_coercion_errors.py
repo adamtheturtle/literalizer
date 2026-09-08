@@ -114,7 +114,7 @@ def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
         expected_exception=HeterogeneousScalarCollectionError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(data=[1, 2.5, 3], input_format=input_format),
             input_format=input_format,
             language=MOJO,
@@ -127,7 +127,7 @@ def test_raises_heterogeneous_array(input_format: InputFormat) -> None:
 def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
     """Dict with mixed-type scalar values raises across all formats."""
     with pytest.raises(expected_exception=HeterogeneousScalarCollectionError):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data={"a": 1, "b": 2.5},
                 input_format=input_format,
@@ -143,7 +143,7 @@ def test_raises_heterogeneous_dict(input_format: InputFormat) -> None:
 def test_raises_nested_heterogeneous(input_format: InputFormat) -> None:
     """Heterogeneous data nested in a list raises across all formats."""
     with pytest.raises(expected_exception=HeterogeneousScalarCollectionError):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data=[[1, "hello"]],
                 input_format=input_format,
@@ -167,7 +167,7 @@ def test_raises_sibling_lists(input_format: InputFormat) -> None:
         expected_exception=HeterogeneousSiblingListsError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data=[[1, 2], ["a", "b"]],
                 input_format=input_format,
@@ -191,7 +191,7 @@ def test_raises_nested_sibling_lists(input_format: InputFormat) -> None:
         expected_exception=HeterogeneousSiblingListsError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data=[[[1, 2], ["a", "b"]]],
                 input_format=input_format,
@@ -215,7 +215,7 @@ def test_raises_mixed_dict_values(input_format: InputFormat) -> None:
         expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data={"name": "Bob", "tags": ["admin", "user"]},
                 input_format=input_format,
@@ -243,7 +243,7 @@ def test_raises_nested_mixed_dict_values(input_format: InputFormat) -> None:
         expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data={
                     "a": {"x": 1},
@@ -274,7 +274,7 @@ def test_raises_nested_mixed_list_values(input_format: InputFormat) -> None:
         expected_exception=MixedListValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data=[[1, 2], ["hello", ["nested"]]],
                 input_format=input_format,
@@ -298,7 +298,7 @@ def test_raises_mixed_list_values(input_format: InputFormat) -> None:
         expected_exception=MixedListValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data=["hello", ["nested"]],
                 input_format=input_format,
@@ -326,7 +326,7 @@ def test_raises_mixed_dict_inside_mixed_list(
         expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data={"wrapper": [{"a": "x", "b": [1]}, "text"]},
                 input_format=input_format,
@@ -355,7 +355,7 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
         expected_exception=MixedDictShapesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(data=data, input_format=input_format),
             input_format=input_format,
             language=Dhall(),
@@ -376,7 +376,7 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
         expected_exception=MixedDictValuesError,
         match=f"^{expected_msg}$",
     ):
-        literalize(
+        _ = literalize(
             source=_to_source(
                 data={"tags": ["admin"], "extra": None},
                 input_format=input_format,
@@ -394,7 +394,7 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
     """Homogeneous array does not raise across all formats."""
-    literalize(
+    _ = literalize(
         source=_to_source(data=[1, 2, 3], input_format=input_format),
         input_format=input_format,
         language=MOJO,
@@ -406,7 +406,7 @@ def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
 @pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
 def test_no_raise_homogeneous_dict(input_format: InputFormat) -> None:
     """Homogeneous dict values do not raise across all formats."""
-    literalize(
+    _ = literalize(
         source=_to_source(
             data={"a": 1, "b": 2},
             input_format=input_format,
@@ -423,7 +423,7 @@ def test_no_raise_heterogeneous_for_language_supporting_it(
     input_format: InputFormat,
 ) -> None:
     """Heterogeneous data does not raise for languages that support it."""
-    literalize(
+    _ = literalize(
         source=_to_source(data=[1, 2.5, 3], input_format=input_format),
         input_format=input_format,
         language=PYTHON,
@@ -439,7 +439,7 @@ def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
         {"type": "create", "name": "a"},
         {"type": "update", "name": "b"},
     ]
-    literalize(
+    _ = literalize(
         source=_to_source(data=data, input_format=input_format),
         input_format=input_format,
         language=Dhall(),

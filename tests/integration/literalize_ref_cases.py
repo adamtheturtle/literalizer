@@ -233,7 +233,7 @@ def run_literalize_ref_golden_case(
         config.resolved_variable_form()
     )
     try:
-        literalizer.literalize(
+        _ = literalizer.literalize(
             source='{"key": "value"}',
             input_format=literalizer.InputFormat.JSON,
             language=spec,
@@ -276,8 +276,8 @@ def run_literalize_ref_golden_case(
             variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
-            bound_refs=bound_refs_input or None,
-            ref_values={
+            bound_refs=bound_refs_input or None,  # pyrefly: ignore [implicit-bool]
+            ref_values={  # pyrefly: ignore [implicit-bool]
                 name: json.loads(s=source)
                 for name, source in config.explicit_ref_value_sources.items()
             }

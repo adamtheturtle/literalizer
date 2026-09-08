@@ -137,7 +137,7 @@ def _haskell_arg_type_str(
     emits ``f()`` at the call site).
     """
     if curried:
-        if not params:
+        if not params:  # pyrefly: ignore [implicit-bool]
             return None
         return " -> ".join(type_name for _ in params)
     if len(params) == 1:
@@ -211,7 +211,7 @@ def _build_haskell_call_stub_lines(
     else:
         field_type = f"{arg_type} -> {ret}"
         construction_lambda = f"\\{lambda_wildcards} -> {body}"
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = root.capitalize() + "Type_"
         return (
             f"data {cls} = {cls} {{ {method} :: {field_type} }}",
@@ -294,7 +294,7 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
     if value.tzinfo is not None:
         value = normalize_datetime_utc(value=value, language_name="Haskell")
     total_seconds = value.hour * 3600 + value.minute * 60 + value.second
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         picos = total_seconds * 10**12 + value.microsecond * 10**6
         time_part = f"picosecondsToDiffTime {picos}"
     else:
@@ -666,7 +666,7 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     """
     match data:
         case datetime.datetime():
-            return not data.microsecond
+            return not data.microsecond  # pyrefly: ignore [implicit-bool]
         case datetime.date():
             return False
         case dict():
@@ -751,7 +751,7 @@ def _haskell_base_constructors(
             ),
             (frozenset({set}), f"{p}Set [{type_name}]"),
         )
-        if types & type_set
+        if types & type_set  # pyrefly: ignore [implicit-bool]
     ]
 
 
@@ -882,7 +882,7 @@ def _haskell_compute_preamble(
 
     # Emit imports first, then data declaration, then instances.
     imports: list[str] = []
-    if import_items:
+    if import_items:  # pyrefly: ignore [implicit-bool]
         imports.append("import Data.Time (" + ", ".join(import_items) + ")")
     if needs_is_string:
         imports.append(cfg.is_string_import)
@@ -933,11 +933,11 @@ def _build_scalar_body_preamble(
     instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
     cfg = _HaskellPreambleConfig(
-        include_hdate=date_format.value.type_produced is datetime.date,
-        include_hdatetime=(
+        include_hdate=date_format.value.type_produced is datetime.date,  # pyrefly: ignore [unknown-argument-type]
+        include_hdatetime=(  # pyrefly: ignore [unknown-argument-type]
             datetime_format.value.type_produced is datetime.datetime
         ),
-        datetime_produces_int=datetime_format.value.type_produced is int,
+        datetime_produces_int=datetime_format.value.type_produced is int,  # pyrefly: ignore [unknown-argument-type]
         date_needs_is_string=bool(
             emit_is_string and date_format.value.preamble_lines
         ),
@@ -1021,7 +1021,7 @@ def _build_declaration_formatters(
     base_declaration: Callable[
         [str, str, Value, frozenset[enum.Enum]], str
     ] = declaration_style.value.formatter
-    raw_declared = sequence_format.value.declared_type
+    raw_declared = sequence_format.value.declared_type  # pyrefly: ignore [unknown-variable-type]
     sequence_declared_type = (
         raw_declared.replace("Val", type_name)
         if raw_declared is not None
@@ -1724,7 +1724,7 @@ class Haskell(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Haskell."""
@@ -1748,7 +1748,7 @@ class Haskell(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1758,7 +1758,7 @@ class Haskell(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Haskell."""
@@ -2084,7 +2084,7 @@ class Haskell(metaclass=LanguageCls):
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             # Call mode: bare expressions are not valid at module
             # top level in Haskell, so wrap them in ``main``. Each call
             # statement is bound via ``_ <- `` so that stubs returning
@@ -2139,7 +2139,7 @@ class Haskell(metaclass=LanguageCls):
         """
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         indented_calls = "\n".join(
-            f"{self.indent}_ <- {line}" if line.strip() else line
+            f"{self.indent}_ <- {line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
             for line in calls.split(sep="\n")
         )
         declaration_block = "\n".join(declarations)
@@ -2147,7 +2147,7 @@ class Haskell(metaclass=LanguageCls):
             f"module {self.module_name} where\n"
             + preamble
             + "\n"
-            + (declaration_block + "\n" if declaration_block else "")
+            + (declaration_block + "\n" if declaration_block else "")  # pyrefly: ignore [implicit-bool]
             + "main :: IO ()\nmain = do\n"
             + indented_calls
             + f"\n{self.indent}pure ()"

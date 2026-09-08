@@ -5,6 +5,8 @@ which no document of a size worth keeping would reach through the
 public API (issue #4699).
 """
 
+# pylint: disable=import-private-name,useless-suppression
+
 from literalizer.languages.cobol import (
     _NameScope,  # pyright: ignore[reportPrivateUsage]
     _unique_cobol_name,  # pyright: ignore[reportPrivateUsage]

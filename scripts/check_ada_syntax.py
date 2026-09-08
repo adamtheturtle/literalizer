@@ -10,12 +10,12 @@ from pathlib import Path
 def main() -> None:
     """Check syntax of the given Ada golden file."""
     filename = sys.argv[1]
-    gnatmake_path = shutil.which(cmd="gnatmake") or "gnatmake"
+    gnatmake_path = shutil.which(cmd="gnatmake") or "gnatmake"  # pyrefly: ignore [implicit-bool]
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_src = Path(tmpdir) / "check.adb"
         content: str = src.read_text(encoding="utf-8")
-        tmp_src.write_text(data=content, encoding="utf-8")
+        _ = tmp_src.write_text(data=content, encoding="utf-8")
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
@@ -27,7 +27,7 @@ def main() -> None:
         )
     if result.returncode != 0:
         msg = f"{filename}: Ada syntax error\n{result.stderr}"
-        sys.stderr.write(msg)
+        _ = sys.stderr.write(msg)
         sys.exit(1)
 
 

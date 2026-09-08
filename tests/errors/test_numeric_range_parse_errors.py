@@ -17,7 +17,7 @@ def test_yaml_finite_float_underflow_raises() -> None:
         expected_exception=ParseError,
         match="outside binary64 range",
     ):
-        literalize(
+        _ = literalize(
             source="-1e-4000",
             input_format=InputFormat.YAML,
             language=Python(),

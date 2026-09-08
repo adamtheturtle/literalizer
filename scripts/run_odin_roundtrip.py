@@ -62,7 +62,7 @@ def main() -> None:
         capabilities=Odin.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    odin = shutil.which(cmd="odin") or "odin"
+    odin = shutil.which(cmd="odin") or "odin"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.odin",

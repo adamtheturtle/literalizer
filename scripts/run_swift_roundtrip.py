@@ -59,7 +59,7 @@ def main() -> None:
         capabilities=Swift.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    swift = shutil.which(cmd="swift") or "swift"
+    swift = shutil.which(cmd="swift") or "swift"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.swift",

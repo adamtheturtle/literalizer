@@ -194,7 +194,7 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
     if isinstance(data, list):
         sibling_lists = [item for item in data if isinstance(item, list)]
         all_are_record_lists = all(
-            item and all(isinstance(element, dict) for element in item)
+            item and all(isinstance(element, dict) for element in item)  # pyrefly: ignore [implicit-bool]
             for item in sibling_lists
         )
         if (
@@ -593,16 +593,16 @@ def _rust_homogeneous_element_type(
     length-bearing format the empty sequence keeps its own type and
     unification reports the mismatch.
     """
-    if not elements:
+    if not elements:  # pyrefly: ignore [implicit-bool]
         return default_type
     informative = [
         element
         for element in elements
-        if element
+        if element  # pyrefly: ignore [implicit-bool]
         or not isinstance(element, (list, dict, set))
         or (sequence_encodes_length and isinstance(element, list))
     ]
-    types = [infer(element) for element in informative or elements]
+    types = [infer(element) for element in informative or elements]  # pyrefly: ignore [implicit-bool]
     return _unify_rust_types(types=types)
 
 
@@ -893,7 +893,7 @@ def _format_date_rust(value: datetime.date) -> str:
 def _format_datetime_rust(value: datetime.datetime) -> str:
     """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call."""
     date = _format_date_rust(value=value)
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         time_call = (
             f"NaiveTime::from_hms_micro_opt("
             f"{value.hour}, {value.minute}, {value.second}, "
@@ -1196,12 +1196,12 @@ def _rust_container_wrapper(
         match raw_value:
             case list():
                 payload = formatted_value
-                if not raw_value:
+                if not raw_value:  # pyrefly: ignore [implicit-bool]
                     payload = "vec![]"
                 return f"{params.enum_name}::List({payload})"
             case _:
                 payload = formatted_value
-                if not raw_value:
+                if not raw_value:  # pyrefly: ignore [implicit-bool]
                     payload = "HashMap::new()"
                 return f"{params.enum_name}::Map({payload})"
 
@@ -1241,7 +1241,7 @@ def _rust_empty_container_literal_overrides(
         value = by_path.get(path)
         if value is None:
             continue
-        if not type_name:
+        if not type_name:  # pyrefly: ignore [implicit-bool]
             msg = (
                 f"empty-container type hint at {path!r} must be a "
                 "non-empty string"
@@ -1299,7 +1299,9 @@ def _rust_infer_tuple_empty_vecs(
             empty = [value for value in values if value == []]
             non_empty = [value for value in values if value != []]
             populated = [
-                value for value in values if isinstance(value, list) and value
+                value
+                for value in values
+                if isinstance(value, list) and value  # pyrefly: ignore [implicit-bool]
             ]
             if len(populated) != len(non_empty) or any(
                 not all(_rust_is_scalar(item) for item in value)
@@ -1316,7 +1318,7 @@ def _rust_infer_tuple_empty_vecs(
                 for item in value
                 if _rust_is_scalar(item)
             }
-            if empty and populated and len(scalar_types) == 1:
+            if empty and populated and len(scalar_types) == 1:  # pyrefly: ignore [implicit-bool]
                 element_type = next(iter(scalar_types))
                 for value in empty:
                     overrides[id(value)] = f"Vec::<{element_type}>::new()"
@@ -1438,7 +1440,8 @@ def _rust_value_enum_lines(
     if include_list_variant:
         variants.append(
             _VariantSignature(
-                name="List", inner_type=list_inner_type or f"Vec<{enum_name}>"
+                name="List",
+                inner_type=list_inner_type or f"Vec<{enum_name}>",  # pyrefly: ignore [implicit-bool]
             )
         )
     if include_map_variant:
@@ -1446,11 +1449,11 @@ def _rust_value_enum_lines(
             _VariantSignature(
                 name="Map",
                 inner_type=(
-                    map_inner_type or f"HashMap<&'static str, {enum_name}>"
+                    map_inner_type or f"HashMap<&'static str, {enum_name}>"  # pyrefly: ignore [implicit-bool]
                 ),
             )
         )
-    if not variants:
+    if not variants:  # pyrefly: ignore [implicit-bool]
         return []
     lines: list[str] = [f"enum {enum_name} {{"]
     for variant in variants:
@@ -1500,7 +1503,7 @@ def _build_tagged_enum_preamble(
             wrap_ids = slot_wrap_ids | value_wrap_ids
         else:
             wrap_ids = _tagged_enum_wrap_ids(data)
-        if not wrap_ids:
+        if not wrap_ids:  # pyrefly: ignore [implicit-bool]
             return ()
         scalars = tuple(
             scalar
@@ -1681,7 +1684,7 @@ def _rust_narrow_derecordized_map_value_type(
     if map_value_typing is RecordMapValueTypings.WIDE:
         return None
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-    if not scalars:
+    if not scalars:  # pyrefly: ignore [implicit-bool]
         return None
     inner_types = {
         _heterogeneous_variant_for_scalar(
@@ -1897,7 +1900,7 @@ def _validate_rust_record_field_key(*, key: str) -> None:
     (e.g. it contains ``-`` or a space) is beyond what raw-identifier
     escaping can express.
     """
-    if key in _RUST_UNUSABLE_FIELD_KEYS or not _RUST_IDENTIFIER.match(
+    if key in _RUST_UNUSABLE_FIELD_KEYS or not _RUST_IDENTIFIER.match(  # pyrefly: ignore [implicit-bool]
         string=key
     ):
         msg = (
@@ -2551,9 +2554,9 @@ def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
         """Return whether two values can occupy one Vec slot."""
         if not isinstance(left, list) or not isinstance(right, list):
             return type(left) is type(right)
-        if not left:
+        if not left:  # pyrefly: ignore [implicit-bool]
             return not _eligible(right)
-        if not right:
+        if not right:  # pyrefly: ignore [implicit-bool]
             return not _eligible(left)
         left_tuple = _eligible(left)
         right_tuple = _eligible(right)
@@ -2705,7 +2708,7 @@ def _record_preamble_impl(
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build struct declarations for every record shape in *data*."""
         raw_shapes_by_id = collect_record_shapes(data=data)
-        if not raw_shapes_by_id:
+        if not raw_shapes_by_id:  # pyrefly: ignore [implicit-bool]
             return ()
         tuple_list_ids = (
             collect_tuple_list_ids(data=data)
@@ -2817,7 +2820,7 @@ def _record_preamble_impl(
                 map_inner_type=None,
             )
         )
-        enum_block = ("\n".join(enum_lines),) if enum_lines else ()
+        enum_block = ("\n".join(enum_lines),) if enum_lines else ()  # pyrefly: ignore [implicit-bool]
         return enum_block + tuple(struct_blocks)
 
     return _preamble
@@ -2976,7 +2979,7 @@ def _rust_call_stub(
     # Use generic type parameters so any argument type is accepted.
     type_vars = [_rust_type_var(index=i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
-    generic_clause = f"<{generic_decl}>" if generic_decl else ""
+    generic_clause = f"<{generic_decl}>" if generic_decl else ""  # pyrefly: ignore [implicit-bool]
     if len(parts) == 1:
         param_list = ", ".join(
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
@@ -2987,9 +2990,9 @@ def _rust_call_stub(
     param_list = ", ".join(
         f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
     )
-    method_param_list = f"&self, {param_list}" if param_list else "&self"
+    method_param_list = f"&self, {param_list}" if param_list else "&self"  # pyrefly: ignore [implicit-bool]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root.title()}Type_"
         return (
             f"struct {type_name};",
@@ -3262,7 +3265,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Rust."""
@@ -3290,7 +3293,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -3300,7 +3303,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Rust."""
@@ -3405,7 +3408,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
         def format_type_annotation(self, element_type: str) -> str:
             """Return the Rust type annotation for this set format."""
@@ -3641,7 +3644,7 @@ class Rust(metaclass=LanguageCls):
             default_key_type: str = "&str",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 default_type,
                 default_key_type=default_key_type,
             )
@@ -3738,7 +3741,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -3937,7 +3940,7 @@ class Rust(metaclass=LanguageCls):
             prefix=self.indent,
         )
         use_line = (
-            f"\n{self.indent}let _ = {variable_name};" if variable_name else ""
+            f"\n{self.indent}let _ = {variable_name};" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         )
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
@@ -4332,7 +4335,7 @@ class Rust(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Rust "
@@ -4359,7 +4362,7 @@ class Rust(metaclass=LanguageCls):
                     f"heterogeneous_value_enum_name."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "

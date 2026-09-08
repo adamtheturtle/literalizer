@@ -57,7 +57,7 @@ def _build_program(json_text: str) -> str:
 def main() -> None:
     """Round-trip the shared document through the Gleam backend."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
-    gleam_path = shutil.which(cmd="gleam") or "gleam"
+    gleam_path = shutil.which(cmd="gleam") or "gleam"  # pyrefly: ignore [implicit-bool]
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Gleam.variant_metadata.round_trip_capabilities,
     )
@@ -67,10 +67,10 @@ def main() -> None:
         # The primed dir already has `gleam.toml`, `manifest.toml`, and
         # `build/packages/<dep>` populated, so the in-tmpdir `gleam
         # run` does not need to download deps.
-        shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
+        _ = shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
         source_path = tmpdir / "src" / "main.gleam"
         source_path.parent.mkdir(parents=True, exist_ok=True)
-        source_path.write_text(data=program, encoding="utf-8")
+        _ = source_path.write_text(data=program, encoding="utf-8")
         result = subprocess.run(
             args=[gleam_path, "run", "-m", "main"],
             capture_output=True,
@@ -80,7 +80,7 @@ def main() -> None:
             encoding="utf-8",
         )
         if result.returncode != 0:
-            sys.stderr.write(
+            _ = sys.stderr.write(
                 f"{_LABEL}: gleam run error\n"
                 f"{result.stdout}{result.stderr}\n"
                 f"Program:\n{program}\n",
@@ -95,7 +95,7 @@ def main() -> None:
             exclude_keys=(),
             expected_json=json_text,
         )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

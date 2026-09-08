@@ -20,7 +20,7 @@ def test_nested_vec_tuple_rejects_nonuniform_siblings(source: str) -> None:
     sibling.
     """
     with pytest.raises(expected_exception=MixedListValuesError):
-        literalizer.literalize(
+        _ = literalizer.literalize(
             source=source,
             input_format=literalizer.InputFormat.JSON,
             language=Rust(

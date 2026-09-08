@@ -97,8 +97,8 @@ def write_lint_environment(tmpdir: Path) -> list[Path]:
     purs_paths: list[Path] = []
     for purs_filename, purs_text, js_text in modules:
         purs_path = tmpdir / purs_filename
-        purs_path.write_text(data=purs_text, encoding="utf-8")
+        _ = purs_path.write_text(data=purs_text, encoding="utf-8")
         js_path = purs_path.with_suffix(suffix=".js")
-        js_path.write_text(data=js_text, encoding="utf-8")
+        _ = js_path.write_text(data=js_text, encoding="utf-8")
         purs_paths.append(purs_path)
     return purs_paths

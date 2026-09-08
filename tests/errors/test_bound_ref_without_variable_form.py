@@ -23,7 +23,7 @@ def test_bound_ref_without_variable_form_rejected() -> None:
         expected_exception=RefNotSelfContainedError,
         match=re.escape(pattern="unbound reference shared"),
     ):
-        literalize(
+        _ = literalize(
             source='{"a": {"$ref": "shared"}}',
             input_format=InputFormat.JSON,
             language=Python(),

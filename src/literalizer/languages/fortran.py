@@ -136,7 +136,7 @@ def _format_fortran_string(value: str) -> str:
     for character in value:
         candidate = chunk + character
         if (
-            chunk
+            chunk  # pyrefly: ignore [implicit-bool]
             and len(_format_fortran_string_unwrapped(value=candidate))
             > _FORTRAN_STRING_CHUNK_LENGTH
         ):
@@ -365,7 +365,7 @@ def _add_continuation(value: str) -> str:
     for i, line in enumerate(iterable=lines):
         is_last = i == len(lines) - 1
         stripped = line.strip()
-        is_pure_comment = not stripped or stripped.startswith("!")
+        is_pure_comment = not stripped or stripped.startswith("!")  # pyrefly: ignore [implicit-bool]
         if is_last or is_pure_comment or stripped.endswith("&"):
             result.append(line)
         else:
@@ -544,22 +544,22 @@ def _fortran_call_stub(
     ``arg``.
     """
     method = parts[-1]
-    clean_params = [p.lstrip("_") or p for p in params]
+    clean_params = [p.lstrip("_") or p for p in params]  # pyrefly: ignore [implicit-bool]
 
     if stub_return is StubReturn.VOID:
-        param_str = f"({', '.join(clean_params)})" if clean_params else "()"
+        param_str = f"({', '.join(clean_params)})" if clean_params else "()"  # pyrefly: ignore [implicit-bool]
         lines: list[str] = [f"subroutine {method}{param_str}"]
         lines.append(f"{indent}implicit none")
-        if clean_params:
+        if clean_params:  # pyrefly: ignore [implicit-bool]
             joined = ", ".join(clean_params)
             lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
         lines.append(f"end subroutine {method}")
         return ("\n".join(lines),)
 
-    param_str = f"({', '.join(clean_params)})" if clean_params else "()"
+    param_str = f"({', '.join(clean_params)})" if clean_params else "()"  # pyrefly: ignore [implicit-bool]
     lines = [f"function {method}{param_str} result(r)"]
     lines.append(f"{indent}implicit none")
-    if clean_params:
+    if clean_params:  # pyrefly: ignore [implicit-bool]
         joined = ", ".join(clean_params)
         lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
     lines.append(f"{indent}type(fval_t) :: r")
@@ -794,7 +794,7 @@ class Fortran(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Fortran."""
@@ -813,7 +813,7 @@ class Fortran(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -823,7 +823,7 @@ class Fortran(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Fortran."""
@@ -1065,7 +1065,7 @@ class Fortran(metaclass=LanguageCls):
         after the executable statements in *content*.
         """
         content = _wrap_fortran_source_lines(content)
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,

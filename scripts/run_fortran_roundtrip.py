@@ -70,7 +70,7 @@ def main() -> None:
         capabilities=Fortran.variant_metadata.round_trip_capabilities,
     )
     program = _build_main(json_text=json_text)
-    gfortran = shutil.which(cmd="gfortran") or "gfortran"
+    gfortran = shutil.which(cmd="gfortran") or "gfortran"  # pyrefly: ignore [implicit-bool]
     fval_m_text = _FVAL_M_SRC.read_text(encoding="utf-8")
     roundtrip_common.execute(
         label=_LABEL,

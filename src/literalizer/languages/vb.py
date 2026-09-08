@@ -133,7 +133,7 @@ def _flush_vb_current(
     current: str,
 ) -> str:
     """Flush accumulated literal characters into parts."""
-    if current:
+    if current:  # pyrefly: ignore [implicit-bool]
         parts.append(f'"{current}"')
     return ""
 
@@ -167,7 +167,7 @@ def _vb_string_parts(value: str) -> list[str]:
             case _:
                 current += c
                 i += 1
-    _flush_vb_current(parts=parts, current=current)
+    _ = _flush_vb_current(parts=parts, current=current)
     return parts
 
 
@@ -181,7 +181,7 @@ def _format_string_vb(value: str) -> str:
     concatenation.
     """
     parts = _vb_string_parts(value=value)
-    if not parts:
+    if not parts:  # pyrefly: ignore [implicit-bool]
         return '""'
     if len(parts) == 1:
         return parts[0]
@@ -245,7 +245,7 @@ def _vb_call_stub(
         text=method_block.format(method=method),
         prefix=indent,
     )
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = _vb_unique_class_name(segment=root, position=0)
         return (
             f"Class {type_name}\n{method_body}\nEnd Class",
@@ -584,7 +584,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for VisualBasic."""
@@ -603,7 +603,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -613,7 +613,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Visual Basic."""
@@ -637,7 +637,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -686,7 +686,7 @@ class VisualBasic(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 default_type,
                 default_key_type=default_key_type,
             )

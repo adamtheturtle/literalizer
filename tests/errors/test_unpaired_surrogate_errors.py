@@ -116,7 +116,7 @@ def test_unpaired_surrogates_raise_parse_error(
         expected_exception=error_type,
         match=rf"unpaired UTF-16 surrogate U\+{surrogate_code_point:04X}",
     ):
-        literalize(
+        _ = literalize(
             source=source_factory(surrogate=surrogate),
             input_format=input_format,
             language=PYTHON,
@@ -129,7 +129,7 @@ def test_unpaired_surrogate_in_toml_comment_raises_parse_error() -> None:
         expected_exception=TOMLParseError,
         match=r"unpaired UTF-16 surrogate U\+D800",
     ):
-        literalize(
+        _ = literalize(
             source=f'value = "safe" # {chr(0xD800)}',
             input_format=InputFormat.TOML,
             language=PYTHON,
@@ -142,7 +142,7 @@ def test_reported_backends_do_not_leak_unicode_encode_error(
 ) -> None:
     """The original Ada and COBOL failures now stop at parsing."""
     with pytest.raises(expected_exception=JSONParseError):
-        literalize(
+        _ = literalize(
             source='{"x": "\\ud800"}',
             input_format=InputFormat.JSON,
             language=language,

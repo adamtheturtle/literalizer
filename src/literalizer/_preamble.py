@@ -83,7 +83,7 @@ def _collect_value_types(
     """
     found: set[type] = set()
     pending: list[Value] = [data]
-    while pending and len(found) != len(_ALL_VALUE_TYPES):
+    while pending and len(found) != len(_ALL_VALUE_TYPES):  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case OrderedMap():
@@ -139,10 +139,10 @@ def _needs_annotation(val: Value) -> bool:
     (issue #4560).
     """
     pending: list[Value] = [val]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
-            case dict() | set() | list() if not value:
+            case dict() | set() | list() if not value:  # pyrefly: ignore [implicit-bool]
                 return True
             case dict():
                 pending.extend(value.values())
@@ -192,7 +192,7 @@ def _walk_annotated_collections(  # noqa: C901  # pylint: disable=too-complex
                     _walk_annotated_collections(val=v, result=result)
                     _add_collection_type(val=v, result=result)
         case set():
-            if not val:
+            if not val:  # pyrefly: ignore [implicit-bool]
                 result.add(set)
         case list():
             if _needs_annotation(val=val):
@@ -216,7 +216,7 @@ def _collections_in(*, data: Value) -> list[_Collection]:
     """Return every collection inside *data*, *data* itself included."""
     found: list[_Collection] = []
     pending: list[Value] = [data]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case dict():
@@ -240,7 +240,7 @@ def _empty_collection_sentinel(
     """Return the sentinel for *value*'s type, or ``None`` if non-
     empty.
     """
-    if value:
+    if value:  # pyrefly: ignore [implicit-bool]
         return None
     match value:
         case OrderedMap():
@@ -450,7 +450,7 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
             return "date"
         case None:
             return "None"
-        case list() if not value:
+        case list() if not value:  # pyrefly: ignore [implicit-bool]
             return "empty_list"
         case list():
             merged = _list_merge_dicts(elements=value)
@@ -458,12 +458,12 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
                 dict.fromkeys(_structural_type_id(value=e) for e in merged)
             )
             return f"list({','.join(elem_ids)})"
-        case set() if not value:
+        case set() if not value:  # pyrefly: ignore [implicit-bool]
             return "empty_set"
         case set():
             elem_ids = sorted({_structural_type_id(value=e) for e in value})
             return f"set({','.join(elem_ids)})"
-        case OrderedMap() if not value:
+        case OrderedMap() if not value:  # pyrefly: ignore [implicit-bool]
             return "empty_odict"
         case OrderedMap():
             val_set: set[str] = set()
@@ -471,7 +471,7 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
                 val_set.add(_structural_type_id(value=ov))
             val_ids = sorted(val_set)
             return f"odict({','.join(val_ids)})"
-        case dict() if not value:
+        case dict() if not value:  # pyrefly: ignore [implicit-bool]
             return "empty_dict"
         case dict():
             val_ids = sorted(
@@ -501,7 +501,7 @@ def _has_union_in_type_hints(*, data: Value) -> bool:
                 return True
             return any(_has_union_in_type_hints(data=e) for e in merged)
         case dict():
-            if data:
+            if data:  # pyrefly: ignore [implicit-bool]
                 val_ids = list(
                     dict.fromkeys(
                         _structural_type_id(value=v) for v in data.values()
@@ -554,7 +554,7 @@ def compute_preamble(
     collection = _collection_preamble(types=types, language=language)
     present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
     annotated_collection_types: frozenset[type] = frozenset()
-    if has_variable_declaration and present_collection_types:
+    if has_variable_declaration and present_collection_types:  # pyrefly: ignore [implicit-bool]
         annotated_collection_types = (
             present_collection_types
             if _annotates_every_declaration(language=language)
@@ -568,7 +568,7 @@ def compute_preamble(
         language.type_hint_collection_preamble_lines(
             annotated_collection_types
         )
-        if annotated_collection_types
+        if annotated_collection_types  # pyrefly: ignore [implicit-bool]
         else ()
     )
     body = language.compute_body_preamble(types, data)

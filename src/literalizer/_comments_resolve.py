@@ -43,7 +43,7 @@ def _filter_null_dict_comments(
     for key, ec in zip(keys, collection_comments.elements, strict=True):
         if data[key] is None:
             pending.extend(ec.before)
-            if ec.inline:
+            if ec.inline:  # pyrefly: ignore [implicit-bool]
                 pending.append(ec.inline)
         else:
             new_before = (*pending, *ec.before)

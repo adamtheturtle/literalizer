@@ -95,7 +95,7 @@ class _EscapesNullByte(Protocol):
 @beartype
 def _comment_suffix(member: enum.Enum) -> bool:
     """Return whether a comment format closes with a terminator."""
-    config = member.value
+    config = member.value  # pyrefly: ignore [unknown-variable-type]
     assert isinstance(config, literalizer.CommentConfig)  # noqa: S101
     return bool(config.suffix)
 
@@ -601,7 +601,7 @@ def _validate_options(
         ):
             options.append("sequence_format")
     unknown = sorted({option for option in options if option not in OPTIONS})
-    if unknown:
+    if unknown:  # pyrefly: ignore [implicit-bool]
         msg = f"axis {axis_key!r}: unknown option {unknown[0]!r}"
         raise AxisPlanError(msg)
 
@@ -634,7 +634,7 @@ def _validate_member_names(
     unknown = sorted(
         flag for flag in axis.member_flags if flag not in _MEMBER_FLAGS
     )
-    if unknown:
+    if unknown:  # pyrefly: ignore [implicit-bool]
         msg = f"axis {axis_key!r}: unknown member flag {unknown[0]!r}"
         raise AxisPlanError(msg)
 
@@ -742,7 +742,7 @@ def _validate_sole_member_template(
         _placeholders(template=axis.sole_member_name_template)
         - (allowed - {_FORMAT_PLACEHOLDER})
     )
-    if unknown:
+    if unknown:  # pyrefly: ignore [implicit-bool]
         msg = (
             f"axis {axis_key!r}: unknown sole-member name-template "
             f"placeholder(s) {unknown}"
@@ -782,14 +782,14 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
             allowed=allowed,
         )
     unknown = sorted(used - allowed)
-    if unknown:
+    if unknown:  # pyrefly: ignore [implicit-bool]
         msg = (
             f"axis {axis_key!r}: unknown name-template placeholder(s) "
             f"{unknown}"
         )
         raise AxisPlanError(msg)
     omitted = sorted(_required_placeholders(axis=axis) - used)
-    if omitted:
+    if omitted:  # pyrefly: ignore [implicit-bool]
         msg = (
             f"axis {axis_key!r}: name template omits placeholder(s) {omitted}"
         )
@@ -798,7 +798,7 @@ def _validate_template(*, axis_key: str, axis: _ExpandedAxis) -> None:
         # Every half of a pairing has to reach the name, or two
         # combinations would claim one golden file.
         missing = sorted(allowed - used - {_LANG_PLACEHOLDER})
-        if missing:
+        if missing:  # pyrefly: ignore [implicit-bool]
             msg = (
                 f"axis {axis_key!r}: name template omits placeholder(s) "
                 f"{missing}"
@@ -843,7 +843,7 @@ def _primary_axis_plan(
             "declared 'every_non_default_member' axis"
         )
         raise AxisPlanError(msg)
-    if base.overrides:
+    if base.overrides:  # pyrefly: ignore [implicit-bool]
         msg = (
             f"axis {axis_key!r}: primary axis {primary_axis!r} declares "
             "overrides, which a pairing does not carry"
@@ -939,7 +939,7 @@ def _validate_references(
     if isinstance(axis, _FixedOverridesPlan | _CrossProductPlan) and (
         axis.primary_axis is not None
     ):
-        _primary_axis_plan(
+        _ = _primary_axis_plan(
             axis_key=axis_key,
             primary_axis=axis.primary_axis,
             axes=axes,

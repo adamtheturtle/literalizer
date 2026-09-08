@@ -64,13 +64,13 @@ def test_language_metadata_is_declared_by_each_language(
 ) -> None:
     """Every language owns its metadata instead of inheriting defaults."""
     missing = _LANGUAGE_OWNED_METADATA - vars(language_cls).keys()
-    assert not missing
+    assert not missing  # pyrefly: ignore [implicit-bool]
 
 
 def test_language_metadata_has_no_metaclass_defaults() -> None:
     """The meta-class contract must not conceal missing declarations."""
     inherited_defaults = _LANGUAGE_OWNED_METADATA & vars(LanguageCls).keys()
-    assert not inherited_defaults
+    assert not inherited_defaults  # pyrefly: ignore [implicit-bool]
 
 
 def test_language_ids_are_unique_lower_snake_identifiers() -> None:
@@ -90,7 +90,7 @@ def test_variant_metadata_fields_have_no_defaults() -> None:
     parameters = inspect.signature(
         obj=type(Python.variant_metadata)
     ).parameters
-    assert parameters
+    assert parameters  # pyrefly: ignore [implicit-bool]
     defaulted = [
         name
         for name, parameter in parameters.items()
@@ -125,7 +125,7 @@ def test_pygments_name_is_valid(
     """Every language's ``pygments_name`` is recognized by Pygments."""
     if language_cls.pygments_name is None:
         return
-    find_lexer_class_by_name(_alias=language_cls.pygments_name)
+    _ = find_lexer_class_by_name(_alias=language_cls.pygments_name)
 
 
 @pytest.mark.parametrize(
@@ -240,7 +240,7 @@ def test_wrap_combined_in_file_unsupported_raises(
 ) -> None:
     """Check wrap_combined_in_file raises when redefinition is unsupported."""
     with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
-        language_cls().wrap_combined_in_file(
+        _ = language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",
             variable_name="x",

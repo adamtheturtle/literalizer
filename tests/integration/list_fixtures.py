@@ -23,7 +23,8 @@ def main(extension: str, version: str) -> int:
         for path in CASES_DIR.rglob(pattern=f"*{extension}")
         if path.name.endswith(suffix)
     )
-    sys.stdout.buffer.write(b"".join(f"{p}".encode() + b"\0" for p in paths))
+    output = b"".join(f"{path}".encode() + b"\0" for path in paths)
+    _ = sys.stdout.buffer.write(output)
     return 0
 
 

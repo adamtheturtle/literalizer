@@ -172,7 +172,7 @@ def _ruby_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = format_class_name(root) + "Type"
         return (
             f"class {cls}; def {method}(*a, **kw); end; end",
@@ -204,7 +204,7 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     ``Time.utc`` so the host time zone cannot affect the result.
     """
     second = str(object=value.second)
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         second += f" + Rational({value.microsecond}, 1000000)"
     args = (
         f"{value.year}, {value.month}, {value.day}, "
@@ -213,7 +213,7 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     offset = value.utcoffset()
     if offset is None:
         return f"Time.utc({args})"
-    if not offset:
+    if not offset:  # pyrefly: ignore [implicit-bool]
         return f"Time.utc({args})"
     total_seconds = int(offset.total_seconds())
     sign = "+" if total_seconds >= 0 else "-"
@@ -419,7 +419,7 @@ class Ruby(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Ruby."""
@@ -443,7 +443,7 @@ class Ruby(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -453,7 +453,7 @@ class Ruby(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Ruby."""
@@ -611,7 +611,7 @@ class Ruby(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

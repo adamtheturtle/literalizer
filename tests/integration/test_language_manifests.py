@@ -24,7 +24,7 @@ _DEFAULT_TYPE_CAPABILITY_FIELDS = (
 
 def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
     """Create one temporary metadata directory and return its path."""
-    (tmp_path / "example.toml").write_text(data=contents, encoding="utf-8")
+    _ = (tmp_path / "example.toml").write_text(data=contents, encoding="utf-8")
     return tmp_path
 
 
@@ -91,7 +91,7 @@ def test_invalid_metadata_is_actionable(
         expected_exception=LanguageMetadataError,
         match=message,
     ):
-        load_language_metadata(
+        _ = load_language_metadata(
             languages_dir=languages_dir,
             language_id="example",
         )
@@ -107,7 +107,7 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
         expected_exception=LanguageMetadataError,
         match="invalid TOML",
     ):
-        load_language_metadata(
+        _ = load_language_metadata(
             languages_dir=languages_dir,
             language_id="example",
         )
@@ -119,7 +119,7 @@ def test_missing_metadata_is_actionable(tmp_path: Path) -> None:
         expected_exception=LanguageMetadataError,
         match="no test metadata for language 'mystery'",
     ):
-        load_language_metadata(
+        _ = load_language_metadata(
             languages_dir=tmp_path,
             language_id="mystery",
         )
@@ -227,18 +227,18 @@ def test_declaration_style_overrides_name_real_formats() -> None:
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         overrides = metadata.declaration_style_sequence_format_overrides
-        if not overrides:
+        if not overrides:  # pyrefly: ignore [implicit-bool]
             continue
         spec = make_spec(lang_cls=lang_cls)
         style_names = {style.name for style in spec.declaration_styles}
         format_names = {fmt.name for fmt in spec.sequence_formats}
         unknown_styles = set(overrides) - style_names
         unknown_formats = set(overrides.values()) - format_names
-        assert not unknown_styles, (
+        assert not unknown_styles, (  # pyrefly: ignore [implicit-bool]
             f"{metadata.path}: unknown declaration styles "
             f"{sorted(unknown_styles)}"
         )
-        assert not unknown_formats, (
+        assert not unknown_formats, (  # pyrefly: ignore [implicit-bool]
             f"{metadata.path}: unknown sequence formats "
             f"{sorted(unknown_formats)}"
         )

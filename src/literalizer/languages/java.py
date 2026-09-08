@@ -245,7 +245,7 @@ def _java_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root.title()}Type_"
         return (
             (
@@ -320,7 +320,7 @@ def _within_java_zone_offset(value: datetime.datetime) -> datetime.datetime:
 def _format_datetime_java_zoned(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
     value = _within_java_zone_offset(value=value)
-    timezone_name = value.tzname() or "UTC"
+    timezone_name = value.tzname() or "UTC"  # pyrefly: ignore [implicit-bool]
     nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
@@ -348,7 +348,7 @@ def _format_datetime_java_instant(value: datetime.datetime) -> str:
 
 
 @beartype
-def _list_of_open(items: list[Any]) -> str:
+def _list_of_open(items: list[Any]) -> str:  # pyrefly: ignore [explicit-any]
     """Return ``List.of(`` after checking for null elements.
 
     Java's ``List.of()`` throws ``NullPointerException`` on null elements.
@@ -453,7 +453,7 @@ def _java_common_element_type(
 
     Returns ``"Object"`` when elements are empty or have mixed types.
     """
-    if not elements:
+    if not elements:  # pyrefly: ignore [implicit-bool]
         return "Object"
     recurse = functools.partial(
         _java_type_hint,
@@ -581,7 +581,8 @@ def _reject_conflicting_java_modifiers(
     produces source such as ``public private int x``.
 
     Raises:
-        ConflictingVariableModifiersError: If several visibilities are given.
+        ConflictingVariableModifiersError: If several visibility modifiers
+            are given.
     """
     visibility = (
         _JavaModifiers.PUBLIC,
@@ -605,7 +606,7 @@ def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """
     _reject_conflicting_java_modifiers(modifiers=modifiers)
     keywords = [m.value for m in _JavaModifiers if m in modifiers]
-    if not keywords:
+    if not keywords:  # pyrefly: ignore [implicit-bool]
         return ""
     return " ".join(keywords) + " "
 
@@ -673,7 +674,7 @@ def _java_inference_widens_unsafely(*, data: Value) -> bool:
     """
     match data:
         case list() | set() | dict():
-            return not data
+            return not data  # pyrefly: ignore [implicit-bool]
         case _:
             return False
 
@@ -720,7 +721,7 @@ def _apply_java_object_nil_declaration(
     """Format a Java variable declaration, guarding top-level ``null``
     and switching to the typed form whenever modifiers are present.
     """
-    if modifiers:
+    if modifiers:  # pyrefly: ignore [implicit-bool]
         return typed_formatter(name, value, data, modifiers)
     if data is None:
         terminated = _java_split_trailing_line_comments(value=value)
@@ -1195,7 +1196,7 @@ class Java(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Java."""
@@ -1227,7 +1228,7 @@ class Java(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1237,7 +1238,7 @@ class Java(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Java."""
@@ -1439,7 +1440,7 @@ class Java(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1621,7 +1622,7 @@ class Java(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Java "
@@ -1642,7 +1643,7 @@ class Java(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1708,7 +1709,7 @@ class Java(metaclass=LanguageCls):
         record_name_for_value = strategy.record_name_for_value
         assert compute_record_shapes is not None  # noqa: S101
         assert record_name_for_value is not None  # noqa: S101
-        compute_record_shapes(data)
+        _ = compute_record_shapes(data)
 
         @beartype
         def _walk(value: Value) -> None:
@@ -1887,7 +1888,7 @@ class Java(metaclass=LanguageCls):
         del variable_name
         first_token = (
             content.lstrip().split(sep=" ", maxsplit=1)[0]
-            if content.strip()
+            if content.strip()  # pyrefly: ignore [implicit-bool]
             else ""
         )
         is_class_field = first_token in {
@@ -1904,11 +1905,11 @@ class Java(metaclass=LanguageCls):
         method_lines = tuple(
             line for line in body_preamble if not line.startswith("static ")
         )
-        class_block = "\n".join(class_lines) + "\n" if class_lines else ""
+        class_block = "\n".join(class_lines) + "\n" if class_lines else ""  # pyrefly: ignore [implicit-bool]
         method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         if is_class_field:
             field_preamble = (
-                "\n".join(method_lines) + "\n" if method_lines else ""
+                "\n".join(method_lines) + "\n" if method_lines else ""  # pyrefly: ignore [implicit-bool]
             )
             return (
                 f"class {self.module_name} {{\n"
@@ -2141,7 +2142,7 @@ class Java(metaclass=LanguageCls):
         still has no precise component type; per the cross-language
         decision in #2317, Java folds it into the ``Object`` top type.
         """
-        nested_type = request.record_name or (
+        nested_type = request.record_name or (  # pyrefly: ignore [implicit-bool]
             f"{request.element_record_name}[]"
             if request.element_record_name is not None
             else None
@@ -2176,7 +2177,7 @@ class Java(metaclass=LanguageCls):
                 return self._java_record_datetime_type(value)
             case _:
                 return (
-                    self._java_record_scalar_resolver(type(value)) or "Object"
+                    self._java_record_scalar_resolver(type(value)) or "Object"  # pyrefly: ignore [implicit-bool]
                 )
 
     @cached_property

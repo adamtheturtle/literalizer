@@ -226,9 +226,9 @@ def _build_program(json_text: str) -> str:
     has_union = bool(variants)
     entry_lines = "\n      ++ ".join(
         _entry_line(
-            key=key,
+            key=key,  # pyrefly: ignore [unknown-argument-type]
             is_first=index == 0,
-            value=value,
+            value=value,  # pyrefly: ignore [unknown-argument-type]
             has_union=has_union,
         )
         for index, (key, value) in enumerate(iterable=parsed.items())
@@ -255,7 +255,7 @@ def main() -> None:
         capabilities=Dhall.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dhall = shutil.which(cmd="dhall") or "dhall"
+    dhall = shutil.which(cmd="dhall") or "dhall"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.dhall",

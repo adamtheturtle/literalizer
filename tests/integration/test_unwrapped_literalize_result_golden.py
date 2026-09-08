@@ -50,8 +50,8 @@ def test_unwrapped_literalize_result_golden(
         variable_form=NewVariable(name="my_data", modifiers=frozenset()),
         wrap_in_file=False,
     )
-    assert result.body_preamble
-    assert result.pre_declaration_comments
+    assert result.body_preamble  # pyrefly: ignore [implicit-bool]
+    assert result.pre_declaration_comments  # pyrefly: ignore [implicit-bool]
     contents = result.code if attribute == "code" else result.bare_code
     check_golden(
         contents=contents + "\n",
@@ -95,8 +95,8 @@ def test_unwrapped_record_preamble_golden(
         language=spec,
         wrap_in_file=False,
     )
-    assert result.preamble
-    assert not result.body_preamble
+    assert result.preamble  # pyrefly: ignore [implicit-bool]
+    assert not result.body_preamble  # pyrefly: ignore [implicit-bool]
     assert not any(entry in result.code for entry in result.preamble)
     check_golden(
         contents="\n".join((*result.preamble, result.code)) + "\n",

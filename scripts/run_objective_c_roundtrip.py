@@ -69,7 +69,7 @@ def main() -> None:
         capabilities=ObjectiveC.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    clang = shutil.which(cmd="clang") or "clang"
+    clang = shutil.which(cmd="clang") or "clang"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.m",

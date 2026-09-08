@@ -36,7 +36,7 @@ def data_has_special_float(*, data: Value) -> bool:
     literalized document do not pay a recursive call per node.
     """
     pending: list[Value] = [data]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case float():

@@ -412,7 +412,7 @@ def _build_elm_body_preamble(
                 ),
                 (frozenset({set}), f"{p}Set (List {type_name})"),
             )
-            if types & type_set
+            if types & type_set  # pyrefly: ignore [implicit-bool]
         ]
         first_line = f"type {type_name}\n{indent}= {constructors[0]}"
         rest_lines = [f"{indent}| {c}" for c in constructors[1:]]
@@ -432,7 +432,7 @@ def _elm_flatten_dotted(parts: Sequence[str]) -> str:
     if len(parts) == 1:
         return parts[0]
     first = parts[0]
-    rest = "".join(p[0].upper() + p[1:] if p else "" for p in parts[1:])
+    rest = "".join(p[0].upper() + p[1:] if p else "" for p in parts[1:])  # pyrefly: ignore [implicit-bool]
     return first + rest
 
 
@@ -901,7 +901,7 @@ class Elm(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Elm."""
@@ -920,7 +920,7 @@ class Elm(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -930,7 +930,7 @@ class Elm(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(data)
+            return self.value(data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Elm."""
@@ -1209,7 +1209,7 @@ class Elm(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             let_lines = [
                 f"{let_indent}_ = {statement}".replace("\n", f"\n{let_indent}")
                 for statement in split_statements(

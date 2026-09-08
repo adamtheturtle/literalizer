@@ -180,7 +180,7 @@ def _value_to_mojo_type(
     match value:
         case list():
             return _mojo_call_arg_element_to_type(
-                infer_element_type(items=[value]) or list,
+                infer_element_type(items=[value]) or list,  # pyrefly: ignore [implicit-bool]
             )
         case OrderedMap():
             # An ordered map is written as a list of tuples, which no
@@ -191,7 +191,7 @@ def _value_to_mojo_type(
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"
             return _mojo_call_arg_element_to_type(
-                infer_element_type(items=[value]) or dict,
+                infer_element_type(items=[value]) or dict,  # pyrefly: ignore [implicit-bool]
             )
         case _:
             return _mojo_call_arg_element_to_type(type(value))
@@ -288,7 +288,7 @@ def _mojo_compute_slot_signatures(
     builder that unions per-slot Variant alternatives with data-driven
     alternatives) can reuse this analysis without recomputing it.
     """
-    if not params:
+    if not params:  # pyrefly: ignore [implicit-bool]
         return _MojoSlotInfo(typed_params=(), slots=())
     slots = _gather_mojo_call_slots(arg_values=arg_values)
     if len(slots) != len(params):
@@ -326,7 +326,7 @@ def _mojo_compute_slot_signatures(
         if len(known_types) > 1 and heterogeneous_value_type is not None:
             typed.append(f"{name}: {heterogeneous_value_type}")
             continue
-        if not slot_types or None in slot_types:
+        if not slot_types or None in slot_types:  # pyrefly: ignore [implicit-bool]
             return _MojoSlotInfo(
                 typed_params=None,
                 slots=tuple(slot_signatures),
@@ -386,7 +386,7 @@ def _mojo_cross_call_scalar_wrap_ids(
     by ``Value(...)`` without an intermediate typed declaration that
     the call-argument formatter does not synthesize.
     """
-    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):
+    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):  # pyrefly: ignore [implicit-bool]
         return frozenset()
     slot_types = {
         _value_to_mojo_type(
@@ -414,7 +414,7 @@ def _mojo_init_expr(parts: Sequence[str]) -> str:
     root = parts[0]
     fields = parts[1:-1]
     root_type = f"_{root.capitalize()}Type"
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         return f"{root_type}()"
     inner_type = f"_{fields[-1].capitalize()}Type"
     expr = f"{inner_type}()"
@@ -510,7 +510,7 @@ def _mojo_call_preamble_stub(
             f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts)"
             f"{return_suffix}:\n{indent}{indent}pass"
         )
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"_{root.capitalize()}Type"
         return (
             (
@@ -761,7 +761,7 @@ def _collect_variant_alternatives_from_data(
     wrap_ids = collect_heterogeneous_container_ids(
         data=data
     ) | collect_sibling_map_wrap_ids(data=data)
-    if not wrap_ids:
+    if not wrap_ids:  # pyrefly: ignore [implicit-bool]
         return ()
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
     type_names: list[str] = []
@@ -836,7 +836,7 @@ def _render_variant_preamble(
 
     Returns ``()`` when *alternatives* is empty.
     """
-    if not alternatives:
+    if not alternatives:  # pyrefly: ignore [implicit-bool]
         return ()
     joined = ", ".join(alternatives)
     return (
@@ -1152,7 +1152,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Mojo."""
@@ -1171,7 +1171,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1181,7 +1181,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Mojo."""
@@ -1190,7 +1190,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
@@ -1209,7 +1209,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1257,7 +1257,7 @@ class Mojo(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 default_type,
                 default_key_type=default_key_type,
             )
@@ -1452,7 +1452,7 @@ class Mojo(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             content = content + f"\n_ = {variable_name}"
         indented = textwrap.indent(text=content, prefix=self.indent)
         return f"def main():\n{indented}"
@@ -1852,8 +1852,8 @@ class Mojo(metaclass=LanguageCls):
         ) -> str:
             """Format the declaration, annotating string lists."""
             if (
-                isinstance(data, list)
-                and data
+                isinstance(data, list)  # pyrefly: ignore [implicit-bool]
+                and data  # pyrefly: ignore [implicit-bool]
                 and all(
                     _mojo_element_renders_as_string(
                         item=item,

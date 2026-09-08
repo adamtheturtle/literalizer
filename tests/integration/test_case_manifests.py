@@ -32,8 +32,8 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     """Create one temporary case directory and return its path."""
     case_dir = tmp_path / "example"
     case_dir.mkdir()
-    (case_dir / input_name).write_text(data="value: 1\n", encoding="utf-8")
-    (case_dir / "case.toml").write_text(data=manifest, encoding="utf-8")
+    _ = (case_dir / input_name).write_text(data="value: 1\n", encoding="utf-8")
+    _ = (case_dir / "case.toml").write_text(data=manifest, encoding="utf-8")
     return case_dir
 
 
@@ -349,7 +349,7 @@ def test_invalid_manifest_is_actionable(
         tmp_path=tmp_path, manifest=manifest, input_name="input.yaml"
     )
     with pytest.raises(expected_exception=CaseManifestError, match=message):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
@@ -363,7 +363,7 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="invalid TOML",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
@@ -374,7 +374,7 @@ def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="manifest is missing",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_manifest_inventory_is_keyed_in_directory_order(
@@ -384,11 +384,11 @@ def test_manifest_inventory_is_keyed_in_directory_order(
     for name in ("second", "first"):
         case_dir = tmp_path / name
         case_dir.mkdir()
-        (case_dir / "input.yaml").write_text(
+        _ = (case_dir / "input.yaml").write_text(
             data="value: 1\n",
             encoding="utf-8",
         )
-        (case_dir / "case.toml").write_text(
+        _ = (case_dir / "case.toml").write_text(
             data='schema_version = 1\nsuites = ["base"]\n',
             encoding="utf-8",
         )
@@ -411,7 +411,7 @@ def test_declared_input_must_exist(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="declared input does not exist",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_declared_input_name_must_be_supported(tmp_path: Path) -> None:
@@ -427,14 +427,14 @@ def test_declared_input_name_must_be_supported(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="input must name one of",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_input_inference_requires_a_candidate(tmp_path: Path) -> None:
     """Input inference fails when the case contains no supported input."""
     case_dir = tmp_path / "example"
     case_dir.mkdir()
-    (case_dir / "case.toml").write_text(
+    _ = (case_dir / "case.toml").write_text(
         data='schema_version = 1\nsuites = ["base"]\n',
         encoding="utf-8",
     )
@@ -443,7 +443,7 @@ def test_input_inference_requires_a_candidate(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="expected exactly one inferable input file",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_input_inference_rejects_multiple_candidates(tmp_path: Path) -> None:
@@ -453,13 +453,13 @@ def test_input_inference_rejects_multiple_candidates(tmp_path: Path) -> None:
         manifest='schema_version = 1\nsuites = ["base"]\n',
         input_name="input.yaml",
     )
-    (case_dir / "input.json").write_text(data="{}\n", encoding="utf-8")
+    _ = (case_dir / "input.json").write_text(data="{}\n", encoding="utf-8")
 
     with pytest.raises(
         expected_exception=CaseManifestError,
         match="expected exactly one inferable input file",
     ):
-        load_case_manifest(case_dir=case_dir)
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_case_input_returns_manifest_input(tmp_path: Path) -> None:
@@ -593,16 +593,16 @@ def test_every_named_language_set_records_its_reason(cases_dir: Path) -> None:
         for manifest in load_case_manifests(cases_dir=cases_dir)
         for selection in (
             manifest.selection,
-            *(table for table in (manifest.call, manifest.ref) if table),
+            *(table for table in (manifest.call, manifest.ref) if table),  # pyrefly: ignore [implicit-bool]
         )
-        if selection.languages and selection.languages_reason is None
+        if selection.languages and selection.languages_reason is None  # pyrefly: ignore [implicit-bool]
     )
     assert unexplained == []
 
 
 def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
     """An owner naming a single fixture cannot match zero directories."""
-    _write_case(
+    _ = _write_case(
         tmp_path=tmp_path,
         manifest='schema_version = 1\nsuites = ["base"]\n',
         input_name="input.yaml",
@@ -611,7 +611,7 @@ def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match="expected exactly one case with owner 'new-variable-kebab'",
     ):
-        case_dir_name_for_owner(
+        _ = case_dir_name_for_owner(
             cases_dir=tmp_path,
             owner=KEBAB_NEW_VARIABLE_OWNER,
         )
@@ -620,12 +620,12 @@ def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
 def test_every_declared_role_has_a_case(cases_dir: Path) -> None:
     """Every role the schema accepts is claimed by a real case."""
     for role in sorted(CASE_ROLE_NAMES):
-        assert case_dir_names_for_role(cases_dir=cases_dir, role=role)
+        assert case_dir_names_for_role(cases_dir=cases_dir, role=role)  # pyrefly: ignore [implicit-bool]
 
 
 def test_role_lookup_requires_a_declaring_case(tmp_path: Path) -> None:
     """A role no case declares fails naming the role and the manifest."""
-    _write_case(
+    _ = _write_case(
         tmp_path=tmp_path,
         manifest='schema_version = 1\nsuites = ["base"]\n',
         input_name="input.yaml",
@@ -634,7 +634,7 @@ def test_role_lookup_requires_a_declaring_case(tmp_path: Path) -> None:
         expected_exception=CaseManifestError,
         match=r"no case\.toml under .* declares roles = \['indent-input'\]",
     ):
-        case_dir_names_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
+        _ = case_dir_names_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
 
 
 def test_sole_role_lookup_rejects_a_shared_role(tmp_path: Path) -> None:
@@ -645,11 +645,14 @@ def test_sole_role_lookup_rejects_a_shared_role(tmp_path: Path) -> None:
     for name in ("first", "second"):
         case_dir = tmp_path / name
         case_dir.mkdir()
-        (case_dir / "input.yaml").write_text(
+        _ = (case_dir / "input.yaml").write_text(
             data="value: 1\n",
             encoding="utf-8",
         )
-        (case_dir / "case.toml").write_text(data=manifest, encoding="utf-8")
+        _ = (case_dir / "case.toml").write_text(
+            data=manifest,
+            encoding="utf-8",
+        )
     with pytest.raises(
         expected_exception=CaseManifestError,
         match=(
@@ -657,14 +660,14 @@ def test_sole_role_lookup_rejects_a_shared_role(tmp_path: Path) -> None:
             r"roles = \['indent-input'\], found \['first', 'second'\]"
         ),
     ):
-        case_dir_name_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
+        _ = case_dir_name_for_role(cases_dir=tmp_path, role=INDENT_ROLE)
 
 
 def test_variant_axis_lookup_finds_no_case_for_an_unused_axis(
     cases_dir: Path,
 ) -> None:
     """An axis no case declares expands to no inputs."""
-    assert not case_dir_names_for_variant_axis(
+    assert not case_dir_names_for_variant_axis(  # pyrefly: ignore [implicit-bool]
         cases_dir=cases_dir,
         axis="not_an_axis",
     )

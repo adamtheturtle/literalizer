@@ -80,10 +80,10 @@ def main() -> None:
         capabilities=R.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    rscript = shutil.which(cmd="Rscript") or "Rscript"
+    rscript = shutil.which(cmd="Rscript") or "Rscript"  # pyrefly: ignore [implicit-bool]
     with tempfile.TemporaryDirectory() as tmpdir_name:
         script_path = Path(tmpdir_name) / "main.R"
-        script_path.write_text(data=program, encoding="utf-8")
+        _ = script_path.write_text(data=program, encoding="utf-8")
         run_result = subprocess.run(
             args=[rscript, "--no-init-file", str(object=script_path)],
             capture_output=True,
@@ -93,11 +93,11 @@ def main() -> None:
             env={**os.environ},
         )
     if run_result.returncode != 0:
-        sys.stderr.write(
+        _ = sys.stderr.write(
             f"{_LABEL}: Rscript runtime error\n{run_result.stdout}"
             f"{run_result.stderr}",
         )
-        sys.stderr.write(f"\nProgram:\n{program}\n")
+        _ = sys.stderr.write(f"\nProgram:\n{program}\n")
         sys.exit(1)
     roundtrip_common.verify(
         label=_LABEL,
@@ -105,7 +105,7 @@ def main() -> None:
         exclude_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

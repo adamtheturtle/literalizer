@@ -145,8 +145,8 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
         # an empty nested collection from rendering as the empty string,
         # which the shared renderer drops from its parent rather than
         # joining with a separator.
-        or not dict_config.close
-        or not sequence_config.close
+        or not dict_config.close  # pyrefly: ignore [implicit-bool]
+        or not sequence_config.close  # pyrefly: ignore [implicit-bool]
         or dict_config.empty_dict
         not in (None, dict_open.open_str + dict_config.close)
         or sequence_config.empty_sequence
@@ -282,7 +282,7 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
     try:
         # The shared renderer always lays out the root collection over
         # multiple lines; ``collection_layout`` controls nested values.
-        if not data:
+        if not data:  # pyrefly: ignore [implicit-bool]
             return line_prefix + compact(data)
         return root(data)
     except _SharedRendererRequiredError:
@@ -297,7 +297,7 @@ def register_json_native_document_fast(*, language_cls: type) -> None:
     modes are known to render as a plain dynamic-node tree.  Instances
     that turn out not to qualify still fall back automatically.
     """
-    format_document_fast.register(
+    _ = format_document_fast.register(
         cls=language_cls,
         func=format_json_native_document_fast,
     )

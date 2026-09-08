@@ -28,11 +28,11 @@ def _check_fixture(
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir()
         elm_json_path = Path(tmpdir) / "elm.json"
-        elm_json_path.write_text(data=ELM_JSON, encoding="utf-8")
+        _ = elm_json_path.write_text(data=ELM_JSON, encoding="utf-8")
         env = {**os.environ, "ELM_HOME": str(object=worker_elm_home())}
         target = src_dir / "Check.elm"
         src = Path(filename)
-        target.write_text(
+        _ = target.write_text(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
@@ -50,14 +50,14 @@ def _check_fixture(
         return False
     msg = f"{filename}: elm make failed\n"
     msg += result.stderr + result.stdout
-    sys.stderr.write(msg)
+    _ = sys.stderr.write(msg)
     return True
 
 
 def main() -> None:
     """Check syntax of the given Elm golden files."""
     filenames = sys.argv[1:]
-    elm_path = shutil.which(cmd="elm") or "elm"
+    elm_path = shutil.which(cmd="elm") or "elm"  # pyrefly: ignore [implicit-bool]
     with (
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str,
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as worker_homes_str,

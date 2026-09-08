@@ -106,7 +106,7 @@ def _section(*, result: literalizer.LiteralizeResult, name: str) -> str:
         if section.name == name:
             return section.content
     available = (
-        ", ".join(section.name for section in result.sections) or "none"
+        ", ".join(section.name for section in result.sections) or "none"  # pyrefly: ignore [implicit-bool]
     )
     msg = (
         f"Expected a {name!r} file section in the literalized COBOL "
@@ -162,7 +162,7 @@ def main() -> None:
         capabilities=Cobol.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    cobc = shutil.which(cmd="cobc") or "cobc"
+    cobc = shutil.which(cmd="cobc") or "cobc"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="check.cob",

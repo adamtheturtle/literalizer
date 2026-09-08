@@ -59,7 +59,7 @@ def main() -> None:
         capabilities=Jsonnet.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    jsonnet = shutil.which(cmd="jsonnet") or "jsonnet"
+    jsonnet = shutil.which(cmd="jsonnet") or "jsonnet"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.jsonnet",
