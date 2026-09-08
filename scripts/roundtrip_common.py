@@ -56,10 +56,10 @@ def input_for_capabilities(
     capabilities: frozenset[RoundTripCapability],
 ) -> str:
     """Return the base corpus plus only explicitly supported groups."""
-    document: dict[str, object] = json.loads(s=read_input())
+    document: dict[str, object] = json.loads(s=read_input())  # ty: ignore[unsound-assignment]
     groups: dict[str, dict[str, object]] = json.loads(
         s=CAPABILITY_INPUT_PATH.read_text(encoding="utf-8"),
-    )
+    )  # ty: ignore[unsound-assignment]
     for capability in sorted(capabilities):
         overlap = document.keys() & groups[capability].keys()
         if overlap:  # pyrefly: ignore [implicit-bool]
@@ -82,7 +82,7 @@ def expected(*, json_text: str | None) -> dict[str, object]:
     """
     parsed: dict[str, object] = json.loads(
         s=read_input() if json_text is None else json_text
-    )
+    )  # ty: ignore[unsound-assignment]
     return parsed
 
 
@@ -106,7 +106,7 @@ def verify(
     """
     want = expected(json_text=expected_json)
     try:
-        got: dict[str, object] = json.loads(s=produced_json)
+        got: dict[str, object] = json.loads(s=produced_json)  # ty: ignore[unsound-assignment]
     except json.JSONDecodeError as exc:
         _ = sys.stderr.write(
             f"{label}: produced invalid JSON ({exc})\n{produced_json!r}\n",
@@ -133,7 +133,7 @@ def trim_keys(json_text: str, excluded_keys: tuple[str, ...]) -> str:
     value the toolchain would reject (e.g. an integer that overflows
     the target's widest literal type).
     """
-    parsed: dict[str, object] = json.loads(s=json_text)
+    parsed: dict[str, object] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
     for key in excluded_keys:
         _ = parsed.pop(key, None)
     return json.dumps(obj=parsed)

@@ -155,6 +155,7 @@ version_scheme = "post-release"
 [tool.ruff]
 line-length = 79
 lint.select = [ "ALL" ]
+lint.extend-select = [ "ANN", "PGH003", "PYI" ]
 lint.ignore = [
     # Ruff warns that this conflicts with the formatter.
     "COM812",
@@ -170,6 +171,7 @@ lint.ignore = [
     # public API design.
     "PLR0913",
 ]
+lint.explicit-preview-rules = true
 lint.per-file-ignores."doccmd_*.py" = [
     # Allow our chosen docstring line-style - pydocstringformatter handles
     # formatting but docstrings in docs may not match this style.
@@ -196,10 +198,13 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "D",
     "DTZ",
     "E",
+    "ERA",
+    "FA",
     "I",
     "INP",
     "PLR",
     "Q",
+    "RUF",
 ]
 lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py38.py" = [
     # Eager Python 3.8 annotations require collection aliases from typing
@@ -246,6 +251,7 @@ lint.flake8-tidy-imports.banned-api."typing.cast".msg = """\
     typing.cast is banned: use explicit type narrowing or a typed variable instead.\
     """
 lint.pydocstyle.convention = "google"
+lint.preview = true
 per-file-target-version = { "tests/integration/cases/**/Python*@py38.py" = "py38" }
 
 [tool.pylint]
@@ -633,8 +639,21 @@ executionEnvironments = [
 
 [tool.ty]
 src.exclude = [ "repro.py" ]
+rules.blanket-ignore-comment = "error"
+rules.division-by-zero = "warn"
+rules.dynamic-function-decorator-return = "error"
+rules.missing-type-argument = "error"
+rules.possibly-missing-attribute = "warn"
+rules.possibly-missing-import = "warn"
+rules.possibly-unresolved-reference = "warn"
+rules.unsound-assignment = "error"
+rules.unsound-return-statement = "error"
+rules.unsound-yield = "error"
+rules.unsupported-dynamic-base = "warn"
 terminal.error-on-warning = true
 analysis.respect-type-ignore-comments = false
+analysis.strict-equality-semantics = true
+analysis.strict-generic-narrowing = true
 
 [[tool.ty.overrides]]
 include = [ "src/literalizer/languages/**/*.py" ]

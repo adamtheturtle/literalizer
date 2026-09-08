@@ -130,7 +130,7 @@ def _build_program(json_text: str) -> str:
         pre_indent_level=0,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    parsed: JsonValue = json.loads(s=json_text)
+    parsed: JsonValue = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
     rebuild = _build(value=parsed, path_expr=f"*{_VAR_NAME}*")
     emit = f"(write-string (com.inuoe.jzon:stringify {rebuild}))"
     return f"{_HEADER}\n{preamble}\n{result.code}\n{emit}\n"

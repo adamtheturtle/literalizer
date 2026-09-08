@@ -73,7 +73,7 @@ the case tells you it is load-bearing.
 
 CASE_ROLE_NAMES: frozenset[CaseRoleName] = frozenset(
     get_args(tp=_CaseRoleNameLiteral),
-)
+)  # ty: ignore[unsound-assignment]
 
 HETEROGENEOUS_STRATEGY_DEFAULT_ROLE: CaseRoleName = (
     "heterogeneous-strategy-default-input"
@@ -408,7 +408,7 @@ def _empty_names() -> tuple[str, ...]:
 
 def _empty_name_set() -> frozenset[str]:
     """Return a typed empty name set for the validation model."""
-    return frozenset()
+    return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 def _single_stub_parameter() -> tuple[str, ...]:
@@ -448,7 +448,7 @@ class _OwnedCaseSpec(
         info: ValidationInfo,  # pyrefly: ignore [explicit-any]
     ) -> Mapping[str, object]:
         """Add the owning case directory name from the load context."""
-        context: Mapping[str, str] = info.context or {}  # pyrefly: ignore [implicit-bool]
+        context: Mapping[str, str] = info.context or {}  # pyrefly: ignore [implicit-bool]  # ty: ignore[unsound-assignment]
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 

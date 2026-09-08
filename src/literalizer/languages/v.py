@@ -481,7 +481,7 @@ def _v_call_stub(
 # mapping.
 _V_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 # V scalar type for a record field, keyed by the value's exact Python
 # type.  ``bool`` and ``int`` are not here (they have dedicated handling

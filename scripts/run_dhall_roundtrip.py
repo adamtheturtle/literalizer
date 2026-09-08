@@ -140,7 +140,7 @@ def _union_variants(*, preamble: str) -> tuple[str, ...]:
     return tuple(
         part.split(sep=":")[0].strip()
         for part in match.group(1).split(sep="|")
-    )
+    )  # ty: ignore[unsound-return-statement]
 
 
 def _scalar_to_json(*, expression: str, value: object) -> str:

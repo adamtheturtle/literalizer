@@ -875,7 +875,7 @@ def _build_default_object_variant_preamble(
 # mapping.
 _NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 
 _NIM_IDENTIFIER = re.compile(pattern=r"[A-Za-z](_?[A-Za-z0-9])*")

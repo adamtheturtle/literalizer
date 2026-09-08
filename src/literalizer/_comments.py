@@ -271,7 +271,7 @@ def _header_comment_lines(*, ca: _CommentAssociation) -> list[str]:
         return lines
 
     for header_token in ca.comment[1] or ():
-        header_value: str = header_token.value
+        header_value: str = header_token.value  # ty: ignore[unsound-assignment]
         lines.extend(
             _token_comment_lines(value=header_value),
         )
@@ -419,7 +419,7 @@ def _collection_column(
 ) -> int:
     """Return the source column this collection is written at."""
     lc_descriptor: Any = CommentedBase.__dict__["lc"]  # pyrefly: ignore [explicit-any]
-    lc: _LineCol = lc_descriptor.fget(ruamel_data)
+    lc: _LineCol = lc_descriptor.fget(ruamel_data)  # ty: ignore[unsound-assignment]
     return lc.col
 
 
@@ -923,8 +923,8 @@ def _extract_scalar_comments(
         comment: list[Any] | None = token.comment  # pyrefly: ignore [explicit-any]
         if not comment:  # pyrefly: ignore [implicit-bool]
             continue
-        inline_token: CommentToken | None = comment[0]
-        before_tokens: list[CommentToken] = comment[1] or []
+        inline_token: CommentToken | None = comment[0]  # ty: ignore[unsound-assignment]
+        before_tokens: list[CommentToken] = comment[1] or []  # ty: ignore[unsound-assignment]
         if inline_token is not None:
             value: str = inline_token.value
             trailing = _split_scalar_after_token(value=value)

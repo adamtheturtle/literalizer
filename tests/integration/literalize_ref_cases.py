@@ -175,19 +175,19 @@ def _parse_ref_input(
     parsed: _RefData
     match input_format:
         case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=input_source)
+            parsed = json.loads(s=input_source)  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.JSON5:
-            parsed = json5.loads(s=input_source, allow_duplicate_keys=False)
+            parsed = json5.loads(s=input_source, allow_duplicate_keys=False)  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.YAML:
             ruamel_yaml = _YAML()
             parsed = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
                 stream=input_source,
-            )
+            )  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.TOML:
-            parsed = tomllib.loads(input_source)
+            parsed = tomllib.loads(input_source)  # ty: ignore[unsound-assignment]
         case _ as unreachable:
             assert_never(unreachable)
-    return parsed
+    return parsed  # ty: ignore[unsound-return-statement]
 
 
 @beartype

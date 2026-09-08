@@ -28,7 +28,7 @@ def build_typed_dict_null_filtering_variants() -> Iterable[Variant]:
             continue
         variant_cls = type(
             f"_{lang_cls.__name__}SkipNullDictValues",
-            (lang_cls,),  # pyrefly: ignore [unsupported-dynamic-base]
+            (lang_cls,),  # pyrefly: ignore [unsupported-dynamic-base]  # ty: ignore[unsupported-dynamic-base]
             {"skip_null_dict_values": True},
         )
         assert isinstance(variant_cls, literalizer.LanguageCls)  # noqa: S101

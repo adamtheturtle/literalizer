@@ -48,7 +48,7 @@ def main() -> None:
     parsed: dict[str, object] = json5.loads(
         s=document,
         allow_duplicate_keys=False,
-    )
+    )  # ty: ignore[unsound-assignment]
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

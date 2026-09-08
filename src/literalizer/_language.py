@@ -1019,7 +1019,7 @@ class HeterogeneousBehavior:
 @beartype
 def no_compute_wrap_ids(_data: Value, /) -> frozenset[int]:
     """Return an empty wrap-id set — used by non-wrapping languages."""
-    return frozenset()
+    return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -1030,13 +1030,13 @@ def _no_compute_call_slot_wrap_ids(
     """Return an empty wrap-id set for languages without cross-call
     top-level scalar wrapping.
     """
-    return frozenset()
+    return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
 def no_empty_container_literal_overrides(_data: Value, /) -> Mapping[int, str]:
     """Return no empty-container literal replacements."""
-    return {}
+    return {}  # ty: ignore[unsound-return-statement]
 
 
 no_compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]] = (

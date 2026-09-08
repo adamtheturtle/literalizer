@@ -189,7 +189,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     parsed: CaseData
     match input_info.input_format:
         case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=source)
+            parsed = json.loads(s=source)  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.JSON5:
             # The library escapes a raw U+2028 or U+2029 inside a
             # string before handing the source to ``json5``, which
@@ -198,7 +198,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             parsed = json5.loads(
                 s=escape_json5_line_separators(source=source),
                 allow_duplicate_keys=False,
-            )
+            )  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,
@@ -214,17 +214,17 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
                     stream=source,
                 )
             )
-            parsed = yaml_parsed
+            parsed = yaml_parsed  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.TOML:
             # Unlike the other parsers (which return ``Any``),
             # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
             # keys are invariant, so route it through an ``Any`` so it
             # widens to ``CaseData`` like the rest.
             toml_parsed: Any = tomllib.loads(source)  # pyrefly: ignore [explicit-any]
-            parsed = toml_parsed
+            parsed = toml_parsed  # ty: ignore[unsound-assignment]
         case _ as unreachable:
             assert_never(unreachable)
-    return parsed
+    return parsed  # ty: ignore[unsound-return-statement]
 
 
 def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:

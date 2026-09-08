@@ -463,7 +463,7 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
     """
     match value:
         case dict():
-            child: frozenset[type] = frozenset()
+            child: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
             for v in value.values():
                 child = child | _collect_gleam_types(value=v)
             return frozenset({dict}) | child
@@ -471,12 +471,12 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
             child = frozenset()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset({set}) | child
+            return frozenset({set}) | child  # ty: ignore[unsound-return-statement]
         case list():
             child = frozenset()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset({list}) | child
+            return frozenset({list}) | child  # ty: ignore[unsound-return-statement]
         case _:
             return frozenset({_scalar_gleam_type(value=value)})
 

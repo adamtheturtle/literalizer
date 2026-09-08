@@ -387,7 +387,7 @@ def _mojo_cross_call_scalar_wrap_ids(
     the call-argument formatter does not synthesize.
     """
     if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):  # pyrefly: ignore [implicit-bool]
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     slot_types = {
         _value_to_mojo_type(
             value,
@@ -397,7 +397,7 @@ def _mojo_cross_call_scalar_wrap_ids(
         for value in slot_values
     }
     if len(slot_types) <= 1:
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     return frozenset(id(value) for value in slot_values)
 
 

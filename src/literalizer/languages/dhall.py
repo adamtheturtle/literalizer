@@ -166,7 +166,7 @@ def _unescape_dhall_string(value: str) -> str:
 
     def _replace(match: re.Match[str]) -> str:
         """Replace a single escape sequence with its raw character."""
-        hex_digits: str | None = match.group(2)
+        hex_digits: str | None = match.group(2)  # ty: ignore[unsound-assignment]
         if hex_digits is not None:
             return chr(int(hex_digits, base=16))
         return _simple_escapes[match.group(1)]

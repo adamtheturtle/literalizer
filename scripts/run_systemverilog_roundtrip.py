@@ -163,7 +163,7 @@ def _build_program(*, json_text: str) -> str:
         var_name=_VAR_NAME,
         pre_indent_level=2,
     )
-    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)
+    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
     walk = ['        out = "{";']
     for index, (key, value) in enumerate(iterable=parsed.items()):
         fragment = ("," if index else "") + json.dumps(obj=key) + ":"  # pyrefly: ignore [implicit-bool]

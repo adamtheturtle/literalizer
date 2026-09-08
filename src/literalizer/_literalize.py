@@ -790,7 +790,7 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
     ``TUPLE`` style (the hook is ``None``).
     """
     compute = spec.heterogeneous_behavior.compute_tuple_list_ids
-    return compute(data) if compute is not None else frozenset()
+    return compute(data) if compute is not None else frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -3119,7 +3119,7 @@ def _collect_yaml_comment_nodes(
     """Map rendered container identities to their ruamel YAML nodes."""
     if isinstance(raw_value, CommentedMap) and isinstance(value, dict):
         out[id(value)] = raw_value
-        typed_raw_map: Mapping[object, object] = raw_value
+        typed_raw_map: Mapping[object, object] = raw_value  # ty: ignore[unsound-assignment]
         normalized_raw_map = _normalized_mapping_objects(mapping=typed_raw_map)
         for key, child in value.items():
             _collect_yaml_comment_nodes(
@@ -4461,11 +4461,11 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
                         value=child, ref_key=ref_key
                     )
                     if name in contextual:
-                        value = contextual[name]
+                        value = contextual[name]  # ty: ignore[invalid-argument-type]
                         if isinstance(value, int) and not isinstance(
                             value, bool
                         ):
-                            contextual[name] = float(value)
+                            contextual[name] = float(value)  # ty: ignore[invalid-assignment]
             for raw_child, inferred_child in zip(raw, inferred, strict=False):
                 if (
                     _extract_call_arg_ref_name(
@@ -4482,11 +4482,11 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
                         value=child, ref_key=ref_key
                     )
                     if name in contextual:
-                        value = contextual[name]
+                        value = contextual[name]  # ty: ignore[invalid-argument-type]
                         if isinstance(value, int) and not isinstance(
                             value, bool
                         ):
-                            contextual[name] = float(value)
+                            contextual[name] = float(value)  # ty: ignore[invalid-assignment]
             for key in raw.keys() & inferred.keys():
                 raw_child = raw[key]
                 if (
@@ -4769,7 +4769,7 @@ def _compose_bound_refs(
     """
     decl_results = composition.declarations
     main_result = composition.main_result
-    empty_types: frozenset[type] = frozenset()
+    empty_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
     union_types = empty_types.union(
         *(d.types_present for d in decl_results),
         main_result.types_present,
@@ -4963,7 +4963,7 @@ def _collect_ref_names(*, value: Value, ref_key: str) -> frozenset[str]:
                 )
             )
         case _:
-            return frozenset()
+            return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -6361,7 +6361,7 @@ def _validate_call_target(
         language_cls.reserved_bare_call_target_identifiers
         if not target_function_parts[1:]  # pyrefly: ignore [implicit-bool]
         else frozenset()
-    )
+    )  # ty: ignore[unsound-assignment]
     if is_reserved_identifier(
         case_sensitive=head_case_sensitive,
         name=head,
@@ -7089,7 +7089,7 @@ def _preamble_data_with_zip(
     # and body-type inference, while giving container-sensitive language
     # preambles the precise values that appear as call arguments.
     untyped_rows: Any = data_for_preamble  # pyrefly: ignore [explicit-any]
-    rows: list[Value] = untyped_rows
+    rows: list[Value] = untyped_rows  # ty: ignore[unsound-assignment]
     argument_values = tuple(
         argument
         for row in rows
@@ -7586,7 +7586,7 @@ def _literalize_call_with_declarations(
                 "calls in this language"
             ),
         )
-    empty_types: frozenset[type] = frozenset()
+    empty_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
     union_types = empty_types.union(
         *(d.types_present for d in declarations),
         call.types_present,

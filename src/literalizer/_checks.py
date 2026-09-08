@@ -720,7 +720,7 @@ def _find_first_mixed_values(
             ):
                 return children
         case _:
-            return []
+            return []  # ty: ignore[unsound-return-statement]
     for child in children:
         result = _find_first_mixed_values(
             data=child,
@@ -728,7 +728,7 @@ def _find_first_mixed_values(
         )
         if result:  # pyrefly: ignore [implicit-bool]
             return result
-    return []
+    return []  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -976,12 +976,12 @@ def _find_first_mixed_keys(*, data: Value) -> Sequence[Value]:
         case list():
             children = data
         case _:
-            return []
+            return []  # ty: ignore[unsound-return-statement]
     for child in children:
         result = _find_first_mixed_keys(data=child)
         if result:  # pyrefly: ignore [implicit-bool]
             return result
-    return []
+    return []  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -1619,13 +1619,13 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
         compute_tuple_list_ids(data)
         if compute_tuple_list_ids is not None
         else frozenset()
-    )
+    )  # ty: ignore[unsound-assignment]
     compute_record_shapes = behavior.compute_record_shapes
     record_shapes_by_id: Mapping[int, RecordShape] = (
         compute_record_shapes(data)
         if compute_record_shapes is not None
         else {}
-    )
+    )  # ty: ignore[unsound-assignment]
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
     _check_unrepresentable_sibling_maps(
         data=data,

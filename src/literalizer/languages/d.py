@@ -285,7 +285,7 @@ def _format_d_entry_raw(_original: Value, formatted: str) -> str:
 # an empty custom-name mapping.
 _D_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 # Without the ``JSONValue`` wrapper a heterogeneous scalar list, a
 # set, an ordered map or a non-record dict (whether a record field or

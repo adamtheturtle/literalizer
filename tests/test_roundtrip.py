@@ -74,7 +74,7 @@ json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     # is the biggest single performance lever without losing
     # meaningful coverage.
     max_leaves=15,
-)
+)  # ty: ignore[unsound-assignment]
 json_arrays = st.lists(elements=json_values, max_size=5)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=5)
 

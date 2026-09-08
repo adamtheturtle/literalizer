@@ -1020,7 +1020,7 @@ def _build_declaration_formatters(
     """Build declaration/assignment formatters with type annotations."""
     base_declaration: Callable[
         [str, str, Value, frozenset[enum.Enum]], str
-    ] = declaration_style.value.formatter
+    ] = declaration_style.value.formatter  # ty: ignore[unsound-assignment]
     raw_declared = sequence_format.value.declared_type  # pyrefly: ignore [unknown-variable-type]
     sequence_declared_type = (
         raw_declared.replace("Val", type_name)

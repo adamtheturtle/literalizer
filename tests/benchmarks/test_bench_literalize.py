@@ -139,7 +139,7 @@ _YAML_FAST = _build_yaml_source(n_records=100, with_comments=False)
 _YAML_WITH_COMMENTS = _build_yaml_source(n_records=100, with_comments=True)
 _JSON_NESTED = _build_json_source(depth=4, fanout=4)
 _JSON_LARGE_FLAT_RECORDS = _build_json_flat_records_source(n_records=1_000)
-_PREAMBLE_DATA: Value = json.loads(s=_JSON_LARGE_FLAT_RECORDS)
+_PREAMBLE_DATA: Value = json.loads(s=_JSON_LARGE_FLAT_RECORDS)  # ty: ignore[unsound-assignment]
 _JSON_HETEROGENEOUS = json.dumps(
     obj={
         "rows": [

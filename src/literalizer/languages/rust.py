@@ -256,7 +256,7 @@ def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
                 )
                 if match is None:
                     break
-                raw_hashes = match[1]
+                raw_hashes = match[1]  # ty: ignore[unsound-assignment]
                 position = match.end()
             else:
                 closer = f'"{raw_hashes}'

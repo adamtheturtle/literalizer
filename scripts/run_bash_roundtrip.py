@@ -217,7 +217,7 @@ def _build_program(json_text: str) -> str:
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     # The shared document is a top-level JSON object, so the parsed value
     # is always a `dict`.
-    parsed: dict[str, JsonValue] = json.loads(s=json_text)
+    parsed: dict[str, JsonValue] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
     lines: list[str] = ['out=""']
     # The top-level value is always a JSON object, declared by
     # `result.code` as the associative array `$myData`; descend into it
