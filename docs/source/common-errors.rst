@@ -8,18 +8,15 @@ Every exception lives in :mod:`literalizer.exceptions`; this page groups them by
 
 All exceptions are importable from :mod:`literalizer.exceptions`, so a name such as ``HeterogeneousScalarCollectionError`` below refers to :class:`literalizer.exceptions.HeterogeneousScalarCollectionError`.
 
-Errors associated with a particular parsed value expose its location as a
-``path`` tuple containing mapping keys and zero-based sequence indexes. Parse
-errors expose one-based ``line`` and ``column`` attributes when the selected
-parser reports them. These structured attributes let callers present their own
-diagnostics without parsing exception messages.
+Errors associated with a particular parsed value expose its location as a ``path`` tuple containing mapping keys and zero-based sequence indexes.
+Parse errors expose one-based ``line`` and ``column`` attributes when the selected parser reports them.
+These structured attributes let callers present their own diagnostics without parsing exception messages.
 
 Catch any Literalizer error
 ---------------------------
 
 Every public exception inherits from :class:`literalizer.LiteralizerError`.
-Applications that report any invalid input or configuration uniformly can
-catch that shared base::
+Applications that report any invalid input or configuration uniformly can catch that shared base::
 
    from literalizer import LiteralizerError, literalize
 
@@ -116,9 +113,8 @@ Identifiers and variable wrapping
 
 Raised when ``variable_form`` or ``ref_case`` asks for output the target language cannot produce.
 
-Capability flags such as ``supports_empty_dict_key`` let callers check an
-option before constructing a language. If a known option is nevertheless
-passed to a language that does not support it, construction raises:
+Capability flags such as ``supports_empty_dict_key`` let callers check an option before constructing a language.
+If a known option is nevertheless passed to a language that does not support it, construction raises:
 
 .. autoexception:: literalizer.exceptions.UnsupportedOptionError
    :no-index:

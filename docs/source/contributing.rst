@@ -54,16 +54,16 @@ Every directory under :file:`tests/integration/cases/` contains a versioned
 variant-axis and ``literalize_call`` coverage; language capability checks and
 expansion remain in the typed Python runner.
 
-An ordinary case participates in the base and combined suites.  Its
-``input.yaml`` is inferred because it is the directory's sole input:
+An ordinary case participates in the base and combined suites.
+Its ``input.yaml`` is inferred because it is the directory's sole input:
 
 .. code-block:: toml
 
    schema_version = 1
    suites = ["base", "combined"]
 
-A variant-only case declares its specialized owner and the axes that consume
-it.  A suffix distinguishes multiple logical uses of one input:
+A variant-only case declares its specialized owner and the axes that consume it.
+A suffix distinguishes multiple logical uses of one input:
 
 .. code-block:: toml
 
@@ -74,8 +74,8 @@ it.  A suffix distinguishes multiple logical uses of one input:
    axis = "nested_tuple_strategy"
    suffix = "_mixed"
 
-Simple render context also belongs beside the input.  This base case replaces
-null record fields before inference:
+Simple render context also belongs beside the input.
+This base case replaces null record fields before inference:
 
 .. code-block:: toml
 
@@ -85,10 +85,8 @@ null record fields before inference:
    [base_context.record_null_substitutions]
    replacement = -1
 
-Some runners render one chosen input rather than the whole inventory: the
-non-default indent, the bare value at file scope, the pre-indent shapes.  The
-input declares the part it plays in a ``roles`` list, and the runner looks it
-up by role, so the directory name stays a single source of truth on disk:
+Some runners render one chosen input rather than the whole inventory: the non-default indent, the bare value at file scope, the pre-indent shapes.
+The input declares the part it plays in a ``roles`` list, and the runner looks it up by role, so the directory name stays a single source of truth on disk:
 
 .. code-block:: toml
 
@@ -96,8 +94,7 @@ up by role, so the directory name stays a single source of truth on disk:
    suites = ["base", "combined"]
    roles = ["indent-input"]
 
-A ``literalize_call`` case declares that owner and describes its call in a
-``[call]`` table, so the whole case lives in one directory:
+A ``literalize_call`` case declares that owner and describes its call in a ``[call]`` table, so the whole case lives in one directory:
 
 .. code-block:: toml
 
@@ -113,16 +110,11 @@ A ``literalize_call`` case declares that owner and describes its call in a
    requires_call_returns_expression = true
 
 ``owner = "literalize-call"`` and a ``[call]`` table require each other.
-``call_transform`` is a template, not code: it may substitute only ``{call}``
-and ``{zipped}``, and any other placeholder fails at load time.  Enum- and
-type-valued fields are named by string and resolved by the loader:
-``call_style`` (``keyword``, ``positional``, ``object``, or ``command``),
-``zip_input_format``, and the ``variable_form`` pair (``new`` or
-``existing``).  ``variant_only = true`` keeps a case out of the default
-per-language call matrix, leaving it to the call-variant suite.
+``call_transform`` is a template, not code: it may substitute only ``{call}`` and ``{zipped}``, and any other placeholder fails at load time.
+Enum- and type-valued fields are named by string and resolved by the loader: ``call_style`` (``keyword``, ``positional``, ``object``, or ``command``), ``zip_input_format``, and the ``variable_form`` pair (``new`` or ``existing``).
+``variant_only = true`` keeps a case out of the default per-language call matrix, leaving it to the call-variant suite.
 
-A ``$ref`` case declares one of the two ref owners and describes itself in a
-``[ref]`` table:
+A ``$ref`` case declares one of the two ref owners and describes itself in a ``[ref]`` table:
 
 .. code-block:: toml
 
@@ -135,19 +127,13 @@ A ``$ref`` case declares one of the two ref owners and describes itself in a
    [ref.value_sources]
    my_int = "42"
 
-``owner = "literalize-ref"`` (the case renders with an explicit ``ref_case``)
-or ``owner = "literalize-ref-default"`` (the case renders without one) and a
-``[ref]`` table require each other, so the table is spelled even when it is
-empty.  ``ref_key`` defaults to ``"$ref"``.  ``ref_case_override`` names an
-identifier case (``snake``, ``camel``, ``pascal``, ``upper_snake``, or
-``kebab``) that replaces the language's default and skips any language whose
-``supported_ref_cases`` excludes it.  Each ``[ref.value_sources]`` entry maps
-a ref name to a JSON source that seeds the bound value for that ref.
+``owner = "literalize-ref"`` (the case renders with an explicit ``ref_case``) or ``owner = "literalize-ref-default"`` (the case renders without one) and a ``[ref]`` table require each other, so the table is spelled even when it is empty.
+``ref_key`` defaults to ``"$ref"``.
+``ref_case_override`` names an identifier case (``snake``, ``camel``, ``pascal``, ``upper_snake``, or ``kebab``) that replaces the language's default and skips any language whose ``supported_ref_cases`` excludes it.
+Each ``[ref.value_sources]`` entry maps a ref name to a JSON source that seeds the bound value for that ref.
 
-A case renders under every language unless it narrows.  ``gates`` names the
-property the narrowing follows from, in the same vocabulary the variant axes
-and the rejection manifests use, so a language that later gains that property
-is covered without editing the manifest:
+A case renders under every language unless it narrows.
+``gates`` names the property the narrowing follows from, in the same vocabulary the variant axes and the rejection manifests use, so a language that later gains that property is covered without editing the manifest:
 
 .. code-block:: toml
 
@@ -155,9 +141,7 @@ is covered without editing the manifest:
    suites = ["base"]
    gates = [{ kind = "metadata_field", field = "nested_list_widening", value = "integer_width" }]
 
-A narrowing no property expresses -- a syntax quirk one language has, or a
-deliberate one-language sample of a rendering that does not vary -- names its
-languages instead and says in ``languages_reason`` which of the two it is:
+A narrowing no property expresses -- a syntax quirk one language has, or a deliberate one-language sample of a rendering that does not vary -- names its languages instead and says in ``languages_reason`` which of the two it is:
 
 .. code-block:: toml
 
@@ -166,16 +150,12 @@ languages instead and says in ``languages_reason`` which of the two it is:
    languages = ["Lua"]
    languages_reason = "Lua alone closes a long string with the ]] delimiter this input runs up against."
 
-``languages`` and ``languages_reason`` require each other, and a case naming
-both ``languages`` and ``gates`` states its narrowing twice and is rejected.
-The ``[call]`` and ``[ref]`` tables narrow the languages they render under the
-same way.
+``languages`` and ``languages_reason`` require each other, and a case naming both ``languages`` and ``gates`` states its narrowing twice and is rejected.
+The ``[call]`` and ``[ref]`` tables narrow the languages they render under the same way.
 
-Non-default inputs can be explicit with ``input = "input.toml"``.  Supported
-variant context fields are ``variable_form`` (``new``, ``existing``, or
-``both``), ``collection_layout``, ``pre_indent_level``, and
-``record_null_substitutions``.  The loader rejects unknown fields or axes,
-missing inputs, duplicate logical cases, and duplicate golden targets.
+Non-default inputs can be explicit with ``input = "input.toml"``.
+Supported variant context fields are ``variable_form`` (``new``, ``existing``, or ``both``), ``collection_layout``, ``pre_indent_level``, and ``record_null_substitutions``.
+The loader rejects unknown fields or axes, missing inputs, duplicate logical cases, and duplicate golden targets.
 
 Rejection manifests
 -------------------
@@ -195,12 +175,10 @@ each raised under a table per exception type:
    [UnrepresentableInputError]
    "C[CJSON]" = "C json_type can only represent dict keys as JSON object strings, not int"
 
-A language raising a different exception from the rest of its family therefore
-appears as its own table rather than as a word buried in a line.
+A language raising a different exception from the rest of its family therefore appears as its own table rather than as a word buried in a line.
 
-A case is keyed by its language, then by the option member it ran under and the
-declared value it substituted, if the manifest varies either.  An option member
-is named (``[CJSON]``) and a declared value is quoted (``['9Entry']``).
+A case is keyed by its language, then by the option member it ran under and the declared value it substituted, if the manifest varies either.
+An option member is named (``[CJSON]``) and a declared value is quoted (``['9Entry']``).
 
 The manifest itself declares only what provokes the rejection:
 
@@ -219,20 +197,14 @@ The manifest itself declares only what provokes the rejection:
    source = "{1: one}"
    input_format = "yaml"
 
-``gates`` selects the languages the rejection is claimed for, using the same
-vocabulary as the golden suite's variant axes; a language that later joins
-those gates is covered without editing the manifest.  A rejection about one
-language's own rendering names it in ``languages`` instead.  ``option`` runs
-each language once per member of that option, and ``values`` runs a case per
-declared value, which any ``{value}`` in a constructor argument substitutes.
+``gates`` selects the languages the rejection is claimed for, using the same vocabulary as the golden suite's variant axes; a language that later joins those gates is covered without editing the manifest.
+A rejection about one language's own rendering names it in ``languages`` instead.
+``option`` runs each language once per member of that option, and ``values`` runs a case per declared value, which any ``{value}`` in a constructor argument substitutes.
 
-``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the
-loader rejects an argument the named API does not take.  ``exceptions`` lists
-the exception types any selected language may raise; the golden file records
-which one each raised, together with its message.
+``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the loader rejects an argument the named API does not take.
+``exceptions`` lists the exception types any selected language may raise; the golden file records which one each raised, together with its message.
 
-A language a gate admits that represents the input rather than refusing it is
-declared in an ``accepts`` entry with the reason it does:
+A language a gate admits that represents the input rather than refusing it is declared in an ``accepts`` entry with the reason it does:
 
 .. code-block:: toml
 
@@ -242,9 +214,7 @@ declared in an ``accepts`` entry with the reason it does:
    Renders tuples alongside the JSON value type rather than instead of it.
    """
 
-An entry there is an assertion rather than a mute: the suite makes the same
-call for those languages and fails if it stops going through, so a language
-that starts rejecting cannot sit behind a stale reason.
+An entry there is an assertion rather than a mute: the suite makes the same call for those languages and fails if it stops going through, so a language that starts rejecting cannot sit behind a stale reason.
 
 Documentation
 -------------
