@@ -432,20 +432,42 @@ Forth visitor stream
 Forth has no native mapping or sequence type, so the Forth language does not emit a data literal.
 Instead it emits a colon definition that executes a sequence of small constructor words, one per structural event in the document:
 
-============  ===========================  =================================
-Word          Stack effect                 Meaning
-============  ===========================  =================================
-``+obj``      ``( -- )``                   start of an object
-``-obj``      ``( -- )``                   end of an object
-``+arr``      ``( -- )``                   start of an array
-``-arr``      ``( -- )``                   end of an array
-``+key``      ``( c-addr u -- )``          a member name
-``+int``      ``( n -- )``                 an integer value
-``+float``    ``( F: r -- )``              a floating-point value
-``+str``      ``( c-addr u -- )``          a string value
-``+bool``     ``( flag -- )``              a boolean value
-``+null``     ``( -- )``                   a null value
-============  ===========================  =================================
+.. list-table::
+   :header-rows: 1
+
+   * - Word
+     - Stack effect
+     - Meaning
+   * - ``+obj``
+     - ``( -- )``
+     - start of an object
+   * - ``-obj``
+     - ``( -- )``
+     - end of an object
+   * - ``+arr``
+     - ``( -- )``
+     - start of an array
+   * - ``-arr``
+     - ``( -- )``
+     - end of an array
+   * - ``+key``
+     - ``( c-addr u -- )``
+     - a member name
+   * - ``+int``
+     - ``( n -- )``
+     - an integer value
+   * - ``+float``
+     - ``( F: r -- )``
+     - a floating-point value
+   * - ``+str``
+     - ``( c-addr u -- )``
+     - a string value
+   * - ``+bool``
+     - ``( flag -- )``
+     - a boolean value
+   * - ``+null``
+     - ``( -- )``
+     - a null value
 
 For example, ``{"name": "Alice", "tags": [1, 2]}`` is literalized to:
 
