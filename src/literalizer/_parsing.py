@@ -534,7 +534,7 @@ def _validate_yaml_float_tokens(*, source: str) -> None:
         return
     tokens: Iterable[object] = get_yaml().scan(  # pyright: ignore[reportUnknownMemberType]
         stream=source
-    )
+    )  # ty: ignore[unsound-assignment]
     for token in tokens:
         if not isinstance(token, _YamlScalarToken) or token.style is not None:
             continue
@@ -742,7 +742,7 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
     constructor = ruamel_yaml.constructor
     original: Callable[[object, _YamlScalarNode], object] = (
         constructor.yaml_constructors[tag]
-    )
+    )  # ty: ignore[unsound-assignment]
 
     def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
         """Construct a YAML integer while preserving signed zero.
@@ -975,7 +975,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             _YAML_PARSERS.round_trip = None
             detail = _yaml_load_detail(exc=exc)
             message = f"Invalid YAML: {detail}"
-            mark: _ParserMark | None = vars(exc).get("problem_mark")
+            mark: _ParserMark | None = vars(exc).get("problem_mark")  # ty: ignore[unsound-assignment]
             raise YAMLParseError(
                 message,
                 line=mark.line + 1 if mark is not None else None,
@@ -1055,7 +1055,7 @@ def _preserve_toml_negative_zero(
         return {
             key: _preserve_toml_negative_zero(
                 data=value,
-                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
+                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]  # ty: ignore[invalid-argument-type]
             )
             for key, value in data.items()
         }
@@ -1110,7 +1110,7 @@ def _parse_toml(*, source: str) -> ParsedInput:
     except _FiniteFloatRangeError as exc:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
-    unwrapped: _TomlData = toml_doc.unwrap()
+    unwrapped: _TomlData = toml_doc.unwrap()  # ty: ignore[unsound-assignment]
     unwrapped = _preserve_toml_negative_zero(
         data=unwrapped,
         raw_data=toml_doc,

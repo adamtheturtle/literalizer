@@ -263,7 +263,7 @@ def _odin_call_body_stub(
 # mapping.
 _ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 
 _ODIN_UNUSABLE_FIELD_KEYS: frozenset[str] = frozenset(

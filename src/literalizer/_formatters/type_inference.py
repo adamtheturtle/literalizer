@@ -565,8 +565,8 @@ def _partition_shapes_by_shared_keys(
         """Return the root index for *index* in the union-find."""
         while parent[index] != index:
             parent[index] = parent[parent[index]]
-            index = parent[index]
-        return index
+            index = parent[index]  # ty: ignore[unsound-assignment]
+        return index  # ty: ignore[unsound-return-statement]
 
     def union(left: int, right: int) -> None:
         """Merge the groups containing *left* and *right*."""

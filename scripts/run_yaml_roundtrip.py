@@ -51,7 +51,7 @@ def main() -> None:
     document = _build_document(json_text=json_text)
     parsed: dict[str, object] = yaml.safe_load(  # type: ignore[no-untyped-call]
         stream=document,
-    )
+    )  # ty: ignore[unsound-assignment]
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

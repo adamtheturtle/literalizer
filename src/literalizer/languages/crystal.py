@@ -290,7 +290,7 @@ _CRYSTAL_I32_MAX = 2**31 - 1
 # an empty custom-name mapping.
 _CRYSTAL_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = (
     MappingProxyType(mapping={})
-)
+)  # ty: ignore[unsound-assignment]
 
 # Crystal scalar type for a record field, keyed by the value's exact
 # Python type.  ``bool`` and ``int`` are not here (they have dedicated

@@ -108,7 +108,7 @@ def _build_program(json_text: str) -> str:
         pre_indent_level=0,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    parsed: JsonValue = json.loads(s=json_text)
+    parsed: JsonValue = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
     emit_expr = _emit(value=parsed, path_expr=f"${_VAR_NAME}")
     return (
         f"{_HEADER}\n{preamble}\n{result.code}\nputs -nonewline {emit_expr}\n"

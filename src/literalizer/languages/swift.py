@@ -496,7 +496,7 @@ def _format_swift_typed_declaration(
 # an empty custom-name mapping.
 _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 _SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS = frozenset({"`inout`"})
 
 

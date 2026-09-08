@@ -58,7 +58,7 @@ _ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset(
     # pylint does not model PEP 695 aliases, so it does not see the
     # ``__value__`` every ``type`` statement defines.
     get_args(tp=Scalar.__value__)  # pylint: disable=no-member
-) | {OrderedMap, dict, list, set}
+) | {OrderedMap, dict, list, set}  # ty: ignore[unsound-assignment]
 """Every type :func:`_collect_value_types` can report.
 
 Once all of them have been observed there is nothing left to learn, so
@@ -332,7 +332,7 @@ def _recordized_dict_ids(*, data: Value, language: Language) -> frozenset[int]:
     """
     behavior = language.heterogeneous_behavior
     if behavior.render_record_literal is None:
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     return frozenset(
         collect_record_shapes(data=data)
     ) - behavior.compute_wrap_ids(data)
@@ -553,7 +553,7 @@ def compute_preamble(
     )
     collection = _collection_preamble(types=types, language=language)
     present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
-    annotated_collection_types: frozenset[type] = frozenset()
+    annotated_collection_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
     if has_variable_declaration and present_collection_types:  # pyrefly: ignore [implicit-bool]
         annotated_collection_types = (
             present_collection_types

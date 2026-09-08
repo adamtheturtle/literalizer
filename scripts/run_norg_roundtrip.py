@@ -101,7 +101,7 @@ def main() -> None:
         library_path=os.environ["LITERALIZER_NORG_PARSER"],
     )
     code_block = _extract_code_block(document=document, language=language)
-    parsed: dict[str, object] = json.loads(s=code_block)
+    parsed: dict[str, object] = json.loads(s=code_block)  # ty: ignore[unsound-assignment]
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

@@ -300,7 +300,7 @@ def _make_zig_call_preamble_stub(
 # an empty custom-name mapping.
 _ZIG_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 # A datetime/date whose format produces an ``int`` epoch is a Zig
 # ``i64`` record field; an ISO string one is ``[]const u8``.  The

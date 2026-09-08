@@ -78,7 +78,7 @@ def _all_numbers(*, value: _JsonValue) -> Iterable[_JsonValue]:
 
 def _excluded_keys(*, json_text: str) -> tuple[str, ...]:
     """Return the top-level keys holding a number ``Num`` cannot keep."""
-    document: dict[str, _JsonValue] = json.loads(s=json_text)
+    document: dict[str, _JsonValue] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
     return tuple(
         key
         for key, value in document.items()

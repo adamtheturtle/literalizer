@@ -146,7 +146,7 @@ def _build_program(*, json_text: str) -> str:
     if list_probe.preamble:  # pyrefly: ignore [implicit-bool]
         message = "the Mojo List semantic probe unexpectedly needs a preamble"
         raise AssertionError(message)
-    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)
+    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
     walk = [
         '    var json = Python.import_module("json")',
         "    var out = Python.dict()",

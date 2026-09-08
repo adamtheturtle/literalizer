@@ -184,7 +184,7 @@ def _make_format_c_entry(
 _C_RECORD_PREFIX = "Record"
 _C_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
     mapping={},
-)
+)  # ty: ignore[unsound-assignment]
 
 
 @beartype

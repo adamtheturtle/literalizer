@@ -72,9 +72,9 @@ def _siblings_mixed_ids(
     does not apply.
     """
     if len(siblings) != total or len(siblings) <= 1:
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     if not _all_scalars_mixed_buckets(values=combined):
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     return frozenset(id(sibling) for sibling in siblings)
 
 
@@ -88,7 +88,7 @@ def _collect_from_dict(data: dict[Scalar, Value]) -> frozenset[int]:
         frozenset({id(data)})
         if _all_scalars_mixed_buckets(values=values)
         else frozenset()
-    )
+    )  # ty: ignore[unsound-assignment]
     sublists: list[list[Value]] = [v for v in values if isinstance(v, list)]
     sublist_ids = _siblings_mixed_ids(
         siblings=sublists,
@@ -110,7 +110,7 @@ def _collect_from_list(data: list[Value]) -> frozenset[int]:
         frozenset({id(data)})
         if _all_scalars_mixed_buckets(values=data)
         else frozenset()
-    )
+    )  # ty: ignore[unsound-assignment]
     sublists: list[list[Value]] = [v for v in data if isinstance(v, list)]
     sublist_ids = _siblings_mixed_ids(
         siblings=sublists,
@@ -151,7 +151,7 @@ def collect_heterogeneous_container_ids(*, data: Value) -> frozenset[int]:
         case list():
             return _collect_from_list(data=data)
         case _:
-            return frozenset()
+            return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -176,7 +176,7 @@ def _widen_sibling_map_wrap_ids(*, pool: Sequence[Value]) -> frozenset[int]:
     ]
     min_maps_for_widening = 2
     if len(maps) < min_maps_for_widening:
-        return frozenset()
+        return frozenset()  # ty: ignore[unsound-return-statement]
     child_pool: list[Value] = [value for m in maps for value in m.values()]
     if _all_scalars_mixed_buckets(values=child_pool):
         return frozenset(id(m) for m in maps)
@@ -208,7 +208,7 @@ def collect_sibling_map_wrap_ids(*, data: Value) -> frozenset[int]:
     """
     match data:
         case OrderedMap():
-            own: frozenset[int] = frozenset()
+            own: frozenset[int] = frozenset()  # ty: ignore[unsound-assignment]
             children: list[Value] = list(data.values())
         case dict():
             own = _widen_sibling_map_wrap_ids(pool=list(data.values()))
@@ -230,11 +230,11 @@ def collect_sibling_map_wrap_ids(*, data: Value) -> frozenset[int]:
             )
             children = list(data)
         case _:
-            return frozenset()
+            return frozenset()  # ty: ignore[unsound-return-statement]
     descendants = frozenset[int]().union(
         *(collect_sibling_map_wrap_ids(data=child) for child in children)
     )
-    return own | descendants
+    return own | descendants  # ty: ignore[unsound-return-statement]
 
 
 @beartype

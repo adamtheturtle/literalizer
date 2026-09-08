@@ -1413,7 +1413,7 @@ def _cpp14_widened_sibling_map_ids(
         == type_ctx.variant_type_name
     ):
         return frozenset(id(sibling) for sibling in siblings)
-    return frozenset()
+    return frozenset()  # ty: ignore[unsound-return-statement]
 
 
 @beartype
@@ -1517,12 +1517,12 @@ def _cpp14_explicit_variant_behavior(
             frozenset(base.compute_record_shapes(data))
             if base.compute_record_shapes is not None
             else frozenset()
-        )
+        )  # ty: ignore[unsound-assignment]
         tuple_ids: frozenset[int] = (
             base.compute_tuple_list_ids(data)
             if base.compute_tuple_list_ids is not None
             else frozenset()
-        )
+        )  # ty: ignore[unsound-assignment]
         return base.compute_wrap_ids(data) | _cpp14_variant_parent_ids(
             data=data,
             type_ctx=type_ctx,
@@ -1985,7 +1985,7 @@ def _build_cpp_record_preamble(
             frozenset(collect_record_shapes(data=data))
             if type_ctx.variant_type_name != "std::variant"
             else frozenset()
-        )
+        )  # ty: ignore[unsound-assignment]
         # A list the active behavior wraps in the carrier is rendered
         # as a carrier-typed vector rather than a tuple, so it still
         # asks for the carrier declaration (issue #4568).
