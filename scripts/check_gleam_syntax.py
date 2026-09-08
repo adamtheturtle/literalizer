@@ -40,13 +40,13 @@ def _strip_version(*, relative: Path) -> Path:
 def main() -> None:
     """Check syntax of all Gleam golden files passed on stdin."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
-    gleam_path = shutil.which(cmd="gleam") or "gleam"
-    fixtures = [Path(line) for line in sys.stdin.read().splitlines() if line]
+    gleam_path = shutil.which(cmd="gleam") or "gleam"  # pyrefly: ignore [implicit-bool]
+    fixtures = [Path(line) for line in sys.stdin.read().splitlines() if line]  # pyrefly: ignore [implicit-bool]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy the primed project (deps already downloaded) so we do not
         # pay `gleam deps download` here.
-        shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
+        _ = shutil.copytree(src=primed_dir, dst=tmpdir, dirs_exist_ok=True)
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir(exist_ok=True)
 
@@ -58,7 +58,7 @@ def main() -> None:
             )
             destination = src_dir / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(
+            _ = destination.write_text(
                 data=fixture.read_text(encoding="utf-8"),
                 encoding="utf-8",
             )
@@ -72,8 +72,8 @@ def main() -> None:
         )
 
     if result.returncode != 0:
-        sys.stderr.write(result.stderr)
-        sys.stderr.write(result.stdout)
+        _ = sys.stderr.write(result.stderr)
+        _ = sys.stderr.write(result.stdout)
         sys.exit(1)
 
 

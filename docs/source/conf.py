@@ -62,7 +62,7 @@ jinja_contexts = {
                 "strategies": ", ".join(f"``{member}``" for member in members),
             }
             for name, members in sorted(_strategies_by_language.items())
-            if members
+            if members  # pyrefly: ignore [implicit-bool]
         ],
     },
 }

@@ -167,7 +167,7 @@ def main() -> None:
         excluded_keys=excluded_keys,
     )
     program = _build_program(json_text=trimmed_json)
-    wren = shutil.which(cmd="wren_cli") or "wren_cli"
+    wren = shutil.which(cmd="wren_cli") or "wren_cli"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.wren",

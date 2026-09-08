@@ -33,13 +33,13 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
     """Cyclic Python-value arguments never leak ``RecursionError``."""
     cycle: list[object] = []
     cycle.append(cycle)
-    cyclic_value: Any = cycle
+    cyclic_value: Any = cycle  # pyrefly: ignore [explicit-any]
 
     with pytest.raises(
         expected_exception=InvalidValueInputError,
         match="ref_values",
     ):
-        literalize(
+        _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -49,7 +49,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
         expected_exception=InvalidValueInputError,
         match="bound_refs",
     ):
-        literalize(
+        _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -59,7 +59,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
         expected_exception=InvalidValueInputError,
         match="record_null_substitutions",
     ):
-        literalize(
+        _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -70,9 +70,9 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
 def test_deep_supplemental_value_raises_typed_error() -> None:
     """Deep cycle-free Python values avoid leaking recursion errors."""
     value: object = 0
-    for _ in range(2_000):
+    for _ in range(2_000):  # pyrefly: ignore [non-convergent-recursion]
         value = [value]
-    deeply_nested_value: Any = value
+    deeply_nested_value: Any = value  # pyrefly: ignore [explicit-any]
 
     with pytest.raises(
         expected_exception=InvalidValueInputError,
@@ -81,7 +81,7 @@ def test_deep_supplemental_value_raises_typed_error() -> None:
             "nesting depth"
         ),
     ):
-        literalize(
+        _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),

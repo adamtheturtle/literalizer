@@ -86,7 +86,7 @@ def split_statements(
             depth = 0
             grouped.append([])
     joined = ["\n".join(group) for group in grouped]
-    return [statement for statement in joined if statement.strip()]
+    return [statement for statement in joined if statement.strip()]  # pyrefly: ignore [implicit-bool]
 
 
 @beartype

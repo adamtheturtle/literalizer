@@ -29,10 +29,10 @@ def _check_type_block(lines: list[str], term_index: int) -> str | None:
     code = [
         line
         for line in first_block
-        if line.strip() and not line.strip().startswith("--")
+        if line.strip() and not line.strip().startswith("--")  # pyrefly: ignore [implicit-bool]
     ]
 
-    if not code:
+    if not code:  # pyrefly: ignore [implicit-bool]
         return "First top-level block is empty"
 
     if not code[0].startswith("MOBILE DATA TYPE "):
@@ -131,7 +131,7 @@ def main() -> None:
     src = Path(filename)
     error = _check_file(path=src)
     if error is not None:
-        sys.stderr.write(f"{filename}: Occam-pi syntax error: {error}\n")
+        _ = sys.stderr.write(f"{filename}: Occam-pi syntax error: {error}\n")
         sys.exit(1)
 
 

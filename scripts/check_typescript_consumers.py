@@ -43,7 +43,7 @@ _DECLARATION = re.compile(
 def _probe(*, text: str) -> str:
     """Return the consumer probe for the last declaration in *text*."""
     declarations = _DECLARATION.findall(string=text)
-    if not declarations:
+    if not declarations:  # pyrefly: ignore [implicit-bool]
         return ""
     name, annotation, value = declarations[-1]
     # An object literal without an annotation has no index signature,
@@ -62,14 +62,14 @@ def _probe(*, text: str) -> str:
 
 def main() -> None:
     """Type-check the given TypeScript golden files with probes."""
-    tsc = shutil.which(cmd="tsc") or "tsc"
+    tsc = shutil.which(cmd="tsc") or "tsc"  # pyrefly: ignore [implicit-bool]
     with tempfile.TemporaryDirectory() as tmpdir:
         names: list[str] = []
         for golden in sys.argv[1:]:
             path = Path(golden)
             text = path.read_text(encoding="utf-8")
             names.append(f"{path.parent.name}__{path.name}")
-            (Path(tmpdir) / names[-1]).write_text(
+            _ = (Path(tmpdir) / names[-1]).write_text(
                 data=text + _probe(text=text),
                 encoding="utf-8",
             )
@@ -82,7 +82,7 @@ def main() -> None:
             encoding="utf-8",
         )
     if result.returncode != 0:
-        sys.stderr.write(
+        _ = sys.stderr.write(
             f"tsc --strict failed\n{result.stdout}{result.stderr}"
         )
         sys.exit(1)

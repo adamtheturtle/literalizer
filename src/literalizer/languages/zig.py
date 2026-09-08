@@ -281,7 +281,7 @@ def _make_zig_call_preamble_stub(
             prev_type = curr_type
         root = chain[0]
         intermediates = chain[1:]
-        if intermediates:
+        if intermediates:  # pyrefly: ignore [implicit-bool]
             root_type = f"{root.title()}Type_"
             lines.append(
                 f"const {root_type} = struct {{ "
@@ -471,7 +471,7 @@ def _zig_record_field_identifier(key: str, /) -> str:
     its literal (``.@"error" = value``), so the output compiles
     (issue #2963).
     """
-    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_IDENTIFIER.match(
+    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_IDENTIFIER.match(  # pyrefly: ignore [implicit-bool]
         string=key
     ):
         return "@" + format_string_backslash_control(
@@ -796,7 +796,7 @@ class Zig(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Zig."""
@@ -815,7 +815,7 @@ class Zig(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -825,7 +825,7 @@ class Zig(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Zig."""
@@ -1119,7 +1119,7 @@ class Zig(metaclass=LanguageCls):
             body_preamble=effective_body_preamble,
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             return f"pub fn main() void {{\n{indented}\n}}"
         match json_mode, self._record_strategy_active, is_var:
             case True, _, True:
@@ -1423,7 +1423,7 @@ class Zig(metaclass=LanguageCls):
             # ``or`` is not a coverage branch, so no unreachable arm is
             # added for a corpus that has no empty ordered-map field.
             val_type = self._zig_value_type(
-                (list(value.values()) or [0])[0],
+                (list(value.values()) or [0])[0],  # pyrefly: ignore [implicit-bool]
             )
             return f"[]const struct {{ key: []const u8, val: {val_type} }}"
         if isinstance(value, list):
@@ -1451,7 +1451,7 @@ class Zig(metaclass=LanguageCls):
         key ties on every element, so ``max`` keeps ``items[0]`` -- an
         arbitrary but type-equivalent representative.
         """
-        if not items:
+        if not items:  # pyrefly: ignore [implicit-bool]
             return "[]const i64"
         inferred = infer_element_type(items=items)
         if inferred is None:
@@ -1570,7 +1570,7 @@ class Zig(metaclass=LanguageCls):
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
                 value_preamble = (
-                    _ZVAL_STATIC_PREAMBLE if compute_wrap_ids(data) else ()
+                    _ZVAL_STATIC_PREAMBLE if compute_wrap_ids(data) else ()  # pyrefly: ignore [implicit-bool]
                 )
                 return (*value_preamble, *record_preamble(data))
 
@@ -1754,7 +1754,7 @@ class Zig(metaclass=LanguageCls):
             """Return the slice opener, or the tuple opener for a
             heterogeneous list.
             """
-            if items and infer_element_type(items=items) is None:
+            if items and infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
                 return ".{"
             return "&.{"
 

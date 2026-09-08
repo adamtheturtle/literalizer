@@ -48,7 +48,7 @@ def test_above_guard_depth_is_a_typed_error() -> None:
         expected_exception=JSONParseError,
         match="exceeds the supported nesting depth",
     ):
-        literalize(
+        _ = literalize(
             source=source,
             input_format=InputFormat.JSON,
             language=PureScript(),

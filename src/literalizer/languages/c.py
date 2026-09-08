@@ -300,7 +300,7 @@ def _all_record_shaped(items: list[Value], /) -> bool:
     formatted, so a list reaching this predicate is single-shape and
     the deduced ``struct RecordN[N]`` member is well-formed.
     """
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return False
     return all(_c_record_dict(item) for item in items)
 
@@ -585,15 +585,15 @@ def _c_call_stub(
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = value_type if is_value else "void"
-    proto = ", ".join([value_type] * len(params)) if params else "void"
+    proto = ", ".join([value_type] * len(params)) if params else "void"  # pyrefly: ignore [implicit-bool]
     stub_params = ", ".join(
         _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
     )
-    stub_signature = stub_params or "void"
+    stub_signature = stub_params or "void"  # pyrefly: ignore [implicit-bool]
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = f" return {value_zero};" if is_value else ""
-    has_body = discards or is_value
-    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"
+    has_body = discards or is_value  # pyrefly: ignore [implicit-bool]
+    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"  # pyrefly: ignore [implicit-bool]
     # Long uniform-typed parameter lists trip clang-tidy's
     # ``bugprone-easily-swappable-parameters`` check past its
     # name-suffix-dissimilarity silencing heuristic.  The stub is
@@ -1037,7 +1037,7 @@ class C(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C."""
@@ -1056,7 +1056,7 @@ class C(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1066,7 +1066,7 @@ class C(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for C."""
@@ -1401,7 +1401,7 @@ class C(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = (
-            f"\n{self.indent}(void){variable_name};" if variable_name else ""
+            f"\n{self.indent}(void){variable_name};" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         )
         return (
             f"int {self.module_name}(void) {{\n{content}{use_line}\n"

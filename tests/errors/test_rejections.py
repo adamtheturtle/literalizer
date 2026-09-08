@@ -106,12 +106,12 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         assert isinstance(resolved_ref_case, literalizer.IdentifierCase)
         ref_case = resolved_ref_case
     if call.api == "constructor":
-        lang_cls(**case.kwargs)
+        _ = lang_cls(**case.kwargs)
         return
     if call.api == "literalize":
         assert case.source is not None
         assert call.input_format is not None
-        literalizer.literalize(
+        _ = literalizer.literalize(
             source=case.source,
             input_format=call.input_format,
             language=lang_cls(**case.kwargs),
@@ -121,24 +121,24 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             include_delimiters=call.include_delimiters,
             ref_key=call.ref_key,
             ref_case=ref_case,
-            bound_refs=dict(call.bound_refs) or None,
+            bound_refs=dict(call.bound_refs) or None,  # pyrefly: ignore [implicit-bool]
         )
         return
     assert case.source is not None
     assert call.input_format is not None
     assert call.target_function is not None
     if "parameter_names_bare" in call.model_fields_set:
-        parameter_names: Any = call.parameter_names_bare
+        parameter_names: Any = call.parameter_names_bare  # pyrefly: ignore [explicit-any]
     else:
         parameter_names = [
             substituted(template=name, value=case.value)
             for name in call.parameter_names
         ]
     if "comment_source_bare" in call.model_fields_set:
-        comment_source: Any = call.comment_source_bare
+        comment_source: Any = call.comment_source_bare  # pyrefly: ignore [explicit-any]
     else:
         comment_source = call.comment_source
-    literalizer.literalize_call(
+    _ = literalizer.literalize_call(
         source=case.source,
         input_format=call.input_format,
         language=lang_cls(**case.kwargs),
@@ -151,7 +151,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         wrap_in_file=call.wrap_in_file,
         ref_key=call.ref_key,
         ref_case=ref_case,
-        bound_refs=dict(call.bound_refs) or None,
+        bound_refs=dict(call.bound_refs) or None,  # pyrefly: ignore [implicit-bool]
         comment_source=comment_source,
         variable_form=(
             variable_form if call.variable_form is not None else None
@@ -178,7 +178,7 @@ def test_rejection_messages(
         raised_by[case.case_id] = str(object=raised)
     accepting = len(manifest.accepting_languages)
     document = tomlkit.document()
-    document.add(
+    _ = document.add(
         key=tomlkit.comment(
             string=(
                 f"languages rejecting: "

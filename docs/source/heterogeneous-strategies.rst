@@ -42,7 +42,7 @@ This is the safe default and matches the strict-typing convention of statically 
 
    raised = False
    try:
-       literalize(
+       _ = literalize(
            source='[1, "two", 3.0]',
            input_format=InputFormat.JSON,
            language=Rust(),

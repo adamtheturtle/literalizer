@@ -19,7 +19,7 @@ from literalizer.languages import Rust
 def test_rust_tuple_format_type_annotation_raises() -> None:
     """TUPLE.format_type_annotation raises for incompatible format."""
     with pytest.raises(expected_exception=IncompatibleFormatsError):
-        Rust.sequence_formats.TUPLE.format_type_annotation(
+        _ = Rust.sequence_formats.TUPLE.format_type_annotation(
             element_type="i32",
             length=2,
         )
@@ -36,4 +36,4 @@ def test_rust_lazy_static_config_formatter_raises_if_called_directly() -> None:
     """
     style = Rust.declaration_styles.LAZY_STATIC
     with pytest.raises(expected_exception=NotImplementedError):
-        style.value.formatter("x", "v", None, frozenset())
+        _ = style.value.formatter("x", "v", None, frozenset())

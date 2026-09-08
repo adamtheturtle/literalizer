@@ -53,7 +53,7 @@ def main() -> None:
         capabilities=Julia.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    julia = shutil.which(cmd="julia") or "julia"
+    julia = shutil.which(cmd="julia") or "julia"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.jl",

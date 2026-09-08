@@ -41,7 +41,7 @@ def test_parse_errors_expose_parser_position(
 ) -> None:
     """Malformed input exposes one-based line and column attributes."""
     with pytest.raises(expected_exception=exception_type) as caught:
-        literalize(
+        _ = literalize(
             source=source,
             input_format=input_format,
             language=Rust(),
@@ -62,7 +62,7 @@ def test_collection_error_exposes_deep_input_path() -> None:
     with pytest.raises(
         expected_exception=HeterogeneousScalarCollectionError
     ) as caught:
-        literalize(
+        _ = literalize(
             source=json.dumps(obj=data),
             input_format=InputFormat.JSON,
             language=Rust(),
@@ -88,7 +88,7 @@ def test_renderer_error_exposes_deep_input_path(
     data = {"outer": [[value]]}
 
     with pytest.raises(expected_exception=exception_type) as caught:
-        literalize(
+        _ = literalize(
             source=json.dumps(obj=data),
             input_format=InputFormat.JSON,
             language=language,

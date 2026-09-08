@@ -66,8 +66,11 @@ def prime_elm_home(*, elm_path: str, elm_home: Path) -> None:
     with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as tmpdir:
         src_dir = Path(tmpdir) / "src"
         src_dir.mkdir()
-        (Path(tmpdir) / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
-        (src_dir / "Check.elm").write_text(
+        _ = (Path(tmpdir) / "elm.json").write_text(
+            data=ELM_JSON,
+            encoding="utf-8",
+        )
+        _ = (src_dir / "Check.elm").write_text(
             data=_PRIME_CHECK_ELM,
             encoding="utf-8",
         )
@@ -130,7 +133,7 @@ def worker_elm_home() -> Path:
             dir=_state.workers_root,
         ),
     )
-    shutil.copytree(src=_state.primed, dst=worker_dir, dirs_exist_ok=True)
+    _ = shutil.copytree(src=_state.primed, dst=worker_dir, dirs_exist_ok=True)
     _state.worker_dir = worker_dir
     return _state.worker_dir
 

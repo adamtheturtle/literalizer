@@ -62,10 +62,10 @@ def main() -> None:
         capabilities=Hcl.variant_metadata.round_trip_capabilities,
     )
     document = _build_document(json_text=json_text)
-    hcl2json = shutil.which(cmd="hcl2json") or "hcl2json"
+    hcl2json = shutil.which(cmd="hcl2json") or "hcl2json"  # pyrefly: ignore [implicit-bool]
     with tempfile.TemporaryDirectory() as tmpdir_name:
         source_path = Path(tmpdir_name) / "main.hcl"
-        source_path.write_text(data=document, encoding="utf-8")
+        _ = source_path.write_text(data=document, encoding="utf-8")
         completed = subprocess.run(
             args=[hcl2json, str(object=source_path)],
             capture_output=True,
@@ -74,7 +74,7 @@ def main() -> None:
             encoding="utf-8",
         )
     if completed.returncode != 0:
-        sys.stderr.write(
+        _ = sys.stderr.write(
             f"{_LABEL}: hcl2json error\n"
             f"{completed.stdout}{completed.stderr}"
             f"\nProgram:\n{document}\n",
@@ -89,7 +89,7 @@ def main() -> None:
         exclude_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":

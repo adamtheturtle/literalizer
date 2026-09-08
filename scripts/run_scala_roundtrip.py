@@ -53,7 +53,7 @@ def main() -> None:
         capabilities=Scala.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    scala_cli = shutil.which(cmd="scala-cli") or "scala-cli"
+    scala_cli = shutil.which(cmd="scala-cli") or "scala-cli"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="Main.scala",

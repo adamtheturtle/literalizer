@@ -104,7 +104,7 @@ def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
     """
     kinds: set[str] = set()
     stack: list[Value] = [data]
-    while stack:
+    while stack:  # pyrefly: ignore [implicit-bool]
         item = stack.pop()
         match item:
             case bool():
@@ -460,7 +460,7 @@ class Ada(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Ada."""
@@ -479,7 +479,7 @@ class Ada(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -489,7 +489,7 @@ class Ada(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Ada."""
@@ -741,7 +741,7 @@ class Ada(metaclass=LanguageCls):
         goes in the declarative section and *content* (calls) goes in
         the executable section.
         """
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
@@ -766,7 +766,7 @@ class Ada(metaclass=LanguageCls):
                 calls_indented,
                 f"end {self.module_name};",
             ]
-            if part
+            if part  # pyrefly: ignore [implicit-bool]
         )
 
     def wrap_combined_in_file(
@@ -1159,7 +1159,7 @@ class Ada(metaclass=LanguageCls):
             """Build the IEEE-special constant declarations for *data*."""
             del types
             kinds = _ada_special_float_kinds(data=data)
-            if not kinds:
+            if not kinds:  # pyrefly: ignore [implicit-bool]
                 return ()
             return (
                 "pragma Suppress (Division_Check);",

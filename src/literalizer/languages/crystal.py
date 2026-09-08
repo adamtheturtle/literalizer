@@ -153,7 +153,7 @@ def _format_crystal_percent_dict_entry(
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating Crystal percent string."""
     if (
-        "|" in value
+        "|" in value  # pyrefly: ignore [implicit-bool]
         or "\0" in value
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value)
@@ -434,7 +434,7 @@ def _crystal_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = format_class_name(root) + "Type_"
         return (
             f"class {cls}; {method_stub.format(name=method)}; end",
@@ -741,7 +741,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Crystal."""
@@ -760,7 +760,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -770,7 +770,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Crystal."""
@@ -825,7 +825,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -875,7 +875,7 @@ class Crystal(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 default_type,
                 default_key_type=default_key_type,
             )
@@ -913,7 +913,7 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            return self.value[numeric_separator.name]
+            return self.value[numeric_separator.name]  # pyrefly: ignore [no-any-return-implicit]
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -939,7 +939,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1378,7 +1378,7 @@ class Crystal(metaclass=LanguageCls):
                 return "Bool"
             case int():
                 return _crystal_int_field_type(value=value)
-            case list() if not value:
+            case list() if not value:  # pyrefly: ignore [implicit-bool]
                 return "Array(Nil)"
             case list():
                 # An empty nested list renders with the element type a
@@ -1390,21 +1390,21 @@ class Crystal(metaclass=LanguageCls):
                 narrowed_kinds: tuple[type, ...] = tuple(
                     kind
                     for kind in (list, dict, set)
-                    if any(item and isinstance(item, kind) for item in value)
+                    if any(item and isinstance(item, kind) for item in value)  # pyrefly: ignore [implicit-bool]
                 )
                 informative = [
                     item
                     for item in value
-                    if item
+                    if item  # pyrefly: ignore [implicit-bool]
                     or not isinstance(item, (list, dict, set))
                     or not isinstance(item, narrowed_kinds)
                 ]
                 parts = {
                     self._crystal_type_for_value(item)
-                    for item in informative or value
+                    for item in informative or value  # pyrefly: ignore [implicit-bool]
                 }
                 return f"Array({_crystal_union(parts)})"
-            case dict() if not value or isinstance(value, OrderedMap):
+            case dict() if not value or isinstance(value, OrderedMap):  # pyrefly: ignore [implicit-bool]
                 parts = {
                     self._crystal_type_for_value(item)
                     for item in value.values()
@@ -1414,7 +1414,7 @@ class Crystal(metaclass=LanguageCls):
                 # to ``default_dict_value_type`` (``or`` keeps the
                 # never-empty corpus path branch-free).
                 value_type = (
-                    _crystal_union(parts) or self.default_dict_value_type
+                    _crystal_union(parts) or self.default_dict_value_type  # pyrefly: ignore [implicit-bool]
                 )
                 return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
@@ -1426,7 +1426,7 @@ class Crystal(metaclass=LanguageCls):
                     if isinstance(value, datetime.date)
                     and not isinstance(value, datetime.datetime)
                     and self.date_format.value.type_produced is datetime.date
-                    else _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"
+                    else _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"  # pyrefly: ignore [implicit-bool]
                 )
 
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -1856,7 +1856,7 @@ class Crystal(metaclass=LanguageCls):
             """Record declaration lines precede scalar body lines."""
             alias = (
                 (_CRYSTAL_RECORD_MAP_ALIAS,)
-                if self._record_strategy.behavior.compute_wrap_ids(data)
+                if self._record_strategy.behavior.compute_wrap_ids(data)  # pyrefly: ignore [implicit-bool]
                 else ()
             )
             return alias + record_preamble(data) + scalar_body(types, data)

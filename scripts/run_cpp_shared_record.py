@@ -64,7 +64,7 @@ def _build_program() -> str:
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()
-    clangxx = shutil.which(cmd="clang++") or "clang++"
+    clangxx = shutil.which(cmd="clang++") or "clang++"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.cpp",

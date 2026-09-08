@@ -271,7 +271,7 @@ def _ts_set_hint(
     recurse: Callable[..., str],
 ) -> str:
     """Derive a TypeScript type annotation for a set value."""
-    if not data:
+    if not data:  # pyrefly: ignore [implicit-bool]
         return "Set<unknown>"
     elem_types = sorted(recurse(data=e) for e in data)
     return f"Set<{_ts_element_union(types=elem_types)}>"
@@ -285,7 +285,7 @@ def _ts_list_hint(
     sequence_is_tuple: bool,
 ) -> str:
     """Derive a TypeScript type annotation for a list value."""
-    if not data:
+    if not data:  # pyrefly: ignore [implicit-bool]
         return "readonly []" if sequence_is_tuple else "unknown[]"
     elem_types = [recurse(data=e) for e in data]
     if sequence_is_tuple:
@@ -315,7 +315,7 @@ def _ts_type_hint(
         case dict():
             hint = _ts_dict_hint(
                 is_ordered=isinstance(data, OrderedMap),
-                is_empty=not data,
+                is_empty=not data,  # pyrefly: ignore [implicit-bool]
                 val_types=[recurse(data=v) for v in data.values()],
                 dict_hint_template=dict_hint_template,
             )
@@ -366,7 +366,7 @@ def _ts_inference_widens_unsafely(
     of the dict format, so they qualify unconditionally.
     """
     match data:
-        case dict() if not data:
+        case dict() if not data:  # pyrefly: ignore [implicit-bool]
             return True
         case dict() if dict_is_object_literal or isinstance(data, OrderedMap):
             return (
@@ -374,7 +374,7 @@ def _ts_inference_widens_unsafely(
                 and len({value_hint(value) for value in data.values()}) == 1
             )
         case list() | set():
-            return not data
+            return not data  # pyrefly: ignore [implicit-bool]
         case _:
             return False
 
@@ -696,7 +696,7 @@ class TypeScript(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for TypeScript."""
@@ -720,7 +720,7 @@ class TypeScript(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -730,7 +730,7 @@ class TypeScript(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for TypeScript."""
@@ -961,7 +961,7 @@ class TypeScript(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

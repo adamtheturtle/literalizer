@@ -178,10 +178,10 @@ def _format_nix_dict_entry(
     quoted.
     """
     inner = key[1:-1]
-    if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:
+    if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:  # pyrefly: ignore [implicit-bool]
         return f"{inner} = {formatted_value};"
     control_char_upper_bound = 0x20
-    if not inner or any(ord(ch) < control_char_upper_bound for ch in inner):
+    if not inner or any(ord(ch) < control_char_upper_bound for ch in inner):  # pyrefly: ignore [implicit-bool]
         msg = (
             f"Nix does not support the dict key {key}. "
             "Attribute names must be non-empty and must not contain "
@@ -338,7 +338,7 @@ class Nix(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Nix."""
@@ -357,7 +357,7 @@ class Nix(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -367,7 +367,7 @@ class Nix(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Nix."""

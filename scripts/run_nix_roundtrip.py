@@ -69,7 +69,7 @@ def main() -> None:
         capabilities=Nix.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    nix_instantiate = shutil.which(cmd="nix-instantiate") or "nix-instantiate"
+    nix_instantiate = shutil.which(cmd="nix-instantiate") or "nix-instantiate"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.nix",

@@ -83,7 +83,7 @@ def main() -> None:
         capabilities=CSharp.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dotnet = shutil.which(cmd="dotnet") or "dotnet"
+    dotnet = shutil.which(cmd="dotnet") or "dotnet"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="Program.cs",

@@ -164,7 +164,7 @@ def _raku_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = root.capitalize() + "Type"
         return (
             f"class {cls} {{ method {method}(*@a, *%kw) {{}} }}",
@@ -207,7 +207,7 @@ def _format_datetime_raku(value: datetime.datetime) -> str:
     """Format a datetime as a Raku ``DateTime`` constructor."""
     if value.tzinfo is not None:
         value = normalize_datetime_utc(value=value, language_name="Raku")
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         second_part = f"{value.second}.{value.microsecond:06d}".rstrip("0")
     else:
         second_part = f"{value.second}"
@@ -414,7 +414,7 @@ class Raku(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Raku."""
@@ -438,7 +438,7 @@ class Raku(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -448,7 +448,7 @@ class Raku(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Raku."""
@@ -600,7 +600,7 @@ class Raku(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

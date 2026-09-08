@@ -7,6 +7,8 @@ those declarations into per-language cases.  The runner
 ``test_call_variant_golden_file``.
 """
 
+# pylint: disable=import-private-name
+
 import dataclasses
 import enum
 import functools
@@ -173,7 +175,7 @@ def _call_transform_style_unsupported(
         return not issubclass(
             config.call_style_type, _SUBSTITUTION_CALL_STYLES
         )
-    default_style = next(iter(lang_cls.CallStyles)).value
+    default_style = next(iter(lang_cls.CallStyles)).value  # pyrefly: ignore [unknown-variable-type]
     return not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
 
 
@@ -272,10 +274,10 @@ def _expected_call_shape_exception(
         else styles[0]
     )
     bound_refs_wrap = bool(
-        config.ref_declarations
-        and not config.unknown_ref_names
+        config.ref_declarations  # pyrefly: ignore [implicit-bool]
+        and not config.unknown_ref_names  # pyrefly: ignore [implicit-bool]
         and config.call_transform is None
-        and not config.transform_stub_names
+        and not config.transform_stub_names  # pyrefly: ignore [implicit-bool]
         and config.variable_form is None
     )
     rejects_reserved_parameters = (
@@ -361,7 +363,7 @@ def discover_call_cases() -> list[CallCase]:
                     for s in styles
                     if isinstance(s.value, config.call_style_type)
                 ]
-                if not matching:
+                if not matching:  # pyrefly: ignore [implicit-bool]
                     continue
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
@@ -579,7 +581,7 @@ def _run_call_with_declarations(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=False,
-            ref_values=ref_values or None,
+            ref_values=ref_values or None,  # pyrefly: ignore [implicit-bool]
             bound_refs=None,
         )
     return _CallWithDeclarations(decl_results=decl_results, result=result)
@@ -755,10 +757,10 @@ def run_call_golden_case(
     # variable; those cases are exercised through the composer call
     # directly above.
     if (
-        config.ref_declarations
-        and not config.unknown_ref_names
+        config.ref_declarations  # pyrefly: ignore [implicit-bool]
+        and not config.unknown_ref_names  # pyrefly: ignore [implicit-bool]
         and config.call_transform is None
-        and not config.transform_stub_names
+        and not config.transform_stub_names  # pyrefly: ignore [implicit-bool]
         and config.variable_form is None
     ):
         bound = _literalize_call_case(

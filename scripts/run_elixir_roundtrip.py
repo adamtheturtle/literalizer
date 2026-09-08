@@ -44,7 +44,7 @@ def main() -> None:
         capabilities=Elixir.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    elixir = shutil.which(cmd="elixir") or "elixir"
+    elixir = shutil.which(cmd="elixir") or "elixir"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.exs",

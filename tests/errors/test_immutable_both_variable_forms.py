@@ -68,4 +68,4 @@ def test_immutable_modifier_accepted_for_one_form(
         ),
         wrap_in_file=True,
     )
-    assert modifier.value in result.code
+    assert modifier.value in result.code  # pyrefly: ignore [unknown-argument-type]

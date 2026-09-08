@@ -180,8 +180,8 @@ def validate_new_variable_name(
             name_source=name_source,
             variable_name=name,
         )
-    language_cls: Any = type(language)
-    pattern = language_cls.reserved_variable_identifier_pattern
+    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
+    pattern = language_cls.reserved_variable_identifier_pattern  # pyrefly: ignore [unknown-variable-type]
     if pattern is not None and pattern.fullmatch(string=name) is not None:
         raise ReservedVariableNameError(
             language_name=language_name,
@@ -192,7 +192,7 @@ def validate_new_variable_name(
         strategy = vars(language).get("heterogeneous_strategy")
         prefix = vars(language)["record_struct_name_prefix"]
         if (
-            isinstance(strategy, enum.Enum)
+            isinstance(strategy, enum.Enum)  # pyrefly: ignore [implicit-bool]
             and strategy.name == "RECORD"
             and re.fullmatch(
                 pattern=rf"{re.escape(pattern=prefix)}\d+",
@@ -204,7 +204,7 @@ def validate_new_variable_name(
                 name_source=name_source,
                 variable_name=name,
             )
-    syntax = language_cls.new_variable_name_syntax
+    syntax = language_cls.new_variable_name_syntax  # pyrefly: ignore [unknown-variable-type]
     if not syntax.accepts(name=name) or (
         language_cls.max_variable_identifier_length is not None
         and len(name) > language_cls.max_variable_identifier_length
@@ -357,7 +357,7 @@ def date_scalar_preamble(
         omitting entries whose preamble is empty.
     """
     return {
-        **(extra or {}),
+        **(extra or {}),  # pyrefly: ignore [implicit-bool]
         **{
             t: p
             for t, p in (
@@ -1268,7 +1268,7 @@ class LanguageCls(type):
     """
 
     language_id: str
-    __dataclass_fields__: dict[str, dataclasses.Field[Any]]
+    __dataclass_fields__: dict[str, dataclasses.Field[Any]]  # pyrefly: ignore [explicit-any]
     """Stable, implementation-neutral identifier for this language.
 
     Consumers that need to name a language without depending on the
@@ -1546,7 +1546,7 @@ class LanguageCls(type):
             )
         }
         known_unsupported = unsupported & known_options
-        if known_unsupported:
+        if known_unsupported:  # pyrefly: ignore [implicit-bool]
             raise UnsupportedOptionError(
                 language_name=cls.__name__,
                 option=min(known_unsupported),
@@ -1608,7 +1608,7 @@ class Language(Protocol):
     required attributes.
     """
 
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]  # pyrefly: ignore [explicit-any]
     variant_metadata: ClassVar[VariantMetadata]
     language_id: ClassVar[str]
 
@@ -3121,7 +3121,7 @@ def _default_wrap_calls_with_declarations(
     *declarations* and *calls* and route through :meth:`wrap_in_file`
     in call mode.
     """
-    content = "\n".join((*declarations, calls)) if declarations else calls
+    content = "\n".join((*declarations, calls)) if declarations else calls  # pyrefly: ignore [implicit-bool]
     return self.wrap_in_file(
         content=content,
         variable_name="",
@@ -3286,7 +3286,7 @@ def prepend_body_preamble(
     body_preamble: tuple[str, ...],
 ) -> str:
     """Prepend *body_preamble* lines to *content*."""
-    if not body_preamble:
+    if not body_preamble:  # pyrefly: ignore [implicit-bool]
         return content
     return "\n".join(body_preamble) + "\n" + content
 
@@ -3312,7 +3312,7 @@ def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
     expression reading; every other value already is one, and a name to
     bind to makes the question moot (issue #4774).
     """
-    if variable_name or not content.lstrip().startswith("{"):
+    if variable_name or not content.lstrip().startswith("{"):  # pyrefly: ignore [implicit-bool]
         return content
     return f"({content})"
 

@@ -77,7 +77,7 @@ def _build_program() -> str:
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()
-    go = shutil.which(cmd="go") or "go"
+    go = shutil.which(cmd="go") or "go"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.go",

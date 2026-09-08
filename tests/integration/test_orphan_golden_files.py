@@ -248,4 +248,4 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
         os.path.relpath(path=path, start=cases_dir)
         for path in actual - expected
     )
-    assert not dead_files
+    assert not dead_files  # pyrefly: ignore [implicit-bool]

@@ -108,7 +108,7 @@ def build_json_type_variable_form_cases(
                 )
             )
         redef_styles = find_redefinition_styles(spec=spec)
-        if not redef_styles:
+        if not redef_styles:  # pyrefly: ignore [implicit-bool]
             name = f"{json_variant.name}_existing"
             cases.append(
                 VariantCase(
@@ -190,7 +190,7 @@ def build_multiline_string_context_cases(
     ):
         spec = base_variant.spec
         redefinition_styles = find_redefinition_styles(spec=spec)
-        if redefinition_styles:
+        if redefinition_styles:  # pyrefly: ignore [implicit-bool]
             declaration_style = (
                 spec.declaration_style
                 if spec.declaration_style in redefinition_styles
@@ -250,14 +250,14 @@ def check_axis_coverage(
     first.
     """
     both = sorted(declared & escape_hatch)
-    if both:
+    if both:  # pyrefly: ignore [implicit-bool]
         msg = (
             "variant axes are both declared in axes.toml and registered as "
             f"escape-hatch builders: {both}"
         )
         raise CaseManifestError(msg)
     contextual = sorted(special & (declared | escape_hatch))
-    if contextual:
+    if contextual:  # pyrefly: ignore [implicit-bool]
         msg = (
             "variant axes are declared as special axes in axes.toml and also "
             f"expand as ordinary ones: {contextual}"

@@ -227,7 +227,7 @@ def _elixir_call_preamble_stub(
     method = parts[-1]
     fields = list(parts[1:-1])
     param_list = ", ".join(_elixir_params(params=params))
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         root_module = _elixir_root_module(root)
         sig = f"{method}({param_list}), do: nil"
         stub = f"defmodule {root_module} do\n  def {sig}\nend"
@@ -446,7 +446,7 @@ class Elixir(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Elixir."""
@@ -470,7 +470,7 @@ class Elixir(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -480,7 +480,7 @@ class Elixir(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Elixir."""
@@ -764,7 +764,7 @@ class Elixir(metaclass=LanguageCls):
         ``defmodule Check do`` but before ``def x do``, while other
         preamble lines stay inside ``def x do``.
         """
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,

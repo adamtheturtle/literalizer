@@ -145,7 +145,7 @@ def _format_jsonnet_dict_entry(
     """
     inner = key[1:-1]
     if (
-        _JSONNET_IDENTIFIER_RE.match(string=inner)
+        _JSONNET_IDENTIFIER_RE.match(string=inner)  # pyrefly: ignore [implicit-bool]
         and inner not in _JSONNET_KEYWORDS
     ):
         return f"{inner}: {formatted_value}"
@@ -304,7 +304,7 @@ class Jsonnet(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Jsonnet."""
@@ -323,7 +323,7 @@ class Jsonnet(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -333,7 +333,7 @@ class Jsonnet(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Jsonnet."""
@@ -554,7 +554,7 @@ class Jsonnet(metaclass=LanguageCls):
         When *variable_name* is empty (call mode), wrap the content
         lines in an array so the file evaluates to a single expression.
         """
-        if not body_preamble:
+        if not body_preamble:  # pyrefly: ignore [implicit-bool]
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,

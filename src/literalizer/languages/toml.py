@@ -164,7 +164,7 @@ def _format_toml_dict_entry(
     """
     inner = strip_key_quotes(key=key)
     bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-    if bare_key_pattern.match(string=inner):
+    if bare_key_pattern.match(string=inner):  # pyrefly: ignore [implicit-bool]
         return f"{inner} = {formatted_value}"
     return f"{key} = {formatted_value}"
 
@@ -308,7 +308,7 @@ class Toml(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Toml."""
@@ -332,7 +332,7 @@ class Toml(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -342,7 +342,7 @@ class Toml(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for TOML."""
@@ -573,7 +573,7 @@ class Toml(metaclass=LanguageCls):
         than a multiline inline table, whose newlines TOML 1.0 forbids.
         """
         mapping_prefix = f"{variable_name} = {{\n"
-        if variable_name and content.startswith(mapping_prefix):
+        if variable_name and content.startswith(mapping_prefix):  # pyrefly: ignore [implicit-bool]
             entries = content[len(mapping_prefix) :].removesuffix("\n}")
             dedented = textwrap.dedent(text=entries)
             # ``str.splitlines`` also breaks on U+0085, U+2028 and
@@ -581,7 +581,7 @@ class Toml(metaclass=LanguageCls):
             # real line separators only (issue #4486).
             table_lines = [
                 _strip_structural_trailing_comma(line=line)
-                if line and not line[0].isspace()
+                if line and not line[0].isspace()  # pyrefly: ignore [implicit-bool]
                 else line
                 for line in dedented.split(sep="\n")
             ]

@@ -34,7 +34,7 @@ from literalizer.languages import (
 
 def test_fortran_accepts_variable_name_at_standard_limit() -> None:
     """The 63-character Fortran name boundary remains valid."""
-    literalize(
+    _ = literalize(
         source="1",
         input_format=InputFormat.JSON,
         language=Fortran(),
@@ -106,7 +106,7 @@ _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
     for language_cls in sorted(
         ALL_LANGUAGES, key=operator.attrgetter("__name__")
     )
-    if language_cls.reserved_variable_identifiers
+    if language_cls.reserved_variable_identifiers  # pyrefly: ignore [implicit-bool]
     and language_cls.supports_variable_names
 )
 
@@ -140,7 +140,7 @@ def test_all_declared_reserved_names_raise(
                 expected_exception=ReservedVariableNameError,
                 match=f"^{re.escape(pattern=expected_message)}$",
             ):
-                literalize(
+                _ = literalize(
                     source="1",
                     input_format=InputFormat.JSON,
                     language=language_cls(),
@@ -181,7 +181,7 @@ def test_generated_record_name_is_reserved_for_record_strategy(
     language = language_cls(heterogeneous_strategy=record_strategy)
 
     with pytest.raises(expected_exception=ReservedVariableNameError):
-        literalize(
+        _ = literalize(
             source='[{"id": 1}]',
             input_format=InputFormat.JSON,
             language=language,

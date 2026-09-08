@@ -203,7 +203,7 @@ def _reject_distinct_record_list_ordered_map_values(data: Value, /) -> None:
         values = list(data.values())
         all_are_record_lists = all(
             isinstance(value, list)
-            and value
+            and value  # pyrefly: ignore [implicit-bool]
             and all(isinstance(element, dict) for element in value)
             for value in values
         )
@@ -266,7 +266,7 @@ def _raw_string_delimiters(*, base: str) -> itertools.chain[str]:
     limit.
     """
     suffix_width = _CPP_RAW_STRING_DELIMITER_MAX_LENGTH - len(base)
-    suffix_indexes = range(10**suffix_width) if suffix_width else range(0)
+    suffix_indexes = range(10**suffix_width) if suffix_width else range(0)  # pyrefly: ignore [implicit-bool]
     suffixed = (f"{base}{index}" for index in suffix_indexes)
     return itertools.chain(("", base), suffixed)
 
@@ -336,7 +336,7 @@ def _narrowest_cpp_int_type(values: list[int]) -> str:
     is skipped because its width is platform-dependent (32-bit on
     Windows, 64-bit on Unix).
     """
-    if not values:
+    if not values:  # pyrefly: ignore [implicit-bool]
         return "int"
     if any(not I64_MIN <= v <= I64_MAX for v in values):
         # The only C++ type holding a value above ``LLONG_MAX`` is
@@ -441,13 +441,13 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
     """Format a datetime as a C++ chrono time_point construction."""
     ymd = _format_date_cpp(value=value)
     parts = [f"std::chrono::sys_days{{{ymd}}}"]
-    if value.hour:
+    if value.hour:  # pyrefly: ignore [implicit-bool]
         parts.append(f"std::chrono::hours{{{value.hour}}}")
-    if value.minute:
+    if value.minute:  # pyrefly: ignore [implicit-bool]
         parts.append(f"std::chrono::minutes{{{value.minute}}}")
-    if value.second:
+    if value.second:  # pyrefly: ignore [implicit-bool]
         parts.append(f"std::chrono::seconds{{{value.second}}}")
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
     return f"std::chrono::system_clock::time_point{{{' + '.join(parts)}}}"
 
@@ -582,7 +582,7 @@ def _cpp_array_type(
     type_ctx: _CppTypeCtx,
 ) -> str | None:
     """Return the recursive ``std::array`` type for *items*."""
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return "std::array<std::nullptr_t, 0>"
     int_type = type_ctx.int_resolver(
         [
@@ -873,7 +873,7 @@ def _compute_element_type_for_items(
     (the fast path would otherwise widen a uniform list-of-arrays to
     ``std::vector<std::variant<...>>``).
     """
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return "std::nullptr_t"
     has_tuple_item = type_ctx.tuple_strategy and any(
         isinstance(item, list) and is_tuple_eligible(value=item)
@@ -908,7 +908,7 @@ def _compute_element_type_for_items(
         and len({len(item) for item in sibling_lists}) == 1
         and bool(sibling_lists[0])
         and any(
-            any(_is_cpp_value_list(item) and not item for item in position)
+            any(_is_cpp_value_list(item) and not item for item in position)  # pyrefly: ignore [implicit-bool]
             and any(_is_cpp_value_list(item) and item for item in position)
             for position in zip(*sibling_lists, strict=True)
         )
@@ -955,7 +955,7 @@ def _items_need_variant(  # noqa: PLR0911
     record_dict_ids: frozenset[int],
 ) -> bool:
     """Check whether a collection's items need ``std::variant``."""
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return False
     # ``infer_element_type`` deliberately has no fixed-size tuple arm,
     # so a homogeneous list of C++ tuple-strategy lists would otherwise
@@ -1083,7 +1083,7 @@ def _has_empty_collection(data: Value) -> bool:
     require ``#include <cstddef>``.
     """
     match data:
-        case list() | set() | dict() if not data:
+        case list() | set() | dict() if not data:  # pyrefly: ignore [implicit-bool]
             return True
         case list():
             return any(_has_empty_collection(data=v) for v in data)
@@ -1240,7 +1240,7 @@ def _build_tuple_preamble(
             record_dict_ids=frozenset(),
         )
         lines = list(variant_preamble(data))
-        if tuple_list_ids:
+        if tuple_list_ids:  # pyrefly: ignore [implicit-bool]
             lines.append("#include <tuple>")
         return tuple(lines)
 
@@ -1487,8 +1487,8 @@ def _cpp14_variant_parent_ids(
             case _:
                 return
         if (
-            id(value) not in excluded_ids
-            and type_children
+            id(value) not in excluded_ids  # pyrefly: ignore [implicit-bool]
+            and type_children  # pyrefly: ignore [implicit-bool]
             and _compute_element_type_for_items(
                 items=type_children,
                 type_ctx=type_ctx,
@@ -1540,7 +1540,7 @@ def _cpp14_explicit_variant_behavior(
         """Wrap divergent scalar call arguments passed as the carrier."""
         base_ids = base.compute_call_slot_wrap_ids(values)
         if (
-            values
+            values  # pyrefly: ignore [implicit-bool]
             and _compute_element_type_for_items(
                 items=list(values),
                 type_ctx=type_ctx,
@@ -1674,7 +1674,7 @@ def _cpp_narrow_widened_map_value_type(
     if type_ctx.variant_type_name != "std::variant":
         return None
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-    if not scalars:
+    if not scalars:  # pyrefly: ignore [implicit-bool]
         return None
     value_type = _compute_element_type_for_items(
         items=list(scalars),
@@ -1831,7 +1831,7 @@ def _all_record_shaped(
     always single-shape and the deduced ``std::vector<RecordN>`` is
     well-formed.
     """
-    if not items:
+    if not items:  # pyrefly: ignore [implicit-bool]
         return False
     return all(
         isinstance(item, dict)
@@ -2015,10 +2015,10 @@ def _build_cpp_record_preamble(
             )
             else list(variant_preamble(data))
         )
-        if include_tuple_header and tuple_list_ids:
+        if include_tuple_header and tuple_list_ids:  # pyrefly: ignore [implicit-bool]
             headers.append("#include <tuple>")
         if (
-            wrap_ids
+            wrap_ids  # pyrefly: ignore [implicit-bool]
             and _cpp_narrow_widened_map_value_type(
                 data=data,
                 wrap_ids=wrap_ids,
@@ -2207,7 +2207,7 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     Values that are not :class:`_CppModifiers` members are ignored.
     """
     keywords = [m.value for m in _CppModifiers if m in modifiers]
-    if not keywords:
+    if not keywords:  # pyrefly: ignore [implicit-bool]
         return ""
     return " ".join(keywords) + " "
 
@@ -2318,7 +2318,7 @@ def _cpp_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root}Type_"
         if stub_return is StubReturn.VOID:
             method_decl = (
@@ -2855,7 +2855,7 @@ class Cpp(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for C++."""
@@ -2889,7 +2889,7 @@ class Cpp(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -2899,7 +2899,7 @@ class Cpp(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for C++."""
@@ -3114,7 +3114,7 @@ class Cpp(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -3244,7 +3244,7 @@ class Cpp(metaclass=LanguageCls):
     def _validate_multiline_raw_string_delimiter_base(self) -> None:
         """Reject a delimiter base outside C++'s ``d-char`` grammar."""
         delimiter = self.multiline_raw_string_delimiter_base
-        if not delimiter:
+        if not delimiter:  # pyrefly: ignore [implicit-bool]
             raise InvalidCppRawStringDelimiterError(
                 delimiter=delimiter,
                 reason="the fallback base must be non-empty",
@@ -3255,7 +3255,7 @@ class Cpp(metaclass=LanguageCls):
                 reason="raw-string delimiters contain at most 16 characters",
             )
         invalid = sorted(set(delimiter) - _CPP_RAW_STRING_DELIMITER_CHARACTERS)
-        if invalid:
+        if invalid:  # pyrefly: ignore [implicit-bool]
             raise InvalidCppRawStringDelimiterError(
                 delimiter=delimiter,
                 reason=(
@@ -3277,7 +3277,7 @@ class Cpp(metaclass=LanguageCls):
             ),
         )
         value_name = self.heterogeneous_value_variant_name
-        if not _CPP_FIELD_IDENTIFIER.match(string=value_name):
+        if not _CPP_FIELD_IDENTIFIER.match(string=value_name):  # pyrefly: ignore [implicit-bool]
             msg = (
                 f"heterogeneous_value_variant_name {value_name!r} must be "
                 "a valid C++ identifier."
@@ -3289,7 +3289,7 @@ class Cpp(metaclass=LanguageCls):
                 "reserved C++ identifier."
             )
             raise InvalidRecordNameError(msg)
-        if auto_name_pattern.match(string=value_name):
+        if auto_name_pattern.match(string=value_name):  # pyrefly: ignore [implicit-bool]
             msg = (
                 f"heterogeneous_value_variant_name {value_name!r} collides "
                 f"with the auto-generated "
@@ -3298,14 +3298,14 @@ class Cpp(metaclass=LanguageCls):
             raise InvalidRecordNameError(msg)
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):
+            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase C++ "
                     "identifier."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):
+            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -3518,7 +3518,7 @@ class Cpp(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = (
-            f"\n{self.indent}(void){variable_name};" if variable_name else ""
+            f"\n{self.indent}(void){variable_name};" if variable_name else ""  # pyrefly: ignore [implicit-bool]
         )
         if self._json_type_active:
             return (
@@ -4201,7 +4201,7 @@ class Cpp(metaclass=LanguageCls):
             return base_open
         if not record_rendering_active and (
             self.language_version is not self.version_formats.CPP14
-            or not self.record_shape_names
+            or not self.record_shape_names  # pyrefly: ignore [implicit-bool]
         ):
             return base_open
         record_strategy = (
@@ -4225,7 +4225,7 @@ class Cpp(metaclass=LanguageCls):
                         record_rendering_active=record_rendering_active,
                         record_name_for_value=record_name_for_value,
                     )
-                    return record_open or base_open(base_items)
+                    return record_open or base_open(base_items)  # pyrefly: ignore [implicit-bool]
                 return "std::vector{"
             nested_type = nested_record_sequence_type(
                 value=items,
@@ -4379,17 +4379,17 @@ class Cpp(metaclass=LanguageCls):
         def _record_aware_open(data: dict[Scalar, Value]) -> str:
             """Type ordered-map values from rendered record lists."""
             values = list(data.values())
-            if values and all(
+            if values and all(  # pyrefly: ignore [implicit-bool]
                 isinstance(value, list) and _all_record_shaped(value)
                 for value in values
             ):
                 resolved_names = [
                     record_name_for_value(value[0])
                     for value in values
-                    if isinstance(value, list) and value
+                    if isinstance(value, list) and value  # pyrefly: ignore [implicit-bool]
                 ]
                 if (
-                    resolved_names
+                    resolved_names  # pyrefly: ignore [implicit-bool]
                     and None not in resolved_names
                     and len(set(resolved_names)) == 1
                 ):

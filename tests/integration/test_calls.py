@@ -45,7 +45,7 @@ def test_select_call_input_root_rejects_non_table_root(
             r"but its parsed root is list"
         ),
     ):
-        _select_call_input_root(
+        _ = _select_call_input_root(
             source="[]",
             input_info=input_info,
             input_root_key="calls",
@@ -63,7 +63,7 @@ def test_select_call_input_root_rejects_missing_key(tmp_path: Path) -> None:
         expected_exception=KeyError,
         match=r"input\.toml has no configured call root 'calls'",
     ):
-        _select_call_input_root(
+        _ = _select_call_input_root(
             source="other = []",
             input_info=input_info,
             input_root_key="calls",
@@ -82,7 +82,7 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
         config for config in default_call_case_specs() if config.wrap_in_file
     )
     golden_path = tmp_path / "stale.py"
-    golden_path.write_text(data="stale\n")
+    _ = golden_path.write_text(data="stale\n")
 
     def reject_call(**_kwargs: object) -> NoReturn:
         """Raise the configured call argument error."""

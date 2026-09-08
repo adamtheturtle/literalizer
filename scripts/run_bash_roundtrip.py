@@ -141,7 +141,7 @@ def _emit_array(
     """Append Bash statements emitting a JSON array from indexed *var*."""
     lines.append("out+='['")
     for index, item in enumerate(iterable=items):
-        if index:
+        if index:  # pyrefly: ignore [implicit-bool]
             lines.append("out+=','")
         _emit_value(
             value=item,
@@ -168,7 +168,7 @@ def _emit_object(
     """
     lines.append("out+='{'")
     for index, (key, sub_value) in enumerate(iterable=entries.items()):
-        if index:
+        if index:  # pyrefly: ignore [implicit-bool]
             lines.append("out+=','")
         key_var = _next_var(counter=counter)
         lines.append(f"{key_var}={_ansi_c_quoted(text=key)}")
@@ -239,7 +239,7 @@ def main() -> None:
         capabilities=Bash.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    bash = shutil.which(cmd="bash") or "bash"
+    bash = shutil.which(cmd="bash") or "bash"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.sh",

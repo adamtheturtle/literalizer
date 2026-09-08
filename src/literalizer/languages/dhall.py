@@ -251,12 +251,12 @@ def _format_dhall_dict_entry(
     """
     inner = key[1:-1]
     if (
-        _IDENTIFIER_RE.match(string=inner)
+        _IDENTIFIER_RE.match(string=inner)  # pyrefly: ignore [implicit-bool]
         and inner not in _DHALL_RESERVED_LABELS
     ):
         return f"{inner} = {formatted_value}"
     raw = _unescape_dhall_string(value=inner)
-    if not raw or not _BACKTICK_LABEL_RE.match(string=raw):
+    if not raw or not _BACKTICK_LABEL_RE.match(string=raw):  # pyrefly: ignore [implicit-bool]
         msg = (
             f"Dhall does not support the dict key {key}. "
             "Backtick-quoted labels must be non-empty and contain only "
@@ -590,7 +590,7 @@ def _build_union_type_preamble(
         wrap_ids = collect_heterogeneous_container_ids(
             data=data
         ) | collect_sibling_map_wrap_ids(data=data)
-        if not wrap_ids:
+        if not wrap_ids:  # pyrefly: ignore [implicit-bool]
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         variants: list[_VariantSignature] = []
@@ -767,7 +767,7 @@ class Dhall(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Dhall."""
@@ -788,7 +788,7 @@ class Dhall(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -798,7 +798,7 @@ class Dhall(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Dhall."""
@@ -1056,7 +1056,7 @@ class Dhall(metaclass=LanguageCls):
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             wrapped += "\nin {=}"
         return wrapped
 
@@ -1259,7 +1259,7 @@ class Dhall(metaclass=LanguageCls):
         which appends the ``in {=}`` terminator needed by both
         this path and the ``wrap_in_file=True`` call path.
         """
-        content = "\n".join((*declarations, calls)) if declarations else calls
+        content = "\n".join((*declarations, calls)) if declarations else calls  # pyrefly: ignore [implicit-bool]
         return self.wrap_in_file(
             content=content,
             variable_name="",

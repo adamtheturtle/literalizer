@@ -31,7 +31,7 @@ def _assert_foreign_modifier_rejected(render: Callable[[], object]) -> None:
             )
         ),
     ):
-        render()
+        _ = render()
 
 
 def test_literalize_rejects_foreign_variable_modifier() -> None:

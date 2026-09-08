@@ -172,12 +172,12 @@ def _run_json_native(*, source: str, language: Language) -> str:
 
 def test_yaml_fast_path(benchmark: BenchmarkFixture) -> None:
     """Comment-free YAML through the C-backed safe loader."""
-    benchmark(_run, source=_YAML_FAST, input_format=InputFormat.YAML)
+    _ = benchmark(_run, source=_YAML_FAST, input_format=InputFormat.YAML)
 
 
 def test_yaml_with_comments(benchmark: BenchmarkFixture) -> None:
     """YAML with comments, forcing the round-trip loader and resolver."""
-    benchmark(
+    _ = benchmark(
         _run,
         source=_YAML_WITH_COMMENTS,
         input_format=InputFormat.YAML,
@@ -186,12 +186,12 @@ def test_yaml_with_comments(benchmark: BenchmarkFixture) -> None:
 
 def test_json_nested(benchmark: BenchmarkFixture) -> None:
     """Deeply nested JSON exercising formatter recursion."""
-    benchmark(_run, source=_JSON_NESTED, input_format=InputFormat.JSON)
+    _ = benchmark(_run, source=_JSON_NESTED, input_format=InputFormat.JSON)
 
 
 def test_json_large_flat_records(benchmark: BenchmarkFixture) -> None:
     """Flat JSON record array exercising high-volume rendering."""
-    benchmark(
+    _ = benchmark(
         _run,
         source=_JSON_LARGE_FLAT_RECORDS,
         input_format=InputFormat.JSON,
@@ -208,7 +208,7 @@ def test_json_large_flat_records_json_native(
     language: Language,
 ) -> None:
     """Large JSON record array through the JSON-native fast path."""
-    benchmark(
+    _ = benchmark(
         _run_json_native,
         source=_JSON_LARGE_FLAT_RECORDS,
         language=language,
@@ -217,7 +217,7 @@ def test_json_large_flat_records_json_native(
 
 def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:
     """Sibling collections with diverging inferred types."""
-    benchmark(
+    _ = benchmark(
         _run,
         source=_JSON_HETEROGENEOUS,
         input_format=InputFormat.JSON,
@@ -226,7 +226,7 @@ def test_heterogeneous_widening(benchmark: BenchmarkFixture) -> None:
 
 def test_preamble_computation(benchmark: BenchmarkFixture) -> None:
     """Preamble computation over a large document, without rendering."""
-    benchmark(
+    _ = benchmark(
         compute_preamble,
         data=_PREAMBLE_DATA,
         language=PYTHON,

@@ -124,7 +124,7 @@ def _format_datetime_dart(value: datetime.datetime) -> str:
         f"{value.year}, {value.month}, {value.day}, {value.hour}, "
         f"{value.minute}, {value.second}"
     )
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         milliseconds, microseconds = divmod(value.microsecond, 1000)
         args += f", {milliseconds}, {microseconds}"
     return f"DateTime.utc({args})"
@@ -167,7 +167,7 @@ def _escape_trailing_whitespace(match: re.Match[str]) -> str:
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Dart triple-quoted string."""
     first_line, first_newline, _ = value.partition("\n")
-    escape_first_newline = bool(first_newline) and not first_line.strip(" \t")
+    escape_first_newline = bool(first_newline) and not first_line.strip(" \t")  # pyrefly: ignore [implicit-bool]
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -228,7 +228,7 @@ def _validate_dart_mixed_numeric_data(
     else:
         items = []
 
-    if items and infer_element_type(items=items) is MixedNumeric:
+    if items and infer_element_type(items=items) is MixedNumeric:  # pyrefly: ignore [implicit-bool]
         for item in items:
             if (
                 isinstance(item, int)
@@ -354,7 +354,7 @@ def _dart_opener_hint(
     language's default ones.
     """
     arguments = opener.removesuffix(delimiter)
-    return f"{prefix}{arguments or f'<{default_arguments}>'}"
+    return f"{prefix}{arguments or f'<{default_arguments}>'}"  # pyrefly: ignore [implicit-bool]
 
 
 @beartype
@@ -393,13 +393,13 @@ def _dart_type_hint(
         case set():
             hint = _dart_set_hint(
                 elem_types=sorted({recurse(data=e) for e in data}),
-                is_empty=not data,
+                is_empty=not data,  # pyrefly: ignore [implicit-bool]
                 default_set_element_type=default_set_element_type,
             )
         case list() if sequence_is_tuple:
             hint = _dart_list_hint(
                 elem_types=[recurse(data=e) for e in data],
-                is_empty=not data,
+                is_empty=not data,  # pyrefly: ignore [implicit-bool]
                 sequence_is_tuple=sequence_is_tuple,
             )
         case list():
@@ -474,7 +474,7 @@ def _dart_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = f"_{root.title()}Type"
         return (
             f"class {cls} {{ dynamic {method}({param_list}) => null; }}",
@@ -738,7 +738,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Dart."""
@@ -762,7 +762,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -772,7 +772,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Dart."""
@@ -827,7 +827,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -926,7 +926,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1069,7 +1069,7 @@ class Dart(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file."""
-        if variable_name:
+        if variable_name:  # pyrefly: ignore [implicit-bool]
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
@@ -1080,7 +1080,7 @@ class Dart(metaclass=LanguageCls):
         # declarations from reference values go inside void main(). Add a
         # top-level my_data sentinel so the CI lint harness can import it.
         indented = "\n".join(
-            f"{self.indent}{line}" if line.strip() else line
+            f"{self.indent}{line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
             for line in content.split(sep="\n")
         )
         return "\n".join(

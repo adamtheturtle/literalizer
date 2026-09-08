@@ -84,7 +84,7 @@ def test_parsed_integer_beyond_digit_limit(
         expected_exception=ExcessiveIntegerDigitsError,
         match="more decimal digits",
     ):
-        literalize(
+        _ = literalize(
             source=source,
             input_format=input_format,
             language=Python(),
@@ -103,7 +103,7 @@ def test_toml_decimal_beyond_digit_limit() -> None:
     promises; the bare ``ValueError`` is what must not escape.
     """
     with pytest.raises(expected_exception=LiteralizerError):
-        literalize(
+        _ = literalize(
             source=f"a = {_OVER_LIMIT_DIGITS}",
             input_format=InputFormat.TOML,
             language=Python(),
@@ -122,7 +122,7 @@ def test_substituted_integer_beyond_digit_limit() -> None:
         expected_exception=ExcessiveIntegerDigitsError,
         match="more decimal digits",
     ):
-        literalize(
+        _ = literalize(
             source='{"a": null}',
             input_format=InputFormat.JSON,
             language=Python(),

@@ -174,7 +174,7 @@ _PERL_NV_EXACT_INTEGER_MAX = float(2**53)
 def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
     """Import ``Math::BigFloat`` when a large finite float needs it."""
     pending = [data]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case float() if (
@@ -300,7 +300,7 @@ def _format_datetime_perl(value: datetime.datetime) -> str:
         f"hour => {value.hour}, minute => {value.minute}, "
         f"second => {value.second}"
     )
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         parts += f", nanosecond => {value.microsecond * 1000}"
     return parts + ", time_zone => 'UTC')"
 
@@ -538,7 +538,7 @@ class Perl(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Perl."""
@@ -562,7 +562,7 @@ class Perl(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BoolFormats(enum.Enum):
         """Boolean format options for Perl."""
@@ -591,7 +591,7 @@ class Perl(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Perl."""
@@ -752,7 +752,7 @@ class Perl(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1219,7 +1219,7 @@ class Perl(metaclass=LanguageCls):
         """
         bool_preamble = self.bool_format.value.preamble_lines
         extra: dict[type, tuple[str, ...]] | None = (
-            {bool: bool_preamble} if bool_preamble else None
+            {bool: bool_preamble} if bool_preamble else None  # pyrefly: ignore [implicit-bool]
         )
         return date_scalar_preamble(
             date_format=self.date_format,

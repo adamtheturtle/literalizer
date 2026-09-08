@@ -125,7 +125,7 @@ def _wren_call_stub(
     where each intermediate exposes a getter returning the next object.
     """
     # Wren parameter names may not start with "_" (reserved for fields).
-    param_list = ", ".join(p.lstrip("_") or p for p in params)
+    param_list = ", ".join(p.lstrip("_") or p for p in params)  # pyrefly: ignore [implicit-bool]
 
     if len(parts) == 1:
         cls_name = parts[0].capitalize() + "_"
@@ -357,7 +357,7 @@ class Wren(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Wren."""
@@ -376,7 +376,7 @@ class Wren(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -386,7 +386,7 @@ class Wren(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Wren."""
@@ -504,7 +504,7 @@ class Wren(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

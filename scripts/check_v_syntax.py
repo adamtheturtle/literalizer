@@ -22,11 +22,11 @@ from pathlib import Path
 def main() -> None:
     """Check syntax of the given V golden file."""
     filename = sys.argv[1]
-    v_path = shutil.which(cmd="v") or "v"
+    v_path = shutil.which(cmd="v") or "v"  # pyrefly: ignore [implicit-bool]
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
         target = Path(tmpdir) / src.name
-        target.write_text(
+        _ = target.write_text(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
@@ -38,7 +38,7 @@ def main() -> None:
         )
         if result.returncode != 0:
             msg = f"{filename}: v fmt failed\n{result.stderr}{result.stdout}"
-            sys.stderr.write(msg)
+            _ = sys.stderr.write(msg)
             sys.exit(1)
         result = subprocess.run(
             args=[v_path, "-check", target],
@@ -50,7 +50,7 @@ def main() -> None:
             msg = (
                 f"{filename}: v -check failed\n{result.stderr}{result.stdout}"
             )
-            sys.stderr.write(msg)
+            _ = sys.stderr.write(msg)
             sys.exit(1)
 
 

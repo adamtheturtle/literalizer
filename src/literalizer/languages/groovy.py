@@ -200,7 +200,7 @@ def _groovy_call_stub_factory(
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
-        if not fields:
+        if not fields:  # pyrefly: ignore [implicit-bool]
             cls = f"_{root.title()}Type"
             return (
                 f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
@@ -413,7 +413,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Groovy."""
@@ -432,7 +432,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -442,7 +442,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Groovy."""
@@ -481,7 +481,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -561,7 +561,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

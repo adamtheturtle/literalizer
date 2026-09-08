@@ -144,7 +144,7 @@ _format_string_d = make_backslash_string_formatter(
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a D WYSIWYG string when source-safe."""
     if (
-        "`" in value
+        "`" in value  # pyrefly: ignore [implicit-bool]
         or "\0" in value
         or "\r" in value
         or has_bidi_formatting_character(value=value)
@@ -216,7 +216,7 @@ def _d_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         type_name = f"{root.title()}Type_"
         return (
             (
@@ -375,7 +375,7 @@ def _d_record_sequence_open(items: list[Value], /) -> str:
     single inferred element type, so it is not heterogeneous here and
     its ``RecordN`` literals make a well-typed ``RecordN[]``).
     """
-    if items and infer_element_type(items=items) is None:
+    if items and infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
         raise UnrepresentableInputError(_D_UNREPRESENTABLE_RECORD_FIELD)
     return "["
 
@@ -434,7 +434,7 @@ def _d_narrow_sequence_open(items: list[Value], /) -> str:
     and a heterogeneous scalar list has no common type, so each is
     rejected.
     """
-    if not items or infer_element_type(items=items) is None:
+    if not items or infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
         raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
     return "["
 
@@ -472,9 +472,9 @@ def _d_narrow_validate_data(data: Value, /) -> None:
     form.
     """
     match data:
-        case list() if not data:
+        case list() if not data:  # pyrefly: ignore [implicit-bool]
             raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
-        case dict() if not data:
+        case dict() if not data:  # pyrefly: ignore [implicit-bool]
             raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
         case list():
             for item in data:
@@ -762,7 +762,7 @@ class D(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for D."""
@@ -781,7 +781,7 @@ class D(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -791,7 +791,7 @@ class D(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for D."""
@@ -932,7 +932,7 @@ class D(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1325,7 +1325,7 @@ class D(metaclass=LanguageCls):
         :func:`_d_record_sequence_open` rejects it while the literal is
         formatted, before the preamble derives this field type.
         """
-        if not items:
+        if not items:  # pyrefly: ignore [implicit-bool]
             return "long[]"
         return f"{self._d_value_type(items[0])}[]"
 
@@ -1447,7 +1447,7 @@ class D(metaclass=LanguageCls):
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Import ``std.json`` when a widened map uses its carrier."""
                 imports = (
-                    ("import std.json;",) if compute_wrap_ids(data) else ()
+                    ("import std.json;",) if compute_wrap_ids(data) else ()  # pyrefly: ignore [implicit-bool]
                 )
                 return (*imports, *record_preamble(data))
 

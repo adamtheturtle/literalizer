@@ -434,7 +434,7 @@ class Haxe(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime formatting options for Haxe."""
@@ -452,7 +452,7 @@ class Haxe(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -462,7 +462,7 @@ class Haxe(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Haxe."""
@@ -505,7 +505,7 @@ class Haxe(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -601,7 +601,7 @@ class Haxe(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -752,7 +752,7 @@ class Haxe(metaclass=LanguageCls):
         )
         body_indent = self.indent + self.indent
         indented = "\n".join(
-            f"{body_indent}{line}" if line.strip() else line
+            f"{body_indent}{line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
             for line in inner.split(sep="\n")
         )
         return "\n".join(

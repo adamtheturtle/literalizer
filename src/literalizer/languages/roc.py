@@ -475,7 +475,7 @@ def _build_roc_body_preamble(
                 ),
                 (frozenset({set}), f"{p}Set (List {type_name})"),
             )
-            if types & type_set
+            if types & type_set  # pyrefly: ignore [implicit-bool]
         ]
         body = ",\n".join(f"    {c}" for c in constructors)
         return (f"{type_name} : [\n{body},\n]",)
@@ -756,7 +756,7 @@ class Roc(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Roc."""
@@ -775,7 +775,7 @@ class Roc(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -785,7 +785,7 @@ class Roc(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(data)
+            return self.value(data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Roc."""
@@ -1030,7 +1030,7 @@ class Roc(metaclass=LanguageCls):
         (``List``/``Dict``/``Set``) self-reference for the compiler to
         consider load-bearing.
         """
-        exposed = variable_name or "main"
+        exposed = variable_name or "main"  # pyrefly: ignore [implicit-bool]
         if f" : {self.type_name}\n" in content:
             effective_preamble = body_preamble
         else:
@@ -1039,10 +1039,10 @@ class Roc(metaclass=LanguageCls):
             )
         preamble_str = (
             "\n".join(effective_preamble) + "\n\n"
-            if effective_preamble
+            if effective_preamble  # pyrefly: ignore [implicit-bool]
             else ""
         )
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             body = _indent_call_lines(content=content, indent=self.indent)
             content = f"main =\n{body}\n{self.indent}{{}}"
         return f"module [{exposed}]\n\n{preamble_str}{content}"
@@ -1076,17 +1076,17 @@ class Roc(metaclass=LanguageCls):
         alias and call stubs; only the top-level call lines inside
         ``main`` are wrapped in ``dbg (...)``.
         """
-        decl_block = "\n".join(declarations) + "\n" if declarations else ""
+        decl_block = "\n".join(declarations) + "\n" if declarations else ""  # pyrefly: ignore [implicit-bool]
         body = _indent_call_lines(content=calls, indent=self.indent)
         main_block = f"main =\n{body}\n{self.indent}{{}}"
         effective_preamble = (
             body_preamble
-            if declarations
+            if declarations  # pyrefly: ignore [implicit-bool]
             else self._strip_type_alias(body_preamble=body_preamble)
         )
         preamble_str = (
             "\n".join(effective_preamble) + "\n\n"
-            if effective_preamble
+            if effective_preamble  # pyrefly: ignore [implicit-bool]
             else ""
         )
         return f"module [main]\n\n{preamble_str}{decl_block}{main_block}"

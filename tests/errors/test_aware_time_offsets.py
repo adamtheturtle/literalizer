@@ -30,7 +30,7 @@ def test_aware_time_rejected_when_native_formatter_drops_offset(
         expected_exception=UnrepresentableInputError,
         match=r"native time format cannot preserve UTC offset 2:00:00",
     ):
-        literalize(
+        _ = literalize(
             source='{"x": {"$ref": "value"}}',
             input_format=InputFormat.JSON,
             language=language,

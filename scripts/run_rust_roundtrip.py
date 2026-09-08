@@ -65,7 +65,7 @@ def main() -> None:
         capabilities=Rust.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    rustc = shutil.which(cmd="rustc") or "rustc"
+    rustc = shutil.which(cmd="rustc") or "rustc"  # pyrefly: ignore [implicit-bool]
     deps_dir = sys.argv[1]
     serde_json_rlib = sys.argv[2]
     roundtrip_common.execute(

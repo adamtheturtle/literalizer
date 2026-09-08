@@ -17,7 +17,7 @@ def test_every_literalizer_exception_has_public_base() -> None:
         and member.__module__ == literalizer.exceptions.__name__
     ]
 
-    assert exception_classes
+    assert exception_classes  # pyrefly: ignore [implicit-bool]
     assert all(
         issubclass(exception_class, LiteralizerError)
         for exception_class in exception_classes

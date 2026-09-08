@@ -244,7 +244,7 @@ def _purescript_has_large_int(val: Value) -> bool:
     the shared parse-depth guard (issue #4560).
     """
     pending: list[Value] = [val]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         match value:
             case bool():
@@ -487,7 +487,7 @@ def _purescript_scalar_needs_prelude(val: Value) -> bool:
             return False
         case float():
             return _purescript_negative_float(val=val)
-        case int():
+        case int():  # pyrefly: ignore [unreachable-match-case]
             return val < 0
         case _:
             return False
@@ -504,7 +504,7 @@ def _purescript_needs_prelude(val: Value) -> bool:
     reason as :func:`_purescript_has_large_int` (issue #4560).
     """
     pending: list[Value] = [val]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         value = pending.pop()
         if _purescript_scalar_needs_prelude(val=value):
             return True
@@ -552,7 +552,7 @@ def _build_purescript_body_preamble(
                 ),
                 (frozenset({set}), f"{p}Set (Array {type_name})"),
             )
-            if types & type_set
+            if types & type_set  # pyrefly: ignore [implicit-bool]
         ]
         if has_large_int:
             int_idx = next(
@@ -598,7 +598,7 @@ def _build_purescript_call_stub_lines(
     method = parts[-1]
     fields = parts[1:-1]
 
-    if not params:
+    if not params:  # pyrefly: ignore [implicit-bool]
         func_type = "Unit"
         func_body = "unit"
     else:
@@ -692,7 +692,7 @@ def _hoist_purescript_imports(preamble: str) -> str:
     imports = list(
         dict.fromkeys(line for line in lines if line.startswith("import ")),
     )
-    if not imports:
+    if not imports:  # pyrefly: ignore [implicit-bool]
         return preamble
     other = [line for line in lines if not line.startswith("import ")]
     return "\n".join([*imports, *other])
@@ -715,7 +715,7 @@ def _build_purescript_call_output(
     """
     if "import Prelude" not in preamble:
         preamble = (
-            "import Prelude\n" + preamble if preamble else "import Prelude"
+            "import Prelude\n" + preamble if preamble else "import Prelude"  # pyrefly: ignore [implicit-bool]
         )
     preamble = _hoist_purescript_imports(preamble=preamble)
     return (
@@ -1091,7 +1091,7 @@ class PureScript(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for PureScript."""
@@ -1110,7 +1110,7 @@ class PureScript(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -1120,7 +1120,7 @@ class PureScript(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(data)
+            return self.value(data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for PureScript."""
@@ -1422,7 +1422,7 @@ class PureScript(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         declaration_block = "\n".join(declarations)
-        decl_part = "\n" + declaration_block if declaration_block else ""
+        decl_part = "\n" + declaration_block if declaration_block else ""  # pyrefly: ignore [implicit-bool]
         return _build_purescript_call_output(
             preamble=preamble,
             decl_part=decl_part,
@@ -1443,7 +1443,7 @@ class PureScript(metaclass=LanguageCls):
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
         preamble = "\n".join(body_preamble)
-        if not variable_name:
+        if not variable_name:  # pyrefly: ignore [implicit-bool]
             return _build_purescript_call_output(
                 preamble=preamble,
                 decl_part="",

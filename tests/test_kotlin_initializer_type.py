@@ -1,5 +1,7 @@
 """Focused tests for Kotlin initializer type extraction."""
 
+# pylint: disable=import-private-name
+
 import pytest
 
 from literalizer.languages.kotlin import (
@@ -23,4 +25,4 @@ def test_unbalanced_initializer_type_is_rejected() -> None:
         expected_exception=ValueError,
         match="Unbalanced Kotlin initializer type",
     ):
-        _kotlin_explicit_initializer_type("listOf<Map<String, Int>(")
+        _ = _kotlin_explicit_initializer_type("listOf<Map<String, Int>(")

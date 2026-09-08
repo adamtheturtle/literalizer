@@ -55,7 +55,7 @@ def main() -> None:
         excluded_keys=_EXCLUDED_KEYS,
     )
     program = _build_program(json_text=trimmed_json)
-    node = shutil.which(cmd="node") or "node"
+    node = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.js",

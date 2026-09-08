@@ -14,16 +14,16 @@ from literalizer.languages import ALL_LANGUAGES
 @beartype
 def fixture_lint_workflow(
     pytestconfig: pytest.Config,
-) -> dict[str, Any]:
+) -> dict[str, Any]:  # pyrefly: ignore [explicit-any]
     """Parse ``.github/workflows/lint.yml`` once per session."""
     lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
     ruamel_yaml = YAML()
-    loaded: dict[str, Any] = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]
+    loaded: dict[str, Any] = ruamel_yaml.load(stream=lint_yml)  # pyright: ignore[reportUnknownMemberType]  # pyrefly: ignore [explicit-any]
     return loaded
 
 
 def test_all_languages_have_lint_workflow(
-    lint_workflow: dict[str, Any],
+    lint_workflow: dict[str, Any],  # pyrefly: ignore [explicit-any]
 ) -> None:
     """Every language is covered by a ``Lint <Class>`` step or
     ``lint-<class>`` job.
@@ -31,7 +31,7 @@ def test_all_languages_have_lint_workflow(
     job_ids: set[str] = set(lint_workflow["jobs"])
     step_names: set[str] = set()
     for job in lint_workflow["jobs"].values():
-        steps: list[dict[str, Any]] = job.get("steps") or []
+        steps: list[dict[str, Any]] = job.get("steps") or []  # pyrefly: ignore [explicit-any]
         for step in steps:
             if "name" in step:
                 step_names.add(step["name"])
@@ -55,12 +55,12 @@ def test_all_languages_have_lint_workflow(
 
 
 def test_all_lint_jobs_in_completion_gate(
-    lint_workflow: dict[str, Any],
+    lint_workflow: dict[str, Any],  # pyrefly: ignore [explicit-any]
 ) -> None:
     """Every lint job is in completion-lint needs."""
     job_ids: set[str] = set(lint_workflow["jobs"])
     completion_needs: set[str] = set(
-        lint_workflow["jobs"]["completion-lint"]["needs"],
+        lint_workflow["jobs"]["completion-lint"]["needs"],  # pyrefly: ignore [unknown-argument-type]
     )
 
     lint_jobs = {jid for jid in job_ids if jid.startswith("lint-")}
@@ -83,4 +83,4 @@ def test_every_language_declares_the_explicit_attributes() -> None:
         )
         for language_cls in ALL_LANGUAGES
     }
-    assert {name: names for name, names in absent.items() if names} == {}
+    assert {name: names for name, names in absent.items() if names} == {}  # pyrefly: ignore [implicit-bool]

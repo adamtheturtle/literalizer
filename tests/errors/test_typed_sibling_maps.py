@@ -6,6 +6,8 @@ which no rejection manifest expresses -- and the one call that reaches
 the pooling check directly, for a shape ``literalize`` cannot build.
 """
 
+# pylint: disable=import-private-name
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
 def test_typed_sibling_maps_allow_same_value_type(language: Language) -> None:
     """Different keys do not matter when every map value type agrees."""
     for source in ('[{"s": 1}, {"t": 3}]', '[{"m": {}}, {"m": {}}]'):
-        literalize(
+        _ = literalize(
             source=source,
             input_format=InputFormat.JSON,
             language=language,

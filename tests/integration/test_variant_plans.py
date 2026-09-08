@@ -120,7 +120,7 @@ overrides_from = "other"
 def _write_registry(*, tmp_path: Path, contents: str) -> Path:
     """Write one temporary axis registry and return its path."""
     path = tmp_path / "axes.toml"
-    path.write_text(data=contents, encoding="utf-8")
+    _ = path.write_text(data=contents, encoding="utf-8")
     return path
 
 
@@ -159,7 +159,7 @@ def test_special_axes_are_declared() -> None:
 def test_every_declared_axis_expands() -> None:
     """No declared plan silently expands to nothing."""
     for axis_key in sorted(declared_axis_names()):
-        assert variants_for_declared_axis(
+        assert variants_for_declared_axis(  # pyrefly: ignore [implicit-bool]
             axis_key=axis_key,
             resolve_axis=variants_for_axis,
         ), axis_key
@@ -318,10 +318,10 @@ def test_member_flags_select_terminated_comment_formats() -> None:
     for lang_cls in ALL_LANGUAGES:
         spec = make_spec(lang_cls=lang_cls)
         for member in spec.comment_formats:
-            config = member.value
+            config = member.value  # pyrefly: ignore [unknown-variable-type]
 
             assert isinstance(config, CommentConfig), lang_cls.__name__
-            if config.suffix:
+            if config.suffix:  # pyrefly: ignore [implicit-bool]
                 expected.add((lang_cls.__name__, member.name))
                 if member is spec.comment_format:
                     defaults.add((lang_cls.__name__, member.name))
@@ -375,7 +375,7 @@ def test_unknown_axis_is_actionable() -> None:
         expected_exception=AxisPlanError,
         match="no plan declared for variant axis 'mystery'",
     ):
-        variants_for_axis(axis_key="mystery")
+        _ = variants_for_axis(axis_key="mystery")
 
 
 @pytest.mark.parametrize(
@@ -588,7 +588,7 @@ def test_invalid_registry_is_actionable(
     """
     path = _write_registry(tmp_path=tmp_path, contents=contents)
     with pytest.raises(expected_exception=AxisPlanError, match=message):
-        load_axis_registry(path=path)
+        _ = load_axis_registry(path=path)
 
 
 def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
@@ -598,7 +598,7 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
         expected_exception=AxisPlanError,
         match="invalid TOML",
     ):
-        load_axis_registry(path=path)
+        _ = load_axis_registry(path=path)
 
 
 @pytest.mark.parametrize(
@@ -698,7 +698,7 @@ def test_missing_language_metadata_is_actionable(
     """
     path = _write_registry(tmp_path=tmp_path, contents=contents)
     with pytest.raises(expected_exception=AxisPlanError, match=message):
-        variants_for_registry_axis(
+        _ = variants_for_registry_axis(
             path=path,
             axis_key="example",
             resolve_axis=variants_for_axis,

@@ -57,8 +57,8 @@ def main() -> None:
         capabilities=Java.variant_metadata.round_trip_capabilities,
     )
     program = _build_main(json_text=json_text)
-    javac = shutil.which(cmd="javac") or "javac"
-    java = shutil.which(cmd="java") or "java"
+    javac = shutil.which(cmd="javac") or "javac"  # pyrefly: ignore [implicit-bool]
+    java = shutil.which(cmd="java") or "java"  # pyrefly: ignore [implicit-bool]
     classpath = os.environ["LITERALIZER_LINT_CLASSPATH"] + os.pathsep + "."
     roundtrip_common.execute(
         label=_LABEL,

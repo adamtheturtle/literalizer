@@ -45,7 +45,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
     rejection_dir = tmp_path / "example"
     rejection_dir.mkdir()
     manifest_path = rejection_dir / MANIFEST_NAME
-    manifest_path.write_text(data=manifest, encoding="utf-8")
+    _ = manifest_path.write_text(data=manifest, encoding="utf-8")
     return manifest_path
 
 
@@ -340,7 +340,7 @@ def test_invalid_manifest_is_rejected(
         expected_exception=RejectionManifestError,
         match=message,
     ):
-        load_rejection_manifest(manifest_path=manifest_path)
+        _ = load_rejection_manifest(manifest_path=manifest_path)
 
 
 def test_directory_without_manifests_is_rejected(tmp_path: Path) -> None:
@@ -351,7 +351,7 @@ def test_directory_without_manifests_is_rejected(tmp_path: Path) -> None:
         expected_exception=RejectionManifestError,
         match=f"no {MANIFEST_NAME} found",
     ):
-        load_rejection_manifests(rejections_dir=tmp_path)
+        _ = load_rejection_manifests(rejections_dir=tmp_path)
 
 
 def test_every_rejection_directory_holds_exactly_its_two_files() -> None:

@@ -20,7 +20,7 @@ def _literalize(
     """Literalize *source* with the supplied Rust empty-container
     hints.
     """
-    literalize(
+    _ = literalize(
         source=source,
         input_format=InputFormat.JSON,
         language=Rust(

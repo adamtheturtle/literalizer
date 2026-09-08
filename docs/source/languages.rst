@@ -197,7 +197,7 @@ syntax:
 
    from literalizer.languages import Python
 
-   Python(
+   _ = Python(
        annotation_evaluation=Python.annotation_evaluations.EAGER,
        language_version=Python.version_formats.PY38,
    )
@@ -424,7 +424,7 @@ Empty sequences are unambiguous and are still accepted.
 
    # Strip or replace the empty mapping before retrying on a real input.
    with contextlib.suppress(UnrepresentableEmptyDictError):
-       literalize(
+       _ = literalize(
            source=json.dumps(obj={"outer": {}}),
            input_format=InputFormat.JSON,
            language=Lua(),

@@ -61,7 +61,7 @@ def main() -> None:
         capabilities=Erlang.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    escript = shutil.which(cmd="escript") or "escript"
+    escript = shutil.which(cmd="escript") or "escript"  # pyrefly: ignore [implicit-bool]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.erl",

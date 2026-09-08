@@ -182,7 +182,7 @@ def _format_string_multiline(value: str) -> str:
         for char in value
     )
     has_trailing_line_whitespace = any(
-        line and line[-1].isspace() for line in value.split(sep="\n")
+        len(line) > 0 and line[-1].isspace() for line in value.split(sep="\n")
     )
     if has_unsafe_control or has_trailing_line_whitespace:
         return _format_string_escaped(value=value)
@@ -208,7 +208,7 @@ def _format_date_swift(value: datetime.date) -> str:
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
-    offset = value.utcoffset() or datetime.timedelta()
+    offset = value.utcoffset() or datetime.timedelta()  # pyrefly: ignore [implicit-bool]
     offset_seconds = int(offset.total_seconds())
     parts = (
         "DateComponents("
@@ -217,7 +217,7 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
-    if value.microsecond:
+    if value.microsecond:  # pyrefly: ignore [implicit-bool]
         nanosecond = value.microsecond * 1000
         parts += f", nanosecond: {nanosecond}"
     return parts + ").date!"
@@ -287,7 +287,7 @@ def _swift_call_stub(
     method_decl = (
         f"@discardableResult func {method}({param_list}) -> Any {{ 0 }}"
     )
-    if not fields:
+    if not fields:  # pyrefly: ignore [implicit-bool]
         cls = f"_{root}Type"
         return (
             f"class {cls} {{ {method_decl} }}",
@@ -408,7 +408,7 @@ def _swift_type_hint(
         case dict():
             hint = _swift_dict_hint(
                 val_types=[recurse(data=v) for v in data.values()],
-                is_empty=not data,
+                is_empty=not data,  # pyrefly: ignore [implicit-bool]
                 default_dict_value_type=default_dict_value_type,
             )
         case set():
@@ -416,7 +416,7 @@ def _swift_type_hint(
         case list():
             hint = _swift_list_hint(
                 elem_types=[recurse(data=e) for e in data],
-                is_empty=not data,
+                is_empty=not data,  # pyrefly: ignore [implicit-bool]
                 sequence_is_tuple=sequence_is_tuple,
                 default_sequence_element_type=default_sequence_element_type,
             )
@@ -786,7 +786,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, date_value: datetime.date, /) -> str:
             """Format a date."""
-            return self.value.formatter(date_value)
+            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class DatetimeFormats(enum.Enum):
         """Datetime format options for Swift."""
@@ -810,7 +810,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, dt_value: datetime.datetime, /) -> str:
             """Format a datetime."""
-            return self.value.formatter(dt_value)
+            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -820,7 +820,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)
+            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Swift."""
@@ -856,7 +856,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
@@ -875,7 +875,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)
+            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -935,7 +935,7 @@ class Swift(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(
+            return self.value(  # pyrefly: ignore [no-any-return-implicit]
                 default_type,
                 default_key_type=default_key_type,
             )
@@ -1020,7 +1020,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)
+            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

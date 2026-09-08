@@ -58,7 +58,7 @@ def test_literalize_call_transform_rejected_for_non_substitution_style() -> (
             r"expression that can be wrapped"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
             language=Tcl(),
@@ -77,7 +77,7 @@ def test_literalize_call_zip_source_length_mismatch_raises() -> None:
             r"generated; the lengths must match$"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1], [2]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -100,7 +100,7 @@ def test_literalize_call_zip_source_without_transform_raises() -> None:
             r"paired values would be unused$"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1], [2]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -120,7 +120,7 @@ def test_literalize_call_zip_source_without_input_format_raises() -> None:
             r"companion source cannot be parsed without its format$"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1], [2]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -140,7 +140,7 @@ def test_literalize_call_zip_input_format_without_source_raises() -> None:
             r"no companion source to parse$"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -159,7 +159,7 @@ def test_literalize_call_zip_source_per_element_non_list_raises() -> None:
             r"top-level list, got str$"
         ),
     ):
-        literalize_call(
+        _ = literalize_call(
             source="[[1], [2]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -178,7 +178,7 @@ def test_both_variable_forms_without_wrap_in_file_raises() -> None:
         expected_exception=ValueError,
         match=f"^{re.escape(pattern=expected_msg)}$",
     ):
-        literalize(
+        _ = literalize(
             source="42",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -196,7 +196,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
         expected_exception=ValueError,
         match=rf"^{re.escape(pattern=expected)}$",
     ):
-        literalize(
+        _ = literalize(
             source="42",
             input_format=InputFormat.JSON,
             language=Elm(),
@@ -218,7 +218,7 @@ def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
             r"at file scope$"
         ),
     ):
-        literalize(
+        _ = literalize(
             source="42",
             input_format=InputFormat.JSON,
             language=Haskell(),

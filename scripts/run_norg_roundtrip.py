@@ -79,12 +79,12 @@ def _extract_code_block(document: str, language: Language) -> str:
     parser = Parser(language=language)
     tree = parser.parse(document.encode(encoding="utf-8"))
     pending = [tree.root_node]
-    while pending:
+    while pending:  # pyrefly: ignore [implicit-bool]
         node = pending.pop()
         if node.type == _CONTENT_NODE_TYPE and node.text is not None:
             return node.text.decode(encoding="utf-8")
         pending.extend(node.children)
-    sys.stderr.write(
+    _ = sys.stderr.write(
         f"{_LABEL}: no {_CONTENT_NODE_TYPE} node found\n"
         f"\nProgram:\n{document}\n",
     )
@@ -109,7 +109,7 @@ def main() -> None:
         exclude_keys=(),
         expected_json=json_text,
     )
-    sys.stdout.write(f"{_LABEL} round-trip OK\n")
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":
