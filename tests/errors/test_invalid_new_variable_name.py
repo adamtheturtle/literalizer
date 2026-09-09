@@ -108,7 +108,7 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
 _LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
     language_cls
     for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
-    if language_cls.reserved_variable_identifiers  # pyrefly: ignore [implicit-bool]
+    if len(language_cls.reserved_variable_identifiers) > 0
     and language_cls.supports_variable_names
 )
 
