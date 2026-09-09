@@ -6,8 +6,8 @@ import dataclasses
 import functools
 import string
 import tomllib
-from collections.abc import Callable, Mapping  # noqa: TC003
-from pathlib import Path  # noqa: TC003
+from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Annotated, Literal, Self, get_args
 
 from beartype import beartype
@@ -22,7 +22,7 @@ from pydantic import (
 )
 
 import literalizer
-from literalizer._types import ValueInput  # noqa: TC001
+from literalizer._types import ValueInput
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input

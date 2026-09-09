@@ -7,11 +7,14 @@ import datetime
 import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from beartype import beartype
 
-from literalizer._formatters.type_inference import infer_element_type
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    infer_element_type,
+)
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -31,9 +34,6 @@ from literalizer.exceptions import (
     UnrepresentableNullError,
     UnrepresentableStringError,
 )
-
-if TYPE_CHECKING:
-    from literalizer._formatters.type_inference import RecordShape
 
 _C0_UPPER_BOUND = 0x20
 

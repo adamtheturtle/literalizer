@@ -8,8 +8,8 @@ cases without depending on individual language classes.
 
 from __future__ import annotations
 
-import enum  # noqa: TC003  # Runtime-resolved by beartype.
-from collections.abc import Mapping  # noqa: TC003
+import enum
+from collections.abc import Mapping
 
 from beartype import beartype
 

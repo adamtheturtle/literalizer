@@ -18,7 +18,7 @@ import dataclasses
 import functools
 import string
 import tomllib
-from collections.abc import Callable, Mapping  # noqa: TC003
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Annotated, Literal, Self, assert_never
 

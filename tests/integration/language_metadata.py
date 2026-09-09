@@ -29,7 +29,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import tomllib
-from collections.abc import Mapping  # noqa: TC003
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Literal
 

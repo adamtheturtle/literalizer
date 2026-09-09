@@ -238,8 +238,6 @@ lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/
 lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
-    # FileRegressionFixture must be imported at runtime for beartype.
-    "TC002",
 ]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
@@ -254,6 +252,8 @@ lint.flake8-tidy-imports.banned-api."operator.attrgetter".msg = """\
 lint.flake8-tidy-imports.banned-api."typing.cast".msg = """\
     typing.cast is banned: use explicit type narrowing or a typed variable instead.\
     """
+lint.flake8-type-checking.runtime-evaluated-base-classes = [ "pydantic.BaseModel" ]
+lint.flake8-type-checking.runtime-evaluated-decorators = [ "beartype.beartype" ]
 lint.pydocstyle.convention = "google"
 lint.preview = true
 per-file-target-version = { "tests/integration/cases/**/Python*@py38.py" = "py38" }
