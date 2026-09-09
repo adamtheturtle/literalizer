@@ -1125,7 +1125,7 @@ class Odin(metaclass=LanguageCls):
     @staticmethod
     def _reject_empty_key(key: str) -> None:
         """Raise if *key* is the empty name Odin's parser discards."""
-        if not key:  # pyrefly: ignore [implicit-bool]
+        if key == "":
             msg = (
                 "Odin json_type parses the embedded JSON text at runtime, "
                 "and its parser drops an object member whose name is "
@@ -1176,7 +1176,7 @@ class Odin(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n_ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
+        use_line = f"\n_ = {variable_name}" if variable_name != "" else ""
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
     @staticmethod
