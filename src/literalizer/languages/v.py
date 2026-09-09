@@ -479,9 +479,11 @@ def _v_call_stub(
 # names (no ``record_shape_names``, consistent with the other non-Rust
 # ports), so the shared renderer always gets an empty custom-name
 # mapping.
-_V_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_V_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 
 # V scalar type for a record field, keyed by the value's exact Python
 # type.  ``bool`` and ``int`` are not here (they have dedicated handling

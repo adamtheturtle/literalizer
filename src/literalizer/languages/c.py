@@ -182,9 +182,11 @@ def _make_format_c_entry(
 # (see issue #2476), so the shared renderer always gets an empty
 # custom-name mapping and the document-order auto counter.
 _C_RECORD_PREFIX = "Record"
-_C_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_C_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 
 
 @beartype
