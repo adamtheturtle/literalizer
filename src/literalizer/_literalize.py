@@ -790,7 +790,7 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
     ``TUPLE`` style (the hook is ``None``).
     """
     compute = spec.heterogeneous_behavior.compute_tuple_list_ids
-    return compute(data) if compute is not None else frozenset()  # ty: ignore[unsound-return-statement]
+    return compute(data) if compute is not None else frozenset[int]()
 
 
 @beartype
