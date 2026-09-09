@@ -611,7 +611,7 @@ class Hcl(metaclass=LanguageCls):
         through unchanged so a mixed file of variable declarations and
         calls parses correctly.
         """
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
@@ -623,9 +623,11 @@ class Hcl(metaclass=LanguageCls):
         comment_prefix = self.comment_config.prefix
         for statement in statements:
             first_line = statement.split(sep="\n", maxsplit=1)[0]
-            if first_line.lstrip().startswith(  # pyrefly: ignore [implicit-bool]
-                comment_prefix
-            ) or _HCL_DECLARATION_PATTERN.match(string=first_line):
+            if (
+                first_line.lstrip().startswith(comment_prefix)
+                or _HCL_DECLARATION_PATTERN.match(string=first_line)
+                is not None
+            ):
                 rendered.append(statement)
             else:
                 rendered.append(f"_{call_counter} = {statement}")
