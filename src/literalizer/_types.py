@@ -61,7 +61,7 @@ class ValueItemsMap[K, V](Protocol):
 
     def items(self) -> Iterable[tuple[K, V]]:
         """Yield the key/value pairs."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 type ValueInput = (

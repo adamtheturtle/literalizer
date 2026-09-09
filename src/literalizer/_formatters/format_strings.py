@@ -16,7 +16,7 @@ class _StringFormatter(Protocol):
 
     def __call__(self, value: str) -> str:
         """Format *value* using backslash escaping."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 BIDI_FORMATTING_CHARACTERS: tuple[str, ...] = (

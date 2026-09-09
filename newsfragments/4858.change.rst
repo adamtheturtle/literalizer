@@ -1,0 +1,1 @@
+Replace suppressed protocol placeholder ellipses with explicit runtime failures.

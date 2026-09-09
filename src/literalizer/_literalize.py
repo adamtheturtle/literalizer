@@ -138,7 +138,7 @@ class _SupportsCallVariableWrapInFile(Protocol):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a call-result variable binding in a complete file."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @runtime_checkable
@@ -150,7 +150,7 @@ class _HasCallWrapperEntrypoint(Protocol):
     @property
     def call_wrapper_entrypoint_name(self) -> str:
         """Return the identifier reserved by the generated wrapper."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @runtime_checkable
@@ -164,7 +164,7 @@ class _RequiresUniqueDottedCallParts(Protocol):
         """Return whether repeated path segments collide in the
         scaffold.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @runtime_checkable
@@ -174,7 +174,7 @@ class _NormalizesDottedCallPartCase(Protocol):
     @property
     def dotted_call_stub_normalizes_part_case(self) -> bool:
         """Return whether helper naming normalizes component case."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 class _DisabledRefKey(str):
@@ -446,7 +446,7 @@ class _MixedNumericIntegerFormatter(Protocol):
         self,
     ) -> Callable[[int], str] | None:
         """Return the integer formatter for a float-widened collection."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @beartype

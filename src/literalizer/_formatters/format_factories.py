@@ -28,7 +28,7 @@ class _DictFormatBuilder(Protocol):
         default_key_type: str,
     ) -> DictFormatConfig:
         """Build a ``DictFormatConfig`` with the given default type."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @runtime_checkable
@@ -44,7 +44,7 @@ class _OrderedMapFormatBuilder(Protocol):
         default_key_type: str,
     ) -> OrderedMapFormatConfig:
         """Build an ``OrderedMapFormatConfig`` with the given default type."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @beartype

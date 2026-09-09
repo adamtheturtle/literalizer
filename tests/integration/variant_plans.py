@@ -78,7 +78,7 @@ class AxisResolver(Hashable, Protocol):
 
     def __call__(self, *, axis_key: str) -> list[Variant]:
         """Return the variants *axis_key* expands to."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
 @runtime_checkable
