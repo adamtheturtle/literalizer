@@ -178,10 +178,13 @@ def _format_nix_dict_entry(
     quoted.
     """
     inner = key[1:-1]
-    if _IDENTIFIER_RE.match(string=inner) and inner not in _NIX_KEYWORDS:  # pyrefly: ignore [implicit-bool]
+    if (
+        _IDENTIFIER_RE.match(string=inner) is not None
+        and inner not in _NIX_KEYWORDS
+    ):
         return f"{inner} = {formatted_value};"
     control_char_upper_bound = 0x20
-    if not inner or any(ord(ch) < control_char_upper_bound for ch in inner):  # pyrefly: ignore [implicit-bool]
+    if inner == "" or any(ord(ch) < control_char_upper_bound for ch in inner):
         msg = (
             f"Nix does not support the dict key {key}. "
             "Attribute names must be non-empty and must not contain "
