@@ -332,7 +332,7 @@ def _recordized_dict_ids(*, data: Value, language: Language) -> frozenset[int]:
     """
     behavior = language.heterogeneous_behavior
     if behavior.render_record_literal is None:
-        return frozenset()  # ty: ignore[unsound-return-statement]
+        return frozenset[int]()
     return frozenset(
         collect_record_shapes(data=data)
     ) - behavior.compute_wrap_ids(data)
@@ -553,7 +553,7 @@ def compute_preamble(
     )
     collection = _collection_preamble(types=types, language=language)
     present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
-    annotated_collection_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
+    annotated_collection_types = frozenset[type]()
     if has_variable_declaration and present_collection_types:  # pyrefly: ignore [implicit-bool]
         annotated_collection_types = (
             present_collection_types
