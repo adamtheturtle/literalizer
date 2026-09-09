@@ -4769,7 +4769,7 @@ def _compose_bound_refs(
     """
     decl_results = composition.declarations
     main_result = composition.main_result
-    empty_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
+    empty_types = frozenset[type]()
     union_types = empty_types.union(
         *(d.types_present for d in decl_results),
         main_result.types_present,
@@ -7586,7 +7586,7 @@ def _literalize_call_with_declarations(
                 "calls in this language"
             ),
         )
-    empty_types: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
+    empty_types = frozenset[type]()
     union_types = empty_types.union(
         *(d.types_present for d in declarations),
         call.types_present,
