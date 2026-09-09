@@ -16,8 +16,9 @@ sets and binary -- are declared in ``tests/errors/rejections``.
 
 import json
 import re
+from collections.abc import Mapping
 from io import StringIO
-from typing import TYPE_CHECKING, assert_never
+from typing import assert_never
 
 import pytest
 import tomlkit
@@ -33,9 +34,6 @@ from literalizer.exceptions import (
     MixedListValuesError,
 )
 from literalizer.languages import Dhall, Mojo, Python
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 type _SourceData = (
     dict[str, _SourceData]

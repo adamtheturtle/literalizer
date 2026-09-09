@@ -22,7 +22,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
-from literalizer._types import ValueInput  # noqa: TC001
+from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
