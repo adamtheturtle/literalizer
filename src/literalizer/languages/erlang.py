@@ -750,9 +750,13 @@ class Erlang(metaclass=LanguageCls):
 
     def __post_init__(self) -> None:
         """Validate that the module name is an unquoted Erlang atom."""
-        if len(self.module_name) <= _MAX_ATOM_LENGTH and re.fullmatch(  # pyrefly: ignore [implicit-bool]
-            pattern=r"[a-z][A-Za-z0-9_@]*",
-            string=self.module_name,
+        if (
+            len(self.module_name) <= _MAX_ATOM_LENGTH
+            and re.fullmatch(
+                pattern=r"[a-z][A-Za-z0-9_@]*",
+                string=self.module_name,
+            )
+            is not None
         ):
             return
         raise InvalidModuleNameError(
@@ -789,7 +793,7 @@ class Erlang(metaclass=LanguageCls):
         :attr:`statement_terminator` and the trailing ``,`` is
         rewritten to ``.`` so ``x()`` ends on a valid clause.
         """
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             body = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
@@ -816,7 +820,7 @@ class Erlang(metaclass=LanguageCls):
         code = last[:comment_start].rstrip()
         gap = last[len(code) : comment_start]
         trimmed_last = f"{code.removesuffix(',')}{gap}{last[comment_start:]}"
-        trimmed = f"{head}\n{trimmed_last}" if head else trimmed_last  # pyrefly: ignore [implicit-bool]
+        trimmed = f"{head}\n{trimmed_last}" if head != "" else trimmed_last
         indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)
