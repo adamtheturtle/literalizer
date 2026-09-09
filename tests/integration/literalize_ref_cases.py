@@ -276,12 +276,19 @@ def run_literalize_ref_golden_case(
             variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
-            bound_refs=bound_refs_input or None,  # pyrefly: ignore [implicit-bool]
-            ref_values={  # pyrefly: ignore [implicit-bool]
-                name: json.loads(s=source)
-                for name, source in config.explicit_ref_value_sources.items()
-            }
-            or None,
+            bound_refs=(
+                bound_refs_input if len(bound_refs_input) > 0 else None
+            ),
+            ref_values=(
+                {
+                    name: json.loads(s=source)
+                    for name, source in (
+                        config.explicit_ref_value_sources.items()
+                    )
+                }
+                if len(config.explicit_ref_value_sources) > 0
+                else None
+            ),
             ref_key=config.ref_key,
             pre_indent_level=config.pre_indent_level,
             collection_layout=literalizer.CollectionLayout(
