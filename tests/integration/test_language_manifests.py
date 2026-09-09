@@ -227,18 +227,18 @@ def test_declaration_style_overrides_name_real_formats() -> None:
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         overrides = metadata.declaration_style_sequence_format_overrides
-        if not overrides:  # pyrefly: ignore [implicit-bool]
+        if len(overrides) == 0:
             continue
         spec = make_spec(lang_cls=lang_cls)
         style_names = {style.name for style in spec.declaration_styles}
         format_names = {fmt.name for fmt in spec.sequence_formats}
         unknown_styles = set(overrides) - style_names
         unknown_formats = set(overrides.values()) - format_names
-        assert not unknown_styles, (  # pyrefly: ignore [implicit-bool]
+        assert len(unknown_styles) == 0, (
             f"{metadata.path}: unknown declaration styles "
             f"{sorted(unknown_styles)}"
         )
-        assert not unknown_formats, (  # pyrefly: ignore [implicit-bool]
+        assert len(unknown_formats) == 0, (
             f"{metadata.path}: unknown sequence formats "
             f"{sorted(unknown_formats)}"
         )
