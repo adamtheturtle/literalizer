@@ -520,7 +520,7 @@ def _build_gleam_data_dependent_preamble(
                 ),
                 (frozenset({set}), f"{p}Set(List({type_name}))"),
             )
-            if types & type_set  # pyrefly: ignore [implicit-bool]
+            if len(types & type_set) > 0
         ]
         body = "\n".join(f"  {c}" for c in constructors)
         return (f"pub type {type_name} {{\n{body}\n}}",)
@@ -1182,7 +1182,9 @@ class Gleam(metaclass=LanguageCls):
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         use_line = (
-            f"\n{self.indent}let _ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
+            f"\n{self.indent}let _ = {variable_name}"
+            if variable_name != ""
+            else ""
         )
         return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
