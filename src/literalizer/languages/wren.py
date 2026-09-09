@@ -125,7 +125,9 @@ def _wren_call_stub(
     where each intermediate exposes a getter returning the next object.
     """
     # Wren parameter names may not start with "_" (reserved for fields).
-    param_list = ", ".join(p.lstrip("_") or p for p in params)  # pyrefly: ignore [implicit-bool]
+    param_list = ", ".join(
+        p.lstrip("_") if p.lstrip("_") != "" else p for p in params
+    )
 
     if len(parts) == 1:
         cls_name = parts[0].capitalize() + "_"
