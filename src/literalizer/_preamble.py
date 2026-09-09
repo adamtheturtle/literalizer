@@ -54,11 +54,11 @@ class EmptyList(EmptyCollection):
     """An empty sequence appears in the data."""
 
 
-_ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset(
+_ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset[type](
     # pylint does not model PEP 695 aliases, so it does not see the
     # ``__value__`` every ``type`` statement defines.
     get_args(tp=Scalar.__value__)  # pylint: disable=no-member
-) | {OrderedMap, dict, list, set}  # ty: ignore[unsound-assignment]
+) | frozenset[type]({OrderedMap, dict, list, set})
 """Every type :func:`_collect_value_types` can report.
 
 Once all of them have been observed there is nothing left to learn, so
