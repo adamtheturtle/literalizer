@@ -121,7 +121,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             include_delimiters=call.include_delimiters,
             ref_key=call.ref_key,
             ref_case=ref_case,
-            bound_refs=dict(call.bound_refs) or None,  # pyrefly: ignore [implicit-bool]
+            bound_refs=(
+                dict(call.bound_refs) if len(call.bound_refs) > 0 else None
+            ),
         )
         return
     assert case.source is not None
@@ -151,7 +153,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         wrap_in_file=call.wrap_in_file,
         ref_key=call.ref_key,
         ref_case=ref_case,
-        bound_refs=dict(call.bound_refs) or None,  # pyrefly: ignore [implicit-bool]
+        bound_refs=(
+            dict(call.bound_refs) if len(call.bound_refs) > 0 else None
+        ),
         comment_source=comment_source,
         variable_form=(
             variable_form if call.variable_form is not None else None
