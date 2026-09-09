@@ -216,7 +216,11 @@ def _narrowed_type_name(
     """
     inner = infer_element_type(items=items)
     type_name = element_to_type(inner) if inner is not None else None
-    return type_name or fallback_type  # pyrefly: ignore [implicit-bool]
+    return (
+        type_name
+        if type_name is not None and len(type_name) > 0
+        else fallback_type
+    )
 
 
 @beartype
@@ -400,7 +404,8 @@ def _typed_collection_open_impl(
     element_type = infer_element_type(items=items)
     if element_type is None:
         return fallback
-    return type_to_opener(element_type) or fallback  # pyrefly: ignore [implicit-bool]
+    opener = type_to_opener(element_type)
+    return opener if opener is not None and len(opener) > 0 else fallback
 
 
 @beartype
@@ -450,7 +455,8 @@ def _typed_dict_open_impl(
     element_type = infer_element_type(items=list(items.values()))
     if element_type is None:
         return fallback
-    return type_to_opener(element_type) or fallback  # pyrefly: ignore [implicit-bool]
+    opener = type_to_opener(element_type)
+    return opener if opener is not None and len(opener) > 0 else fallback
 
 
 @beartype
@@ -611,7 +617,7 @@ class TypedOpenerConfig:
         raw_template = self._dict_type_template if enable_dict_type else None
         resolved_template = (
             raw_template.replace("{key_type}", dict_key_type)
-            if raw_template is not None and dict_key_type  # pyrefly: ignore [implicit-bool]
+            if raw_template is not None and len(dict_key_type) > 0
             else raw_template
         )
         return make_element_to_type(
@@ -703,7 +709,7 @@ class TypedOpenerConfig:
                 "{key_type}",
                 dict_key_type,
             )
-            if dict_key_type  # pyrefly: ignore [implicit-bool]
+            if len(dict_key_type) > 0
             else self._dict_opener_template
         )
         return TypeOpeners(
