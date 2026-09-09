@@ -159,9 +159,13 @@ def test_special_axes_are_declared() -> None:
 def test_every_declared_axis_expands() -> None:
     """No declared plan silently expands to nothing."""
     for axis_key in sorted(declared_axis_names()):
-        assert variants_for_declared_axis(  # pyrefly: ignore [implicit-bool]
-            axis_key=axis_key,
-            resolve_axis=variants_for_axis,
+        assert (
+            len(
+                variants_for_declared_axis(
+                    axis_key=axis_key, resolve_axis=variants_for_axis
+                )
+            )
+            > 0
         ), axis_key
 
 
@@ -321,7 +325,7 @@ def test_member_flags_select_terminated_comment_formats() -> None:
             config = member.value  # pyrefly: ignore [unknown-variable-type]
 
             assert isinstance(config, CommentConfig), lang_cls.__name__
-            if config.suffix:  # pyrefly: ignore [implicit-bool]
+            if config.suffix != "":
                 expected.add((lang_cls.__name__, member.name))
                 if member is spec.comment_format:
                     defaults.add((lang_cls.__name__, member.name))
