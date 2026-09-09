@@ -308,7 +308,7 @@ def _build_sml_call_stub_lines(
     """
     method = parts[-1]
     if curried:
-        if not params:  # pyrefly: ignore [implicit-bool]
+        if len(params) == 0:
             lines: list[str] = [f"val {method} = ()"]
         else:
             wildcards = " ".join("_" for _ in params)
@@ -830,7 +830,9 @@ class Sml(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        force_line = f"\nval _ = {variable_name}" if variable_name else ""  # pyrefly: ignore [implicit-bool]
+        force_line = (
+            f"\nval _ = {variable_name}" if variable_name != "" else ""
+        )
         return content + force_line
 
     @staticmethod
