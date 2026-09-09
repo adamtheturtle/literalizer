@@ -246,7 +246,7 @@ def _sv_call_stub(
             f"{indent}endfunction"
         )
 
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"{root.title()}Type_"
         return (
             f"class {type_name};\n{method_decl}\nendclass",
@@ -789,7 +789,7 @@ class SystemVerilog(metaclass=LanguageCls):
         ``initial begin``.  In declaration mode, *body_preamble* is
         prepended inside ``initial begin`` as usual.
         """
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
