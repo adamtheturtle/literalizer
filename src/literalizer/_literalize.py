@@ -4963,7 +4963,7 @@ def _collect_ref_names(*, value: Value, ref_key: str) -> frozenset[str]:
                 )
             )
         case _:
-            return frozenset()  # ty: ignore[unsound-return-statement]
+            return frozenset[str]()
 
 
 @beartype
