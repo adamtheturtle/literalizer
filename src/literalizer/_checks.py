@@ -720,7 +720,7 @@ def _find_first_mixed_values(
             ):
                 return children
         case _:
-            return []  # ty: ignore[unsound-return-statement]
+            return ()
     for child in children:
         result = _find_first_mixed_values(
             data=child,
@@ -728,7 +728,7 @@ def _find_first_mixed_values(
         )
         if result:  # pyrefly: ignore [implicit-bool]
             return result
-    return []  # ty: ignore[unsound-return-statement]
+    return ()
 
 
 @beartype
@@ -976,12 +976,12 @@ def _find_first_mixed_keys(*, data: Value) -> Sequence[Value]:
         case list():
             children = data
         case _:
-            return []  # ty: ignore[unsound-return-statement]
+            return ()
     for child in children:
         result = _find_first_mixed_keys(data=child)
         if result:  # pyrefly: ignore [implicit-bool]
             return result
-    return []  # ty: ignore[unsound-return-statement]
+    return ()
 
 
 @beartype
