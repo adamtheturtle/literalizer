@@ -117,7 +117,7 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
 @beartype
 def _occam_stub_parameters(params: Sequence[str], /) -> str:
     """Return an Occam parameter list for a generated call stub."""
-    if not params:  # pyrefly: ignore [implicit-bool]
+    if len(params) == 0:
         return "()"
     formatted = ", ".join(f"VAL MOBILE LIT {param}" for param in params)
     return f"({formatted})"
@@ -556,7 +556,7 @@ class Occam(metaclass=LanguageCls):
         """Wrap an occam-pi VAL declaration in a PROC."""
         del variable_name
         top_level_preamble = (
-            "\n".join(body_preamble) + "\n" if body_preamble else ""  # pyrefly: ignore [implicit-bool]
+            "\n".join(body_preamble) + "\n" if len(body_preamble) > 0 else ""
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (
