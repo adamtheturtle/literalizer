@@ -752,7 +752,7 @@ class Haxe(metaclass=LanguageCls):
         )
         body_indent = self.indent + self.indent
         indented = "\n".join(
-            f"{body_indent}{line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
+            f"{body_indent}{line}" if line.strip() != "" else line
             for line in inner.split(sep="\n")
         )
         return "\n".join(
