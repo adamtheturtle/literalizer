@@ -127,7 +127,7 @@ _INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
 def _reject_numeric_string_keys(data: Value) -> None:
     """Reject mapping keys that PHP arrays coerce from strings to integers."""
     stack = [data]
-    while stack:  # pyrefly: ignore [implicit-bool]
+    while len(stack) > 0:
         value = stack.pop()
         if isinstance(value, dict):
             for key, child in value.items():
@@ -231,7 +231,7 @@ def _php_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = root.capitalize() + "Type"
         return (
             f"class {cls} {{ function {method}({param_list}) {{}} }}",
