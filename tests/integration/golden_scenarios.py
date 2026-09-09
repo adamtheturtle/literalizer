@@ -367,7 +367,11 @@ def _base_renderings(
                     variable_form=variable_form_for_context(context=context),
                     pre_indent_level=context.pre_indent_level,
                     collection_layout=literalizer.CollectionLayout(
-                        value=context.collection_layout or "compact"  # pyrefly: ignore [implicit-bool]
+                        value=(
+                            context.collection_layout
+                            if context.collection_layout not in (None, "")
+                            else "compact"
+                        )
                     ),
                     record_null_substitutions=(
                         context.record_null_substitutions
@@ -724,7 +728,7 @@ def golden_groups() -> tuple[GoldenGroup, ...]:
     for scenario in GOLDEN_SCENARIOS:
         for lang_cls in sorted_languages():
             renderings = scenario.build(lang_cls=lang_cls)
-            if renderings:  # pyrefly: ignore [implicit-bool]
+            if len(renderings) > 0:
                 groups.append(
                     GoldenGroup(
                         scenario_name=scenario.name,
