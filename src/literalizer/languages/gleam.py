@@ -463,20 +463,20 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
     """
     match value:
         case dict():
-            child: frozenset[type] = frozenset()  # ty: ignore[unsound-assignment]
+            child = frozenset[type]()
             for v in value.values():
                 child = child | _collect_gleam_types(value=v)
-            return frozenset({dict}) | child
+            return frozenset[type]({dict}) | child
         case set():
-            child = frozenset()
+            child = frozenset[type]()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset({set}) | child  # ty: ignore[unsound-return-statement]
+            return frozenset[type]({set}) | child
         case list():
-            child = frozenset()
+            child = frozenset[type]()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset({list}) | child  # ty: ignore[unsound-return-statement]
+            return frozenset[type]({list}) | child
         case _:
             return frozenset({_scalar_gleam_type(value=value)})
 
