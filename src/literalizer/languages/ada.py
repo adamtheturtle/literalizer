@@ -104,7 +104,7 @@ def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
     """
     kinds: set[str] = set()
     stack: list[Value] = [data]
-    while stack:  # pyrefly: ignore [implicit-bool]
+    while len(stack) > 0:
         item = stack.pop()
         match item:
             case bool():
@@ -741,7 +741,7 @@ class Ada(metaclass=LanguageCls):
         goes in the declarative section and *content* (calls) goes in
         the executable section.
         """
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
@@ -766,7 +766,7 @@ class Ada(metaclass=LanguageCls):
                 calls_indented,
                 f"end {self.module_name};",
             ]
-            if part  # pyrefly: ignore [implicit-bool]
+            if part != ""
         )
 
     def wrap_combined_in_file(
@@ -1159,7 +1159,7 @@ class Ada(metaclass=LanguageCls):
             """Build the IEEE-special constant declarations for *data*."""
             del types
             kinds = _ada_special_float_kinds(data=data)
-            if not kinds:  # pyrefly: ignore [implicit-bool]
+            if len(kinds) == 0:
                 return ()
             return (
                 "pragma Suppress (Division_Check);",
