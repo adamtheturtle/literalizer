@@ -174,7 +174,7 @@ _PERL_NV_EXACT_INTEGER_MAX = float(2**53)
 def _perl_math_bigfloat_preamble(data: Value, /) -> tuple[str, ...]:
     """Import ``Math::BigFloat`` when a large finite float needs it."""
     pending = [data]
-    while pending:  # pyrefly: ignore [implicit-bool]
+    while len(pending) > 0:
         value = pending.pop()
         match value:
             case float() if (
@@ -300,7 +300,7 @@ def _format_datetime_perl(value: datetime.datetime) -> str:
         f"hour => {value.hour}, minute => {value.minute}, "
         f"second => {value.second}"
     )
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         parts += f", nanosecond => {value.microsecond * 1000}"
     return parts + ", time_zone => 'UTC')"
 
@@ -1219,7 +1219,7 @@ class Perl(metaclass=LanguageCls):
         """
         bool_preamble = self.bool_format.value.preamble_lines
         extra: dict[type, tuple[str, ...]] | None = (
-            {bool: bool_preamble} if bool_preamble else None  # pyrefly: ignore [implicit-bool]
+            {bool: bool_preamble} if len(bool_preamble) > 0 else None
         )
         return date_scalar_preamble(
             date_format=self.date_format,
