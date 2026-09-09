@@ -1618,14 +1618,14 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
     tuple_list_ids: frozenset[int] = (
         compute_tuple_list_ids(data)
         if compute_tuple_list_ids is not None
-        else frozenset()
-    )  # ty: ignore[unsound-assignment]
+        else frozenset[int]()
+    )
     compute_record_shapes = behavior.compute_record_shapes
     record_shapes_by_id: Mapping[int, RecordShape] = (
         compute_record_shapes(data)
         if compute_record_shapes is not None
-        else {}
-    )  # ty: ignore[unsound-assignment]
+        else dict[int, RecordShape]()
+    )
     record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
     _check_unrepresentable_sibling_maps(
         data=data,
