@@ -133,7 +133,7 @@ def _flush_vb_current(
     current: str,
 ) -> str:
     """Flush accumulated literal characters into parts."""
-    if current:  # pyrefly: ignore [implicit-bool]
+    if current != "":
         parts.append(f'"{current}"')
     return ""
 
@@ -181,7 +181,7 @@ def _format_string_vb(value: str) -> str:
     concatenation.
     """
     parts = _vb_string_parts(value=value)
-    if not parts:  # pyrefly: ignore [implicit-bool]
+    if len(parts) == 0:
         return '""'
     if len(parts) == 1:
         return parts[0]
@@ -245,7 +245,7 @@ def _vb_call_stub(
         text=method_block.format(method=method),
         prefix=indent,
     )
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = _vb_unique_class_name(segment=root, position=0)
         return (
             f"Class {type_name}\n{method_body}\nEnd Class",
