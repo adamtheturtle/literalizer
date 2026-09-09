@@ -873,9 +873,11 @@ def _build_default_object_variant_preamble(
 # names (no ``record_shape_names``, consistent with the other non-Rust
 # ports), so the shared renderer always gets an empty custom-name
 # mapping.
-_NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_NIM_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 
 
 _NIM_IDENTIFIER = re.compile(pattern=r"[A-Za-z](_?[A-Za-z0-9])*")

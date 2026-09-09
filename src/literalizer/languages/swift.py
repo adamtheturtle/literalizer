@@ -494,9 +494,11 @@ def _format_swift_typed_declaration(
 # The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
 # names (no ``record_shape_names``), so the shared renderer always gets
 # an empty custom-name mapping.
-_SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 _SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS = frozenset({"`inout`"})
 
 

@@ -261,9 +261,11 @@ def _odin_call_body_stub(
 # names (no ``record_shape_names``, consistent with the other non-Rust
 # ports), so the shared renderer always gets an empty custom-name
 # mapping.
-_ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_ODIN_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 
 
 _ODIN_UNUSABLE_FIELD_KEYS: frozenset[str] = frozenset(

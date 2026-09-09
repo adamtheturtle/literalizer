@@ -283,9 +283,11 @@ def _format_d_entry_raw(_original: Value, formatted: str) -> str:
 # The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
 # names (no ``record_shape_names``), so the shared renderer always gets
 # an empty custom-name mapping.
-_D_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType(
+_D_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
+    frozenset[str], str
+](
     mapping={},
-)  # ty: ignore[unsound-assignment]
+)
 
 # Without the ``JSONValue`` wrapper a heterogeneous scalar list, a
 # set, an ordered map or a non-record dict (whether a record field or
