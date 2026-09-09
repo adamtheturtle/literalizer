@@ -58,11 +58,18 @@ _HIGH_SURROGATE_START = 0xD800
 _LOW_SURROGATE_END = 0xDFFF
 
 
+@runtime_checkable
 class _ParserMark(Protocol):
     """Line and column metadata exposed by parser exceptions."""
 
     line: int
     column: int
+
+
+def _parser_mark(*, exc: Exception) -> _ParserMark | None:
+    """Return parser position metadata when an exception provides it."""
+    mark = vars(exc).get("problem_mark")
+    return mark if isinstance(mark, _ParserMark) else None
 
 
 @runtime_checkable
@@ -975,7 +982,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             _YAML_PARSERS.round_trip = None
             detail = _yaml_load_detail(exc=exc)
             message = f"Invalid YAML: {detail}"
-            mark: _ParserMark | None = vars(exc).get("problem_mark")  # ty: ignore[unsound-assignment]
+            mark = _parser_mark(exc=exc)
             raise YAMLParseError(
                 message,
                 line=mark.line + 1 if mark is not None else None,
@@ -1002,7 +1009,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         _YAML_PARSERS.safe = None
         detail = _yaml_load_detail(exc=exc)
         message = f"Invalid YAML: {detail}"
-        mark = vars(exc).get("problem_mark")
+        mark = _parser_mark(exc=exc)
         raise YAMLParseError(
             message,
             line=mark.line + 1 if mark is not None else None,
