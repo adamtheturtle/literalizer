@@ -113,7 +113,7 @@ def _format_string(value: str) -> str:
     parts: list[str] = []
     segments = value.split(sep="\0")
     for index, segment in enumerate(iterable=segments):
-        if segment:  # pyrefly: ignore [implicit-bool]
+        if segment != "":
             parts.append(_format_string(value=segment))
         if index < len(segments) - 1:
             parts.append("(string (code-char 0))")
