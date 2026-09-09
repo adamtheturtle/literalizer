@@ -248,6 +248,9 @@ lint.unfixable = [ "ERA001" ]
 # ``NOD`` codes come from ``no-defaults``, so ``RUF100`` is told about
 # them rather than treating their ``noqa`` directives as unknown.
 lint.external = [ "NOD" ]
+lint.flake8-tidy-imports.banned-api."operator.attrgetter".msg = """\
+    operator.attrgetter is banned: use an explicitly typed callable instead.\
+    """
 lint.flake8-tidy-imports.banned-api."typing.cast".msg = """\
     typing.cast is banned: use explicit type narrowing or a typed variable instead.\
     """

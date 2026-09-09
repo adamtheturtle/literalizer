@@ -2,7 +2,6 @@
 
 import enum
 import inspect
-import operator
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
@@ -15,9 +14,15 @@ from literalizer import Language, LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import Python, Raku
 
+
+def _language_class_name(language_cls: LanguageCls, /) -> str:
+    """Return the language class name."""
+    return language_cls.__name__
+
+
 _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
-    key=operator.attrgetter("__name__"),
+    key=_language_class_name,
 )
 
 _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
