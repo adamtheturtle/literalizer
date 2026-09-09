@@ -172,7 +172,7 @@ def _ruby_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = format_class_name(root) + "Type"
         return (
             f"class {cls}; def {method}(*a, **kw); end; end",
@@ -204,7 +204,7 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     ``Time.utc`` so the host time zone cannot affect the result.
     """
     second = str(object=value.second)
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         second += f" + Rational({value.microsecond}, 1000000)"
     args = (
         f"{value.year}, {value.month}, {value.day}, "
@@ -213,7 +213,7 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     offset = value.utcoffset()
     if offset is None:
         return f"Time.utc({args})"
-    if not offset:  # pyrefly: ignore [implicit-bool]
+    if offset.total_seconds() == 0:
         return f"Time.utc({args})"
     total_seconds = int(offset.total_seconds())
     sign = "+" if total_seconds >= 0 else "-"
