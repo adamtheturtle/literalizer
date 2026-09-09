@@ -1413,7 +1413,7 @@ def _cpp14_widened_sibling_map_ids(
         == type_ctx.variant_type_name
     ):
         return frozenset(id(sibling) for sibling in siblings)
-    return frozenset()  # ty: ignore[unsound-return-statement]
+    return frozenset[int]()
 
 
 @beartype
