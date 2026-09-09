@@ -357,7 +357,7 @@ def _build_fsharp_call_stub_lines(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
@@ -998,7 +998,9 @@ class FSharp(metaclass=LanguageCls):
         del variable_name
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
         assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
-        preamble = "\n".join(body_preamble) + "\n" if body_preamble else ""  # pyrefly: ignore [implicit-bool]
+        preamble = (
+            "\n".join(body_preamble) + "\n" if len(body_preamble) > 0 else ""
+        )
         camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         body = f"module {self.module_name}\n\n" + preamble
         body += (
