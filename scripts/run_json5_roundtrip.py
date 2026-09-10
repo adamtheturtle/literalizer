@@ -49,10 +49,12 @@ def main() -> None:
         capabilities=Json5.variant_metadata.round_trip_capabilities,
     )
     document = _build_document(json_text=json_text)
-    parsed: dict[str, object] = json5.loads(
-        s=document,
-        allow_duplicate_keys=False,
-    )  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object(
+        value=json5.loads(
+            s=document,
+            allow_duplicate_keys=False,
+        ),
+    )
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

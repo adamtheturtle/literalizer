@@ -82,7 +82,7 @@ def main() -> None:
             f"\nProgram:\n{document}\n",
         )
         sys.exit(1)
-    parsed: dict[str, object] = json.loads(s=completed.stdout)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object_from_text(text=completed.stdout)
     inner = parsed[_VAR_NAME]
     produced_json = json.dumps(obj=inner)
     roundtrip_common.verify(
