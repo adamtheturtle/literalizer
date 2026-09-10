@@ -30,7 +30,6 @@ Two top-level keys are excluded from the comparison:
   exclusion.
 """
 
-import json
 import shutil
 from collections.abc import Iterable
 
@@ -78,7 +77,7 @@ def _all_numbers(*, value: _JsonValue) -> Iterable[_JsonValue]:
 
 def _excluded_keys(*, json_text: str) -> tuple[str, ...]:
     """Return the top-level keys holding a number ``Num`` cannot keep."""
-    document: dict[str, _JsonValue] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
+    document = roundtrip_common.json_object_from_text(text=json_text)
     return tuple(
         key
         for key, value in document.items()
