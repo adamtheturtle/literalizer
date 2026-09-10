@@ -53,9 +53,11 @@ def main() -> None:
         capabilities=Yaml.variant_metadata.round_trip_capabilities,
     )
     document = _build_document(json_text=json_text)
-    parsed: dict[str, object] = yaml.safe_load(  # type: ignore[no-untyped-call]
-        stream=document,
-    )  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object(
+        value=yaml.safe_load(  # type: ignore[no-untyped-call]
+            stream=document,
+        ),
+    )
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(
         label=_LABEL,

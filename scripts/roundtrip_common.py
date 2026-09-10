@@ -37,6 +37,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from pydantic import TypeAdapter
+
 from literalizer import (
     InputFormat,
     Language,
@@ -51,15 +53,36 @@ CAPABILITY_INPUT_PATH = (
     Path(__file__).resolve().parent / "roundtrip_capability_input.json"
 )
 
+type JsonValue = (
+    bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
+)
+_JSON_OBJECT_ADAPTER = TypeAdapter[dict[str, JsonValue]](
+    type=dict[str, JsonValue],
+)
+_CAPABILITY_GROUPS_ADAPTER = TypeAdapter[dict[str, dict[str, JsonValue]]](
+    type=dict[str, dict[str, JsonValue]],
+)
+
+
+def json_object_from_text(*, text: str) -> dict[str, JsonValue]:
+    """Parse a top-level JSON object."""
+    return _JSON_OBJECT_ADAPTER.validate_json(text, strict=True)
+
+
+def json_object(*, value: object) -> dict[str, JsonValue]:
+    """Validate a decoded value as a JSON object."""
+    return _JSON_OBJECT_ADAPTER.validate_python(value, strict=True)
+
 
 def input_for_capabilities(
     capabilities: frozenset[RoundTripCapability],
 ) -> str:
     """Return the base corpus plus only explicitly supported groups."""
-    document: dict[str, object] = json.loads(s=read_input())  # ty: ignore[unsound-assignment]
-    groups: dict[str, dict[str, object]] = json.loads(
-        s=CAPABILITY_INPUT_PATH.read_text(encoding="utf-8"),
-    )  # ty: ignore[unsound-assignment]
+    document = json_object_from_text(text=read_input())
+    groups = _CAPABILITY_GROUPS_ADAPTER.validate_json(
+        CAPABILITY_INPUT_PATH.read_text(encoding="utf-8"),
+        strict=True,
+    )
     for capability in sorted(capabilities):
         overlap = document.keys() & groups[capability].keys()
         if len(overlap) > 0:
@@ -74,16 +97,14 @@ def read_input() -> str:
     return INPUT_PATH.read_text(encoding="utf-8")
 
 
-def expected(*, json_text: str | None) -> dict[str, object]:
+def expected(*, json_text: str | None) -> dict[str, JsonValue]:
     """Return the parsed value the round-trip must reproduce.
 
     The shared ``roundtrip_input.json`` document is a top-level JSON
     object, so the parsed value is always a ``dict``.
     """
-    parsed: dict[str, object] = json.loads(
-        s=read_input() if json_text is None else json_text
-    )  # ty: ignore[unsound-assignment]
-    return parsed
+    text = read_input() if json_text is None else json_text
+    return json_object_from_text(text=text)
 
 
 def verify(
@@ -106,8 +127,8 @@ def verify(
     """
     want = expected(json_text=expected_json)
     try:
-        got: dict[str, object] = json.loads(s=produced_json)  # ty: ignore[unsound-assignment]
-    except json.JSONDecodeError as exc:
+        got = json_object_from_text(text=produced_json)
+    except ValueError as exc:
         _ = sys.stderr.write(
             f"{label}: produced invalid JSON ({exc})\n{produced_json!r}\n",
         )
@@ -133,7 +154,7 @@ def trim_keys(json_text: str, excluded_keys: tuple[str, ...]) -> str:
     value the toolchain would reject (e.g. an integer that overflows
     the target's widest literal type).
     """
-    parsed: dict[str, object] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
+    parsed = json_object_from_text(text=json_text)
     for key in excluded_keys:
         _ = parsed.pop(key, None)
     return json.dumps(obj=parsed)

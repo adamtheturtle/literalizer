@@ -62,7 +62,7 @@ def main() -> None:
         excluded_keys=_EXCLUDED_KEYS,
     )
     document = _build_document(json_text=trimmed_json)
-    parsed: dict[str, object] = tomli.loads(document)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object(value=tomli.loads(document))
     produced_json = json.dumps(obj=parsed[_VAR_NAME])
     roundtrip_common.verify(
         label=_LABEL,
