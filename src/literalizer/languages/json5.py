@@ -108,7 +108,7 @@ def _format_json5_dict_entry(
     identifier_pattern = re.compile(
         pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
     )
-    if identifier_pattern.match(string=inner):  # pyrefly: ignore [implicit-bool]
+    if identifier_pattern.match(string=inner) is not None:
         return f"{inner}: {formatted_value}"
     return f"{key}: {formatted_value}"
 
