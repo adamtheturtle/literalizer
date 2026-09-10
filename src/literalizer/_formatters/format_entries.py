@@ -360,7 +360,7 @@ def _format_dict_entry_symbol_style(
         pattern=r"""(["'])([A-Za-z_][A-Za-z0-9_]*[!?]?)\1""",
         string=key,
     )
-    label = identifier_key.group(2) if identifier_key else key  # pyrefly: ignore [implicit-bool]
+    label = identifier_key.group(2) if identifier_key is not None else key
     return f"{label}: {formatted}"
 
 
