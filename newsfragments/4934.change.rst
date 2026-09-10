@@ -1,2 +1,1 @@
-Type Bash, D, and SystemVerilog language callbacks with their actual receiver
-and collection types.
+Type Bash, D, and SystemVerilog language callbacks with their actual receiver and collection types.
