@@ -132,25 +132,17 @@ class _Collected:
     dict_values: list[Value]
 
 
-@dataclass(frozen=True, slots=True)
-class _InferenceFailed:
-    """Sentinel returned when no concrete element type can be inferred."""
-
-
-_INFER_FAILED = _InferenceFailed()
-
-
 @beartype
 def _collect_element_types(
     items: list[Value],
-) -> _Collected | _InferenceFailed:
+) -> _Collected | None:
     """Collect element types for ``items`` or signal hard inference
     failure.
 
     Empty inner lists are skipped so they do not poison inference of
     homogeneous siblings.  When every list item is empty (and there
-    are no other items contributing a ``ListType``), ``_INFER_FAILED``
-    is returned because no concrete inner type could be derived.
+    are no other items contributing a ``ListType``), ``None`` is
+    returned because no concrete inner type could be derived.
     """
     element_types: set[type | ListType] = set()
     dict_values: list[Value] = []
@@ -162,7 +154,7 @@ def _collect_element_types(
             case list():
                 inner = infer_element_type(items=item)
                 if inner is None:
-                    return _INFER_FAILED
+                    return None
                 element_types.add(ListType(inner=inner))
             case OrderedMap():
                 element_types.add(type(item))
@@ -174,7 +166,7 @@ def _collect_element_types(
     if saw_empty_list and not any(
         isinstance(t, ListType) for t in element_types
     ):
-        return _INFER_FAILED
+        return None
     return _Collected(element_types=element_types, dict_values=dict_values)
 
 
