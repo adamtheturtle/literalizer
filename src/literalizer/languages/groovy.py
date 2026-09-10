@@ -200,7 +200,7 @@ def _groovy_call_stub_factory(
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
-        if not fields:  # pyrefly: ignore [implicit-bool]
+        if len(fields) == 0:
             cls = f"_{root.title()}Type"
             return (
                 f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
