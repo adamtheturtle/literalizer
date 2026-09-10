@@ -593,9 +593,13 @@ def test_every_named_language_set_records_its_reason(cases_dir: Path) -> None:
         for manifest in load_case_manifests(cases_dir=cases_dir)
         for selection in (
             manifest.selection,
-            *(table for table in (manifest.call, manifest.ref) if table),  # pyrefly: ignore [implicit-bool]
+            *(
+                table
+                for table in (manifest.call, manifest.ref)
+                if table is not None
+            ),
         )
-        if selection.languages and selection.languages_reason is None  # pyrefly: ignore [implicit-bool]
+        if len(selection.languages) > 0 and selection.languages_reason is None
     )
     assert unexplained == []
 
@@ -620,7 +624,7 @@ def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
 def test_every_declared_role_has_a_case(cases_dir: Path) -> None:
     """Every role the schema accepts is claimed by a real case."""
     for role in sorted(CASE_ROLE_NAMES):
-        assert case_dir_names_for_role(cases_dir=cases_dir, role=role)  # pyrefly: ignore [implicit-bool]
+        assert len(case_dir_names_for_role(cases_dir=cases_dir, role=role)) > 0
 
 
 def test_role_lookup_requires_a_declaring_case(tmp_path: Path) -> None:
@@ -667,9 +671,13 @@ def test_variant_axis_lookup_finds_no_case_for_an_unused_axis(
     cases_dir: Path,
 ) -> None:
     """An axis no case declares expands to no inputs."""
-    assert not case_dir_names_for_variant_axis(  # pyrefly: ignore [implicit-bool]
-        cases_dir=cases_dir,
-        axis="not_an_axis",
+    assert (
+        len(
+            case_dir_names_for_variant_axis(
+                cases_dir=cases_dir, axis="not_an_axis"
+            )
+        )
+        == 0
     )
 
 
