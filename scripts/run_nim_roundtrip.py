@@ -58,7 +58,9 @@ def main() -> None:
         capabilities=Nim.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    nim = shutil.which(cmd="nim") or "nim"  # pyrefly: ignore [implicit-bool]
+    nim = shutil.which(cmd="nim")
+    if nim is None or nim == "":
+        nim = "nim"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.nim",

@@ -22,7 +22,9 @@ from pathlib import Path
 def main() -> None:
     """Check syntax of the given V golden file."""
     filename = sys.argv[1]
-    v_path = shutil.which(cmd="v") or "v"  # pyrefly: ignore [implicit-bool]
+    v_path = shutil.which(cmd="v")
+    if v_path is None or v_path == "":
+        v_path = "v"
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
         target = Path(tmpdir) / src.name

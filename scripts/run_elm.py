@@ -136,8 +136,12 @@ def main() -> None:
         for f in sys.argv[1:]
         if not any(f.endswith(suffix) for suffix in _SKIP_SUFFIXES)
     ]
-    elm_path = shutil.which(cmd="elm") or "elm"  # pyrefly: ignore [implicit-bool]
-    node_path = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
+    elm_path = shutil.which(cmd="elm")
+    if elm_path is None or elm_path == "":
+        elm_path = "elm"
+    node_path = shutil.which(cmd="node")
+    if node_path is None or node_path == "":
+        node_path = "node"
     with (
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str,
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as worker_homes_str,

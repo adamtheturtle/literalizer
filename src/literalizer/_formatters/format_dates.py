@@ -70,7 +70,7 @@ def format_datetime_javascript(value: datetime.datetime) -> str:
     not get parsed as an environment-dependent instant. Aware values retain
     their explicit ISO offset. JavaScript ``Date`` has millisecond precision.
     """
-    if value.microsecond % 1000:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond % 1000 != 0:
         msg = (
             "JavaScript Date cannot preserve sub-millisecond datetime "
             f"precision: {value.isoformat()}"
@@ -82,7 +82,7 @@ def format_datetime_javascript(value: datetime.datetime) -> str:
         f"{value.year}, {value.month - 1}, {value.day}, {value.hour}, "
         f"{value.minute}, {value.second}"
     )
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         args += f", {value.microsecond // 1000}"
     return _javascript_date_expression(year=value.year, args=args)
 
@@ -117,9 +117,9 @@ def format_time_local_time_of(value: datetime.time) -> str:
     """
     parts = [str(object=value.hour), str(object=value.minute)]
     nanoseconds = value.microsecond * 1000
-    if value.second or nanoseconds:  # pyrefly: ignore [implicit-bool]
+    if value.second != 0 or bool(nanoseconds):
         parts.append(str(object=value.second))
-    if nanoseconds:  # pyrefly: ignore [implicit-bool]
+    if nanoseconds != 0:
         parts.append(str(object=nanoseconds))
     return f"LocalTime.of({', '.join(parts)})"
 
@@ -134,10 +134,10 @@ def _time_only_args(value: datetime.time) -> str:
         str(object=value.minute),
         str(object=value.second),
     ]
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         milliseconds, microseconds = divmod(value.microsecond, 1000)
         parts.append(str(object=milliseconds))
-        if microseconds:  # pyrefly: ignore [implicit-bool]
+        if microseconds != 0:
             parts.append(str(object=microseconds))
     return ", ".join(parts)
 
@@ -168,13 +168,15 @@ def format_time_vb(value: datetime.time) -> str:
 @beartype
 def datetime_epoch_seconds(value: datetime.datetime) -> int:
     """Return exact integer Unix epoch seconds for a datetime."""
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         msg = (
             "integer Unix epoch seconds cannot preserve fractional "
             f"datetime precision: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
-    offset = value.utcoffset() or datetime.timedelta()  # pyrefly: ignore [implicit-bool]
+    offset = value.utcoffset()
+    if offset is None or offset == datetime.timedelta():
+        offset = datetime.timedelta()
     elapsed = datetime.timedelta(
         days=value.toordinal()
         - datetime.date(year=1970, month=1, day=1).toordinal(),
@@ -187,7 +189,9 @@ def datetime_epoch_seconds(value: datetime.datetime) -> int:
 @beartype
 def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
     """Format exact Unix epoch seconds, retaining a fractional part."""
-    offset = value.utcoffset() or datetime.timedelta()  # pyrefly: ignore [implicit-bool]
+    offset = value.utcoffset()
+    if offset is None or offset == datetime.timedelta():
+        offset = datetime.timedelta()
     elapsed = datetime.timedelta(
         days=value.toordinal()
         - datetime.date(year=1970, month=1, day=1).toordinal(),
@@ -199,7 +203,7 @@ def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
     )
     sign = "-" if total_microseconds < 0 else ""
     seconds, microseconds = divmod(abs(total_microseconds), 1_000_000)
-    if not microseconds:  # pyrefly: ignore [implicit-bool]
+    if microseconds == 0:
         return f"{sign}{seconds}"
     fraction = f"{microseconds:06d}".rstrip("0")
     return f"{sign}{seconds}.{fraction}"
@@ -281,13 +285,13 @@ def _format_datetime_ymdhms(
     shorter spelling (issue #4521).
     """
     if millisecond_template is None:
-        if value.microsecond:  # pyrefly: ignore [implicit-bool]
+        if value.microsecond != 0:
             msg = (
                 "whole-second native datetime format cannot preserve "
                 f"microseconds: {value.isoformat()}"
             )
             raise UnrepresentableInputError(msg)
-    elif value.microsecond % _MICROSECONDS_PER_MILLISECOND:  # pyrefly: ignore [implicit-bool]
+    elif value.microsecond % _MICROSECONDS_PER_MILLISECOND != 0:
         msg = (
             "millisecond-precision native datetime format cannot "
             f"preserve sub-millisecond precision: {value.isoformat()}"
@@ -301,7 +305,7 @@ def _format_datetime_ymdhms(
         raise UnrepresentableInputError(msg)
     selected = (
         millisecond_template
-        if millisecond_template is not None and value.microsecond  # pyrefly: ignore [implicit-bool]
+        if millisecond_template is not None and bool(value.microsecond)
         else template
     )
     return selected.format(

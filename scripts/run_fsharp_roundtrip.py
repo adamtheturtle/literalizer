@@ -71,7 +71,9 @@ def main() -> None:
         capabilities=FSharp.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dotnet = shutil.which(cmd="dotnet") or "dotnet"  # pyrefly: ignore [implicit-bool]
+    dotnet = shutil.which(cmd="dotnet")
+    if dotnet is None or dotnet == "":
+        dotnet = "dotnet"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.fsx",

@@ -75,7 +75,9 @@ def main() -> None:
         capabilities=Go.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    go = shutil.which(cmd="go") or "go"  # pyrefly: ignore [implicit-bool]
+    go = shutil.which(cmd="go")
+    if go is None or go == "":
+        go = "go"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.go",

@@ -166,7 +166,7 @@ def _build_program(*, json_text: str) -> str:
     parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
     walk = ['        out = "{";']
     for index, (key, value) in enumerate(iterable=parsed.items()):
-        fragment = ("," if index else "") + json.dumps(obj=key) + ":"  # pyrefly: ignore [implicit-bool]
+        fragment = ("," if index != 0 else "") + json.dumps(obj=key) + ":"
         expr = _value_expr(value=value, access=f"{_VAR_NAME}[{index}].v")
         walk.append(
             f"        out = {{out, {_sv_string_literal(text=fragment)}, "
@@ -200,7 +200,9 @@ def main() -> None:
         capabilities=SystemVerilog.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    verilator = shutil.which(cmd="verilator") or "verilator"  # pyrefly: ignore [implicit-bool]
+    verilator = shutil.which(cmd="verilator")
+    if verilator is None or verilator == "":
+        verilator = "verilator"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.sv",

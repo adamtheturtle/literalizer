@@ -83,4 +83,6 @@ def test_every_language_declares_the_explicit_attributes() -> None:
         )
         for language_cls in ALL_LANGUAGES
     }
-    assert {name: names for name, names in absent.items() if names} == {}  # pyrefly: ignore [implicit-bool]
+    assert {
+        name: names for name, names in absent.items() if len(names) > 0
+    } == {}

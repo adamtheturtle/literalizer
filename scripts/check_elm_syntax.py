@@ -57,7 +57,9 @@ def _check_fixture(
 def main() -> None:
     """Check syntax of the given Elm golden files."""
     filenames = sys.argv[1:]
-    elm_path = shutil.which(cmd="elm") or "elm"  # pyrefly: ignore [implicit-bool]
+    elm_path = shutil.which(cmd="elm")
+    if elm_path is None or elm_path == "":
+        elm_path = "elm"
     with (
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as primed_str,
         tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as worker_homes_str,

@@ -230,7 +230,7 @@ def _format_datetime_python(
         f"minute={value.minute}",
         f"second={value.second}",
     ]
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         parts.append(f"microsecond={value.microsecond}")
     if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
         if offset == datetime.timedelta():
@@ -242,7 +242,7 @@ def _format_datetime_python(
             hours = sign * (abs_seconds // 3600)
             minutes = sign * ((abs_seconds % 3600) // 60)
             td_parts = [f"hours={hours}"]
-            if minutes:  # pyrefly: ignore [implicit-bool]
+            if minutes != 0:
                 td_parts.append(f"minutes={minutes}")
             td_args = ", ".join(td_parts)
             parts.append(
@@ -262,7 +262,7 @@ def _format_time_python(value: datetime.time) -> str:
         f"minute={value.minute}",
         f"second={value.second}",
     ]
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         parts.append(f"microsecond={value.microsecond}")
     args = ", ".join(parts)
     return f"datetime.time({args})"
@@ -455,7 +455,7 @@ def _collection_element_union(
     avoids ``dict[str, X] | dict[str, Y]`` unions that mypy rejects
     because ``dict`` is invariant in its type parameters.
     """
-    if not elements:  # pyrefly: ignore [implicit-bool]
+    if len(elements) == 0:
         return default_type
     if merge_dicts:
         elements = _merge_dict_elements(elements=elements)
@@ -576,7 +576,7 @@ def _python_type_hint(
             outer = (
                 "OrderedDict" if isinstance(data, OrderedMap) else dict_hint
             )
-            key_hint = default_dict_key_type if not data else "str"  # pyrefly: ignore [implicit-bool]
+            key_hint = default_dict_key_type if len(data) == 0 else "str"
             val_union = _collection_element_union(
                 elements=list(data.values()),
                 recurse=recurse,
@@ -673,9 +673,9 @@ def _build_type_hint_preamble(
             )
         ):
             imports.add("Union")
-        if _any_types.intersection(annotated_collection_types):  # pyrefly: ignore [implicit-bool]
+        if len(_any_types.intersection(annotated_collection_types)) > 0:
             imports.add("Any")
-        if not imports:  # pyrefly: ignore [implicit-bool]
+        if len(imports) == 0:
             return ()
         return (f"from typing import {', '.join(sorted(imports))}",)
 
@@ -706,7 +706,7 @@ def _build_python_call_stub(
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
-        if not fields:  # pyrefly: ignore [implicit-bool]
+        if len(fields) == 0:
             cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
             return (
                 f"class {cls}:",
@@ -792,9 +792,9 @@ def _build_type_hint_preamble_py38(
             )
         ):
             imports.add("Union")
-        if _any_types.intersection(annotated_collection_types):  # pyrefly: ignore [implicit-bool]
+        if len(_any_types.intersection(annotated_collection_types)) > 0:
             imports.add("Any")
-        if not imports:  # pyrefly: ignore [implicit-bool]
+        if len(imports) == 0:
             return ()
         return (f"from typing import {', '.join(sorted(imports))}",)
 
@@ -1835,7 +1835,7 @@ class Python(metaclass=LanguageCls):
             dataclasses``.
             """
             blocks = record_preamble(data)
-            if not blocks:  # pyrefly: ignore [implicit-bool]
+            if len(blocks) == 0:
                 return ()
             typing_import = (
                 ("from typing import Union",)

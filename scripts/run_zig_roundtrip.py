@@ -65,7 +65,9 @@ def main() -> None:
         capabilities=Zig.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    zig = shutil.which(cmd="zig") or "zig"  # pyrefly: ignore [implicit-bool]
+    zig = shutil.which(cmd="zig")
+    if zig is None or zig == "":
+        zig = "zig"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.zig",

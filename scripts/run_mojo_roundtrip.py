@@ -143,7 +143,7 @@ def _build_program(*, json_text: str) -> str:
         var_name=_LIST_PROBE_NAME,
         pre_indent_level=1,
     )
-    if list_probe.preamble:  # pyrefly: ignore [implicit-bool]
+    if len(list_probe.preamble) > 0:
         message = "the Mojo List semantic probe unexpectedly needs a preamble"
         raise AssertionError(message)
     parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
@@ -179,7 +179,9 @@ def main() -> None:
         capabilities=Mojo.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    mojo = shutil.which(cmd="mojo") or "mojo"  # pyrefly: ignore [implicit-bool]
+    mojo = shutil.which(cmd="mojo")
+    if mojo is None or mojo == "":
+        mojo = "mojo"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.mojo",

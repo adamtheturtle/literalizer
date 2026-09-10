@@ -136,7 +136,7 @@ def test_unresolved_ref_marker_leaves_no_preamble(
         ref_values=ref_values,
     )
     assert result.bare_code == "vec![\n    a,\n    1,\n]"
-    assert not result.preamble  # pyrefly: ignore [implicit-bool]
+    assert len(result.preamble) == 0
 
 
 def test_ordered_map_argument_types_from_its_reference() -> None:

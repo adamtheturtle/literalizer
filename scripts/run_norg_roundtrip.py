@@ -79,7 +79,7 @@ def _extract_code_block(document: str, language: Language) -> str:
     parser = Parser(language=language)
     tree = parser.parse(document.encode(encoding="utf-8"))
     pending = [tree.root_node]
-    while pending:  # pyrefly: ignore [implicit-bool]
+    while len(pending) > 0:
         node = pending.pop()
         if node.type == _CONTENT_NODE_TYPE and node.text is not None:
             return node.text.decode(encoding="utf-8")

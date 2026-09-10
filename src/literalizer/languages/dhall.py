@@ -251,12 +251,12 @@ def _format_dhall_dict_entry(
     """
     inner = key[1:-1]
     if (
-        _IDENTIFIER_RE.match(string=inner)  # pyrefly: ignore [implicit-bool]
+        _IDENTIFIER_RE.match(string=inner) is not None
         and inner not in _DHALL_RESERVED_LABELS
     ):
         return f"{inner} = {formatted_value}"
     raw = _unescape_dhall_string(value=inner)
-    if not raw or not _BACKTICK_LABEL_RE.match(string=raw):  # pyrefly: ignore [implicit-bool]
+    if raw == "" or _BACKTICK_LABEL_RE.match(string=raw) is None:
         msg = (
             f"Dhall does not support the dict key {key}. "
             "Backtick-quoted labels must be non-empty and contain only "
@@ -590,7 +590,7 @@ def _build_union_type_preamble(
         wrap_ids = collect_heterogeneous_container_ids(
             data=data
         ) | collect_sibling_map_wrap_ids(data=data)
-        if not wrap_ids:  # pyrefly: ignore [implicit-bool]
+        if len(wrap_ids) == 0:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         variants: list[_VariantSignature] = []
@@ -1056,7 +1056,7 @@ class Dhall(metaclass=LanguageCls):
             variable_name=variable_name,
             body_preamble=body_preamble,
         )
-        if not variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name == "":
             wrapped += "\nin {=}"
         return wrapped
 
@@ -1259,7 +1259,11 @@ class Dhall(metaclass=LanguageCls):
         which appends the ``in {=}`` terminator needed by both
         this path and the ``wrap_in_file=True`` call path.
         """
-        content = "\n".join((*declarations, calls)) if declarations else calls  # pyrefly: ignore [implicit-bool]
+        content = (
+            "\n".join((*declarations, calls))
+            if len(declarations) > 0
+            else calls
+        )
         return self.wrap_in_file(
             content=content,
             variable_name="",

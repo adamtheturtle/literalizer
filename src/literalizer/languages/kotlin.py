@@ -264,7 +264,7 @@ def _kotlin_list_sequence_open(
 
     def _open(items: list[Value], /) -> str:
         """Keep empty LIST values in Kotlin's array container family."""
-        if not items:  # pyrefly: ignore [implicit-bool]
+        if len(items) == 0:
             return "arrayOf<Any?>("
         return typed_open(items)
 
@@ -524,7 +524,7 @@ def _kotlin_list_hint(
     sequence_format_name: str,
 ) -> str:
     """Derive a Kotlin sequence type annotation."""
-    if not data:  # pyrefly: ignore [implicit-bool]
+    if len(data) == 0:
         return (
             "Array<Any?>" if sequence_format_name == "ARRAY" else "List<Any?>"
         )
@@ -564,7 +564,7 @@ def _kotlin_type_hint(
     match data:
         case dict():
             hint = _kotlin_dict_hint(
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 is_ordered=isinstance(data, OrderedMap),
                 val_types=[recurse(data=v) for v in data.values()],
                 default_dict_key_type=default_dict_key_type,
@@ -574,7 +574,7 @@ def _kotlin_type_hint(
         case set():
             hint = _kotlin_set_hint(
                 elem_types_sorted=sorted({recurse(data=e) for e in data}),
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 default_set_element_type=default_set_element_type,
                 set_outer=set_outer,
             )
@@ -622,7 +622,12 @@ def _format_kotlin_typed_declaration(
         set_outer=set_outer,
         sequence_format_name=sequence_format_name,
     )
-    hint = _kotlin_explicit_initializer_type(value) or inferred_hint  # pyrefly: ignore [implicit-bool]
+    explicit_hint = _kotlin_explicit_initializer_type(value)
+    hint = (
+        explicit_hint
+        if explicit_hint is not None and explicit_hint != ""
+        else inferred_hint
+    )
     return f"{keyword} {name}: {hint} = {value}"
 
 
@@ -648,7 +653,7 @@ def _kotlin_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
             f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
@@ -1832,7 +1837,7 @@ class Kotlin(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if _PASCAL_CASE_IDENTIFIER.match(string=name) is None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Kotlin "
@@ -1846,7 +1851,7 @@ class Kotlin(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if auto_name_pattern.match(string=name) is not None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1991,8 +1996,11 @@ class Kotlin(metaclass=LanguageCls):
                     return f"Array<{element}>"
                 return _kotlin_opener_to_type(opener)
             case _:
-                return self._kotlin_record_scalar_resolver(type(value)) or (  # pyrefly: ignore [implicit-bool]
-                    "Any?"
+                scalar_type = self._kotlin_record_scalar_resolver(type(value))
+                return (
+                    scalar_type
+                    if scalar_type is not None and scalar_type != ""
+                    else "Any?"
                 )
 
     def _kotlin_tuple_field_type(self, elements: list[Value], /) -> str:
@@ -2064,7 +2072,7 @@ class Kotlin(metaclass=LanguageCls):
         has the ``Any?`` top type (a ``null`` value).
         """
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:  # pyrefly: ignore [implicit-bool]
+        if len(scalars) == 0:
             return None
         scalar_types = {
             self._kotlin_value_field_type(scalar) for scalar in scalars
@@ -2353,7 +2361,11 @@ class Kotlin(metaclass=LanguageCls):
         openers = self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._dt_type_name,
-            set_opener_template=base.set_opener_template or None,  # pyrefly: ignore [implicit-bool]
+            set_opener_template=(
+                base.set_opener_template
+                if base.set_opener_template != ""
+                else None
+            ),
             narrow_dict_values=False,
             narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,

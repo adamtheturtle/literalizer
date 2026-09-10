@@ -179,8 +179,9 @@ def _value_to_mojo_type(
     """
     match value:
         case list():
+            element_type = infer_element_type(items=[value])
             return _mojo_call_arg_element_to_type(
-                infer_element_type(items=[value]) or list,  # pyrefly: ignore [implicit-bool]
+                element_type if element_type is not None else list,
             )
         case OrderedMap():
             # An ordered map is written as a list of tuples, which no
@@ -190,8 +191,9 @@ def _value_to_mojo_type(
         case dict():
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"
+            element_type = infer_element_type(items=[value])
             return _mojo_call_arg_element_to_type(
-                infer_element_type(items=[value]) or dict,  # pyrefly: ignore [implicit-bool]
+                element_type if element_type is not None else dict,
             )
         case _:
             return _mojo_call_arg_element_to_type(type(value))
@@ -288,7 +290,7 @@ def _mojo_compute_slot_signatures(
     builder that unions per-slot Variant alternatives with data-driven
     alternatives) can reuse this analysis without recomputing it.
     """
-    if not params:  # pyrefly: ignore [implicit-bool]
+    if len(params) == 0:
         return _MojoSlotInfo(typed_params=(), slots=())
     slots = _gather_mojo_call_slots(arg_values=arg_values)
     if len(slots) != len(params):
@@ -326,7 +328,7 @@ def _mojo_compute_slot_signatures(
         if len(known_types) > 1 and heterogeneous_value_type is not None:
             typed.append(f"{name}: {heterogeneous_value_type}")
             continue
-        if not slot_types or None in slot_types:  # pyrefly: ignore [implicit-bool]
+        if len(slot_types) == 0 or None in slot_types:
             return _MojoSlotInfo(
                 typed_params=None,
                 slots=tuple(slot_signatures),
@@ -386,7 +388,9 @@ def _mojo_cross_call_scalar_wrap_ids(
     by ``Value(...)`` without an intermediate typed declaration that
     the call-argument formatter does not synthesize.
     """
-    if not slot_values or not _slot_is_all_scalars(slot_values=slot_values):  # pyrefly: ignore [implicit-bool]
+    if len(slot_values) == 0 or not _slot_is_all_scalars(
+        slot_values=slot_values
+    ):
         return frozenset[int]()
     slot_types = {
         _value_to_mojo_type(
@@ -414,7 +418,7 @@ def _mojo_init_expr(parts: Sequence[str]) -> str:
     root = parts[0]
     fields = parts[1:-1]
     root_type = f"_{root.capitalize()}Type"
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         return f"{root_type}()"
     inner_type = f"_{fields[-1].capitalize()}Type"
     expr = f"{inner_type}()"
@@ -510,7 +514,7 @@ def _mojo_call_preamble_stub(
             f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts)"
             f"{return_suffix}:\n{indent}{indent}pass"
         )
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"_{root.capitalize()}Type"
         return (
             (
@@ -761,7 +765,7 @@ def _collect_variant_alternatives_from_data(
     wrap_ids = collect_heterogeneous_container_ids(
         data=data
     ) | collect_sibling_map_wrap_ids(data=data)
-    if not wrap_ids:  # pyrefly: ignore [implicit-bool]
+    if len(wrap_ids) == 0:
         return ()
     scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
     type_names: list[str] = []
@@ -836,7 +840,7 @@ def _render_variant_preamble(
 
     Returns ``()`` when *alternatives* is empty.
     """
-    if not alternatives:  # pyrefly: ignore [implicit-bool]
+    if len(alternatives) == 0:
         return ()
     joined = ", ".join(alternatives)
     return (
@@ -1452,7 +1456,7 @@ class Mojo(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             content = content + f"\n_ = {variable_name}"
         indented = textwrap.indent(text=content, prefix=self.indent)
         return f"def main():\n{indented}"
@@ -1852,8 +1856,8 @@ class Mojo(metaclass=LanguageCls):
         ) -> str:
             """Format the declaration, annotating string lists."""
             if (
-                isinstance(data, list)  # pyrefly: ignore [implicit-bool]
-                and data  # pyrefly: ignore [implicit-bool]
+                isinstance(data, list)
+                and len(data) > 0
                 and all(
                     _mojo_element_renders_as_string(
                         item=item,

@@ -57,7 +57,9 @@ def _build_program(json_text: str) -> str:
 def main() -> None:
     """Round-trip the shared document through the Gleam backend."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
-    gleam_path = shutil.which(cmd="gleam") or "gleam"  # pyrefly: ignore [implicit-bool]
+    gleam_path = shutil.which(cmd="gleam")
+    if gleam_path is None or gleam_path == "":
+        gleam_path = "gleam"
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Gleam.variant_metadata.round_trip_capabilities,
     )

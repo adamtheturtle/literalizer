@@ -76,7 +76,9 @@ def main() -> None:
         capabilities=Perl.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    perl = shutil.which(cmd="perl") or "perl"  # pyrefly: ignore [implicit-bool]
+    perl = shutil.which(cmd="perl")
+    if perl is None or perl == "":
+        perl = "perl"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.pl",

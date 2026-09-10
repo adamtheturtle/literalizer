@@ -55,7 +55,9 @@ def main() -> None:
         capabilities=Crystal.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    crystal = shutil.which(cmd="crystal") or "crystal"  # pyrefly: ignore [implicit-bool]
+    crystal = shutil.which(cmd="crystal")
+    if crystal is None or crystal == "":
+        crystal = "crystal"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.cr",

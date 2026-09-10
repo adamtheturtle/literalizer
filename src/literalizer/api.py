@@ -207,7 +207,7 @@ def _validate_pre_indented_wrap(
     """
     language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     if (
-        pre_indent_level  # pyrefly: ignore [implicit-bool]
+        pre_indent_level != 0
         and wrap_in_file
         and not language_cls.wrap_in_file_tolerates_pre_indent
     ):
@@ -418,7 +418,11 @@ def literalize(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         variable_form=variable_form,
-        bound_ref_names=bound_refs or {},  # pyrefly: ignore [implicit-bool]
+        bound_ref_names=(
+            bound_refs
+            if bound_refs is not None and len(bound_refs) > 0
+            else {}
+        ),
         wrap_in_file=wrap_in_file,
         ref_case=ref_case,
     )
@@ -460,7 +464,7 @@ def literalize(
     # the same name wins (it is the caller's stated type intent).
     combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
     materialized_ref_values: Mapping[str, Value] | None = (
-        combined_ref_values or None  # pyrefly: ignore [implicit-bool]
+        combined_ref_values if len(combined_ref_values) > 0 else None
     )
     _validate_bound_ref_output_name(
         language=language,
@@ -502,7 +506,9 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_values=materialized_ref_values,
-            explicit_ref_values=explicit_ref_values or None,  # pyrefly: ignore [implicit-bool]
+            explicit_ref_values=(
+                explicit_ref_values if len(explicit_ref_values) > 0 else None
+            ),
             bound_refs=materialized_bound_refs,
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
@@ -510,7 +516,7 @@ def literalize(
         )
 
     if (
-        materialized_bound_refs  # pyrefly: ignore [implicit-bool]
+        len(materialized_bound_refs) > 0
         and wrap_in_file
         and isinstance(variable_form, NewVariable | ExistingVariable)
     ):
@@ -522,7 +528,9 @@ def literalize(
             include_delimiters=include_delimiters,
             variable_form=variable_form,
             ref_case=ref_case,
-            explicit_ref_values=explicit_ref_values or None,  # pyrefly: ignore [implicit-bool]
+            explicit_ref_values=(
+                explicit_ref_values if len(explicit_ref_values) > 0 else None
+            ),
             bound_refs=materialized_bound_refs,
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
@@ -819,14 +827,22 @@ def literalize_call(
     _validate_bound_ref_output_name(
         language=language,
         variable_form=variable_form,
-        bound_ref_names=bound_refs or {},  # pyrefly: ignore [implicit-bool]
+        bound_ref_names=(
+            bound_refs
+            if bound_refs is not None and len(bound_refs) > 0
+            else {}
+        ),
         ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )
     _validate_module_name_variable_collision(
         language=language,
         variable_form=variable_form,
-        bound_ref_names=bound_refs or {},  # pyrefly: ignore [implicit-bool]
+        bound_ref_names=(
+            bound_refs
+            if bound_refs is not None and len(bound_refs) > 0
+            else {}
+        ),
         ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )

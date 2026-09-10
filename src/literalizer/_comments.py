@@ -163,7 +163,7 @@ def _parse_after_token(
     inline = ""
     start = 0
 
-    if column > 0 and lines:  # pyrefly: ignore [implicit-bool]
+    if column > 0 and bool(lines):
         inline = _strip_comment_marker(text=lines[0])
         start = 1
 
@@ -178,7 +178,7 @@ def _parse_after_token(
         before_next=before_next,
         standalone_column=(
             len(standalone_lines[0]) - len(standalone_lines[0].lstrip())
-            if standalone_lines  # pyrefly: ignore [implicit-bool]
+            if len(standalone_lines) > 0
             else None
         ),
     )
@@ -339,7 +339,14 @@ def _collection_end_comments(
     duplicates ``ca.end``, which is the only home a comment on a nested
     trailing node has, so that is read at every level.
     """
-    closing = () if nested else (ca.comment or (None,))[:1]  # pyrefly: ignore [implicit-bool]
+    comment = ca.comment
+    closing = (
+        ()
+        if nested
+        else (
+            comment if comment is not None and len(comment) > 0 else (None,)
+        )[:1]
+    )
     return [
         line
         for stored in (*closing, *ca.end)
@@ -439,8 +446,8 @@ def _nested_inline_comment(*, value: object) -> str:
             key=key,
             token_idx=targets.token_idx,
         )
-        if parsed.inline or deeper:  # pyrefly: ignore [implicit-bool]
-            return parsed.inline or deeper  # pyrefly: ignore [implicit-bool]
+        if parsed.inline != "" or bool(deeper):
+            return parsed.inline if parsed.inline != "" else deeper
     return ""
 
 
@@ -485,7 +492,7 @@ def _outdented_trailing_comments(
 
     nested_column = _collection_column(ruamel_data=value)
     targets = _collection_targets(ruamel_data=value)
-    if not targets.keys:  # pyrefly: ignore [implicit-bool]
+    if len(targets.keys) == 0:
         return ElementComments(before=(), inline="")
 
     last_key = targets.keys[-1]
@@ -515,13 +522,16 @@ def _outdented_trailing_comments(
             inline=(
                 _nested_inline_comment(value=value)
                 if hoist_inline
-                else parsed.inline or deeper.inline  # pyrefly: ignore [implicit-bool]
+                else parsed.inline
+                if parsed.inline != ""
+                else deeper.inline
             ),
         )
     if hoist_inline:
+        nested_inline = _nested_inline_comment(value=value)
         return ElementComments(
             before=deeper.before,
-            inline=_nested_inline_comment(value=value) or deeper.inline,  # pyrefly: ignore [implicit-bool]
+            inline=nested_inline if nested_inline != "" else deeper.inline,
         )
     return deeper
 
@@ -612,7 +622,7 @@ def extract_yaml_comments(
             hoist_inline=hoist_nested_inline,
         )
         pending_before += list(nested_comments.before)
-        inline = inline or nested_comments.inline  # pyrefly: ignore [implicit-bool]
+        inline = inline if inline != "" else nested_comments.inline
 
         element_map[key] = ElementComments(
             before=tuple(before),
@@ -688,7 +698,7 @@ def _toml_body_comments(
                 inline = _toml_inline_comment(item=child)
                 hoisted.extend(pending)
                 pending = list(inner.trailing)
-                hoisted.extend((inline,) if inline else ())  # pyrefly: ignore [implicit-bool]
+                hoisted.extend((inline,) if inline != "" else ())
                 hoisted.extend(inner.hoisted)
     return _TomlNestedComments(
         hoisted=tuple(hoisted),
@@ -757,7 +767,7 @@ def extract_toml_comments(
         merged = elements.get(key, ElementComments(before=(), inline=""))
         elements[key] = ElementComments(
             before=(*merged.before, *before),
-            inline=merged.inline or inline,  # pyrefly: ignore [implicit-bool]
+            inline=merged.inline if merged.inline != "" else inline,
         )
 
     return CollectionComments(
@@ -787,7 +797,7 @@ def neutralize_inline_comment(
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
     )
-    if not comment_suffix and escaped.endswith("\\"):  # pyrefly: ignore [implicit-bool]
+    if comment_suffix == "" and escaped.endswith("\\"):
         return f"{escaped} ."
     return escaped
 
@@ -801,7 +811,7 @@ def _format_comment(
     line_prefix: str,
 ) -> str:
     """Format a single comment line."""
-    if text:  # pyrefly: ignore [implicit-bool]
+    if text != "":
         if isinstance(comment_prefix, EncodingCookieSafeCommentPrefix):
             text = _PYTHON_ENCODING_COOKIE.sub(
                 repl=r"\g<label> \g<separator>\g<encoding>",
@@ -857,7 +867,7 @@ def neutralize_comment_terminator(
     if isinstance(comment_suffix, NestingCommentSuffix):
         opener = comment_suffix.opener
         text = text.replace(opener, " ".join(opener))  # pyrefly: ignore [string-as-iterable]
-    if not terminator or terminator not in text:  # pyrefly: ignore [implicit-bool]
+    if terminator == "" or terminator not in text:
         return text
     replacement = (
         " ".join(terminator)  # pyrefly: ignore [string-as-iterable]
@@ -921,7 +931,7 @@ def _extract_scalar_comments(
     trailing = _ScalarComments(before=[], inline="", after=[])
     for token in tokens:
         comment: list[Any] | None = token.comment  # pyrefly: ignore [explicit-any]
-        if not comment:  # pyrefly: ignore [implicit-bool]
+        if comment is None or len(comment) == 0:
             continue
         inline_token: CommentToken | None = comment[0]  # ty: ignore[unsound-assignment]
         before_tokens: list[CommentToken] = comment[1] or []  # ty: ignore[unsound-assignment]
@@ -1005,9 +1015,9 @@ def literalize_yaml_scalar(
     )
 
     if (
-        not scalar_comments.before  # pyrefly: ignore [implicit-bool]
-        and not scalar_comments.inline  # pyrefly: ignore [implicit-bool]
-        and not scalar_comments.after  # pyrefly: ignore [implicit-bool]
+        len(scalar_comments.before) == 0
+        and scalar_comments.inline == ""
+        and len(scalar_comments.after) == 0
     ):
         return ScalarCommentResult(result=base, pending_before=())
 
@@ -1150,10 +1160,10 @@ def prepend_collection_comments(
     lines: list[str] = []
     for ec in collection_comments.elements:
         lines.extend(_fmt(text=text) for text in ec.before)
-        if ec.inline:  # pyrefly: ignore [implicit-bool]
+        if ec.inline != "":
             lines.append(_fmt(text=ec.inline))
     lines.extend(_fmt(text=text) for text in collection_comments.trailing)
-    if not lines:  # pyrefly: ignore [implicit-bool]
+    if len(lines) == 0:
         return base
     return "\n".join(lines) + "\n" + base
 
@@ -1173,12 +1183,12 @@ def apply_collection_comments(
     """
     has_comments = (
         any(
-            element_comment.before or element_comment.inline  # pyrefly: ignore [implicit-bool]
+            len(element_comment.before) > 0 or bool(element_comment.inline)
             for element_comment in collection_comments.elements
         )
         or collection_comments.trailing
     )
-    if not has_comments:  # pyrefly: ignore [implicit-bool]
+    if not bool(has_comments):
         return base
     ctx = YamlCollectionContext(
         base=base,
@@ -1227,7 +1237,7 @@ def apply_collection_comments_to_elements(
             )
             for comment_text in ec.before
         )
-        if ec.inline:  # pyrefly: ignore [implicit-bool]
+        if ec.inline != "":
             escaped_inline = neutralize_inline_comment(
                 text=ec.inline,
                 comment_prefix=comment_prefix,

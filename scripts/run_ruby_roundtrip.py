@@ -45,7 +45,9 @@ def main() -> None:
         capabilities=Ruby.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    ruby = shutil.which(cmd="ruby") or "ruby"  # pyrefly: ignore [implicit-bool]
+    ruby = shutil.which(cmd="ruby")
+    if ruby is None or ruby == "":
+        ruby = "ruby"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rb",

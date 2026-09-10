@@ -144,11 +144,11 @@ _format_string_d = make_backslash_string_formatter(
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a D WYSIWYG string when source-safe."""
     if (
-        "`" in value  # pyrefly: ignore [implicit-bool]
-        or "\0" in value
+        "`" in value
+        or "\x00" in value
         or "\r" in value
         or has_bidi_formatting_character(value=value)
-        or _TRAILING_LINE_WHITESPACE.search(string=value)
+        or bool(_TRAILING_LINE_WHITESPACE.search(string=value))
     ):
         return _format_string_d(value=value)
     return f"`{value}`"
@@ -216,7 +216,7 @@ def _d_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"{root.title()}Type_"
         return (
             (
@@ -377,7 +377,7 @@ def _d_record_sequence_open(items: list[Value], /) -> str:
     single inferred element type, so it is not heterogeneous here and
     its ``RecordN`` literals make a well-typed ``RecordN[]``).
     """
-    if items and infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
+    if len(items) > 0 and infer_element_type(items=items) is None:
         raise UnrepresentableInputError(_D_UNREPRESENTABLE_RECORD_FIELD)
     return "["
 
@@ -436,7 +436,7 @@ def _d_narrow_sequence_open(items: list[Value], /) -> str:
     and a heterogeneous scalar list has no common type, so each is
     rejected.
     """
-    if not items or infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
+    if len(items) == 0 or infer_element_type(items=items) is None:
         raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
     return "["
 
@@ -474,9 +474,9 @@ def _d_narrow_validate_data(data: Value, /) -> None:
     form.
     """
     match data:
-        case list() if not data:  # pyrefly: ignore [implicit-bool]
+        case list() if len(data) == 0:
             raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
-        case dict() if not data:  # pyrefly: ignore [implicit-bool]
+        case dict() if len(data) == 0:
             raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
         case list():
             for item in data:
@@ -1327,7 +1327,7 @@ class D(metaclass=LanguageCls):
         :func:`_d_record_sequence_open` rejects it while the literal is
         formatted, before the preamble derives this field type.
         """
-        if not items:  # pyrefly: ignore [implicit-bool]
+        if len(items) == 0:
             return "long[]"
         return f"{self._d_value_type(items[0])}[]"
 
@@ -1449,7 +1449,9 @@ class D(metaclass=LanguageCls):
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Import ``std.json`` when a widened map uses its carrier."""
                 imports = (
-                    ("import std.json;",) if compute_wrap_ids(data) else ()  # pyrefly: ignore [implicit-bool]
+                    ("import std.json;",)
+                    if len(compute_wrap_ids(data)) > 0
+                    else ()
                 )
                 return (*imports, *record_preamble(data))
 

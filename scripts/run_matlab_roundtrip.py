@@ -59,7 +59,9 @@ def main() -> None:
         capabilities=Matlab.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    octave = shutil.which(cmd="octave") or "octave"  # pyrefly: ignore [implicit-bool]
+    octave = shutil.which(cmd="octave")
+    if octave is None or octave == "":
+        octave = "octave"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.m",

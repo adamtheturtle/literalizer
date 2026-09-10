@@ -19,7 +19,9 @@ _STUB_SOURCES = ("a_stub.ads", "a_stub.adb")
 def main() -> None:
     """Compile and run the given Ada golden file."""
     filename = sys.argv[1]
-    gnatmake_path = shutil.which(cmd="gnatmake") or "gnatmake"  # pyrefly: ignore [implicit-bool]
+    gnatmake_path = shutil.which(cmd="gnatmake")
+    if gnatmake_path is None or gnatmake_path == "":
+        gnatmake_path = "gnatmake"
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)

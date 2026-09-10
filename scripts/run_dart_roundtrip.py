@@ -58,7 +58,9 @@ def main() -> None:
         capabilities=Dart.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dart = shutil.which(cmd="dart") or "dart"  # pyrefly: ignore [implicit-bool]
+    dart = shutil.which(cmd="dart")
+    if dart is None or dart == "":
+        dart = "dart"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.dart",

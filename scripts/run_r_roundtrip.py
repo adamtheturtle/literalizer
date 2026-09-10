@@ -80,7 +80,9 @@ def main() -> None:
         capabilities=R.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    rscript = shutil.which(cmd="Rscript") or "Rscript"  # pyrefly: ignore [implicit-bool]
+    rscript = shutil.which(cmd="Rscript")
+    if rscript is None or rscript == "":
+        rscript = "Rscript"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         script_path = Path(tmpdir_name) / "main.R"
         _ = script_path.write_text(data=program, encoding="utf-8")

@@ -215,7 +215,7 @@ def nested_record_sequence_type(
     record_name = record_name_for_value(value)
     if record_name is not None:
         return (0, record_name)
-    if not isinstance(value, list) or not value:  # pyrefly: ignore [implicit-bool]
+    if not isinstance(value, list) or len(value) == 0:
         return None
     child_types = {
         nested_record_sequence_type(
@@ -255,7 +255,7 @@ def _validate_field_identifiers(
         identifiers: set[str] = set()
         for key in shape.keys:
             identifier = renderer.field_identifier(key)
-            if not _RECORD_FIELD_IDENTIFIER.match(string=identifier):  # pyrefly: ignore [implicit-bool]
+            if _RECORD_FIELD_IDENTIFIER.match(string=identifier) is None:
                 msg = (
                     f"cannot represent the dict key {key!r} as a lexical "
                     "field identifier under the RECORD heterogeneous strategy"
@@ -374,7 +374,7 @@ def _list_element_token(
     formatting, so the first element's string is a fine deterministic
     stand-in for the whole list.
     """
-    if not isinstance(field_value, list) or not field_value:  # pyrefly: ignore [implicit-bool]
+    if not isinstance(field_value, list) or len(field_value) == 0:
         return None
     if any(
         not (isinstance(item, dict) and id(item) in id_to_shape)
@@ -407,7 +407,7 @@ def _nested_record_tokens(
     """
     tokens: set[str] = set()
     pending: list[Value] = [field_value]
-    while pending:  # pyrefly: ignore [implicit-bool]
+    while len(pending) > 0:
         value = pending.pop()
         match value:
             case dict():
@@ -811,7 +811,7 @@ def _list_element_record_name(
     here shares one shape and the first element's resolved name applies
     to the whole list.
     """
-    if not isinstance(field_value, list) or not field_value:  # pyrefly: ignore [implicit-bool]
+    if not isinstance(field_value, list) or len(field_value) == 0:
         return None
     shapes = [
         id_to_shape.get(id(item)) if isinstance(item, dict) else None

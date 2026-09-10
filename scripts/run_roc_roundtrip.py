@@ -132,7 +132,9 @@ def main() -> None:
         capabilities=Roc.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    roc = shutil.which(cmd="roc") or "roc"  # pyrefly: ignore [implicit-bool]
+    roc = shutil.which(cmd="roc")
+    if roc is None or roc == "":
+        roc = "roc"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.roc",

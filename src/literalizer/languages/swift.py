@@ -208,7 +208,9 @@ def _format_date_swift(value: datetime.date) -> str:
 @beartype
 def _format_datetime_swift(value: datetime.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
-    offset = value.utcoffset() or datetime.timedelta()  # pyrefly: ignore [implicit-bool]
+    offset = value.utcoffset()
+    if offset is None or offset == datetime.timedelta():
+        offset = datetime.timedelta()
     offset_seconds = int(offset.total_seconds())
     parts = (
         "DateComponents("
@@ -217,7 +219,7 @@ def _format_datetime_swift(value: datetime.datetime) -> str:
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         nanosecond = value.microsecond * 1000
         parts += f", nanosecond: {nanosecond}"
     return parts + ").date!"
@@ -287,7 +289,7 @@ def _swift_call_stub(
     method_decl = (
         f"@discardableResult func {method}({param_list}) -> Any {{ 0 }}"
     )
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = f"_{root}Type"
         return (
             f"class {cls} {{ {method_decl} }}",
@@ -408,7 +410,7 @@ def _swift_type_hint(
         case dict():
             hint = _swift_dict_hint(
                 val_types=[recurse(data=v) for v in data.values()],
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 default_dict_value_type=default_dict_value_type,
             )
         case set():
@@ -416,7 +418,7 @@ def _swift_type_hint(
         case list():
             hint = _swift_list_hint(
                 elem_types=[recurse(data=e) for e in data],
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 sequence_is_tuple=sequence_is_tuple,
                 default_sequence_element_type=default_sequence_element_type,
             )

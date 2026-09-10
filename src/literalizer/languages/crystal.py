@@ -153,10 +153,10 @@ def _format_crystal_percent_dict_entry(
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as a non-interpolating Crystal percent string."""
     if (
-        "|" in value  # pyrefly: ignore [implicit-bool]
-        or "\0" in value
+        "|" in value
+        or "\x00" in value
         or "\r" in value
-        or _TRAILING_LINE_WHITESPACE.search(string=value)
+        or bool(_TRAILING_LINE_WHITESPACE.search(string=value))
     ):
         return _format_string(value=value)
     return f"%q|{value}|"
@@ -434,7 +434,7 @@ def _crystal_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = format_class_name(root) + "Type_"
         return (
             f"class {cls}; {method_stub.format(name=method)}; end",
@@ -1378,7 +1378,7 @@ class Crystal(metaclass=LanguageCls):
                 return "Bool"
             case int():
                 return _crystal_int_field_type(value=value)
-            case list() if not value:  # pyrefly: ignore [implicit-bool]
+            case list() if len(value) == 0:
                 return "Array(Nil)"
             case list():
                 # An empty nested list renders with the element type a
@@ -1390,21 +1390,25 @@ class Crystal(metaclass=LanguageCls):
                 narrowed_kinds: tuple[type, ...] = tuple(
                     kind
                     for kind in (list, dict, set)
-                    if any(item and isinstance(item, kind) for item in value)  # pyrefly: ignore [implicit-bool]
+                    if any(
+                        bool(item) and isinstance(item, kind) for item in value
+                    )
                 )
                 informative = [
                     item
                     for item in value
-                    if item  # pyrefly: ignore [implicit-bool]
+                    if bool(item)
                     or not isinstance(item, (list, dict, set))
-                    or not isinstance(item, narrowed_kinds)
+                    or (not isinstance(item, narrowed_kinds))
                 ]
                 parts = {
                     self._crystal_type_for_value(item)
-                    for item in informative or value  # pyrefly: ignore [implicit-bool]
+                    for item in (
+                        informative if len(informative) > 0 else value
+                    )
                 }
                 return f"Array({_crystal_union(parts)})"
-            case dict() if not value or isinstance(value, OrderedMap):  # pyrefly: ignore [implicit-bool]
+            case dict() if len(value) == 0 or isinstance(value, OrderedMap):
                 parts = {
                     self._crystal_type_for_value(item)
                     for item in value.values()
@@ -1413,20 +1417,26 @@ class Crystal(metaclass=LanguageCls):
                 # the configured dict defaults, so the union falls back
                 # to ``default_dict_value_type`` (``or`` keeps the
                 # never-empty corpus path branch-free).
+                union_type = _crystal_union(parts)
                 value_type = (
-                    _crystal_union(parts) or self.default_dict_value_type  # pyrefly: ignore [implicit-bool]
+                    union_type
+                    if union_type != ""
+                    else self.default_dict_value_type
                 )
                 return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
                 # A set or non-empty non-record dict field is out of scope for
                 # the base ``RECORD`` port (#2317) and is not reached
                 # by any record golden; the ``or`` widens it to ``Nil``.
+                scalar_type = _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value))
                 return (
                     "Time"
                     if isinstance(value, datetime.date)
                     and not isinstance(value, datetime.datetime)
                     and self.date_format.value.type_produced is datetime.date
-                    else _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value)) or "Nil"  # pyrefly: ignore [implicit-bool]
+                    else scalar_type
+                    if scalar_type is not None and scalar_type != ""
+                    else "Nil"
                 )
 
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -1856,7 +1866,8 @@ class Crystal(metaclass=LanguageCls):
             """Record declaration lines precede scalar body lines."""
             alias = (
                 (_CRYSTAL_RECORD_MAP_ALIAS,)
-                if self._record_strategy.behavior.compute_wrap_ids(data)  # pyrefly: ignore [implicit-bool]
+                if len(self._record_strategy.behavior.compute_wrap_ids(data))
+                > 0
                 else ()
             )
             return alias + record_preamble(data) + scalar_body(types, data)

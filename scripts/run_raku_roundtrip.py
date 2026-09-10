@@ -51,7 +51,9 @@ def main() -> None:
         capabilities=Raku.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    raku = shutil.which(cmd="raku") or "raku"  # pyrefly: ignore [implicit-bool]
+    raku = shutil.which(cmd="raku")
+    if raku is None or raku == "":
+        raku = "raku"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.raku",

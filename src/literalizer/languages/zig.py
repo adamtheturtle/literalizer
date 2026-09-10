@@ -281,7 +281,7 @@ def _make_zig_call_preamble_stub(
             prev_type = curr_type
         root = chain[0]
         intermediates = chain[1:]
-        if intermediates:  # pyrefly: ignore [implicit-bool]
+        if len(intermediates) > 0:
             root_type = f"{root.title()}Type_"
             lines.append(
                 f"const {root_type} = struct {{ "
@@ -473,8 +473,9 @@ def _zig_record_field_identifier(key: str, /) -> str:
     its literal (``.@"error" = value``), so the output compiles
     (issue #2963).
     """
-    if key in _ZIG_RESERVED_IDENTIFIERS or not _ZIG_IDENTIFIER.match(  # pyrefly: ignore [implicit-bool]
-        string=key
+    if (
+        key in _ZIG_RESERVED_IDENTIFIERS
+        or _ZIG_IDENTIFIER.match(string=key) is None
     ):
         return "@" + format_string_backslash_control(
             value=key,
@@ -1121,7 +1122,7 @@ class Zig(metaclass=LanguageCls):
             body_preamble=effective_body_preamble,
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        if not variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name == "":
             return f"pub fn main() void {{\n{indented}\n}}"
         match json_mode, self._record_strategy_active, is_var:
             case True, _, True:
@@ -1424,9 +1425,9 @@ class Zig(metaclass=LanguageCls):
             # (its ``&.{}`` literal coerces to any slice element type);
             # ``or`` is not a coverage branch, so no unreachable arm is
             # added for a corpus that has no empty ordered-map field.
-            val_type = self._zig_value_type(
-                (list(value.values()) or [0])[0],  # pyrefly: ignore [implicit-bool]
-            )
+            values = list(value.values())
+            value_for_type = values[0] if len(values) > 0 else 0
+            val_type = self._zig_value_type(value_for_type)
             return f"[]const struct {{ key: []const u8, val: {val_type} }}"
         if isinstance(value, list):
             return self._zig_list_type(items=value)
@@ -1453,7 +1454,7 @@ class Zig(metaclass=LanguageCls):
         key ties on every element, so ``max`` keeps ``items[0]`` -- an
         arbitrary but type-equivalent representative.
         """
-        if not items:  # pyrefly: ignore [implicit-bool]
+        if len(items) == 0:
             return "[]const i64"
         inferred = infer_element_type(items=items)
         if inferred is None:
@@ -1572,7 +1573,9 @@ class Zig(metaclass=LanguageCls):
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
                 value_preamble = (
-                    _ZVAL_STATIC_PREAMBLE if compute_wrap_ids(data) else ()  # pyrefly: ignore [implicit-bool]
+                    _ZVAL_STATIC_PREAMBLE
+                    if len(compute_wrap_ids(data)) > 0
+                    else ()
                 )
                 return (*value_preamble, *record_preamble(data))
 
@@ -1756,7 +1759,7 @@ class Zig(metaclass=LanguageCls):
             """Return the slice opener, or the tuple opener for a
             heterogeneous list.
             """
-            if items and infer_element_type(items=items) is None:  # pyrefly: ignore [implicit-bool]
+            if len(items) > 0 and infer_element_type(items=items) is None:
                 return ".{"
             return "&.{"
 

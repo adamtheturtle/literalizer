@@ -53,7 +53,9 @@ def main() -> None:
         capabilities=OCaml.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    ocamlfind = shutil.which(cmd="ocamlfind") or "ocamlfind"  # pyrefly: ignore [implicit-bool]
+    ocamlfind = shutil.which(cmd="ocamlfind")
+    if ocamlfind is None or ocamlfind == "":
+        ocamlfind = "ocamlfind"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.ml",
