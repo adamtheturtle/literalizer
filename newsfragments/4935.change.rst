@@ -1,0 +1,1 @@
+Type internal bound-reference name collections independently of their values.
