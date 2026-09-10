@@ -401,7 +401,9 @@ def _d_record_dict_open(value: dict[Scalar, Value], /) -> str:
 
 
 @beartype
-def _d_record_reject_open(_collection: object, /) -> str:
+def _d_record_reject_open(
+    _collection: list[Value] | dict[Scalar, Value], /
+) -> str:
     """Reject a set or ordered map under ``RECORD``.
 
     A set or ordered map is never record-eligible and has no
@@ -489,7 +491,9 @@ def _d_narrow_validate_data(data: Value, /) -> None:
 
 
 @beartype
-def _d_narrow_reject_open(_collection: object, /) -> str:
+def _d_narrow_reject_open(
+    _collection: list[Value] | dict[Scalar, Value], /
+) -> str:
     """Reject a set or ordered map under narrow-typed mode.
 
     D has no built-in set type, and ``std.json``'s ordered map is

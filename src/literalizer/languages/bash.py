@@ -233,7 +233,7 @@ def _reject_delete_in_compound(*, data: Value) -> None:
 
 
 @beartype
-def _bash_validate_spec_for_data(_self: object, data: Value) -> None:
+def _bash_validate_spec_for_data(_self: "Bash", data: Value) -> None:
     """Raise for values and dict keys that Bash cannot represent."""
     reject_nulls(data=data, language_name="Bash")
     # A lone scalar is emitted as a simple assignment, which keeps the
