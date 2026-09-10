@@ -85,7 +85,7 @@ def _collect_from_dict(data: dict[Scalar, Value]) -> frozenset[int]:
     """
     values: list[Value] = list(data.values())
     own: frozenset[int] = (
-        frozenset({id(data)})
+        frozenset[int]({id(data)})
         if _all_scalars_mixed_buckets(values=values)
         else frozenset[int]()
     )
@@ -107,7 +107,7 @@ def _collect_from_list(data: list[Value]) -> frozenset[int]:
     descendants.
     """
     own: frozenset[int] = (
-        frozenset({id(data)})
+        frozenset[int]({id(data)})
         if _all_scalars_mixed_buckets(values=data)
         else frozenset[int]()
     )
