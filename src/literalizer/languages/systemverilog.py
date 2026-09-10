@@ -99,7 +99,9 @@ _MAX_STRINGIFIED_COLLECTION_DEPTH = 12
 
 
 @beartype
-def _systemverilog_validate_spec_for_data(_self: object, data: Value) -> None:
+def _systemverilog_validate_spec_for_data(
+    _self: "SystemVerilog", data: Value
+) -> None:
     """Reject nesting whose repeated string escaping grows
     exponentially.
     """
