@@ -484,7 +484,7 @@ def reject_excessive_integer_digits(*, value: int) -> None:
     describes the interpreter rather than the input (issue #4558).
     """
     limit = sys.get_int_max_str_digits()
-    if not limit:  # pyrefly: ignore [implicit-bool]
+    if limit == 0:
         return
     if value.bit_length() <= limit * _BITS_PER_DECIMAL_DIGIT_FLOOR:
         return
@@ -506,7 +506,7 @@ def reject_excessive_decimal_token(*, token: str) -> None:
     """
     limit = sys.get_int_max_str_digits()
     digits = token.lstrip("+-").replace("_", "").lstrip("0")
-    if limit and len(digits) > limit and digits.isdigit():  # pyrefly: ignore [implicit-bool]
+    if limit != 0 and len(digits) > limit and digits.isdigit():
         raise ExcessiveIntegerDigitsError(limit=limit)
 
 
@@ -865,7 +865,7 @@ def _record_anchor_binding(
     latest_binding: dict[str, int],
 ) -> None:
     """Note that *anchor* now names the node numbered *binding*."""
-    if anchor:  # pyrefly: ignore [implicit-bool]
+    if anchor != "":
         latest_binding[anchor] = binding
 
 
