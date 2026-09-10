@@ -56,22 +56,20 @@ CAPABILITY_INPUT_PATH = (
 type JsonValue = (
     bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 )
-_JSON_OBJECT_ADAPTER = TypeAdapter[dict[str, JsonValue]](
-    type=dict[str, JsonValue],
-)
-_CAPABILITY_GROUPS_ADAPTER = TypeAdapter[dict[str, dict[str, JsonValue]]](
-    type=dict[str, dict[str, JsonValue]],
-)
 
 
 def json_object_from_text(*, text: str) -> dict[str, JsonValue]:
     """Parse a top-level JSON object."""
-    return _JSON_OBJECT_ADAPTER.validate_json(text, strict=True)
+    return TypeAdapter[dict[str, JsonValue]](
+        type=dict[str, JsonValue],
+    ).validate_json(text, strict=True)
 
 
 def json_object(*, value: object) -> dict[str, JsonValue]:
     """Validate a decoded value as a JSON object."""
-    return _JSON_OBJECT_ADAPTER.validate_python(value, strict=True)
+    return TypeAdapter[dict[str, JsonValue]](
+        type=dict[str, JsonValue],
+    ).validate_python(value, strict=True)
 
 
 def input_for_capabilities(
@@ -79,7 +77,9 @@ def input_for_capabilities(
 ) -> str:
     """Return the base corpus plus only explicitly supported groups."""
     document = json_object_from_text(text=read_input())
-    groups = _CAPABILITY_GROUPS_ADAPTER.validate_json(
+    groups = TypeAdapter[dict[str, dict[str, JsonValue]]](
+        type=dict[str, dict[str, JsonValue]],
+    ).validate_json(
         CAPABILITY_INPUT_PATH.read_text(encoding="utf-8"),
         strict=True,
     )
