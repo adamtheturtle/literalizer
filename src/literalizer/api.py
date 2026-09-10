@@ -8,7 +8,7 @@ package root as :func:`literalizer.literalize` and
 
 import dataclasses
 import enum
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import Any
 
 from beartype import beartype
@@ -65,7 +65,7 @@ def _validate_bound_ref_output_name(
     *,
     language: Language,
     variable_form: VariableForm | None,
-    bound_ref_names: Mapping[str, object],
+    bound_ref_names: Collection[str],
     ref_case: IdentifierCase | None,
     wrap_in_file: bool,
 ) -> None:
@@ -118,7 +118,7 @@ def _validate_module_name_variable_collision(
     *,
     language: Language,
     variable_form: VariableForm | None,
-    bound_ref_names: Mapping[str, object],
+    bound_ref_names: Collection[str],
     ref_case: IdentifierCase | None,
     wrap_in_file: bool,
 ) -> None:
@@ -223,7 +223,7 @@ def _validate_render_arguments(
     pre_indent_level: int,
     include_delimiters: bool,
     variable_form: VariableForm | None,
-    bound_ref_names: Mapping[str, object],
+    bound_ref_names: Collection[str],
     wrap_in_file: bool,
     ref_case: IdentifierCase | None,
 ) -> None:
