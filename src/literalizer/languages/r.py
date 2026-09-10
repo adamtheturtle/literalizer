@@ -134,7 +134,7 @@ def _format_datetime_r(value: datetime.datetime, /) -> str:
     if aware:
         value = normalize_datetime_utc(value=value, language_name="R")
     rendered = value.strftime(format="%Y-%m-%d %H:%M:%S")
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         rendered += f".{value.microsecond:06d}"
     if aware:
         rendered += "+0000"
