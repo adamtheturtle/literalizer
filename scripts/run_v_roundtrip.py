@@ -150,11 +150,8 @@ def _build_program(json_text: str) -> str:
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
-    # pyright cannot resolve the nested ``HeterogeneousStrategies`` enum
-    # through V's metaclass (it widens the attribute to ``type[Enum]``),
-    # so the lookup needs an explicit suppression.
     language = V(
-        heterogeneous_strategy=V.HeterogeneousStrategies.INTERFACE,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType, reportAttributeAccessIssue]
+        heterogeneous_strategy=V.heterogeneous_strategies.INTERFACE,
     )
     result = roundtrip_common.literalize_new_variable(
         language=language,

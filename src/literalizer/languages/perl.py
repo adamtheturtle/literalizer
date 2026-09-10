@@ -1249,4 +1249,4 @@ class Perl(metaclass=LanguageCls):
 
 
 # The variant planner accesses non-default enum members dynamically.
-_PERL_INTEGER_BOOL_FORMAT = Perl.BoolFormats.INTEGER  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType, reportAttributeAccessIssue]
+_PERL_INTEGER_BOOL_FORMAT = Perl.bool_formats.INTEGER
