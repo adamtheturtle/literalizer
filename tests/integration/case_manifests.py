@@ -449,14 +449,8 @@ class _OwnedCaseSpec(
     ) -> Mapping[str, object]:
         """Add the owning case directory name from the load context."""
         raw_context = info.context
-        context_key = "case_dir_name"
-        if raw_context is None:
-            raise KeyError(context_key)
-        case_dir_name: object = raw_context[context_key]
-        if not isinstance(case_dir_name, str):
-            msg = "case_dir_name context must be a string"
-            raise TypeError(msg)
-        return {**data, "case_dir_name": case_dir_name}
+        context: Mapping[str, str] = {} if raw_context is None else raw_context  # ty: ignore[unsound-assignment]
+        return {**data, "case_dir_name": context["case_dir_name"]}
 
 
 class RefCaseSpec(  # noqa: NOD001
