@@ -1,0 +1,2 @@
+Type the Zig inferred-element mapping with the inference domain instead of
+``object``.
