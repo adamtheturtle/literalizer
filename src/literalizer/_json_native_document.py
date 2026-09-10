@@ -145,8 +145,8 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
         # an empty nested collection from rendering as the empty string,
         # which the shared renderer drops from its parent rather than
         # joining with a separator.
-        or not dict_config.close  # pyrefly: ignore [implicit-bool]
-        or not sequence_config.close  # pyrefly: ignore [implicit-bool]
+        or dict_config.close == ""
+        or sequence_config.close == ""
         or dict_config.empty_dict
         not in (None, dict_open.open_str + dict_config.close)
         or sequence_config.empty_sequence
@@ -282,7 +282,7 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
     try:
         # The shared renderer always lays out the root collection over
         # multiple lines; ``collection_layout`` controls nested values.
-        if not data:  # pyrefly: ignore [implicit-bool]
+        if len(data) == 0:
             return line_prefix + compact(data)
         return root(data)
     except _SharedRendererRequiredError:
