@@ -55,6 +55,8 @@ def main() -> None:
         src_dir.mkdir(exist_ok=True)
 
         for fixture in fixtures:
+            # Python 3.12 requires this argument to be positional, while the
+            # Python 3.14 signature makes strict-kwargs reject that call.
             relative = _strip_version(
                 relative=fixture.relative_to(  # type: ignore[call-arg, unused-ignore]
                     _FIXTURE_PREFIX,
