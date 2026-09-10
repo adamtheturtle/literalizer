@@ -539,6 +539,42 @@ def _needs_json_wrap_for_field(field_type: str | None) -> bool:
     return field_type == "JsonNode"
 
 
+class _NimContainerKind(enum.Enum):
+    """Kinds of native Nim container represented by a shape."""
+
+    LIST = enum.auto()
+    DICT = enum.auto()
+
+
+class _NimShapeMarker(enum.Enum):
+    """Non-concrete child states in a native Nim container shape."""
+
+    EMPTY = enum.auto()
+    MIXED = enum.auto()
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _NimContainerShape:
+    """The native Nim type shape inferred for a container."""
+
+    kind: _NimContainerKind
+    child: "type | _NimContainerShape | _NimShapeMarker"
+
+
+type _NimLiteralShape = type | _NimContainerShape
+
+
+def _nim_child_shape(
+    *, child_types: set[_NimLiteralShape]
+) -> _NimLiteralShape | _NimShapeMarker:
+    """Return the common child shape, or an empty/mixed marker."""
+    if len(child_types) == 0:
+        return _NimShapeMarker.EMPTY
+    if len(child_types) == 1:
+        return next(iter(child_types))
+    return _NimShapeMarker.MIXED
+
+
 @beartype
 def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
     *, data: Value
@@ -566,9 +602,9 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
             case _:
                 return None
 
-    def _literal_type(  # noqa: C901, PLR0911
+    def _literal_type(  # noqa: PLR0911
         item: Value,
-    ) -> object:
+    ) -> _NimLiteralShape:
         """Return the native Nim type shape inferred for *item*.
 
         Python's ``type`` alone is not enough for nested collections:
@@ -589,20 +625,18 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
                 return int
             case list():
                 child_types = {_literal_type(item=child) for child in item}
-                if len(child_types) == 0:
-                    return (list, None)
-                if len(child_types) == 1:
-                    return (list, next(iter(child_types)))
-                return (list, "mixed")
+                return _NimContainerShape(
+                    kind=_NimContainerKind.LIST,
+                    child=_nim_child_shape(child_types=child_types),
+                )
             case dict() if not isinstance(item, OrderedMap):
                 child_types = {
                     _literal_type(item=child) for child in item.values()
                 }
-                if len(child_types) == 0:
-                    return (dict, None)
-                if len(child_types) == 1:
-                    return (dict, next(iter(child_types)))
-                return (dict, "mixed")
+                return _NimContainerShape(
+                    kind=_NimContainerKind.DICT,
+                    child=_nim_child_shape(child_types=child_types),
+                )
             case _:
                 return type(item)
 
