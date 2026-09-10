@@ -160,38 +160,74 @@ _CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
 )
 
 
-def _cpp_record_value_shape(value: Value, /) -> object:
+@dataclasses.dataclass(frozen=True, slots=True)
+class _CppRecordListShape:
+    """The distinct element shapes in a C++ record list."""
+
+    elements: tuple["_CppRecordValueShape", ...]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _CppRecordShape:
+    """The keys and value shapes in a C++ record."""
+
+    keys: tuple[Scalar, ...]
+    values: tuple["_CppRecordValueShape", ...]
+
+
+type _CppRecordValueShape = str | _CppRecordListShape | _CppRecordShape
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _CppArrayShape:
+    """The size and distinct element shapes in a C++ array."""
+
+    length: int
+    elements: tuple["_CppArrayNestedShape", ...]
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _CppArrayMapShape:
+    """The value shapes in a map nested within a C++ array."""
+
+    values: tuple["_CppArrayNestedShape", ...]
+
+
+type _CppArrayNestedShape = str | _CppArrayShape | _CppArrayMapShape
+
+
+def _cpp_record_value_shape(value: Value, /) -> _CppRecordValueShape:
     """Return the generated-record shape required by *value*."""
     if isinstance(value, list):
-        return (
-            "list",
-            tuple(
+        return _CppRecordListShape(
+            elements=tuple(
                 dict.fromkeys(_cpp_record_value_shape(item) for item in value)
             ),
         )
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
-        return (
-            "record",
-            tuple(value),
-            tuple(_cpp_record_value_shape(item) for item in value.values()),
+        return _CppRecordShape(
+            keys=tuple(value),
+            values=tuple(
+                _cpp_record_value_shape(item) for item in value.values()
+            ),
         )
     return type(value).__name__
 
 
-def _cpp_array_nested_shape(value: Value, /) -> object:
+def _cpp_array_nested_shape(value: Value, /) -> _CppArrayNestedShape:
     """Return a structural type shape for a nested C++ array value."""
     if isinstance(value, list):
-        return (
-            "array",
-            len(value),
-            tuple(
+        return _CppArrayShape(
+            length=len(value),
+            elements=tuple(
                 dict.fromkeys(_cpp_array_nested_shape(item) for item in value)
             ),
         )
     if isinstance(value, dict):
-        return (
-            "map",
-            tuple(_cpp_array_nested_shape(item) for item in value.values()),
+        return _CppArrayMapShape(
+            values=tuple(
+                _cpp_array_nested_shape(item) for item in value.values()
+            ),
         )
     return type(value).__name__
 
