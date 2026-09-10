@@ -166,7 +166,7 @@ def _powershell_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     param_list = ", ".join(f"[object] ${p}" for p in params)
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"{root.title()}Type_"
         return (
             (
