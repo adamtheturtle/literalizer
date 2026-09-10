@@ -278,7 +278,7 @@ def _apply_concat_control(
     for segment in re.split(
         pattern=r"([\x00-\x1f\x85\u2028\u2029])", string=value
     ):
-        if not segment:  # pyrefly: ignore [implicit-bool]
+        if segment == "":
             continue
         if len(segment) == 1 and ord(segment) < control_char_threshold:
             parts.append(control_char_template.format(ord(segment)))
