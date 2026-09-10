@@ -52,7 +52,7 @@ dev = [
     "clang-tidy==22.1.8",
     "deptry==0.25.1",
     "doc8==2.0.0",
-    "doccmd==2026.9.1",
+    "doccmd==2026.9.7",
     "furo==2025.12.19",
     "hypothesis>=6.0",
     "interrogate==1.7.0",
