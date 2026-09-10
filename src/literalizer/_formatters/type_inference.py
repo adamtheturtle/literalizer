@@ -132,13 +132,18 @@ class _Collected:
     dict_values: list[Value]
 
 
-_INFER_FAILED = object()
+@dataclass(frozen=True, slots=True)
+class _InferenceFailed:
+    """Sentinel returned when no concrete element type can be inferred."""
+
+
+_INFER_FAILED = _InferenceFailed()
 
 
 @beartype
 def _collect_element_types(
     items: list[Value],
-) -> _Collected | object:
+) -> _Collected | _InferenceFailed:
     """Collect element types for ``items`` or signal hard inference
     failure.
 
