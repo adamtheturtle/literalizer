@@ -145,7 +145,7 @@ def _format_jsonnet_dict_entry(
     """
     inner = key[1:-1]
     if (
-        _JSONNET_IDENTIFIER_RE.match(string=inner)  # pyrefly: ignore [implicit-bool]
+        _JSONNET_IDENTIFIER_RE.match(string=inner) is not None
         and inner not in _JSONNET_KEYWORDS
     ):
         return f"{inner}: {formatted_value}"
@@ -554,7 +554,7 @@ class Jsonnet(metaclass=LanguageCls):
         When *variable_name* is empty (call mode), wrap the content
         lines in an array so the file evaluates to a single expression.
         """
-        if not body_preamble:  # pyrefly: ignore [implicit-bool]
+        if len(body_preamble) == 0:
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
