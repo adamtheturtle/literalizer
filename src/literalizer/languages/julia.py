@@ -143,7 +143,7 @@ def _julia_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     _anon = f"({variadic}) -> nothing"
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = root.capitalize() + "Type"
         return (
             f"struct {cls}; {method}; end",
