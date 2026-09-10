@@ -227,7 +227,7 @@ def _elixir_call_preamble_stub(
     method = parts[-1]
     fields = list(parts[1:-1])
     param_list = ", ".join(_elixir_params(params=params))
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         root_module = _elixir_root_module(root)
         sig = f"{method}({param_list}), do: nil"
         stub = f"defmodule {root_module} do\n  def {sig}\nend"
@@ -764,7 +764,7 @@ class Elixir(metaclass=LanguageCls):
         ``defmodule Check do`` but before ``def x do``, while other
         preamble lines stay inside ``def x do``.
         """
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,
