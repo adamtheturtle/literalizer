@@ -57,6 +57,8 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
     MixedNumeric,
     infer_element_type,
     record_shape_for_dict,
@@ -320,8 +322,8 @@ _ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
 # the mapping needs no corpus case to stay coverage-clean (the same
 # ``.get``-default trick used for the epoch field type; the coverage
 # tool does not treat a dict lookup default as a branch).
-_ZIG_INFERRED_ELEMENT_TYPES: Mapping[object, str] = MappingProxyType(
-    mapping={MixedNumeric: "f64"},
+_ZIG_INFERRED_ELEMENT_TYPES: Mapping[type | ListType | DictType, str] = (
+    MappingProxyType(mapping={MixedNumeric: "f64"})
 )
 
 
