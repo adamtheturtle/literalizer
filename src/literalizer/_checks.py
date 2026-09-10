@@ -7,6 +7,7 @@ import datetime
 import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any, overload
 
 from beartype import beartype
@@ -36,6 +37,14 @@ from literalizer.exceptions import (
 )
 
 _C0_UPPER_BOUND = 0x20
+
+
+@dataclass(frozen=True, slots=True)
+class _SequenceShape:
+    """The nested lengths which determine a sequence type."""
+
+    length: int
+    children: tuple["_SequenceShape | None", ...]
 
 
 def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
@@ -163,7 +172,7 @@ def guard_collection_nesting_depth(
 
 
 @beartype
-def _sequence_shape(value: Value, /) -> tuple[object, ...] | None:
+def _sequence_shape(value: Value, /) -> _SequenceShape | None:
     """Return the nested lengths a sequence's type is built from.
 
     A fixed-size type spells a length at every level it nests, so two
@@ -173,7 +182,10 @@ def _sequence_shape(value: Value, /) -> tuple[object, ...] | None:
     """
     if not isinstance(value, list):
         return None
-    return (len(value), tuple(_sequence_shape(item) for item in value))
+    return _SequenceShape(
+        length=len(value),
+        children=tuple(_sequence_shape(item) for item in value),
+    )
 
 
 @beartype
@@ -931,7 +943,7 @@ def _has_mixed_record_shapes(
             )
         case list():
             dicts_in_list = [v for v in data if isinstance(v, dict)]
-            signatures: set[object] = {
+            signatures: set[RecordShape | frozenset[Scalar]] = {
                 shapes_by_id.get(id(d), frozenset(d.keys()))
                 for d in dicts_in_list
             }
