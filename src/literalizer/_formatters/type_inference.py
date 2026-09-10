@@ -111,7 +111,7 @@ def int_widening_tier(items: list[Value]) -> type | None:
     collection formatting to select a widened integer formatter without
     running full :func:`infer_element_type`.
     """
-    if not items:  # pyrefly: ignore [implicit-bool]
+    if len(items) == 0:
         return None
     widest: type | None = None
     for item in items:
@@ -220,7 +220,7 @@ def _unify_element_types(
             else None
         )
     numeric_types = {int, float, WideInt, BeyondI64, MixedNumeric}
-    if element_types and element_types <= numeric_types:  # pyrefly: ignore [implicit-bool]
+    if len(element_types) > 0 and element_types <= numeric_types:
         rank: dict[type | ListType, int] = {
             int: 0,
             WideInt: 1,
@@ -249,7 +249,7 @@ def infer_element_type(
     contains a mix of ``int`` and ``float`` values.  Returns a
     ``DictType`` when all items are plain dicts (not ordered maps).
     """
-    if not items:  # pyrefly: ignore [implicit-bool]
+    if len(items) == 0:
         return None
     collected = _collect_element_types(items=items)
     if not isinstance(collected, _Collected):
@@ -304,7 +304,7 @@ def record_shape_for_dict(
     # non-string-keyed dict is a plain map, not a record (the
     # ``int_key_dict`` heterogeneous-strategy variant exercises the
     # latter).
-    if not value:  # pyrefly: ignore [implicit-bool]
+    if len(value) == 0:
         return None
     str_keys: list[str] = []
     for key in value:
@@ -455,7 +455,7 @@ def drop_unrecordizable_nested_sibling_maps(
             member_shapes = {shapes_by_id[id(member)] for member in members}
             if len(member_shapes) > 1:
                 to_drop.extend(members)
-    if not to_drop:  # pyrefly: ignore [implicit-bool]
+    if len(to_drop) == 0:
         return dict(shapes_by_id)
     dropped_ids = {id(member) for member in to_drop}
     return {

@@ -39,8 +39,12 @@ def _strip_version(*, relative: Path) -> Path:
 def main() -> None:
     """Run every Gleam golden file passed on stdin."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])
-    gleam_path = shutil.which(cmd="gleam") or "gleam"  # pyrefly: ignore [implicit-bool]
-    fixtures = [Path(line) for line in sys.stdin.read().splitlines() if line]  # pyrefly: ignore [implicit-bool]
+    gleam_path = shutil.which(cmd="gleam")
+    if gleam_path is None or gleam_path == "":
+        gleam_path = "gleam"
+    fixtures = [
+        Path(line) for line in sys.stdin.read().splitlines() if bool(line)
+    ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Copy the primed project (deps already downloaded) so we do not

@@ -269,7 +269,7 @@ def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """
     _reject_conflicting_csharp_modifiers(modifiers=modifiers)
     keywords = [m.value for m in _CSharpModifiers if m in modifiers]
-    if not keywords:  # pyrefly: ignore [implicit-bool]
+    if len(keywords) == 0:
         return ""
     return " ".join(keywords) + " "
 
@@ -311,7 +311,7 @@ def _csharp_common_element_type(
     dict_value_type: str,
 ) -> str:
     """Return the common C# type for a list of elements."""
-    if not items:  # pyrefly: ignore [implicit-bool]
+    if len(items) == 0:
         return "object"
     types = {
         _csharp_type_hint(
@@ -397,7 +397,7 @@ def _format_csharp_declaration(
         )
         raise IncompatibleFormatsError(msg)
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
-    if not prefix:  # pyrefly: ignore [implicit-bool]
+    if prefix == "":
         return f"var {name} = {value};"
     hint = _csharp_type_hint(
         data=data,
@@ -516,7 +516,7 @@ def _csharp_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"{root.title()}Type_"
         return (
             (
@@ -1255,7 +1255,7 @@ class CSharp(metaclass=LanguageCls):
         auto_name_pattern = re.compile(pattern=r"^Record\d+$")
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if _PASCAL_CASE_IDENTIFIER.match(string=name) is None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase C# "
@@ -1269,7 +1269,7 @@ class CSharp(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if auto_name_pattern.match(string=name) is not None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1385,7 +1385,7 @@ class CSharp(metaclass=LanguageCls):
         """
         first_token = (
             content.lstrip().split(sep=" ", maxsplit=1)[0]
-            if content.strip()  # pyrefly: ignore [implicit-bool]
+            if content.strip() != ""
             else ""
         )
         is_class_field = first_token in {
@@ -1397,7 +1397,9 @@ class CSharp(metaclass=LanguageCls):
         }
         if is_class_field:
             preamble_block = (
-                "\n".join(body_preamble) + "\n" if body_preamble else ""  # pyrefly: ignore [implicit-bool]
+                "\n".join(body_preamble) + "\n"
+                if len(body_preamble) > 0
+                else ""
             )
             return (
                 f"{preamble_block}class Check {{\n"
@@ -1414,7 +1416,7 @@ class CSharp(metaclass=LanguageCls):
             for line in body_preamble
             if not line.startswith(stub_prefixes)
         )
-        if stub_lines:  # pyrefly: ignore [implicit-bool]
+        if len(stub_lines) > 0:
             stub_block = "\n".join(stub_lines) + "\n"
             body = prepend_body_preamble(
                 content=content,
@@ -1700,9 +1702,11 @@ class CSharp(metaclass=LanguageCls):
             case list():
                 opener = self.sequence_open(value)
             case _:
+                scalar_type = self._csharp_record_scalar_resolver(type(value))
                 return (
-                    self._csharp_record_scalar_resolver(type(value))  # pyrefly: ignore [implicit-bool]
-                    or "object"
+                    scalar_type
+                    if scalar_type is not None and scalar_type != ""
+                    else "object"
                 )
         return opener.removeprefix("new ").removesuffix(" {")
 
@@ -1744,7 +1748,9 @@ class CSharp(metaclass=LanguageCls):
 
         def _widened_map_open() -> str:
             """Return the fallback-map opener for the current pass."""
-            value_type = narrowing.value_type or "object"  # pyrefly: ignore [implicit-bool]
+            value_type = narrowing.value_type
+            if value_type is None or value_type == "":
+                value_type = "object"
             return f"new Dictionary<string, {value_type}> {{"
 
         return dataclasses.replace(
@@ -1758,7 +1764,9 @@ class CSharp(metaclass=LanguageCls):
 
     def _csharp_derecordized_map_field_type(self) -> str:
         """Return the component type for a widened fallback map."""
-        value_type = self._derecordized_map_narrowing.value_type or "object"  # pyrefly: ignore [implicit-bool]
+        value_type = self._derecordized_map_narrowing.value_type
+        if value_type is None or value_type == "":
+            value_type = "object"
         return f"Dictionary<string, {value_type}>"
 
     def _csharp_narrow_derecordized_map_type(
@@ -1792,7 +1800,7 @@ class CSharp(metaclass=LanguageCls):
         if contains_wrapped_non_scalar(value=data):
             return None
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:  # pyrefly: ignore [implicit-bool]
+        if len(scalars) == 0:
             return None
         scalar_types = {
             self._csharp_record_field_type(
@@ -1972,7 +1980,9 @@ class CSharp(metaclass=LanguageCls):
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
             set_opener_template=(
-                self._base_set_format_config.set_opener_template or None  # pyrefly: ignore [implicit-bool]
+                self._base_set_format_config.set_opener_template
+                if self._base_set_format_config.set_opener_template != ""
+                else None
             ),
             narrow_dict_values=False,
             narrow_list_values=True,

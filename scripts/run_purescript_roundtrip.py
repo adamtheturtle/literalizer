@@ -162,8 +162,12 @@ def main() -> None:
         capabilities=PureScript.variant_metadata.round_trip_capabilities,
     )
     program = _build_check(json_text=json_text)
-    purs = shutil.which(cmd="purs") or "purs"  # pyrefly: ignore [implicit-bool]
-    node = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
+    purs = shutil.which(cmd="purs")
+    if purs is None or purs == "":
+        purs = "purs"
+    node = shutil.which(cmd="node")
+    if node is None or node == "":
+        node = "node"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="Check.purs",

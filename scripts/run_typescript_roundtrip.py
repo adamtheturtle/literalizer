@@ -59,7 +59,9 @@ def main() -> None:
         capabilities=TypeScript.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    tsx = shutil.which(cmd="tsx") or "tsx"  # pyrefly: ignore [implicit-bool]
+    tsx = shutil.which(cmd="tsx")
+    if tsx is None or tsx == "":
+        tsx = "tsx"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.ts",

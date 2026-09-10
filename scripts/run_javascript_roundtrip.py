@@ -55,7 +55,9 @@ def main() -> None:
         excluded_keys=_EXCLUDED_KEYS,
     )
     program = _build_program(json_text=trimmed_json)
-    node = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
+    node = shutil.which(cmd="node")
+    if node is None or node == "":
+        node = "node"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.js",

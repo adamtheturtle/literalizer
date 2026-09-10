@@ -48,7 +48,9 @@ def main() -> None:
         capabilities=Groovy.variant_metadata.round_trip_capabilities,
     )
     program = _build_script(json_text=json_text)
-    groovy = shutil.which(cmd="groovy") or "groovy"  # pyrefly: ignore [implicit-bool]
+    groovy = shutil.which(cmd="groovy")
+    if groovy is None or groovy == "":
+        groovy = "groovy"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="Main.groovy",

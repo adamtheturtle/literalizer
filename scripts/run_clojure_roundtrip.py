@@ -50,7 +50,9 @@ def main() -> None:
         capabilities=Clojure.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    bb = shutil.which(cmd="bb") or "bb"  # pyrefly: ignore [implicit-bool]
+    bb = shutil.which(cmd="bb")
+    if bb is None or bb == "":
+        bb = "bb"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.clj",

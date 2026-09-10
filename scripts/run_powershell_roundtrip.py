@@ -62,7 +62,9 @@ def main() -> None:
         capabilities=PowerShell.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    pwsh = shutil.which(cmd="pwsh") or "pwsh"  # pyrefly: ignore [implicit-bool]
+    pwsh = shutil.which(cmd="pwsh")
+    if pwsh is None or pwsh == "":
+        pwsh = "pwsh"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.ps1",

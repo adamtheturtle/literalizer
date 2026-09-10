@@ -12,7 +12,9 @@ from scripts.purescript_common import write_lint_environment
 def main() -> None:
     """Check syntax of a single PureScript file."""
     filename = sys.argv[1]
-    purs_path: str = shutil.which(cmd="purs") or "purs"  # pyrefly: ignore [implicit-bool]
+    purs_path = shutil.which(cmd="purs")
+    if purs_path is None or purs_path == "":
+        purs_path = "purs"
     with tempfile.TemporaryDirectory() as tmpdir:
         env_purs_paths = write_lint_environment(tmpdir=Path(tmpdir))
         output_dir = Path(tmpdir) / "output"

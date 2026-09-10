@@ -334,7 +334,7 @@ class LiteralizeResult:
             *self.body_preamble,
             *self.pre_declaration_comments,
         )
-        if not all_prefix_lines:  # pyrefly: ignore [implicit-bool]
+        if len(all_prefix_lines) == 0:
             return self.declaration_code
         return "\n".join(all_prefix_lines) + "\n" + self.declaration_code
 
@@ -345,7 +345,7 @@ class LiteralizeResult:
         Identical to :attr:`code` when :attr:`body_preamble` is empty.
         :attr:`pre_declaration_comments` are preserved.
         """
-        if not self.pre_declaration_comments:  # pyrefly: ignore [implicit-bool]
+        if len(self.pre_declaration_comments) == 0:
             return self.declaration_code
         return (
             "\n".join(self.pre_declaration_comments)
@@ -841,7 +841,7 @@ def _accumulate_cousin_empty_list_overrides(
     else:
         return
     sibling_lists = [child for child in children if isinstance(child, list)]
-    if len(sibling_lists) == len(children) and sibling_lists:  # pyrefly: ignore [implicit-bool]
+    if len(sibling_lists) == len(children) and bool(sibling_lists):
         _accumulate_positional_empty_list_overrides(
             sibling_lists=sibling_lists,
             narrowed_empty_sequence=narrowed_empty_sequence,
@@ -870,13 +870,13 @@ def _accumulate_positional_empty_list_overrides(
         lists = [cousin for cousin in cousins if _is_value_list(cousin)]
         if len(lists) != len(cousins):
             continue
-        empty_lists = [item for item in lists if not item]  # pyrefly: ignore [implicit-bool]
-        non_empty_lists = [item for item in lists if item]  # pyrefly: ignore [implicit-bool]
-        if empty_lists and non_empty_lists:  # pyrefly: ignore [implicit-bool]
+        empty_lists = [item for item in lists if len(item) == 0]
+        non_empty_lists = [item for item in lists if len(item) > 0]
+        if len(empty_lists) > 0 and bool(non_empty_lists):
             replacement = narrowed_empty_sequence(non_empty_lists)
             for empty_list in empty_lists:
                 _ = out.setdefault(id(empty_list), replacement)
-        if non_empty_lists:  # pyrefly: ignore [implicit-bool]
+        if len(non_empty_lists) > 0:
             _accumulate_positional_empty_list_overrides(
                 sibling_lists=non_empty_lists,
                 narrowed_empty_sequence=narrowed_empty_sequence,
@@ -890,8 +890,12 @@ def _accumulate_sibling_list_empty_overrides(
 ) -> None:
     """Type empty lists from homogeneous non-empty list siblings."""
     if isinstance(value, list):
-        non_empty = [item for item in value if isinstance(item, list) and item]  # pyrefly: ignore [implicit-bool]
-        empty = [item for item in value if isinstance(item, list) and not item]  # pyrefly: ignore [implicit-bool]
+        non_empty = [
+            item for item in value if isinstance(item, list) and bool(item)
+        ]
+        empty = [
+            item for item in value if isinstance(item, list) and len(item) == 0
+        ]
         sibling_openers = {spec.sequence_open(item) for item in non_empty}
         widened_opener = _compute_sequence_open_override(
             items=non_empty,
@@ -902,7 +906,7 @@ def _accumulate_sibling_list_empty_overrides(
             if len(sibling_openers) == 1
             else widened_opener
         )
-        if empty and sibling_opener is not None:  # pyrefly: ignore [implicit-bool]
+        if len(empty) > 0 and sibling_opener is not None:
             narrowed = spec.sequence_format_config.narrowed_empty_form
             replacement = (
                 narrowed(non_empty)
@@ -980,13 +984,13 @@ def _accumulate_sibling_dict_empty_overrides(
         ]
         if len(maps) != len(cousins):
             continue
-        empty_maps = [cousin for cousin in maps if not cousin]  # pyrefly: ignore [implicit-bool]
-        non_empty_maps = [cousin for cousin in maps if cousin]  # pyrefly: ignore [implicit-bool]
-        if empty_maps and non_empty_maps:  # pyrefly: ignore [implicit-bool]
+        empty_maps = [cousin for cousin in maps if len(cousin) == 0]
+        non_empty_maps = [cousin for cousin in maps if len(cousin) > 0]
+        if len(empty_maps) > 0 and bool(non_empty_maps):
             replacement = narrowed_empty_dict(non_empty_maps)
             for empty_map in empty_maps:
                 _ = out.setdefault(id(empty_map), replacement)
-        if non_empty_maps:  # pyrefly: ignore [implicit-bool]
+        if len(non_empty_maps) > 0:
             _accumulate_sibling_dict_empty_overrides(
                 sibling_dicts=non_empty_maps,
                 narrowed_empty_dict=narrowed_empty_dict,
@@ -1016,7 +1020,7 @@ def _format_set_value(
     spec = ctx.spec
     set_cfg = spec.set_format_config
 
-    if not value and set_cfg.empty_set is not None:  # pyrefly: ignore [implicit-bool]
+    if len(value) == 0 and set_cfg.empty_set is not None:
         return set_cfg.empty_set
     sorted_items = sorted(value, key=set_sort_key)
     items_as_values: list[Value] = list(sorted_items)
@@ -1086,7 +1090,7 @@ def _format_ordered_map_value(
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     ]
-    if not ordered_map_items:  # pyrefly: ignore [implicit-bool]
+    if len(ordered_map_items) == 0:
         if ordered_map_cfg.empty_ordered_map is not None:
             return ordered_map_cfg.empty_ordered_map
         if spec.dict_format_config.empty_dict is not None:
@@ -1295,7 +1299,7 @@ def _format_dict_value(
         for k, v in value.items()
         if not (spec.skip_null_dict_values and v is None)
     }
-    if not dict_items and dict_cfg.empty_dict is not None:  # pyrefly: ignore [implicit-bool]
+    if len(dict_items) == 0 and dict_cfg.empty_dict is not None:
         return dict_cfg.empty_dict
     parent_id = id(value)
     # Widen nested sequences that occupy matching positions across
@@ -1387,11 +1391,9 @@ def _format_dict_entry_value(
     """
     child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
-        if not value and outer_sequence_override is None:  # pyrefly: ignore [implicit-bool]
+        if len(value) == 0 and outer_sequence_override is None:
             non_empty_siblings = [
-                sibling
-                for sibling in sibling_list_values
-                if sibling  # pyrefly: ignore [implicit-bool]
+                sibling for sibling in sibling_list_values if len(sibling) > 0
             ]
             sibling_openers = {
                 ctx.spec.sequence_open(sibling)
@@ -1934,9 +1936,7 @@ def _compute_sequence_open_override(
     # sibling to match it, so only the lists that carry a type are
     # compared (issue #3927).
     lists: list[list[Value]] = [
-        item
-        for item in items
-        if isinstance(item, list) and item  # pyrefly: ignore [implicit-bool]
+        item for item in items if isinstance(item, list) and bool(item)
     ]
     # Widening compares openers across lists, so we need at least two
     # to have anything to compare.
@@ -1952,7 +1952,7 @@ def _compute_sequence_open_override(
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
         same_length = len({len(sibling) for sibling in lists}) == 1
         has_positional_empty_mix = same_length and any(
-            any(_is_value_list(item) and not item for item in position)  # pyrefly: ignore [implicit-bool]
+            any(_is_value_list(item) and len(item) == 0 for item in position)
             and any(_is_value_list(item) and bool(item) for item in position)
             for position in zip(*lists, strict=True)
         )
@@ -1991,14 +1991,14 @@ def _replace_positional_empty_lists(
             (
                 cousin
                 for cousin in cousins
-                if _is_value_list(cousin) and cousin  # pyrefly: ignore [implicit-bool]
+                if _is_value_list(cousin) and bool(cousin)
             ),
             None,
         )
         if exemplar is None:
             continue
         for items in normalized:
-            if _is_value_list(items[position]) and not items[position]:  # pyrefly: ignore [implicit-bool]
+            if _is_value_list(items[position]) and not bool(items[position]):
                 items[position] = exemplar
     return normalized
 
@@ -2057,14 +2057,12 @@ def _empty_child_sibling_opener(
     opener exists and the default fallback should stand.
     """
     item = value[position]
-    if not (isinstance(item, list) and not item):  # pyrefly: ignore [implicit-bool]
+    if not (isinstance(item, list) and len(item) == 0):
         return None
     non_empty_siblings = [
-        other
-        for other in value
-        if isinstance(other, list) and other  # pyrefly: ignore [implicit-bool]
+        other for other in value if isinstance(other, list) and bool(other)
     ]
-    if not non_empty_siblings:  # pyrefly: ignore [implicit-bool]
+    if len(non_empty_siblings) == 0:
         return None
     sibling_openers = {spec.sequence_open(o) for o in non_empty_siblings}
     if len(sibling_openers) != 1:
@@ -2119,7 +2117,7 @@ def _format_sequence_child(
     if (
         parent_override is None
         and isinstance(child, list)
-        and not child  # pyrefly: ignore [implicit-bool]
+        and len(child) == 0
         and sibling_open is not None
     ):
         narrowed_empty_form = (
@@ -2129,25 +2127,25 @@ def _format_sequence_child(
             non_empty_siblings = [
                 other
                 for other in value
-                if isinstance(other, list) and other  # pyrefly: ignore [implicit-bool]
+                if isinstance(other, list) and bool(other)
             ]
             return narrowed_empty_form(non_empty_siblings)
     if (
         parent_override is None
         and isinstance(child, dict)
         and not isinstance(child, OrderedMap)
-        and not child  # pyrefly: ignore [implicit-bool]
+        and len(child) == 0
     ):
         narrowed_empty_dict = ctx.spec.dict_format_config.narrowed_empty_form
         if narrowed_empty_dict is not None:
             non_empty_map_siblings = [
                 other
                 for other in value
-                if isinstance(other, dict)  # pyrefly: ignore [implicit-bool]
-                and not isinstance(other, OrderedMap)
-                and other
+                if isinstance(other, dict)
+                and (not isinstance(other, OrderedMap))
+                and bool(other)
             ]
-            if non_empty_map_siblings:  # pyrefly: ignore [implicit-bool]
+            if len(non_empty_map_siblings) > 0:
                 return narrowed_empty_dict(non_empty_map_siblings)
     child_ctx = _nested_collection_context(value=child, ctx=ctx)
     return _format_value(
@@ -2197,12 +2195,12 @@ def _format_list_value(
     # it must use the typed empty literal (e.g. ``[]TYPE{}``) regardless
     # of any sibling opener, so that the element type is preserved.
     if (
-        not value  # pyrefly: ignore [implicit-bool]
+        len(value) == 0
         and sequence_cfg.empty_sequence is not None
         and (sequence_open_override is None or id(value) in ctx.wrap_ids)
     ):
         return sequence_cfg.empty_sequence
-    if ctx.collection_layout is CollectionLayout.MULTILINE and value:  # pyrefly: ignore [implicit-bool]
+    if ctx.collection_layout is CollectionLayout.MULTILINE and bool(value):
         return _format_multiline_collection_value(
             value=value,
             dict_open_override=None,
@@ -2217,9 +2215,9 @@ def _format_list_value(
         ref_key=ctx.ref_key,
     )
     parent_id = id(value)
-    int_formatter = ctx.list_int_formatters.get(  # pyrefly: ignore [implicit-bool]
-        id(value)
-    ) or _widened_int_formatter(items=value, spec=spec)
+    int_formatter = ctx.list_int_formatters.get(id(value))
+    if int_formatter is None:
+        int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
         spec.format_sequence_entry(
             v,
@@ -2246,7 +2244,7 @@ def _format_list_value(
     # nested empty sub-list inside a non-empty list (possible in
     # languages like Forth whose empty-sequence opener and close are
     # both empty) does not leave a dangling separator in the output.
-    non_empty_items = [item for item in items if item]  # pyrefly: ignore [implicit-bool]
+    non_empty_items = [item for item in items if item != ""]
     joined = spec.element_separator.join(non_empty_items)
     # Some languages (e.g. Python) require a trailing comma on
     # single-element sequences to avoid syntactic ambiguity.  The
@@ -2369,9 +2367,9 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
         if tuple_literal is not None:
             return tuple_literal
     if (
-        ctx.collection_layout is CollectionLayout.MULTILINE  # pyrefly: ignore [implicit-bool]
+        ctx.collection_layout is CollectionLayout.MULTILINE
         and isinstance(value, (dict, list, set, OrderedMap))
-        and value
+        and bool(value)
     ):
         return _format_multiline_collection_value(
             value=value,
@@ -2518,10 +2516,15 @@ def _opener_inference_value(
     if ctx.ref_key is _DISABLED_REF_KEY:
         return data
     if ctx.expand_refs:
+        ref_values = ctx.ref_values
         return _strip_direct_refs_for_opener(
             value=_substitute_known_refs_in_container(
                 data=data,
-                ref_values=ctx.ref_values or {},  # pyrefly: ignore [implicit-bool]
+                ref_values=(
+                    ref_values
+                    if ref_values is not None and len(ref_values) > 0
+                    else {}
+                ),
                 ref_key=ctx.ref_key,
             ),
             ref_key=ctx.ref_key,
@@ -2571,7 +2574,7 @@ def _ordered_map_open_for_ref_inference(
     """Return the ordered-map opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
     return ctx.spec.ordered_map_format_config.ordered_map_open(
-        inferred if isinstance(inferred, dict) and inferred else data  # pyrefly: ignore [implicit-bool]
+        inferred if isinstance(inferred, dict) and bool(inferred) else data
     )
 
 
@@ -2582,7 +2585,7 @@ def _dict_open_for_ref_inference(
     """Return the dictionary opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
     return ctx.spec.dict_format_config.dict_open(
-        inferred if isinstance(inferred, dict) and inferred else data  # pyrefly: ignore [implicit-bool]
+        inferred if isinstance(inferred, dict) and bool(inferred) else data
     )
 
 
@@ -2593,7 +2596,7 @@ def _sequence_open_for_ref_inference(
     """Return the sequence opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
     return ctx.spec.sequence_open(
-        inferred if isinstance(inferred, list) and inferred else data  # pyrefly: ignore [implicit-bool]
+        inferred if isinstance(inferred, list) and bool(inferred) else data
     )
 
 
@@ -2853,7 +2856,7 @@ def _filter_collection_comments(
     ):
         if not keep_element:
             pending.extend(element.before)
-            if element.inline:  # pyrefly: ignore [implicit-bool]
+            if element.inline != "":
                 pending.append(element.inline)
             continue
         elements.append(
@@ -3032,9 +3035,16 @@ def _format_collection_lines(
                 spec=spec,
                 ref_key=ctx.ref_key,
             )
-            list_int_formatter = ctx.list_int_formatters.get(  # pyrefly: ignore [implicit-bool]
-                id(list_data)
-            ) or _widened_int_formatter(items=list_data, spec=spec)
+            list_int_formatter = (
+                list_int_formatter
+                if (
+                    list_int_formatter := ctx.list_int_formatters.get(
+                        id(list_data)
+                    )
+                )
+                is not None
+                else _widened_int_formatter(items=list_data, spec=spec)
+            )
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
@@ -3153,7 +3163,7 @@ def _source_list_children_for_inference(
     """Return source children retained during reference inference."""
     children: list[Value] = []
     for child in source:
-        if ref_values:  # pyrefly: ignore [implicit-bool]
+        if ref_values is not None and len(ref_values) > 0:
             include = _resolve_ref_for_preamble(
                 value=child,
                 ref_values=ref_values,
@@ -3237,7 +3247,7 @@ def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
 
     def _visit(item: Value, /) -> None:
         """Collect empty containers and traverse populated peers."""
-        if isinstance(item, (dict, list, set)) and not item:  # pyrefly: ignore [implicit-bool]
+        if isinstance(item, (dict, list, set)) and len(item) == 0:
             ids.add(id(item))
         if isinstance(item, dict):
             for child in item.values():
@@ -3513,7 +3523,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         yaml_comment_nodes=yaml_comment_nodes,
         toml_comments=toml_comments,
         comment_root_id=(
-            id(data) if yaml_comment_nodes or toml_comments else None  # pyrefly: ignore [implicit-bool]
+            id(data)
+            if len(yaml_comment_nodes) > 0 or bool(toml_comments)
+            else None
         ),
     )
 
@@ -3541,7 +3553,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
     # Empty collections have no elements to lay out line-by-line, so
     # delegate to _format_value which already returns the correct
     # compact representation (e.g. ``{}``, ``[]``).
-    if not data and include_delimiters:  # pyrefly: ignore [implicit-bool]
+    if len(data) == 0 and include_delimiters:
         formatted: str = _format_value(
             value=data,
             dict_open_override=None,
@@ -3610,7 +3622,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
 
     body = "\n".join(lines)
 
-    if not include_delimiters or not body:  # pyrefly: ignore [implicit-bool]
+    if not include_delimiters or body == "":
         return body
 
     return _wrap_body(
@@ -3770,7 +3782,7 @@ def _apply_variable_wrapper(
     if variable_form is None:
         return result
 
-    if line_prefix and result.startswith(line_prefix):  # pyrefly: ignore [implicit-bool]
+    if line_prefix != "" and result.startswith(line_prefix):
         value = result[len(line_prefix) :]
     else:
         value = result
@@ -3952,7 +3964,11 @@ def _literalize_pre_form_impl(
     if active_ref_key is not disabled_ref_key():
         data_for_declaration = _substitute_known_refs(
             value=data,
-            ref_values=ref_values or {},  # pyrefly: ignore [implicit-bool]
+            ref_values=(
+                ref_values
+                if ref_values is not None and len(ref_values) > 0
+                else {}
+            ),
             ref_key=active_ref_key,
         )
         # A marker with no value supplied is stripped rather than left
@@ -3961,7 +3977,11 @@ def _literalize_pre_form_impl(
         # cannot change the preamble of identical code (issue #4480).
         resolution = _resolve_ref_for_preamble(
             value=data,
-            ref_values=ref_values or {},  # pyrefly: ignore [implicit-bool]
+            ref_values=(
+                ref_values
+                if ref_values is not None and len(ref_values) > 0
+                else {}
+            ),
             ref_key=active_ref_key,
         )
         data_for_preamble = resolution.value if resolution.include else []
@@ -4033,7 +4053,7 @@ def _substitute_record_nulls(
     cannot alias between parsed records. Ordered maps remain positional maps
     and are never considered records.
     """
-    if not substitutions:  # pyrefly: ignore [implicit-bool]
+    if substitutions is None or len(substitutions) == 0:
         return data
     if isinstance(data, list):
         return [
@@ -4295,7 +4315,7 @@ def literalize_apply_form(
 
     if wrap_in_file:
         content = result
-        if pre_decl:  # pyrefly: ignore [implicit-bool]
+        if len(pre_decl) > 0:
             content = "\n".join(pre_decl) + "\n" + content
         scoped = _scope_preamble_for_wrap(
             language=language,
@@ -4304,10 +4324,14 @@ def literalize_apply_form(
         )
         wrapped = language.wrap_in_file(
             content=content,
-            variable_name=variable_name or "",  # pyrefly: ignore [implicit-bool]
+            variable_name=(
+                variable_name
+                if variable_name is not None and variable_name != ""
+                else ""
+            ),
             body_preamble=scoped.body + computed.body,
         )
-        if scoped.file_scope:  # pyrefly: ignore [implicit-bool]
+        if len(scoped.file_scope) > 0:
             wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
         return LiteralizeResult(
             declaration_code=wrapped,
@@ -4352,7 +4376,7 @@ def literalize_both_forms(
     collection_layout: CollectionLayout,
 ) -> LiteralizeResult:
     """Produce combined declaration + assignment output."""
-    if bound_refs:  # pyrefly: ignore [implicit-bool]
+    if len(bound_refs) > 0:
         return literalize_bound_refs(
             source=source,
             input_format=input_format,
@@ -4412,7 +4436,7 @@ def literalize_both_forms(
         variable_name=variable_form.name,
         body_preamble=decl_preamble,
     )
-    if scoped.file_scope:  # pyrefly: ignore [implicit-bool]
+    if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,
@@ -4584,7 +4608,11 @@ def literalize_bound_refs(
     effective_ref_values: dict[str, Value] = {
         name: bound_refs[name] for name in ordered_names
     }
-    effective_ref_values.update(explicit_ref_values or {})  # pyrefly: ignore [implicit-bool]
+    effective_ref_values.update(
+        explicit_ref_values
+        if explicit_ref_values is not None and len(explicit_ref_values) > 0
+        else {}
+    )
     pre_form = literalize_pre_form(
         source=source,
         input_format=input_format,
@@ -4592,7 +4620,9 @@ def literalize_bound_refs(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
-        ref_values=effective_ref_values or None,  # pyrefly: ignore [implicit-bool]
+        ref_values=(
+            effective_ref_values if len(effective_ref_values) > 0 else None
+        ),
         ref_key=ref_key,
         record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
@@ -4845,7 +4875,7 @@ def _compose_bound_refs(
             variable_name=composition.main_variable_name,
             body_preamble=body_preamble,
         )
-    if scoped.file_scope:  # pyrefly: ignore [implicit-bool]
+    if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,
@@ -5005,7 +5035,7 @@ def reject_unbound_refs_in_file(
         for name in _collect_ref_names(value=data, ref_key=ref_key)
         if _spelled(name) not in bound
     }
-    if unbound:  # pyrefly: ignore [implicit-bool]
+    if len(unbound) > 0:
         raise RefNotSelfContainedError(
             language_name=type(language).__name__,
             ref_names=frozenset(unbound),
@@ -5049,7 +5079,7 @@ def _resolve_refs_for_inference(
     """Resolve known refs and remove unknown refs for type inference."""
     if ref_key is _DISABLED_REF_KEY:
         return value
-    if ref_values:  # pyrefly: ignore [implicit-bool]
+    if ref_values is not None and len(ref_values) > 0:
         resolved = _resolve_ref_for_preamble(
             value=value,
             ref_values=ref_values,
@@ -5174,7 +5204,7 @@ def _compute_call_arg_ref_consume_inhibited_names(
     consume form intact, matching the historical behavior for callers
     that omit ``ref_values``.
     """
-    if not ref_values:  # pyrefly: ignore [implicit-bool]
+    if len(ref_values) == 0:
         return frozenset[str]()
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
@@ -5303,7 +5333,7 @@ def _strip_call_arg_refs_for_preamble(
     Refs nested inside list or dict argument values are also stripped
     recursively.
     """
-    if ref_values:  # pyrefly: ignore [implicit-bool]
+    if len(ref_values) > 0:
         resolved = _resolve_ref_for_preamble(
             value=data,
             ref_values=ref_values,
@@ -5478,7 +5508,7 @@ def _format_prefix_call_args(
     When *kw_prefix* is empty the call is positional (values only).
     Otherwise each value is emitted as ``{kw_prefix}{name}{sep}{value}``.
     """
-    if not kw_prefix:  # pyrefly: ignore [implicit-bool]
+    if kw_prefix == "":
         return sep.join(formatted)
     _validate_call_parameter_count(params=params, formatted=formatted)
     return sep.join(
@@ -5548,7 +5578,7 @@ def _format_call_args(
         for slot_index, arg_value in enumerate(iterable=values)
     ]
 
-    if not formatted and not language.allows_empty_call_parens:  # pyrefly: ignore [implicit-bool]
+    if len(formatted) == 0 and not language.allows_empty_call_parens:
         return ""
 
     match style:
@@ -5629,7 +5659,7 @@ def _assemble_bare_call_expr(
         case PostfixCallStyle():
             return (
                 f"{args_str} {target_function}"
-                if args_str  # pyrefly: ignore [implicit-bool]
+                if args_str != ""
                 else target_function
             )
         case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
@@ -5637,20 +5667,20 @@ def _assemble_bare_call_expr(
         case PrefixCallStyle(arg_separator=sep):
             inside = (
                 f"{target_function}{sep}{args_str}"
-                if args_str  # pyrefly: ignore [implicit-bool]
+                if args_str != ""
                 else target_function
             )
             return f"({inside})"
         case DottedCommandCallStyle(arg_separator=sep):
             return (
                 f"{target_function}{sep}{args_str}"
-                if args_str  # pyrefly: ignore [implicit-bool]
+                if args_str != ""
                 else target_function
             )
         case CommandCallStyle(arg_separator=sep):
             return (
                 f"{target_function}{sep}{args_str}"
-                if args_str  # pyrefly: ignore [implicit-bool]
+                if args_str != ""
                 else target_function
             )
         case _ as unreachable:
@@ -5711,7 +5741,7 @@ def _append_trailing_comment(
     block-comment form (``/* ... */``), which is valid on a single
     line.  An empty *comment* leaves *rendered* unchanged.
     """
-    if not comment:  # pyrefly: ignore [implicit-bool]
+    if comment == "":
         return rendered
     cfg = language.comment_config
     escaped_comment = neutralize_inline_comment(
@@ -6109,7 +6139,7 @@ def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
         nested=False,
         hoist_nested_inline=False,
     )
-    if collection_comments.trailing:  # pyrefly: ignore [implicit-bool]
+    if len(collection_comments.trailing) > 0:
         return True
     return any(element.before for element in collection_comments.elements)
 
@@ -6317,7 +6347,9 @@ def _validate_call_target(
     target_function_parts: tuple[str, ...],
 ) -> None:
     """Raise when a dotted call target contains an unsafe component."""
-    if not target_function or any(not part for part in target_function_parts):  # pyrefly: ignore [implicit-bool]
+    if target_function == "" or any(
+        part == "" for part in target_function_parts
+    ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
             target_function=target_function,
@@ -6359,7 +6391,7 @@ def _validate_call_target(
     # already carries (issue #4495).
     bare_target_identifiers: frozenset[str] = (
         language_cls.reserved_bare_call_target_identifiers
-        if not target_function_parts[1:]  # pyrefly: ignore [implicit-bool]
+        if len(target_function_parts[1:]) == 0
         else frozenset()
     )  # ty: ignore[unsound-assignment]
     if is_reserved_identifier(
@@ -6534,7 +6566,7 @@ def _validate_wrapped_call_scaffold(
     variable_form: NewVariable | ExistingVariable | None,
 ) -> None:
     """Reject call inputs that collide with or empty a file scaffold."""
-    if not arg_values:  # pyrefly: ignore [implicit-bool]
+    if len(arg_values) == 0:
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
             reason=(
@@ -6610,7 +6642,7 @@ def _validate_wrapped_call_scaffold(
     colliding_names = converted_bound_ref_names.intersection(
         target_function_parts
     )
-    if colliding_names:  # pyrefly: ignore [implicit-bool]
+    if len(colliding_names) > 0:
         collision = min(colliding_names)
         raise UnsupportedCallShapeError(
             language_name=type(language).__name__,
@@ -6812,7 +6844,7 @@ def _wrap_call_in_file(
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
     full_preamble = preamble + call_binding_pragmas + preamble_stubs
-    if full_preamble:  # pyrefly: ignore [implicit-bool]
+    if len(full_preamble) > 0:
         wrapped = "\n".join(full_preamble) + "\n" + wrapped
     return wrapped
 
@@ -6939,7 +6971,7 @@ def _wrap_call_result_in_file(
     otherwise.  Keeping this dispatch out of :func:`literalize_call`
     keeps that public entry point within its complexity budget.
     """
-    if materialized_bound_refs:  # pyrefly: ignore [implicit-bool]
+    if len(materialized_bound_refs) > 0:
         if variable_form is not None:
             # The ref declarations are composed through
             # ``wrap_calls_with_declarations``, which routes to a
@@ -7283,7 +7315,11 @@ def literalize_call_parsed(
         data=data,
         ref_key=ref_key,
         ref_case=ref_case,
-        bound_ref_names=frozenset(bound_refs or {}),  # pyrefly: ignore [implicit-bool]
+        bound_ref_names=(
+            frozenset(bound_refs)
+            if bound_refs is not None and len(bound_refs) > 0
+            else frozenset()
+        ),
         language=language,
         wrap_in_file=wrap_in_file,
     )
@@ -7331,7 +7367,11 @@ def literalize_call_parsed(
         style=style,
         variable_form=variable_form,
         wrap_in_file=wrap_in_file,
-        bound_ref_names=tuple((bound_refs or {}).keys()),  # pyrefly: ignore [implicit-bool]
+        bound_ref_names=(
+            tuple(bound_refs)
+            if bound_refs is not None and len(bound_refs) > 0
+            else ()
+        ),
     )
     if (
         isinstance(style, DottedCommandCallStyle)
@@ -7365,19 +7405,29 @@ def literalize_call_parsed(
     )
     target_function = language.format_call_target(target_function_parts)
 
+    source_ref_values: Mapping[str, ValueInput] = (
+        ref_values
+        if ref_values is not None and len(ref_values) > 0
+        else dict[str, ValueInput]()
+    )
     explicit_ref_values: dict[str, Value] = {
         name: materialize_value_input(
             value=value,
             argument_name="ref_values",
         )
-        for name, value in (ref_values or {}).items()  # pyrefly: ignore [implicit-bool]
+        for name, value in source_ref_values.items()
     }
+    source_bound_refs: Mapping[str, ValueInput] = (
+        bound_refs
+        if bound_refs is not None and len(bound_refs) > 0
+        else dict[str, ValueInput]()
+    )
     materialized_bound_refs: dict[str, Value] = {
         name: materialize_value_input(
             value=value,
             argument_name="bound_refs",
         )
-        for name, value in (bound_refs or {}).items()  # pyrefly: ignore [implicit-bool]
+        for name, value in source_bound_refs.items()
     }
     # ``bound_refs`` entries double as ``ref_values`` so a name need not
     # be repeated in both mappings; an explicit ``ref_values`` entry for
@@ -7691,7 +7741,7 @@ def _literalize_call_with_declarations(
             scoped.body + unified_body_preamble + extra_body_preamble
         ),
     )
-    if scoped.file_scope:  # pyrefly: ignore [implicit-bool]
+    if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
         declaration_code=wrapped,

@@ -77,8 +77,12 @@ def _run_fixture(
 def main() -> None:
     """Run each PureScript golden file end-to-end."""
     filenames = sys.argv[1:]
-    purs_path = shutil.which(cmd="purs") or "purs"  # pyrefly: ignore [implicit-bool]
-    node_path = shutil.which(cmd="node") or "node"  # pyrefly: ignore [implicit-bool]
+    purs_path = shutil.which(cmd="purs")
+    if purs_path is None or purs_path == "":
+        purs_path = "purs"
+    node_path = shutil.which(cmd="node")
+    if node_path is None or node_path == "":
+        node_path = "node"
     failed = False
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)

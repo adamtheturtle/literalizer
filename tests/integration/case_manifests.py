@@ -343,7 +343,7 @@ class LanguageSelection(  # noqa: NOD001
         """Reject a narrowing stated twice, or stated without a
         reason.
         """
-        if self.languages and self.gates:  # pyrefly: ignore [implicit-bool]
+        if len(self.languages) > 0 and bool(self.gates):
             msg = "declare either languages or gates, not both"
             raise ValueError(msg)
         if bool(self.languages) != (self.languages_reason is not None):
@@ -355,7 +355,7 @@ class LanguageSelection(  # noqa: NOD001
     @beartype
     def admits_language(self, *, lang_cls: literalizer.LanguageCls) -> bool:
         """Return whether this narrowing selects *lang_cls*."""
-        if self.languages:  # pyrefly: ignore [implicit-bool]
+        if len(self.languages) > 0:
             return lang_cls in self.languages
         return gates_admit(
             gates=self.gates,
@@ -448,7 +448,8 @@ class _OwnedCaseSpec(
         info: ValidationInfo,  # pyrefly: ignore [explicit-any]
     ) -> Mapping[str, object]:
         """Add the owning case directory name from the load context."""
-        context: Mapping[str, str] = info.context or {}  # pyrefly: ignore [implicit-bool]  # ty: ignore[unsound-assignment]
+        raw_context = info.context
+        context: Mapping[str, str] = {} if raw_context is None else raw_context  # ty: ignore[unsound-assignment]
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
@@ -638,7 +639,7 @@ class CallCaseSpec(  # noqa: NOD001
         if len(axes) != len(set(axes)):
             msg = "duplicate call variant axis"
             raise ValueError(msg)
-        if self.variant_only and not self.variants:  # pyrefly: ignore [implicit-bool]
+        if self.variant_only and len(self.variants) == 0:
             msg = "variant_only requires at least one call variant axis"
             raise ValueError(msg)
         return self
@@ -704,10 +705,10 @@ class _CaseManifestData(  # noqa: NOD001
         if len(self.roles) != len(set(self.roles)):
             msg = "roles contains a duplicate entry"
             raise ValueError(msg)
-        if self.suites and self.owner is not None:  # pyrefly: ignore [implicit-bool]
+        if len(self.suites) > 0 and self.owner is not None:
             msg = "suites and owner are mutually exclusive"
             raise ValueError(msg)
-        if not self.suites and self.owner is None:  # pyrefly: ignore [implicit-bool]
+        if len(self.suites) == 0 and self.owner is None:
             msg = "declare suites or a specialized owner"
             raise ValueError(msg)
         if (
@@ -928,7 +929,7 @@ def case_dir_names_for_role(
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if role in manifest.roles
     )
-    if not names:  # pyrefly: ignore [implicit-bool]
+    if len(names) == 0:
         msg = (
             f"no {MANIFEST_NAME} under {cases_dir} declares roles = [{role!r}]"
         )

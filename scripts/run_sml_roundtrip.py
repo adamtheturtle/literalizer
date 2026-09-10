@@ -157,7 +157,9 @@ def main() -> None:
         capabilities=Sml.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    mlton = shutil.which(cmd="mlton") or "mlton"  # pyrefly: ignore [implicit-bool]
+    mlton = shutil.which(cmd="mlton")
+    if mlton is None or mlton == "":
+        mlton = "mlton"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.sml",

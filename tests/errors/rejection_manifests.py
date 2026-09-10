@@ -403,7 +403,7 @@ class CallSpec(  # noqa: NOD001
         if has_comment_source and has_comment_source_bare:
             msg = "declare comment_source or comment_source_bare, not both"
             raise ValueError(msg)
-        if self.api != "literalize" and self.modifiers:  # pyrefly: ignore [implicit-bool]
+        if self.api != "literalize" and bool(self.modifiers):
             msg = "modifiers apply to api = 'literalize'"
             raise ValueError(msg)
         return self
@@ -443,7 +443,7 @@ class _RejectionData(  # noqa: NOD001
         if bool(self.gates) == bool(self.languages):
             msg = "declare either gates or languages, not both"
             raise ValueError(msg)
-        if self.languages and self.accepts:  # pyrefly: ignore [implicit-bool]
+        if len(self.languages) > 0 and bool(self.accepts):
             msg = "accepts applies to a gated manifest"
             raise ValueError(msg)
         accepting = tuple(
@@ -473,7 +473,7 @@ class _RejectionData(  # noqa: NOD001
         unknown = sorted(
             set(self.languages + accepting) - set(LANGUAGES_BY_NAME)
         )
-        if unknown:  # pyrefly: ignore [implicit-bool]
+        if len(unknown) > 0:
             msg = f"unknown language(s) {unknown}"
             raise ValueError(msg)
         if self.option is not None and self.option not in OPTIONS:
@@ -484,7 +484,7 @@ class _RejectionData(  # noqa: NOD001
             gates=self.gates,
             names=accepting,
         )
-        if unadmitted:  # pyrefly: ignore [implicit-bool]
+        if len(unadmitted) > 0:
             msg = f"accepts language(s) not admitted by gates {unadmitted}"
             raise ValueError(msg)
         return self
@@ -507,7 +507,7 @@ class _RejectionData(  # noqa: NOD001
             for placeholder in _placeholders(template=template)
             if placeholder != VALUE_PLACEHOLDER
         )
-        if unknown:  # pyrefly: ignore [implicit-bool]
+        if len(unknown) > 0:
             msg = f"unknown placeholder(s) {unknown}"
             raise ValueError(msg)
         substitutes = any(
@@ -604,7 +604,7 @@ def load_rejection_manifests(
         load_rejection_manifest(manifest_path=path)
         for path in sorted(rejections_dir.glob(pattern=f"*/{MANIFEST_NAME}"))
     ]
-    if not manifests:  # pyrefly: ignore [implicit-bool]
+    if len(manifests) == 0:
         msg = f"no {MANIFEST_NAME} found under {rejections_dir}"
         raise RejectionManifestError(msg)
     return tuple(manifests)

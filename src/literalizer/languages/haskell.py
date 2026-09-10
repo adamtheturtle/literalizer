@@ -137,7 +137,7 @@ def _haskell_arg_type_str(
     emits ``f()`` at the call site).
     """
     if curried:
-        if not params:  # pyrefly: ignore [implicit-bool]
+        if len(params) == 0:
             return None
         return " -> ".join(type_name for _ in params)
     if len(params) == 1:
@@ -211,7 +211,7 @@ def _build_haskell_call_stub_lines(
     else:
         field_type = f"{arg_type} -> {ret}"
         construction_lambda = f"\\{lambda_wildcards} -> {body}"
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = root.capitalize() + "Type_"
         return (
             f"data {cls} = {cls} {{ {method} :: {field_type} }}",
@@ -294,7 +294,7 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
     if value.tzinfo is not None:
         value = normalize_datetime_utc(value=value, language_name="Haskell")
     total_seconds = value.hour * 3600 + value.minute * 60 + value.second
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         picos = total_seconds * 10**12 + value.microsecond * 10**6
         time_part = f"picosecondsToDiffTime {picos}"
     else:
@@ -666,7 +666,7 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     """
     match data:
         case datetime.datetime():
-            return not data.microsecond  # pyrefly: ignore [implicit-bool]
+            return data.microsecond == 0
         case datetime.date():
             return False
         case dict():
@@ -751,7 +751,7 @@ def _haskell_base_constructors(
             ),
             (frozenset({set}), f"{p}Set [{type_name}]"),
         )
-        if types & type_set  # pyrefly: ignore [implicit-bool]
+        if len(types & type_set) > 0
     ]
 
 
@@ -882,7 +882,7 @@ def _haskell_compute_preamble(
 
     # Emit imports first, then data declaration, then instances.
     imports: list[str] = []
-    if import_items:  # pyrefly: ignore [implicit-bool]
+    if len(import_items) > 0:
         imports.append("import Data.Time (" + ", ".join(import_items) + ")")
     if needs_is_string:
         imports.append(cfg.is_string_import)
@@ -2084,7 +2084,7 @@ class Haskell(metaclass=LanguageCls):
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
-        if not variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name == "":
             # Call mode: bare expressions are not valid at module
             # top level in Haskell, so wrap them in ``main``. Each call
             # statement is bound via ``_ <- `` so that stubs returning
@@ -2139,7 +2139,7 @@ class Haskell(metaclass=LanguageCls):
         """
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         indented_calls = "\n".join(
-            f"{self.indent}_ <- {line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
+            f"{self.indent}_ <- {line}" if line.strip() != "" else line
             for line in calls.split(sep="\n")
         )
         declaration_block = "\n".join(declarations)
@@ -2147,7 +2147,7 @@ class Haskell(metaclass=LanguageCls):
             f"module {self.module_name} where\n"
             + preamble
             + "\n"
-            + (declaration_block + "\n" if declaration_block else "")  # pyrefly: ignore [implicit-bool]
+            + (declaration_block + "\n" if declaration_block != "" else "")
             + "main :: IO ()\nmain = do\n"
             + indented_calls
             + f"\n{self.indent}pure ()"

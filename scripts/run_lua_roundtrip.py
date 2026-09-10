@@ -74,7 +74,9 @@ def main() -> None:
         capabilities=Lua.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    lua = shutil.which(cmd="lua") or "lua"  # pyrefly: ignore [implicit-bool]
+    lua = shutil.which(cmd="lua")
+    if lua is None or lua == "":
+        lua = "lua"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.lua",

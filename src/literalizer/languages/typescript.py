@@ -271,7 +271,7 @@ def _ts_set_hint(
     recurse: Callable[..., str],
 ) -> str:
     """Derive a TypeScript type annotation for a set value."""
-    if not data:  # pyrefly: ignore [implicit-bool]
+    if len(data) == 0:
         return "Set<unknown>"
     elem_types = sorted(recurse(data=e) for e in data)
     return f"Set<{_ts_element_union(types=elem_types)}>"
@@ -285,7 +285,7 @@ def _ts_list_hint(
     sequence_is_tuple: bool,
 ) -> str:
     """Derive a TypeScript type annotation for a list value."""
-    if not data:  # pyrefly: ignore [implicit-bool]
+    if len(data) == 0:
         return "readonly []" if sequence_is_tuple else "unknown[]"
     elem_types = [recurse(data=e) for e in data]
     if sequence_is_tuple:
@@ -315,7 +315,7 @@ def _ts_type_hint(
         case dict():
             hint = _ts_dict_hint(
                 is_ordered=isinstance(data, OrderedMap),
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 val_types=[recurse(data=v) for v in data.values()],
                 dict_hint_template=dict_hint_template,
             )
@@ -366,7 +366,7 @@ def _ts_inference_widens_unsafely(
     of the dict format, so they qualify unconditionally.
     """
     match data:
-        case dict() if not data:  # pyrefly: ignore [implicit-bool]
+        case dict() if len(data) == 0:
             return True
         case dict() if dict_is_object_literal or isinstance(data, OrderedMap):
             return (
@@ -374,7 +374,7 @@ def _ts_inference_widens_unsafely(
                 and len({value_hint(value) for value in data.values()}) == 1
             )
         case list() | set():
-            return not data  # pyrefly: ignore [implicit-bool]
+            return len(data) == 0
         case _:
             return False
 

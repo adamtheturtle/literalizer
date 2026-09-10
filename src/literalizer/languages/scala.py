@@ -223,7 +223,12 @@ def _format_scala_bigint_literal(value: int) -> str:
 @beartype
 def _format_datetime_scala(value: datetime.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
-    timezone_name = value.tzname() or "UTC"  # pyrefly: ignore [implicit-bool]
+    raw_timezone_name = value.tzname()
+    timezone_name = (
+        raw_timezone_name
+        if raw_timezone_name is not None and raw_timezone_name != ""
+        else "UTC"
+    )
     nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
@@ -340,7 +345,7 @@ def _scala_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = f"_{root.capitalize()}Type"
         return (
             f"class {cls} {{ def {method}({param_list}): Any = null }}",
@@ -1329,7 +1334,7 @@ class Scala(metaclass=LanguageCls):
         )
         seen_names: set[str] = set()
         for keys, name in self.record_shape_names.items():
-            if not _PASCAL_CASE_IDENTIFIER.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if _PASCAL_CASE_IDENTIFIER.match(string=name) is None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which is not a PascalCase Scala "
@@ -1343,7 +1348,7 @@ class Scala(metaclass=LanguageCls):
                     f"code itself uses."
                 )
                 raise InvalidRecordNameError(msg)
-            if auto_name_pattern.match(string=name):  # pyrefly: ignore [implicit-bool]
+            if auto_name_pattern.match(string=name) is not None:
                 msg = (
                     f"record_shape_names entry for keys {sorted(keys)!r} "
                     f"maps to {name!r}, which collides with the "
@@ -1431,7 +1436,12 @@ class Scala(metaclass=LanguageCls):
         element_type: type = (
             int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt
         )
-        return self._scalar_field_type_resolver(element_type) or "Any"  # pyrefly: ignore [implicit-bool]
+        resolved_type = self._scalar_field_type_resolver(element_type)
+        return (
+            resolved_type
+            if resolved_type is not None and resolved_type != ""
+            else "Any"
+        )
 
     def _scala_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
         self,
@@ -1492,13 +1502,23 @@ class Scala(metaclass=LanguageCls):
             case list():
                 opener = self.sequence_open(value)
             case bool():
-                return self._scalar_field_type_resolver(bool) or "Any"  # pyrefly: ignore [implicit-bool]
+                resolved_type = self._scalar_field_type_resolver(bool)
+                return (
+                    resolved_type
+                    if resolved_type is not None and resolved_type != ""
+                    else "Any"
+                )
             case int() if not I64_MIN <= value <= I64_MAX:
                 return "BigInt"
             case int():
                 return self._scala_int_magnitude_field_type(value)
             case _:
-                return self._scalar_field_type_resolver(type(value)) or "Any"  # pyrefly: ignore [implicit-bool]
+                resolved_type = self._scalar_field_type_resolver(type(value))
+                return (
+                    resolved_type
+                    if resolved_type is not None and resolved_type != ""
+                    else "Any"
+                )
         head = opener[: -len("(")]
         return _SCALA_UNTYPED_OPENERS.get(head, head)
 
@@ -1581,7 +1601,7 @@ class Scala(metaclass=LanguageCls):
         has the ``Any`` top type (a ``null`` value).
         """
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
-        if not scalars:  # pyrefly: ignore [implicit-bool]
+        if len(scalars) == 0:
             return None
         scalar_types = {
             self._scala_record_field_type(
@@ -1813,7 +1833,9 @@ class Scala(metaclass=LanguageCls):
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
             set_opener_template=(
-                self.set_format.value.set_opener_template or None  # pyrefly: ignore [implicit-bool]
+                self.set_format.value.set_opener_template
+                if self.set_format.value.set_opener_template != ""
+                else None
             ),
             narrow_dict_values=False,
             narrow_list_values=True,

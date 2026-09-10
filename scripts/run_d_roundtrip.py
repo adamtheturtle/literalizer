@@ -61,7 +61,9 @@ def main() -> None:
         capabilities=D.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dmd = shutil.which(cmd="dmd") or "dmd"  # pyrefly: ignore [implicit-bool]
+    dmd = shutil.which(cmd="dmd")
+    if dmd is None or dmd == "":
+        dmd = "dmd"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.d",

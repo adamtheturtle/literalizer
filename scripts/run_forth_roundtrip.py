@@ -115,7 +115,9 @@ def main() -> None:
         json_text=json_text,
         ffl_path=ffl_path,
     )
-    gforth = shutil.which(cmd="gforth") or "gforth"  # pyrefly: ignore [implicit-bool]
+    gforth = shutil.which(cmd="gforth")
+    if gforth is None or gforth == "":
+        gforth = "gforth"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.fth",

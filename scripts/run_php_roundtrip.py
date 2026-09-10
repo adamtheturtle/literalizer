@@ -56,7 +56,9 @@ def main() -> None:
         capabilities=Php.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    php = shutil.which(cmd="php") or "php"  # pyrefly: ignore [implicit-bool]
+    php = shutil.which(cmd="php")
+    if php is None or php == "":
+        php = "php"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.php",

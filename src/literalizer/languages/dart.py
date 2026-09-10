@@ -124,7 +124,7 @@ def _format_datetime_dart(value: datetime.datetime) -> str:
         f"{value.year}, {value.month}, {value.day}, {value.hour}, "
         f"{value.minute}, {value.second}"
     )
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         milliseconds, microseconds = divmod(value.microsecond, 1000)
         args += f", {milliseconds}, {microseconds}"
     return f"DateTime.utc({args})"
@@ -167,7 +167,9 @@ def _escape_trailing_whitespace(match: re.Match[str]) -> str:
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Dart triple-quoted string."""
     first_line, first_newline, _ = value.partition("\n")
-    escape_first_newline = bool(first_newline) and not first_line.strip(" \t")  # pyrefly: ignore [implicit-bool]
+    escape_first_newline = (
+        bool(first_newline) and first_line.strip(" \t") == ""
+    )
     escaped = (
         value.replace("\\", "\\\\")
         .replace("\0", "\\x00")
@@ -228,7 +230,7 @@ def _validate_dart_mixed_numeric_data(
     else:
         items = []
 
-    if items and infer_element_type(items=items) is MixedNumeric:  # pyrefly: ignore [implicit-bool]
+    if len(items) > 0 and infer_element_type(items=items) is MixedNumeric:
         for item in items:
             if (
                 isinstance(item, int)
@@ -354,7 +356,10 @@ def _dart_opener_hint(
     language's default ones.
     """
     arguments = opener.removesuffix(delimiter)
-    return f"{prefix}{arguments or f'<{default_arguments}>'}"  # pyrefly: ignore [implicit-bool]
+    resolved_arguments = (
+        arguments if arguments != "" else f"<{default_arguments}>"
+    )
+    return f"{prefix}{resolved_arguments}"
 
 
 @beartype
@@ -393,13 +398,13 @@ def _dart_type_hint(
         case set():
             hint = _dart_set_hint(
                 elem_types=sorted({recurse(data=e) for e in data}),
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 default_set_element_type=default_set_element_type,
             )
         case list() if sequence_is_tuple:
             hint = _dart_list_hint(
                 elem_types=[recurse(data=e) for e in data],
-                is_empty=not data,  # pyrefly: ignore [implicit-bool]
+                is_empty=len(data) == 0,
                 sequence_is_tuple=sequence_is_tuple,
             )
         case list():
@@ -474,7 +479,7 @@ def _dart_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
             f"class {cls} {{ dynamic {method}({param_list}) => null; }}",
@@ -1069,7 +1074,7 @@ class Dart(metaclass=LanguageCls):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap code in a valid file."""
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             return wrap_in_file_noop(
                 content=content,
                 variable_name=variable_name,
@@ -1080,7 +1085,7 @@ class Dart(metaclass=LanguageCls):
         # declarations from reference values go inside void main(). Add a
         # top-level my_data sentinel so the CI lint harness can import it.
         indented = "\n".join(
-            f"{self.indent}{line}" if line.strip() else line  # pyrefly: ignore [implicit-bool]
+            f"{self.indent}{line}" if line.strip() != "" else line
             for line in content.split(sep="\n")
         )
         return "\n".join(

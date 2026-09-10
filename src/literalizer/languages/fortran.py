@@ -136,7 +136,7 @@ def _format_fortran_string(value: str) -> str:
     for character in value:
         candidate = chunk + character
         if (
-            chunk  # pyrefly: ignore [implicit-bool]
+            chunk != ""
             and len(_format_fortran_string_unwrapped(value=candidate))
             > _FORTRAN_STRING_CHUNK_LENGTH
         ):
@@ -365,7 +365,7 @@ def _add_continuation(value: str) -> str:
     for i, line in enumerate(iterable=lines):
         is_last = i == len(lines) - 1
         stripped = line.strip()
-        is_pure_comment = not stripped or stripped.startswith("!")  # pyrefly: ignore [implicit-bool]
+        is_pure_comment = stripped == "" or stripped.startswith("!")
         if is_last or is_pure_comment or stripped.endswith("&"):
             result.append(line)
         else:
@@ -544,22 +544,28 @@ def _fortran_call_stub(
     ``arg``.
     """
     method = parts[-1]
-    clean_params = [p.lstrip("_") or p for p in params]  # pyrefly: ignore [implicit-bool]
+    clean_params = [
+        p.lstrip("_") if p.lstrip("_") != "" else p for p in params
+    ]
 
     if stub_return is StubReturn.VOID:
-        param_str = f"({', '.join(clean_params)})" if clean_params else "()"  # pyrefly: ignore [implicit-bool]
+        param_str = (
+            f"({', '.join(clean_params)})" if len(clean_params) > 0 else "()"
+        )
         lines: list[str] = [f"subroutine {method}{param_str}"]
         lines.append(f"{indent}implicit none")
-        if clean_params:  # pyrefly: ignore [implicit-bool]
+        if len(clean_params) > 0:
             joined = ", ".join(clean_params)
             lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
         lines.append(f"end subroutine {method}")
         return ("\n".join(lines),)
 
-    param_str = f"({', '.join(clean_params)})" if clean_params else "()"  # pyrefly: ignore [implicit-bool]
+    param_str = (
+        f"({', '.join(clean_params)})" if len(clean_params) > 0 else "()"
+    )
     lines = [f"function {method}{param_str} result(r)"]
     lines.append(f"{indent}implicit none")
-    if clean_params:  # pyrefly: ignore [implicit-bool]
+    if len(clean_params) > 0:
         joined = ", ".join(clean_params)
         lines.append(f"{indent}type(fval_t), intent(in) :: {joined}")
     lines.append(f"{indent}type(fval_t) :: r")
@@ -1065,7 +1071,7 @@ class Fortran(metaclass=LanguageCls):
         after the executable statements in *content*.
         """
         content = _wrap_fortran_source_lines(content)
-        if variable_name:  # pyrefly: ignore [implicit-bool]
+        if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
                 body_preamble=body_preamble,

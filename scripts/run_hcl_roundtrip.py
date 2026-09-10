@@ -62,7 +62,9 @@ def main() -> None:
         capabilities=Hcl.variant_metadata.round_trip_capabilities,
     )
     document = _build_document(json_text=json_text)
-    hcl2json = shutil.which(cmd="hcl2json") or "hcl2json"  # pyrefly: ignore [implicit-bool]
+    hcl2json = shutil.which(cmd="hcl2json")
+    if hcl2json is None or hcl2json == "":
+        hcl2json = "hcl2json"
     with tempfile.TemporaryDirectory() as tmpdir_name:
         source_path = Path(tmpdir_name) / "main.hcl"
         _ = source_path.write_text(data=document, encoding="utf-8")

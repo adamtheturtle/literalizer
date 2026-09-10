@@ -60,7 +60,9 @@ def _build_program() -> str:
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()
-    rustc = shutil.which(cmd="rustc") or "rustc"  # pyrefly: ignore [implicit-bool]
+    rustc = shutil.which(cmd="rustc")
+    if rustc is None or rustc == "":
+        rustc = "rustc"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rs",

@@ -70,7 +70,9 @@ def main() -> None:
     # `Install apt packages` step does not replay the package's
     # `update-alternatives` postinst on cache hit, so `/usr/bin/guile`
     # is missing (mirrors the `Lint Scheme` step).
-    guile = shutil.which(cmd="guile-3.0") or "guile-3.0"  # pyrefly: ignore [implicit-bool]
+    guile = shutil.which(cmd="guile-3.0")
+    if guile is None or guile == "":
+        guile = "guile-3.0"
     # `LITERALIZER_GUILE_JSON_PATH` points at the guile-json checkout
     # (the `Install guile-json` step in `.github/workflows/lint.yml`
     # exports it).  Adding it via `-L` puts `json.scm` on Guile's

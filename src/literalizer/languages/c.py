@@ -302,7 +302,7 @@ def _all_record_shaped(items: list[Value], /) -> bool:
     formatted, so a list reaching this predicate is single-shape and
     the deduced ``struct RecordN[N]`` member is well-formed.
     """
-    if not items:  # pyrefly: ignore [implicit-bool]
+    if len(items) == 0:
         return False
     return all(_c_record_dict(item) for item in items)
 
@@ -587,15 +587,17 @@ def _c_call_stub(
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = value_type if is_value else "void"
-    proto = ", ".join([value_type] * len(params)) if params else "void"  # pyrefly: ignore [implicit-bool]
+    proto = (
+        ", ".join([value_type] * len(params)) if len(params) > 0 else "void"
+    )
     stub_params = ", ".join(
         _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
     )
-    stub_signature = stub_params or "void"  # pyrefly: ignore [implicit-bool]
+    stub_signature = stub_params if stub_params != "" else "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = f" return {value_zero};" if is_value else ""
-    has_body = discards or is_value  # pyrefly: ignore [implicit-bool]
-    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"  # pyrefly: ignore [implicit-bool]
+    has_body = discards if discards != "" else is_value
+    stub_body = f"{{{discards}{return_stmt} }}" if bool(has_body) else "{}"
     # Long uniform-typed parameter lists trip clang-tidy's
     # ``bugprone-easily-swappable-parameters`` check past its
     # name-suffix-dissimilarity silencing heuristic.  The stub is
@@ -1403,7 +1405,9 @@ class C(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = (
-            f"\n{self.indent}(void){variable_name};" if variable_name else ""  # pyrefly: ignore [implicit-bool]
+            f"\n{self.indent}(void){variable_name};"
+            if variable_name != ""
+            else ""
         )
         return (
             f"int {self.module_name}(void) {{\n{content}{use_line}\n"

@@ -66,7 +66,9 @@ def main() -> None:
         capabilities=Kotlin.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    kotlin = shutil.which(cmd="kotlin") or "kotlin"  # pyrefly: ignore [implicit-bool]
+    kotlin = shutil.which(cmd="kotlin")
+    if kotlin is None or kotlin == "":
+        kotlin = "kotlin"
     # ``LITERALIZER_LINT_CLASSPATH`` is set by the ``lint-kotlin`` job
     # to ``/tmp/kotlinx-jars/*`` for the per-fixture compile host.  The
     # ``kotlin`` script wrapper does not forward the JVM ``dir/*``

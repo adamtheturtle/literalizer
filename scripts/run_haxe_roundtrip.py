@@ -59,7 +59,9 @@ def main() -> None:
         capabilities=Haxe.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    haxe = shutil.which(cmd="haxe") or "haxe"  # pyrefly: ignore [implicit-bool]
+    haxe = shutil.which(cmd="haxe")
+    if haxe is None or haxe == "":
+        haxe = "haxe"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="Main.hx",

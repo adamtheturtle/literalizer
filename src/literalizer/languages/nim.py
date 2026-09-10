@@ -141,11 +141,13 @@ def _reject_uninferrable_native_sequences(*, data: Value) -> None:
             for child in data.values():
                 _reject_uninferrable_native_sequences(data=child)
         case list():
-            all_empty_lists = bool(data) and all(item == [] for item in data)
+            all_empty_lists = len(data) > 0 and all(
+                item == [] for item in data
+            )
             if (
-                data  # pyrefly: ignore [implicit-bool]
+                len(data) > 0
                 and not all_empty_lists
-                and infer_element_type(items=data) is None
+                and (infer_element_type(items=data) is None)
             ):
                 msg = (
                     "Nim native sequences require one inferable element "
@@ -198,10 +200,10 @@ def _format_string_multiline(value: str) -> str:
     if value.startswith(("\n", '"')) or value.endswith('"'):
         return format_string_backslash_nul_hex(value=value)
     if (
-        '"""' in value  # pyrefly: ignore [implicit-bool]
-        or "\0" in value
+        '"""' in value
+        or "\x00" in value
         or "\r" in value
-        or _TRAILING_LINE_WHITESPACE.search(string=value)
+        or bool(_TRAILING_LINE_WHITESPACE.search(string=value))
     ):
         return format_string_backslash_nul_hex(value=value)
     return f'"""{value}"""'
@@ -289,7 +291,7 @@ def _apply_nim_variable_declaration(
     """
     use_sequence = (
         isinstance(_data, list)
-        and _data  # pyrefly: ignore [implicit-bool]
+        and len(_data) > 0
         and (
             force_sequence
             or (
@@ -301,7 +303,7 @@ def _apply_nim_variable_declaration(
             )
         )
     )
-    if use_sequence:  # pyrefly: ignore [implicit-bool]
+    if use_sequence:
         return f"{keyword} {name} = @{value}"
     if force_sequence or not uses_json_wrap:
         return f"{keyword} {name} = {value}"
@@ -361,9 +363,9 @@ def _apply_nim_variable_assignment(
     simple scalars.
     """
     if (
-        uses_typed_literal_for_scalars  # pyrefly: ignore [implicit-bool]
+        uses_typed_literal_for_scalars
         and isinstance(_data, list)
-        and _data  # pyrefly: ignore [implicit-bool]
+        and (len(_data) > 0)
         and all(
             isinstance(item, (str, int, float, bool, bytes)) for item in _data
         )
@@ -587,7 +589,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
                 return int
             case list():
                 child_types = {_literal_type(item=child) for child in item}
-                if not child_types:  # pyrefly: ignore [implicit-bool]
+                if len(child_types) == 0:
                     return (list, None)
                 if len(child_types) == 1:
                     return (list, next(iter(child_types)))
@@ -596,7 +598,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
                 child_types = {
                     _literal_type(item=child) for child in item.values()
                 }
-                if not child_types:  # pyrefly: ignore [implicit-bool]
+                if len(child_types) == 0:
                     return (dict, None)
                 if len(child_types) == 1:
                     return (dict, next(iter(child_types)))
@@ -613,7 +615,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
             _visit(item=child)
         # Empty containers need a concrete type when placed beside a
         # populated container; null is only representable by vkNull.
-        if not children or any(child is None for child in children):  # pyrefly: ignore [implicit-bool]
+        if len(children) == 0 or any(child is None for child in children):
             wrap_ids.add(id(item))
             return
         # Collections widen integer siblings to their widest native Nim
@@ -635,7 +637,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         # A native parent must use Value for any child container that
         # already uses recursive Value elements. This applies even when
         # every child is wrapped and their native shapes match.
-        if len(child_types) > 1 or wrapped_containers:  # pyrefly: ignore [implicit-bool]
+        if len(child_types) > 1 or bool(wrapped_containers):
             wrap_ids.add(id(item))
 
     _visit(item=data)
@@ -730,13 +732,15 @@ def _build_object_variant_behavior(
         match raw_value:
             case list():
                 payload = (
-                    formatted if raw_value else f"newSeq[{variant_name}]()"  # pyrefly: ignore [implicit-bool]
+                    formatted
+                    if len(raw_value) > 0
+                    else f"newSeq[{variant_name}]()"
                 )
                 return f"{variant_name}(kind: vkList, listVal: {payload})"
             case dict() if not isinstance(raw_value, OrderedMap):
                 payload = (
                     formatted
-                    if raw_value  # pyrefly: ignore [implicit-bool]
+                    if len(raw_value) > 0
                     else f"initTable[string, {variant_name}]()"
                 )
                 return f"{variant_name}(kind: vkTable, tableVal: {payload})"
@@ -787,7 +791,7 @@ def _build_object_variant_preamble(
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the object-variant type declaration for *data*."""
         wrap_ids = compute_wrap_ids(data)
-        if not wrap_ids:  # pyrefly: ignore [implicit-bool]
+        if len(wrap_ids) == 0:
             return ()
         scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
         variants: list[_VariantSignature] = []
@@ -822,7 +826,7 @@ def _build_object_variant_preamble(
                     field_type=f"Table[string, {variant_name}]",
                 )
             )
-        if not variants:  # pyrefly: ignore [implicit-bool]
+        if len(variants) == 0:
             return ()
         half_indent = " " * (len(indent) // 2)
         kind_type = f"{variant_name}Kind"
@@ -1033,7 +1037,7 @@ def _nim_call_stub(
 
     # VALUE: use a generic proc instead of a template
     type_params = [f"T{i}" for i in range(len(_params))]
-    type_clause = f"[{', '.join(type_params)}]" if type_params else ""  # pyrefly: ignore [implicit-bool]
+    type_clause = f"[{', '.join(type_params)}]" if len(type_params) > 0 else ""
     if len(parts) == 1:
         params_str = "; ".join(
             f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
@@ -1064,7 +1068,7 @@ def _nim_call_stub(
     )
     self_and_params = (
         f"self: {holder_type}; {params_str}"
-        if params_str  # pyrefly: ignore [implicit-bool]
+        if params_str != ""
         else f"self: {holder_type}"
     )
     lines.append(
@@ -1693,9 +1697,9 @@ class Nim(metaclass=LanguageCls):
             _reject_uninferrable_native_sequences(data=data)
             _reject_distinct_record_list_ordered_map_values(data=data)
         if (
-            self._uses_native_nim_collections  # pyrefly: ignore [implicit-bool]
+            self._uses_native_nim_collections
             and isinstance(data, list)
-            and data  # pyrefly: ignore [implicit-bool]
+            and (len(data) > 0)
             and all(item is None for item in data)
         ):
             msg = (
@@ -2061,7 +2065,7 @@ class Nim(metaclass=LanguageCls):
             case datetime.date():
                 resolved = self._heterogeneous_variant_date_type
             case list():
-                if not value:  # pyrefly: ignore [implicit-bool]
+                if len(value) == 0:
                     return "seq[string]"
                 if infer_element_type(items=value) is WideInt:
                     return "seq[int64]"

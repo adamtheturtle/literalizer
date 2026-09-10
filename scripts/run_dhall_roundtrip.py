@@ -255,7 +255,9 @@ def main() -> None:
         capabilities=Dhall.variant_metadata.round_trip_capabilities,
     )
     program = _build_program(json_text=json_text)
-    dhall = shutil.which(cmd="dhall") or "dhall"  # pyrefly: ignore [implicit-bool]
+    dhall = shutil.which(cmd="dhall")
+    if dhall is None or dhall == "":
+        dhall = "dhall"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.dhall",

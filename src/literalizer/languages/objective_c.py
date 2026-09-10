@@ -138,7 +138,7 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
         isinstance(original, (int, float)) or is_numeric_datetime
     ):
         return formatted
-    if _OBJC_BARE_NUMERIC.fullmatch(string=formatted):  # pyrefly: ignore [implicit-bool]
+    if _OBJC_BARE_NUMERIC.fullmatch(string=formatted) is not None:
         return f"@{formatted}"
     if formatted.startswith("(") and formatted.endswith(")"):
         return f"@{formatted}"
@@ -288,13 +288,13 @@ def _objc_call_stub(
     """
     is_value = stub_return is StubReturn.VALUE
     return_keyword = "id" if is_value else "void"
-    proto = ", ".join(["id"] * len(params)) if params else "void"  # pyrefly: ignore [implicit-bool]
+    proto = ", ".join(["id"] * len(params)) if len(params) > 0 else "void"
     stub_params = ", ".join(f"id _a{i}" for i in range(len(params)))
-    stub_signature = stub_params or "void"  # pyrefly: ignore [implicit-bool]
+    stub_signature = stub_params if stub_params != "" else "void"
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
     return_stmt = " return nil;" if is_value else ""
-    has_body = discards or is_value  # pyrefly: ignore [implicit-bool]
-    stub_body = f"{{{discards}{return_stmt} }}" if has_body else "{}"  # pyrefly: ignore [implicit-bool]
+    has_body = discards if discards != "" else is_value
+    stub_body = f"{{{discards}{return_stmt} }}" if bool(has_body) else "{}"
     # Long uniform-typed parameter lists trip clang-tidy's
     # ``bugprone-easily-swappable-parameters`` check past its
     # name-suffix-dissimilarity silencing heuristic.  The stub is
@@ -318,7 +318,7 @@ def _objc_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     stub_fn = "_".join((root, *parts[1:], "stub_"))
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         type_name = f"{root}Type_"
         return (
             *nolint,
@@ -996,7 +996,9 @@ class ObjectiveC(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         use_line = (
-            f"\n{self.indent}(void){variable_name};" if variable_name else ""  # pyrefly: ignore [implicit-bool]
+            f"\n{self.indent}(void){variable_name};"
+            if variable_name != ""
+            else ""
         )
         return (
             f"int {self.module_name}(void) {{\n"

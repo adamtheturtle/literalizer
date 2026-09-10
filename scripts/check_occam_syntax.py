@@ -29,10 +29,10 @@ def _check_type_block(lines: list[str], term_index: int) -> str | None:
     code = [
         line
         for line in first_block
-        if line.strip() and not line.strip().startswith("--")  # pyrefly: ignore [implicit-bool]
+        if line.strip() != "" and not line.strip().startswith("--")
     ]
 
-    if not code:  # pyrefly: ignore [implicit-bool]
+    if len(code) == 0:
         return "First top-level block is empty"
 
     if not code[0].startswith("MOBILE DATA TYPE "):

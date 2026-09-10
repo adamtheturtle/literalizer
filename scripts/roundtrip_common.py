@@ -62,7 +62,7 @@ def input_for_capabilities(
     )  # ty: ignore[unsound-assignment]
     for capability in sorted(capabilities):
         overlap = document.keys() & groups[capability].keys()
-        if overlap:  # pyrefly: ignore [implicit-bool]
+        if len(overlap) > 0:
             msg = f"duplicate round-trip corpus keys: {sorted(overlap)!r}"
             raise ValueError(msg)
         document.update(groups[capability])
@@ -200,7 +200,11 @@ def execute(
     line is written to stdout.  Callers do not need to emit that line
     themselves.
     """
-    extras = extra_files or {}  # pyrefly: ignore [implicit-bool]
+    extras: Mapping[str, str] = (
+        extra_files
+        if extra_files is not None and len(extra_files) > 0
+        else dict[str, str]()
+    )
     last_stdout = ""
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)

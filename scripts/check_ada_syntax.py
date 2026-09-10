@@ -10,7 +10,9 @@ from pathlib import Path
 def main() -> None:
     """Check syntax of the given Ada golden file."""
     filename = sys.argv[1]
-    gnatmake_path = shutil.which(cmd="gnatmake") or "gnatmake"  # pyrefly: ignore [implicit-bool]
+    gnatmake_path = shutil.which(cmd="gnatmake")
+    if gnatmake_path is None or gnatmake_path == "":
+        gnatmake_path = "gnatmake"
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_src = Path(tmpdir) / "check.adb"

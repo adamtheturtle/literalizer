@@ -273,12 +273,12 @@ def _expected_call_shape_exception(
         if config.call_style_type is not None
         else styles[0]
     )
-    bound_refs_wrap = bool(
-        config.ref_declarations  # pyrefly: ignore [implicit-bool]
-        and not config.unknown_ref_names  # pyrefly: ignore [implicit-bool]
-        and config.call_transform is None
-        and not config.transform_stub_names  # pyrefly: ignore [implicit-bool]
-        and config.variable_form is None
+    bound_refs_wrap = (
+        len(config.ref_declarations) > 0
+        and len(config.unknown_ref_names) == 0
+        and (config.call_transform is None)
+        and (len(config.transform_stub_names) == 0)
+        and (config.variable_form is None)
     )
     rejects_reserved_parameters = (
         config.wrap_in_file
@@ -363,7 +363,7 @@ def discover_call_cases() -> list[CallCase]:
                     for s in styles
                     if isinstance(s.value, config.call_style_type)
                 ]
-                if not matching:  # pyrefly: ignore [implicit-bool]
+                if len(matching) == 0:
                     continue
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
@@ -581,7 +581,7 @@ def _run_call_with_declarations(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=False,
-            ref_values=ref_values or None,  # pyrefly: ignore [implicit-bool]
+            ref_values=(ref_values if len(ref_values) > 0 else None),
             bound_refs=None,
         )
     return _CallWithDeclarations(decl_results=decl_results, result=result)
@@ -757,11 +757,11 @@ def run_call_golden_case(
     # variable; those cases are exercised through the composer call
     # directly above.
     if (
-        config.ref_declarations  # pyrefly: ignore [implicit-bool]
-        and not config.unknown_ref_names  # pyrefly: ignore [implicit-bool]
-        and config.call_transform is None
-        and not config.transform_stub_names  # pyrefly: ignore [implicit-bool]
-        and config.variable_form is None
+        len(config.ref_declarations) > 0
+        and len(config.unknown_ref_names) == 0
+        and (config.call_transform is None)
+        and (len(config.transform_stub_names) == 0)
+        and (config.variable_form is None)
     ):
         bound = _literalize_call_case(
             config=config,
