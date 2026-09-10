@@ -51,6 +51,7 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_unsigned_overflow_fallback,
 )
+from literalizer._formatters.format_json_value import to_jsonable
 from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
@@ -470,49 +471,6 @@ _JSON_VALUE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _temporal_to_iso(data: datetime.date | datetime.time) -> str:
-    """Return ISO-8601 text for a date / datetime / time value.
-
-    Naive datetimes are anchored to UTC so the round trip through
-    ``json.parse_string`` keeps a definite offset.
-    """
-    if isinstance(data, datetime.datetime):
-        iso = data.isoformat()
-        if data.tzinfo is None:
-            iso += "Z"
-        return iso
-    return data.isoformat()
-
-
-@beartype
-def _to_jsonable(data: Value) -> object:
-    """Convert *data* into a value that :func:`json.dumps` can serialize.
-
-    Dates, datetimes, and times become ISO-8601 strings (JSON has no
-    temporal type).  Bytes become a hex-encoded string.  Sets and
-    :class:`OrderedMap` fold into list/dict respectively.  Non-string
-    dict keys are not handled here; the caller validates first.
-    """
-    match data:
-        case datetime.datetime() | datetime.date() | datetime.time():
-            return _temporal_to_iso(data=data)
-        case bytes():
-            return data.hex()
-        case OrderedMap() | dict():
-            return {
-                key: _to_jsonable(data=value) for key, value in data.items()
-            }
-        case set():
-            items = [_to_jsonable(data=item) for item in data]
-            items.sort(key=repr)
-            return items
-        case list():
-            return [_to_jsonable(data=item) for item in data]
-        case _:
-            return data
-
-
-@beartype
 def _format_odin_json_value(data: Value) -> str:
     """Serialize *data* as a single-line JSON expression.
 
@@ -521,7 +479,7 @@ def _format_odin_json_value(data: Value) -> str:
     and the raw string the text is carried in has no escapes of its
     own (issue #3920).
     """
-    text = json.dumps(obj=_to_jsonable(data=data), ensure_ascii=False)
+    text = json.dumps(obj=to_jsonable(data=data), ensure_ascii=False)
     return text.replace(_BYTE_ORDER_MARK, "\\uFEFF")
 
 
