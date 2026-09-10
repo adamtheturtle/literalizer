@@ -232,8 +232,8 @@ def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
     match data:
         case dict():
             for key in data:
-                if isinstance(key, str) and (  # pyrefly: ignore [implicit-bool]
-                    key and (not key.isprintable() or not key.isascii())  # pyrefly: ignore [implicit-bool]
+                if isinstance(key, str) and (
+                    key != "" and (not key.isprintable() or not key.isascii())
                 ):
                     return True
             return any(
@@ -515,7 +515,7 @@ def build_statement_terminator_combined_cases() -> list[
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
-        if not find_redefinition_styles(spec=spec):  # pyrefly: ignore [implicit-bool]
+        if len(find_redefinition_styles(spec=spec)) == 0:
             continue
         default_statement_terminator_style = spec.statement_terminator_style
         for statement_terminator_style in spec.statement_terminator_styles:
@@ -564,7 +564,7 @@ def build_heterogeneous_strategy_combined_cases() -> list[
     for lang_cls in sorted_languages():
         lang_name = lang_cls.__name__
         spec = make_spec(lang_cls=lang_cls)
-        if not find_redefinition_styles(spec=spec):  # pyrefly: ignore [implicit-bool]
+        if len(find_redefinition_styles(spec=spec)) == 0:
             continue
         default_strategy = spec.heterogeneous_strategy
         for strategy in spec.heterogeneous_strategies:
