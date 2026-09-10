@@ -59,6 +59,7 @@ from literalizer._formatters.format_integers import (
     make_long_suffix_formatter,
     make_overflow_fallback_formatter,
 )
+from literalizer._formatters.format_json_value import JsonValue
 from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
@@ -908,7 +909,7 @@ def _kotlin_temporal_to_iso(data: datetime.date | datetime.time) -> str:
 
 
 @beartype
-def _kotlin_to_jsonable(data: Value) -> object:
+def _kotlin_to_jsonable(data: Value) -> JsonValue:
     """Convert *data* into a value :func:`json.dumps` can serialize.
 
     Dates, datetimes, and times become ISO-8601 strings (JSON has no
