@@ -45,7 +45,6 @@ itself; ``dhall text`` strips the surrounding double quotes off the
 final ``Text`` so the emitted JSON reaches stdout verbatim.
 """
 
-import json
 import re
 import shutil
 from collections.abc import Mapping, Sequence
@@ -194,7 +193,7 @@ def _build_program(json_text: str) -> str:
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
-    parsed = json.loads(s=trimmed_json)
+    parsed = roundtrip_common.json_object_from_text(text=trimmed_json)
     # ``UNION_TYPE`` is looked up dynamically because
     # :attr:`Dhall.HeterogeneousStrategies` is declared on the language
     # metaclass and ``basedpyright`` cannot statically resolve the
@@ -226,9 +225,9 @@ def _build_program(json_text: str) -> str:
     has_union = bool(variants)
     entry_lines = "\n      ++ ".join(
         _entry_line(
-            key=key,  # pyrefly: ignore [unknown-argument-type]
+            key=key,
             is_first=index == 0,
-            value=value,  # pyrefly: ignore [unknown-argument-type]
+            value=value,
             has_union=has_union,
         )
         for index, (key, value) in enumerate(iterable=parsed.items())
