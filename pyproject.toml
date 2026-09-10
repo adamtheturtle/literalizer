@@ -52,7 +52,7 @@ dev = [
     "clang-tidy==22.1.8",
     "deptry==0.25.1",
     "doc8==2.0.0",
-    "doccmd==2026.9.1",
+    "doccmd==2026.9.7",
     "furo==2025.12.19",
     "hypothesis>=6.0",
     "interrogate==1.7.0",
@@ -83,7 +83,7 @@ dev = [
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
     "shellcheck-py==0.11.0.1",
-    "shfmt-py==4.1.0",
+    "shfmt-py==4.2.0",
     "snapper-fmt==0.11.0",
     "sphinx==9.1.0",
     "sphinx-copybutton==0.5.2",
@@ -111,7 +111,7 @@ dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.78",
+    "ty==0.0.79",
     "types-pygments==2.21.0.20260819",
     "vale==3.20.0.0",
     "vulture==2.16",
