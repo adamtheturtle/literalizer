@@ -1,2 +1,1 @@
-Type record-name callbacks with Literalizer values instead of arbitrary
-objects.
+Type record-name callbacks with Literalizer values instead of arbitrary objects.
