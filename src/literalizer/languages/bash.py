@@ -264,7 +264,7 @@ def _bash_validate_dict_keys(data: Value) -> None:
                     raw_key if isinstance(raw_key, str) else f"{raw_key!r}"
                 )
                 if (
-                    not rendered_key  # pyrefly: ignore [implicit-bool]
+                    rendered_key == ""
                     or not rendered_key.isprintable()
                     or not rendered_key.isascii()
                 ):
