@@ -55,7 +55,7 @@ from literalizer._language import (
     no_compute_wrap_ids,
     no_empty_container_literal_overrides,
 )
-from literalizer._types import Scalar, Value
+from literalizer._types import Scalar, Value, ValueInput
 from literalizer.exceptions import UnrepresentableInputError
 
 # A shared record renderer may use a conventional ASCII identifier, or an
@@ -198,14 +198,14 @@ class RecordStrategy:
 
     behavior: HeterogeneousBehavior
     preamble: Callable[[Value], tuple[str, ...]]
-    record_name_for_value: Callable[[object], str | None] | None
+    record_name_for_value: Callable[[ValueInput], str | None] | None
 
 
 @beartype
 def nested_record_sequence_type(
     *,
     value: Value,
-    record_name_for_value: Callable[[object], str | None],
+    record_name_for_value: Callable[[ValueInput], str | None],
 ) -> tuple[int, str] | None:
     """Return ``(depth, record_name)`` for a uniform nested record list.
 
@@ -1059,7 +1059,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         return renderer.render_literal(name_by_shape[shape], literal_fields)
 
     def _record_name_for_value(
-        value: object,
+        value: ValueInput,
         /,
     ) -> str | None:
         """Return *value*'s assigned record name, if it is rendered as

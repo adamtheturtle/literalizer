@@ -139,7 +139,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -1850,7 +1850,7 @@ def _cpp14_record_list_open(
     items: list[dict[str, Value]],
     record_shape_names: Mapping[frozenset[str], str],
     record_rendering_active: bool,
-    record_name_for_value: Callable[[object], str | None],
+    record_name_for_value: Callable[[ValueInput], str | None],
 ) -> str | None:
     """Return an explicit C++14 vector opener for record literals."""
     first_item = items[0]
@@ -4381,7 +4381,7 @@ class Cpp(metaclass=LanguageCls):
             else self._tuple_record_strategy.record_name_for_value
         )
         assert maybe_record_name_for_value is not None  # noqa: S101
-        record_name_for_value: Callable[[object], str | None] = (
+        record_name_for_value: Callable[[ValueInput], str | None] = (
             maybe_record_name_for_value
         )
 
