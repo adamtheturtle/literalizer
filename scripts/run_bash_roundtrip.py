@@ -33,9 +33,8 @@ import shutil
 from literalizer.languages import Bash
 from scripts import roundtrip_common
 
-# `json.loads` returns this recursive shape; typing the walker against
-# it lets `isinstance` narrow cleanly under pyright, pyrefly, and ty
-# without `cast`.
+# The validated input has this recursive shape, which lets
+# `isinstance` narrow the walker cleanly under every type checker.
 type JsonValue = (
     bool
     | int
@@ -217,7 +216,7 @@ def _build_program(json_text: str) -> str:
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     # The shared document is a top-level JSON object, so the parsed value
     # is always a `dict`.
-    parsed: dict[str, JsonValue] = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object_from_text(text=json_text)
     lines: list[str] = ['out=""']
     # The top-level value is always a JSON object, declared by
     # `result.code` as the associative array `$myData`; descend into it

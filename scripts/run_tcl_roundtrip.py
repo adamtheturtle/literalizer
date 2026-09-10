@@ -26,15 +26,13 @@ wide integers and large exponents round-trip without needing the
 precision-loss exclusions seen in the typed-language scripts.
 """
 
-import json
 import shutil
 
 from literalizer.languages import Tcl
 from scripts import roundtrip_common
 
-# `json.loads` returns this recursive shape; typing the walker against
-# it lets `isinstance` narrow cleanly under pyright, pyrefly, and ty
-# without `cast`.
+# The validated input has this recursive shape, which lets
+# `isinstance` narrow the walker cleanly under every type checker.
 type JsonValue = (
     bool
     | int
@@ -108,7 +106,7 @@ def _build_program(json_text: str) -> str:
         pre_indent_level=0,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    parsed: JsonValue = json.loads(s=json_text)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object_from_text(text=json_text)
     emit_expr = _emit(value=parsed, path_expr=f"${_VAR_NAME}")
     return (
         f"{_HEADER}\n{preamble}\n{result.code}\nputs -nonewline {emit_expr}\n"

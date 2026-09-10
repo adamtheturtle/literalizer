@@ -58,14 +58,13 @@ which guards against Mojo 1.0's bare ``[...]`` expressions silently
 changing the backend's documented sequence type from ``List`` to ``Array``.
 """
 
-import json
 import shutil
 
 from literalizer.languages import Mojo
 from scripts import roundtrip_common
 
-# ``json.loads`` returns this recursive shape; typing the value helper
-# against it lets ``isinstance`` narrow cleanly under the type checkers.
+# The validated input has this recursive shape, which lets
+# ``isinstance`` narrow the value helper cleanly under every type checker.
 type JsonValue = (
     bool
     | int
@@ -146,7 +145,7 @@ def _build_program(*, json_text: str) -> str:
     if len(list_probe.preamble) > 0:
         message = "the Mojo List semantic probe unexpectedly needs a preamble"
         raise AssertionError(message)
-    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object_from_text(text=trimmed_json)
     walk = [
         '    var json = Python.import_module("json")',
         "    var out = Python.dict()",

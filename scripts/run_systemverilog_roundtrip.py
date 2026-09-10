@@ -61,8 +61,8 @@ import shutil
 from literalizer.languages import SystemVerilog
 from scripts import roundtrip_common
 
-# ``json.loads`` returns this recursive shape; typing the value helper
-# against it lets ``isinstance`` narrow cleanly under the type checkers.
+# The validated input has this recursive shape, which lets
+# ``isinstance`` narrow the value helper cleanly under every type checker.
 type JsonValue = (
     bool
     | int
@@ -163,7 +163,7 @@ def _build_program(*, json_text: str) -> str:
         var_name=_VAR_NAME,
         pre_indent_level=2,
     )
-    parsed: dict[str, JsonValue] = json.loads(s=trimmed_json)  # ty: ignore[unsound-assignment]
+    parsed = roundtrip_common.json_object_from_text(text=trimmed_json)
     walk = ['        out = "{";']
     for index, (key, value) in enumerate(iterable=parsed.items()):
         fragment = ("," if index != 0 else "") + json.dumps(obj=key) + ":"
