@@ -164,7 +164,7 @@ def _format_toml_dict_entry(
     """
     inner = strip_key_quotes(key=key)
     bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-    if bare_key_pattern.match(string=inner):  # pyrefly: ignore [implicit-bool]
+    if bare_key_pattern.match(string=inner) is not None:
         return f"{inner} = {formatted_value}"
     return f"{key} = {formatted_value}"
 
@@ -573,7 +573,7 @@ class Toml(metaclass=LanguageCls):
         than a multiline inline table, whose newlines TOML 1.0 forbids.
         """
         mapping_prefix = f"{variable_name} = {{\n"
-        if variable_name and content.startswith(mapping_prefix):  # pyrefly: ignore [implicit-bool]
+        if variable_name != "" and content.startswith(mapping_prefix):
             entries = content[len(mapping_prefix) :].removesuffix("\n}")
             dedented = textwrap.dedent(text=entries)
             # ``str.splitlines`` also breaks on U+0085, U+2028 and
@@ -581,7 +581,7 @@ class Toml(metaclass=LanguageCls):
             # real line separators only (issue #4486).
             table_lines = [
                 _strip_structural_trailing_comma(line=line)
-                if line and not line[0].isspace()  # pyrefly: ignore [implicit-bool]
+                if line != "" and not line[0].isspace()
                 else line
                 for line in dedented.split(sep="\n")
             ]
