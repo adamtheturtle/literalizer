@@ -164,7 +164,7 @@ def _raku_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    if not fields:  # pyrefly: ignore [implicit-bool]
+    if len(fields) == 0:
         cls = root.capitalize() + "Type"
         return (
             f"class {cls} {{ method {method}(*@a, *%kw) {{}} }}",
@@ -207,7 +207,7 @@ def _format_datetime_raku(value: datetime.datetime) -> str:
     """Format a datetime as a Raku ``DateTime`` constructor."""
     if value.tzinfo is not None:
         value = normalize_datetime_utc(value=value, language_name="Raku")
-    if value.microsecond:  # pyrefly: ignore [implicit-bool]
+    if value.microsecond != 0:
         second_part = f"{value.second}.{value.microsecond:06d}".rstrip("0")
     else:
         second_part = f"{value.second}"
