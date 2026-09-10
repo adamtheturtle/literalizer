@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import Any, ClassVar, Final, assert_never
+from typing import ClassVar, Final, assert_never
 
 from beartype import beartype
 
@@ -353,7 +353,7 @@ def _format_datetime_java_instant(value: datetime.datetime) -> str:
 
 
 @beartype
-def _list_of_open(items: list[Any]) -> str:  # pyrefly: ignore [explicit-any]
+def _list_of_open(items: list[Value]) -> str:
     """Return ``List.of(`` after checking for null elements.
 
     Java's ``List.of()`` throws ``NullPointerException`` on null elements.
