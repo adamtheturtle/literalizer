@@ -196,15 +196,15 @@ def _apply_fortran_entry(
     int_name: str,
     real_name: str,
     str_name: str,
+    datetime_as_int: bool,
 ) -> str:
     """Wrap a formatted entry in its constructor call."""
     match original:
         case bool():
             return formatted
-        case datetime.datetime() if (
-            formatted.removesuffix("_int64").lstrip("-").isdigit()
-        ):
-            return f"{int_name}({formatted})"
+        case datetime.datetime():
+            name = int_name if datetime_as_int else str_name
+            return f"{name}({formatted})"
         case int():
             return f"{int_name}({formatted})"
         case float():
@@ -221,6 +221,7 @@ def _build_format_fortran_entry(
     int_name: str,
     real_name: str,
     str_name: str,
+    datetime_as_int: bool,
 ) -> Callable[[Value, str], str]:
     """Build a formatter that wraps values in the appropriate
     constructor.
@@ -234,6 +235,7 @@ def _build_format_fortran_entry(
             int_name=int_name,
             real_name=real_name,
             str_name=str_name,
+            datetime_as_int=datetime_as_int,
         )
 
     return _format_fortran_entry
@@ -881,6 +883,7 @@ class Fortran(metaclass=LanguageCls):
                     int_name="fint",
                     real_name="freal",
                     str_name="fstr",
+                    datetime_as_int=False,
                 ),
             ),
             supports_redefinition=True,
@@ -1449,6 +1452,7 @@ class Fortran(metaclass=LanguageCls):
             int_name=self.int_name,
             real_name=self.real_name,
             str_name=self.str_name,
+            datetime_as_int=self.datetime_format.value.type_produced is int,
         )
 
     @cached_property

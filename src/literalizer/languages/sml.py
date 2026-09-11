@@ -168,7 +168,11 @@ def _sml_scientific(value: float) -> str:
 
 @beartype
 def _apply_sml_entry_formatter(
-    original: Value, formatted: str, prefix: str
+    original: Value,
+    formatted: str,
+    prefix: str,
+    date_type: type,
+    datetime_type: type,
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
     constructor.
@@ -192,7 +196,7 @@ def _apply_sml_entry_formatter(
             )
         case str() | bytes():
             result = f"{prefix}Str {formatted}"
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
+        case datetime.datetime() if datetime_type is int:
             negative = formatted.startswith("-")
             literal = f"~{formatted[1:]}" if negative else formatted
             result = (
@@ -200,10 +204,20 @@ def _apply_sml_entry_formatter(
                 if negative
                 else f"{prefix}Int {literal}"
             )
-        case datetime.time() if formatted.startswith('"'):
+        case datetime.datetime():
+            result = (
+                formatted
+                if datetime_type is datetime.datetime
+                else f"{prefix}Str {formatted}"
+            )
+        case datetime.time():
             result = f"{prefix}Str {formatted}"
-        case datetime.date() if formatted.startswith('"'):
-            result = f"{prefix}Str {formatted}"
+        case datetime.date():
+            result = (
+                formatted
+                if date_type is datetime.date
+                else f"{prefix}Str {formatted}"
+            )
         case _:
             result = formatted
     return result
@@ -211,7 +225,7 @@ def _apply_sml_entry_formatter(
 
 @beartype
 def _build_sml_entry_formatter(
-    prefix: str,
+    prefix: str, date_type: type, datetime_type: type
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in SML ``datatype``
     constructors using the given *prefix*.
@@ -220,7 +234,11 @@ def _build_sml_entry_formatter(
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_entry_formatter(
-            original=original, formatted=formatted, prefix=prefix
+            original=original,
+            formatted=formatted,
+            prefix=prefix,
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
 
     return _format
@@ -1069,7 +1087,11 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Shared entry formatter parameterized by constructor prefix."""
-        return _build_sml_entry_formatter(prefix=self.constructor_prefix)
+        return _build_sml_entry_formatter(
+            prefix=self.constructor_prefix,
+            date_type=self.date_format.value.type_produced,
+            datetime_type=self.datetime_format.value.type_produced,
+        )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

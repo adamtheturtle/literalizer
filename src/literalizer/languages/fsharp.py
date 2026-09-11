@@ -106,8 +106,34 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _apply_fsharp_entry(  # noqa: PLR0911
-    original: Value, formatted: str, prefix: str
+def _format_fsharp_temporal_entry(
+    original: datetime.date | datetime.datetime | datetime.time,
+    formatted: str,
+    prefix: str,
+    date_type: type,
+    datetime_type: type,
+) -> str:
+    """Wrap a temporal value from its configured output type."""
+    if isinstance(original, datetime.datetime):
+        if datetime_type is int:
+            return formatted
+        if datetime_type is datetime.datetime:
+            return f"{prefix}Datetime ({formatted})"
+        return f"{prefix}Str {formatted}"
+    if isinstance(original, datetime.time):
+        return f"{prefix}Str (string ({formatted}))"
+    if date_type is datetime.date:
+        return f"{prefix}Date ({formatted})"
+    return f"{prefix}Str {formatted}"
+
+
+@beartype
+def _apply_fsharp_entry(
+    original: Value,
+    formatted: str,
+    prefix: str,
+    date_type: type,
+    datetime_type: type,
 ) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
@@ -137,38 +163,37 @@ def _apply_fsharp_entry(  # noqa: PLR0911
                 if negative
                 else f"{prefix}Float {formatted}"
             )
-        case datetime.datetime() if formatted.startswith(f"{prefix}Int"):
-            return formatted
-        case datetime.datetime() if formatted.startswith("System.DateTime"):
-            return f"{prefix}Datetime ({formatted})"
-        case datetime.date() if formatted.startswith("System.DateOnly"):
-            return f"{prefix}Date ({formatted})"
-        case str() | bytes() | datetime.date() | datetime.time():
-            return (
-                f"{prefix}Str (string ({formatted}))"
-                if formatted.startswith("System.")
-                else f"{prefix}Str {formatted}"
+        case datetime.date() | datetime.time():
+            return _format_fsharp_temporal_entry(
+                original=original,
+                formatted=formatted,
+                prefix=prefix,
+                date_type=date_type,
+                datetime_type=datetime_type,
             )
+        case str() | bytes():
+            return f"{prefix}Str {formatted}"
         case _:
             return formatted
 
 
 @beartype
 def _build_fsharp_entry_formatter(
-    prefix: str,
+    prefix: str, date_type: type, datetime_type: type
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in F# constructors."""
 
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_entry(
-            original=original, formatted=formatted, prefix=prefix
+            original=original,
+            formatted=formatted,
+            prefix=prefix,
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
 
     return _format
-
-
-_format_fsharp_entry = _build_fsharp_entry_formatter(prefix="F")
 
 
 _FSHARP_JSON_USING = "open System.Text.Json.Nodes"
@@ -268,6 +293,8 @@ def _build_fsharp_datetime_epoch(
             original=int(formatted),
             formatted=formatted,
             prefix=prefix,
+            date_type=str,
+            datetime_type=int,
         )
 
     return _format
@@ -1190,7 +1217,11 @@ class FSharp(metaclass=LanguageCls):
         """Shared entry formatter with the configured constructor
         prefix.
         """
-        return _build_fsharp_entry_formatter(prefix=self.constructor_prefix)
+        return _build_fsharp_entry_formatter(
+            prefix=self.constructor_prefix,
+            date_type=self.date_format.value.type_produced,
+            datetime_type=self.datetime_format.value.type_produced,
+        )
 
     @cached_property
     def _json_type_active(self) -> bool:

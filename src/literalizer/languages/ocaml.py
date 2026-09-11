@@ -101,7 +101,13 @@ from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 
 @beartype
-def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
+def _apply_ocaml_entry(
+    original: Value,
+    formatted: str,
+    prefix: str,
+    date_type: type,
+    datetime_type: type,
+) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
@@ -114,11 +120,15 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
             tag = "Float"
         case str() | bytes():
             tag = "Str"
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            tag = "Int"
-        case datetime.time() if formatted.startswith('"'):
+        case datetime.datetime():
+            if datetime_type is datetime.datetime:
+                return formatted
+            tag = "Int" if datetime_type is int else "Str"
+        case datetime.time():
             tag = "Str"
-        case datetime.date() if formatted.startswith('"'):
+        case datetime.date():
+            if date_type is datetime.date:
+                return formatted
             tag = "Str"
         case _:
             return formatted
@@ -128,7 +138,7 @@ def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
 
 @beartype
 def _build_ocaml_entry_formatter(
-    prefix: str,
+    prefix: str, date_type: type, datetime_type: type
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in OCaml ``val_t``
     constructors using the given *prefix*.
@@ -137,13 +147,14 @@ def _build_ocaml_entry_formatter(
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_entry(
-            original=original, formatted=formatted, prefix=prefix
+            original=original,
+            formatted=formatted,
+            prefix=prefix,
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
 
     return _format
-
-
-_format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
 _YOJSON_SAFE_T = "Yojson.Safe.t"
@@ -1072,7 +1083,11 @@ class OCaml(metaclass=LanguageCls):
         """Entry formatter built from the configured prefix."""
         if self._json_type_active:
             return _apply_yojson_entry
-        return _build_ocaml_entry_formatter(prefix=self.constructor_prefix)
+        return _build_ocaml_entry_formatter(
+            prefix=self.constructor_prefix,
+            date_type=self.date_format.value.type_produced,
+            datetime_type=self.datetime_format.value.type_produced,
+        )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
