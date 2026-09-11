@@ -160,23 +160,21 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
     """Wrap a formatted entry in the appropriate ``Yojson.Safe.t``
     polymorphic-variant constructor.
 
-    Pre-wrapped literals (null, booleans, lists, dicts, sets, the
+    Pre-wrapped literals (null, booleans, collections, and the
     arbitrary-precision ``Intlit`` fallback for integers that overflow
-    the native ``int`` range) already carry a leading backtick and are
-    passed through untouched.  Scalars whose formatted form is a bare
-    value (numbers, quoted strings produced by ISO date/time formatters
-    or by the bytes encoder) get a leading ``Bool``/``Int``/``Float``/
-    ``String`` tag here.
+    the native ``int`` range) are identified from the source value and
+    passed through untouched.  Other scalars get a leading
+    ``Int``/``Float``/``String`` tag here.
     """
-    if formatted.startswith("`"):
+    if (
+        original is None
+        or isinstance(original, (bool, list, dict, set, OrderedMap))
+        or (
+            isinstance(original, int)
+            and not _OCAML_INT_MIN <= original <= _OCAML_INT_MAX
+        )
+    ):
         return formatted
-    # Only bare-scalar formatted values reach here: integers, floats,
-    # quoted strings (str, bytes, and ISO date/datetime/time strings).
-    # ``bool`` is a subclass of ``int`` in Python but cannot reach here
-    # because ``true_literal`` / ``false_literal`` are already
-    # backtick-prefixed and caught by the early-return above.  ``None``
-    # / collections (list, dict, set, OrderedMap) likewise arrive
-    # pre-wrapped via the configured open/close delimiters.
     match original:
         case int():
             tag = "Int"
