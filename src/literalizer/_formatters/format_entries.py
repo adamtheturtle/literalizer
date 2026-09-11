@@ -11,24 +11,6 @@ from literalizer._types import Value
 
 
 @beartype
-def strip_key_quotes(key: str) -> str:
-    """Strip the surrounding quotes from a formatted key string.
-
-    Handles double- and single-quoted strings.
-
-    Example::
-
-        strip_key_quotes('"name"')  # => 'name'
-
-    All current input formats produce quoted string keys, so *key*
-    is always surrounded by matching quotes.
-    """
-    # All current input formats produce quoted string keys.
-    # If a new format introduces unquoted keys, this will need updating.
-    return key[1:-1]
-
-
-@beartype
 def _format_variable(
     name: str, value: str, _data: Value, template: str
 ) -> str:
