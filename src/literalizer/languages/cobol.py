@@ -26,7 +26,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
-    strip_key_quotes,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -312,30 +311,46 @@ def _is_data_entry(s: str) -> bool:
 
 
 @beartype
-def _pic_from_value(value: str) -> str:
-    """Return a COBOL PIC (or storage) clause for a formatted literal.
-
-    Inspects the pre-formatted value string to choose the narrowest
-    appropriate clause.
-    """
-    if value == "SPACES":
+def _pic_from_value(
+    original: Value,
+    formatted: str,
+    *,
+    datetime_as_int: bool,
+) -> str:
+    """Return a COBOL PIC (or storage) clause for a source value."""
+    if original is None:
         return "PIC X(1)"
-    if value.startswith('"') and value.endswith('"'):
-        inner = value[1:-1].replace('""', '"')
-        return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
-    if re.match(pattern="^-?\\d+$", string=value) is not None:
+    if isinstance(original, datetime.datetime) and datetime_as_int:
         return "PIC S9(18) COMP-5"
-    # Float or other numeric
+    if isinstance(
+        original,
+        (str, bytes, datetime.date, datetime.time),
+    ):
+        inner = formatted[1:-1].replace('""', '"')
+        return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
+    if isinstance(original, (bool, int)):
+        return "PIC S9(18) COMP-5"
     return "COMP-2"
 
 
 @beartype
-def _to_cobol_entry(value: str, name: str, level: int) -> str:
+def _to_cobol_entry(
+    *,
+    original: Value,
+    value: str,
+    name: str,
+    level: int,
+    datetime_as_int: bool,
+) -> str:
     """Wrap a scalar literal in a COBOL DATA DIVISION entry.
 
     Example: ``"42"`` → ``"05 FILLER PIC S9(18) COMP-5 VALUE 42."``
     """
-    picture_clause = _pic_from_value(value=value)
+    picture_clause = _pic_from_value(
+        original=original,
+        formatted=value,
+        datetime_as_int=datetime_as_int,
+    )
     return _cobol_value_entry(
         prefix=f"{level:02d} {name} {picture_clause}",
         tokens=_cobol_value_tokens(value),
@@ -366,7 +381,12 @@ def _bump_levels(content: str) -> str:
 
 
 @beartype
-def _format_cobol_sequence_entry(_original: Value, item: str) -> str:
+def _format_cobol_sequence_entry(
+    original: Value,
+    item: str,
+    *,
+    datetime_as_int: bool,
+) -> str:
     """Format a sequence item as a COBOL DATA DIVISION entry.
 
     Scalar values become ``05 FILLER PIC … VALUE …`` items.
@@ -379,25 +399,30 @@ def _format_cobol_sequence_entry(_original: Value, item: str) -> str:
         return f"05 FILLER.\n{nested}"
     if _is_data_entry(s=item.strip()):
         return item.strip()
-    return _to_cobol_entry(value=item, name="FILLER", level=5)
+    return _to_cobol_entry(
+        original=original,
+        value=item,
+        name="FILLER",
+        level=5,
+        datetime_as_int=datetime_as_int,
+    )
 
 
 @beartype
-def _key_to_cobol_name(key_str: str) -> str:
-    """Convert a formatted COBOL string literal to a valid COBOL data name.
+def _key_to_cobol_name(raw_key: str) -> str:
+    """Convert a source mapping key to a valid COBOL data name.
 
-    Strips outer quotes, converts doubled double-quotes back to single,
-    converts the result to upper case, replaces non-alphanumeric characters
+    Converts the key to upper case, replaces non-alphanumeric characters
     with hyphens, and adds the ``F-`` prefix to avoid clashes with COBOL
-    reserved words.  The result is truncated to 28 characters (leaving
-    room for the prefix).
+    reserved words. The result is truncated to 28 characters (leaving room
+    for the prefix).
 
     This mapping discards information, so two distinct keys can collapse
     onto the same name (the character rewriting above, or the 28-character
     truncation).  Sibling clashes within a group are resolved afterwards
     by :func:`_disambiguate_data_names`.
     """
-    name = strip_key_quotes(key=key_str).replace('""', '"')
+    name = raw_key
     name = name.upper()
     name = re.sub(pattern=r"[^A-Z0-9]", repl="-", string=name)
     name = re.sub(pattern=r"-+", repl="-", string=name).strip("-")
@@ -502,6 +527,13 @@ def _disambiguate_data_names(content: str) -> str:
 class _CobolDictFormatConfig(DictFormatConfig):
     """COBOL mapping config that makes normalized sibling names unique."""
 
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Build a COBOL data name from the source key."""
+        del formatted_key
+        return _key_to_cobol_name(raw_key=raw_key)
+
     @override
     def postprocess_entries(self, lines: list[str], /) -> list[str]:
         """Disambiguate one mapping even without a variable wrapper."""
@@ -510,18 +542,46 @@ class _CobolDictFormatConfig(DictFormatConfig):
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class _CobolOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """COBOL ordered-map config that classifies source keys."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Build a COBOL data name from the source key."""
+        del formatted_key
+        return _key_to_cobol_name(raw_key=raw_key)
+
+
+@beartype
 def _format_cobol_dict_entry(
     key: str,
-    _raw_value: Value,
+    raw_value: Value,
     formatted_value: str,
+    *,
+    datetime_as_int: bool,
 ) -> str:
     """Format a COBOL DATA DIVISION entry for a dict key-value pair.
 
-    The key string is converted to a valid COBOL data name.  Scalar
-    values produce elementary items; nested collections produce group
-    items with bumped level numbers.
+    The key has already been converted to a valid COBOL data name. Scalar
+    values produce elementary items; nested collections produce group items
+    with bumped level numbers.
     """
-    name = _key_to_cobol_name(key_str=key)
+    name = key
+    if isinstance(raw_value, (list, dict, set)):
+        content = (
+            formatted_value
+            if "\n" in formatted_value
+            else formatted_value.strip()
+        )
+        bumped = _bump_levels(content=content)
+        nested = textwrap.indent(text=bumped, prefix="    ")
+        return f"05 {name}.\n{nested}"
+    # Comments can make a scalar entry multiline or place a complete
+    # DATA DIVISION entry around it.  These checks preserve that emitted
+    # layout; the source value above decides whether the value itself is
+    # a collection.
     if "\n" in formatted_value:
         bumped = _bump_levels(content=formatted_value)
         nested = textwrap.indent(text=bumped, prefix="    ")
@@ -530,7 +590,11 @@ def _format_cobol_dict_entry(
         bumped = _bump_levels(content=formatted_value.strip())
         nested = textwrap.indent(text=bumped, prefix="    ")
         return f"05 {name}.\n{nested}"
-    picture_clause = _pic_from_value(value=formatted_value)
+    picture_clause = _pic_from_value(
+        original=raw_value,
+        formatted=formatted_value,
+        datetime_as_int=datetime_as_int,
+    )
     return _cobol_value_entry(
         prefix=f"05 {name} {picture_clause}",
         tokens=_cobol_value_tokens(formatted_value),
@@ -612,11 +676,12 @@ def _cobol_call_stub(
 
 
 @beartype
-def _format_variable_declaration(
+def _apply_variable_declaration(
+    *,
     name: str,
     value: str,
-    _data: Value,
-    _modifiers: frozenset[enum.Enum],
+    data: Value,
+    datetime_as_int: bool,
 ) -> str:
     """Format a COBOL 01-level variable declaration.
 
@@ -625,12 +690,16 @@ def _format_variable_declaration(
     """
     cobol_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
-    scalar = stripped.strip()
-    if "\n" in stripped or _is_data_entry(s=scalar):
+    if isinstance(data, (list, dict, set)):
         return _disambiguate_data_names(
             content=f"01 {cobol_name}.\n{stripped}"
         )
-    picture_clause = _pic_from_value(value=scalar)
+    scalar = stripped.strip()
+    picture_clause = _pic_from_value(
+        original=data,
+        formatted=scalar,
+        datetime_as_int=datetime_as_int,
+    )
     return _cobol_value_entry(
         prefix=f"01 {cobol_name} {picture_clause}",
         tokens=_cobol_value_tokens(scalar),
@@ -638,7 +707,50 @@ def _format_variable_declaration(
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
+def _format_variable_declaration(
+    name: str,
+    value: str,
+    data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Format a declaration using COBOL's default ISO datetime form."""
+    return _apply_variable_declaration(
+        name=name,
+        value=value,
+        data=data,
+        datetime_as_int=False,
+    )
+
+
+@beartype
+def _build_variable_declaration(
+    *, datetime_as_int: bool
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build a declaration formatter from datetime output metadata."""
+
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a COBOL variable declaration."""
+        return _apply_variable_declaration(
+            name=name,
+            value=value,
+            data=data,
+            datetime_as_int=datetime_as_int,
+        )
+
+    return _format
+
+
+@beartype
+def _format_variable_assignment(
+    name: str,
+    value: str,
+    data: Value,
+) -> str:
     """Format a COBOL PROCEDURE DIVISION assignment statement.
 
     Scalars use a ``MOVE … TO …`` statement; complex group items use
@@ -647,9 +759,9 @@ def _format_variable_assignment(name: str, value: str, _data: Value) -> str:
     """
     cobol_name = _to_cobol_name(python_name=name)
     stripped = value.strip("\n")
-    scalar = stripped.strip()
-    if "\n" in stripped or _is_data_entry(s=scalar):
+    if isinstance(data, (list, dict, set)):
         return f"INITIALIZE {cobol_name}."
+    scalar = stripped.strip()
     return f"MOVE {scalar} TO {cobol_name}."
 
 
@@ -1679,12 +1791,15 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_cobol_sequence_entry
+        return partial(
+            _format_cobol_sequence_entry,
+            datetime_as_int=(self.datetime_format.value.type_produced is int),
+        )
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_cobol_sequence_entry
+        return self.format_sequence_entry
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
@@ -1729,7 +1844,10 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Format one ordered-map entry."""
-        return _format_cobol_dict_entry
+        return partial(
+            _format_cobol_dict_entry,
+            datetime_as_int=(self.datetime_format.value.type_produced is int),
+        )
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -1898,10 +2016,20 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return _CobolDictFormatConfig(
+        config_cls = (
+            DictFormatConfig
+            if self._json_type_active
+            else _CobolDictFormatConfig
+        )
+        return config_cls(
             dict_open=fixed_open(open_str=""),
             close="",
-            format_entry=_format_cobol_dict_entry,
+            format_entry=partial(
+                _format_cobol_dict_entry,
+                datetime_as_int=(
+                    self.datetime_format.value.type_produced is int
+                ),
+            ),
             empty_dict=_COBOL_EMPTY_LITERAL,
             preamble_lines=(),
             narrowed_open=None,
@@ -1950,7 +2078,12 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        config_cls = (
+            OrderedMapFormatConfig
+            if self._json_type_active
+            else _CobolOrderedMapFormatConfig
+        )
+        return config_cls(
             ordered_map_open=fixed_open(open_str=""),
             close="",
             preamble_lines=(),
@@ -2017,7 +2150,9 @@ class Cobol(metaclass=LanguageCls):
                 )
 
             return _format_cjson_decl
-        return self.declaration_style.value.formatter
+        return _build_variable_declaration(
+            datetime_as_int=(self.datetime_format.value.type_produced is int),
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
