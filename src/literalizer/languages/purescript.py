@@ -485,10 +485,10 @@ def _purescript_scalar_needs_prelude(val: Value) -> bool:
     match val:
         case bool():
             return False
+        case int():
+            return val < 0
         case float():
             return _purescript_negative_float(val=val)
-        case int():  # pyrefly: ignore [unreachable-match-case]
-            return val < 0
         case _:
             return False
 
