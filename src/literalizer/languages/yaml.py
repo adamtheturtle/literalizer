@@ -48,7 +48,9 @@ from literalizer._language import (
     CallSupport,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -220,8 +222,10 @@ class Yaml(metaclass=LanguageCls):
     )
     """Callable that rewrites a formatted direct call argument."""
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Yaml."""
+
+        _value_: DateFormatConfig
 
         YAML = DateFormatConfig(
             formatter=date_iso_formatter(template="{iso}"),
@@ -232,12 +236,10 @@ class Yaml(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Yaml."""
+
+        _value_: DatetimeFormatConfig
 
         YAML = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template="{iso}"),
@@ -255,10 +257,6 @@ class Yaml(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

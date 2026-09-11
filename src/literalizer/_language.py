@@ -334,6 +334,30 @@ class DatetimeFormatConfig:
     type_produced: type
 
 
+class DateFormatEnum(enum.Enum):
+    """Date format options with a statically checked config payload."""
+
+    _value_: DateFormatConfig
+
+    def __call__(self, date_value: datetime.date, /) -> str:
+        """Format a date with this member's configuration."""
+        # Pylint does not yet infer the standardized Enum _value_ annotation.
+        return self._value_.formatter(date_value)  # pylint: disable=no-member
+
+
+class DatetimeFormatEnum(enum.Enum):
+    """Datetime format options with a statically checked config
+    payload.
+    """
+
+    _value_: DatetimeFormatConfig
+
+    def __call__(self, dt_value: datetime.datetime, /) -> str:
+        """Format a datetime with this member's configuration."""
+        # Pylint does not yet infer the standardized Enum _value_ annotation.
+        return self._value_.formatter(dt_value)  # pylint: disable=no-member
+
+
 @beartype
 def date_scalar_preamble(
     *,

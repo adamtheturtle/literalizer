@@ -76,7 +76,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -672,19 +674,19 @@ class Odin(metaclass=LanguageCls):
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Odin."""
+
+        _value_: DateFormatConfig
 
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Odin."""
+
+        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -697,10 +699,6 @@ class Odin(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

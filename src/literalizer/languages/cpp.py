@@ -94,7 +94,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -2873,8 +2875,10 @@ class Cpp(metaclass=LanguageCls):
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for C++."""
+
+        _value_: DateFormatConfig
 
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
@@ -2891,16 +2895,16 @@ class Cpp(metaclass=LanguageCls):
         def cpp_type(self) -> str:
             """Return the C++ type name for this date format."""
             cfg: DateFormatConfig = self.value
-            if cfg.type_produced is str:
+            # Pylint does not yet infer the standardized Enum _value_
+            # annotation.
+            if cfg.type_produced is str:  # pylint: disable=no-member
                 return "std::string"
             return "std::chrono::year_month_day"
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for C++."""
+
+        _value_: DatetimeFormatConfig
 
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
@@ -2923,15 +2927,13 @@ class Cpp(metaclass=LanguageCls):
         def cpp_type(self) -> str:
             """Return the C++ type name for this datetime format."""
             cfg: DatetimeFormatConfig = self.value
-            if cfg.type_produced is str:
+            # Pylint does not yet infer the standardized Enum _value_
+            # annotation.
+            if cfg.type_produced is str:  # pylint: disable=no-member
                 return "std::string"
-            if cfg.type_produced is int:
+            if cfg.type_produced is int:  # pylint: disable=no-member
                 return "long long"
             return "std::chrono::system_clock::time_point"
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

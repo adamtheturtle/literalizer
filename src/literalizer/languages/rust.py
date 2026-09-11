@@ -83,7 +83,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -3267,8 +3269,10 @@ class Rust(metaclass=LanguageCls):
     supports_non_string_dict_keys = True
     checks_raw_control_dict_keys_separately = False
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Rust."""
+
+        _value_: DateFormatConfig
 
         RUST = DateFormatConfig(
             formatter=_format_date_rust,
@@ -3279,12 +3283,10 @@ class Rust(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Rust."""
+
+        _value_: DatetimeFormatConfig
 
         RUST = DatetimeFormatConfig(
             formatter=_format_datetime_rust,
@@ -3306,10 +3308,6 @@ class Rust(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

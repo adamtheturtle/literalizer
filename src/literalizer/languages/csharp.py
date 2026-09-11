@@ -83,7 +83,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -869,8 +871,10 @@ class CSharp(metaclass=LanguageCls):
         fallback_value_type="object",
     )
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for C#."""
+
+        _value_: DateFormatConfig
 
         CSHARP = DateFormatConfig(
             formatter=date_ymd_formatter(
@@ -883,12 +887,10 @@ class CSharp(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for C#."""
+
+        _value_: DatetimeFormatConfig
 
         CSHARP = DatetimeFormatConfig(
             formatter=datetime_ymdhms_formatter(
@@ -910,10 +912,6 @@ class CSharp(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

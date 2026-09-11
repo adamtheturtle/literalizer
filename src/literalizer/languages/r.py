@@ -51,7 +51,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -398,8 +400,10 @@ class R(metaclass=LanguageCls):
     )
     """Callable that rewrites a formatted direct call argument."""
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date formatting options for R."""
+
+        _value_: DateFormatConfig
 
         R = DateFormatConfig(
             formatter=date_iso_formatter(template='as.Date("{iso}")'),
@@ -410,12 +414,10 @@ class R(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for R."""
+
+        _value_: DatetimeFormatConfig
 
         R = DatetimeFormatConfig(
             formatter=_format_datetime_r,
@@ -433,10 +435,6 @@ class R(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class EmptyDictKey(enum.Enum):
         """How to handle empty-string dict keys in R.
