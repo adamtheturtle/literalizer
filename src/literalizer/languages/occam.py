@@ -95,15 +95,19 @@ _format_string_safe = reject_nul_string_formatter(
 
 
 @beartype
-def _format_occam_entry(original: Value, formatted: str) -> str:
+def _format_occam_entry(
+    original: Value, formatted: str, *, datetime_as_int: bool
+) -> str:
     """Wrap a formatted entry in the appropriate occam-pi ``LIT``
     constructor.
     """
     match original:
         case bool():
             return formatted
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f"MOBILE LIT(lit.int; {formatted})"
+        case datetime.datetime():
+            tag = "int" if datetime_as_int else "str"
+            suffix = "" if datetime_as_int else "MOBILE []BYTE "
+            return f"MOBILE LIT(lit.{tag}; {suffix}{formatted})"
         case int():
             return f"MOBILE LIT(lit.int; {formatted})"
         case float():
@@ -112,6 +116,23 @@ def _format_occam_entry(original: Value, formatted: str) -> str:
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
             return formatted
+
+
+@beartype
+def _build_occam_entry_formatter(
+    *, datetime_as_int: bool
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter from datetime output metadata."""
+
+    def _format(original: Value, formatted: str) -> str:
+        """Wrap one Occam value."""
+        return _format_occam_entry(
+            original=original,
+            formatted=formatted,
+            datetime_as_int=datetime_as_int,
+        )
+
+    return _format
 
 
 @beartype
@@ -658,19 +679,26 @@ class Occam(metaclass=LanguageCls):
         return str
 
     @cached_property
+    def _entry_formatter(self) -> Callable[[Value, str], str]:
+        """Entry formatter built from datetime output metadata."""
+        return _build_occam_entry_formatter(
+            datetime_as_int=self.datetime_format.value.type_produced is int
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_occam_entry
+        return self._entry_formatter
 
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap direct call arguments in ``MOBILE LIT`` constructors."""
-        return _format_occam_entry
+        return self._entry_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_occam_entry
+        return self._entry_formatter
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
@@ -793,7 +821,7 @@ class Occam(metaclass=LanguageCls):
         """Shared dict-entry formatter used by dict and ordered-map."""
         return dict_entry_with_template(
             template="MOBILE LIT(lit.pair; MOBILE []BYTE {key}; {value})",
-            format_value=_format_occam_entry,
+            format_value=self._entry_formatter,
         )
 
     @cached_property

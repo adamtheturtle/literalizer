@@ -155,13 +155,18 @@ def _escape_nested(text: str) -> str:
 
 
 @beartype
-def _format_sv_entry(original: Value, formatted: str) -> str:
+def _format_sv_entry(
+    original: Value, formatted: str, *, datetime_as_int: bool
+) -> str:
     """Wrap a formatted entry in a named ``_VVal`` struct literal."""
     match original:
         case bool():
             return formatted
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
+        case datetime.datetime():
+            if datetime_as_int:
+                payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
+            else:
+                payload = f"_VVAL_STR, i: 0, r: 0.0, s: {formatted}"
         case int():
             payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case float():
@@ -177,30 +182,64 @@ def _format_sv_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format a SystemVerilog variable declaration."""
-    match data:
-        case list() | set():
-            return f"static _VVal {name}[] = {value};"
-        case dict():
-            return f"static _VKV {name}[] = {value};"
-        case _:
-            wrapped = _format_sv_entry(original=data, formatted=value)
-            return f"static _VVal {name} = {wrapped};"
+def _build_sv_entry_formatter(
+    *, datetime_as_int: bool
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter from datetime output metadata."""
+
+    def _format(original: Value, formatted: str) -> str:
+        """Wrap one SystemVerilog value."""
+        return _format_sv_entry(
+            original=original,
+            formatted=formatted,
+            datetime_as_int=datetime_as_int,
+        )
+
+    return _format
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format a SystemVerilog variable assignment."""
-    if isinstance(data, (list, set, dict)):
-        return f"{name} = {value};"
-    wrapped = _format_sv_entry(original=data, formatted=value)
-    return f"{name} = {wrapped};"
+def _build_sv_variable_declaration(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build a SystemVerilog variable declaration formatter."""
+
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Declare one SystemVerilog value."""
+        match data:
+            case list() | set():
+                return f"static _VVal {name}[] = {value};"
+            case dict():
+                return f"static _VKV {name}[] = {value};"
+            case _:
+                wrapped = format_entry(data, value)
+                return f"static _VVal {name} = {wrapped};"
+
+    return _format
+
+
+@beartype
+def _build_sv_variable_assignment(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value], str]:
+    """Build a SystemVerilog variable assignment formatter."""
+
+    def _format(name: str, value: str, data: Value) -> str:
+        """Assign one SystemVerilog value."""
+        if isinstance(data, (list, set, dict)):
+            return f"{name} = {value};"
+        wrapped = format_entry(data, value)
+        return f"{name} = {wrapped};"
+
+    return _format
+
+
+_format_sv_entry_iso = _build_sv_entry_formatter(datetime_as_int=False)
 
 
 _SV_NULL = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
@@ -602,7 +641,9 @@ class SystemVerilog(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=_build_sv_variable_declaration(
+                format_entry=_format_sv_entry_iso
+            ),
             supports_redefinition=True,
         )
 
@@ -929,19 +970,28 @@ class SystemVerilog(metaclass=LanguageCls):
         return format_string_backslash_nul_octal
 
     @cached_property
+    def _entry_formatter(self) -> Callable[[Value, str], str]:
+        """Entry formatter built from datetime output metadata."""
+        return _build_sv_entry_formatter(
+            datetime_as_int=self.datetime_format.value.type_produced is int
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_sv_entry
+        return self._entry_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_sv_entry
+        return self._entry_formatter
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_variable_assignment
+        return _build_sv_variable_assignment(
+            format_entry=self._entry_formatter
+        )
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -981,7 +1031,7 @@ class SystemVerilog(metaclass=LanguageCls):
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``_VVal`` struct literal."""
-        return _format_sv_entry
+        return self._entry_formatter
 
     @cached_property
     def format_call_preamble_stub(
@@ -1096,7 +1146,7 @@ class SystemVerilog(metaclass=LanguageCls):
         """
         return dict_entry_with_template(
             template="_VKV'{{k: {key}, v: {value}}}",
-            format_value=_format_sv_entry,
+            format_value=self._entry_formatter,
         )
 
     @cached_property
@@ -1179,7 +1229,9 @@ class SystemVerilog(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        return _build_sv_variable_declaration(
+            format_entry=self._entry_formatter
+        )
 
     @cached_property
     def format_call_variable_declaration(

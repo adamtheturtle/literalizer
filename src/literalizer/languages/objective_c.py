@@ -117,7 +117,9 @@ _OBJC_BARE_NUMERIC = re.compile(
 
 
 @beartype
-def _format_objc_entry(original: Value, formatted: str, /) -> str:
+def _format_objc_entry(
+    original: Value, formatted: str, /, *, datetime_as_number: bool
+) -> str:
     """Wrap a formatted entry for use inside an Objective-C collection.
 
     Only bare numeric values (``int`` / ``float``, but not ``bool``)
@@ -128,11 +130,7 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
     ``readability-redundant-parentheses`` check passes.
     """
     is_numeric_datetime = (
-        isinstance(
-            original,
-            datetime.datetime,
-        )
-        and formatted.lstrip("-").isdigit()
+        isinstance(original, datetime.datetime) and datetime_as_number
     )
     if isinstance(original, bool) or not (
         isinstance(original, (int, float)) or is_numeric_datetime
@@ -146,25 +144,54 @@ def _format_objc_entry(original: Value, formatted: str, /) -> str:
 
 
 @beartype
-def _format_objc_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format an Objective-C ``id`` declaration, boxing primitive scalars.
+def _build_objc_entry_formatter(
+    *, datetime_as_number: bool
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter from datetime output metadata."""
 
-    Same reason as :func:`_format_objc_entry`: an ``id`` is a pointer
-    type, so bare ``int``/``float`` values must be boxed as ``NSNumber``
-    before assignment.
-    """
-    return f"id {name} = {_format_objc_entry(data, value)};"
+    def _format(original: Value, formatted: str) -> str:
+        """Box one Objective-C value."""
+        return _format_objc_entry(
+            original,
+            formatted,
+            datetime_as_number=datetime_as_number,
+        )
+
+    return _format
 
 
 @beartype
-def _format_objc_assignment(name: str, value: str, data: Value) -> str:
-    """Format an Objective-C reassignment, boxing primitive scalars."""
-    return f"{name} = {_format_objc_entry(data, value)};"
+def _build_objc_declaration(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build an Objective-C declaration formatter."""
+
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Declare one boxed Objective-C value."""
+        return f"id {name} = {format_entry(data, value)};"
+
+    return _format
+
+
+@beartype
+def _build_objc_assignment(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value], str]:
+    """Build an Objective-C assignment formatter."""
+
+    def _format(name: str, value: str, data: Value) -> str:
+        """Assign one boxed Objective-C value."""
+        return f"{name} = {format_entry(data, value)};"
+
+    return _format
+
+
+_format_objc_entry_iso = _build_objc_entry_formatter(datetime_as_number=False)
 
 
 @beartype
@@ -188,7 +215,7 @@ def _format_objc_call_declaration(
 def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
     """Format an Objective-C reassignment binding a call result.
 
-    The call-expression counterpart of :func:`_format_objc_assignment`;
+    The call-expression counterpart of the literal assignment formatter;
     no ``@(...)`` boxing since a call already yields an object pointer.
     """
     return f"{name} = {value};"
@@ -815,7 +842,9 @@ class ObjectiveC(metaclass=LanguageCls):
         """Declaration style options."""
 
         TYPED = DeclarationStyleConfig(
-            formatter=_format_objc_declaration,
+            formatter=_build_objc_declaration(
+                format_entry=_format_objc_entry_iso
+            ),
             supports_redefinition=True,
         )
 
@@ -1089,19 +1118,26 @@ class ObjectiveC(metaclass=LanguageCls):
         return _format_objc_string
 
     @cached_property
+    def _entry_formatter(self) -> Callable[[Value, str], str]:
+        """Entry formatter built from datetime output metadata."""
+        return _build_objc_entry_formatter(
+            datetime_as_number=self.datetime_format.value.type_produced is int
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_objc_entry
+        return self._entry_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_objc_entry
+        return self._entry_formatter
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_objc_assignment
+        return _build_objc_assignment(format_entry=self._entry_formatter)
 
     @cached_property
     def format_call_variable_declaration(
@@ -1230,7 +1266,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Box each call argument as an ``id`` so call sites match the
         concrete prototype emitted by :func:`_objc_call_stub`.
         """
-        return _format_objc_entry
+        return self._entry_formatter
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1252,7 +1288,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Shared dict-entry formatter used by dict and ordered-map."""
         return dict_entry_with_separator(
             separator=": ",
-            format_value=_format_objc_entry,
+            format_value=self._entry_formatter,
         )
 
     @cached_property
@@ -1345,7 +1381,7 @@ class ObjectiveC(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        return _build_objc_declaration(format_entry=self._entry_formatter)
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
