@@ -2454,9 +2454,10 @@ _NLOHMANN_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _cpp_nlohmann_json_value_expression(value: str, /) -> str:
-    """Wrap *value* in ``nlohmann::json(...)`` unless it is already a
-    structural ``nlohmann::json`` factory expression.
+def _cpp_nlohmann_json_value_expression(
+    raw_value: Value, value: str, /
+) -> str:
+    """Wrap a scalar *value* in ``nlohmann::json(...)``.
 
     The explicit ``array`` and ``object`` factories in the collection
     configurations preserve empty-container intent and avoid the
@@ -2464,15 +2465,15 @@ def _cpp_nlohmann_json_value_expression(value: str, /) -> str:
     need the wrapping constructor so a bare declaration still deduces
     to ``nlohmann::json``.
     """
-    if value.startswith("nlohmann::json"):
+    if isinstance(raw_value, (dict, list, set)):
         return value
     return f"nlohmann::json({value})"
 
 
 @beartype
-def _format_cpp_json_call_arg(_raw_value: Value, formatted: str) -> str:
+def _format_cpp_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct call argument as structural ``nlohmann::json``."""
-    return _cpp_nlohmann_json_value_expression(formatted)
+    return _cpp_nlohmann_json_value_expression(raw_value, formatted)
 
 
 # C++ raw-string delimiter wrapping the inline JSON document under
@@ -3750,17 +3751,16 @@ class Cpp(metaclass=LanguageCls):
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
-            wrap_json_expression = (
-                _cpp_nlohmann_json_parse_expression
-                if self._json_inline_document_active
-                else _cpp_nlohmann_json_value_expression
-            )
 
-            def _formatter(name: str, value: str, _data: Value) -> str:
+            def _formatter(name: str, value: str, data: Value) -> str:
                 """Assign a ``nlohmann::json`` value to an existing
                 binding.
                 """
-                expr = wrap_json_expression(value)
+                expr = (
+                    _cpp_nlohmann_json_parse_expression(value)
+                    if self._json_inline_document_active
+                    else _cpp_nlohmann_json_value_expression(data, value)
+                )
                 return f"{name} = {expr};"
 
             return _formatter
@@ -4555,16 +4555,11 @@ class Cpp(metaclass=LanguageCls):
         :class:`Value` rather than the rendered text.
         """
         if self._json_type_active:
-            wrap_json_expression = (
-                _cpp_nlohmann_json_parse_expression
-                if self._json_inline_document_active
-                else _cpp_nlohmann_json_value_expression
-            )
 
             def _json_formatter(
                 name: str,
                 value: str,
-                _data: Value,
+                data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Render an ``auto``-deduced ``nlohmann::json``
@@ -4576,7 +4571,11 @@ class Cpp(metaclass=LanguageCls):
                 considers explicitly-typed local variables); the deduced
                 type is the same.
                 """
-                expr = wrap_json_expression(value)
+                expr = (
+                    _cpp_nlohmann_json_parse_expression(value)
+                    if self._json_inline_document_active
+                    else _cpp_nlohmann_json_value_expression(data, value)
+                )
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
                 return f"{prefix}auto {name} = {expr};"
 

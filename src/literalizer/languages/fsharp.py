@@ -181,8 +181,8 @@ _FSHARP_JSON_EMPTY_ARRAY = "JsonArray()"
 
 
 @beartype
-def _fsharp_json_wrap(formatted: str) -> str:
-    """Coerce a rendered F# expression to the ``JsonNode`` base class.
+def _fsharp_json_wrap(original: Value, formatted: str) -> str:
+    """Coerce an F# expression to the ``JsonNode`` base class.
 
     ``JsonObject`` / ``JsonArray`` literals and ``null`` are already
     valid ``JsonNode`` expressions; a scalar literal is wrapped in
@@ -192,36 +192,29 @@ def _fsharp_json_wrap(formatted: str) -> str:
     collections type-infer as ``IDictionary<string, JsonNode>`` /
     ``JsonNode array``.
     """
-    if formatted.startswith(
-        (
-            _FSHARP_JSON_OBJECT_OPEN,
-            _FSHARP_JSON_ARRAY_OPEN,
-            _FSHARP_JSON_EMPTY_OBJECT,
-            _FSHARP_JSON_EMPTY_ARRAY,
-        )
-    ):
+    if isinstance(original, (dict, list, set)):
         return f"({formatted} :> JsonNode)"
-    if formatted == "null":
+    if original is None:
         return "(null :> JsonNode)"
     return f"(JsonValue.Create({formatted}) :> JsonNode)"
 
 
 @beartype
-def _format_fsharp_json_entry(_original: Value, formatted: str) -> str:
+def _format_fsharp_json_entry(original: Value, formatted: str) -> str:
     """Wrap a sequence / set / dict entry for ``JsonArray`` /
     ``JsonObject``.
     """
-    return _fsharp_json_wrap(formatted=formatted)
+    return _fsharp_json_wrap(original=original, formatted=formatted)
 
 
 @beartype
-def _format_fsharp_json_call_arg(_original: Value, formatted: str, /) -> str:
+def _format_fsharp_json_call_arg(original: Value, formatted: str, /) -> str:
     """Wrap a direct F# call argument as ``JsonNode``."""
-    return _fsharp_json_wrap(formatted=formatted)
+    return _fsharp_json_wrap(original=original, formatted=formatted)
 
 
 @beartype
-def _fsharp_json_top_level(formatted: str) -> str:
+def _fsharp_json_top_level(original: Value, formatted: str) -> str:
     """Render the top-level right-hand side of a ``JsonNode`` binding.
 
     Collection literals (``JsonObject(...)``, ``JsonArray(...)``) and
@@ -231,24 +224,18 @@ def _fsharp_json_top_level(formatted: str) -> str:
     ``JsonNode``) rather than a raw primitive that F# would refuse to
     widen.
     """
-    if formatted.startswith(
-        (
-            _FSHARP_JSON_OBJECT_OPEN,
-            _FSHARP_JSON_ARRAY_OPEN,
-            _FSHARP_JSON_EMPTY_OBJECT,
-            _FSHARP_JSON_EMPTY_ARRAY,
-        )
-    ):
+    if isinstance(original, (dict, list, set)):
         return formatted
-    if formatted == "null":
+    if original is None:
         return "null"
     return f"JsonValue.Create({formatted})"
 
 
 @beartype
-def _format_fsharp_json_assignment(name: str, value: str, _data: Value) -> str:
+def _format_fsharp_json_assignment(name: str, value: str, data: Value) -> str:
     """Assign a rendered literal to an F# ``JsonNode`` binding."""
-    return f"let {name}: JsonNode = {_fsharp_json_top_level(formatted=value)}"
+    rhs = _fsharp_json_top_level(original=data, formatted=value)
+    return f"let {name}: JsonNode = {rhs}"
 
 
 @beartype
@@ -258,9 +245,9 @@ def _build_fsharp_json_declaration_inner(
 ) -> Callable[[str, str, Value], str]:
     """Build a new F# ``JsonNode`` declaration formatter."""
 
-    def _format(name: str, value: str, _data: Value) -> str:
+    def _format(name: str, value: str, data: Value) -> str:
         """Format a JSON-backed declaration."""
-        rhs = _fsharp_json_top_level(formatted=value)
+        rhs = _fsharp_json_top_level(original=data, formatted=value)
         return f"{keyword} {name}: JsonNode = {rhs}"
 
     return _format

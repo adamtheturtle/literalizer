@@ -423,39 +423,29 @@ _CSHARP_JSON_EMPTY_ARRAY = "new JsonArray()"
 
 
 @beartype
-def _csharp_json_value_expression(value: str, /) -> str:
-    """Cast a rendered literal to ``JsonNode?`` unless it already
-    evaluates to a ``JsonNode`` (a ``new JsonObject``/``new JsonArray``
-    expression) or has already been cast.
+def _csharp_json_value_expression(raw_value: Value, value: str, /) -> str:
+    """Cast a scalar literal to ``JsonNode?``.
 
     The cast triggers ``System.Text.Json.Nodes``'s implicit operators
     that convert primitives (``int``, ``string``, ``bool``, ``double``)
     to ``JsonValue`` so scalars become ``JsonNode``-typed without an
     explicit ``JsonValue.Create(...)`` call.
     """
-    if value.startswith(
-        (
-            _CSHARP_JSON_OBJECT_OPEN,
-            _CSHARP_JSON_ARRAY_OPEN,
-            _CSHARP_JSON_EMPTY_OBJECT,
-            _CSHARP_JSON_EMPTY_ARRAY,
-            "(JsonNode",
-        )
-    ):
+    if raw_value is None or isinstance(raw_value, (dict, list, set)):
         return value
     return f"(JsonNode?)({value})"
 
 
 @beartype
-def _format_csharp_json_call_arg(_raw_value: Value, formatted: str) -> str:
+def _format_csharp_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct C# call argument as ``JsonNode?``."""
-    return _csharp_json_value_expression(formatted)
+    return _csharp_json_value_expression(raw_value, formatted)
 
 
 @beartype
-def _format_csharp_json_assignment(name: str, value: str, _data: Value) -> str:
+def _format_csharp_json_assignment(name: str, value: str, data: Value) -> str:
     """Assign a rendered literal to a C# ``JsonNode?`` binding."""
-    return f"{name} = {_csharp_json_value_expression(value)};"
+    return f"{name} = {_csharp_json_value_expression(data, value)};"
 
 
 @beartype
@@ -474,7 +464,7 @@ def _csharp_json_declaration_formatter(
     def _formatter(
         name: str,
         value: str,
-        _data: Value,
+        data: Value,
         modifiers: frozenset[enum.Enum],
     ) -> str:
         """Format a JSON-backed declaration."""
@@ -486,7 +476,7 @@ def _csharp_json_declaration_formatter(
             )
             raise IncompatibleFormatsError(msg)
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
-        expr = _csharp_json_value_expression(value)
+        expr = _csharp_json_value_expression(data, value)
         return f"{prefix}{json_type}? {name} = {expr};"
 
     return _formatter
