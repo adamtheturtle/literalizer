@@ -71,9 +71,9 @@ its directory name stays a single source of truth on disk and reading
 the case tells you it is load-bearing.
 """
 
-CASE_ROLE_NAMES: frozenset[CaseRoleName] = frozenset(
+CASE_ROLE_NAMES = frozenset[CaseRoleName](
     get_args(tp=_CaseRoleNameLiteral),
-)  # ty: ignore[unsound-assignment]
+)
 
 HETEROGENEOUS_STRATEGY_DEFAULT_ROLE: CaseRoleName = (
     "heterogeneous-strategy-default-input"
@@ -408,7 +408,7 @@ def _empty_names() -> tuple[str, ...]:
 
 def _empty_name_set() -> frozenset[str]:
     """Return a typed empty name set for the validation model."""
-    return frozenset()  # ty: ignore[unsound-return-statement]
+    return frozenset[str]()
 
 
 def _single_stub_parameter() -> tuple[str, ...]:
