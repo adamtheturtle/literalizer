@@ -866,11 +866,13 @@ def neutralize_comment_terminator(
     terminator = comment_suffix.strip()
     if isinstance(comment_suffix, NestingCommentSuffix):
         opener = comment_suffix.opener
-        text = text.replace(opener, " ".join(opener))  # pyrefly: ignore [string-as-iterable]
+        text = text.replace(
+            opener, " ".join(character for character in opener)
+        )
     if terminator == "" or terminator not in text:
         return text
     replacement = (
-        " ".join(terminator)  # pyrefly: ignore [string-as-iterable]
+        " ".join(character for character in terminator)
         if len(terminator) > 1
         else f"<U+{ord(terminator):04X}>"
     )
