@@ -162,26 +162,25 @@ def _format_bytes_base64_forth(value: bytes) -> str:
 
 
 @beartype
-def _forth_scalar_marker(value: Value, formatted: str) -> str:
-    r"""Return the visitor marker word for a formatted scalar.
-
-    The marker reflects the *rendered* form, not the Python type, so a
-    datetime literalized to an epoch integer is tagged ``+int`` while
-    one rendered as an ISO ``s\" ..."`` string is tagged ``+str``.
-    """
+def _forth_scalar_marker(value: Value, *, datetime_as_int: bool) -> str:
+    """Return the visitor marker word from source and format metadata."""
     match value:
         case bool():
             return "+bool"
         case float():
             return "+float"
-        case _ if formatted.startswith('s\\"'):
+        case datetime.datetime():
+            return "+int" if datetime_as_int else "+str"
+        case str() | bytes() | datetime.date() | datetime.time():
             return "+str"
         case _:
             return "+int"
 
 
 @beartype
-def _forth_mark_value(value: Value, formatted: str) -> str:
+def _forth_mark_value(
+    value: Value, formatted: str, *, datetime_as_int: bool
+) -> str:
     r"""Append a visitor marker after a formatted leaf value.
 
     Container values already carry their own ``+obj``/``+arr`` brackets,
@@ -197,65 +196,69 @@ def _forth_mark_value(value: Value, formatted: str) -> str:
         case None:
             return "+null"
         case _:
-            marker = _forth_scalar_marker(value=value, formatted=formatted)
+            marker = _forth_scalar_marker(
+                value=value, datetime_as_int=datetime_as_int
+            )
             return f"{formatted} {marker}"
 
 
 @beartype
-def _format_forth_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    r"""Format a Forth colon definition emitting a visitor stream.
+def _build_forth_value_formatter(
+    *, datetime_as_int: bool
+) -> Callable[[Value, str], str]:
+    """Build a value formatter from datetime output metadata."""
 
-    A top-level scalar is tagged with its marker so the definition is a
-    complete visitor sequence on its own; collections already carry
-    their brackets and markers from the opener/entry formatters.
+    def _format(value: Value, formatted: str) -> str:
+        """Append the matching visitor marker."""
+        return _forth_mark_value(
+            value=value,
+            formatted=formatted,
+            datetime_as_int=datetime_as_int,
+        )
 
-    Example (single line): ``: my_data 42 +int ;``
-
-    Example (multi-line)::
-
-        : my_data
-        +obj
-            s\" name" +key s\" Alice" +str
-            s\" age" +key 30 +int
-         -obj
-        ;
-    """
-    # Every value yields a non-empty body: scalars gain a marker, ``null``
-    # becomes ``+null``, and empty collections render ``+obj -obj`` /
-    # ``+arr -arr``, so there is no empty-definition case to guard.
-    body = _forth_mark_value(value=data, formatted=value)
-    stripped = body.strip("\n")
-    if "\n" in stripped:
-        return f": {name}\n{stripped}\n;"
-    return f": {name} {stripped} ;"
+    return _format
 
 
 @beartype
-def _format_forth_dict_entry(
-    key: str,
-    raw_value: Value,
-    formatted_value: str,
-) -> str:
-    r"""Format a dict entry as a ``+key`` token followed by the value.
+def _build_forth_declaration(
+    *, format_value: Callable[[Value, str], str]
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build a Forth colon-definition formatter."""
 
-    Example: ``s\" name" +key s\" Alice" +str``.
-    """
-    marked = _forth_mark_value(value=raw_value, formatted=formatted_value)
-    return f"{key} +key {marked}"
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Format a Forth colon definition emitting a visitor stream."""
+        body = format_value(data, value)
+        stripped = body.strip("\n")
+        if "\n" in stripped:
+            return f": {name}\n{stripped}\n;"
+        return f": {name} {stripped} ;"
+
+    return _format
 
 
 @beartype
-def _forth_sequence_entry(value: Value, item: str) -> str:
-    r"""Tag a sequence or set element with its visitor marker.
+def _build_forth_dict_entry(
+    *, format_value: Callable[[Value, str], str]
+) -> Callable[[str, Value, str], str]:
+    """Build a Forth key/value entry formatter."""
 
-    Example: ``42`` -> ``42 +int``.
-    """
-    return _forth_mark_value(value=value, formatted=item)
+    def _format(key: str, raw_value: Value, formatted_value: str) -> str:
+        """Format a ``+key`` token followed by a marked value."""
+        marked = format_value(raw_value, formatted_value)
+        return f"{key} +key {marked}"
+
+    return _format
+
+
+_format_forth_value_iso = _build_forth_value_formatter(datetime_as_int=False)
+_format_forth_declaration_iso = _build_forth_declaration(
+    format_value=_format_forth_value_iso
+)
 
 
 @beartype
@@ -449,7 +452,7 @@ class Forth(metaclass=LanguageCls):
             supports_trailing_comma=False,
             empty_sequence="+arr -arr",
             preamble_lines=(),
-            format_entry=_forth_sequence_entry,
+            format_entry=_format_forth_value_iso,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
@@ -486,7 +489,7 @@ class Forth(metaclass=LanguageCls):
         """Declaration style options."""
 
         COLON = DeclarationStyleConfig(
-            formatter=_format_forth_declaration,
+            formatter=_format_forth_declaration_iso,
             supports_redefinition=True,
         )
 
@@ -742,19 +745,33 @@ class Forth(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _value_formatter(self) -> Callable[[Value, str], str]:
+        """Value formatter built from datetime output metadata."""
+        return _build_forth_value_formatter(
+            datetime_as_int=self.datetime_format.value.type_produced is int
+        )
+
+    @cached_property
+    def _dict_entry(self) -> Callable[[str, Value, str], str]:
+        """Dictionary entry formatter using the configured value
+        marker.
+        """
+        return _build_forth_dict_entry(format_value=self._value_formatter)
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _forth_sequence_entry
+        return self._value_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _forth_sequence_entry
+        return self._value_formatter
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Format one ordered-map entry."""
-        return _format_forth_dict_entry
+        return self._dict_entry
 
     @cached_property
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
@@ -873,7 +890,7 @@ class Forth(metaclass=LanguageCls):
         return DictFormatConfig(
             dict_open=fixed_open(open_str="+obj "),
             close=" -obj",
-            format_entry=_format_forth_dict_entry,
+            format_entry=self._dict_entry,
             empty_dict="+obj -obj",
             preamble_lines=(),
             narrowed_open=None,
@@ -935,7 +952,7 @@ class Forth(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        return _build_forth_declaration(format_value=self._value_formatter)
 
     @cached_property
     def format_variable_assignment(
@@ -943,7 +960,7 @@ class Forth(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable."""
         return assignment_formatter_from_declaration(
-            formatter=self.declaration_style.value.formatter,
+            formatter=self.format_variable_declaration,
         )
 
     @cached_property

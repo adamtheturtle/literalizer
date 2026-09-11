@@ -134,13 +134,16 @@ def _ada_narrowed_empty_form(_siblings: Sequence[list[Value]]) -> str:
 
 
 @beartype
-def _format_ada_entry(original: Value, formatted: str) -> str:
+def _format_ada_entry(
+    original: Value, formatted: str, *, datetime_as_int: bool
+) -> str:
     """Wrap a formatted entry in the appropriate Ada ``A_Val`` constructor."""
     match original:
         case bool():
             return formatted
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            return f"AInt ({formatted})"
+        case datetime.datetime():
+            tag = "AInt" if datetime_as_int else "AStr"
+            return f"{tag} ({formatted})"
         case int():
             return f"AInt ({formatted})"
         case float():
@@ -152,30 +155,56 @@ def _format_ada_entry(original: Value, formatted: str) -> str:
 
 
 @beartype
-def _format_variable_declaration(
-    name: str,
-    value: str,
-    data: Value,
-    _modifiers: frozenset[enum.Enum],
-) -> str:
-    """Format an Ada object declaration.
+def _build_ada_entry_formatter(
+    *, datetime_as_int: bool
+) -> Callable[[Value, str], str]:
+    """Build an entry formatter from datetime output metadata."""
 
-    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
-    ``"x : A_Val := AList'[AInt (1)];"``
-    """
-    wrapped = _format_ada_entry(original=data, formatted=value)
-    return f"{name} : A_Val := {wrapped};"
+    def _format(original: Value, formatted: str) -> str:
+        """Wrap one Ada value."""
+        return _format_ada_entry(
+            original=original,
+            formatted=formatted,
+            datetime_as_int=datetime_as_int,
+        )
+
+    return _format
 
 
 @beartype
-def _format_variable_assignment(name: str, value: str, data: Value) -> str:
-    """Format an Ada assignment statement to an existing variable.
+def _build_ada_variable_declaration(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Build an Ada object declaration formatter."""
 
-    Example: ``"x"`` and ``"AList'[AInt (1)]"`` →
-    ``"x := AList'[AInt (1)];"``
-    """
-    wrapped = _format_ada_entry(original=data, formatted=value)
-    return f"{name} := {wrapped};"
+    def _format(
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+    ) -> str:
+        """Wrap and declare one Ada value."""
+        wrapped = format_entry(data, value)
+        return f"{name} : A_Val := {wrapped};"
+
+    return _format
+
+
+@beartype
+def _build_ada_variable_assignment(
+    *, format_entry: Callable[[Value, str], str]
+) -> Callable[[str, str, Value], str]:
+    """Build an Ada assignment formatter."""
+
+    def _format(name: str, value: str, data: Value) -> str:
+        """Wrap and assign one Ada value."""
+        wrapped = format_entry(data, value)
+        return f"{name} := {wrapped};"
+
+    return _format
+
+
+_format_ada_entry_iso = _build_ada_entry_formatter(datetime_as_int=False)
 
 
 @beartype
@@ -536,7 +565,9 @@ class Ada(metaclass=LanguageCls):
         """Declaration style options."""
 
         DECLARE = DeclarationStyleConfig(
-            formatter=_format_variable_declaration,
+            formatter=_build_ada_variable_declaration(
+                format_entry=_format_ada_entry_iso
+            ),
             supports_redefinition=True,
         )
 
@@ -860,19 +891,28 @@ class Ada(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _entry_formatter(self) -> Callable[[Value, str], str]:
+        """Entry formatter built from datetime output metadata."""
+        return _build_ada_entry_formatter(
+            datetime_as_int=self.datetime_format.value.type_produced is int
+        )
+
+    @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
-        return _format_ada_entry
+        return self._entry_formatter
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
-        return _format_ada_entry
+        return self._entry_formatter
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
-        return _format_variable_assignment
+        return _build_ada_variable_assignment(
+            format_entry=self._entry_formatter
+        )
 
     @cached_property
     def format_call_variable_declaration(
@@ -959,7 +999,7 @@ class Ada(metaclass=LanguageCls):
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap a call argument in the appropriate A_Val constructor."""
-        return _format_ada_entry
+        return self._entry_formatter
 
     @cached_property
     def format_call_ref_identifier(
@@ -1032,7 +1072,7 @@ class Ada(metaclass=LanguageCls):
             close="]",
             format_entry=dict_entry_with_template(
                 template="AEntry ({key}, {value})",
-                format_value=_format_ada_entry,
+                format_value=self._entry_formatter,
             ),
             empty_dict="AMap'[]",
             preamble_lines=(),
@@ -1115,7 +1155,7 @@ class Ada(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_template(
             template="AEntry ({key}, {value})",
-            format_value=_format_ada_entry,
+            format_value=self._entry_formatter,
         )
 
     @cached_property
@@ -1123,7 +1163,9 @@ class Ada(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        return _build_ada_variable_declaration(
+            format_entry=self._entry_formatter
+        )
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
