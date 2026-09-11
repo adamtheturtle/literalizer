@@ -99,36 +99,58 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
+_OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
+    int: "Int",
+    float: "Float",
+    str: "Str",
+    bytes: "Str",
+    datetime.time: "Str",
+}
+
 
 @beartype
-def _apply_ocaml_entry(original: Value, formatted: str, prefix: str) -> str:
+def _ocaml_entry_tag(
+    original: Value,
+    date_type: type,
+    datetime_type: type,
+) -> str | None:
+    """Return the ``val_t`` tag required for a source value."""
+    if isinstance(original, datetime.datetime):
+        if datetime_type is datetime.datetime:
+            return None
+        return "Int" if datetime_type is int else "Str"
+    if isinstance(original, datetime.date):
+        if date_type is datetime.date:
+            return None
+        return "Str"
+    return _OCAML_SCALAR_ENTRY_TAGS.get(type(original))
+
+
+@beartype
+def _apply_ocaml_entry(
+    original: Value,
+    formatted: str,
+    prefix: str,
+    date_type: type,
+    datetime_type: type,
+) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
-    match original:
-        case bool():
-            return formatted
-        case int():
-            tag = "Int"
-        case float():
-            tag = "Float"
-        case str() | bytes():
-            tag = "Str"
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            tag = "Int"
-        case datetime.time() if formatted.startswith('"'):
-            tag = "Str"
-        case datetime.date() if formatted.startswith('"'):
-            tag = "Str"
-        case _:
-            return formatted
+    tag = _ocaml_entry_tag(
+        original=original,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    if tag is None:
+        return formatted
     literal = f"({formatted})" if formatted.startswith("-") else formatted
     return f"{prefix}{tag} {literal}"
 
 
 @beartype
 def _build_ocaml_entry_formatter(
-    prefix: str,
+    prefix: str, date_type: type, datetime_type: type
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in OCaml ``val_t``
     constructors using the given *prefix*.
@@ -137,13 +159,14 @@ def _build_ocaml_entry_formatter(
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_entry(
-            original=original, formatted=formatted, prefix=prefix
+            original=original,
+            formatted=formatted,
+            prefix=prefix,
+            date_type=date_type,
+            datetime_type=datetime_type,
         )
 
     return _format
-
-
-_format_ocaml_entry = _build_ocaml_entry_formatter(prefix="O")
 
 
 _YOJSON_SAFE_T = "Yojson.Safe.t"
@@ -1072,7 +1095,11 @@ class OCaml(metaclass=LanguageCls):
         """Entry formatter built from the configured prefix."""
         if self._json_type_active:
             return _apply_yojson_entry
-        return _build_ocaml_entry_formatter(prefix=self.constructor_prefix)
+        return _build_ocaml_entry_formatter(
+            prefix=self.constructor_prefix,
+            date_type=self.date_format.value.type_produced,
+            datetime_type=self.datetime_format.value.type_produced,
+        )
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

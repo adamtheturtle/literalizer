@@ -128,11 +128,12 @@ def _apply_format_c_entry(
     uint_field: str,
     float_field: str,
     string_field: str,
+    datetime_as_int: bool,
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
-        case datetime.datetime() if formatted.lstrip("-").isdigit():
-            field = int_field
+        case datetime.datetime():
+            field = int_field if datetime_as_int else string_field
         case str() | bytes() | datetime.date():
             field = string_field
         case bool():
@@ -158,6 +159,7 @@ def _make_format_c_entry(
     uint_field: str,
     float_field: str,
     string_field: str,
+    datetime_as_int: bool,
 ) -> collections.abc.Callable[[Value, str], str]:
     """Return a formatter that wraps values in the appropriate
     ``CVal`` union literal using the given field names.
@@ -172,6 +174,7 @@ def _make_format_c_entry(
             uint_field=uint_field,
             float_field=float_field,
             string_field=string_field,
+            datetime_as_int=datetime_as_int,
         )
 
     return _format_c_entry
@@ -200,6 +203,7 @@ def _apply_format_c_entry_record(
     string_field: str,
     bool_field: str,
     array_field: str,
+    datetime_as_int: bool,
 ) -> str:
     """Wrap a formatted entry in the appropriate ``CVal`` union literal
     under the ``RECORD`` strategy.
@@ -234,6 +238,7 @@ def _apply_format_c_entry_record(
                 uint_field=uint_field,
                 float_field=float_field,
                 string_field=string_field,
+                datetime_as_int=datetime_as_int,
             )
 
 
@@ -246,6 +251,7 @@ def _make_format_c_entry_record(
     string_field: str,
     bool_field: str,
     array_field: str,
+    datetime_as_int: bool,
 ) -> collections.abc.Callable[[Value, str], str]:
     """Return the ``RECORD``-strategy ``CVal``-wrapping entry
     formatter.
@@ -262,6 +268,7 @@ def _make_format_c_entry_record(
             string_field=string_field,
             bool_field=bool_field,
             array_field=array_field,
+            datetime_as_int=datetime_as_int,
         )
 
     return _format_c_entry
@@ -1781,12 +1788,16 @@ class C(metaclass=LanguageCls):
                 string_field=self.string_field,
                 bool_field=self.bool_field,
                 array_field=self.array_field,
+                datetime_as_int=(
+                    self.datetime_format.value.type_produced is int
+                ),
             )
         return _make_format_c_entry(
             int_field=self.int_field,
             uint_field=self.uint_field,
             float_field=self.float_field,
             string_field=self.string_field,
+            datetime_as_int=self.datetime_format.value.type_produced is int,
         )
 
     @cached_property
