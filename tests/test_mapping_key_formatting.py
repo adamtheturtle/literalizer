@@ -45,6 +45,25 @@ def test_ordered_object_proto_key_uses_source_name(
     )
 
 
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        JavaScript(string_format=JavaScript.string_formats.MULTILINE),
+        TypeScript(string_format=TypeScript.string_formats.MULTILINE),
+    ],
+)
+def test_multiline_ordered_object_computes_every_key(
+    language: JavaScript | TypeScript,
+) -> None:
+    """Multiline strings require computed-property syntax."""
+    assert (
+        language.ordered_map_format_config.format_key(
+            raw_key="ordinary", formatted_key='"rendered"'
+        )
+        == '["rendered"]'
+    )
+
+
 def test_ruby_symbol_label_uses_source_name() -> None:
     """Ruby label eligibility is decided before rendering the key."""
     language = Ruby(dict_entry_style=Ruby.dict_entry_styles.SYMBOL)
