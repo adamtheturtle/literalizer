@@ -578,18 +578,6 @@ def _format_cobol_dict_entry(
         bumped = _bump_levels(content=content)
         nested = textwrap.indent(text=bumped, prefix="    ")
         return f"05 {name}.\n{nested}"
-    # Comments can make a scalar entry multiline or place a complete
-    # DATA DIVISION entry around it.  These checks preserve that emitted
-    # layout; the source value above decides whether the value itself is
-    # a collection.
-    if "\n" in formatted_value:
-        bumped = _bump_levels(content=formatted_value)
-        nested = textwrap.indent(text=bumped, prefix="    ")
-        return f"05 {name}.\n{nested}"
-    if _is_data_entry(s=formatted_value.strip()):
-        bumped = _bump_levels(content=formatted_value.strip())
-        nested = textwrap.indent(text=bumped, prefix="    ")
-        return f"05 {name}.\n{nested}"
     picture_clause = _pic_from_value(
         original=raw_value,
         formatted=formatted_value,
@@ -2150,9 +2138,9 @@ class Cobol(metaclass=LanguageCls):
                 )
 
             return _format_cjson_decl
-        return _build_variable_declaration(
-            datetime_as_int=(self.datetime_format.value.type_produced is int),
-        )
+        if self.datetime_format.value.type_produced is int:
+            return _build_variable_declaration(datetime_as_int=True)
+        return _format_variable_declaration
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
