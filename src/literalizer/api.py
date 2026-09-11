@@ -9,7 +9,6 @@ package root as :func:`literalizer.literalize` and
 import dataclasses
 import enum
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import Any
 
 from beartype import beartype
 
@@ -131,15 +130,14 @@ def _validate_module_name_variable_collision(
     (issue #4752), and it is compared under its ``ref_case`` conversion
     for the reason ``_validate_bound_ref_output_name`` gives.
     """
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     # ``BothVariableForms`` is exempt: its wrapper puts everything it
     # declares in a subroutine named after the module rather than in
     # the module's own scope, so the names coexist (issue #4530).
     if (
         not wrap_in_file
         or isinstance(variable_form, BothVariableForms)
-        or not language_cls.supports_module_name
-        or not language_cls.module_name_shares_variable_scope
+        or not language.supports_module_name
+        or not language.module_name_shares_variable_scope
     ):
         return
     declared = {
@@ -155,7 +153,7 @@ def _validate_module_name_variable_collision(
         reserved_identifiers=frozenset(declared),
     ):
         raise ModuleNameVariableCollisionError(
-            language_name=language_cls.__name__,  # pyrefly: ignore [unknown-argument-type]
+            language_name=type(language).__name__,
             name=module_name,
         )
 
@@ -180,14 +178,13 @@ def _validate_immutable_both_forms(
     """
     if not isinstance(variable_form, BothVariableForms):
         return
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     immutable = sorted(
-        variable_form.modifiers & language_cls.immutable_variable_modifiers,  # pyrefly: ignore [unknown-argument-type]
+        variable_form.modifiers & language.immutable_variable_modifiers,
         key=_modifier_name,
     )
     for modifier in immutable:
         raise ImmutableVariableModifierError(
-            language_name=language_cls.__name__,  # pyrefly: ignore [unknown-argument-type]
+            language_name=type(language).__name__,
             modifier=modifier,
         )
 
@@ -205,14 +202,13 @@ def _validate_pre_indented_wrap(
     around it, so the file carries two margins.  Only a language that
     reads indentation as structure minds (issue #4535).
     """
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     if (
         pre_indent_level != 0
         and wrap_in_file
-        and not language_cls.wrap_in_file_tolerates_pre_indent
+        and not language.wrap_in_file_tolerates_pre_indent
     ):
         raise PreIndentedWrappedFileError(
-            language_name=language_cls.__name__,  # pyrefly: ignore [unknown-argument-type]
+            language_name=type(language).__name__,
         )
 
 

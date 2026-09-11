@@ -9,6 +9,7 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from types import MappingProxyType
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Final,
@@ -180,15 +181,14 @@ def validate_new_variable_name(
             name_source=name_source,
             variable_name=name,
         )
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
-    pattern = language_cls.reserved_variable_identifier_pattern  # pyrefly: ignore [unknown-variable-type]
+    pattern = language.reserved_variable_identifier_pattern
     if pattern is not None and pattern.fullmatch(string=name) is not None:
         raise ReservedVariableNameError(
             language_name=language_name,
             name_source=name_source,
             variable_name=name,
         )
-    if language_cls.supports_record_struct_name_prefix:
+    if language.supports_record_struct_name_prefix:
         strategy = vars(language).get("heterogeneous_strategy")
         prefix = vars(language)["record_struct_name_prefix"]
         if (
@@ -205,10 +205,10 @@ def validate_new_variable_name(
                 name_source=name_source,
                 variable_name=name,
             )
-    syntax = language_cls.new_variable_name_syntax  # pyrefly: ignore [unknown-variable-type]
+    syntax = language.new_variable_name_syntax
     if not syntax.accepts(name=name) or (
-        language_cls.max_variable_identifier_length is not None
-        and len(name) > language_cls.max_variable_identifier_length
+        language.max_variable_identifier_length is not None
+        and len(name) > language.max_variable_identifier_length
     ):
         raise InvalidNewVariableNameError(
             language_name=language_name,
@@ -1624,6 +1624,112 @@ class Language(Protocol):
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]  # pyrefly: ignore [explicit-any]
     variant_metadata: ClassVar[VariantMetadata]
     language_id: ClassVar[str]
+
+    # LanguageCls requires this metadata on every language class. Normal
+    # attribute lookup also exposes it through each instance, which is the
+    # interface rendering and validation code consumes.
+    @property
+    def accepts_type_name_call_target(self) -> bool:
+        """Whether a bare type name may be a call target."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def call_parameter_shadowing(self) -> CallParameterShadowing:
+        """Return the wrapped-call parameter shadowing rule."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def contextual_call_target_identifiers(self) -> frozenset[str]:
+        """Return contextual identifiers permitted as call targets."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def declares_type_name_call_target(self) -> bool:
+        """Whether a wrapped file can declare a type-name call target."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def dotted_call_root_shares_entrypoint_namespace(self) -> bool:
+        """Whether dotted call roots share entry-point identifiers."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def immutable_variable_modifiers(self) -> frozenset[enum.Enum]:
+        """Return modifiers that prevent later assignment."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def module_name_shares_variable_scope(self) -> bool:
+        """Whether module and variable names share a scope."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def new_variable_name_syntax(self) -> NewVariableNameSyntax:
+        """Return the grammar for new variable names."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def pools_map_integer_width(self) -> bool:
+        """Whether map values share one integer width."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def reserved_bare_call_target_identifiers(self) -> frozenset[str]:
+        """Return identifiers reserved only for bare call targets."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def reserved_call_target_head_identifiers(self) -> frozenset[str]:
+        """Return identifiers reserved at the head of a call target."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def reserved_call_target_keywords_case_sensitive(self) -> bool:
+        """Whether reserved call-target keywords are case-sensitive."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_module_name(self) -> bool:
+        """Whether this language supports a module name."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_multiline_dict_layout(self) -> bool:
+        """Whether mappings may use a multiline layout."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def supports_record_struct_name_prefix(self) -> bool:
+        """Whether record struct names accept a configurable prefix."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    @property
+    def wrap_in_file_tolerates_pre_indent(self) -> bool:
+        """Whether a wrapped file tolerates pre-indentation."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    if TYPE_CHECKING:
+        # A class-level ``None`` marks a runtime Protocol member as absent.
+        # These optional metadata values therefore remain static-only until
+        # https://github.com/python/cpython/issues/156413 is fixed.
+        @property
+        def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
+            """Return the specialized call-target grammar, when
+            present.
+            """
+            ...  # pylint: disable=unnecessary-ellipsis
+
+        @property
+        def max_variable_identifier_length(self) -> int | None:
+            """Return the maximum identifier length, when bounded."""
+            ...  # pylint: disable=unnecessary-ellipsis
+
+        @property
+        def reserved_variable_identifier_pattern(
+            self,
+        ) -> re.Pattern[str] | None:
+            """Return the reserved variable-name pattern, when present."""
+            ...  # pylint: disable=unnecessary-ellipsis
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class

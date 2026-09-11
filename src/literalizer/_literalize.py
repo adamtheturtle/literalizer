@@ -503,8 +503,7 @@ def _map_widened_int_formatter(
     value its own type, so there is nothing to pool and a mixed-width
     document renders each value on its own terms (issue #4488).
     """
-    language_cls: Any = type(spec)  # pyrefly: ignore [explicit-any]
-    if not language_cls.pools_map_integer_width:
+    if not spec.pools_map_integer_width:
         return None
     return _widened_int_formatter(items=items, spec=spec)
 
@@ -721,7 +720,7 @@ def _nested_collection_context(
     """Keep nested collection payload strings layout-independent."""
     if not isinstance(value, (dict, list, set)):
         return ctx
-    language_cls: Any = type(ctx.spec)  # pyrefly: ignore [explicit-any]
+    language_cls = type(ctx.spec)
     if not isinstance(language_cls, LanguageCls):
         msg = "nested collection rendering requires a LanguageCls language"
         raise TypeError(msg)
@@ -2306,8 +2305,7 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
     """
     if not isinstance(value, (dict, OrderedMap)):
         return ctx
-    language_cls: Any = type(ctx.spec)  # pyrefly: ignore [explicit-any]
-    if language_cls.supports_multiline_dict_layout:
+    if ctx.spec.supports_multiline_dict_layout:
         return ctx
     return ctx.compact()
 
@@ -4154,7 +4152,7 @@ def _scope_preamble_for_wrap(
     ``case class`` declarations) inside the wrapped body rather than at
     file scope; everything stays at file scope for the rest.
     """
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
+    language_cls = type(language)
     if not isinstance(language_cls, LanguageCls):
         msg = "preamble scoping requires a LanguageCls language"
         raise TypeError(msg)
@@ -4221,12 +4219,11 @@ def _declaration_spellings(
     styles of the same declaration, and the second is what the
     assignment form emits, so it stands on its own (issue #4465).
     """
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
-    styles = language_cls.DeclarationStyles  # pyrefly: ignore [unknown-variable-type]
+    styles = language.declaration_styles
     spellings: set[str] = set()
     for style in styles:
         try:
-            styled = dataclasses.replace(language, declaration_style=style)  # pyrefly: ignore [unknown-argument-type]
+            styled = dataclasses.replace(language, declaration_style=style)
         except LiteralizerError:
             # A style the rest of the spec rules out spells nothing.
             continue
@@ -6395,19 +6392,17 @@ def _validate_call_target(
         language=language,
         target_function=target_function,
     )
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     # A bare constructor target is just the class name, which some
     # languages do not admit as a function name at all (issue #3914).
     # Sliced rather than measured by ``len``: a length test narrows the
     # tuple type, and that narrowing reaches the head index below.
     exempt = is_constructor_target and (
         bool(target_function_parts[1:])
-        or language_cls.accepts_type_name_call_target
+        or language.accepts_type_name_call_target
     )
-    component_syntax = (
-        language_cls.call_target_name_syntax  # pyrefly: ignore [unknown-variable-type]
-        or language_cls.new_variable_name_syntax
-    )
+    component_syntax = language.call_target_name_syntax
+    if component_syntax is None:
+        component_syntax = language.new_variable_name_syntax
     # The leading component names a function, or the value a member is
     # read from, so it follows the declaration keyword rules of the
     # target language.  A later component is a member name, which a
@@ -6419,7 +6414,7 @@ def _validate_call_target(
     # the head is compared by case.
     head_case_sensitive = (
         language.reserved_variable_identifiers_case_sensitive
-        and language_cls.reserved_call_target_keywords_case_sensitive
+        and language.reserved_call_target_keywords_case_sensitive
     )
     # A language that declares a plain function only for a target with
     # no dot in it reserves those names here.  PHP matches a function
@@ -6428,17 +6423,17 @@ def _validate_call_target(
     bare_target_identifiers = (
         frozenset[str]()
         if len(target_function_parts[1:]) > 0
-        else language_cls.reserved_bare_call_target_identifiers
+        else language.reserved_bare_call_target_identifiers
     )
     if is_reserved_identifier(
         case_sensitive=head_case_sensitive,
         name=head,
-        reserved_identifiers=(  # pyrefly: ignore [unknown-argument-type]
+        reserved_identifiers=(
             language.reserved_variable_identifiers
-            | language_cls.reserved_call_target_head_identifiers
+            | language.reserved_call_target_head_identifiers
             | bare_target_identifiers
         )
-        - language_cls.contextual_call_target_identifiers,
+        - language.contextual_call_target_identifiers,
     ):
         raise InvalidCallTargetError(
             language_name=type(language).__name__,
@@ -6447,8 +6442,8 @@ def _validate_call_target(
         )
     for part in target_function_parts:
         if (
-            language_cls.max_variable_identifier_length is not None
-            and len(part) > language_cls.max_variable_identifier_length
+            language.max_variable_identifier_length is not None
+            and len(part) > language.max_variable_identifier_length
         ):
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
@@ -6483,7 +6478,6 @@ def _validate_call_target(
 def _validate_wrapped_call_entrypoint(
     *,
     language: Language,
-    language_cls: LanguageCls,
     target_function: str,
     target_function_parts: tuple[str, ...],
 ) -> None:
@@ -6496,7 +6490,7 @@ def _validate_wrapped_call_entrypoint(
     """
     if not isinstance(language, _HasCallWrapperEntrypoint):
         return
-    shares_scope = language_cls.dotted_call_root_shares_entrypoint_namespace
+    shares_scope = language.dotted_call_root_shares_entrypoint_namespace
     collides = target_function == language.call_wrapper_entrypoint_name or (
         len(target_function_parts) > 1
         and shares_scope
@@ -6514,7 +6508,6 @@ def _validate_wrapped_call_entrypoint(
 def _validate_wrapped_call_declarations(
     *,
     language: Language,
-    language_cls: LanguageCls,
     target_function: str,
     target_function_parts: tuple[str, ...],
 ) -> None:
@@ -6531,11 +6524,11 @@ def _validate_wrapped_call_declarations(
             language=language,
             target_function=target_function,
         )
-        and language_cls.declares_type_name_call_target
+        and language.declares_type_name_call_target
     ):
         return
     for part in target_function_parts:
-        if not language_cls.new_variable_name_syntax.accepts(name=part):
+        if not language.new_variable_name_syntax.accepts(name=part):
             raise InvalidCallTargetError(
                 language_name=type(language).__name__,
                 target_function=target_function,
@@ -6550,7 +6543,6 @@ def _validate_wrapped_call_declarations(
 def _validate_wrapped_call_parameter_shadowing(
     *,
     language: Language,
-    language_cls: LanguageCls,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
 ) -> None:
@@ -6560,7 +6552,7 @@ def _validate_wrapped_call_parameter_shadowing(
     so a language that treats the declared name as in scope there
     refuses a parameter repeating it (issue #4528).
     """
-    match language_cls.call_parameter_shadowing:
+    match language.call_parameter_shadowing:
         case CallParameterShadowing.ALLOWED:
             return
         case CallParameterShadowing.TARGET_NAME:
@@ -6610,22 +6602,18 @@ def _validate_wrapped_call_scaffold(
                 "the per-element input is empty"
             ),
         )
-    language_cls: Any = type(language)  # pyrefly: ignore [explicit-any]
     _validate_wrapped_call_entrypoint(
         language=language,
-        language_cls=language_cls,
         target_function=target_function,
         target_function_parts=target_function_parts,
     )
     _validate_wrapped_call_declarations(
         language=language,
-        language_cls=language_cls,
         target_function=target_function,
         target_function_parts=target_function_parts,
     )
     _validate_wrapped_call_parameter_shadowing(
         language=language,
-        language_cls=language_cls,
         target_function_parts=target_function_parts,
         parameter_names=parameter_names,
     )
