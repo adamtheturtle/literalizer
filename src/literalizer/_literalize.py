@@ -1009,7 +1009,11 @@ def _build_dict_entry(
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
     config = spec.dict_format_config
-    formatted_key = config.format_key(raw_key, key_str)
+    formatted_key = (
+        config.format_key(raw_key=raw_key, formatted_key=key_str)
+        if isinstance(raw_key, str)
+        else key_str
+    )
     return config.format_entry(
         formatted_key,
         raw_value,
@@ -1022,7 +1026,12 @@ def _format_ordered_map_key(
     *, raw_key: Scalar, key_str: str, spec: Language
 ) -> str:
     """Format an ordered-map key from its raw and rendered forms."""
-    return spec.ordered_map_format_config.format_key(raw_key, key_str)
+    if isinstance(raw_key, str):
+        return spec.ordered_map_format_config.format_key(
+            raw_key=raw_key,
+            formatted_key=key_str,
+        )
+    return key_str
 
 
 @beartype

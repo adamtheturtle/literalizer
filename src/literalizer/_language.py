@@ -437,10 +437,10 @@ class DictFormatConfig:
     ``None`` keeps the language's default ``empty_dict`` / opener path.
     """
 
-    def format_key(  # pylint: disable=no-self-use
-        self, _raw_key: Scalar, formatted_key: str, /
-    ) -> str:
+    @staticmethod
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
         """Return a formatted dict key unchanged."""
+        del raw_key
         return formatted_key
 
     def postprocess_entries(  # pylint: disable=no-self-use
@@ -458,10 +458,10 @@ class OrderedMapFormatConfig:
     close: str
     preamble_lines: tuple[str, ...]
 
-    def format_key(  # pylint: disable=no-self-use
-        self, _raw_key: Scalar, formatted_key: str, /
-    ) -> str:
+    @staticmethod
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
         """Return a formatted ordered-map key unchanged."""
+        del raw_key
         return formatted_key
 
     @property

@@ -148,11 +148,8 @@ def _matlab_char_vector(s: str) -> str:
 
 
 @beartype
-def _format_matlab_key(raw_key: Scalar, _formatted_key: str) -> str:
+def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
     """Format a MATLAB field key directly from its source value."""
-    if not isinstance(raw_key, str):
-        msg = f"MATLAB does not support the dict key {raw_key!r}."
-        raise InvalidDictKeyError(msg)
     if _MATLAB_FIELD_NAME.fullmatch(string=raw_key) is None:
         msg = (
             f"MATLAB does not support the struct field name {raw_key!r}. "
@@ -167,8 +164,9 @@ def _format_matlab_key(raw_key: Scalar, _formatted_key: str) -> str:
 class _MatlabDictFormatConfig(DictFormatConfig):
     """A dict format that spells fields from their source keys."""
 
+    @staticmethod
     @override
-    def format_key(self, raw_key: Scalar, formatted_key: str, /) -> str:
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
         """Format one source key as a MATLAB character vector."""
         return _format_matlab_key(
             raw_key=raw_key,
@@ -180,8 +178,9 @@ class _MatlabDictFormatConfig(DictFormatConfig):
 class _MatlabOrderedMapFormatConfig(OrderedMapFormatConfig):
     """An ordered-map format that spells fields from their source keys."""
 
+    @staticmethod
     @override
-    def format_key(self, raw_key: Scalar, formatted_key: str, /) -> str:
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
         """Format one source key as a MATLAB character vector."""
         return _format_matlab_key(
             raw_key=raw_key,
