@@ -99,6 +99,32 @@ from literalizer._language import (
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
+_OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
+    int: "Int",
+    float: "Float",
+    str: "Str",
+    bytes: "Str",
+    datetime.time: "Str",
+}
+
+
+@beartype
+def _ocaml_entry_tag(
+    original: Value,
+    date_type: type,
+    datetime_type: type,
+) -> str | None:
+    """Return the ``val_t`` tag required for a source value."""
+    if isinstance(original, datetime.datetime):
+        if datetime_type is datetime.datetime:
+            return None
+        return "Int" if datetime_type is int else "Str"
+    if isinstance(original, datetime.date):
+        if date_type is datetime.date:
+            return None
+        return "Str"
+    return _OCAML_SCALAR_ENTRY_TAGS.get(type(original))
+
 
 @beartype
 def _apply_ocaml_entry(
@@ -111,27 +137,13 @@ def _apply_ocaml_entry(
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
     """
-    match original:
-        case bool():
-            return formatted
-        case int():
-            tag = "Int"
-        case float():
-            tag = "Float"
-        case str() | bytes():
-            tag = "Str"
-        case datetime.datetime():
-            if datetime_type is datetime.datetime:
-                return formatted
-            tag = "Int" if datetime_type is int else "Str"
-        case datetime.time():
-            tag = "Str"
-        case datetime.date():
-            if date_type is datetime.date:
-                return formatted
-            tag = "Str"
-        case _:
-            return formatted
+    tag = _ocaml_entry_tag(
+        original=original,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    if tag is None:
+        return formatted
     literal = f"({formatted})" if formatted.startswith("-") else formatted
     return f"{prefix}{tag} {literal}"
 
