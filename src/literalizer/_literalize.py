@@ -4472,7 +4472,7 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
     """Widen scalar ref bindings to the numeric type their use
     requires.
     """
-    contextual = dict(bound_refs)
+    contextual: dict[str, Value] = dict(bound_refs)
 
     def _visit(  # noqa: C901, PLR0912  # pylint: disable=too-many-branches
         *, raw: Value, inferred: Value
@@ -4484,12 +4484,12 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
                     name = _extract_call_arg_ref_name(
                         value=child, ref_key=ref_key
                     )
-                    if name in contextual:
-                        value = contextual[name]  # ty: ignore[invalid-argument-type]
+                    if name is not None and name in contextual:
+                        value = contextual[name]
                         if isinstance(value, int) and not isinstance(
                             value, bool
                         ):
-                            contextual[name] = float(value)  # ty: ignore[invalid-assignment]
+                            contextual[name] = float(value)
             for raw_child, inferred_child in zip(raw, inferred, strict=False):
                 if (
                     _extract_call_arg_ref_name(
@@ -4505,12 +4505,12 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
                     name = _extract_call_arg_ref_name(
                         value=child, ref_key=ref_key
                     )
-                    if name in contextual:
-                        value = contextual[name]  # ty: ignore[invalid-argument-type]
+                    if name is not None and name in contextual:
+                        value = contextual[name]
                         if isinstance(value, int) and not isinstance(
                             value, bool
                         ):
-                            contextual[name] = float(value)  # ty: ignore[invalid-assignment]
+                            contextual[name] = float(value)
             for key in raw.keys() & inferred.keys():
                 raw_child = raw[key]
                 if (
