@@ -9,7 +9,7 @@ import math
 import re
 import sys
 import threading
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5
@@ -92,6 +92,32 @@ class _PositionedTomlError(Protocol):
 
     line: int
     col: int
+
+
+@runtime_checkable
+class _ObjectMapping(Protocol):
+    """Mapping operations used while validating parser output."""
+
+    def values(self) -> Iterable[object]:
+        """Return the mapping values."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def __getitem__(self, key: str) -> object:
+        """Return the value for a string key."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
+@runtime_checkable
+class _ObjectList(Protocol):
+    """List operations used while validating parser output."""
+
+    def __iter__(self) -> Iterator[object]:
+        """Iterate over list values."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+    def __getitem__(self, index: int) -> object:
+        """Return the value at an index."""
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 class _DuplicateJSONKeyError(ValueError):
@@ -1038,16 +1064,12 @@ def _validate_toml_float_tokens(*, data: object) -> None:
         reject_excessive_decimal_token(token=data.as_string())
     if isinstance(data, TomlFloat):
         _ = _parse_finite_float(value=data.as_string())
-    elif isinstance(data, Mapping):
-        for value in data.values():  # pyright: ignore[reportUnknownVariableType]
-            _validate_toml_float_tokens(
-                data=value  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
-            )
-    elif isinstance(data, list):
-        for value in data:  # pyright: ignore[reportUnknownVariableType]
-            _validate_toml_float_tokens(
-                data=value  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
-            )
+    elif isinstance(data, _ObjectMapping) and isinstance(data, Mapping):
+        for value in data.values():
+            _validate_toml_float_tokens(data=value)
+    elif isinstance(data, _ObjectList) and isinstance(data, list):
+        for value in data:
+            _validate_toml_float_tokens(data=value)
 
 
 def _preserve_toml_negative_zero(
@@ -1058,19 +1080,27 @@ def _preserve_toml_negative_zero(
     """
     if isinstance(raw_data, TomlInteger) and raw_data.as_string() == "-0":
         return -0.0
-    if isinstance(data, dict) and isinstance(raw_data, Mapping):
+    if (
+        isinstance(data, dict)
+        and isinstance(raw_data, _ObjectMapping)
+        and isinstance(raw_data, Mapping)
+    ):
         return {
             key: _preserve_toml_negative_zero(
                 data=value,
-                raw_data=raw_data[key],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]  # ty: ignore[invalid-argument-type]
+                raw_data=raw_data[key],
             )
             for key, value in data.items()
         }
-    if isinstance(data, list) and isinstance(raw_data, list):
+    if (
+        isinstance(data, list)
+        and isinstance(raw_data, _ObjectList)
+        and isinstance(raw_data, list)
+    ):
         return [
             _preserve_toml_negative_zero(
                 data=value,
-                raw_data=raw_data[index],  # pyright: ignore[reportUnknownArgumentType]  # pyrefly: ignore [unknown-argument-type]
+                raw_data=raw_data[index],
             )
             for index, value in enumerate(iterable=data)
         ]
