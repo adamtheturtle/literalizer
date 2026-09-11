@@ -8,7 +8,7 @@ import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, overload
+from typing import overload
 
 from beartype import beartype
 
@@ -67,7 +67,7 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
         case datetime.time():
             result = spec.format_time(value)
         case _:
-            date_value: Any = value  # pyrefly: ignore [explicit-any]
+            date_value: datetime.date = value
             result = spec.format_date(date_value)
     return result
 
