@@ -1553,16 +1553,18 @@ def _cpp14_explicit_variant_behavior(
 
     def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
         """Combine strategy-specific and fallback-variant parent ids."""
-        record_ids: frozenset[int] = (
-            frozenset(base.compute_record_shapes(data))
-            if base.compute_record_shapes is not None
-            else frozenset()
-        )  # ty: ignore[unsound-assignment]
-        tuple_ids: frozenset[int] = (
-            base.compute_tuple_list_ids(data)
-            if base.compute_tuple_list_ids is not None
-            else frozenset()
-        )  # ty: ignore[unsound-assignment]
+        compute_record_shapes = base.compute_record_shapes
+        record_ids = (
+            frozenset[int]()
+            if compute_record_shapes is None
+            else frozenset(compute_record_shapes(data))
+        )
+        compute_tuple_list_ids = base.compute_tuple_list_ids
+        tuple_ids = (
+            frozenset[int]()
+            if compute_tuple_list_ids is None
+            else compute_tuple_list_ids(data)
+        )
         return base.compute_wrap_ids(data) | _cpp14_variant_parent_ids(
             data=data,
             type_ctx=type_ctx,
@@ -2020,11 +2022,11 @@ def _build_cpp_record_preamble(
         # render-time cache already holds the field requests that the
         # declaration preamble consumes.  The raw shape walk is enough to
         # distinguish individual struct fields from map values.
-        record_dict_ids: frozenset[int] = (
-            frozenset(collect_record_shapes(data=data))
-            if type_ctx.variant_type_name != "std::variant"
-            else frozenset()
-        )  # ty: ignore[unsound-assignment]
+        record_dict_ids = (
+            frozenset[int]()
+            if type_ctx.variant_type_name == "std::variant"
+            else frozenset(collect_record_shapes(data=data))
+        )
         # A list the active behavior wraps in the carrier is rendered
         # as a carrier-typed vector rather than a tuple, so it still
         # asks for the carrier declaration (issue #4568).
