@@ -6,13 +6,14 @@ once, neither of which a case file can declare (issue #4699).
 
 import datetime
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
 import pytest
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.exceptions import InvalidValueInputError
 from literalizer.languages import Python, Rust
+
+type _RecursiveIntValue = int | list[_RecursiveIntValue]
 
 
 def test_time_key_in_public_substitution_uses_time_formatter() -> None:
@@ -31,9 +32,8 @@ def test_time_key_in_public_substitution_uses_time_formatter() -> None:
 
 def test_cyclic_supplemental_values_raise_typed_error() -> None:
     """Cyclic Python-value arguments never leak ``RecursionError``."""
-    cycle: list[object] = []
+    cycle: list[_RecursiveIntValue] = []
     cycle.append(cycle)
-    cyclic_value: Any = cycle  # pyrefly: ignore [explicit-any]
 
     with pytest.raises(
         expected_exception=InvalidValueInputError,
@@ -43,7 +43,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
-            ref_values={"value": cyclic_value},
+            ref_values={"value": cycle},
         )
     with pytest.raises(
         expected_exception=InvalidValueInputError,
@@ -53,7 +53,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
-            bound_refs={"value": cyclic_value},
+            bound_refs={"value": cycle},
         )
     with pytest.raises(
         expected_exception=InvalidValueInputError,
@@ -63,16 +63,15 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
-            record_null_substitutions={"value": cyclic_value},
+            record_null_substitutions={"value": cycle},
         )
 
 
 def test_deep_supplemental_value_raises_typed_error() -> None:
     """Deep cycle-free Python values avoid leaking recursion errors."""
-    value: object = 0
-    for _ in range(2_000):  # pyrefly: ignore [non-convergent-recursion]
+    value: _RecursiveIntValue = 0
+    for _ in range(2_000):
         value = [value]
-    deeply_nested_value: Any = value  # pyrefly: ignore [explicit-any]
 
     with pytest.raises(
         expected_exception=InvalidValueInputError,
@@ -85,7 +84,7 @@ def test_deep_supplemental_value_raises_typed_error() -> None:
             source="1",
             input_format=InputFormat.JSON,
             language=Python(),
-            ref_values={"value": deeply_nested_value},
+            ref_values={"value": value},
         )
 
 
