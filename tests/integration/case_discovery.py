@@ -14,10 +14,11 @@ import math
 import re
 import tomllib
 from pathlib import Path
-from typing import Any, assert_never
+from typing import assert_never
 
 import json5
 from beartype import beartype
+from pydantic import TypeAdapter
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import TaggedScalar
 from typing_extensions import TypeIs
@@ -186,10 +187,10 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     structurally by the ``has_*`` predicates.
     """
     source = input_info.path.read_text(encoding="utf-8")
-    parsed: CaseData
+    parsed: object
     match input_info.input_format:
         case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=source)  # ty: ignore[unsound-assignment]
+            parsed = json.loads(s=source)
         case literalizer.InputFormat.JSON5:
             # The library escapes a raw U+2028 or U+2029 inside a
             # string before handing the source to ``json5``, which
@@ -198,7 +199,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             parsed = json5.loads(
                 s=escape_json5_line_separators(source=source),
                 allow_duplicate_keys=False,
-            )  # ty: ignore[unsound-assignment]
+            )
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,
@@ -209,22 +210,19 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # loader. Mirror that choice so discovery can inspect the same
             # valid fixtures as the public API.
             yaml = YAML() if "=" in source else YAML(typ="safe")
-            yaml_parsed: Any = _demote_yaml_tags(  # pyrefly: ignore [explicit-any]
+            parsed = _demote_yaml_tags(
                 value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
                     stream=source,
                 )
             )
-            parsed = yaml_parsed  # ty: ignore[unsound-assignment]
         case literalizer.InputFormat.TOML:
-            # Unlike the other parsers (which return ``Any``),
-            # ``tomllib.loads`` is typed ``dict[str, Any]``.  ``dict``
-            # keys are invariant, so route it through an ``Any`` so it
-            # widens to ``CaseData`` like the rest.
-            toml_parsed: Any = tomllib.loads(source)  # pyrefly: ignore [explicit-any]
-            parsed = toml_parsed  # ty: ignore[unsound-assignment]
+            parsed = tomllib.loads(source)
         case _ as unreachable:
             assert_never(unreachable)
-    return parsed  # ty: ignore[unsound-return-statement]
+    return TypeAdapter[CaseData](type=CaseData).validate_python(
+        parsed,
+        strict=True,
+    )
 
 
 def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:

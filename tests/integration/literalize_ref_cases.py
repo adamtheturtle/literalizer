@@ -18,6 +18,7 @@ from typing import assert_never
 
 import json5
 from beartype import beartype
+from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
@@ -172,22 +173,28 @@ def _parse_ref_input(
     yields plain Python containers so :func:`_collect_ref_names` can
     walk them structurally.
     """
-    parsed: _RefData
+    parsed: object
     match input_format:
         case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=input_source)  # ty: ignore[unsound-assignment]
+            parsed = json.loads(s=input_source)
         case literalizer.InputFormat.JSON5:
-            parsed = json5.loads(s=input_source, allow_duplicate_keys=False)  # ty: ignore[unsound-assignment]
+            parsed = json5.loads(
+                s=input_source,
+                allow_duplicate_keys=False,
+            )
         case literalizer.InputFormat.YAML:
             ruamel_yaml = _YAML()
             parsed = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
                 stream=input_source,
-            )  # ty: ignore[unsound-assignment]
+            )
         case literalizer.InputFormat.TOML:
-            parsed = tomllib.loads(input_source)  # ty: ignore[unsound-assignment]
+            parsed = tomllib.loads(input_source)
         case _ as unreachable:
             assert_never(unreachable)
-    return parsed  # ty: ignore[unsound-return-statement]
+    return TypeAdapter[_RefData](type=_RefData).validate_python(
+        parsed,
+        strict=True,
+    )
 
 
 @beartype
