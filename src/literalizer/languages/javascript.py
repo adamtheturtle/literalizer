@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -24,7 +24,7 @@ from literalizer._formatters.format_dates import (
 )
 from literalizer._formatters.format_entries import (
     assignment_formatter_from_declaration,
-    dict_entry_with_computed_names,
+    dict_entry_with_separator,
     dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
@@ -109,6 +109,54 @@ from literalizer._types import Value
 # property, so the entry is silently lost.  Only the computed form
 # ``["__proto__"]`` defines a property (issue #4523).
 _COMPUTED_PROPERTY_NAMES: frozenset[str] = frozenset({"__proto__"})
+
+
+@beartype
+def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
+    """Use computed syntax for every source key."""
+    del raw_key
+    return f"[{formatted_key}]"
+
+
+@dataclasses.dataclass(frozen=True)
+class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
+    """Object-literal config that classifies keys from source names."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Use computed syntax where the source key requires it."""
+        if raw_key in _COMPUTED_PROPERTY_NAMES:
+            return f"[{formatted_key}]"
+        return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
+    """Object-literal config that computes every property name."""
+
+    format_key = staticmethod(_format_computed_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Ordered-object config that classifies keys from source names."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Use computed syntax where the source key requires it."""
+        if raw_key in _COMPUTED_PROPERTY_NAMES:
+            return f"[{formatted_key}]"
+        return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _JavaScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Ordered-object config that computes every property name."""
+
+    format_key = staticmethod(_format_computed_key)
+
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
@@ -513,13 +561,12 @@ class JavaScript(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        OBJECT = DictFormatConfig(
+        OBJECT = _JavaScriptObjectDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
-            format_entry=dict_entry_with_computed_names(
+            format_entry=dict_entry_with_separator(
                 separator=": ",
                 format_value=passthrough_sequence_entry,
-                computed_names=_COMPUTED_PROPERTY_NAMES,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -933,17 +980,23 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        config = self.dict_format.value
+        config: DictFormatConfig = self.dict_format.value
         if (
             self.string_format.name == "MULTILINE"
             and self.dict_format.name == "OBJECT"
         ):
-            return dataclasses.replace(
-                config,
-                format_entry=dict_entry_with_template(
-                    template="[{key}]: {value}",
+            return _JavaScriptComputedDictFormatConfig(
+                dict_open=config.dict_open,
+                close=config.close,
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
                     format_value=passthrough_sequence_entry,
                 ),
+                empty_dict=config.empty_dict,
+                preamble_lines=config.preamble_lines,
+                narrowed_open=config.narrowed_open,
+                supports_trailing_comma=config.supports_trailing_comma,
+                narrowed_empty_form=config.narrowed_empty_form,
             )
         return config
 
@@ -1004,7 +1057,12 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        config_cls = (
+            _JavaScriptComputedOrderedMapFormatConfig
+            if self.string_format.name == "MULTILINE"
+            else _JavaScriptObjectOrderedMapFormatConfig
+        )
+        return config_cls(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
@@ -1013,10 +1071,9 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        return dict_entry_with_computed_names(
+        return dict_entry_with_separator(
             separator=": ",
             format_value=passthrough_sequence_entry,
-            computed_names=_COMPUTED_PROPERTY_NAMES,
         )
 
     @cached_property
