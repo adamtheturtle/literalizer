@@ -907,8 +907,8 @@ def _haskell_compute_preamble(
 @beartype
 def _build_scalar_body_preamble(
     *,
-    date_format: enum.Enum,
-    datetime_format: enum.Enum,
+    date_config: DateFormatConfig,
+    datetime_config: DatetimeFormatConfig,
     is_string_import: str,
     is_string_instance: str,
     type_name: str,
@@ -933,24 +933,22 @@ def _build_scalar_body_preamble(
     instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
     cfg = _HaskellPreambleConfig(
-        include_hdate=date_format.value.type_produced is datetime.date,  # pyrefly: ignore [unknown-argument-type]
-        include_hdatetime=(  # pyrefly: ignore [unknown-argument-type]
-            datetime_format.value.type_produced is datetime.datetime
-        ),
-        datetime_produces_int=datetime_format.value.type_produced is int,  # pyrefly: ignore [unknown-argument-type]
+        include_hdate=date_config.type_produced is datetime.date,
+        include_hdatetime=datetime_config.type_produced is datetime.datetime,
+        datetime_produces_int=datetime_config.type_produced is int,
         date_needs_is_string=bool(
-            emit_is_string and date_format.value.preamble_lines
+            emit_is_string and date_config.preamble_lines
         ),
         datetime_needs_is_string=bool(
-            emit_is_string and datetime_format.value.preamble_lines
+            emit_is_string and datetime_config.preamble_lines
         ),
         # In EXPLICIT mode, ISO dates/datetimes produce HStr-wrapped
         # strings, so HStr String must appear in the data type.
-        date_needs_str_explicit=bool(
-            not emit_is_string and date_format.value.type_produced is str
+        date_needs_str_explicit=(
+            not emit_is_string and date_config.type_produced is str
         ),
-        datetime_needs_str_explicit=bool(
-            not emit_is_string and datetime_format.value.type_produced is str
+        datetime_needs_str_explicit=(
+            not emit_is_string and datetime_config.type_produced is str
         ),
         is_string_import=is_string_import,
         is_string_instance=is_string_instance,
@@ -1013,15 +1011,13 @@ def _format_haskell_declaration(
 @beartype
 def _build_declaration_formatters(
     *,
-    declaration_style: enum.Enum,
-    sequence_format: enum.Enum,
+    declaration_config: DeclarationStyleConfig,
+    sequence_config: SequenceFormatConfig,
     type_name: str,
 ) -> _DeclarationFormatters:
     """Build declaration/assignment formatters with type annotations."""
-    base_declaration: Callable[
-        [str, str, Value, frozenset[enum.Enum]], str
-    ] = declaration_style.value.formatter  # ty: ignore[unsound-assignment]
-    raw_declared = sequence_format.value.declared_type  # pyrefly: ignore [unknown-variable-type]
+    base_declaration = declaration_config.formatter
+    raw_declared = sequence_config.declared_type
     sequence_declared_type = (
         raw_declared.replace("Val", type_name)
         if raw_declared is not None
@@ -1066,6 +1062,8 @@ def _build_preamble_setup(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
+    date_config: DateFormatConfig,
+    datetime_config: DatetimeFormatConfig,
     is_explicit: bool,
     type_name: str,
     constructor_prefix: str,
@@ -1091,8 +1089,8 @@ def _build_preamble_setup(
     return _PreambleSetup(
         scalar_preamble=scalar_preamble,
         compute_body_preamble=_build_scalar_body_preamble(
-            date_format=date_format,
-            datetime_format=datetime_format,
+            date_config=date_config,
+            datetime_config=datetime_config,
             is_string_import="import Data.String (IsString(fromString))",
             is_string_instance=(
                 f"instance IsString {type_name} where\n"
@@ -2475,9 +2473,13 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def _decl_fmts(self) -> _DeclarationFormatters:
         """Shared declaration/assignment formatter bundle."""
+        declaration_config: DeclarationStyleConfig = (
+            self.declaration_style.value
+        )
+        sequence_config: SequenceFormatConfig = self.sequence_format.value
         return _build_declaration_formatters(
-            declaration_style=self.declaration_style,
-            sequence_format=self.sequence_format,
+            declaration_config=declaration_config,
+            sequence_config=sequence_config,
             type_name=self.type_name,
         )
 
@@ -2529,9 +2531,13 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def _preamble(self) -> _PreambleSetup:
         """Shared preamble setup bundle."""
+        date_config: DateFormatConfig = self.date_format.value
+        datetime_config: DatetimeFormatConfig = self.datetime_format.value
         setup = _build_preamble_setup(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
+            date_config=date_config,
+            datetime_config=datetime_config,
             is_explicit=self._string_fmts.is_explicit,
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
