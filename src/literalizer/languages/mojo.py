@@ -1180,24 +1180,30 @@ class Mojo(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Mojo."""
+
+        _value_: Callable[[str], SequenceFormatConfig]
 
         LIST = enum.member(value=_mojo_list_format)
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(default_type)
 
     class SetFormats(enum.Enum):
         """Set type options for Mojo."""
+
+        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -1213,7 +1219,7 @@ class Mojo(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""

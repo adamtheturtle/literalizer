@@ -1117,12 +1117,14 @@ class PureScript(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=_format_purescript_bytes_hex)
         BASE64 = enum.member(value=_format_purescript_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for PureScript."""

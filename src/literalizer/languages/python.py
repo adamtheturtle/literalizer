@@ -1147,13 +1147,15 @@ class Python(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options for Python."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
         PYTHON = enum.member(value=_format_bytes_python)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
         @property
         def type_hint(self) -> str:
@@ -1432,6 +1434,8 @@ class Python(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
+        _value_: Callable[[str], str]
+
         DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
         RAW = enum.member(value=_format_string_raw)
@@ -1439,7 +1443,7 @@ class Python(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

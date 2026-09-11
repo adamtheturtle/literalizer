@@ -1245,12 +1245,14 @@ class Kotlin(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Kotlin."""
@@ -1310,6 +1312,8 @@ class Kotlin(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Kotlin."""
 
+        _value_: Callable[[str], SetFormatConfig]
+
         SET = enum.member(
             value=set_format_factory(
                 open_template="setOf<{type}>(",
@@ -1335,7 +1339,7 @@ class Kotlin(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1449,12 +1453,14 @@ class Kotlin(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
+        _value_: Callable[[str], str]
+
         DOUBLE = enum.member(value=_format_string_backslash_dollar_nul)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
