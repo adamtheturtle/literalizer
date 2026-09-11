@@ -7050,26 +7050,18 @@ def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
 
     def materialize(item: ValueInput) -> Value:
         """Materialize one node while tracking its active ancestors."""
-        if _is_value_mapping(item):
-            mapping: ValueItemsMap[Scalar, ValueInput] | None = item
-            sequence: Sequence[ValueInput] | None = None
-        elif _is_value_sequence(item):
-            mapping = None
-            sequence = item
-        else:
+        if not _is_value_mapping(item) and not _is_value_sequence(item):
             return item
         identity = id(item)
         if identity in active:
             raise InvalidValueInputError(argument_name=argument_name)
         active.add(identity)
         try:
-            if mapping is not None:
+            if _is_value_mapping(item):
                 return {
-                    key: materialize(item=child)
-                    for key, child in mapping.items()
+                    key: materialize(item=child) for key, child in item.items()
                 }
-            sequence_values: Any = sequence  # pyrefly: ignore [explicit-any]
-            return [materialize(item=child) for child in sequence_values]
+            return [materialize(item=child) for child in item]
         finally:
             active.remove(identity)
 
