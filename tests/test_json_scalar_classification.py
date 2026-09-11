@@ -28,7 +28,7 @@ def test_scala_circe_beyond_i64_collection_keeps_per_value_width() -> None:
 
 
 def test_ocaml_yojson_wrapper_uses_source_value() -> None:
-    """Yojson pass-through and scalar tags do not parse rendered text."""
+    """OCaml JSON pass-through and scalar tags use the source value."""
     language = OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T)
     source_bool = True
 
