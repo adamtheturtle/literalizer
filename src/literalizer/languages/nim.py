@@ -210,9 +210,8 @@ def _format_string_multiline(value: str) -> str:
 
 
 @beartype
-def _nim_json_value_expression(value: str, /) -> str:
-    """Wrap *value* in ``%*`` unless it is already a ``JsonNode``
-    expression.
+def _nim_json_value_expression(raw_value: Value, value: str, /) -> str:
+    """Wrap a scalar *value* in ``%*``.
 
     Values produced by the JSON-mode container openers already begin
     with ``%*`` and explicit ``newJArray()`` / ``newJObject()`` /
@@ -220,21 +219,21 @@ def _nim_json_value_expression(value: str, /) -> str:
     ``JsonNode`` typed and skip the extra wrap so the output does not
     accumulate redundant macros.
     """
-    if value.startswith((_NIM_JSON_MACRO, "newJ")):
+    if isinstance(raw_value, (dict, list, set)):
         return value
     return f"{_NIM_JSON_MACRO}({value})"
 
 
 @beartype
-def _format_nim_json_call_arg(_raw_value: Value, formatted: str) -> str:
+def _format_nim_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct Nim call argument as ``JsonNode``."""
-    return _nim_json_value_expression(formatted)
+    return _nim_json_value_expression(raw_value, formatted)
 
 
 @beartype
-def _format_nim_json_assignment(name: str, value: str, _data: Value) -> str:
+def _format_nim_json_assignment(name: str, value: str, data: Value) -> str:
     """Assign a rendered literal to a Nim ``JsonNode`` binding."""
-    return f"{name} = {_nim_json_value_expression(value)}"
+    return f"{name} = {_nim_json_value_expression(data, value)}"
 
 
 @beartype
@@ -248,11 +247,11 @@ def _nim_json_declaration_formatter(
     def _formatter(
         name: str,
         value: str,
-        _data: Value,
+        data: Value,
         _modifiers: frozenset[enum.Enum],
     ) -> str:
         """Format a JSON-backed declaration."""
-        expr = _nim_json_value_expression(value)
+        expr = _nim_json_value_expression(data, value)
         keyword = declaration_style.name.lower()
         return f"{keyword} {name}: {json_type} = {expr}"
 

@@ -863,25 +863,26 @@ def _format_let_declaration(
 
 
 @beartype
-def _rust_json_value_expression(value: str, /) -> str:
-    """Wrap *value* in ``serde_json::json!`` unless it is already a
-    JSON macro expression.
+def _rust_json_value_expression(raw_value: Value, value: str, /) -> str:
+    """Wrap a scalar *value* in ``serde_json::json!``.
+
+    Collection formatters already produce JSON macro expressions.
     """
-    if value.startswith(f"{_SERDE_JSON_MACRO}("):
+    if isinstance(raw_value, (dict, list, set)):
         return value
     return f"{_SERDE_JSON_MACRO}({value})"
 
 
 @beartype
-def _format_rust_json_call_arg(_raw_value: Value, formatted: str) -> str:
+def _format_rust_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct Rust call argument as ``serde_json::Value``."""
-    return _rust_json_value_expression(formatted)
+    return _rust_json_value_expression(raw_value, formatted)
 
 
 @beartype
-def _format_rust_json_assignment(name: str, value: str, _data: Value) -> str:
+def _format_rust_json_assignment(name: str, value: str, data: Value) -> str:
     """Assign a rendered literal to a Rust JSON value binding."""
-    return f"{name} = {_rust_json_value_expression(value)};"
+    return f"{name} = {_rust_json_value_expression(data, value)};"
 
 
 @beartype
@@ -3486,11 +3487,11 @@ class Rust(metaclass=LanguageCls):
                 def _lazy_formatter(
                     name: str,
                     value: str,
-                    _data: Value,
+                    data: Value,
                     _modifiers: frozenset[enum.Enum],
                 ) -> str:
                     """Format a lazy static JSON-backed declaration."""
-                    expr = _rust_json_value_expression(value)
+                    expr = _rust_json_value_expression(data, value)
                     return (
                         f"static {name}: LazyLock<{json_type}> = "
                         f"LazyLock::new(|| {expr});"
@@ -3506,11 +3507,11 @@ class Rust(metaclass=LanguageCls):
             def _local_formatter(
                 name: str,
                 value: str,
-                _data: Value,
+                data: Value,
                 modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Format a local JSON-backed declaration."""
-                expr = _rust_json_value_expression(value)
+                expr = _rust_json_value_expression(data, value)
                 effective_keyword = (
                     "let mut" if _RustModifiers.MUT in modifiers else keyword
                 )
