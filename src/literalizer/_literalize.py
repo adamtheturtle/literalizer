@@ -6389,11 +6389,11 @@ def _validate_call_target(
     # no dot in it reserves those names here.  PHP matches a function
     # name without regard to case, which ``head_case_sensitive``
     # already carries (issue #4495).
-    bare_target_identifiers: frozenset[str] = (
-        language_cls.reserved_bare_call_target_identifiers
-        if len(target_function_parts[1:]) == 0
-        else frozenset()
-    )  # ty: ignore[unsound-assignment]
+    bare_target_identifiers = (
+        frozenset[str]()
+        if len(target_function_parts[1:]) > 0
+        else language_cls.reserved_bare_call_target_identifiers
+    )
     if is_reserved_identifier(
         case_sensitive=head_case_sensitive,
         name=head,
