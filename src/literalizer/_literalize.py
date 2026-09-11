@@ -1000,14 +1000,38 @@ def _accumulate_sibling_dict_empty_overrides(
 
 @beartype
 def _build_dict_entry(
-    *, key_str: str, raw_value: Value, formatted_value: str, spec: Language
+    *,
+    raw_key: Scalar,
+    key_str: str,
+    raw_value: Value,
+    formatted_value: str,
+    spec: Language,
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
-    return spec.dict_format_config.format_entry(
-        key_str,
+    config = spec.dict_format_config
+    formatted_key = (
+        config.format_key(raw_key=raw_key, formatted_key=key_str)
+        if isinstance(raw_key, str)
+        else key_str
+    )
+    return config.format_entry(
+        formatted_key,
         raw_value,
         formatted_value,
     )
+
+
+@beartype
+def _format_ordered_map_key(
+    *, raw_key: Scalar, key_str: str, spec: Language
+) -> str:
+    """Format an ordered-map key from its raw and rendered forms."""
+    if isinstance(raw_key, str):
+        return spec.ordered_map_format_config.format_key(
+            raw_key=raw_key,
+            formatted_key=key_str,
+        )
+    return key_str
 
 
 @beartype
@@ -1113,12 +1137,16 @@ def _format_ordered_map_value(
     )
     pairs = [
         spec.format_ordered_map_entry(
-            _format_value(
-                value=k,
-                dict_open_override=None,
-                sequence_open_override=None,
-                ctx=ctx.compact(),
-                int_formatter=None,
+            _format_ordered_map_key(
+                raw_key=k,
+                key_str=_format_value(
+                    value=k,
+                    dict_open_override=None,
+                    sequence_open_override=None,
+                    ctx=ctx.compact(),
+                    int_formatter=None,
+                ),
+                spec=spec,
             ),
             v,
             _maybe_wrap_child(
@@ -1326,6 +1354,7 @@ def _format_dict_value(
         )
     pairs = [
         _build_dict_entry(
+            raw_key=k,
             key_str=_format_value(
                 value=k,
                 dict_open_override=None,
@@ -2954,10 +2983,17 @@ def _format_collection_lines(
                 )
                 entry = (
                     spec.format_ordered_map_entry(
-                        formatted_key, v, formatted_val
+                        _format_ordered_map_key(
+                            raw_key=k,
+                            key_str=formatted_key,
+                            spec=spec,
+                        ),
+                        v,
+                        formatted_val,
                     )
                     if is_ordered_map
                     else _build_dict_entry(
+                        raw_key=k,
                         key_str=formatted_key,
                         raw_value=v,
                         formatted_value=formatted_val,

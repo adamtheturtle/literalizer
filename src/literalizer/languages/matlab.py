@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -122,32 +122,6 @@ def _format_matlab_string(value: str) -> str:
 
 
 @beartype
-def _decode_matlab_string_expr(expr: str) -> str:
-    r"""Decode a MATLAB string expression back to its raw string value.
-
-    Reverses the output of ``format_string_matlab``.  Handles the simple
-    ``"..."`` form (with ``""`` for embedded double-quotes), the
-    ``sprintf('%s...', "...", char(N), ...)`` concatenation form used
-    for control characters, and the ``['...', char(N), ...]`` char
-    vector form used where a null is present.
-    """
-    if expr.startswith("sprintf("):
-        expr = expr.partition(", ")[2].removesuffix(")")
-    raw: list[str] = []
-    for double_seg, single_seg, char_code in re.findall(
-        pattern=(r'"((?:[^"]|"")*)"' r"|'((?:[^']|'')*)'" r"|char\((\d+)\)"),
-        string=expr,
-    ):
-        if char_code:
-            raw.append(chr(int(char_code)))
-        elif single_seg:
-            raw.append(single_seg.replace("''", "'"))  # pyrefly: ignore [unknown-argument-type]
-        else:
-            raw.append(double_seg.replace('""', '"'))  # pyrefly: ignore [unknown-argument-type]
-    return "".join(raw)
-
-
-@beartype
 def _matlab_char_vector(s: str) -> str:
     """Build a MATLAB char-array expression for *s*.
 
@@ -174,36 +148,65 @@ def _matlab_char_vector(s: str) -> str:
 
 
 @beartype
+def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
+    """Format a MATLAB field key directly from its source value."""
+    if _MATLAB_FIELD_NAME.fullmatch(string=raw_key) is None:
+        msg = (
+            f"MATLAB does not support the struct field name {raw_key!r}. "
+            "Field names must start with a letter and contain only letters, "
+            "digits, and underscores."
+        )
+        raise InvalidDictKeyError(msg)
+    return _matlab_char_vector(s=raw_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _MatlabDictFormatConfig(DictFormatConfig):
+    """A dict format that spells fields from their source keys."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Format one source key as a MATLAB character vector."""
+        return _format_matlab_key(
+            raw_key=raw_key,
+            _formatted_key=formatted_key,
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class _MatlabOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """An ordered-map format that spells fields from their source keys."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Format one source key as a MATLAB character vector."""
+        return _format_matlab_key(
+            raw_key=raw_key,
+            _formatted_key=formatted_key,
+        )
+
+
+@beartype
 def _format_matlab_dict_entry(
     key: str,
-    _raw_value: Value,
+    raw_value: Value,
     formatted_value: str,
 ) -> str:
     """Format a MATLAB ``struct`` field as a ``'key', value`` pair.
 
     MATLAB ``struct`` accepts alternating character-vector keys and values.
-    Dictionary keys arrive as double-quoted strings; they are converted to
-    single-quoted character vectors as required by ``struct``.  Internal
-    single quotes are doubled to produce valid MATLAB char-vector literals.
-    Control characters are emitted as ``char(N)`` concatenation expressions
-    because MATLAB char vectors cannot contain literal control characters.
+    Dictionary keys have already been formatted directly from their source
+    values as single-quoted character vectors.
 
     Cell-array values are wrapped in an extra layer of braces so that
     ``struct`` stores them as a single cell-array field rather than
     expanding them into a struct array.
     """
-    inner = _decode_matlab_string_expr(expr=key)
-    if _MATLAB_FIELD_NAME.fullmatch(string=inner) is None:
-        msg = (
-            f"MATLAB does not support the struct field name {inner!r}. "
-            "Field names must start with a letter and contain only letters, "
-            "digits, and underscores."
-        )
-        raise InvalidDictKeyError(msg)
-    key_expr = _matlab_char_vector(s=inner)
-    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+    if isinstance(raw_value, (list, set)):
         formatted_value = f"{{{formatted_value}}}"
-    return f"{key_expr}, {formatted_value}"
+    return f"{key}, {formatted_value}"
 
 
 @beartype
@@ -231,11 +234,11 @@ def _containers_map_open(data: dict[Scalar, Value]) -> str:
 @beartype
 def _format_containers_map_entry(
     _key: str,
-    _raw_value: Value,
+    raw_value: Value,
     formatted_value: str,
 ) -> str:
     """Format a ``containers.Map`` value entry (key already in opener)."""
-    if formatted_value.startswith("{") and formatted_value.endswith("}"):
+    if isinstance(raw_value, (list, set)):
         formatted_value = f"{{{formatted_value}}}"
     return formatted_value
 
@@ -509,7 +512,7 @@ class Matlab(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        STRUCT = DictFormatConfig(
+        STRUCT = _MatlabDictFormatConfig(
             dict_open=fixed_open(open_str="struct("),
             close=")",
             format_entry=_format_matlab_dict_entry,
@@ -894,7 +897,8 @@ class Matlab(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return self.dict_format.value
+        config: DictFormatConfig = self.dict_format.value
+        return config
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -939,7 +943,7 @@ class Matlab(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _MatlabOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="struct("),
             close=")",
             preamble_lines=(),
