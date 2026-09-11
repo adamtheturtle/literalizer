@@ -115,6 +115,13 @@ from literalizer._types import OrderedMap, Scalar, Value
 _COMPUTED_PROPERTY_NAMES: frozenset[str] = frozenset({"__proto__"})
 
 
+@beartype
+def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
+    """Use computed syntax for every source key."""
+    del raw_key
+    return f"[{formatted_key}]"
+
+
 @dataclasses.dataclass(frozen=True)
 class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
@@ -132,12 +139,7 @@ class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
 class _TypeScriptComputedDictFormatConfig(DictFormatConfig):
     """Object-literal config that computes every property name."""
 
-    @staticmethod
-    @override
-    def format_key(*, raw_key: str, formatted_key: str) -> str:
-        """Use computed syntax for every source key."""
-        del raw_key
-        return f"[{formatted_key}]"
+    format_key = staticmethod(_format_computed_key)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -157,12 +159,7 @@ class _TypeScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
 class _TypeScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that computes every property name."""
 
-    @staticmethod
-    @override
-    def format_key(*, raw_key: str, formatted_key: str) -> str:
-        """Use computed syntax for every source key."""
-        del raw_key
-        return f"[{formatted_key}]"
+    format_key = staticmethod(_format_computed_key)
 
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
