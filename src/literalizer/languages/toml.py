@@ -26,7 +26,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    strip_key_quotes,
     variable_declaration_formatter,
     variable_formatter,
 )
@@ -150,22 +149,38 @@ def _strip_structural_trailing_comma(*, line: str) -> str:
     return f"{stripped[:-1]}{value[len(stripped) :]}{comment}"
 
 
+_TOML_BARE_KEY_RE = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
+
+
+@beartype
+def _format_toml_key(*, raw_key: str, formatted_key: str) -> str:
+    """Use a bare TOML key when the source name permits it."""
+    if _TOML_BARE_KEY_RE.match(string=raw_key) is not None:
+        return raw_key
+    return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _TomlDictFormatConfig(DictFormatConfig):
+    """TOML dict config that classifies source keys."""
+
+    format_key = staticmethod(_format_toml_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _TomlOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """TOML ordered-map config that classifies source keys."""
+
+    format_key = staticmethod(_format_toml_key)
+
+
 @beartype
 def _format_toml_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
 ) -> str:
-    """Format a TOML dict entry as ``key = value``.
-
-    If the key is a double-quoted string that is also a valid bare key
-    (alphanumeric, dashes, underscores only), the quotes are stripped for
-    cleaner idiomatic output.
-    """
-    inner = strip_key_quotes(key=key)
-    bare_key_pattern = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
-    if bare_key_pattern.match(string=inner) is not None:
-        return f"{inner} = {formatted_value}"
+    """Format a TOML dict entry as ``key = value``."""
     return f"{key} = {formatted_value}"
 
 
@@ -810,7 +825,7 @@ class Toml(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _TomlDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_toml_dict_entry,
@@ -874,7 +889,7 @@ class Toml(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _TomlOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
