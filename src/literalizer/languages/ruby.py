@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -22,7 +22,6 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
-    dict_entry_symbol_style,
     dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
@@ -101,7 +100,24 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
+_RUBY_LABEL_KEY = re.compile(pattern=r"[A-Za-z_][A-Za-z0-9_]*[!?]?")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
+
+
+@dataclasses.dataclass(frozen=True)
+class _RubyDictFormatConfig(DictFormatConfig):
+    """Ruby hash config that derives symbol labels from source keys."""
+
+    @staticmethod
+    @override
+    def format_key(*, raw_key: str, formatted_key: str) -> str:
+        """Return label syntax for identifier-shaped source keys."""
+        is_label = _RUBY_LABEL_KEY.fullmatch(string=raw_key) is not None
+        if is_label:
+            return raw_key
+        return formatted_key
+
+
 _format_string_double = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[
@@ -520,7 +536,8 @@ class Ruby(metaclass=LanguageCls):
             ),
         )
         SYMBOL = (
-            dict_entry_symbol_style(
+            dict_entry_with_separator(
+                separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
         )
@@ -936,7 +953,12 @@ class Ruby(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         (format_entry,) = self.dict_entry_style.value
-        return DictFormatConfig(
+        config_cls = (
+            _RubyDictFormatConfig
+            if self.dict_entry_style.name == "SYMBOL"
+            else DictFormatConfig
+        )
+        return config_cls(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=format_entry,
