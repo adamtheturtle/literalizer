@@ -136,10 +136,11 @@ def _union_variants(*, preamble: str) -> tuple[str, ...]:
     match = re.search(pattern=r"let Value = <([^>]*)>", string=preamble)
     if match is None:
         return ()
-    return tuple(
+    variants: list[str] = [
         part.split(sep=":")[0].strip()
         for part in match.group(1).split(sep="|")
-    )  # ty: ignore[unsound-return-statement]
+    ]
+    return tuple(variants)
 
 
 def _scalar_to_json(*, expression: str, value: object) -> str:
