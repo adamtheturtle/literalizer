@@ -445,11 +445,13 @@ class _OwnedCaseSpec(
     def _add_case_dir_name(
         cls,
         data: Mapping[str, object],
-        info: ValidationInfo,  # pyrefly: ignore [explicit-any]
+        info: ValidationInfo[Mapping[str, str] | None],
     ) -> Mapping[str, object]:
         """Add the owning case directory name from the load context."""
         raw_context = info.context
-        context: Mapping[str, str] = {} if raw_context is None else raw_context  # ty: ignore[unsound-assignment]
+        context: Mapping[str, str] = (
+            dict[str, str]() if raw_context is None else raw_context
+        )
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
