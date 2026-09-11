@@ -175,9 +175,9 @@ def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:  # noqa: 
             return _CIRCE_TRUE if raw_value else _CIRCE_FALSE
         case None:
             return _CIRCE_NULL
-        case int() if formatted.startswith("BigInt"):
+        case int() if not I64_MIN <= raw_value <= I64_MAX:
             return f"Json.fromBigInt({formatted})"
-        case int() if formatted.endswith("L"):
+        case int() if not -(2**31) <= raw_value <= 2**31 - 1:
             return f"Json.fromLong({formatted})"
         case int():
             return f"Json.fromInt({formatted})"
@@ -2052,9 +2052,19 @@ class Scala(metaclass=LanguageCls):
 
     @cached_property
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
-        """Always-``BigInt`` formatter for collections that exceed
-        signed 64-bit range.
+        """Formatter for collections that exceed signed 64-bit range.
+
+        Ordinary Scala collections widen every integer to ``BigInt``;
+        Circe collections keep each integer's natural width because
+        their entries are uniformly ``Json`` values.
         """
+        if self._json_type_active:
+            # Circe collection entries are uniformly ``Json`` already,
+            # so their underlying integer expressions do not need to be
+            # widened to one Scala type.  Keeping the normal per-value
+            # formatter lets the wrapper select its constructor from the
+            # source integer's range rather than parsing rendered text.
+            return self.format_integer
         return _format_scala_bigint_literal
 
     @cached_property
