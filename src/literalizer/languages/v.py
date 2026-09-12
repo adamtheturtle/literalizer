@@ -210,7 +210,7 @@ def _make_v_i64_formatter(
 
 
 @beartype
-def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
+def _v_collect_ids_needing_wrap(
     data: Value,
 ) -> frozenset[int]:
     """Return container ids that need interface-type wrapping in V.
@@ -258,10 +258,9 @@ def _v_collect_ids_needing_wrap(  # pylint: disable=too-complex
         container_children = [
             v for v in children if isinstance(v, (list, dict, set))
         ]
-        if len(container_children) > 0:
-            wrapped = [v for v in container_children if id(v) in wrap_ids]
-            if len(wrapped) > 0 and len(wrapped) < len(container_children):
-                wrap_ids.add(id(item))
+        wrapped = [v for v in container_children if id(v) in wrap_ids]
+        if 0 < len(wrapped) < len(container_children):
+            wrap_ids.add(id(item))
 
     _visit(item=data)
     return frozenset(wrap_ids)
