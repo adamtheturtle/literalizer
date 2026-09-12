@@ -63,7 +63,7 @@ _SPECIAL_FLOAT_CAPABILITIES: frozenset[VariantCapabilityName] = frozenset(
 
 
 @runtime_checkable
-class _HasJsonType(Protocol):
+class HasJsonType(Protocol):
     """Structural type for languages whose spec exposes a ``json_type``
     value field, alongside the ``json_types`` enum that configures it.
 
@@ -89,7 +89,7 @@ def build_json_type_variable_form_cases(
     cases: list[VariantCase] = []
     for json_variant in variants_for_axis(axis_key="json_type"):
         spec = json_variant.spec
-        assert isinstance(spec, _HasJsonType)  # noqa: S101
+        assert isinstance(spec, HasJsonType)  # noqa: S101
         if json_variant.lang_cls.language_id == "cpp":
             name = f"{json_variant.name}_variable_multiline"
             cases.append(
