@@ -448,6 +448,7 @@ _DATA_NAME_LINE_RE = re.compile(
 )
 
 
+@beartype
 @dataclasses.dataclass
 class _NameScope:
     """Mutable record of the data names already used in one COBOL group.

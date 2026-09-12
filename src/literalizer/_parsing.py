@@ -66,6 +66,7 @@ class _ParserMark(Protocol):
     column: int
 
 
+@beartype
 def _parser_mark(*, exc: Exception) -> _ParserMark | None:
     """Return parser position metadata when an exception provides it."""
     mark = vars(exc).get("problem_mark")
@@ -124,6 +125,7 @@ class _DuplicateJSONKeyError(ValueError):
     """A JSON object contains the same member name more than once."""
 
 
+@beartype
 def _json_object_without_duplicate_keys(
     pairs: list[tuple[str, object]],
 ) -> dict[str, object]:
@@ -151,6 +153,7 @@ class InputFormat(enum.Enum):
     TOML = enum.auto()
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ParsedPlain:
     """Result of parsing a comment-free input (JSON or JSON5)."""
@@ -158,6 +161,7 @@ class ParsedPlain:
     data: Value
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ParsedYaml:
     """Result of parsing a YAML input string."""
@@ -173,6 +177,7 @@ class ParsedYaml:
     """
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ParsedToml:
     """Result of parsing a TOML input string."""
@@ -318,6 +323,7 @@ def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
     return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
 
+@beartype
 def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
     """Return whether a value is a dictionary with object-typed
     contents.
@@ -325,6 +331,7 @@ def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
     return isinstance(value, dict)
 
 
+@beartype
 def _is_object_sequence(
     value: object,
     /,
@@ -344,11 +351,13 @@ def _is_object_pair(
     return isinstance(value, tuple)
 
 
+@beartype
 def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
     """Return whether *value* is an object-typed ruamel YAML set."""
     return isinstance(value, CommentedSet)
 
 
+@beartype
 def _validate_yaml_mapping_key(*, key: object) -> None:
     """Reject one non-scalar YAML mapping or set key."""
     if isinstance(
@@ -478,6 +487,7 @@ class _FiniteFloatRangeError(ValueError):
     """Raised when a finite token cannot survive binary64 conversion."""
 
 
+@beartype
 def _parse_finite_float(value: str) -> float:
     """Convert *value* without silent overflow or underflow."""
     normalized = value.replace("_", "")
@@ -536,6 +546,7 @@ def reject_excessive_decimal_token(*, token: str) -> None:
         raise ExcessiveIntegerDigitsError(limit=limit)
 
 
+@beartype
 def _parse_integer_preserving_negative_zero(value: str) -> int | float:
     """Parse an integer token while retaining negative zero's sign."""
     if value == "-0":
@@ -544,6 +555,7 @@ def _parse_integer_preserving_negative_zero(value: str) -> int | float:
     return int(value, base=_DECIMAL_BASE)
 
 
+@beartype
 def _parse_json5_integer(  # noqa: NOD001
     value: str, base: int = 10
 ) -> int | float:
@@ -561,6 +573,7 @@ def _parse_json5_integer(  # noqa: NOD001
     return _parse_integer_preserving_negative_zero(value=value)
 
 
+@beartype
 def _validate_yaml_float_tokens(*, source: str) -> None:
     """Check plain YAML numeric tokens before their value is rounded."""
     if "e" not in source.lower():
@@ -769,6 +782,7 @@ def _parse_json5(*, source: str) -> ParsedInput:
     return ParsedPlain(data=_combine_surrogate_pairs(data=data))
 
 
+@beartype
 def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
     """Teach a ruamel loader to retain signed integer zero as ``-0.0``."""
     tag = "tag:yaml.org,2002:int"
@@ -1053,6 +1067,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
 type _TomlData = dict[str, _TomlData] | list[_TomlData] | Scalar
 
 
+@beartype
 def _validate_toml_float_tokens(*, data: object) -> None:
     """Check TOML numeric tokens before unwrapping discards their
     spelling.
@@ -1072,6 +1087,7 @@ def _validate_toml_float_tokens(*, data: object) -> None:
             _validate_toml_float_tokens(data=value)
 
 
+@beartype
 def _preserve_toml_negative_zero(
     *, data: _TomlData, raw_data: object
 ) -> _TomlData:

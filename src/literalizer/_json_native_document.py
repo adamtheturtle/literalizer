@@ -52,6 +52,7 @@ class _SharedRendererRequiredError(Exception):
     """Signal a value outside the JSON-native fast path."""
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _IntRange:
     """The integer range the fast path may render itself.

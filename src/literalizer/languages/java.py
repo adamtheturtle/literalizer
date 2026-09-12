@@ -605,6 +605,7 @@ def _reject_conflicting_java_modifiers(
         )
 
 
+@beartype
 def _java_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static final `` prefix for a Java
     declaration, including a trailing space when non-empty.

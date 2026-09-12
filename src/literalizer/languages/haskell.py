@@ -326,6 +326,7 @@ def _build_haskell_datetime_formatter(
 _format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _DateTimeFormatters:
     """Resolved date and datetime formatters."""
@@ -414,6 +415,7 @@ def _build_date_formatters(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _StringFormatters:
     """String, bytes, and dict-entry formatters."""
@@ -456,6 +458,7 @@ def _format_explicit_dict_entry(
     return f"({clean_key}, {formatted_value})"
 
 
+@beartype
 def _is_haskell_hex_control(character: str) -> bool:
     """Return whether *character* uses a greedy Haskell hex escape."""
     return (
@@ -472,6 +475,7 @@ ordinary space separator such as U+00A0 is accepted (issue #3953).
 """
 
 
+@beartype
 def _is_haskell_hex_escaped(character: str) -> bool:
     """Return whether *character* is written as a Haskell hex escape.
 
@@ -488,6 +492,7 @@ def _is_haskell_hex_escaped(character: str) -> bool:
     )
 
 
+@beartype
 def _format_haskell_string_character(character: str) -> str:
     """Escape one character for a Haskell string literal."""
     if _is_haskell_hex_escaped(character=character):
@@ -705,6 +710,7 @@ def _datetime_import_items(
     return items
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _HaskellPreambleConfig:
     """Captured configuration for the Haskell body preamble
@@ -968,6 +974,7 @@ def _build_scalar_body_preamble(
     return _compute
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _SequenceSetup:
     """Sequence format configuration and opener."""
@@ -976,6 +983,7 @@ class _SequenceSetup:
     sequence_open: Callable[[list[Value]], str]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _DeclarationFormatters:
     """Variable declaration and assignment formatters."""
@@ -1051,6 +1059,7 @@ def _build_declaration_formatters(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _PreambleSetup:
     """Preamble configuration for Haskell output."""

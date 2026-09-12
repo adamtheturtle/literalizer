@@ -169,6 +169,7 @@ def _format_fortran_datetime_epoch(value: datetime.datetime, /) -> str:
     return f"{format_datetime_epoch(value=value)}_int64"
 
 
+@beartype
 def _suffix_real64(
     formatter: Callable[[float], str],
 ) -> Callable[[float], str]:

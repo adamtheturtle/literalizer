@@ -228,6 +228,7 @@ def _slot_is_all_scalars(*, slot_values: Sequence[Value]) -> bool:
     return all(not isinstance(v, (list, dict, set)) for v in slot_values)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _MojoSlotSignature:
     """Per-slot resolved type info for a Mojo typed param list.
@@ -242,6 +243,7 @@ class _MojoSlotSignature:
     known_types: frozenset[str]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _MojoSlotInfo:
     """Aggregate result of computing Mojo per-slot signatures.
@@ -570,6 +572,7 @@ def _format_mojo_ordered_map_entry(
 _VARIANT_PAYLOAD_VALUE_PLACEHOLDER = "{value}"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _VariantSignature:
     """Mojo ``Variant`` alternative for one scalar bucket.
@@ -672,6 +675,7 @@ def _mojo_value_inhibits_consuming_form(
     return signature.type_name in _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Mojo heterogeneous-values strategy.
@@ -969,6 +973,7 @@ def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     )
 
 
+@beartype
 class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered maps in Mojo use a list-of-pairs representation."""
 

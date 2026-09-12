@@ -307,6 +307,7 @@ def _format_datetime_perl(value: datetime.datetime) -> str:
     return parts + ", time_zone => 'UTC')"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _BoolFormatConfig:
     """Configuration for a single Perl boolean format."""

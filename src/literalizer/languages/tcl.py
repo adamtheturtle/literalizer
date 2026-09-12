@@ -87,6 +87,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _TclCommentConfig(CommentConfig):
     """Tcl comment syntax including its command-position prefix."""

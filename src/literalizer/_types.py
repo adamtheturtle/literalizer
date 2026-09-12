@@ -4,6 +4,8 @@ import datetime
 from collections.abc import Iterable, Sequence
 from typing import Protocol, runtime_checkable
 
+from beartype import beartype
+
 type Scalar = (
     str
     | int
@@ -18,6 +20,7 @@ type Scalar = (
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 
 
+@beartype
 class CallPreambleData(list[Value]):
     """Call-rendering preamble input with its rendered arguments.
 

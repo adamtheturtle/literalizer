@@ -287,6 +287,7 @@ def validate_call_parameter_names(
             )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class SequenceFormatConfig:
     """Configuration for a single sequence format."""
@@ -316,6 +317,7 @@ class SequenceFormatConfig:
     """
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class DateFormatConfig:
     """Configuration for a single date format."""
@@ -325,6 +327,7 @@ class DateFormatConfig:
     type_produced: type
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class DatetimeFormatConfig:
     """Configuration for a single datetime format."""
@@ -396,6 +399,7 @@ def date_scalar_preamble(
     }
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class SetFormatConfig:
     """Configuration for a single set format."""
@@ -433,6 +437,7 @@ class SetFormatConfig:
         )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class CommentConfig:
     """Configuration for language comment syntax."""
@@ -446,6 +451,7 @@ class CommentConfig:
         return self.prefix
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class DictFormatConfig:
     """Configuration for dict formatting."""
@@ -503,6 +509,7 @@ class DictFormatBuilder(Protocol):
         ...  # pylint: disable=unnecessary-ellipsis
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
@@ -552,6 +559,7 @@ class OrderedMapFormatConfig:
         return None
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class TrailingCommaConfig:
     """Configuration for trailing-comma behavior.
@@ -566,6 +574,7 @@ class TrailingCommaConfig:
     multiline_trailing_comma: bool
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class DeclarationStyleConfig:
     """Configuration for a single declaration style."""
@@ -574,6 +583,7 @@ class DeclarationStyleConfig:
     supports_redefinition: bool
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class PositionalCallStyle:
     """Positional arguments only: ``func(value1, value2)``."""
@@ -582,6 +592,7 @@ class PositionalCallStyle:
     parenthesize_each_arg: bool
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class KeywordCallStyle:
     """Named arguments: ``func(name=value)``.
@@ -593,6 +604,7 @@ class KeywordCallStyle:
     separator: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ObjectCallStyle:
     """Arguments wrapped in an object literal: ``func({ name: value })``.
@@ -605,6 +617,7 @@ class ObjectCallStyle:
     computed_names: frozenset[str]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class PostfixCallStyle:
     """Postfix (stack) calls: ``value1 value2 func``.
@@ -617,6 +630,7 @@ class PostfixCallStyle:
     arg_separator: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class PrefixCallStyle:
     """S-expression-style calls: ``(func value1 value2)``.
@@ -635,6 +649,7 @@ class PrefixCallStyle:
     keyword_prefix: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class CommandCallStyle:
     """Shell-command-style calls: ``func value1 value2``.
@@ -651,6 +666,7 @@ class CommandCallStyle:
     arg_separator: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class DottedCommandCallStyle(CommandCallStyle):
     """Command calls with a distinct style for dotted member calls.
@@ -753,6 +769,7 @@ class RecordMapValueTypings(enum.Enum):
     """
 
 
+@beartype
 class FloatSpecialsMixin:
     """Mixin for ``FloatFormats`` enums that provides ``__call__``.
 
@@ -913,6 +930,7 @@ class CollectionLayout(enum.Enum):
     """Render nested collections with one element per line."""
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RenderedRecordLiteral:
     """A record literal as structured pieces, assembled into compact or
@@ -934,6 +952,7 @@ class RenderedRecordLiteral:
     compact_pad: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RenderedTupleLiteral:
     """A heterogeneous-tuple literal as structured pieces, assembled
@@ -966,6 +985,7 @@ class RenderedTupleLiteral:
     multiline_trailing_comma: bool
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class HeterogeneousBehavior:
     """Per-language hook describing how heterogeneous scalar
@@ -1214,6 +1234,7 @@ identity_call_statement: Callable[[str], str] = _identity_call_statement
 """Shared callable for languages whose calls need no statement wrapper."""
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ModifierCombination:
     """A named combination of declaration modifiers for a language.
@@ -1244,6 +1265,7 @@ class JsonType(enum.Enum):
         return False
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class VariantMetadata:
     r"""Language-owned renderer capabilities and option compatibility.
@@ -1302,6 +1324,7 @@ new_constructor_target: Callable[[str], str] = _new_constructor_target
 """
 
 
+@beartype
 class LanguageCls(type):
     """Meta-class that declares the nested format Enum class attributes.
 
@@ -3216,12 +3239,12 @@ preamble lines required to come before :attr:`Language.static_preamble`.
 """
 
 
+@beartype
 class _NoPygmentsName(str):
     """Descriptor for languages with no matching Pygments lexer alias."""
 
     __slots__ = ()
 
-    @beartype
     def __get__(
         self, _instance: object | None, _owner: type[object] | None
     ) -> None:

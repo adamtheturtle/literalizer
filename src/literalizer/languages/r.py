@@ -206,6 +206,7 @@ def _format_r_dict_entry_error(
 type _RSourceEntryFormatter = Callable[[Scalar, str, Value, str], str]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _RDictFormatConfig(DictFormatConfig):
     """R dict config that classifies empty source keys."""
@@ -227,6 +228,7 @@ class _RDictFormatConfig(DictFormatConfig):
         )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ROrderedMapFormatConfig(OrderedMapFormatConfig):
     """R ordered-map config that classifies empty source keys."""

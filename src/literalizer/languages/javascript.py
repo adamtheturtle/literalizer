@@ -120,6 +120,7 @@ def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
     return f"[{formatted_key}]"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
@@ -133,6 +134,7 @@ class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
         return formatted_key
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
     """Object-literal config that computes every property name."""
@@ -140,6 +142,7 @@ class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
     format_key = staticmethod(_format_computed_key)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that classifies keys from source names."""

@@ -111,6 +111,7 @@ _format_string_lua_escaped = make_backslash_string_formatter(
 )
 
 
+@beartype
 def _reject_invalid_table_key(value: Value, *, location: str) -> None:
     """Reject one value Lua cannot use as a table index."""
     if value is None:
@@ -121,6 +122,7 @@ def _reject_invalid_table_key(value: Value, *, location: str) -> None:
         raise UnrepresentableInputError(msg)
 
 
+@beartype
 def _reject_invalid_table_keys(data: Value) -> None:
     """Reject values Lua cannot use as table indexes."""
     match data:

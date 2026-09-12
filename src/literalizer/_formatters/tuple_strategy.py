@@ -172,6 +172,7 @@ def collect_tuple_list_ids(*, data: Value) -> frozenset[int]:
     return frozenset(id(lst) for lst in collect_tuple_lists(data=data))
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class TupleRenderer:
     """Per-language syntax hooks for the ``TUPLE`` strategy.

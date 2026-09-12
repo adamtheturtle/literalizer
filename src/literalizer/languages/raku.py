@@ -104,6 +104,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 
+@beartype
 def _raku_num_float_formatter(
     formatter: Callable[[float], str], /
 ) -> Callable[[float], str]:

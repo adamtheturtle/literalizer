@@ -134,6 +134,7 @@ def _format_float_fixed(value: float) -> str:
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
+@beartype
 def _groovy_key_is_native_temporal(
     *, raw_key: Scalar, native_dates: bool
 ) -> bool:
@@ -145,6 +146,7 @@ def _groovy_key_is_native_temporal(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _GroovyDictFormatConfig(DictFormatConfig):
     """Groovy dict config that classifies source temporal keys."""
@@ -170,6 +172,7 @@ class _GroovyDictFormatConfig(DictFormatConfig):
         return self.format_entry(formatted_key, raw_value, formatted_value)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _GroovyOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Groovy ordered-map config that classifies source temporal keys."""

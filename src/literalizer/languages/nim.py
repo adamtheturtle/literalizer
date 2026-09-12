@@ -398,6 +398,7 @@ def _make_variable_assignment(
     return _format
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _VariantSignature:
     """Name and optional field info for one Nim object variant branch.
@@ -480,6 +481,7 @@ def _nim_variant_for_scalar(  # pylint: disable=too-complex
     return signature
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, eq=False)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Nim heterogeneous-values strategy.
@@ -554,6 +556,7 @@ class _NimShapeMarker(enum.Enum):
     MIXED = enum.auto()
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, slots=True)
 class _NimContainerShape:
     """The native Nim type shape inferred for a container."""
@@ -565,6 +568,7 @@ class _NimContainerShape:
 type _NimLiteralShape = type | _NimContainerShape
 
 
+@beartype
 def _nim_child_shape(
     *, child_types: set[_NimLiteralShape]
 ) -> _NimLiteralShape | _NimShapeMarker:

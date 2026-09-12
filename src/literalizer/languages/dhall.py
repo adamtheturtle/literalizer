@@ -229,6 +229,7 @@ def _format_dhall_key(*, raw_key: str, formatted_key: str) -> str:
     return f"`{raw_key}`"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _DhallDictFormatConfig(DictFormatConfig):
     """Dhall dict config that classifies source keys."""
@@ -236,6 +237,7 @@ class _DhallDictFormatConfig(DictFormatConfig):
     format_key = staticmethod(_format_dhall_key)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _DhallOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Dhall ordered-map config that classifies source keys."""
@@ -422,6 +424,7 @@ def _dhall_reject_ref_identifier(name: str, _value: Value | None, /) -> str:
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _VariantSignature:
     """Name and optional inner-type string for one Dhall union variant.
@@ -483,6 +486,7 @@ def _dhall_variant_for_scalar(  # pylint: disable=too-complex
     return signature
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Dhall heterogeneous-values strategy.

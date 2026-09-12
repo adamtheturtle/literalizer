@@ -305,6 +305,7 @@ def _resolve_sequence_open(
     return fmt.sequence_open
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ScalaDictSpec:
     """Per-format dict config pieces resolved at init time."""
@@ -571,6 +572,7 @@ def _scala_record_literal(
     )
 
 
+@beartype
 @dataclasses.dataclass
 class _ScalaWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.

@@ -263,6 +263,7 @@ def _reject_conflicting_csharp_modifiers(
         )
 
 
+@beartype
 def _csharp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     """Return the ``public static readonly `` prefix for a C#
     declaration, including a trailing space when non-empty.
@@ -410,6 +411,7 @@ def _format_csharp_declaration(
     return f"{prefix}{hint} {name} = {value};"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _CSharpDictSpec:
     """Per-format dict config pieces resolved at init time."""
@@ -631,6 +633,7 @@ def _csharp_int_field_type(*, value: int) -> str:
     return "long"
 
 
+@beartype
 @dataclasses.dataclass
 class _CSharpWidenedMapNarrowing:
     """Per-pass concrete value type for widened record fallback maps."""

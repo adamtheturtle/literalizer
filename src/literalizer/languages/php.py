@@ -126,6 +126,7 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
 
 
+@beartype
 def _reject_numeric_string_keys(data: Value) -> None:
     """Reject mapping keys that PHP arrays coerce from strings to integers."""
     stack = [data]
@@ -148,6 +149,7 @@ def _reject_numeric_string_keys(data: Value) -> None:
             stack.extend(value)
 
 
+@beartype
 def _php_integer_formatter(
     *, base: Callable[[int], str]
 ) -> Callable[[int], str]:

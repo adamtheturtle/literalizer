@@ -58,6 +58,7 @@ def _filter_null_dict_comments(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ResolvedComments:
     """Result of resolving YAML comments for a collection or scalar."""

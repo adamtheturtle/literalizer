@@ -106,6 +106,7 @@ _RUBY_LABEL_KEY = re.compile(pattern=r"[A-Za-z_][A-Za-z0-9_]*[!?]?")
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _RubyDictFormatConfig(DictFormatConfig):
     """Ruby hash config that derives symbol labels from source keys."""

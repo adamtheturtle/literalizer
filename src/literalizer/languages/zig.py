@@ -159,6 +159,7 @@ def _make_zig_integer_formatter(
     return _format
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ZigDeclarationStyleConfig:
     """Configuration for a Zig declaration style.

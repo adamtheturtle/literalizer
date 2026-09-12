@@ -9,6 +9,7 @@ from beartype import beartype
 from literalizer._types import OrderedMap, Scalar, Value
 
 
+@beartype
 @dataclass(frozen=True)
 class ListType:
     """Represents a homogeneous list element type for type inference.
@@ -20,6 +21,7 @@ class ListType:
     inner: "type | ListType | DictType"
 
 
+@beartype
 @dataclass(frozen=True)
 class DictType:
     """Represents a homogeneous dict element type for type inference.
@@ -124,6 +126,7 @@ def int_widening_tier(items: list[Value]) -> type | None:
     return widest
 
 
+@beartype
 @dataclass(frozen=True)
 class _Collected:
     """Per-item type buckets gathered for ``infer_element_type``."""
@@ -261,6 +264,7 @@ def infer_element_type(
     return _unify_element_types(element_types=element_types)
 
 
+@beartype
 @dataclass(frozen=True)
 class RecordShape:
     """Immutable signature of a record-shaped dict, suitable for use

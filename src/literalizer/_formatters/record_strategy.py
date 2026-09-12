@@ -71,6 +71,7 @@ _RECORD_FIELD_IDENTIFIER = re.compile(
 )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RecordDeclarationField:
     """One resolved field of a generated record declaration."""
@@ -79,6 +80,7 @@ class RecordDeclarationField:
     type_name: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RecordLiteralField:
     """One resolved field of a generated record literal.
@@ -93,6 +95,7 @@ class RecordLiteralField:
     type_name: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RecordFieldType:
     """The structured input to :attr:`RecordRenderer.field_type`.
@@ -119,6 +122,7 @@ class RecordFieldType:
     element_record_name: str | None
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RecordRenderer:
     """Per-language syntax hooks for the ``RECORD`` strategy.
@@ -185,6 +189,7 @@ class RecordRenderer:
     """
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class RecordStrategy:
     """Configuration a language wires into its record strategy.
@@ -273,6 +278,7 @@ def _validate_field_identifiers(
             identifiers.add(comparison)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _FieldVariantRecordShape(RecordShape):
     """A record shape split off from same-key-set dicts whose field
@@ -877,6 +883,7 @@ def _accumulate_field_requests(
             )
 
 
+@beartype
 def _alias_record_ids(
     id_map: Mapping[int, int],
     *,
@@ -892,6 +899,7 @@ def _alias_record_ids(
     )
 
 
+@beartype
 def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
     renderer: RecordRenderer,

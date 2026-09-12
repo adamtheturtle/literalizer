@@ -55,11 +55,13 @@ from literalizer.exceptions import (
 )
 
 
+@beartype
 def _fresh_language(language: Language) -> Language:
     """Return a spec with fresh per-render cached formatter state."""
     return dataclasses.replace(language)
 
 
+@beartype
 def _validate_bound_ref_output_name(
     *,
     language: Language,
@@ -96,6 +98,7 @@ def _validate_bound_ref_output_name(
         raise BoundRefOutputCollisionError(name=variable_form.name)
 
 
+@beartype
 def _validate_variable_modifiers(
     *,
     language: Language,
