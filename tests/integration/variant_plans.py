@@ -95,7 +95,7 @@ class _EscapesNullByte(Protocol):
 @beartype
 def _comment_suffix(member: enum.Enum) -> bool:
     """Return whether a comment format closes with a terminator."""
-    config = member.value  # pyrefly: ignore [unknown-variable-type]
+    config: object = member.value
     assert isinstance(config, literalizer.CommentConfig)  # noqa: S101
     return bool(config.suffix)
 
