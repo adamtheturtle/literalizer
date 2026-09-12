@@ -1727,6 +1727,12 @@ class CSharp(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
+        if not self._record_strategy_active:
+            return RecordStrategy(
+                behavior=NO_HETEROGENEOUS_BEHAVIOR,
+                preamble=no_data_preamble,
+                record_name_for_value=None,
+            )
         strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=True,
@@ -2108,10 +2114,13 @@ class CSharp(metaclass=LanguageCls):
             )
         else:
             base_open = fmt.sequence_open
-        if self._json_type_active or not self._record_strategy_active:
+        if self._json_type_active:
             return base_open
-        record_name_for_value = self._record_strategy.record_name_for_value
-        assert record_name_for_value is not None  # noqa: S101
+        match self._record_strategy.record_name_for_value:
+            case None:
+                return base_open
+            case record_name_for_value:
+                pass
 
         def _open(items: list[Value]) -> str:
             """Return the implicitly-typed array opener for an

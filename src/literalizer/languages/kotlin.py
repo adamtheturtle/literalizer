@@ -2329,14 +2329,14 @@ class Kotlin(metaclass=LanguageCls):
                 dict_resolver=self._kotlin_dict_value_type,
             )
         # ``RECORD`` and ``TUPLE`` (which composes ``RECORD``) both set
-        # ``render_record_literal``; ``ERROR`` does not.  Keying off the
-        # behavior rather than the enum member keeps the two
-        # record-rendering strategies in step.
-        if self.heterogeneous_behavior.render_record_literal is None:
-            return base
-        strategy_name_hook = self._record_strategy.record_name_for_value
-        assert strategy_name_hook is not None  # noqa: S101
-        record_name_for_value = strategy_name_hook
+        # this hook; ``ERROR`` does not.  Keying off the behavior rather
+        # than the enum member keeps the two record-rendering strategies
+        # in step.
+        match self._record_strategy.record_name_for_value:
+            case None:
+                return base
+            case record_name_for_value:
+                pass
 
         def _open(items: list[Value], /) -> str:
             """Use the shared record element type when every item is
