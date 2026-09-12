@@ -175,7 +175,7 @@ def _call_transform_style_unsupported(
         return not issubclass(
             config.call_style_type, _SUBSTITUTION_CALL_STYLES
         )
-    default_style = next(iter(lang_cls.CallStyles)).value  # pyrefly: ignore [unknown-variable-type]
+    default_style = lang_cls().call_style_config
     return not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
 
 
