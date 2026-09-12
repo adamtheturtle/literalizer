@@ -5,7 +5,7 @@ import datetime
 import enum
 import re
 from collections import Counter
-from collections.abc import Callable, Hashable, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
 from typing import ClassVar, Final, assert_never
@@ -2911,7 +2911,7 @@ def _accumulate_emit_order(
 
 
 @beartype
-def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
+def _gather_record_field_values(
     *,
     data: Value,
     shapes_by_id: Mapping[int, RecordShape],
@@ -2922,34 +2922,24 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
     """Walk *data* recording the first observed value for each
     (shape, key) pair, in document order.
     """
+    children: Iterable[Value]
     match data:
-        case dict() if id(data) in shapes_by_id:
-            shape = shapes_by_id[id(data)]
-            if shape not in seen:
-                seen.add(shape)
-                ordered_shapes.append(shape)
-                field_values[shape] = {}
-            # Iterate ``shape.keys`` (guaranteed strings) rather than
-            # ``data.items()`` so ``stored`` keeps its ``dict[str, ...]``
-            # type without per-key type narrowing.  First occurrence
-            # wins, so later same-shape siblings don't overwrite the
-            # example values used for type inference.
-            stored = field_values[shape]
-            for key in shape.keys:
-                if key in stored:
-                    continue
-                if key not in data:
-                    continue
-                stored[key] = data[key]
-            for value in data.values():
-                _gather_record_field_values(
-                    data=value,
-                    shapes_by_id=shapes_by_id,
-                    ordered_shapes=ordered_shapes,
-                    seen=seen,
-                    field_values=field_values,
-                )
         case dict():
+            shape = shapes_by_id.get(id(data))
+            if shape is not None:
+                if shape not in seen:
+                    seen.add(shape)
+                    ordered_shapes.append(shape)
+                    field_values[shape] = {}
+                # Iterate ``shape.keys`` (guaranteed strings) rather than
+                # ``data.items()`` so ``stored`` keeps its ``dict[str, ...]``
+                # type without per-key type narrowing.  First occurrence
+                # wins, so later same-shape siblings don't overwrite the
+                # example values used for type inference.
+                stored = field_values[shape]
+                for key in shape.keys:
+                    if key not in stored and key in data:
+                        stored[key] = data[key]
             # Non-record dicts (empty, non-string-keyed, or an ordered
             # map) sitting next to record dicts have no precise Rust
             # component type under the RECORD strategy (#2317).  Keep
@@ -2957,25 +2947,19 @@ def _gather_record_field_values(  # noqa: C901  # pylint: disable=too-complex
             # one is still found, even though
             # :func:`_rust_record_field_type` later rejects such a dict
             # when it is itself a record field.
-            for value in data.values():
-                _gather_record_field_values(
-                    data=value,
-                    shapes_by_id=shapes_by_id,
-                    ordered_shapes=ordered_shapes,
-                    seen=seen,
-                    field_values=field_values,
-                )
+            children = data.values()
         case list():
-            for item in data:
-                _gather_record_field_values(
-                    data=item,
-                    shapes_by_id=shapes_by_id,
-                    ordered_shapes=ordered_shapes,
-                    seen=seen,
-                    field_values=field_values,
-                )
+            children = data
         case _:
             return
+    for child in children:
+        _gather_record_field_values(
+            data=child,
+            shapes_by_id=shapes_by_id,
+            ordered_shapes=ordered_shapes,
+            seen=seen,
+            field_values=field_values,
+        )
 
 
 @beartype
