@@ -665,6 +665,39 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
+    if (
+        len(config.ref_declarations) > 0
+        and len(config.unknown_ref_names) == 0
+        and (config.call_transform is None)
+        and (len(config.transform_stub_names) == 0)
+        and (config.variable_form is None)
+    ):
+        with GoldenSkips(
+            policy=_DECLARATION_SKIPS,
+            golden_path=golden_path,
+            prefix=lang_cls.__name__,
+        ):
+            bound = _literalize_call_case(
+                config=config,
+                spec=spec,
+                source=source,
+                input_info=input_info,
+                effective_ref_case=effective_ref_case,
+                variable_form=config.variable_form,
+                wrap_in_file=True,
+                ref_values=None,
+                bound_refs={
+                    ref_name: json.loads(s=ref_source)
+                    for ref_name, ref_source in config.ref_declarations.items()
+                },
+            )
+        check_golden(
+            contents=bound.code + "\n",
+            extension=lang_cls.extension,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+        return
     call_outcome = _run_call_with_declarations(
         config=config,
         spec=spec,
@@ -750,39 +783,6 @@ def run_call_golden_case(
         extra_body_preamble=tuple(body_stubs),
         extra_preamble=tuple(preamble_stubs),
     )
-    # Anchor the public ``literalize_call(bound_refs=...)`` path to this
-    # golden-verified composer output.  ``bound_refs`` injects only the
-    # target stub, so the equivalence holds exactly when this case
-    # synthesizes no extra (transform-wrapper) stubs and binds no
-    # variable; those cases are exercised through the composer call
-    # directly above.
-    if (
-        len(config.ref_declarations) > 0
-        and len(config.unknown_ref_names) == 0
-        and (config.call_transform is None)
-        and (len(config.transform_stub_names) == 0)
-        and (config.variable_form is None)
-    ):
-        bound = _literalize_call_case(
-            config=config,
-            spec=spec,
-            source=source,
-            input_info=input_info,
-            effective_ref_case=effective_ref_case,
-            variable_form=config.variable_form,
-            wrap_in_file=True,
-            ref_values=None,
-            bound_refs={
-                ref_name: json.loads(s=ref_source)
-                for ref_name, ref_source in config.ref_declarations.items()
-            },
-        )
-        divergence_message = (
-            "literalize_call(bound_refs=...) diverged from the shared "
-            f"call/declaration composition for {lang_cls.__name__} / "
-            f"{config.case_dir_name}"
-        )
-        assert bound.code == composed.code, divergence_message  # noqa: S101
     check_golden(
         contents=composed.code + "\n",
         extension=lang_cls.extension,
