@@ -1013,10 +1013,11 @@ def _build_dict_entry(
         if isinstance(raw_key, str)
         else key_str
     )
-    return config.format_entry(
-        formatted_key,
-        raw_value,
-        formatted_value,
+    return config.format_entry_from_source(
+        raw_key=raw_key,
+        formatted_key=formatted_key,
+        raw_value=raw_value,
+        formatted_value=formatted_value,
     )
 
 
@@ -1135,8 +1136,9 @@ def _format_ordered_map_value(
         spec=spec,
     )
     pairs = [
-        spec.format_ordered_map_entry(
-            _format_ordered_map_key(
+        ordered_map_cfg.format_entry_from_source(
+            raw_key=k,
+            formatted_key=_format_ordered_map_key(
                 raw_key=k,
                 key_str=_format_value(
                     value=k,
@@ -1147,8 +1149,8 @@ def _format_ordered_map_value(
                 ),
                 spec=spec,
             ),
-            v,
-            _maybe_wrap_child(
+            raw_value=v,
+            formatted_value=_maybe_wrap_child(
                 parent_id=parent_id,
                 raw_value=v,
                 formatted_value=_format_dict_entry_value(
@@ -1161,6 +1163,7 @@ def _format_ordered_map_value(
                 ),
                 ctx=ctx,
             ),
+            format_entry=spec.format_ordered_map_entry,
         )
         for k, v in ordered_map_items
     ]
@@ -2980,14 +2983,16 @@ def _format_collection_lines(
                     ctx=ctx,
                 )
                 entry = (
-                    spec.format_ordered_map_entry(
-                        _format_ordered_map_key(
+                    spec.ordered_map_format_config.format_entry_from_source(
+                        raw_key=k,
+                        formatted_key=_format_ordered_map_key(
                             raw_key=k,
                             key_str=formatted_key,
                             spec=spec,
                         ),
-                        v,
-                        formatted_val,
+                        raw_value=v,
+                        formatted_value=formatted_val,
+                        format_entry=spec.format_ordered_map_entry,
                     )
                     if is_ordered_map
                     else _build_dict_entry(
