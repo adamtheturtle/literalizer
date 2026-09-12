@@ -1447,7 +1447,7 @@ class Scala(metaclass=LanguageCls):
             else "Any"
         )
 
-    def _scala_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
+    def _scala_record_field_type(
         self,
         request: RecordFieldType,
         /,
@@ -1493,38 +1493,37 @@ class Scala(metaclass=LanguageCls):
             isinstance(value, datetime.datetime)
             and self.datetime_format.value.type_produced is int
         ):
-            return "Long"
-        match value:
-            case None:
-                return "Any"
-            case OrderedMap():
-                opener = self.ordered_map_format_config.ordered_map_open(
-                    value,
-                )
-            case dict() if record_shape_for_dict(value=value) is not None:
-                return self._scala_derecordized_map_field_type()
-            case list():
-                opener = self.sequence_open(value)
-            case bool():
-                resolved_type = self._scalar_field_type_resolver(bool)
-                return (
-                    resolved_type
-                    if resolved_type is not None and resolved_type != ""
-                    else "Any"
-                )
-            case int() if not I64_MIN <= value <= I64_MAX:
-                return "BigInt"
-            case int():
-                return self._scala_int_magnitude_field_type(value)
-            case _:
-                resolved_type = self._scalar_field_type_resolver(type(value))
-                return (
-                    resolved_type
-                    if resolved_type is not None and resolved_type != ""
-                    else "Any"
-                )
-        head = opener[: -len("(")]
-        return _SCALA_UNTYPED_OPENERS.get(head, head)
+            field_type = "Long"
+        else:
+            match value:
+                case OrderedMap():
+                    opener = self.ordered_map_format_config.ordered_map_open(
+                        value,
+                    )
+                    head = opener[: -len("(")]
+                    field_type = _SCALA_UNTYPED_OPENERS.get(head, head)
+                case dict() if record_shape_for_dict(value=value) is not None:
+                    field_type = self._scala_derecordized_map_field_type()
+                case list():
+                    opener = self.sequence_open(value)
+                    head = opener[: -len("(")]
+                    field_type = _SCALA_UNTYPED_OPENERS.get(head, head)
+                case int() if not isinstance(value, bool) and not (
+                    I64_MIN <= value <= I64_MAX
+                ):
+                    field_type = "BigInt"
+                case int() if not isinstance(value, bool):
+                    field_type = self._scala_int_magnitude_field_type(value)
+                case _:
+                    resolved_type = self._scalar_field_type_resolver(
+                        type(value)
+                    )
+                    field_type = (
+                        resolved_type
+                        if resolved_type is not None and resolved_type != ""
+                        else "Any"
+                    )
+        return field_type
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
