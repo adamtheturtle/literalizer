@@ -20,7 +20,7 @@ comparison logic as the other per-language round-trip helpers.
 import json
 import sys
 
-import yaml  # pyrefly: ignore [untyped-import]
+import yaml
 
 from literalizer import InputFormat, literalize
 from literalizer.languages import Yaml
@@ -54,7 +54,7 @@ def main() -> None:
     )
     document = _build_document(json_text=json_text)
     parsed = roundtrip_common.json_object(
-        value=yaml.safe_load(  # type: ignore[no-untyped-call]
+        value=yaml.safe_load(
             stream=document,
         ),
     )
