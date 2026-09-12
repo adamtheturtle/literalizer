@@ -11,14 +11,14 @@ from ruamel.yaml.comments import (
     CommentedMap,
     CommentedSeq,
     CommentedSet,
+    TaggedScalar,
 )
 from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import AoT, Comment, Item, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
-from literalizer._parsing import (
-    unwrap_yaml_scalar,
-)
+from literalizer._parsing import unwrap_yaml_scalar
+from literalizer._types import Scalar
 
 
 class QuoteSensitiveCommentSuffix(str):
@@ -91,10 +91,9 @@ class ElementComments:
 
 
 @beartype
-def _yaml_set_sort_key(value: object) -> tuple[str, str]:
+def _yaml_set_sort_key(value: Scalar | TaggedScalar) -> tuple[str, str]:
     """Return the rendering sort key for a wrapped YAML set member."""
-    scalar: Any = value  # pyrefly: ignore [explicit-any]
-    unwrapped = unwrap_yaml_scalar(value=scalar)
+    unwrapped = unwrap_yaml_scalar(value=value)
     return type(unwrapped).__name__, repr(unwrapped)
 
 
@@ -197,7 +196,7 @@ class _CollectionTargets:
     """Iteration details for extracting collection comments."""
 
     token_idx: int
-    keys: list[object]
+    keys: list[Scalar | TaggedScalar]
     # Slots of ``ca.items[key]`` holding the comments a flow collection
     # writes after an element's comma, kept on the element that follows
     # them (issue #4491).
@@ -216,6 +215,13 @@ class _CommentAssociation(Protocol):
     comment: Sequence[Any] | None  # pyrefly: ignore [explicit-any]
     items: Mapping[object, Sequence[Any]]  # pyrefly: ignore [explicit-any]
     end: Sequence[CommentToken]
+
+
+@runtime_checkable
+class _CommentedToken(Protocol):
+    """Scanner token carrying ruamel comment metadata."""
+
+    comment: list[CommentToken | list[CommentToken] | None] | None
 
 
 @beartype
@@ -271,9 +277,8 @@ def _header_comment_lines(*, ca: _CommentAssociation) -> list[str]:
         return lines
 
     for header_token in ca.comment[1] or ():
-        header_value: str = header_token.value  # ty: ignore[unsound-assignment]
         lines.extend(
-            _token_comment_lines(value=header_value),
+            _comment_token_lines(token=header_token),
         )
     return lines
 
@@ -632,7 +637,7 @@ def extract_yaml_comments(
     # CommentedSet elements are emitted in sorted order by _literalize,
     # so reorder to match that sort key to keep comments aligned.
     if isinstance(ruamel_data, CommentedSet):
-        output_keys: list[object] = sorted(
+        output_keys: list[Scalar | TaggedScalar] = sorted(
             targets.keys,
             key=_yaml_set_sort_key,
         )
@@ -918,7 +923,7 @@ def _split_scalar_after_token(*, value: str) -> _ScalarComments:
 @beartype
 def _extract_scalar_comments(
     *,
-    tokens: Iterable[Any],  # pyrefly: ignore [explicit-any]
+    tokens: Iterable[_CommentedToken],
 ) -> _ScalarComments:
     """Extract comments from scanned YAML tokens for a scalar value.
 
@@ -932,19 +937,19 @@ def _extract_scalar_comments(
     before_comments: list[str] = []
     trailing = _ScalarComments(before=[], inline="", after=[])
     for token in tokens:
-        comment: list[Any] | None = token.comment  # pyrefly: ignore [explicit-any]
+        comment = token.comment
         if comment is None or len(comment) == 0:
             continue
-        inline_token: CommentToken | None = comment[0]  # ty: ignore[unsound-assignment]
-        before_tokens: list[CommentToken] = comment[1] or []  # ty: ignore[unsound-assignment]
-        if inline_token is not None:
-            value: str = inline_token.value
+        inline_token = comment[0]
+        if isinstance(inline_token, CommentToken):
+            value = inline_token.value
             trailing = _split_scalar_after_token(value=value)
-        for bt in before_tokens:
-            bt_value: str = bt.value
-            before_comments.extend(
-                _token_comment_lines(value=bt_value),
-            )
+        before_tokens = comment[1] if len(comment) > 1 else None
+        if isinstance(before_tokens, list):
+            for before_token in before_tokens:
+                before_comments.extend(
+                    _token_comment_lines(value=before_token.value),
+                )
         break
     return _ScalarComments(
         before=before_comments,
@@ -985,7 +990,7 @@ class ScalarCommentResult:
 @beartype
 def literalize_yaml_scalar(
     *,
-    tokens: Iterable[Any],  # pyrefly: ignore [explicit-any]
+    tokens: Iterable[_CommentedToken],
     base: str,
     comment_prefix: str,
     comment_suffix: str,
