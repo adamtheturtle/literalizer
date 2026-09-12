@@ -3168,8 +3168,7 @@ def _collect_yaml_comment_nodes(
     """Map rendered container identities to their ruamel YAML nodes."""
     if isinstance(raw_value, CommentedMap) and isinstance(value, dict):
         out[id(value)] = raw_value
-        typed_raw_map: Mapping[object, object] = raw_value  # ty: ignore[unsound-assignment]
-        normalized_raw_map = _normalized_mapping_objects(mapping=typed_raw_map)
+        normalized_raw_map = _normalized_mapping_objects(mapping=raw_value)
         for key, child in value.items():
             _collect_yaml_comment_nodes(
                 value=child,
