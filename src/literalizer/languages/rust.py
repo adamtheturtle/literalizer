@@ -4763,10 +4763,10 @@ class Rust(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self._json_type_active:
-            assert self.json_type is not None  # noqa: S101
+        json_type = self.json_type
+        if json_type is not None:
             return self.declaration_style.build_json_formatter(
-                json_type=self.json_type.value,
+                json_type=json_type.value,
             )
         return self.declaration_style.build_formatter(
             date_type=self._declaration_date_type,

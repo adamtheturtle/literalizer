@@ -2111,8 +2111,7 @@ class Scala(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        if self._json_type_active:
-            assert self.json_type is not None  # noqa: S101
+        if self.json_type is not None:
             return self.declaration_style.build_circe_formatter(
                 json_type_name="Json",
             )
