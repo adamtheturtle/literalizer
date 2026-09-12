@@ -12,7 +12,7 @@ from .case_manifests import CaseManifestError
 from .language_specs import make_spec
 from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
 from .variant_cases import (
-    _HasJsonType,  # pyright: ignore[reportPrivateUsage]
+    HasJsonType,
     check_axis_coverage,
     variants_for_axis,
 )
@@ -209,7 +209,7 @@ def test_json_type_axis_covers_every_capable_language() -> None:
     supported = {
         lang_cls
         for lang_cls in ALL_LANGUAGES
-        if isinstance(make_spec(lang_cls=lang_cls), _HasJsonType)
+        if isinstance(make_spec(lang_cls=lang_cls), HasJsonType)
     }
     covered = {
         variant.lang_cls for variant in variants_for_axis(axis_key="json_type")
@@ -231,7 +231,7 @@ def test_json_type_name_suffixes_rename_a_member() -> None:
             continue
         spec = make_spec(lang_cls=lang_cls)
 
-        assert isinstance(spec, _HasJsonType), lang_cls.__name__
+        assert isinstance(spec, HasJsonType), lang_cls.__name__
         assert suffix not in {
             member.name.lower()
             for member in spec.json_types
