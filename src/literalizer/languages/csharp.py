@@ -2325,10 +2325,10 @@ class CSharp(metaclass=LanguageCls):
         because every json-mode initializer (the cast or the
         constructor) is a runtime expression.
         """
-        if self._json_type_active:
-            assert self.json_type is not None  # noqa: S101
+        json_type = self.json_type
+        if json_type is not None:
             return _csharp_json_declaration_formatter(
-                json_type=self.json_type.value,
+                json_type=json_type.value,
             )
         date_hint = (
             "string"

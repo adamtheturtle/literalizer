@@ -2654,11 +2654,11 @@ class Nim(metaclass=LanguageCls):
         :func:`_nim_json_value_expression` skips re-wrapping ``%*(...)``
         and ``newJ*`` builders so the rendered output stays flat).
         """
-        if self._uses_json_node:
-            assert self.json_type is not None  # noqa: S101
+        json_type = self.json_type
+        if json_type is not None:
             return _nim_json_declaration_formatter(
                 declaration_style=self.declaration_style,
-                json_type=self.json_type.value,
+                json_type=json_type.value,
             )
         is_const = self.declaration_style is self.declaration_styles.CONST
         return _make_variable_declaration(
