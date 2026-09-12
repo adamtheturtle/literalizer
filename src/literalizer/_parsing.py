@@ -288,7 +288,7 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
         value = _unwrap_yaml_tagged_scalar(value=value)
     match value:
         case bool():
-            return bool(value)  # pyrefly: ignore [unnecessary-type-conversion]
+            return value
         case int():
             return int(value)  # pyrefly: ignore [unnecessary-type-conversion]
         case float():
