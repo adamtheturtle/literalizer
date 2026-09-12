@@ -172,36 +172,24 @@ def _add_collection_type(*, val: Value, result: set[type]) -> None:
 
 
 @beartype
-def _walk_annotated_collections(  # noqa: C901  # pylint: disable=too-complex
-    *,
-    val: Value,
-    result: set[type],
-) -> None:
+def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
     """Walk *val* and add collection types that appear in type annotations."""
-    match val:
-        case OrderedMap():
-            if _needs_annotation(val=val):
-                result.add(OrderedMap)
-                for v in val.values():
-                    _walk_annotated_collections(val=v, result=result)
-                    _add_collection_type(val=v, result=result)
-        case dict():
-            if _needs_annotation(val=val):
-                result.add(dict)
-                for v in val.values():
-                    _walk_annotated_collections(val=v, result=result)
-                    _add_collection_type(val=v, result=result)
-        case set():
-            if len(val) == 0:
+    pending: list[Value] = [val]
+    while len(pending) > 0:
+        value = pending.pop()
+        if isinstance(value, set):
+            if len(value) == 0:
                 result.add(set)
-        case list():
-            if _needs_annotation(val=val):
-                result.add(list)
-                for v in val:
-                    _walk_annotated_collections(val=v, result=result)
-                    _add_collection_type(val=v, result=result)
-        case _:
-            pass
+            continue
+        if not isinstance(value, (dict, list)) or not _needs_annotation(
+            val=value
+        ):
+            continue
+        _add_collection_type(val=value, result=result)
+        children = value.values() if isinstance(value, dict) else value
+        for child in children:
+            _add_collection_type(val=child, result=result)
+            pending.append(child)
 
 
 _ANNOTATED_COLLECTION_TYPES = frozenset({dict, list, set, OrderedMap})
