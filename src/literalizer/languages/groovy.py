@@ -7,7 +7,7 @@ import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -93,7 +93,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 
 
 @beartype
@@ -134,16 +134,66 @@ def _format_float_fixed(value: float) -> str:
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
-class _GroovyDictEntryWithSeparator(DictEntryWithSeparator):
-    """Parenthesize expression keys required by Groovy map literals."""
+def _groovy_key_is_native_temporal(
+    *, raw_key: Scalar, native_dates: bool
+) -> bool:
+    """Return whether a source key renders as a ``java.time`` call."""
+    return isinstance(raw_key, datetime.time) or (
+        native_dates
+        and isinstance(raw_key, datetime.date)
+        and not isinstance(raw_key, datetime.datetime)
+    )
 
-    def __call__(
-        self, key: str, raw_value: Value, formatted_value: str, /
+
+@dataclasses.dataclass(frozen=True)
+class _GroovyDictFormatConfig(DictFormatConfig):
+    """Groovy dict config that classifies source temporal keys."""
+
+    native_dates: bool
+
+    @override
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
     ) -> str:
-        """Protect a method-call key from parsing as a label."""
-        if key.startswith("java.time."):
-            key = f"({key})"
-        return super().__call__(key, raw_value, formatted_value)
+        """Parenthesize native temporal keys so they parse as
+        expressions.
+        """
+        if _groovy_key_is_native_temporal(
+            raw_key=raw_key, native_dates=self.native_dates
+        ):
+            formatted_key = f"({formatted_key})"
+        return self.format_entry(formatted_key, raw_value, formatted_value)
+
+
+@dataclasses.dataclass(frozen=True)
+class _GroovyOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Groovy ordered-map config that classifies source temporal keys."""
+
+    native_dates: bool
+
+    @override
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+        format_entry: Callable[[str, Value, str], str],
+    ) -> str:
+        """Parenthesize native temporal keys so they parse as
+        expressions.
+        """
+        if _groovy_key_is_native_temporal(
+            raw_key=raw_key, native_dates=self.native_dates
+        ):
+            formatted_key = f"({formatted_key})"
+        return format_entry(formatted_key, raw_value, formatted_value)
 
 
 @beartype
@@ -889,10 +939,10 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _GroovyDictFormatConfig(
             dict_open=fixed_open(open_str="["),
             close="]",
-            format_entry=_GroovyDictEntryWithSeparator(
+            format_entry=DictEntryWithSeparator(
                 separator=": ",
                 format_value=passthrough_sequence_entry,
             ),
@@ -901,6 +951,9 @@ class Groovy(metaclass=LanguageCls):
             narrowed_open=None,
             supports_trailing_comma=True,
             narrowed_empty_form=None,
+            native_dates=(
+                self.date_format.value.type_produced is datetime.date
+            ),
         )
 
     @cached_property
@@ -941,16 +994,19 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _GroovyOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="["),
             close="]",
             preamble_lines=(),
+            native_dates=(
+                self.date_format.value.type_produced is datetime.date
+            ),
         )
 
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        return _GroovyDictEntryWithSeparator(
+        return DictEntryWithSeparator(
             separator=": ",
             format_value=passthrough_sequence_entry,
         )

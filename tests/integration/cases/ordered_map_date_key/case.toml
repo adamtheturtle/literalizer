@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Groovy"]
+languages_reason = "Groovy native temporal mapping keys require expression parentheses."
+suites = ["base"]
+
+[[variants]]
+axis = "date"
