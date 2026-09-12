@@ -224,10 +224,11 @@ def nested_record_sequence_type(
         )
         for item in value
     }
-    if len(child_types) != 1 or None in child_types:
+    if len(child_types) != 1:
         return None
     (child_type,) = child_types
-    assert child_type is not None  # noqa: S101
+    if child_type is None:
+        return None
     depth, name = child_type
     return (depth + 1, name)
 
