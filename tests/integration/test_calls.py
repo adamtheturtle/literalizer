@@ -18,11 +18,11 @@ from literalizer.languages import Python
 
 from .call_cases import (
     CallCase,
-    _run_wrap_in_file_case,  # pyright: ignore[reportPrivateUsage]
-    _select_call_input_root,  # pyright: ignore[reportPrivateUsage]
     default_call_case_specs,
     discover_call_cases,
     run_call_golden_case,
+    run_wrap_in_file_case,
+    select_call_input_root,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
@@ -45,7 +45,7 @@ def test_select_call_input_root_rejects_non_table_root(
             r"but its parsed root is list"
         ),
     ):
-        _ = _select_call_input_root(
+        _ = select_call_input_root(
             source="[]",
             input_info=input_info,
             input_root_key="calls",
@@ -63,7 +63,7 @@ def test_select_call_input_root_rejects_missing_key(tmp_path: Path) -> None:
         expected_exception=KeyError,
         match=r"input\.toml has no configured call root 'calls'",
     ):
-        _ = _select_call_input_root(
+        _ = select_call_input_root(
             source="other = []",
             input_info=input_info,
             input_root_key="calls",
@@ -97,7 +97,7 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
         expected_exception=pytest.skip.Exception,
         match="Python rejected call arg: compound argument",
     ):
-        _run_wrap_in_file_case(
+        run_wrap_in_file_case(
             config=config,
             spec=make_spec(lang_cls=Python),
             source="[]\n",
