@@ -290,7 +290,10 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
     # ``ruamel`` always returns its own ``TimeStamp`` subclass for
     # datetimes, so we always reconstruct.
     if isinstance(value, TaggedScalar):
-        value = _unwrap_yaml_tagged_scalar(value=value)
+        # ``TaggedScalar.__str__`` returns ``value`` but avoids its unknown
+        # upstream type until https://sourceforge.net/p/ruamel-yaml/tickets/571/
+        # is released.
+        value = str(object=value)
     match value:
         case bool():
             return value
@@ -315,12 +318,6 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
             return value
         case _ as unreachable:
             assert_never(unreachable)
-
-
-@beartype
-def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
-    """Unwrap the scalar payload retained for an explicit YAML tag."""
-    return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
 
 
 @beartype
@@ -428,7 +425,7 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
     # represents ``!!omap`` and must become an ``OrderedMap``.
     match data:
         case TaggedScalar():
-            return _unwrap_yaml_tagged_scalar(value=data)
+            return unwrap_yaml_scalar(value=data)
         case CommentedOrderedMap():
             omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
             return OrderedMap(
