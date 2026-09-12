@@ -395,7 +395,7 @@ def _check_c_record_array_field_lengths(
 
 
 @beartype
-def _check_c_record_nesting(  # noqa: C901
+def _check_c_record_nesting(
     *,
     node: Value,
     cval_context: bool,
@@ -414,7 +414,6 @@ def _check_c_record_nesting(  # noqa: C901
     descended through a non-record container, where the value must
     occupy a ``CVal`` slot and a record there cannot be represented.
     """
-    # pylint: disable=too-complex
     if _c_record_dict(node):
         if cval_context:
             raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
@@ -436,20 +435,14 @@ def _check_c_record_nesting(  # noqa: C901
                     cval_context=True,
                     array_lengths_by_shape=array_lengths_by_shape,
                 )
-        case list() if _all_record_shaped(node):
-            if cval_context:
+        case list():
+            records = _all_record_shaped(node)
+            if records and cval_context:
                 raise UnrepresentableInputError(_C_RECORD_IN_CVAL_MSG)
             for element in node:
                 _check_c_record_nesting(
                     node=element,
-                    cval_context=False,
-                    array_lengths_by_shape=array_lengths_by_shape,
-                )
-        case list():
-            for element in node:
-                _check_c_record_nesting(
-                    node=element,
-                    cval_context=True,
+                    cval_context=not records,
                     array_lengths_by_shape=array_lengths_by_shape,
                 )
         case _:
