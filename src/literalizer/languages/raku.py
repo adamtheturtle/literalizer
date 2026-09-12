@@ -60,7 +60,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -397,8 +399,10 @@ class Raku(metaclass=LanguageCls):
     )
     """Callable that rewrites a formatted direct call argument."""
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Raku."""
+
+        _value_: DateFormatConfig
 
         RAKU = DateFormatConfig(
             formatter=date_ymd_formatter(
@@ -412,12 +416,10 @@ class Raku(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Raku."""
+
+        _value_: DatetimeFormatConfig
 
         RAKU = DatetimeFormatConfig(
             formatter=_format_datetime_raku,
@@ -435,10 +437,6 @@ class Raku(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

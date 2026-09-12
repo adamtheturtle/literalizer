@@ -53,7 +53,9 @@ from literalizer._language import (
     CommandCallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -745,8 +747,10 @@ class Roc(metaclass=LanguageCls):
     stringifies_nested_collections = False
     supports_special_floats = True
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Roc."""
+
+        _value_: DateFormatConfig
 
         ISO = DateFormatConfig(
             formatter=_format_roc_date_iso,
@@ -754,12 +758,10 @@ class Roc(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Roc."""
+
+        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=_format_roc_datetime_iso,
@@ -772,10 +774,6 @@ class Roc(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

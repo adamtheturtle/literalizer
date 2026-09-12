@@ -58,7 +58,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -568,8 +570,10 @@ class VisualBasic(metaclass=LanguageCls):
     )
     """Callable that rewrites a formatted direct call argument."""
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for VisualBasic."""
+
+        _value_: DateFormatConfig
 
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -582,12 +586,10 @@ class VisualBasic(metaclass=LanguageCls):
             preamble_lines=("Imports System",),
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for VisualBasic."""
+
+        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -600,10 +602,6 @@ class VisualBasic(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

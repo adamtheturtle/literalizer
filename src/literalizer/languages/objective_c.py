@@ -48,7 +48,9 @@ from literalizer._language import (
     CallParameterShadowing,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -741,8 +743,10 @@ class ObjectiveC(metaclass=LanguageCls):
     supports_non_string_dict_keys = False
     checks_raw_control_dict_keys_separately = False
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for ObjectiveC."""
+
+        _value_: DateFormatConfig
 
         OBJC = DateFormatConfig(
             formatter=_format_date_objc,
@@ -755,12 +759,10 @@ class ObjectiveC(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for ObjectiveC."""
+
+        _value_: DatetimeFormatConfig
 
         OBJC = DatetimeFormatConfig(
             formatter=_format_datetime_objc,
@@ -778,10 +780,6 @@ class ObjectiveC(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

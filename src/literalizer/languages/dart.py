@@ -62,7 +62,9 @@ from literalizer._language import (
     CallStyle,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -729,8 +731,10 @@ class Dart(metaclass=LanguageCls):
         beyond_i64_type="BigInt",
     )
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date formatting options for Dart."""
+
+        _value_: DateFormatConfig
 
         DART = DateFormatConfig(
             formatter=_format_date_dart,
@@ -741,12 +745,10 @@ class Dart(metaclass=LanguageCls):
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for Dart."""
+
+        _value_: DatetimeFormatConfig
 
         DART = DatetimeFormatConfig(
             formatter=_format_datetime_dart,
@@ -764,10 +766,6 @@ class Dart(metaclass=LanguageCls):
             type_produced=int,
             preamble_lines=(),
         )
-
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
