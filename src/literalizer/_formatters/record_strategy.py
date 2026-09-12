@@ -207,6 +207,14 @@ class RecordStrategy:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class ActiveRecordStrategy(RecordStrategy):
+    """Record strategy whose active callbacks are always available."""
+
+    record_name_for_value: Callable[[ValueInput], str | None]
+
+
+@beartype
 def nested_record_sequence_type(
     *,
     value: Value,
@@ -907,7 +915,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     split_conflicting_field_types: bool,
     widen_unrecordizable_nested_sibling_maps: bool,
     derecordized_map_open: str | None,
-) -> RecordStrategy:
+) -> ActiveRecordStrategy:
     """Build the behavior + preamble for the ``RECORD`` strategy.
 
     The two share per-pass caches: ``compute_record_shapes`` (run first,
@@ -1154,7 +1162,7 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
             )
         return preamble_by_value.setdefault(repr(data), tuple(blocks))
 
-    return RecordStrategy(
+    return ActiveRecordStrategy(
         behavior=behavior,
         preamble=_preamble,
         record_name_for_value=_record_name_for_value,

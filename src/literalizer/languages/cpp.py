@@ -59,11 +59,11 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
     nested_record_sequence_type,
@@ -993,7 +993,7 @@ def _compute_element_type_for_items(
 
 
 @beartype
-def _items_need_variant(  # noqa: PLR0911
+def _items_need_variant(
     items: list[Value],
     element_to_type: Callable[[type | ListType | DictType], str | None],
     *,
@@ -1028,24 +1028,15 @@ def _items_need_variant(  # noqa: PLR0911
         )
         if len(types) != 1:
             return True
-        return any(
-            _needs_variant_type(
-                data=item,
-                element_to_type=element_to_type,
-                type_ctx=type_ctx,
-                tuple_list_ids=tuple_list_ids,
-                record_dict_ids=record_dict_ids,
-            )
-            for item in items
-        )
-    match element_type:
-        case DictType(value_type=vt):
-            if vt is None or element_to_type(vt) is None:
+    else:
+        match element_type:
+            case DictType(value_type=vt):
+                if vt is None or element_to_type(vt) is None:
+                    return True
+            case other if element_to_type(other) is None:
                 return True
-        case other if element_to_type(other) is None:
-            return True
-        case _:
-            pass
+            case _:
+                pass
     return any(
         _needs_variant_type(
             data=v,
@@ -4080,7 +4071,7 @@ class Cpp(metaclass=LanguageCls):
         return _CppWidenedMapNarrowing(value_type=None)
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
@@ -4132,7 +4123,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
-    def _tuple_record_strategy(self) -> RecordStrategy:
+    def _tuple_record_strategy(self) -> ActiveRecordStrategy:
         """Compose C++14's native tuple and record forms.
 
         A tuple-eligible field belongs to a generated record just as
@@ -4178,7 +4169,6 @@ class Cpp(metaclass=LanguageCls):
         if not self._record_strategy_active:
             return None
         lookup = self._record_strategy.record_name_for_value
-        assert lookup is not None  # noqa: S101
         return lookup(value)
 
     @cached_property
@@ -4267,7 +4257,6 @@ class Cpp(metaclass=LanguageCls):
             else self._tuple_record_strategy
         )
         record_name_for_value = record_strategy.record_name_for_value
-        assert record_name_for_value is not None  # noqa: S101
 
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
@@ -4427,14 +4416,10 @@ class Cpp(metaclass=LanguageCls):
         )
         if not record_rendering_active:
             return config
-        maybe_record_name_for_value = (
+        record_name_for_value = (
             self._record_strategy.record_name_for_value
             if self._record_strategy_active
             else self._tuple_record_strategy.record_name_for_value
-        )
-        assert maybe_record_name_for_value is not None  # noqa: S101
-        record_name_for_value: Callable[[ValueInput], str | None] = (
-            maybe_record_name_for_value
         )
 
         def _record_aware_open(data: dict[Scalar, Value]) -> str:
@@ -4449,17 +4434,17 @@ class Cpp(metaclass=LanguageCls):
                     for value in values
                     if isinstance(value, list) and bool(value)
                 ]
-                if (
-                    len(resolved_names) > 0
-                    and None not in resolved_names
-                    and (len(set(resolved_names)) == 1)
-                ):
-                    record_name = resolved_names[0]
-                    assert record_name is not None  # noqa: S101
-                    value_type = f"std::vector<{record_name}>"
-                    return (
-                        f"std::vector<std::pair<std::string, {value_type}>>{{"
-                    )
+                match resolved_names:
+                    case [str() as record_name, *rest] if all(
+                        name == record_name for name in rest
+                    ):
+                        value_type = f"std::vector<{record_name}>"
+                        return (
+                            "std::vector<std::pair<std::string, "
+                            f"{value_type}>>{{"
+                        )
+                    case _:
+                        pass
             return config.ordered_map_open(data)
 
         return dataclasses.replace(
