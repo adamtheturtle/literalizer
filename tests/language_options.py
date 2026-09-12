@@ -31,7 +31,6 @@ class _HasBoolFormat(Protocol):
     """A spec exposing a configurable boolean literal spelling."""
 
     bool_format: enum.Enum
-    bool_formats: type[enum.Enum]
 
 
 @runtime_checkable
@@ -68,7 +67,6 @@ class _HasJsonType(Protocol):
     """
 
     json_type: enum.Enum | None
-    json_types: type[enum.Enum]
 
 
 @runtime_checkable
@@ -104,7 +102,6 @@ class _HasBytesFormat(Protocol):
     """A spec exposing the configured bytes format."""
 
     bytes_format: enum.Enum
-    bytes_formats: type[enum.Enum]
 
 
 @beartype
@@ -112,13 +109,6 @@ def _bool_format(spec: literalizer.Language) -> object:
     """Return the configured boolean literal spelling."""
     assert isinstance(spec, _HasBoolFormat)  # noqa: S101
     return spec.bool_format
-
-
-@beartype
-def _bool_formats(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the boolean literal spellings a language offers."""
-    assert isinstance(spec, _HasBoolFormat)  # noqa: S101
-    return spec.bool_formats
 
 
 @beartype
@@ -171,13 +161,6 @@ def _json_type(spec: literalizer.Language) -> object:
 
 
 @beartype
-def _json_types(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the JSON value types a language offers."""
-    assert isinstance(spec, _HasJsonType)  # noqa: S101
-    return spec.json_types
-
-
-@beartype
 def _json_rendering(spec: literalizer.Language) -> object:
     """Return the configured JSON rendering, if any."""
     assert isinstance(spec, _HasJsonRendering)  # noqa: S101
@@ -212,13 +195,6 @@ def _bytes_format(spec: literalizer.Language) -> object:
     """Return the configured bytes format, despite JSON overrides."""
     assert isinstance(spec, _HasBytesFormat)  # noqa: S101
     return spec.bytes_format
-
-
-@beartype
-def _bytes_formats(spec: literalizer.Language) -> type[enum.Enum]:
-    """Return the bytes formats a language offers."""
-    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
-    return spec.bytes_formats
 
 
 _LINE_SEPARATOR = "\u2028"
@@ -269,7 +245,7 @@ OPTIONS: Mapping[str, Option] = {
     "bool_format": Option(
         kwarg="bool_format",
         get_default=_bool_format,
-        get_members=_bool_formats,
+        get_members=lambda spec: spec.bool_formats,
     ),
     # Each option reads the value the constructor took, not the derived
     # formatter the language built from it: a JSON value type overrides
@@ -280,7 +256,7 @@ OPTIONS: Mapping[str, Option] = {
     "bytes_format": Option(
         kwarg="bytes_format",
         get_default=_bytes_format,
-        get_members=_bytes_formats,
+        get_members=lambda spec: spec.bytes_formats,
     ),
     "comment_format": Option(
         kwarg="comment_format",
@@ -345,7 +321,7 @@ OPTIONS: Mapping[str, Option] = {
     "json_type": Option(
         kwarg="json_type",
         get_default=_json_type,
-        get_members=_json_types,
+        get_members=lambda spec: spec.json_types,
     ),
     "language_version": Option(
         kwarg="language_version",
