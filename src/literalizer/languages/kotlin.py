@@ -634,6 +634,7 @@ def _format_kotlin_typed_declaration(
     return f"{keyword} {name}: {hint} = {value}"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _KotlinDictSpec:
     """Per-format dict config pieces resolved at init time."""
@@ -785,6 +786,7 @@ def _kotlin_record_literal(
     )
 
 
+@beartype
 @dataclasses.dataclass
 class _KotlinWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.

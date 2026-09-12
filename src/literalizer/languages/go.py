@@ -394,6 +394,7 @@ def _go_record_literal(
     )
 
 
+@beartype
 @dataclasses.dataclass
 class _GoWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.

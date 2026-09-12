@@ -514,6 +514,7 @@ def _has_union_in_type_hints(*, data: Value) -> bool:
             return False
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _PreambleResult:
     """Header and body preamble lines."""

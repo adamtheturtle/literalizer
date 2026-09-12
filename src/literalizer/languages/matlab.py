@@ -162,6 +162,7 @@ def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
     return _matlab_char_vector(s=raw_key)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _MatlabDictFormatConfig(DictFormatConfig):
     """A dict format that spells fields from their source keys."""
@@ -176,6 +177,7 @@ class _MatlabDictFormatConfig(DictFormatConfig):
         )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _MatlabOrderedMapFormatConfig(OrderedMapFormatConfig):
     """An ordered-map format that spells fields from their source keys."""

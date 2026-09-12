@@ -102,6 +102,7 @@ _format_string = make_backslash_string_formatter(
 )
 
 
+@beartype
 @dataclasses.dataclass
 class _HclScanState:
     """Mutable HCL bracket/string scan state across lines."""

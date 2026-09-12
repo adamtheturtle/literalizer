@@ -147,6 +147,7 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 )
 
 
+@beartype
 def _rust_native_type_shape(value: Value, /) -> Hashable:
     """Return the concrete Rust collection-type shape of *value*."""
     if isinstance(value, list):
@@ -220,6 +221,7 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
             _reject_incompatible_nested_sibling_lists(child)
 
 
+@beartype
 def _reject_float_collection_keys(data: Value) -> None:
     """Reject floats requiring unavailable Rust
     equality, hashing, and ordering traits.
@@ -242,6 +244,7 @@ def _reject_float_collection_keys(data: Value) -> None:
             return
 
 
+@beartype
 def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
     """Indent Rust code lines without changing multiline raw contents."""
     raw_hashes: str | None = None
@@ -915,6 +918,7 @@ def _format_datetime_rust(value: datetime.datetime) -> str:
     return f"NaiveDateTime::new({date}, {time_call})"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _VariantSignature:
     """Name and optional inner-type string for one tagged-enum variant.
@@ -986,6 +990,7 @@ def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-comp
     return signature
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _StrategyParams:
     """Bundle of Rust spec knobs handed to a heterogeneous-strategy
@@ -1007,6 +1012,7 @@ class _StrategyParams:
     sequence_supports_heterogeneity: bool
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Rust heterogeneous-values strategy.
@@ -1665,6 +1671,7 @@ def _raise_for_derecordized_map_container_values(
             return
 
 
+@beartype
 @dataclasses.dataclass
 class _RustWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.
@@ -1931,6 +1938,7 @@ def _validate_rust_record_field_key(*, key: str) -> None:
         raise UnrepresentableInputError(msg)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _FieldVariantRecordShape(RecordShape):
     """A record shape split off from same-key-set dicts whose field

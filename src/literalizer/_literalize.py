@@ -185,11 +185,13 @@ class _DisabledRefKey(str):
 _DISABLED_REF_KEY = _DisabledRefKey()
 
 
+@beartype
 def disabled_ref_key() -> str:
     """Return the internal marker for disabled reference detection."""
     return _DISABLED_REF_KEY
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class CallContext:
     """Per-row context passed to a :func:`literalize_call`
@@ -224,6 +226,7 @@ class CallContext:
     """
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
     """Result of converting data to a native language literal."""
@@ -353,6 +356,7 @@ class LiteralizeResult:
         )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class NewVariable:
     """Wrap output in a new variable declaration."""
@@ -366,6 +370,7 @@ class NewVariable:
     """
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ExistingVariable:
     """Wrap output in an assignment to an existing variable.
@@ -377,6 +382,7 @@ class ExistingVariable:
     name: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class BothVariableForms:
     """Produce both a declaration and an assignment, combined.
@@ -598,6 +604,7 @@ _SCALAR_TYPES: Final = (
 )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, slots=True)
 class _RenderContext:
     """State shared by recursive formatter calls."""
@@ -713,6 +720,7 @@ class _RenderContext:
         )
 
 
+@beartype
 def _nested_collection_context(
     *, value: Value, ctx: _RenderContext
 ) -> _RenderContext:
@@ -2004,6 +2012,7 @@ def _compute_sequence_open_override(
 _FALLBACK_PROBE: list[Value] = [1, "probe"]
 
 
+@beartype
 def _is_value_list(value: Value, /) -> TypeGuard[list[Value]]:
     """Narrow a parsed value to its recursively typed list form."""
     return isinstance(value, list)
@@ -3191,6 +3200,7 @@ def _collect_yaml_comment_nodes(
         out[id(value)] = raw_value
 
 
+@beartype
 def _source_list_children_for_inference(
     *,
     source: list[Value],
@@ -3215,6 +3225,7 @@ def _source_list_children_for_inference(
     return children
 
 
+@beartype
 def _inference_to_source_container_ids(
     *,
     source: Value,
@@ -3256,6 +3267,7 @@ def _inference_to_source_container_ids(
     return id_map
 
 
+@beartype
 def _source_container_ids(
     *, inferred_ids: frozenset[int], id_map: Mapping[int, int]
 ) -> frozenset[int]:
@@ -3267,6 +3279,7 @@ def _source_container_ids(
     )
 
 
+@beartype
 def _source_container_id_mapping[T](
     *, inferred_mapping: Mapping[int, T], id_map: Mapping[int, int]
 ) -> dict[int, T]:
@@ -3278,6 +3291,7 @@ def _source_container_id_mapping[T](
     }
 
 
+@beartype
 def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
     """Return identities of containers that are empty in source data."""
     ids: set[int] = set()
@@ -3676,6 +3690,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
     )
 
 
+@beartype
 def _literalize_child_path(
     *,
     data: Value,
@@ -3862,6 +3877,7 @@ def _apply_variable_wrapper(
     return line_prefix + wrapped
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _PreFormState:
     """Variable-form-independent results of
@@ -4127,6 +4143,7 @@ def _substitute_record_nulls(
     return data
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ScopedWrapPreamble:
     """Preamble entries split by wrap-mode placement."""
@@ -4487,6 +4504,7 @@ def literalize_both_forms(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _BoundRefComposition:
     """Per-ref declaration results paired with the main binding."""
@@ -5125,6 +5143,7 @@ def _resolve_refs_for_inference(
     return _strip_refs_from_value(value=value, ref_key=ref_key)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _PreambleRefResolution:
     """Ref-marker resolution result for preamble inference."""

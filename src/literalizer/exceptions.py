@@ -2,9 +2,12 @@
 
 import enum
 
+from beartype import beartype
+
 type InputPath = tuple[str | int, ...]
 
 
+@beartype
 class LiteralizerError(Exception):
     """Base class for every public error raised by Literalizer.
 
@@ -27,6 +30,7 @@ class LiteralizerError(Exception):
         self.path = path
 
 
+@beartype
 class UnsupportedOptionError(LiteralizerError):
     """Raised when a language does not accept a known constructor option.
 
@@ -42,6 +46,7 @@ class UnsupportedOptionError(LiteralizerError):
         self.option = option
 
 
+@beartype
 class ParseError(LiteralizerError):
     """Raised when input cannot be parsed into a data structure.
 
@@ -119,6 +124,7 @@ class UnrepresentableInputError(LiteralizerError):
     """
 
 
+@beartype
 class TargetScalarCollisionError(UnrepresentableInputError):
     """Raised when distinct collection scalars render identically.
 
@@ -143,6 +149,7 @@ class TargetScalarCollisionError(UnrepresentableInputError):
         self.rendered = rendered
 
 
+@beartype
 class UnrepresentableStringError(UnrepresentableInputError):
     """Raised when a string contains a character the target language
     cannot represent in a string literal.
@@ -164,6 +171,7 @@ class UnrepresentableStringError(UnrepresentableInputError):
         self.character_name = character_name
 
 
+@beartype
 class UnrepresentableNullError(UnrepresentableInputError):
     """Raised when null collapses onto another target-language value."""
 
@@ -271,6 +279,7 @@ class HeterogeneousSetError(HeterogeneousCollectionError):
     """
 
 
+@beartype
 class TupleArityNotRepresentableError(HeterogeneousCollectionError):
     """Raised when the ``TUPLE`` heterogeneous strategy meets a
     tuple-eligible heterogeneous scalar array whose length the target
@@ -321,6 +330,7 @@ class PerElementNotListError(LiteralizerError):
     """
 
 
+@beartype
 class ParameterCountMismatchError(LiteralizerError):
     """Raised when the number of ``parameter_names`` does not match the
     number of argument values in a function-call row.
@@ -338,6 +348,7 @@ class ParameterCountMismatchError(LiteralizerError):
         self.got = got
 
 
+@beartype
 class CallsNotSupportedByLanguageError(LiteralizerError):
     """Raised when the target language itself has no function call
     syntax (e.g. pure data/markup formats like YAML, TOML, JSON5, Norg).
@@ -352,6 +363,7 @@ class CallsNotSupportedByLanguageError(LiteralizerError):
         self.language_name = language_name
 
 
+@beartype
 class CallsNotSupportedByToolError(LiteralizerError):
     """Raised when literalizer has not yet implemented function call
     rendering for the target language, even though the language itself
@@ -369,6 +381,7 @@ class CallsNotSupportedByToolError(LiteralizerError):
         self.language_name = language_name
 
 
+@beartype
 class CallArgNotSupportedError(LiteralizerError):
     """Raised when a call argument value cannot be expressed as a
     positional argument in the target language's call syntax.
@@ -415,6 +428,7 @@ class InvalidRecordNameError(LiteralizerError):
     """
 
 
+@beartype
 class InvalidCppRawStringDelimiterError(LiteralizerError, ValueError):
     """Raised when C++'s multiline raw-string delimiter base is invalid.
 
@@ -435,6 +449,7 @@ class InvalidCppRawStringDelimiterError(LiteralizerError, ValueError):
         self.reason = reason
 
 
+@beartype
 class ReservedVariableNameError(LiteralizerError):
     """Raised when a variable or reference name is reserved by the target
     language.
@@ -459,6 +474,7 @@ class ReservedVariableNameError(LiteralizerError):
         self.variable_name = variable_name
 
 
+@beartype
 class InvalidNewVariableNameError(LiteralizerError):
     """Raised when a variable or reference name is not a syntactically
     valid identifier for the target language.
@@ -484,6 +500,7 @@ class InvalidNewVariableNameError(LiteralizerError):
         self.variable_name = variable_name
 
 
+@beartype
 class InvalidModuleNameError(LiteralizerError):
     """Raised when a module name is not a safe source identifier."""
 
@@ -497,6 +514,7 @@ class InvalidModuleNameError(LiteralizerError):
         self.module_name = module_name
 
 
+@beartype
 class InvalidCallParameterNameError(LiteralizerError):
     """Raised when a call parameter is not a target-language
     identifier.
@@ -519,6 +537,7 @@ class InvalidCallParameterNameError(LiteralizerError):
         self.reason = reason
 
 
+@beartype
 class InvalidCallTargetError(LiteralizerError):
     """Raised when a call target is not a valid target-language name."""
 
@@ -539,6 +558,7 @@ class InvalidRenderArgumentError(LiteralizerError, ValueError):
     """Base class for invalid rendering-option combinations."""
 
 
+@beartype
 class InvalidValueInputError(InvalidRenderArgumentError):
     """Raised when a supplemental Python value is cyclic or too deep."""
 
@@ -551,6 +571,7 @@ class InvalidValueInputError(InvalidRenderArgumentError):
         self.argument_name = argument_name
 
 
+@beartype
 class BoundRefOutputCollisionError(InvalidRenderArgumentError):
     """Raised when a bound ref would re-declare the output binding."""
 
@@ -562,6 +583,7 @@ class BoundRefOutputCollisionError(InvalidRenderArgumentError):
         self.name = name
 
 
+@beartype
 class InvalidPreIndentLevelError(InvalidRenderArgumentError):
     """Raised when ``pre_indent_level`` is negative."""
 
@@ -572,6 +594,7 @@ class InvalidPreIndentLevelError(InvalidRenderArgumentError):
         )
 
 
+@beartype
 class InvalidSequenceArgumentError(InvalidRenderArgumentError):
     """Raised when a sequence argument is passed as a bare string."""
 
@@ -583,6 +606,7 @@ class InvalidSequenceArgumentError(InvalidRenderArgumentError):
         self.argument_name = argument_name
 
 
+@beartype
 class ModuleNameVariableCollisionError(InvalidRenderArgumentError):
     """Raised when the wrapper name is the bound variable's own name."""
 
@@ -596,6 +620,7 @@ class ModuleNameVariableCollisionError(InvalidRenderArgumentError):
         self.name = name
 
 
+@beartype
 class RefOutputCollisionError(InvalidRenderArgumentError):
     """Raised when a ref identifier is the output binding's own name."""
 
@@ -607,6 +632,7 @@ class RefOutputCollisionError(InvalidRenderArgumentError):
         self.name = name
 
 
+@beartype
 class DelimiterlessVariableError(InvalidRenderArgumentError):
     """Raised when a delimiter-less collection is bound as one value."""
 
@@ -617,6 +643,7 @@ class DelimiterlessVariableError(InvalidRenderArgumentError):
         )
 
 
+@beartype
 class DelimiterlessWrappedFileError(InvalidRenderArgumentError):
     """Raised when a delimiter-less fragment would become a whole file."""
 
@@ -627,6 +654,7 @@ class DelimiterlessWrappedFileError(InvalidRenderArgumentError):
         )
 
 
+@beartype
 class ImmutableVariableModifierError(InvalidRenderArgumentError):
     """Raised when a once-bound declaration would be assigned to.
 
@@ -653,6 +681,7 @@ class ImmutableVariableModifierError(InvalidRenderArgumentError):
         self.modifier = modifier
 
 
+@beartype
 class PreIndentedWrappedFileError(InvalidRenderArgumentError):
     """Raised when an indented whole file could not be parsed.
 
@@ -673,6 +702,7 @@ class PreIndentedWrappedFileError(InvalidRenderArgumentError):
         self.language_name = language_name
 
 
+@beartype
 class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
     """Raised when a complete file would assign an undeclared name."""
 
@@ -685,6 +715,7 @@ class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
         self.language_name = language_name
 
 
+@beartype
 class RefNotSelfContainedError(InvalidRenderArgumentError):
     """Raised when a complete file would name an undeclared reference."""
 
@@ -707,6 +738,7 @@ class RefNotSelfContainedError(InvalidRenderArgumentError):
         self.ref_names = ref_names
 
 
+@beartype
 class InvalidVariableModifierError(LiteralizerError):
     """Raised when a declaration modifier belongs to another language."""
 
@@ -742,6 +774,7 @@ class UnrepresentableIntegerError(LiteralizerError):
     """
 
 
+@beartype
 class ExcessiveIntegerDigitsError(LiteralizerError):
     """Raised when an integer is too wide for the interpreter to write out.
 
@@ -794,6 +827,7 @@ class UnrepresentableSpecialFloatError(LiteralizerError):
     """
 
 
+@beartype
 class UnsupportedIdentifierCaseError(LiteralizerError):
     """Raised when ``literalize`` or ``literalize_call`` is passed a
     ``ref_case`` that is not in the target language's
@@ -813,6 +847,7 @@ class UnsupportedIdentifierCaseError(LiteralizerError):
         self.case_name = case_name
 
 
+@beartype
 class DottedCallTargetNotSupportedError(LiteralizerError):
     """Raised when ``literalize_call`` is given a dotted
     ``target_function``
@@ -832,6 +867,7 @@ class DottedCallTargetNotSupportedError(LiteralizerError):
         self.target_function = target_function
 
 
+@beartype
 class ZipValuesLengthMismatchError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` whose
     parsed top-level elements differ in number from the generated calls.
@@ -854,6 +890,7 @@ class ZipValuesLengthMismatchError(LiteralizerError):
         self.zip_count = zip_count
 
 
+@beartype
 class ZipValuesWithoutCallTransformError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` but no
     ``call_transform`` to consume the paired values.
@@ -874,6 +911,7 @@ class ZipValuesWithoutCallTransformError(LiteralizerError):
         )
 
 
+@beartype
 class ZipSourceWithoutInputFormatError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` but no
     ``zip_input_format`` describing how to parse it.
@@ -892,6 +930,7 @@ class ZipSourceWithoutInputFormatError(LiteralizerError):
         )
 
 
+@beartype
 class ZipInputFormatWithoutSourceError(LiteralizerError):
     """Raised when ``literalize_call`` is given ``zip_input_format``
     without a companion ``zip_source``.
@@ -908,6 +947,7 @@ class ZipInputFormatWithoutSourceError(LiteralizerError):
         )
 
 
+@beartype
 class CommentSourceLengthMismatchError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``comment_source``
     whose entry count differs from the number of generated calls.
@@ -933,6 +973,7 @@ class CommentSourceLengthMismatchError(LiteralizerError):
         self.comment_count = comment_count
 
 
+@beartype
 class CommentSourceMultilineError(LiteralizerError):
     """Raised when a ``comment_source`` entry contains a newline.
 
@@ -953,6 +994,7 @@ class CommentSourceMultilineError(LiteralizerError):
         self.index = index
 
 
+@beartype
 class CommentSourceNulError(LiteralizerError):
     """Raised when a ``comment_source`` entry contains a null byte.
 
@@ -969,6 +1011,7 @@ class CommentSourceNulError(LiteralizerError):
         self.index = index
 
 
+@beartype
 class VariableNameNotSupportedError(LiteralizerError):
     """Raised when ``literalize`` is given a ``variable_form`` but the
     target language does not support variable-name wrapping.
@@ -987,6 +1030,7 @@ class VariableNameNotSupportedError(LiteralizerError):
         self.variable_name = variable_name
 
 
+@beartype
 class WrapInFileWithoutVariableNotSupportedError(LiteralizerError):
     """Raised when ``literalize`` is called with ``wrap_in_file=True``
     and ``variable_form=None`` for a target language that cannot
@@ -1014,6 +1058,7 @@ class WrapInFileWithoutVariableNotSupportedError(LiteralizerError):
         self.language_name = language_name
 
 
+@beartype
 class UnsupportedCallShapeError(LiteralizerError):
     """Raised when ``literalize_call`` is given a call shape the target
     language cannot represent.
@@ -1036,6 +1081,7 @@ class UnsupportedCallShapeError(LiteralizerError):
         self.reason = reason
 
 
+@beartype
 class ExcessiveNestingError(LiteralizerError):
     """Raised when a target language's safe collection nesting limit is
     exceeded.
@@ -1068,6 +1114,7 @@ class WrapCombinedInFileNotSupportedError(LiteralizerError):
     """
 
 
+@beartype
 class ConflictingVariableModifiersError(LiteralizerError):
     """Raised when declaration modifiers cannot be combined.
 

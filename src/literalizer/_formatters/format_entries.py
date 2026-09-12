@@ -239,6 +239,7 @@ def passthrough_set_entry(_value: Value, item: str) -> str:
     return item
 
 
+@beartype
 @dataclass(frozen=True)
 class DictEntryWithSeparator:
     """A ``format_dict_entry`` that joins key and value with a separator.

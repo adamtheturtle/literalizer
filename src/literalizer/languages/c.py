@@ -767,6 +767,7 @@ def _check_c_json_value_keys(*, data: Value) -> None:
             return
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _CJsonBuild:
     """The statements that build a cJSON node tree, plus its root name.

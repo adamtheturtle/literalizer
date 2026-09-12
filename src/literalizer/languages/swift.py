@@ -126,6 +126,7 @@ _CONTROL_CHAR_THRESHOLD = 32
 _NESTED_TUPLE_RECORD_DEPTH = 2
 
 
+@beartype
 def _reject_date_midnight_collisions(data: Value) -> None:
     """Reject Swift ``Date`` keys that can denote the same instant."""
     match data:
@@ -507,6 +508,7 @@ _SWIFT_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
 _SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS = frozenset({"`inout`"})
 
 
+@beartype
 def _swift_record_argument_label(identifier: str, /) -> str:
     """Return a valid initializer label for a record field identifier."""
     if identifier in _SWIFT_ARGUMENT_LABELS_REQUIRING_BACKTICKS:

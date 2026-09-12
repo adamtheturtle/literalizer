@@ -47,6 +47,7 @@ class _SequenceShape:
     children: tuple["_SequenceShape | None", ...]
 
 
+@beartype
 def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
     """Return the target expression that determines scalar identity."""
     match value:
@@ -72,6 +73,7 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
     return result
 
 
+@beartype
 def _check_scalar_collection_identity(
     *, values: Iterable[Scalar], spec: Language
 ) -> None:
@@ -89,6 +91,7 @@ def _check_scalar_collection_identity(
         rendered_values[rendered] = value
 
 
+@beartype
 def _check_scalar_identity_collisions(*, data: Value, spec: Language) -> None:
     """Reject distinct set members or mapping keys rendered
     identically.
@@ -107,6 +110,7 @@ def _check_scalar_identity_collisions(*, data: Value, spec: Language) -> None:
             return
 
 
+@beartype
 def _check_raw_control_characters(*, data: Value, spec: Language) -> None:
     """Reject strings whose selected formatter emits a raw C0 byte."""
     match data:
@@ -485,6 +489,7 @@ def reject_stringified_dict_key_collisions(
             return
 
 
+@beartype
 def reject_null_dict_keys(*, data: Value, language_name: str) -> None:
     """Reject a null mapping key in a language whose keys are strings.
 
@@ -508,6 +513,7 @@ def reject_null_dict_keys(*, data: Value, language_name: str) -> None:
             return
 
 
+@beartype
 def _contains_set(data: Value, /) -> bool:
     """Return whether *data* contains a set at any depth."""
     match data:
@@ -921,6 +927,7 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
             return False
 
 
+@beartype
 def _has_mixed_record_shapes(
     *,
     data: Value,
@@ -1713,6 +1720,7 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
             raise MixedDictValuesError(msg)
 
 
+@beartype
 def _path_key(key: Scalar) -> str | int:
     """Return a stable public path component for a mapping key."""
     if isinstance(key, (str, int)) and not isinstance(key, bool):
@@ -1720,6 +1728,7 @@ def _path_key(key: Scalar) -> str | int:
     return repr(key)
 
 
+@beartype
 def _locate_error(
     *,
     data: Value,

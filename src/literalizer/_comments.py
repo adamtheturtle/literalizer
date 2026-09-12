@@ -67,6 +67,7 @@ _PYTHON_ENCODING_COOKIE = re.compile(
 )
 
 
+@beartype
 class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
     """Mark a comment form whose opener starts a nested comment."""
 
@@ -82,6 +83,7 @@ class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
         }[self.strip()]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ElementComments:
     """Comments associated with a single top-level YAML element."""
@@ -127,6 +129,7 @@ def _token_comment_lines(*, value: str) -> list[str]:
     ]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ParsedAfterToken:
     """Result of parsing an after-element comment token."""
@@ -183,6 +186,7 @@ def _parse_after_token(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class CollectionComments:
     """Comments extracted from a YAML sequence or mapping string."""
@@ -191,6 +195,7 @@ class CollectionComments:
     trailing: tuple[str, ...]
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _CollectionTargets:
     """Iteration details for extracting collection comments."""
@@ -662,6 +667,7 @@ def _toml_inline_comment(*, item: Item) -> str:
     return ""
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _TomlNestedComments:
     """Comments found below one top-level TOML item.
@@ -884,6 +890,7 @@ def neutralize_comment_terminator(
     return text.replace(terminator, replacement)
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _ScalarComments:
     """Comments extracted from a scalar YAML string."""
@@ -958,6 +965,7 @@ def _extract_scalar_comments(
     )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class YamlCollectionContext:
     """Context for formatting sequence/mapping YAML with comments."""
@@ -970,6 +978,7 @@ class YamlCollectionContext:
     comment_line_prefix: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class ScalarCommentResult:
     """Result of formatting scalar YAML comments.

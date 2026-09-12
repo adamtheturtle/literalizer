@@ -17,6 +17,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._types import Scalar, Value
 
 
+@beartype
 @dataclass(frozen=True)
 class FixedOpen:
     """An opener that returns ``open_str`` whatever the collection holds.
@@ -37,6 +38,7 @@ class FixedOpen:
         return self.open_str
 
 
+@beartype
 @dataclass(frozen=True)
 class SequenceSurrogateSetOpen:
     """Mark a set opener whose target value is actually a sequence."""
@@ -493,6 +495,7 @@ def typed_dict_open(
     return _open
 
 
+@beartype
 @dataclass(frozen=True)
 class TypeOpeners:
     """Resolved type-to-opener functions for sequences, dicts, and
@@ -504,6 +507,7 @@ class TypeOpeners:
     set: Callable[[type | ListType | DictType], str | None]
 
 
+@beartype
 class TypedOpenerConfig:
     """Configuration for typed collection openers in a language.
 
@@ -511,7 +515,6 @@ class TypedOpenerConfig:
     type-to-opener functions.
     """
 
-    @beartype
     def __init__(
         self,
         *,
@@ -552,7 +555,6 @@ class TypedOpenerConfig:
         self._wide_int_type = wide_int_type
         self._beyond_i64_type = beyond_i64_type
 
-    @beartype
     def type_name(self, py_type: type) -> str | None:
         """Look up the language type name for a Python type."""
         return self._scalar_types().get(py_type)
@@ -587,7 +589,6 @@ class TypedOpenerConfig:
             if name is not None
         }
 
-    @beartype
     def element_to_type(
         self,
         *,
@@ -651,7 +652,6 @@ class TypedOpenerConfig:
             ),
         )
 
-    @beartype
     def build(
         self,
         *,

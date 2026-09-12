@@ -332,6 +332,7 @@ def _dart_list_hint(
     return f"({', '.join(elem_types)},)"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class _DartHintOpeners:
     """The openers a declared type annotation is read back from."""

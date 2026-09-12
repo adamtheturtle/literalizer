@@ -198,6 +198,7 @@ class _CppArrayMapShape:
 type _CppArrayNestedShape = str | _CppArrayShape | _CppArrayMapShape
 
 
+@beartype
 def _cpp_record_value_shape(value: Value, /) -> _CppRecordValueShape:
     """Return the generated-record shape required by *value*."""
     if isinstance(value, list):
@@ -216,6 +217,7 @@ def _cpp_record_value_shape(value: Value, /) -> _CppRecordValueShape:
     return type(value).__name__
 
 
+@beartype
 def _cpp_array_nested_shape(value: Value, /) -> _CppArrayNestedShape:
     """Return a structural type shape for a nested C++ array value."""
     if isinstance(value, list):
@@ -543,6 +545,7 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     return isinstance(value, (bool, int, float, datetime.date))
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _CppTypeCtx:
     """Context for C++ type resolution with value-driven int narrowing.
@@ -726,6 +729,7 @@ def _cpp_narrowed_empty_sequence(
     return type_ctx.sequence_type(inner=inner, length=0) + "{}"
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _DictFormatOption:
     """A dict format bundled with its typed opener template."""
@@ -734,6 +738,7 @@ class _DictFormatOption:
     opener_template: str
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _NumericLiteralSuffixConfig:
     """Configuration for a numeric literal suffix option."""
@@ -886,6 +891,7 @@ def _collect_unique_cpp_types(
     return unique_cpp_types
 
 
+@beartype
 def _is_cpp_value_list(value: Value, /) -> TypeGuard[list[Value]]:
     """Narrow a parsed value to a recursively typed list."""
     return isinstance(value, list)
@@ -1676,6 +1682,7 @@ _CPP_RECORD_MAP_VALUE = "LiteralizerRecordValue"
 _CPP_RECORD_MAP_TYPE = f"std::map<std::string, {_CPP_RECORD_MAP_VALUE}>"
 
 
+@beartype
 @dataclasses.dataclass
 class _CppWidenedMapNarrowing:
     """Per-pass cache of the widened fallback maps' narrow value type.
@@ -2255,6 +2262,7 @@ def _cpp_modifier_prefix(modifiers: frozenset[enum.Enum]) -> str:
     return " ".join(keywords) + " "
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _CppDeclarationStyleConfig:
     """Configuration for a Cpp declaration style.
