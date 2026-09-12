@@ -33,7 +33,7 @@ from pytest_codspeed import BenchmarkFixture
 
 from literalizer import InputFormat, Language, literalize
 from literalizer._preamble import compute_preamble
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.languages import (
     C,
     Cpp,
@@ -114,32 +114,33 @@ def _build_json_source(*, depth: int, fanout: int) -> str:
     return json.dumps(obj=build(level=depth))
 
 
-def _build_json_flat_records_source(*, n_records: int) -> str:
-    """Return a large flat JSON array of repeated record-shaped dicts."""
-    return json.dumps(
-        obj=[
-            {
-                "id": i,
-                "name": f"user_{i}",
-                "active": i % 2 == 0,
-                "score": i * 1.25,
-                "tags": [f"tag_{i % 10}", f"group_{i % 25}"],
-                "metrics": {
-                    "views": i * 3,
-                    "clicks": i % 17,
-                    "ratio": (i % 100) / 100,
-                },
-            }
-            for i in range(n_records)
-        ],
-    )
+def _build_json_flat_records(*, n_records: int) -> list[Value]:
+    """Return repeated record-shaped mappings for a large JSON array."""
+    records: list[Value] = []
+    for i in range(n_records):
+        tags: list[Value] = [f"tag_{i % 10}", f"group_{i % 25}"]
+        metrics: dict[Scalar, Value] = {
+            "views": i * 3,
+            "clicks": i % 17,
+            "ratio": (i % 100) / 100,
+        }
+        record: dict[Scalar, Value] = {
+            "id": i,
+            "name": f"user_{i}",
+            "active": i % 2 == 0,
+            "score": i * 1.25,
+            "tags": tags,
+            "metrics": metrics,
+        }
+        records.append(record)
+    return records
 
 
 _YAML_FAST = _build_yaml_source(n_records=100, with_comments=False)
 _YAML_WITH_COMMENTS = _build_yaml_source(n_records=100, with_comments=True)
 _JSON_NESTED = _build_json_source(depth=4, fanout=4)
-_JSON_LARGE_FLAT_RECORDS = _build_json_flat_records_source(n_records=1_000)
-_PREAMBLE_DATA: Value = json.loads(s=_JSON_LARGE_FLAT_RECORDS)  # ty: ignore[unsound-assignment]
+_PREAMBLE_DATA = _build_json_flat_records(n_records=1_000)
+_JSON_LARGE_FLAT_RECORDS = json.dumps(obj=_PREAMBLE_DATA)
 _JSON_HETEROGENEOUS = json.dumps(
     obj={
         "rows": [
