@@ -1988,7 +1988,7 @@ def _unify_signatures(*, signatures: Sequence[Hashable]) -> Hashable:
 
 
 @beartype
-def _record_field_type_signature(  # pylint: disable=redefined-variable-type
+def _record_field_type_signature(
     *,
     value: Value,
     group_of: Mapping[int, Hashable],
@@ -2024,37 +2024,37 @@ def _record_field_type_signature(  # pylint: disable=redefined-variable-type
             sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
         )
 
-    result: Hashable
     match value:
         case [] if not sequence_supports_heterogeneity:
-            result = sequence_format_type_annotation("String", 0)
+            return sequence_format_type_annotation("String", 0)
         case list() if (
             id(value) in tuple_list_ids or sequence_supports_heterogeneity
         ):
-            result = ("tuple", tuple(recurse(item=item) for item in value))
+            return ("tuple", tuple(recurse(item=item) for item in value))
         case list():
             element_signatures = [recurse(item=item) for item in value]
-            result = (
+            return (
                 sequence_format_type_annotation("T", len(value)),
                 _unify_signatures(signatures=element_signatures),
             )
         case dict() if id(value) in group_of:
-            result = group_of[id(value)]
+            return group_of[id(value)]
         case dict():
-            result = "<non-record dict>"
+            fallback_signature = "<non-record dict>"
         case set():
-            result = "<set>"
+            fallback_signature = "<set>"
         case _:
             signature = _heterogeneous_variant_for_scalar(
                 value=value,
                 date_type=date_type,
                 datetime_type=datetime_type,
             )
-            if signature.inner_type is None:
-                result = "Option<()>"
-            else:
-                result = signature.inner_type
-    return result
+            return (
+                "Option<()>"
+                if signature.inner_type is None
+                else signature.inner_type
+            )
+    return fallback_signature
 
 
 @beartype
