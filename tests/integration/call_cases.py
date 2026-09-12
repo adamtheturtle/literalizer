@@ -383,7 +383,7 @@ def discover_call_cases() -> list[CallCase]:
 
 
 @beartype
-def _select_call_input_root(
+def select_call_input_root(
     *,
     source: str,
     input_info: CaseInput,
@@ -450,7 +450,7 @@ def _literalize_call_case(
             ),
         )
     return literalize_call_parsed(
-        parsed=_select_call_input_root(
+        parsed=select_call_input_root(
             source=source,
             input_info=input_info,
             input_root_key=config.input_root_key,
@@ -477,7 +477,7 @@ def _literalize_call_case(
 
 
 @beartype
-def _run_wrap_in_file_case(
+def run_wrap_in_file_case(
     *,
     config: CallCaseSpec,
     spec: literalizer.Language,
@@ -653,7 +653,7 @@ def run_call_golden_case(
             ref_name: ref_name for ref_name in config.ref_declarations
         }
     if config.wrap_in_file:
-        _run_wrap_in_file_case(
+        run_wrap_in_file_case(
             config=config,
             spec=spec,
             source=source,
