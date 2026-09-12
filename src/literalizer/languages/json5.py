@@ -45,7 +45,9 @@ from literalizer._language import (
     CallSupport,
     CommentConfig,
     DateFormatConfig,
+    DateFormatEnum,
     DatetimeFormatConfig,
+    DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
     FloatSpecialsMixin,
@@ -248,18 +250,14 @@ class Json5(metaclass=LanguageCls):
     )
     """Callable that rewrites a formatted direct call argument."""
 
-    class DateFormats(enum.Enum):
+    class DateFormats(DateFormatEnum):
         """Date format options for Json5."""
 
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
-        def __call__(self, date_value: datetime.date, /) -> str:
-            """Format a date."""
-            return self.value.formatter(date_value)  # pyrefly: ignore [no-any-return-implicit]
-
-    class DatetimeFormats(enum.Enum):
+    class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Json5."""
 
         ISO = DatetimeFormatConfig(
@@ -274,19 +272,17 @@ class Json5(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-        def __call__(self, dt_value: datetime.datetime, /) -> str:
-            """Format a datetime."""
-            return self.value.formatter(dt_value)  # pyrefly: ignore [no-any-return-implicit]
-
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
+
+        _value_: Callable[[bytes], str]
 
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for JSON5."""
