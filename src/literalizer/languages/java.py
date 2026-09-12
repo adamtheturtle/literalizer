@@ -2420,12 +2420,11 @@ class Java(metaclass=LanguageCls):
             type_to_opener=openers.seq,
             fallback=fmt.typed_opener_fallback,
         )
-        strategies = type(self.heterogeneous_strategy)
-        if self.heterogeneous_strategy is not strategies.RECORD:
-            return base
-        strategy_name_hook = self._record_strategy.record_name_for_value
-        assert strategy_name_hook is not None  # noqa: S101
-        record_name_for_value = strategy_name_hook
+        match self._record_strategy.record_name_for_value:
+            case None:
+                return base
+            case record_name_for_value:
+                pass
 
         def _open(items: list[Value], /) -> str:
             """Use the shared record element type when every item is

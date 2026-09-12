@@ -1909,12 +1909,10 @@ class Scala(metaclass=LanguageCls):
         )
         if self._json_type_active:
             return fixed_open(open_str="Json.arr(")
-        cls = type(self.heterogeneous_strategy)
-        if self.heterogeneous_strategy not in (cls.RECORD, cls.TUPLE):
-            return base
         plain_open = self.sequence_format.value.sequence_open
         record_name_for_value = self._record_strategy.record_name_for_value
-        assert record_name_for_value is not None  # noqa: S101
+        if record_name_for_value is None:
+            return base
 
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.

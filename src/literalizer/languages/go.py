@@ -1541,12 +1541,9 @@ class Go(metaclass=LanguageCls):
             ),
             fallback=f"[]{self.default_sequence_element_type}{{",
         )
-        record = type(self.heterogeneous_strategy).RECORD
-        if self.heterogeneous_strategy is not record:
+        record_name_for_value = self._record_strategy.record_name_for_value
+        if record_name_for_value is None:
             return base
-        strategy_name_hook = self._record_strategy.record_name_for_value
-        assert strategy_name_hook is not None  # noqa: S101
-        record_name_for_value = strategy_name_hook
 
         def _open(items: list[Value], /) -> str:
             """Use the shared record element type when every item is
