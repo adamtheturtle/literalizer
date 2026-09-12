@@ -1638,7 +1638,7 @@ class CSharp(metaclass=LanguageCls):
             dict_key_type="",
         )
 
-    def _csharp_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
+    def _csharp_record_field_type(
         self,
         request: RecordFieldType,
         /,
@@ -1686,28 +1686,28 @@ class CSharp(metaclass=LanguageCls):
         ):
             value = datetime_epoch_seconds(value=value)
         match value:
-            case bool():
-                return "bool"
-            case int():
-                return _csharp_int_field_type(value=value)
+            case int() if not isinstance(value, bool):
+                field_type = _csharp_int_field_type(value=value)
             case OrderedMap():
                 opener = self.ordered_map_format_config.ordered_map_open(
                     value,
                 )
+                field_type = opener.removeprefix("new ").removesuffix(" {")
+            case dict() if record_shape_for_dict(value=value) is not None:
+                field_type = self._csharp_derecordized_map_field_type()
             case dict():
-                if record_shape_for_dict(value=value) is not None:
-                    return self._csharp_derecordized_map_field_type()
-                return "object"
+                field_type = "object"
             case list():
                 opener = self.sequence_open(value)
+                field_type = opener.removeprefix("new ").removesuffix(" {")
             case _:
                 scalar_type = self._csharp_record_scalar_resolver(type(value))
-                return (
+                field_type = (
                     scalar_type
                     if scalar_type is not None and scalar_type != ""
                     else "object"
                 )
-        return opener.removeprefix("new ").removesuffix(" {")
+        return field_type
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:

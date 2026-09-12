@@ -1970,7 +1970,7 @@ class Kotlin(metaclass=LanguageCls):
             return f"List<{request.element_record_name}>"
         return self._kotlin_value_field_type(request.value)
 
-    def _kotlin_value_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
+    def _kotlin_value_field_type(
         self,
         value: Value,
         /,
@@ -1979,36 +1979,36 @@ class Kotlin(metaclass=LanguageCls):
         value, descending into an ``arrayOf(`` element type.
         """
         match value:
-            case None:
-                return "Any?"
-            case bool():
-                return "Boolean"
-            case int() if not I64_MIN <= value <= I64_MAX:
-                return "BigInteger"
-            case int():
+            case int() if not isinstance(value, bool) and not (
+                I64_MIN <= value <= I64_MAX
+            ):
+                field_type = "BigInteger"
+            case int() if not isinstance(value, bool):
                 in_i32 = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
-                return "Int" if in_i32 else "Long"
+                field_type = "Int" if in_i32 else "Long"
             case datetime.datetime():
-                return self._kotlin_record_datetime_type(value)
+                field_type = self._kotlin_record_datetime_type(value)
             case OrderedMap():
-                return _kotlin_opener_to_type(
+                field_type = _kotlin_opener_to_type(
                     self.ordered_map_format_config.ordered_map_open(value),
                 )
             case dict() if record_shape_for_dict(value=value) is not None:
-                return self._kotlin_derecordized_map_field_type()
+                field_type = self._kotlin_derecordized_map_field_type()
             case list():
                 opener = self.sequence_open(value)
                 if opener == "arrayOf(":
                     element = self._kotlin_value_field_type(value[0])
-                    return f"Array<{element}>"
-                return _kotlin_opener_to_type(opener)
+                    field_type = f"Array<{element}>"
+                else:
+                    field_type = _kotlin_opener_to_type(opener)
             case _:
                 scalar_type = self._kotlin_record_scalar_resolver(type(value))
-                return (
+                field_type = (
                     scalar_type
                     if scalar_type is not None and scalar_type != ""
                     else "Any?"
                 )
+        return field_type
 
     def _kotlin_tuple_field_type(self, elements: list[Value], /) -> str:
         """Return the Kotlin ``Pair``/``Triple`` type for a
