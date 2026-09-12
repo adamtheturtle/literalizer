@@ -83,20 +83,19 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidDictKeyError
 
 
 @beartype
-def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
+def _powershell_call_arg(value: Value, formatted: str, /) -> str:
     """Return a call argument the command parser reads as one value.
 
-    A command argument that opens with a type literal -- the
-    ``[ordered]`` an ordered map is written with -- is read as a cast
-    of what follows rather than as the argument, which the parser
-    then refuses.  Parentheses make it one value again (issue #4735).
+    The ``[ordered]`` type literal used for an ordered map is read as a cast
+    of what follows rather than as the argument, which the parser then
+    refuses. Parentheses make it one value again (issue #4735).
     """
-    if formatted.startswith("["):
+    if isinstance(value, OrderedMap):
         return f"({formatted})"
     return formatted
 
