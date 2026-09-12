@@ -55,7 +55,7 @@ json_text = st.text(
     ),
     max_size=20,
 )
-json_scalars = (
+json_scalars: st.SearchStrategy[_JSONValue] = (
     st.none()
     | st.booleans()
     | st.integers()
@@ -63,18 +63,28 @@ json_scalars = (
     | st.floats(allow_nan=False, allow_infinity=False)
     | json_text
 )
+
+
+def _json_collection_values(
+    children: st.SearchStrategy[_JSONValue],
+) -> st.SearchStrategy[_JSONValue]:
+    """Return recursive JSON collection strategies."""
+    return st.lists(elements=children, max_size=3) | st.dictionaries(
+        keys=json_text,
+        values=children,
+        max_size=3,
+    )
+
+
 json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     base=json_scalars,
-    extend=lambda children: (
-        st.lists(elements=children, max_size=3)
-        | st.dictionaries(keys=json_text, values=children, max_size=3)
-    ),
+    extend=_json_collection_values,
     # ``max_leaves`` caps total nodes generated; the recursive strategy
     # is by far the dominant cost in these tests, so a tight bound here
     # is the biggest single performance lever without losing
     # meaningful coverage.
     max_leaves=15,
-)  # ty: ignore[unsound-assignment]
+)
 json_arrays = st.lists(elements=json_values, max_size=5)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=5)
 
