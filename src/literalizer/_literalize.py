@@ -7,7 +7,6 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from typing import (
-    Any,
     Final,
     Protocol,
     TypeGuard,
@@ -5135,6 +5134,26 @@ class _PreambleRefResolution:
 
 
 @beartype
+def _resolve_ref_list_for_preamble(
+    *,
+    values: list[Value],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+) -> list[Value]:
+    """Resolve known refs and remove unknown refs within a list."""
+    result: list[Value] = []
+    for value in values:
+        resolved = _resolve_ref_for_preamble(
+            value=value,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        if resolved.include:
+            result.append(resolved.value)
+    return result
+
+
+@beartype
 def _resolve_ref_for_preamble(
     *,
     value: Value,
@@ -5157,16 +5176,14 @@ def _resolve_ref_for_preamble(
             value=ref_values[ref_name],
         )
     if isinstance(value, list):
-        resolved_list: list[Value] = []
-        for item in value:
-            resolved = _resolve_ref_for_preamble(
-                value=item,
+        return _PreambleRefResolution(
+            include=True,
+            value=_resolve_ref_list_for_preamble(
+                values=value,
                 ref_values=ref_values,
                 ref_key=ref_key,
-            )
-            if resolved.include:
-                resolved_list.append(resolved.value)
-        return _PreambleRefResolution(include=True, value=resolved_list)
+            ),
+        )
     if isinstance(value, dict):
         resolved_dict: dict[Scalar, Value] = {}
         for key, item in value.items():
@@ -5344,13 +5361,22 @@ def _format_call_arg_ref_identifier(
 
 
 @beartype
-def _strip_call_arg_refs_for_preamble(
+@dataclasses.dataclass(frozen=True)
+class _ResolvedCallPreambleData:
+    """Ref-resolved data for whole-input or per-element calls."""
+
+    value: Value
+    rows: list[Value] | None
+
+
+@beartype
+def _resolve_call_preamble_data(
     *,
     data: Value,
     per_element_data: list[Value] | None,
     ref_key: str,
     ref_values: Mapping[str, Value],
-) -> Value:
+) -> _ResolvedCallPreambleData:
     """Return *data* with call-argument ref markers resolved or removed.
 
     Ref markers represent a variable declared elsewhere, not real data,
@@ -5364,48 +5390,71 @@ def _strip_call_arg_refs_for_preamble(
     that value into the preamble input so the referenced variable's
     types participate in body-preamble computation.
 
-    When *per_element* is ``True``, *data* is a list of argument lists
-    and refs are stripped from each inner list.  Otherwise a
-    top-level ref becomes an empty list, standing in for "no data".
-    Refs nested inside list or dict argument values are also stripped
-    recursively.
+    When *per_element_data* is present, refs are resolved within each
+    call row and the typed rows are retained alongside the general
+    preamble value.  Otherwise a top-level ref becomes an empty list,
+    standing in for "no data".  Refs nested inside list or dict argument
+    values are also stripped recursively.
     """
+    if per_element_data is not None:
+        rows: list[Value]
+        if len(ref_values) > 0:
+            rows = _resolve_ref_list_for_preamble(
+                values=per_element_data,
+                ref_values=ref_values,
+                ref_key=ref_key,
+            )
+        else:
+            rows = []
+            for element in per_element_data:
+                match element:
+                    case list():
+                        rows.append(
+                            [
+                                _strip_refs_from_value(
+                                    value=value,
+                                    ref_key=ref_key,
+                                )
+                                for value in element
+                                if _extract_call_arg_ref_name(
+                                    value=value,
+                                    ref_key=ref_key,
+                                )
+                                is None
+                            ]
+                        )
+                    case _ if (
+                        _extract_call_arg_ref_name(
+                            value=element,
+                            ref_key=ref_key,
+                        )
+                        is None
+                    ):
+                        rows.append(
+                            _strip_refs_from_value(
+                                value=element,
+                                ref_key=ref_key,
+                            )
+                        )
+                    case _:
+                        # A ref-named non-list element is dropped entirely.
+                        pass
+        return _ResolvedCallPreambleData(value=rows, rows=rows)
+
     if len(ref_values) > 0:
         resolved = _resolve_ref_for_preamble(
             value=data,
             ref_values=ref_values,
             ref_key=ref_key,
         )
-        return resolved.value if resolved.include else []
-    if per_element_data is not None:
-        result: list[Value] = []
-        for element in per_element_data:
-            match element:
-                case list():
-                    result.append(
-                        [
-                            _strip_refs_from_value(value=v, ref_key=ref_key)
-                            for v in element
-                            if _extract_call_arg_ref_name(
-                                value=v, ref_key=ref_key
-                            )
-                            is None
-                        ]
-                    )
-                case _ if (
-                    _extract_call_arg_ref_name(value=element, ref_key=ref_key)
-                    is None
-                ):
-                    result.append(
-                        _strip_refs_from_value(value=element, ref_key=ref_key)
-                    )
-                case _:
-                    # A ref-named non-list element is dropped entirely.
-                    pass
-        return result
+        value = resolved.value if resolved.include else []
+        return _ResolvedCallPreambleData(value=value, rows=None)
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is not None:
-        return []
-    return _strip_refs_from_value(value=data, ref_key=ref_key)
+        return _ResolvedCallPreambleData(value=[], rows=None)
+    return _ResolvedCallPreambleData(
+        value=_strip_refs_from_value(value=data, ref_key=ref_key),
+        rows=None,
+    )
 
 
 @beartype
@@ -7116,7 +7165,7 @@ def _preamble_data_with_zip(
     *,
     data_for_preamble: Value,
     zip_resolution: "_ZipResolution | None",
-    per_element: bool,
+    per_element_rows: list[Value] | None,
 ) -> Value:
     """Fold the parsed ``zip_source`` values into the data used for
     preamble inference.
@@ -7131,7 +7180,7 @@ def _preamble_data_with_zip(
     as siblings; only the *set of types present* matters here, not the
     structure.
     """
-    if not per_element:
+    if per_element_rows is None:
         if zip_resolution is None:
             return data_for_preamble
         return [data_for_preamble, *zip_resolution.values]
@@ -7140,8 +7189,7 @@ def _preamble_data_with_zip(
     # literals.  Preserve the existing data shape for general preamble
     # and body-type inference, while giving container-sensitive language
     # preambles the precise values that appear as call arguments.
-    untyped_rows: Any = data_for_preamble  # pyrefly: ignore [explicit-any]
-    rows: list[Value] = untyped_rows  # ty: ignore[unsound-assignment]
+    rows = per_element_rows
     argument_values = tuple(
         argument
         for row in rows
@@ -7159,7 +7207,7 @@ def _preamble_data_with_zip(
     if zip_resolution is not None:
         argument_values += tuple(zip_resolution.values)
         argument_slots += tuple([value] for value in zip_resolution.values)
-        preamble_data: Any = [rows, *zip_resolution.values]  # pyrefly: ignore [explicit-any]
+        preamble_data: list[Value] = [rows, *zip_resolution.values]
     else:
         preamble_data = rows
     return CallPreambleData(
@@ -7458,7 +7506,7 @@ def literalize_call_parsed(
         **explicit_ref_values,
     }
 
-    data_for_preamble = _strip_call_arg_refs_for_preamble(
+    resolved_preamble_data = _resolve_call_preamble_data(
         data=data,
         per_element_data=per_element_data,
         ref_key=ref_key,
@@ -7519,9 +7567,9 @@ def literalize_call_parsed(
         literal in result for literal in zip_resolution.literals
     )
     preamble_data = _preamble_data_with_zip(
-        data_for_preamble=data_for_preamble,
+        data_for_preamble=resolved_preamble_data.value,
         zip_resolution=zip_resolution if rendered_uses_zip else None,
-        per_element=per_element,
+        per_element_rows=resolved_preamble_data.rows,
     )
     computed = compute_preamble(
         data=preamble_data,
@@ -7558,7 +7606,7 @@ def literalize_call_parsed(
             computed_body=computed.body,
             types_present=computed.types_present,
             contains_standalone_comments=contains_standalone_comments,
-            data_for_preamble=data_for_preamble,
+            data_for_preamble=resolved_preamble_data.value,
             per_element=per_element,
             variable_form=variable_form,
             target_function_parts=target_function_parts,
@@ -7574,7 +7622,7 @@ def literalize_call_parsed(
         body_preamble=computed.body,
         types_present=computed.types_present,
         contains_standalone_comments=contains_standalone_comments,
-        source_data=data_for_preamble,
+        source_data=resolved_preamble_data.value,
         pre_declaration_comments=(),
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
