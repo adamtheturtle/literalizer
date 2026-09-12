@@ -5,26 +5,17 @@ rendered without its delimiters has no golden surface (issue #4699,
 and #3557 for the same gap on ``LiteralizeResult``).
 """
 
-# pylint: disable=import-private-name,protected-access,useless-suppression,wrong-spelling-in-comment
-# ruff: noqa: SLF001
-
 from __future__ import annotations
-
-from typing import TYPE_CHECKING
 
 import pytest
 
 import literalizer
 from literalizer import (
     InputFormat,
-    _literalize,
     literalize,
     literalize_call,
 )
 from literalizer.languages import Cpp, OCaml, PureScript, Python, Rust
-
-if TYPE_CHECKING:
-    from literalizer._types import Scalar, Value
 
 
 def test_binary_without_sequence_delimiters() -> None:
@@ -40,27 +31,37 @@ def test_binary_without_sequence_delimiters() -> None:
     assert result.code == '"48656c6c6f",'
 
 
-def test_ref_marker_search_covers_nested_sequences_and_scalars() -> None:
-    """Nested lists are searched and scalar leaves terminate recursion."""
-    marker: dict[Scalar, Value] = {"$ref": "existing"}
-    present_nested: list[Value] = []
-    present_nested.append(marker)
-    present: list[Value] = [0]
-    present.append(present_nested)
-    absent_nested: list[Value] = []
-    absent_nested.append("plain")
-    absent: list[Value] = [0]
-    absent.append(absent_nested)
-    mapping: dict[Scalar, Value] = {"nested": present}
-    assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
-        value=present, ref_key="$ref"
+@pytest.mark.parametrize(
+    argnames=("source", "expected"),
+    argvalues=[
+        (
+            '[0, [[{"\\u0024ref": "existing"}]]]',
+            "(\n    0,\n    ((existing,),),\n)",
+        ),
+        (
+            '[0, [["\\u0070lain"]]]',
+            '(\n    0,\n    (("plain",),),\n)',
+        ),
+        (
+            '{"nested": [0, {"\\u0024ref": "existing"}]}',
+            '{\n    "nested": (0, existing),\n}',
+        ),
+    ],
+)
+def test_escaped_ref_marker_search_covers_nested_values(
+    source: str,
+    expected: str,
+) -> None:
+    """Escaped keys are found through nested lists and mappings."""
+    result = literalize(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=Python(),
+        ref_key="$ref",
+        ref_values={"existing": 1},
     )
-    assert not _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
-        value=absent, ref_key="$ref"
-    )
-    assert _literalize._contains_ref_marker(  # pyright: ignore[reportPrivateUsage]
-        value=mapping, ref_key="$ref"
-    )
+
+    assert result.bare_code == expected
 
 
 @pytest.mark.parametrize(
