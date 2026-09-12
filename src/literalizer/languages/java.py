@@ -68,6 +68,7 @@ from literalizer._formatters.record_strategy import (
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    RecordShape,
     record_shape_for_dict,
 )
 from literalizer._language import (
@@ -1688,11 +1689,8 @@ class Java(metaclass=LanguageCls):
             self._validate_json_value_keys(data)
             return
         _validate_no_null_collection_keys(data=data)
+        self.validate_call_arg(data)
         strategies = type(self.heterogeneous_strategy)
-        if self.heterogeneous_strategy is strategies.RECORD:
-            self._validate_record_null_map_values(data=data)
-        else:
-            _validate_no_null_map_values(data=data)
         formats = type(self.sequence_format)
         if (
             self.heterogeneous_strategy is strategies.RECORD
@@ -1708,15 +1706,16 @@ class Java(metaclass=LanguageCls):
             )
             raise IncompatibleFormatsError(msg)
 
-    def _validate_record_null_map_values(self, data: Value) -> None:
+    @staticmethod
+    def _validate_record_null_map_values(
+        data: Value,
+        *,
+        compute_record_shapes: Callable[[Value], Mapping[int, RecordShape]],
+        record_name_for_value: Callable[[Value], str | None],
+    ) -> None:
         """Reject nulls in maps that the record strategy leaves as
         maps.
         """
-        strategy = self._record_strategy
-        compute_record_shapes = strategy.behavior.compute_record_shapes
-        record_name_for_value = strategy.record_name_for_value
-        assert compute_record_shapes is not None  # noqa: S101
-        assert record_name_for_value is not None  # noqa: S101
         _ = compute_record_shapes(data)
 
         @beartype
@@ -1750,10 +1749,22 @@ class Java(metaclass=LanguageCls):
         """Return call-argument validation for this language."""
         if self._json_type_active:
             return self._validate_json_value_keys
-        strategies = type(self.heterogeneous_strategy)
-        if self.heterogeneous_strategy is strategies.RECORD:
-            return self._validate_record_null_map_values
-        return _validate_no_null_map_values
+        strategy = self._record_strategy
+        match (
+            strategy.behavior.compute_record_shapes,
+            strategy.record_name_for_value,
+        ):
+            case (compute_record_shapes, record_name_for_value) if (
+                compute_record_shapes is not None
+                and record_name_for_value is not None
+            ):
+                return functools.partial(
+                    self._validate_record_null_map_values,
+                    compute_record_shapes=compute_record_shapes,
+                    record_name_for_value=record_name_for_value,
+                )
+            case _:
+                return _validate_no_null_map_values
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
