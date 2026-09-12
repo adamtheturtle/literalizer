@@ -20,11 +20,11 @@ from .case_manifests import (
 )
 from .language_specs import sorted_languages
 from .variant_cases import (
-    _case_for_manifest_variant,  # pyright: ignore[reportPrivateUsage]
-    _one_special_input,  # pyright: ignore[reportPrivateUsage]
     build_multiline_string_context_cases,
     build_variant_cases,
+    case_for_manifest_variant,
     group_variant_cases_by_language,
+    one_special_input,
     variant_languages,
 )
 from .variant_escape_hatches import build_typed_dict_null_filtering_variants
@@ -45,7 +45,7 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
 def test_manifest_variant_context_overrides_collection_layout() -> None:
     """A manifest variant can select multiline collection rendering."""
     source_case = build_variant_cases()[0]
-    case = _case_for_manifest_variant(
+    case = case_for_manifest_variant(
         case_dir_name="example",
         manifest_variant=ManifestVariant(
             axis="date",
@@ -66,7 +66,7 @@ def test_special_axis_requires_one_manifest_input() -> None:
         expected_exception=CaseManifestError,
         match="requires exactly one manifest input",
     ):
-        _ = _one_special_input(entries=[], axis="modifiers")
+        _ = one_special_input(entries=[], axis="modifiers")
 
 
 def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
