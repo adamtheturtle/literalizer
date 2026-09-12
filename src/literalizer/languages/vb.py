@@ -62,6 +62,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DatetimeFormatEnum,
     DeclarationStyleConfig,
+    DictFormatBuilder,
     DictFormatConfig,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
@@ -661,6 +662,8 @@ class VisualBasic(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
+        _value_: DictFormatBuilder
+
         DEFAULT = enum.member(
             value=dict_format_factory(
                 open_template=(
@@ -684,8 +687,8 @@ class VisualBasic(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self.value(  # pyrefly: ignore [no-any-return-implicit]
-                default_type,
+            return self._value_(
+                default_type=default_type,
                 default_key_type=default_key_type,
             )
 

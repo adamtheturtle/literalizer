@@ -443,6 +443,8 @@ class R(metaclass=LanguageCls):
         error).
         """
 
+        _value_: Callable[[str, Value, str], str]
+
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
@@ -454,11 +456,7 @@ class R(metaclass=LanguageCls):
             /,
         ) -> str:
             """Format a dict entry."""
-            return self.value(  # pyrefly: ignore [no-any-return-implicit]
-                key=key,
-                _raw_value=raw_value,
-                formatted_value=formatted_value,
-            )
+            return self._value_(key, raw_value, formatted_value)
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""

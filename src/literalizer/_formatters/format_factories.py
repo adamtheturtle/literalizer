@@ -9,26 +9,13 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._language import (
+    DictFormatBuilder,
     DictFormatConfig,
     OrderedMapFormatConfig,
     SequenceFormatConfig,
     SetFormatConfig,
 )
 from literalizer._types import Value
-
-
-@runtime_checkable
-class _DictFormatBuilder(Protocol):
-    """Protocol for the callable returned by ``dict_format_factory``."""
-
-    def __call__(
-        self,
-        default_type: str,
-        *,
-        default_key_type: str,
-    ) -> DictFormatConfig:
-        """Build a ``DictFormatConfig`` with the given default type."""
-        ...  # pylint: disable=unnecessary-ellipsis
 
 
 @runtime_checkable
@@ -250,7 +237,7 @@ def dict_format_factory(
     preamble_lines: tuple[str, ...],
     narrowed_open: str | None,
     supports_trailing_comma: bool,
-) -> _DictFormatBuilder:
+) -> DictFormatBuilder:
     """Return a callable that builds a ``DictFormatConfig`` for a given
     type.
 

@@ -476,6 +476,22 @@ class DictFormatConfig:
         return lines
 
 
+@runtime_checkable
+class DictFormatBuilder(Protocol):
+    """Callable that builds a dict format for given value and key
+    types.
+    """
+
+    def __call__(
+        self,
+        default_type: str,
+        *,
+        default_key_type: str,
+    ) -> DictFormatConfig:
+        """Build a dict format configuration."""
+        ...  # pylint: disable=unnecessary-ellipsis
+
+
 @dataclasses.dataclass(frozen=True)
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
