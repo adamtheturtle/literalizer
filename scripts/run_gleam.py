@@ -56,12 +56,14 @@ def main() -> None:
         runner_imports: list[str] = []
         runner_calls: list[str] = []
         for fixture in fixtures:
-            # Python 3.12 requires this argument to be positional, while the
-            # Python 3.14 signature makes strict-kwargs reject that call.
+            # ``Path.relative_to`` made ``other`` keyword-capable in Python
+            # 3.14.  Keep each supported runtime on its native signature.
+            if sys.version_info >= (3, 14):
+                relative_path = fixture.relative_to(other=_FIXTURE_PREFIX)
+            else:
+                relative_path = fixture.relative_to(_FIXTURE_PREFIX)
             relative = _strip_version(
-                relative=fixture.relative_to(  # type: ignore[call-arg, unused-ignore]
-                    _FIXTURE_PREFIX,
-                ),
+                relative=relative_path,
             )
             destination = src_dir / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
