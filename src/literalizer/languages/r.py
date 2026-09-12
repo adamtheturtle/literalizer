@@ -7,7 +7,7 @@ import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -95,7 +95,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableIntegerError,
@@ -167,8 +167,9 @@ def _r_call_stub(
 
 @beartype
 def _format_r_dict_entry_positional(
-    key: str,
-    _raw_value: Value,
+    raw_key: Scalar,
+    formatted_key: str,
+    raw_value: Value,
     formatted_value: str,
 ) -> str:
     """Format an R named list entry.
@@ -177,26 +178,76 @@ def _format_r_dict_entry_positional(
     parse error), so empty-string keys are emitted as positional (unnamed)
     elements.
     """
-    if key == '""':
+    del raw_value
+    if raw_key == "":
         return formatted_value
-    return f"{key} = {formatted_value}"
+    return f"{formatted_key} = {formatted_value}"
 
 
 @beartype
 def _format_r_dict_entry_error(
-    key: str,
-    _raw_value: Value,
+    raw_key: Scalar,
+    formatted_key: str,
+    raw_value: Value,
     formatted_value: str,
 ) -> str:
     """Format an R named list entry, raising on empty-string keys."""
-    if key == '""':
+    del raw_value
+    if raw_key == "":
         msg = (
-            f"R does not support the dict key {key}. "
+            f"R does not support the dict key {formatted_key}. "
             "Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them "
             "as unnamed list elements instead."
         )
         raise InvalidDictKeyError(msg)
-    return f"{key} = {formatted_value}"
+    return f"{formatted_key} = {formatted_value}"
+
+
+type _RSourceEntryFormatter = Callable[[Scalar, str, Value, str], str]
+
+
+@dataclasses.dataclass(frozen=True)
+class _RDictFormatConfig(DictFormatConfig):
+    """R dict config that classifies empty source keys."""
+
+    source_format_entry: _RSourceEntryFormatter
+
+    @override
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+    ) -> str:
+        """Format an entry according to the source empty-key policy."""
+        return self.source_format_entry(
+            raw_key, formatted_key, raw_value, formatted_value
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class _ROrderedMapFormatConfig(OrderedMapFormatConfig):
+    """R ordered-map config that classifies empty source keys."""
+
+    source_format_entry: _RSourceEntryFormatter
+
+    @override
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+        format_entry: Callable[[str, Value, str], str],
+    ) -> str:
+        """Format an entry according to the source empty-key policy."""
+        del format_entry
+        return self.source_format_entry(
+            raw_key, formatted_key, raw_value, formatted_value
+        )
 
 
 # The R decimal float parser is several units in the last place out at
@@ -443,20 +494,23 @@ class R(metaclass=LanguageCls):
         error).
         """
 
-        _value_: Callable[[str, Value, str], str]
+        _value_: _RSourceEntryFormatter
 
         POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
         ERROR = enum.member(value=_format_r_dict_entry_error)
 
         def __call__(
             self,
-            key: str,
+            raw_key: Scalar,
+            formatted_key: str,
             raw_value: Value,
             formatted_value: str,
             /,
         ) -> str:
             """Format a dict entry."""
-            return self._value_(key, raw_value, formatted_value)
+            return self._value_(
+                raw_key, formatted_key, raw_value, formatted_value
+            )
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
@@ -909,15 +963,18 @@ class R(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _RDictFormatConfig(
             dict_open=fixed_open(open_str="list("),
             close=")",
-            format_entry=self.empty_dict_key,
+            format_entry=dict_entry_with_separator(
+                separator=" = ", format_value=passthrough_sequence_entry
+            ),
             empty_dict=None,
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
             narrowed_empty_form=None,
+            source_format_entry=self.empty_dict_key,
         )
 
     @cached_property
@@ -969,10 +1026,11 @@ class R(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _ROrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="list("),
             close=")",
             preamble_lines=(),
+            source_format_entry=self.empty_dict_key,
         )
 
     @cached_property

@@ -469,6 +469,18 @@ class DictFormatConfig:
         del raw_key
         return formatted_key
 
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+    ) -> str:
+        """Format an entry, retaining access to its source key."""
+        del raw_key
+        return self.format_entry(formatted_key, raw_value, formatted_value)
+
     def postprocess_entries(  # pylint: disable=no-self-use
         self, lines: list[str], /
     ) -> list[str]:
@@ -505,6 +517,35 @@ class OrderedMapFormatConfig:
         """Return a formatted ordered-map key unchanged."""
         del raw_key
         return formatted_key
+
+    def format_entry_from_source(
+        self,
+        *,
+        raw_key: Scalar,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+        format_entry: Callable[[str, Value, str], str],
+    ) -> str:
+        """Format an entry, retaining access to its source key."""
+        del raw_key
+        return self._format_entry_without_source(
+            formatted_key=formatted_key,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_entry=format_entry,
+        )
+
+    @staticmethod
+    def _format_entry_without_source(
+        *,
+        formatted_key: str,
+        raw_value: Value,
+        formatted_value: str,
+        format_entry: Callable[[str, Value, str], str],
+    ) -> str:
+        """Format an entry without using its source key."""
+        return format_entry(formatted_key, raw_value, formatted_value)
 
     @property
     def empty_ordered_map(self) -> str | None:

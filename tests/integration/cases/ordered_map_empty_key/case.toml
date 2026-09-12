@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["R"]
+languages_reason = "R has a configurable positional fallback for empty mapping keys."
+
+[[variants]]
+axis = "empty_dict_key"
