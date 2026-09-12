@@ -341,7 +341,8 @@ class DateFormatEnum(enum.Enum):
 
     def __call__(self, date_value: datetime.date, /) -> str:
         """Format a date with this member's configuration."""
-        # Pylint does not yet infer the standardized Enum _value_ annotation.
+        # Pylint does not yet infer the standardized Enum _value_ annotation:
+        # https://github.com/pylint-dev/pylint/issues/11413
         return self._value_.formatter(date_value)  # pylint: disable=no-member
 
 
@@ -354,7 +355,8 @@ class DatetimeFormatEnum(enum.Enum):
 
     def __call__(self, dt_value: datetime.datetime, /) -> str:
         """Format a datetime with this member's configuration."""
-        # Pylint does not yet infer the standardized Enum _value_ annotation.
+        # Pylint does not yet infer the standardized Enum _value_ annotation:
+        # https://github.com/pylint-dev/pylint/issues/11413
         return self._value_.formatter(dt_value)  # pylint: disable=no-member
 
 

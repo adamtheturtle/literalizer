@@ -2896,7 +2896,7 @@ class Cpp(metaclass=LanguageCls):
             """Return the C++ type name for this date format."""
             cfg: DateFormatConfig = self.value
             # Pylint does not yet infer the standardized Enum _value_
-            # annotation.
+            # annotation: https://github.com/pylint-dev/pylint/issues/11413
             if cfg.type_produced is str:  # pylint: disable=no-member
                 return "std::string"
             return "std::chrono::year_month_day"
@@ -2928,7 +2928,7 @@ class Cpp(metaclass=LanguageCls):
             """Return the C++ type name for this datetime format."""
             cfg: DatetimeFormatConfig = self.value
             # Pylint does not yet infer the standardized Enum _value_
-            # annotation.
+            # annotation: https://github.com/pylint-dev/pylint/issues/11413
             if cfg.type_produced is str:  # pylint: disable=no-member
                 return "std::string"
             if cfg.type_produced is int:  # pylint: disable=no-member
