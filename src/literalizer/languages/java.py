@@ -493,7 +493,7 @@ _JAVA_I32_MAX = 2**31 - 1
 
 
 @beartype
-def _java_scalar_hint(  # pylint: disable=too-complex
+def _java_scalar_hint(
     *,
     data: Scalar,
     int_type: str,
@@ -505,12 +505,12 @@ def _java_scalar_hint(  # pylint: disable=too-complex
         case bool():
             hint = "boolean"
         case int():
-            if int_type == "int" and not (
-                _JAVA_I32_MIN <= data <= _JAVA_I32_MAX
-            ):
-                hint = "long"
-            else:
-                hint = int_type
+            hint = (
+                "long"
+                if int_type == "int"
+                and not _JAVA_I32_MIN <= data <= _JAVA_I32_MAX
+                else int_type
+            )
         case float():
             hint = "double"
         case str() | bytes():
