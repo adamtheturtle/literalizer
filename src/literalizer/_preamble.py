@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+from collections.abc import Iterable
 from typing import Final, assert_never, get_args
 
 from beartype import beartype
@@ -416,10 +417,7 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
 
 
 @beartype
-def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
-    *,
-    value: Value,
-) -> str:
+def _structural_type_id(*, value: Value) -> str:
     """Return a structural type identifier for *value*.
 
     Two values produce the same ID if and only if Python's
@@ -431,55 +429,34 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
     element types are heterogeneous without actually running the full
     type-hint formatter.
     """
+    collection_kind: str
+    elements: Iterable[Value]
+    preserve_order = False
     match value:
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "float"
-        case str():
-            return "str"
-        case bytes():
-            return "bytes"
-        case datetime.datetime():
-            return "datetime"
-        case datetime.time():
-            return "time"
-        case datetime.date():
-            return "date"
-        case None:
-            return "None"
-        case list() if len(value) == 0:
-            return "empty_list"
         case list():
-            merged = _list_merge_dicts(elements=value)
-            elem_ids = list(
-                dict.fromkeys(_structural_type_id(value=e) for e in merged)
-            )
-            return f"list({','.join(elem_ids)})"
-        case set() if len(value) == 0:
-            return "empty_set"
+            collection_kind = "list"
+            elements = _list_merge_dicts(elements=value)
+            preserve_order = True
         case set():
-            elem_ids = sorted({_structural_type_id(value=e) for e in value})
-            return f"set({','.join(elem_ids)})"
-        case OrderedMap() if len(value) == 0:
-            return "empty_odict"
+            collection_kind = "set"
+            elements = value
         case OrderedMap():
-            val_set: set[str] = set()
-            for ov in value.values():
-                val_set.add(_structural_type_id(value=ov))
-            val_ids = sorted(val_set)
-            return f"odict({','.join(val_ids)})"
-        case dict() if len(value) == 0:
-            return "empty_dict"
+            collection_kind = "odict"
+            elements = value.values()
         case dict():
-            val_ids = sorted(
-                {_structural_type_id(value=v) for v in value.values()}
-            )
-            return f"dict({','.join(val_ids)})"
-        case _ as unreachable:
-            assert_never(unreachable)
+            collection_kind = "dict"
+            elements = value.values()
+        case _:
+            bucket = scalar_type_bucket(value=value)
+            return "None" if value is None else bucket.__name__
+    if len(value) == 0:
+        return f"empty_{collection_kind}"
+
+    ids = (_structural_type_id(value=element) for element in elements)
+    element_ids = (
+        list(dict.fromkeys(ids)) if preserve_order else sorted(set(ids))
+    )
+    return f"{collection_kind}({','.join(element_ids)})"
 
 
 @beartype
