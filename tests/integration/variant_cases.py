@@ -290,7 +290,7 @@ def variants_for_axis(*, axis_key: str) -> list[Variant]:
 
 
 @beartype
-def _case_for_manifest_variant(
+def case_for_manifest_variant(
     *,
     case_dir_name: str,
     manifest_variant: ManifestVariant,
@@ -319,7 +319,7 @@ def _case_for_manifest_variant(
     )
 
 
-def _one_special_input(
+def one_special_input(
     *, entries: list[tuple[str, ManifestVariant]], axis: str
 ) -> tuple[str, ManifestVariant]:
     """Return the sole manifest entry registered for a special axis."""
@@ -421,7 +421,7 @@ def build_variant_cases() -> list[VariantCase]:
             special_float_cases=special_float_cases,
         )
         cases.extend(
-            _case_for_manifest_variant(
+            case_for_manifest_variant(
                 case_dir_name=case_dir_name,
                 manifest_variant=manifest_variant,
                 variant=variant,
@@ -454,7 +454,7 @@ def build_variant_cases() -> list[VariantCase]:
         )
     )
 
-    json_case_dir_name, _ = _one_special_input(
+    json_case_dir_name, _ = one_special_input(
         entries=entries,
         axis="json_type_variable_form",
     )
@@ -462,11 +462,11 @@ def build_variant_cases() -> list[VariantCase]:
         build_json_type_variable_form_cases(case_dir_name=json_case_dir_name)
     )
 
-    combined_case_dir_name, combined_entry = _one_special_input(
+    combined_case_dir_name, combined_entry = one_special_input(
         entries=entries,
         axis="multiline_string_combined",
     )
-    pre_indent_case_dir_name, pre_indent_entry = _one_special_input(
+    pre_indent_case_dir_name, pre_indent_entry = one_special_input(
         entries=entries,
         axis="multiline_string_pre_indent",
     )
