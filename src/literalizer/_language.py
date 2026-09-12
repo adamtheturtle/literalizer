@@ -481,9 +481,8 @@ class DictFormatConfig:
         del raw_key
         return self.format_entry(formatted_key, raw_value, formatted_value)
 
-    def postprocess_entries(  # pylint: disable=no-self-use
-        self, lines: list[str], /
-    ) -> list[str]:
+    @staticmethod
+    def postprocess_entries(lines: list[str], /) -> list[str]:
         """Return fully rendered mapping entry lines unchanged."""
         return lines
 

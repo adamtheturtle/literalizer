@@ -536,8 +536,9 @@ class _CobolDictFormatConfig(DictFormatConfig):
         del formatted_key
         return _key_to_cobol_name(raw_key=raw_key)
 
+    @staticmethod
     @override
-    def postprocess_entries(self, lines: list[str], /) -> list[str]:
+    def postprocess_entries(lines: list[str], /) -> list[str]:
         """Disambiguate one mapping even without a variable wrapper."""
         rooted = "\n".join(("00 ROOT.", *lines))
         return _disambiguate_data_names(content=rooted).split(sep="\n")[1:]
