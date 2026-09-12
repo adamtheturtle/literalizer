@@ -320,7 +320,7 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
 @beartype
 def _unwrap_yaml_tagged_scalar(*, value: TaggedScalar) -> Scalar:
     """Unwrap the scalar payload retained for an explicit YAML tag."""
-    return str(object=value.value)  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+    return str(object=value)
 
 
 @beartype
