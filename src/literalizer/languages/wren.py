@@ -381,12 +381,14 @@ class Wren(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Wren."""
@@ -500,11 +502,13 @@ class Wren(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
+        _value_: Callable[[str], str]
+
         DOUBLE = enum.member(value=_format_string)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

@@ -764,12 +764,14 @@ class Crystal(metaclass=LanguageCls):
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
 
+        _value_: Callable[[bytes], str]
+
         HEX = enum.member(value=format_bytes_hex)
         BASE64 = enum.member(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self.value(value=data)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Crystal."""
@@ -810,6 +812,8 @@ class Crystal(metaclass=LanguageCls):
     class SetFormats(enum.Enum):
         """Set type options for Crystal."""
 
+        _value_: Callable[[str], SetFormatConfig]
+
         SET = enum.member(
             value=set_format_factory(
                 open_template="Set{{",
@@ -824,7 +828,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self.value(default_type)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -902,6 +906,8 @@ class Crystal(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
+        _value_: Mapping[str, Callable[[int], str]]
+
         DECIMAL = MappingProxyType(
             mapping={
                 "NONE": _format_integer_decimal,
@@ -914,7 +920,7 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            return self.value[numeric_separator.name]  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_[numeric_separator.name]
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -935,12 +941,14 @@ class Crystal(metaclass=LanguageCls):
     class StringFormats(enum.Enum):
         """String format options."""
 
+        _value_: Callable[[str], str]
+
         DOUBLE = enum.member(value=_format_string)
         MULTILINE = enum.member(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self.value(value=value)  # pyrefly: ignore [no-any-return-implicit]
+            return self._value_(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
