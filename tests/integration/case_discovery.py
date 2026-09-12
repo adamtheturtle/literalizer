@@ -25,7 +25,10 @@ from typing_extensions import TypeIs
 
 import literalizer
 from literalizer._language import NewVariableNameSyntax
-from literalizer._parsing import escape_json5_line_separators
+from literalizer._parsing import (
+    escape_json5_line_separators,
+    unwrap_yaml_scalar,
+)
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
@@ -165,7 +168,7 @@ def _is_object_list(value: object, /) -> TypeIs[list[object]]:
 def _demote_yaml_tags(*, value: object) -> object:
     """Demote round-trip-only tagged scalar wrappers for discovery."""
     if isinstance(value, TaggedScalar):
-        return vars(value)["value"]  # pyrefly: ignore [no-any-return-explicit]
+        return unwrap_yaml_scalar(value=value)
     if _is_object_dict(value):
         return {
             _demote_yaml_tags(value=key): _demote_yaml_tags(value=item)
