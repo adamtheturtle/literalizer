@@ -164,7 +164,7 @@ def _format_string_multiline(value: str) -> str:
 
 
 @beartype
-def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:  # noqa: PLR0911
+def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:
     """Wrap a formatted scalar literal in the matching Circe constructor.
 
     The literal already produced by the per-type formatter is the inner
@@ -177,12 +177,14 @@ def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:  # noqa: 
             return _CIRCE_TRUE if raw_value else _CIRCE_FALSE
         case None:
             return _CIRCE_NULL
-        case int() if not I64_MIN <= raw_value <= I64_MAX:
-            return f"Json.fromBigInt({formatted})"
-        case int() if not -(2**31) <= raw_value <= 2**31 - 1:
-            return f"Json.fromLong({formatted})"
         case int():
-            return f"Json.fromInt({formatted})"
+            if not I64_MIN <= raw_value <= I64_MAX:
+                constructor = "BigInt"
+            elif not -(2**31) <= raw_value <= 2**31 - 1:
+                constructor = "Long"
+            else:
+                constructor = "Int"
+            return f"Json.from{constructor}({formatted})"
         case float():
             return f"Json.fromDoubleOrNull({formatted})"
         case _:
