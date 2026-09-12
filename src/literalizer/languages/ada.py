@@ -87,6 +87,7 @@ from literalizer._language import (
 from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
+_C0_CONTROL_LIMIT = 32
 
 _ADA_FLOAT_SPECIAL_DECLS = {
     "pos_inf": "Pos_Inf : constant Long_Float := 1.0 / Zero;",
@@ -1123,7 +1124,7 @@ class Ada(metaclass=LanguageCls):
         def _format(value: str) -> str:
             """Widen a bare ``Character'Val(N)`` result to ``String``."""
             formatted = inner(value)
-            if formatted.startswith("Character'Val"):
+            if len(value) == 1 and ord(value) < _C0_CONTROL_LIMIT:
                 return f'"" & {formatted}'
             return formatted
 

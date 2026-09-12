@@ -24,7 +24,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    strip_key_quotes,
     variable_declaration_formatter,
     variable_formatter,
 )
@@ -91,6 +90,30 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
+_JSON5_IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+
+
+@beartype
+def _format_json5_key(*, raw_key: str, formatted_key: str) -> str:
+    """Use a bare JSON5 key when the source name is an identifier."""
+    if _JSON5_IDENTIFIER_RE.match(string=raw_key) is not None:
+        return raw_key
+    return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _Json5DictFormatConfig(DictFormatConfig):
+    """JSON5 dict config that classifies source keys."""
+
+    format_key = staticmethod(_format_json5_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _Json5OrderedMapFormatConfig(OrderedMapFormatConfig):
+    """JSON5 ordered-map config that classifies source keys."""
+
+    format_key = staticmethod(_format_json5_key)
+
 
 @beartype
 def _format_json5_dict_entry(
@@ -98,18 +121,7 @@ def _format_json5_dict_entry(
     _raw_value: Value,
     formatted_value: str,
 ) -> str:
-    """Format a JSON5 dict entry as ``key: value``.
-
-    If the key is a double-quoted string that is also a valid ECMAScript
-    5.1 ``IdentifierName`` (and is not a reserved word), the quotes are
-    stripped for cleaner idiomatic JSON5 output.
-    """
-    inner = strip_key_quotes(key=key)
-    identifier_pattern = re.compile(
-        pattern=r"^[A-Za-z_$][A-Za-z0-9_$]*$",
-    )
-    if identifier_pattern.match(string=inner) is not None:
-        return f"{inner}: {formatted_value}"
+    """Format a JSON5 dict entry as ``key: value``."""
     return f"{key}: {formatted_value}"
 
 
@@ -692,7 +704,7 @@ class Json5(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _Json5DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_json5_dict_entry,
@@ -759,7 +771,7 @@ class Json5(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _Json5OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),

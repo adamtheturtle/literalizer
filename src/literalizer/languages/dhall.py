@@ -96,8 +96,6 @@ from literalizer.exceptions import (
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
 
-_DHALL_UNESCAPE_RE = re.compile(pattern=r"\\([$\"\\nrt]|u\{([0-9A-Fa-f]+)\})")
-
 # Dhall backtick labels allow printable ASCII excluding backtick:
 # %x20-5F / %x61-7E (space through underscore, a-z plus {|}~).
 _BACKTICK_LABEL_RE = re.compile(pattern=r"^[\x20-\x5f\x61-\x7e]+$")
@@ -148,30 +146,6 @@ def _reject_mixed_scalar_container_lists(data: Value, /) -> None:
             return
     for child in children:
         _reject_mixed_scalar_container_lists(child)
-
-
-@beartype
-def _unescape_dhall_string(value: str) -> str:
-    """Reverse Dhall double-quoted string escapes to produce raw
-    content.
-    """
-    _simple_escapes = {
-        "$": "$",
-        '"': '"',
-        "\\": "\\",
-        "n": "\n",
-        "r": "\r",
-        "t": "\t",
-    }
-
-    def _replace(match: re.Match[str]) -> str:
-        """Replace a single escape sequence with its raw character."""
-        hex_digits = match.group(2)
-        if hex_digits is not None:
-            return chr(int(hex_digits, base=16))
-        return _simple_escapes[match.group(1)]
-
-    return _DHALL_UNESCAPE_RE.sub(repl=_replace, string=value)
 
 
 _dhall_narrowed_empty_form = make_narrowed_empty_form(
@@ -236,34 +210,45 @@ def _format_dhall_string(value: str) -> str:
 
 
 @beartype
+def _format_dhall_key(*, raw_key: str, formatted_key: str) -> str:
+    """Format and validate a Dhall key from its source name."""
+    if (
+        _IDENTIFIER_RE.match(string=raw_key) is not None
+        and raw_key not in _DHALL_RESERVED_LABELS
+    ):
+        return raw_key
+    if raw_key == "" or _BACKTICK_LABEL_RE.match(string=raw_key) is None:
+        msg = (
+            f"Dhall does not support the dict key {formatted_key}. "
+            "Backtick-quoted labels must be non-empty and contain only "
+            "printable ASCII (no backticks or control characters)."
+        )
+        raise InvalidDictKeyError(msg)
+    return f"`{raw_key}`"
+
+
+@dataclasses.dataclass(frozen=True)
+class _DhallDictFormatConfig(DictFormatConfig):
+    """Dhall dict config that classifies source keys."""
+
+    format_key = staticmethod(_format_dhall_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _DhallOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Dhall ordered-map config that classifies source keys."""
+
+    format_key = staticmethod(_format_dhall_key)
+
+
+@beartype
 def _format_dhall_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
 ) -> str:
-    """Format a Dhall record entry as ``key = value``.
-
-    If the key is a valid Dhall simple label (letter or underscore
-    followed by letters, digits, hyphens, underscores, or slashes),
-    the quotes are stripped for idiomatic bare output.  Otherwise the
-    key is wrapped in backticks, which Dhall uses for non-identifier
-    labels.
-    """
-    inner = key[1:-1]
-    if (
-        _IDENTIFIER_RE.match(string=inner) is not None
-        and inner not in _DHALL_RESERVED_LABELS
-    ):
-        return f"{inner} = {formatted_value}"
-    raw = _unescape_dhall_string(value=inner)
-    if raw == "" or _BACKTICK_LABEL_RE.match(string=raw) is None:
-        msg = (
-            f"Dhall does not support the dict key {key}. "
-            "Backtick-quoted labels must be non-empty and contain only "
-            "printable ASCII (no backticks or control characters)."
-        )
-        raise InvalidDictKeyError(msg)
-    return f"`{raw}` = {formatted_value}"
+    """Format a Dhall record entry as ``key = value``."""
+    return f"{key} = {formatted_value}"
 
 
 _DHALL_DVAL_TYPE = (
@@ -1345,7 +1330,7 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _DhallDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_dhall_dict_entry,
@@ -1394,7 +1379,7 @@ class Dhall(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _DhallOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),

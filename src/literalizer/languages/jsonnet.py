@@ -131,24 +131,37 @@ _JSONNET_KEYWORDS = frozenset(
 
 
 @beartype
+def _format_jsonnet_key(*, raw_key: str, formatted_key: str) -> str:
+    """Use a bare Jsonnet key when the source name is an identifier."""
+    if (
+        _JSONNET_IDENTIFIER_RE.match(string=raw_key) is not None
+        and raw_key not in _JSONNET_KEYWORDS
+    ):
+        return raw_key
+    return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _JsonnetDictFormatConfig(DictFormatConfig):
+    """Jsonnet dict config that classifies source keys."""
+
+    format_key = staticmethod(_format_jsonnet_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _JsonnetOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Jsonnet ordered-map config that classifies source keys."""
+
+    format_key = staticmethod(_format_jsonnet_key)
+
+
+@beartype
 def _format_jsonnet_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
 ) -> str:
-    """Format a Jsonnet dict entry as ``key: value``.
-
-    If the key is a double-quoted string that is also a valid Jsonnet
-    identifier (ASCII letters, digits, underscores, starting with a
-    letter or underscore), the quotes are stripped for cleaner idiomatic
-    Jsonnet output.
-    """
-    inner = key[1:-1]
-    if (
-        _JSONNET_IDENTIFIER_RE.match(string=inner) is not None
-        and inner not in _JSONNET_KEYWORDS
-    ):
-        return f"{inner}: {formatted_value}"
+    """Format a Jsonnet dict entry as ``key: value``."""
     return f"{key}: {formatted_value}"
 
 
@@ -790,7 +803,7 @@ class Jsonnet(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _JsonnetDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_jsonnet_dict_entry,
@@ -856,7 +869,7 @@ class Jsonnet(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _JsonnetOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),

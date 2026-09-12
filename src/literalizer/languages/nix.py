@@ -166,31 +166,47 @@ _format_nix_string_safe = reject_nul_string_formatter(
 
 
 @beartype
+def _format_nix_key(*, raw_key: str, formatted_key: str) -> str:
+    """Format and validate a Nix key from its source name."""
+    if (
+        _IDENTIFIER_RE.match(string=raw_key) is not None
+        and raw_key not in _NIX_KEYWORDS
+    ):
+        return raw_key
+    control_char_upper_bound = 0x20
+    if raw_key == "" or any(
+        ord(ch) < control_char_upper_bound for ch in raw_key
+    ):
+        msg = (
+            f"Nix does not support the dict key {formatted_key}. "
+            "Attribute names must be non-empty and must not contain "
+            "control characters."
+        )
+        raise InvalidDictKeyError(msg)
+    return formatted_key
+
+
+@dataclasses.dataclass(frozen=True)
+class _NixDictFormatConfig(DictFormatConfig):
+    """Nix dict config that classifies source keys."""
+
+    format_key = staticmethod(_format_nix_key)
+
+
+@dataclasses.dataclass(frozen=True)
+class _NixOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Nix ordered-map config that classifies source keys."""
+
+    format_key = staticmethod(_format_nix_key)
+
+
+@beartype
 def _format_nix_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
 ) -> str:
-    """Format a Nix attribute set entry as ``key = value;``.
-
-    If the key is a valid Nix identifier and not a keyword, the quotes
-    are stripped for idiomatic bare output.  Otherwise the key remains
-    quoted.
-    """
-    inner = key[1:-1]
-    if (
-        _IDENTIFIER_RE.match(string=inner) is not None
-        and inner not in _NIX_KEYWORDS
-    ):
-        return f"{inner} = {formatted_value};"
-    control_char_upper_bound = 0x20
-    if inner == "" or any(ord(ch) < control_char_upper_bound for ch in inner):
-        msg = (
-            f"Nix does not support the dict key {key}. "
-            "Attribute names must be non-empty and must not contain "
-            "control characters."
-        )
-        raise InvalidDictKeyError(msg)
+    """Format a Nix attribute set entry as ``key = value;``."""
     return f"{key} = {formatted_value};"
 
 
@@ -837,7 +853,7 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _NixDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=_format_nix_dict_entry,
@@ -886,7 +902,7 @@ class Nix(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _NixOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
