@@ -1391,7 +1391,7 @@ class LanguageCls(type):
     """
 
     language_id: str
-    __dataclass_fields__: dict[str, dataclasses.Field[Any]]  # pyrefly: ignore [explicit-any]
+    __dataclass_fields__: dict[str, dataclasses.Field[object]]
     """Stable, implementation-neutral identifier for this language.
 
     Consumers that need to name a language without depending on the
@@ -1731,6 +1731,8 @@ class Language(Protocol):
     required attributes.
     """
 
+    # The standard library DataclassInstance protocol uses Field[Any], and this
+    # member makes Language valid input to dataclasses.fields/replace.
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]  # pyrefly: ignore [explicit-any]
     variant_metadata: ClassVar[VariantMetadata]
     language_id: ClassVar[str]
