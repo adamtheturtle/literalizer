@@ -702,27 +702,14 @@ def _kotlin_opener_to_type(opener: str, /) -> str:
     declared type (``listOf<Any?>(`` -> ``List<Any?>``,
     ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
     ``arrayOf(`` carries no element type in the opener and is handled
-    by the caller.
+    by the caller.  Callers pass openers emitted by the configured
+    Kotlin formatters, so their generic delimiters are balanced.
     """
     if opener == "intArrayOf(":
         return "IntArray"
     generic_start = opener.index("<")
     name = opener[:generic_start]
-    depth = 0
-    generic_end = generic_start
-    for index, character in enumerate(
-        iterable=opener[generic_start:], start=generic_start
-    ):
-        generic_end = index
-        if character == "<":
-            depth += 1
-        elif character == ">":
-            depth -= 1
-            if depth == 0:
-                break
-    if depth != 0:
-        msg = f"Unbalanced Kotlin initializer type: {opener!r}"
-        raise ValueError(msg)
+    generic_end = opener.index(">(", generic_start)
     generics = opener[generic_start : generic_end + 1]
     return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
 
