@@ -4618,7 +4618,9 @@ def _contextual_bound_ref_values(
         if any(isinstance(item, float) for item in inferred_children):
             for child in raw_children:
                 name = _extract_call_arg_ref_name(value=child, ref_key=ref_key)
-                if name is not None and name in contextual:
+                if name is not None:
+                    # ``literalize_bound_refs`` rejects undeclared references
+                    # before collecting contexts, so every marker is present.
                     value = contextual[name]
                     if isinstance(value, int) and not isinstance(value, bool):
                         contextual[name] = float(value)
@@ -4665,24 +4667,24 @@ def _bound_ref_parent_contexts(
                 name = _extract_call_arg_ref_name(
                     value=raw_child, ref_key=ref_key
                 )
-                if name is not None and name in bound_refs:
-                    list_parent = list(inferred)
-                    list_parent[index] = bound_refs[name]
-                    _ = contexts.setdefault(name, list_parent)
-                elif name is None:
+                if name is None:
                     _visit(raw=raw_child, inferred=inferred_child)
+                    continue
+                list_parent = list(inferred)
+                list_parent[index] = bound_refs[name]
+                _ = contexts.setdefault(name, list_parent)
         elif isinstance(raw, dict) and isinstance(inferred, dict):
             for key in raw.keys() & inferred.keys():
                 raw_child = raw[key]
                 name = _extract_call_arg_ref_name(
                     value=raw_child, ref_key=ref_key
                 )
-                if name is not None and name in bound_refs:
-                    dict_parent = _copy_parent_mapping(value=inferred)
-                    dict_parent[key] = bound_refs[name]
-                    _ = contexts.setdefault(name, dict_parent)
-                elif name is None:
+                if name is None:
                     _visit(raw=raw_child, inferred=inferred[key])
+                    continue
+                dict_parent = _copy_parent_mapping(value=inferred)
+                dict_parent[key] = bound_refs[name]
+                _ = contexts.setdefault(name, dict_parent)
 
     _visit(raw=source, inferred=resolved)
     return contexts
