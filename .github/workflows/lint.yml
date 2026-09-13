@@ -3028,18 +3028,13 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.nim' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # The archive download can stall until this step's timeout:
+      # https://github.com/jiro4989/setup-nim-action/issues/529.
       - name: Install Nim
         timeout-minutes: 10
-        run: |-
-          # A stalled compiler download must leave time for another attempt.
-          curl --fail --silent --show-error --location \
-            --connect-timeout 15 --max-time 90 \
-            --retry 5 --retry-all-errors --retry-max-time 480 \
-            "https://nim-lang.org/download/nim-${NIM_VERSION}-linux_x64.tar.xz" \
-            --output "$RUNNER_TEMP/nim.tar.xz"
-          tar -xJf "$RUNNER_TEMP/nim.tar.xz" -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/nim-${NIM_VERSION}/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/nim-${NIM_VERSION}/bin/nim" --version
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ env.NIM_VERSION }}
       # Nim derives the module name from the source filename and
       # rejects ``@`` as a non-identifier character, so copy each
       # fixture to a sanitized name before invoking ``nim c -r``.
