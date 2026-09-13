@@ -564,13 +564,11 @@ def _partition_shapes_by_shared_keys(
 
     def find(index: int) -> int:
         """Return the root index for *index* in the union-find."""
-        # ty infers int | Unknown for parent[index] across the loop back edge,
-        # requiring both ignores below. Likely related to:
-        # https://github.com/astral-sh/ty/issues/2871
         while parent[index] != index:
-            parent[index] = parent[parent[index]]
-            index = parent[index]  # ty: ignore[unsound-assignment]
-        return index  # ty: ignore[unsound-return-statement]
+            grandparent: int = parent[parent[index]]
+            parent[index] = grandparent
+            index = grandparent
+        return index
 
     def union(left: int, right: int) -> None:
         """Merge the groups containing *left* and *right*."""
