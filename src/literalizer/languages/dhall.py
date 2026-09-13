@@ -447,7 +447,30 @@ _DHALL_TYPE_FOR_PYTHON_TYPE: dict[type, str] = {
 
 
 @beartype
-def _dhall_variant_for_scalar(  # pylint: disable=too-complex
+def _dhall_text_variant_for_scalar(
+    *, value: str | bytes | datetime.date | datetime.time
+) -> _VariantSignature:
+    """Return the Dhall variant for a scalar rendered as ``Text``.
+
+    The caller handles :class:`datetime.datetime` first because it is a
+    :class:`datetime.date` subclass and may instead render as an integer.
+    """
+    match value:
+        case str():
+            name = "Str"
+        case bytes():
+            name = "Bytes"
+        case datetime.date():
+            name = "Date"
+        case datetime.time():
+            name = "Time"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return _VariantSignature(name=name, inner_type="Text")
+
+
+@beartype
+def _dhall_variant_for_scalar(
     *,
     value: Scalar,
     datetime_inner_type: str,
@@ -467,18 +490,12 @@ def _dhall_variant_for_scalar(  # pylint: disable=too-complex
             signature = _VariantSignature(name="Int", inner_type="Integer")
         case float():
             signature = _VariantSignature(name="Double", inner_type="Double")
-        case str():
-            signature = _VariantSignature(name="Str", inner_type="Text")
-        case bytes():
-            signature = _VariantSignature(name="Bytes", inner_type="Text")
         case datetime.datetime():
             signature = _VariantSignature(
                 name="DateTime", inner_type=datetime_inner_type
             )
-        case datetime.date():
-            signature = _VariantSignature(name="Date", inner_type="Text")
-        case datetime.time():
-            signature = _VariantSignature(name="Time", inner_type="Text")
+        case str() | bytes() | datetime.date() | datetime.time():
+            signature = _dhall_text_variant_for_scalar(value=value)
         case None:
             signature = _VariantSignature(name="Null", inner_type=None)
         case _ as unreachable:
