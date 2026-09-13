@@ -502,7 +502,28 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 
 
 @beartype
-def _python_scalar_hint(  # pylint: disable=too-complex
+def _python_temporal_hint(
+    *,
+    data: datetime.date | datetime.time,
+    date_hint: str,
+    datetime_hint: str,
+    time_hint: str,
+) -> str:
+    """Derive a Python type hint for a temporal scalar value."""
+    match data:
+        case datetime.datetime():
+            hint = datetime_hint
+        case datetime.date():
+            hint = date_hint
+        case datetime.time():
+            hint = time_hint
+        case _ as unreachable:
+            assert_never(unreachable)
+    return hint
+
+
+@beartype
+def _python_scalar_hint(
     *,
     data: Scalar,
     bytes_hint: str,
@@ -524,12 +545,13 @@ def _python_scalar_hint(  # pylint: disable=too-complex
             hint = "str"
         case bytes():
             hint = bytes_hint
-        case datetime.datetime():
-            hint = datetime_hint
-        case datetime.date():
-            hint = date_hint
-        case datetime.time():
-            hint = time_hint
+        case datetime.datetime() | datetime.date() | datetime.time():
+            hint = _python_temporal_hint(
+                data=data,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+                time_hint=time_hint,
+            )
         case None:
             hint = "None"
         case _ as unreachable:
