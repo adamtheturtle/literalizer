@@ -7,7 +7,7 @@ language that joins a manifest's gates -- a new language declaring
 ``json_type``, say -- shows up as a new line rather than as silence.
 """
 
-from typing import Any, assert_never
+from typing import assert_never
 
 import pytest
 import tomlkit
@@ -129,17 +129,19 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     assert case.source is not None
     assert call.input_format is not None
     assert call.target_function is not None
-    if "parameter_names_bare" in call.model_fields_set:
-        parameter_names: Any = call.parameter_names_bare  # pyrefly: ignore [explicit-any]
-    else:
-        parameter_names = [
+    parameter_names = (
+        call.parameter_names_bare
+        if "parameter_names_bare" in call.model_fields_set
+        else [
             substituted(template=name, value=case.value)
             for name in call.parameter_names
         ]
-    if "comment_source_bare" in call.model_fields_set:
-        comment_source: Any = call.comment_source_bare  # pyrefly: ignore [explicit-any]
-    else:
-        comment_source = call.comment_source
+    )
+    comment_source = (
+        call.comment_source_bare
+        if "comment_source_bare" in call.model_fields_set
+        else call.comment_source
+    )
     _ = literalizer.literalize_call(
         source=case.source,
         input_format=call.input_format,
