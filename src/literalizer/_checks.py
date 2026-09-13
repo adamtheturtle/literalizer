@@ -594,42 +594,16 @@ def _all_scalars_heterogeneous(
 
 
 @beartype
-def _value_type_family(  # noqa: C901, PLR0911, PLR0912
-    *,
-    value: Value,
-) -> str:
-    # pylint: disable=too-complex,too-many-branches
+def _value_type_family(*, value: Value) -> str:
     """Return a broad type family label for a value."""
-    # Check bool before int (bool is a subclass of int), datetime
-    # before date (datetime is a subclass of date), and OrderedMap
-    # before dict (OrderedMap is a subclass of dict).
-    match value:
-        case None:
-            return "none"
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "float"
-        case str():
-            return "str"
-        case bytes():
-            return "bytes"
-        case datetime.datetime():
-            return "datetime"
-        case datetime.date():
-            return "date"
-        case datetime.time():
-            return "time"
-        case list():
-            return "list"
-        case OrderedMap():
-            return "dict"
-        case dict():
-            return "dict"
-        case _:
-            return "set"
+    bucket = scalar_type_bucket(value=value)
+    if bucket is not None:
+        return "none" if value is None else bucket.__name__
+    if isinstance(value, dict):
+        return "dict"
+    if isinstance(value, list):
+        return "list"
+    return "set"
 
 
 @beartype
