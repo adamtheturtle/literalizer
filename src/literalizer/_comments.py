@@ -4,7 +4,7 @@ import dataclasses
 import re
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Protocol, assert_never, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
 from ruamel.yaml.comments import (
@@ -215,12 +215,15 @@ class _CollectionTargets:
     value_gap_token_indices: tuple[int, ...]
 
 
+type _CommentSlot = str | CommentToken | list[CommentToken] | None
+
+
 @runtime_checkable
 class _CommentAssociation(Protocol):
     """Typed boundary for ruamel.yaml comment association metadata."""
 
-    comment: Sequence[Any] | None  # pyrefly: ignore [explicit-any]
-    items: Mapping[object, Sequence[Any]]  # pyrefly: ignore [explicit-any]
+    comment: Sequence[_CommentSlot] | None
+    items: Mapping[object, Sequence[_CommentSlot]]
     end: Sequence[CommentToken]
 
 
@@ -274,30 +277,26 @@ def _collection_targets(
     """Return comment-token index and iteration keys for a collection."""
     # Sequences and sets store after-element tokens at index 0,
     # mappings at index 2.
-    match ruamel_data:
-        case CommentedSet():
-            return _CollectionTargets(
-                token_idx=0,
-                keys=list(ruamel_data),
-                flow_before_token_indices=(1,),
-                value_gap_token_indices=(),
-            )
-        case CommentedMap():
-            return _CollectionTargets(
-                token_idx=2,
-                keys=list(ruamel_data),
-                flow_before_token_indices=(),
-                value_gap_token_indices=(3,),
-            )
-        case CommentedSeq():  # pyrefly: ignore [unreachable-match-case]
-            return _CollectionTargets(
-                token_idx=0,
-                keys=list(range(len(ruamel_data))),
-                flow_before_token_indices=(1,),
-                value_gap_token_indices=(),
-            )
-        case _ as unreachable:
-            assert_never(unreachable)
+    if isinstance(ruamel_data, CommentedSet):
+        return _CollectionTargets(
+            token_idx=0,
+            keys=list(ruamel_data),
+            flow_before_token_indices=(1,),
+            value_gap_token_indices=(),
+        )
+    if isinstance(ruamel_data, CommentedMap):
+        return _CollectionTargets(
+            token_idx=2,
+            keys=list(ruamel_data),
+            flow_before_token_indices=(),
+            value_gap_token_indices=(3,),
+        )
+    return _CollectionTargets(
+        token_idx=0,
+        keys=list(range(len(ruamel_data))),
+        flow_before_token_indices=(1,),
+        value_gap_token_indices=(),
+    )
 
 
 @beartype
@@ -307,7 +306,10 @@ def _header_comment_lines(*, ca: _CommentAssociation) -> list[str]:
     if ca.comment is None or len(ca.comment) <= 1:
         return lines
 
-    for header_token in ca.comment[1] or ():
+    header_tokens = ca.comment[1]
+    if not isinstance(header_tokens, list):
+        return lines
+    for header_token in header_tokens:
         lines.extend(
             _comment_token_lines(token=header_token),
         )
@@ -349,12 +351,13 @@ def _element_before_comments(
     if key not in ca.items:
         return []
     item_tokens = ca.items[key]
-    return [
-        line
-        for token_index in token_indices
-        for stored in item_tokens[token_index] or ()
-        for line in _comment_token_lines(token=stored)
-    ]
+    lines: list[str] = []
+    for token_index in token_indices:
+        stored_tokens = item_tokens[token_index]
+        if isinstance(stored_tokens, list):
+            for stored in stored_tokens:
+                lines.extend(_comment_token_lines(token=stored))
+    return lines
 
 
 @beartype
@@ -381,7 +384,7 @@ def _collection_end_comments(
         not nested
         and comment is not None
         and len(comment) > 0
-        and comment[0] is not None
+        and isinstance(comment[0], (str, CommentToken))
     ):
         closing_lines = _comment_token_lines(token=comment[0])
     return closing_lines + [
@@ -406,7 +409,7 @@ def _element_after_comments(
 
     item_tokens = ca.items[key]
     item_token = item_tokens[token_idx]
-    if item_token is None:
+    if not isinstance(item_token, CommentToken):
         return _ParsedAfterToken(
             inline="", before_next=[], standalone_column=None
         )
