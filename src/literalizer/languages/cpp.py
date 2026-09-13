@@ -797,7 +797,7 @@ def _cpp_tuple_type(
 
 
 @beartype
-def _compute_cpp_type(  # noqa: PLR0911
+def _compute_cpp_type(
     *,
     item: Value,
     element_to_type: Callable[[type | ListType | DictType], str | None],
@@ -834,20 +834,20 @@ def _compute_cpp_type(  # noqa: PLR0911
                 in_mapping_value=True,
             )
             return type_ctx.dict_type(value_type)
-        case list() if type_ctx.tuple_strategy and is_tuple_eligible(
-            value=item,
-        ):
-            return _cpp_tuple_type(items=item, type_ctx=type_ctx)
         case list():
-            inner_type = _compute_element_type_for_items(
-                items=item,
-                type_ctx=type_ctx,
-                in_mapping_value=False,
-            )
-            return type_ctx.sequence_type(
-                inner=inner_type,
-                length=len(item),
-            )
+            if type_ctx.tuple_strategy and is_tuple_eligible(value=item):
+                cpp_type = _cpp_tuple_type(items=item, type_ctx=type_ctx)
+            else:
+                inner_type = _compute_element_type_for_items(
+                    items=item,
+                    type_ctx=type_ctx,
+                    in_mapping_value=False,
+                )
+                cpp_type = type_ctx.sequence_type(
+                    inner=inner_type,
+                    length=len(item),
+                )
+            return cpp_type
         case set():
             sorted_items: list[Value] = sorted(
                 item,
@@ -863,10 +863,8 @@ def _compute_cpp_type(  # noqa: PLR0911
                 length=len(sorted_items),
             )
         case _:
-            cpp_type = element_to_type(type(item))
-            if cpp_type is not None:
-                return cpp_type
-            return "std::nullptr_t"
+            scalar_type = element_to_type(type(item))
+            return scalar_type if scalar_type is not None else "std::nullptr_t"
 
 
 @beartype
