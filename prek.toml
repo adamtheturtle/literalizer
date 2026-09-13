@@ -236,8 +236,12 @@ hooks = [
     stages = ["pre-push"],
     groups = ["typecheck"],
     priority = 540,
-    entry = 'uv run --group=dev doccmd --no-write-to-file --language=python --command="mypy --num-workers=4"',
+    # Mypy's parallel build workers can lose their shared worker-options file
+    # and crash: https://github.com/python/mypy/issues/21393. Keep both Mypy
+    # and prek's filename batching serial for these small documentation files.
+    entry = 'uv run --group=dev doccmd --no-write-to-file --language=python --command="mypy --num-workers=1"',
     language = "python",
+    require_serial = true,
     types_or = [
       "markdown",
       "rst"
