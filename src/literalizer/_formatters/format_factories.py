@@ -50,6 +50,16 @@ def _build_sequence_format_config(
     typed_opener_fallback_template: str | None,
 ) -> SequenceFormatConfig:
     """Build a ``SequenceFormatConfig`` with the given default type."""
+    effective_empty_sequence = None
+    if empty_template is not None:
+        effective_empty_sequence = empty_template.format(type=default_type)
+    effective_typed_opener_fallback = None
+    if typed_opener_fallback_template is not None:
+        effective_typed_opener_fallback = (
+            typed_opener_fallback_template.format(
+                type=default_type,
+            )
+        )
     return SequenceFormatConfig(
         sequence_open=fixed_open(
             open_str=open_template.format(type=default_type),
@@ -58,20 +68,10 @@ def _build_sequence_format_config(
         supports_heterogeneity=supports_heterogeneity,
         single_element_trailing_comma=single_element_trailing_comma,
         supports_trailing_comma=supports_trailing_comma,
-        empty_sequence=(
-            empty_template.format(type=default_type)
-            if empty_template is not None
-            else None
-        ),
+        empty_sequence=(effective_empty_sequence),
         preamble_lines=preamble_lines,
         format_entry=format_entry,
-        typed_opener_fallback=(
-            typed_opener_fallback_template.format(
-                type=default_type,
-            )
-            if typed_opener_fallback_template is not None
-            else None
-        ),
+        typed_opener_fallback=(effective_typed_opener_fallback),
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
@@ -134,14 +134,13 @@ def _build_set_format_config(
 ) -> SetFormatConfig:
     """Build a ``SetFormatConfig`` with the given default type."""
     open_str = open_template.format(type=default_type)
+    effective_empty_set = None
+    if empty_template is not None:
+        effective_empty_set = empty_template.format(type=default_type)
     return SetFormatConfig(
         set_open=fixed_open(open_str=open_str),
         close=close.format(type=default_type),
-        empty_set=(
-            empty_template.format(type=default_type)
-            if empty_template is not None
-            else None
-        ),
+        empty_set=(effective_empty_set),
         preamble_lines=preamble_lines,
         set_opener_template=set_opener_template,
         supports_heterogeneity=supports_heterogeneity,
@@ -209,17 +208,16 @@ def _build_dict_format_config(
 ) -> DictFormatConfig:
     """Build a ``DictFormatConfig`` with the given default type."""
     fmt_kwargs = {"type": default_type, "key_type": default_key_type}
+    effective_empty_dict = None
+    if empty_template is not None:
+        effective_empty_dict = empty_template.format(**fmt_kwargs)
     return DictFormatConfig(
         dict_open=fixed_open(
             open_str=open_template.format(**fmt_kwargs),
         ),
         close=close,
         format_entry=format_entry,
-        empty_dict=(
-            empty_template.format(**fmt_kwargs)
-            if empty_template is not None
-            else None
-        ),
+        empty_dict=(effective_empty_dict),
         preamble_lines=preamble_lines,
         narrowed_open=narrowed_open,
         supports_trailing_comma=supports_trailing_comma,

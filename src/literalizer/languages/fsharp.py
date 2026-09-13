@@ -15,6 +15,7 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -130,6 +131,32 @@ def _format_fsharp_temporal_entry(
 
 
 @beartype
+def _fsharp_integer_entry(
+    *, original: int, formatted: str, prefix: str
+) -> str:
+    """Wrap a formatted integer in the FSharp value constructor."""
+    negative = formatted.startswith("-")
+    # ``format_integer`` already appends the ``I`` suffix for
+    # values outside the signed 64-bit range; here we only add
+    # the ``L`` suffix for in-range ``int64`` values.
+    literal = formatted
+    if I64_MIN <= original <= I64_MAX:
+        literal = f"{formatted}L"
+    if negative:
+        return f"{prefix}Int({literal})"
+    return f"{prefix}Int {literal}"
+
+
+@beartype
+def _fsharp_float_entry(*, formatted: str, prefix: str) -> str:
+    """Wrap a formatted float in the FSharp value constructor."""
+    negative = formatted.startswith("-")
+    if negative:
+        return f"{prefix}Float({formatted})"
+    return f"{prefix}Float {formatted}"
+
+
+@beartype
 def _apply_fsharp_entry(
     original: Value,
     formatted: str,
@@ -144,27 +171,11 @@ def _apply_fsharp_entry(
         case bool():
             return formatted
         case int():
-            negative = formatted.startswith("-")
-            # ``format_integer`` already appends the ``I`` suffix for
-            # values outside the signed 64-bit range; here we only add
-            # the ``L`` suffix for in-range ``int64`` values.
-            literal = (
-                f"{formatted}L"
-                if I64_MIN <= original <= I64_MAX
-                else formatted
-            )
-            return (
-                f"{prefix}Int({literal})"
-                if negative
-                else f"{prefix}Int {literal}"
+            return _fsharp_integer_entry(
+                original=original, formatted=formatted, prefix=prefix
             )
         case float():
-            negative = formatted.startswith("-")
-            return (
-                f"{prefix}Float({formatted})"
-                if negative
-                else f"{prefix}Float {formatted}"
-            )
+            return _fsharp_float_entry(formatted=formatted, prefix=prefix)
         case datetime.date() | datetime.time():
             return _format_fsharp_temporal_entry(
                 original=original,
@@ -317,11 +328,9 @@ def _apply_fsharp_declaration(
     entry_formatter: Callable[[Value, str], str],
 ) -> str:
     """Format a variable declaration or assignment."""
-    decl_type = (
-        sequence_declared_type
-        if isinstance(data, list)
-        else scalar_declared_type
-    )
+    decl_type = scalar_declared_type
+    if isinstance(data, list):
+        decl_type = sequence_declared_type
     wrapped = entry_formatter(data, value)
     return template.format(
         name=name,
@@ -367,7 +376,9 @@ def _build_fsharp_call_stub_lines(
         param_list = " " + " ".join(f"(_{p}: obj)" for p in params)
     else:
         param_list = "(" + ", ".join(f"_{p}: obj" for p in params) + ")"
-    let_param_list = param_list if curried else f" {param_list}"
+    let_param_list = param_list
+    if not curried:
+        let_param_list = f" {param_list}"
     if len(parts) == 1:
         return (f"let {parts[0]}{let_param_list} : obj = null",)
     root = parts[0]
@@ -1012,9 +1023,7 @@ class FSharp(metaclass=LanguageCls):
         del variable_name
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
         assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
-        preamble = (
-            "\n".join(body_preamble) + "\n" if len(body_preamble) > 0 else ""
-        )
+        preamble = "\n".join((*body_preamble, ""))
         camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         body = f"module {self.module_name}\n\n" + preamble
         body += (
@@ -1482,10 +1491,8 @@ class FSharp(metaclass=LanguageCls):
     def _sequence_declared_type(self) -> str:
         """Resolved declared type for sequence values."""
         raw_declared = self.sequence_format.value.declared_type
-        return (
-            raw_declared.replace("Val", self.type_name)
-            if raw_declared is not None
-            else self.type_name
+        return (value_or_default(value=raw_declared, default="Val")).replace(
+            "Val", self.type_name
         )
 
     @cached_property
@@ -1493,11 +1500,9 @@ class FSharp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        keyword = (
-            "let mutable"
-            if self.declaration_style.value.supports_redefinition
-            else "let"
-        )
+        keyword = "let"
+        if self.declaration_style.value.supports_redefinition:
+            keyword = "let mutable"
         if self._json_type_active:
             return declaration_formatter_ignoring_modifiers(
                 formatter=_build_fsharp_json_declaration_inner(
@@ -1572,6 +1577,19 @@ class FSharp(metaclass=LanguageCls):
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
         f_str = f"    | {p}Str of string"
+        if self.date_format.value.type_produced is datetime.date:
+            effective_header = (header, f"    | {p}Date of System.DateOnly")
+        else:
+            effective_header = (header, f_str)
+        if self.datetime_format.value.type_produced is int:
+            effective_header_2 = (header, f"    | {p}Int of int64")
+        elif self.datetime_format.value.type_produced is datetime.datetime:
+            effective_header_2 = (
+                header,
+                f"    | {p}Datetime of System.DateTime",
+            )
+        else:
+            effective_header_2 = (header, f_str)
         return {
             type(None): (header, f"    | {p}Null"),
             bool: (header, f"    | {p}Bool of bool"),
@@ -1589,22 +1607,9 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Map of (string * {self.type_name}) list",
             ),
             set: (header, f"    | {p}Set of {self.type_name} list"),
-            datetime.date: (
-                (header, f"    | {p}Date of System.DateOnly")
-                if self.date_format.value.type_produced is datetime.date
-                else (header, f_str)
-            ),
+            datetime.date: (effective_header),
             datetime.time: (header, f_str),
-            datetime.datetime: (
-                (header, f"    | {p}Int of int64")
-                if self.datetime_format.value.type_produced is int
-                else (
-                    (header, f"    | {p}Datetime of System.DateTime")
-                    if self.datetime_format.value.type_produced
-                    is datetime.datetime
-                    else (header, f_str)
-                )
-            ),
+            datetime.datetime: (effective_header_2),
         }
 
     @cached_property

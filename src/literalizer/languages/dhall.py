@@ -292,7 +292,9 @@ def _dhall_call_stub(
     matches callers that consume the return value (e.g. a transform
     wrapper like ``emit``).
     """
-    body = "{=}" if stub_return is StubReturn.VOID else "DVal.DBool True"
+    body = "DVal.DBool True"
+    if stub_return is StubReturn.VOID:
+        body = "{=}"
     fn_expr = body
     for _param in reversed(params):
         fn_expr = f"\\(_ : DVal) -> {fn_expr}"
@@ -612,12 +614,16 @@ def _build_union_type_preamble(
                 continue
             seen.add(signature.name)
             variants.append(signature)
-        parts = [
-            variant.name
-            if variant.inner_type is None
-            else f"{variant.name} : {variant.inner_type}"
-            for variant in variants
-        ]
+        collected_parts: list[str] = []
+        for entry_variant in variants:
+            if entry_variant.inner_type is None:
+                effective_entry_variant = entry_variant.name
+            else:
+                effective_entry_variant = (
+                    f"{entry_variant.name} : {entry_variant.inner_type}"
+                )
+            collected_parts.append(effective_entry_variant)
+        parts = collected_parts
         body = " | ".join(parts)
         return (f"let {union_name} = < {body} > in",)
 
@@ -1261,11 +1267,7 @@ class Dhall(metaclass=LanguageCls):
         which appends the ``in {=}`` terminator needed by both
         this path and the ``wrap_in_file=True`` call path.
         """
-        content = (
-            "\n".join((*declarations, calls))
-            if len(declarations) > 0
-            else calls
-        )
+        content = "\n".join((*declarations, calls))
         return self.wrap_in_file(
             content=content,
             variable_name="",

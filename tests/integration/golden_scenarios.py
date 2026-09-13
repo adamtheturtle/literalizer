@@ -23,6 +23,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._types import ValueInput
 from literalizer.exceptions import (
     ExistingVariableNotSelfContainedError,
@@ -357,6 +358,9 @@ def _base_renderings(
     renderings: list[GoldenRendering] = []
     for case_name in grouped.get(lang_cls, []):
         context = manifests[case_name].base_context
+        effective_value = nonempty_or_default(
+            value=context.collection_layout, default="compact"
+        )
         renderings.append(
             unprefixed_rendering(
                 lang_cls=lang_cls,
@@ -367,11 +371,7 @@ def _base_renderings(
                     variable_form=variable_form_for_context(context=context),
                     pre_indent_level=context.pre_indent_level,
                     collection_layout=literalizer.CollectionLayout(
-                        value=(
-                            context.collection_layout
-                            if context.collection_layout not in (None, "")
-                            else "compact"
-                        )
+                        value=(effective_value)
                     ),
                     record_null_substitutions=(
                         context.record_null_substitutions

@@ -92,8 +92,11 @@ def _run_fixture(
         # checking for the ``_call`` suffix that selects the call-mode driver.
         logical_stem = src.stem.split(sep="@", maxsplit=1)[0]
         is_call = logical_stem.endswith("_call")
+        effective_data = _MAIN_ELM
+        if is_call:
+            effective_data = _CALL_MAIN_ELM
         _ = main_path.write_text(
-            data=_CALL_MAIN_ELM if is_call else _MAIN_ELM,
+            data=effective_data,
             encoding="utf-8",
         )
         _ = check_path.write_text(

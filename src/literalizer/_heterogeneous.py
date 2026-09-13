@@ -84,11 +84,11 @@ def _collect_from_dict(data: dict[Scalar, Value]) -> frozenset[int]:
     descendants.
     """
     values: list[Value] = list(data.values())
-    own: frozenset[int] = (
-        frozenset[int]({id(data)})
-        if _all_scalars_mixed_buckets(values=values)
-        else frozenset[int]()
-    )
+    own: frozenset[int]
+    if _all_scalars_mixed_buckets(values=values):
+        own = frozenset[int]({id(data)})
+    else:
+        own = frozenset[int]()
     sublists: list[list[Value]] = [v for v in values if isinstance(v, list)]
     sublist_ids = _siblings_mixed_ids(
         siblings=sublists,
@@ -106,11 +106,11 @@ def _collect_from_list(data: list[Value]) -> frozenset[int]:
     """Return container ids for a list, its sibling children, and
     descendants.
     """
-    own: frozenset[int] = (
-        frozenset[int]({id(data)})
-        if _all_scalars_mixed_buckets(values=data)
-        else frozenset[int]()
-    )
+    own: frozenset[int]
+    if _all_scalars_mixed_buckets(values=data):
+        own = frozenset[int]({id(data)})
+    else:
+        own = frozenset[int]()
     sublists: list[list[Value]] = [v for v in data if isinstance(v, list)]
     sublist_ids = _siblings_mixed_ids(
         siblings=sublists,
@@ -223,11 +223,10 @@ def collect_sibling_map_wrap_ids(*, data: Value) -> frozenset[int]:
             pooled: list[Value] = [
                 value for element in plain_dicts for value in element.values()
             ]
-            own = (
-                _widen_sibling_map_wrap_ids(pool=pooled)
-                if len(plain_dicts) == len(data) >= min_dicts_for_widening
-                else frozenset[int]()
-            )
+            if len(plain_dicts) == len(data) >= min_dicts_for_widening:
+                own = _widen_sibling_map_wrap_ids(pool=pooled)
+            else:
+                own = frozenset[int]()
             children = list(data)
         case _:
             return frozenset[int]()

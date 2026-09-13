@@ -1030,18 +1030,18 @@ class Roc(metaclass=LanguageCls):
         (``List``/``Dict``/``Set``) self-reference for the compiler to
         consider load-bearing.
         """
-        exposed = variable_name if variable_name != "" else "main"
+        exposed = "main"
+        if variable_name != "":
+            exposed = variable_name
         if f" : {self.type_name}\n" in content:
             effective_preamble = body_preamble
         else:
             effective_preamble = self._strip_type_alias(
                 body_preamble=body_preamble,
             )
-        preamble_str = (
-            "\n".join(effective_preamble) + "\n\n"
-            if len(effective_preamble) > 0
-            else ""
-        )
+        preamble_str = ""
+        if len(effective_preamble) > 0:
+            preamble_str = "\n".join(effective_preamble) + "\n\n"
         if variable_name == "":
             body = _indent_call_lines(content=content, indent=self.indent)
             content = f"main =\n{body}\n{self.indent}{{}}"
@@ -1076,21 +1076,19 @@ class Roc(metaclass=LanguageCls):
         alias and call stubs; only the top-level call lines inside
         ``main`` are wrapped in ``dbg (...)``.
         """
-        decl_block = (
-            "\n".join(declarations) + "\n" if len(declarations) > 0 else ""
-        )
+        decl_block = ""
+        if len(declarations) > 0:
+            decl_block = "\n".join(declarations) + "\n"
         body = _indent_call_lines(content=calls, indent=self.indent)
         main_block = f"main =\n{body}\n{self.indent}{{}}"
-        effective_preamble = (
-            body_preamble
-            if len(declarations) > 0
-            else self._strip_type_alias(body_preamble=body_preamble)
-        )
-        preamble_str = (
-            "\n".join(effective_preamble) + "\n\n"
-            if len(effective_preamble) > 0
-            else ""
-        )
+        effective_preamble = body_preamble
+        if len(declarations) == 0:
+            effective_preamble = self._strip_type_alias(
+                body_preamble=body_preamble
+            )
+        preamble_str = ""
+        if len(effective_preamble) > 0:
+            preamble_str = "\n".join(effective_preamble) + "\n\n"
         return f"module [main]\n\n{preamble_str}{decl_block}{main_block}"
 
     @staticmethod
@@ -1415,7 +1413,9 @@ class Roc(metaclass=LanguageCls):
         def _format_float_with_specials(value: float) -> str:
             """Format a float, handling inf and nan."""
             if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
+                if value < 0:
+                    return _neg_inf
+                return _pos_inf
             if math.isnan(value):
                 return _nan_val
             return _float_finite(value)

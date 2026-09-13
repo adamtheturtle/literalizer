@@ -1457,11 +1457,11 @@ class D(metaclass=LanguageCls):
 
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Import ``std.json`` when a widened map uses its carrier."""
-                imports = (
-                    ("import std.json;",)
-                    if len(compute_wrap_ids(data)) > 0
-                    else ()
-                )
+                imports: tuple[str, ...]
+                if len(compute_wrap_ids(data)) > 0:
+                    imports = ("import std.json;",)
+                else:
+                    imports = ()
                 return (*imports, *record_preamble(data))
 
             return _record_preamble
@@ -1725,8 +1725,16 @@ class D(metaclass=LanguageCls):
                 base=base,
                 suffix="L",
             )
+
+        @beartype
+        def format_signed(value: int) -> str:
+            """Format the signed minimum using its named constant."""
+            if value == I64_MIN:
+                return "long.min"
+            return base(value)
+
         return make_overflow_fallback_formatter(
-            base=lambda value: "long.min" if value == I64_MIN else base(value),
+            base=format_signed,
             fallback=make_unsigned_overflow_fallback(
                 format_positive=_make_d_ulong_positive_formatter(base=base),
                 language_name="D",

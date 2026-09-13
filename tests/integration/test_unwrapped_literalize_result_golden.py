@@ -52,7 +52,11 @@ def test_unwrapped_literalize_result_golden(
     )
     assert len(result.body_preamble) > 0
     assert len(result.pre_declaration_comments) > 0
-    contents = result.code if attribute == "code" else result.bare_code
+    contents_by_attribute = {
+        "code": result.code,
+        "bare_code": result.bare_code,
+    }
+    contents = contents_by_attribute[attribute]
     check_golden(
         contents=contents + "\n",
         extension=spec.extension,

@@ -103,7 +103,9 @@ def expected(*, json_text: str | None) -> dict[str, JsonValue]:
     The shared ``roundtrip_input.json`` document is a top-level JSON
     object, so the parsed value is always a ``dict``.
     """
-    text = read_input() if json_text is None else json_text
+    text = json_text
+    if text is None:
+        text = read_input()
     return json_object_from_text(text=text)
 
 
@@ -221,11 +223,10 @@ def execute(
     line is written to stdout.  Callers do not need to emit that line
     themselves.
     """
-    extras: Mapping[str, str] = (
-        extra_files
-        if extra_files is not None and len(extra_files) > 0
-        else dict[str, str]()
-    )
+    extras: Mapping[str, str]
+    extras = dict[str, str]()
+    if extra_files is not None:
+        extras = extra_files
     last_stdout = ""
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)

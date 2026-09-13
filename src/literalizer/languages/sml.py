@@ -15,6 +15,7 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -169,6 +170,58 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
+def _sml_int_entry(*, formatted: str, prefix: str) -> str:
+    """Wrap a formatted integer in the SML value constructor."""
+    negative = formatted.startswith("~")
+    if negative:
+        result = f"{prefix}Int ({formatted})"
+    else:
+        result = f"{prefix}Int {formatted}"
+    return result
+
+
+@beartype
+def _sml_float_entry(*, formatted: str, prefix: str) -> str:
+    """Wrap a formatted real in the SML value constructor."""
+    negative = formatted.startswith(("~", "("))
+    if negative:
+        result = f"{prefix}Real ({formatted})"
+    else:
+        result = f"{prefix}Real {formatted}"
+    return result
+
+
+@beartype
+def _sml_epoch_entry(*, formatted: str, prefix: str) -> str:
+    """Convert an epoch integer to SML signed literal syntax."""
+    negative = formatted.startswith("-")
+    literal = formatted
+    if negative:
+        literal = f"~{formatted[1:]}"
+    if negative:
+        result = f"{prefix}Int ({literal})"
+    else:
+        result = f"{prefix}Int {literal}"
+    return result
+
+
+@beartype
+def _sml_temporal_entry(
+    *,
+    formatted: str,
+    prefix: str,
+    produced_type: type,
+    native_type: type,
+) -> str:
+    """Wrap string-rendered temporal values in the SML string
+    constructor.
+    """
+    if produced_type is native_type:
+        return formatted
+    return f"{prefix}Str {formatted}"
+
+
+@beartype
 def _apply_sml_entry_formatter(
     original: Value,
     formatted: str,
@@ -183,42 +236,28 @@ def _apply_sml_entry_formatter(
         case bool():
             result = formatted
         case int():
-            negative = formatted.startswith("~")
-            result = (
-                f"{prefix}Int ({formatted})"
-                if negative
-                else f"{prefix}Int {formatted}"
-            )
+            result = _sml_int_entry(formatted=formatted, prefix=prefix)
         case float():
-            negative = formatted.startswith(("~", "("))
-            result = (
-                f"{prefix}Real ({formatted})"
-                if negative
-                else f"{prefix}Real {formatted}"
-            )
+            result = _sml_float_entry(formatted=formatted, prefix=prefix)
         case str() | bytes():
             result = f"{prefix}Str {formatted}"
         case datetime.datetime() if datetime_type is int:
-            negative = formatted.startswith("-")
-            literal = f"~{formatted[1:]}" if negative else formatted
-            result = (
-                f"{prefix}Int ({literal})"
-                if negative
-                else f"{prefix}Int {literal}"
-            )
+            result = _sml_epoch_entry(formatted=formatted, prefix=prefix)
         case datetime.datetime():
-            result = (
-                formatted
-                if datetime_type is datetime.datetime
-                else f"{prefix}Str {formatted}"
+            result = _sml_temporal_entry(
+                formatted=formatted,
+                prefix=prefix,
+                produced_type=datetime_type,
+                native_type=datetime.datetime,
             )
         case datetime.time():
             result = f"{prefix}Str {formatted}"
         case datetime.date():
-            result = (
-                formatted
-                if date_type is datetime.date
-                else f"{prefix}Str {formatted}"
+            result = _sml_temporal_entry(
+                formatted=formatted,
+                prefix=prefix,
+                produced_type=date_type,
+                native_type=datetime.date,
             )
         case _:
             result = formatted
@@ -257,11 +296,9 @@ def _apply_sml_declaration(
     entry_formatter: Callable[[Value, str], str],
 ) -> str:
     """Format a variable declaration."""
-    decl_type = (
-        sequence_declared_type
-        if isinstance(data, list)
-        else scalar_declared_type
-    )
+    decl_type = scalar_declared_type
+    if isinstance(data, list):
+        decl_type = sequence_declared_type
     wrapped = entry_formatter(data, value)
     return f"val {name} : {decl_type} = {wrapped}"
 
@@ -848,9 +885,9 @@ class Sml(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        force_line = (
-            f"\nval _ = {variable_name}" if variable_name != "" else ""
-        )
+        force_line = ""
+        if variable_name != "":
+            force_line = f"\nval _ = {variable_name}"
         return content + force_line
 
     @staticmethod
@@ -926,14 +963,15 @@ class Sml(metaclass=LanguageCls):
                 control_char_fmt="\\{:03d}",
                 escape_delete=False,
             )
-            return "".join(
-                (
-                    "".join(f"\\{byte:03d}" for byte in char.encode())
-                    if ord(char) >= _ASCII_DELETE_CODE_POINT
-                    else char
-                )
-                for char in formatted
-            )
+            collected_entries: list[str] = []
+            for entry_char in formatted:
+                effective_byte = entry_char
+                if ord(effective_byte) >= _ASCII_DELETE_CODE_POINT:
+                    effective_byte = "".join(
+                        f"\\{byte:03d}" for byte in entry_char.encode()
+                    )
+                collected_entries.append(effective_byte)
+            return "".join(collected_entries)
 
         return _format
 
@@ -1236,10 +1274,8 @@ class Sml(metaclass=LanguageCls):
         """Shared SML variable declaration formatter."""
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
-            _raw_declared.replace("val_t", self.type_name)
-            if _raw_declared is not None
-            else self.type_name
-        )
+            value_or_default(value=_raw_declared, default="val_t")
+        ).replace("val_t", self.type_name)
         return _build_sml_declaration(
             sequence_declared_type=_sequence_declared_type,
             scalar_declared_type=self.type_name,
@@ -1281,20 +1317,18 @@ class Sml(metaclass=LanguageCls):
         """Per-instance scalar body preamble for SML datatype declarations."""
         p = self.constructor_prefix
         _h = f"datatype {self.type_name} ="
-        _date_constructor = (
-            f"{p}Str of string"
-            if self.date_format.value.type_produced is str
-            else f"{p}Date of (int * int * int)"
-        )
-        _datetime_constructor = (
-            f"{p}Int of LargeInt.int"
-            if self.datetime_format.value.type_produced is int
-            else (
-                f"{p}Str of string"
-                if self.datetime_format.value.type_produced is str
-                else f"{p}Datetime of ((int * int * int) * (int * int * int))"
+        if self.date_format.value.type_produced is str:
+            _date_constructor = f"{p}Str of string"
+        else:
+            _date_constructor = f"{p}Date of (int * int * int)"
+        if self.datetime_format.value.type_produced is int:
+            _datetime_constructor = f"{p}Int of LargeInt.int"
+        elif self.datetime_format.value.type_produced is str:
+            _datetime_constructor = f"{p}Str of string"
+        else:
+            _datetime_constructor = (
+                f"{p}Datetime of ((int * int * int) * (int * int * int))"
             )
-        )
         return {
             type(None): (_h, f"{p}Null"),
             bool: (_h, f"{p}Bool of bool"),

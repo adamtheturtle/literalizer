@@ -54,7 +54,9 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
         case None:
             result = spec.null_literal
         case bool():
-            result = spec.true_literal if value else spec.false_literal
+            result = {True: spec.true_literal, False: spec.false_literal}[
+                value
+            ]
         case int():
             result = spec.format_integer(value)
         case float():
@@ -171,7 +173,10 @@ def guard_collection_nesting_depth(
                 maximum_depth=maximum_depth,
                 actual_depth=depth,
             )
-        children = value.values() if isinstance(value, dict) else value
+        if isinstance(value, dict):
+            children = list(value.values())
+        else:
+            children = list(value)
         pending.extend((child, depth) for child in children)
 
 
@@ -598,7 +603,9 @@ def _value_type_family(*, value: Value) -> str:
     """Return a broad type family label for a value."""
     bucket = scalar_type_bucket(value=value)
     if bucket is not None:
-        return "none" if value is None else bucket.__name__
+        if value is None:
+            return "none"
+        return bucket.__name__
     if isinstance(value, dict):
         return "dict"
     if isinstance(value, list):
@@ -637,7 +644,10 @@ def _list_nesting_depths(*, value: list[Value]) -> frozenset[int]:
         if isinstance(item, list):
             inner = _list_nesting_depths(value=item)
             inner_depths = {depth + 1 for depth in inner}
-            depths |= inner_depths if len(inner_depths) > 0 else {2}
+            effective_inner_depths = inner_depths
+            if len(effective_inner_depths) == 0:
+                effective_inner_depths = {2}
+            depths |= effective_inner_depths
         else:
             depths.add(1)
     return frozenset(depths)
@@ -889,11 +899,11 @@ def _has_mixed_dict_shapes(*, data: Value) -> bool:
         case list():
             dicts_in_list = [v for v in data if isinstance(v, dict)]
             key_sets = {frozenset(d.keys()) for d in dicts_in_list}
-            has_mixed = (
-                not all(ks == next(iter(key_sets)) for ks in key_sets)
-                if len(key_sets) > 0
-                else False
-            )
+            has_mixed = False
+            if len(key_sets) > 0:
+                has_mixed = not all(
+                    ks == next(iter(key_sets)) for ks in key_sets
+                )
             if has_mixed:
                 return True
             return any(_has_mixed_dict_shapes(data=v) for v in data)
@@ -1493,13 +1503,9 @@ def _has_unrepresentable_sibling_maps(
                 and len(plain_dicts) == len(data) >= min_dicts_for_pooling
                 and _sibling_maps_diverge(
                     pool=(
-                        [
-                            value
-                            for element in plain_dicts
-                            for value in element.values()
-                        ]
-                        if spec.dict_supports_heterogeneous_values
-                        else list(data)
+                        _sibling_map_pool(
+                            data=data, plain_dicts=plain_dicts, spec=spec
+                        )
                     ),
                     spec=spec,
                     record_dict_ids=record_dict_ids,
@@ -1575,72 +1581,33 @@ def check_empty_sibling_sequence_type_hint_data(
 
 
 @beartype
-def _check_data(  # noqa: C901  # pylint: disable=too-complex
+def _sibling_map_pool(
+    *,
+    data: list[Value],
+    plain_dicts: list[dict[Scalar, Value]],
+    spec: Language,
+) -> list[Value]:
+    """Pool map values only when the language permits heterogeneous values."""
+    if spec.dict_supports_heterogeneous_values:
+        return [value for element in plain_dicts for value in element.values()]
+    return list(data)
+
+
+@beartype
+def _check_scalar_heterogeneity(
     *,
     data: Value,
     spec: Language,
+    record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> None:
-    """Check that *data* fits the language's collection-shape
-    constraints.
-
-    Raises a subclass of
-    :exc:`~literalizer.exceptions.HeterogeneousCollectionError` when the
-    data cannot be represented in the target language's collection
-    formats.
+    """Validate scalar families after record and tuple shapes are
+    known.
     """
-    _check_raw_control_characters(data=data, spec=spec)
-    _reject_unpreserved_aware_times(data=data, spec=spec)
-    _check_scalar_identity_collisions(data=data, spec=spec)
-    if not spec.set_format_config.preserves_set_semantics and _contains_set(
-        data
-    ):
-        msg = (
-            f"{type(spec).__name__} cannot preserve native set semantics "
-            "with the selected set format"
-        )
-        raise UnrepresentableInputError(msg)
-    if spec.sequence_format_config.requires_uniform_record_shapes:
-        _check_mixed_dict_shapes(data=data)
-
+    behavior = spec.heterogeneous_behavior
     seq_supports_het = spec.sequence_format_config.supports_heterogeneity
     dict_supports_het = spec.dict_supports_heterogeneous_values
     set_supports_het = spec.set_format_config.supports_heterogeneity
-    behavior = spec.heterogeneous_behavior
-    # Validate tuple arity before record-shape refinement asks the
-    # tuple-aware field-type hook to derive a native tuple type.  In
-    # particular, Kotlin only has Pair and Triple, and its hook cannot
-    # type an otherwise eligible four-element tuple.
-    compute_tuple_list_ids = behavior.compute_tuple_list_ids
-    tuple_list_ids: frozenset[int] = (
-        compute_tuple_list_ids(data)
-        if compute_tuple_list_ids is not None
-        else frozenset[int]()
-    )
-    compute_record_shapes = behavior.compute_record_shapes
-    record_shapes_by_id: Mapping[int, RecordShape] = (
-        compute_record_shapes(data)
-        if compute_record_shapes is not None
-        else dict[int, RecordShape]()
-    )
-    record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
-    _check_unrepresentable_sibling_maps(
-        data=data,
-        spec=spec,
-        record_dict_ids=(record_dict_ids | behavior.compute_wrap_ids(data)),
-        tuple_list_ids=tuple_list_ids,
-    )
-    if behavior.render_record_literal is not None and _has_mixed_record_shapes(
-        data=data,
-        shapes_by_id=record_shapes_by_id,
-    ):
-        msg = (
-            "Sibling list contains dicts with different record shapes; "
-            "the RECORD heterogeneous strategy cannot represent a "
-            "heterogeneous sequence of record shapes"
-        )
-        raise HeterogeneousSiblingListsError(msg)
-    if not dict_supports_het:
-        _check_mixed_dict_keys(data=data)
     if not behavior.skip_scalar_checks:
         # A scalar-wrapping or top-type-widening strategy (RECORD
         # widening a nested sibling map to a plain map, issue #2910)
@@ -1692,6 +1659,79 @@ def _check_data(  # noqa: C901  # pylint: disable=too-complex
                 "represent"
             )
             raise MixedDictValuesError(msg)
+
+
+@beartype
+def _check_data(
+    *,
+    data: Value,
+    spec: Language,
+) -> None:
+    """Check that *data* fits the language's collection-shape
+    constraints.
+
+    Raises a subclass of
+    :exc:`~literalizer.exceptions.HeterogeneousCollectionError` when the
+    data cannot be represented in the target language's collection
+    formats.
+    """
+    _check_raw_control_characters(data=data, spec=spec)
+    _reject_unpreserved_aware_times(data=data, spec=spec)
+    _check_scalar_identity_collisions(data=data, spec=spec)
+    if not spec.set_format_config.preserves_set_semantics and _contains_set(
+        data
+    ):
+        msg = (
+            f"{type(spec).__name__} cannot preserve native set semantics "
+            "with the selected set format"
+        )
+        raise UnrepresentableInputError(msg)
+    if spec.sequence_format_config.requires_uniform_record_shapes:
+        _check_mixed_dict_shapes(data=data)
+
+    dict_supports_het = spec.dict_supports_heterogeneous_values
+    behavior = spec.heterogeneous_behavior
+    # Validate tuple arity before record-shape refinement asks the
+    # tuple-aware field-type hook to derive a native tuple type.  In
+    # particular, Kotlin only has Pair and Triple, and its hook cannot
+    # type an otherwise eligible four-element tuple.
+    compute_tuple_list_ids = behavior.compute_tuple_list_ids
+    tuple_list_ids: frozenset[int]
+    if compute_tuple_list_ids is not None:
+        tuple_list_ids = compute_tuple_list_ids(data)
+    else:
+        tuple_list_ids = frozenset[int]()
+    compute_record_shapes = behavior.compute_record_shapes
+    record_shapes_by_id: Mapping[int, RecordShape]
+    if compute_record_shapes is not None:
+        record_shapes_by_id = compute_record_shapes(data)
+    else:
+        record_shapes_by_id = dict[int, RecordShape]()
+    record_dict_ids: frozenset[int] = frozenset(record_shapes_by_id)
+    _check_unrepresentable_sibling_maps(
+        data=data,
+        spec=spec,
+        record_dict_ids=(record_dict_ids | behavior.compute_wrap_ids(data)),
+        tuple_list_ids=tuple_list_ids,
+    )
+    if behavior.render_record_literal is not None and _has_mixed_record_shapes(
+        data=data,
+        shapes_by_id=record_shapes_by_id,
+    ):
+        msg = (
+            "Sibling list contains dicts with different record shapes; "
+            "the RECORD heterogeneous strategy cannot represent a "
+            "heterogeneous sequence of record shapes"
+        )
+        raise HeterogeneousSiblingListsError(msg)
+    if not dict_supports_het:
+        _check_mixed_dict_keys(data=data)
+    _check_scalar_heterogeneity(
+        data=data,
+        spec=spec,
+        record_dict_ids=record_dict_ids,
+        tuple_list_ids=tuple_list_ids,
+    )
 
 
 @beartype

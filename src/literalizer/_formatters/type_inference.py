@@ -214,11 +214,9 @@ def _unify_element_types(
                 return None
             inner_types.add(inner)
         unified_inner = _unify_element_types(element_types=inner_types)
-        return (
-            ListType(inner=unified_inner)
-            if unified_inner is not None
-            else None
-        )
+        if unified_inner is not None:
+            return ListType(inner=unified_inner)
+        return None
     numeric_types = {int, float, WideInt, BeyondI64, MixedNumeric}
     if len(element_types) > 0 and element_types <= numeric_types:
         rank: dict[type | ListType, int] = {
@@ -666,3 +664,16 @@ def _accumulate_record_shapes(
                 _accumulate_record_shapes(data=v, out=out)
         case _:
             return
+
+
+@beartype
+def single_concrete_type(*, types: set[str], fallback_type: str) -> str | None:
+    """Return the shared concrete type, excluding a language's top
+    type.
+    """
+    if len(types) != 1:
+        return None
+    (type_name,) = types
+    if type_name == fallback_type:
+        return None
+    return type_name

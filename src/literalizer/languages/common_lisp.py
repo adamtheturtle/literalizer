@@ -151,7 +151,9 @@ def _common_lisp_call_stub(
     for transform wrapper functions (invoked positionally).  Stub
     bodies return ``nil`` for void stubs and ``0`` for value stubs.
     """
-    body = "nil" if stub_return is StubReturn.VOID else "0"
+    body = "0"
+    if stub_return is StubReturn.VOID:
+        body = "nil"
     return tuple(
         f"(defun {'.'.join(parts[: i + 1])} "
         f"(&rest args) (declare (ignore args)) {body})"

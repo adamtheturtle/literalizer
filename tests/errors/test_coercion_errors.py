@@ -89,9 +89,10 @@ def _to_source(
             yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
             return stream.getvalue()
         case InputFormat.TOML:
-            toml_data: Mapping[str, _SourceData] = (
-                data if isinstance(data, dict) else {"_": data}
-            )
+            toml_data: Mapping[str, _SourceData]
+            toml_data = {"_": data}
+            if isinstance(data, dict):
+                toml_data = data
             return tomlkit.dumps(data=toml_data)
         case _ as unreachable:
             assert_never(unreachable)

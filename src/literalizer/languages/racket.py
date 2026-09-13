@@ -123,7 +123,9 @@ def _racket_call_stub(
     are ``(void)`` for void stubs and ``0`` for value stubs (Racket
     has no ``undefined``).
     """
-    body = "(void)" if stub_return is StubReturn.VOID else "0"
+    body = "0"
+    if stub_return is StubReturn.VOID:
+        body = "(void)"
     return tuple(
         f"(define {'.'.join(parts[: i + 1])} "
         f"(make-keyword-procedure (lambda _ {body})))"

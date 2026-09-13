@@ -324,11 +324,9 @@ def _format_datetime_java_zoned(value: datetime.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
     value = _within_java_zone_offset(value=value)
     raw_timezone_name = value.tzname()
-    timezone_name = (
-        raw_timezone_name
-        if raw_timezone_name is not None and raw_timezone_name != ""
-        else "UTC"
-    )
+    timezone_name = "UTC"
+    if raw_timezone_name is not None and raw_timezone_name != "":
+        timezone_name = raw_timezone_name
     nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
@@ -476,20 +474,38 @@ def _java_common_element_type(
     unique = set(types)
     if len(unique) == 1:
         result = unique.pop()
-        return _java_box(type_name=result) if boxed else result
+        resolved_result_1: str = result
+        if boxed:
+            resolved_result_1 = _java_box(type_name=result)
+        return resolved_result_1
     # int + double → double (widening)
     double_t = "double"
     if unique == {int_type, double_t}:
-        return "Double" if boxed else "double"
+        resolved_result_2: str = "double"
+        if boxed:
+            resolved_result_2 = "Double"
+        return resolved_result_2
     # int + long → long (integer-width widening for mixed-magnitude
     # int collections, e.g. ``{1, 1099511627776}``)
     if unique == {"int", "long"}:
-        return "Long" if boxed else "long"
+        resolved_result_3: str = "long"
+        if boxed:
+            resolved_result_3 = "Long"
+        return resolved_result_3
     return "Object"
 
 
 _JAVA_I32_MIN = -(2**31)
 _JAVA_I32_MAX = 2**31 - 1
+
+
+@beartype
+def _java_integer_hint(*, data: int, int_type: str) -> str:
+    """Choose the Java integer type covering the value."""
+    hint = int_type
+    if hint == "int" and not _JAVA_I32_MIN <= data <= _JAVA_I32_MAX:
+        hint = "long"
+    return hint
 
 
 @beartype
@@ -505,12 +521,7 @@ def _java_scalar_hint(
         case bool():
             hint = "boolean"
         case int():
-            hint = (
-                "long"
-                if int_type == "int"
-                and not _JAVA_I32_MIN <= data <= _JAVA_I32_MAX
-                else int_type
-            )
+            hint = _java_integer_hint(data=data, int_type=int_type)
         case float():
             hint = "double"
         case str() | bytes():
@@ -1905,11 +1916,7 @@ class Java(metaclass=LanguageCls):
         ``var x = 42;`` compile.
         """
         del variable_name
-        first_token = (
-            content.lstrip().split(sep=" ", maxsplit=1)[0]
-            if content.strip() != ""
-            else ""
-        )
+        first_token = content.lstrip().partition(" ")[0]
         is_class_field = first_token in {
             "public",
             "private",
@@ -1924,14 +1931,12 @@ class Java(metaclass=LanguageCls):
         method_lines = tuple(
             line for line in body_preamble if not line.startswith("static ")
         )
-        class_block = (
-            "\n".join(class_lines) + "\n" if len(class_lines) > 0 else ""
-        )
+        class_block = ""
+        if len(class_lines) > 0:
+            class_block = "\n".join(class_lines) + "\n"
         method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         if is_class_field:
-            field_preamble = (
-                "\n".join(method_lines) + "\n" if len(method_lines) > 0 else ""
-            )
+            field_preamble = "\n".join((*method_lines, ""))
             return (
                 f"class {self.module_name} {{\n"
                 f"{class_block}{field_preamble}{content}\n}}"
@@ -1940,7 +1945,9 @@ class Java(metaclass=LanguageCls):
             content=content,
             body_preamble=method_lines,
         )
-        throws_clause = " throws Exception" if self._json_type_active else ""
+        throws_clause = ""
+        if self._json_type_active:
+            throws_clause = " throws Exception"
         return (
             f"class {self.module_name} {{\n"
             f"{class_block}"
@@ -2081,7 +2088,9 @@ class Java(metaclass=LanguageCls):
     @cached_property
     def _java_record_int_type(self) -> str:
         """Java integer type for a record-component scalar."""
-        return "long" if self._suffix_is_auto else "int"
+        if self._suffix_is_auto:
+            return "long"
+        return "int"
 
     def _java_record_datetime_type(self, value: datetime.datetime, /) -> str:
         """Java type for a :class:`datetime.datetime` record component.
@@ -2105,7 +2114,9 @@ class Java(metaclass=LanguageCls):
             epoch = datetime_epoch_seconds(value=value)
             int_type = self._java_record_int_type
             in_i32 = _JAVA_I32_MIN <= epoch <= _JAVA_I32_MAX
-            return "long" if int_type == "int" and not in_i32 else int_type
+            if int_type == "int" and not in_i32:
+                return "long"
+            return int_type
         if self.datetime_format is type(self.datetime_format).ZONED:
             return "ZonedDateTime"
         return "Instant"
@@ -2163,13 +2174,12 @@ class Java(metaclass=LanguageCls):
         still has no precise component type; per the cross-language
         decision in #2317, Java folds it into the ``Object`` top type.
         """
-        nested_type = (
-            request.record_name
-            if request.record_name is not None and request.record_name != ""
-            else f"{request.element_record_name}[]"
-            if request.element_record_name is not None
-            else None
-        )
+        if request.record_name is not None and request.record_name != "":
+            nested_type = request.record_name
+        else:
+            nested_type = None
+            if request.element_record_name is not None:
+                nested_type = f"{request.element_record_name}[]"
         if nested_type is not None:
             return nested_type
         value = request.value
@@ -2195,16 +2205,18 @@ class Java(metaclass=LanguageCls):
             case int():
                 int_type = self._java_record_int_type
                 in_i32 = _JAVA_I32_MIN <= value <= _JAVA_I32_MAX
-                return "long" if int_type == "int" and not in_i32 else int_type
+                resolved_result_1: str = int_type
+                if int_type == "int" and (not in_i32):
+                    resolved_result_1 = "long"
+                return resolved_result_1
             case datetime.datetime():
                 return self._java_record_datetime_type(value)
             case _:
                 scalar_type = self._java_record_scalar_resolver(type(value))
-                return (
-                    scalar_type
-                    if scalar_type is not None and scalar_type != ""
-                    else "Object"
-                )
+                resolved_result_2: str = "Object"
+                if scalar_type is not None and scalar_type != "":
+                    resolved_result_2 = scalar_type
+                return resolved_result_2
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
@@ -2406,22 +2418,21 @@ class Java(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             return fmt.sequence_open
-        cfg = (
-            self._opener_config_long
-            if self._suffix_is_auto
-            else self._opener_config
-        )
+        if self._suffix_is_auto:
+            cfg = self._opener_config_long
+        else:
+            cfg = self._opener_config
+        effective_datetime_type: str | None
+        effective_datetime_type = "long"
+        if self.datetime_format.value.type_produced is not int:
+            effective_datetime_type = cfg.type_name(
+                py_type=self.datetime_format.value.type_produced,
+            )
         openers = cfg.build(
             date_type=cfg.type_name(
                 py_type=self.date_format.value.type_produced
             ),
-            datetime_type=(
-                "long"
-                if self.datetime_format.value.type_produced is int
-                else cfg.type_name(
-                    py_type=self.datetime_format.value.type_produced,
-                )
-            ),
+            datetime_type=(effective_datetime_type),
             set_opener_template=None,
             narrow_dict_values=False,
             narrow_list_values=True,
@@ -2529,16 +2540,16 @@ class Java(metaclass=LanguageCls):
         base_int_formatter = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
-        suffixed: Callable[[int], str] = (
-            make_long_suffix_formatter(base=base_int_formatter)
-            if self._suffix_is_auto
-            else make_overflow_suffix_formatter(
+        suffixed: Callable[[int], str]
+        if self._suffix_is_auto:
+            suffixed = make_long_suffix_formatter(base=base_int_formatter)
+        else:
+            suffixed = make_overflow_suffix_formatter(
                 base=base_int_formatter,
                 min_value=-(2**31),
                 max_value=2**31 - 1,
                 suffix="L",
             )
-        )
         return make_overflow_fallback_formatter(
             base=suffixed,
             fallback=_format_java_biginteger_literal,
@@ -2588,28 +2599,28 @@ class Java(metaclass=LanguageCls):
                 datetime_hint = "ZonedDateTime"
             case _:
                 datetime_hint = "Instant"
+        effective_int_type = "int"
+        if self._suffix_is_auto:
+            effective_int_type = "long"
+        effective_date_hint = "LocalDate"
+        if self.date_format.value.type_produced is str:
+            effective_date_hint = "String"
+        effective_dict_outer = "Map"
+        if self.dict_format is type(self.dict_format).HASH_MAP:
+            effective_dict_outer = "HashMap"
+        effective_set_outer = "Set"
+        if self.set_format is type(self.set_format).TREE_SET:
+            effective_set_outer = "TreeSet"
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
-            int_type="long" if self._suffix_is_auto else "int",
-            date_hint=(
-                "String"
-                if self.date_format.value.type_produced is str
-                else "LocalDate"
-            ),
+            int_type=effective_int_type,
+            date_hint=(effective_date_hint),
             datetime_hint=datetime_hint,
             seq_is_array=(
                 self.sequence_format is type(self.sequence_format).ARRAY
             ),
-            dict_outer=(
-                "HashMap"
-                if self.dict_format is type(self.dict_format).HASH_MAP
-                else "Map"
-            ),
-            set_outer=(
-                "TreeSet"
-                if self.set_format is type(self.set_format).TREE_SET
-                else "Set"
-            ),
+            dict_outer=(effective_dict_outer),
+            set_outer=(effective_set_outer),
         )
 
     @cached_property

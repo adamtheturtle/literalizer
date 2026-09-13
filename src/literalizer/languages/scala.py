@@ -20,6 +20,7 @@ from literalizer._formatters.collection_openers import (
     typed_collection_open,
     typed_dict_open,
 )
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_epoch_seconds,
@@ -73,6 +74,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     WideInt,
     record_shape_for_dict,
+    single_concrete_type,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._json_native_document import (
@@ -174,7 +176,9 @@ def _scala_circe_wrap_scalar(raw_value: Value, formatted: str) -> str:
     """
     match raw_value:
         case bool():
-            return _CIRCE_TRUE if raw_value else _CIRCE_FALSE
+            if raw_value:
+                return _CIRCE_TRUE
+            return _CIRCE_FALSE
         case None:
             return _CIRCE_NULL
         case int():
@@ -228,11 +232,9 @@ def _format_scala_bigint_literal(value: int) -> str:
 def _format_datetime_scala(value: datetime.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
     raw_timezone_name = value.tzname()
-    timezone_name = (
-        raw_timezone_name
-        if raw_timezone_name is not None and raw_timezone_name != ""
-        else "UTC"
-    )
+    timezone_name = "UTC"
+    if raw_timezone_name is not None and raw_timezone_name != "":
+        timezone_name = raw_timezone_name
     nanoseconds = value.microsecond * 1000
     return (
         f"ZonedDateTime.of({value.year}, {value.month}, {value.day}, "
@@ -325,7 +327,9 @@ def _scala_parameter_declaration(name: str, /) -> str:
     the parser reads ``x_:`` as one identifier, so the type ascription
     is lost and the declaration does not parse (issue #3951).
     """
-    separator = " :" if name.endswith("_") else ":"
+    separator = ":"
+    if name.endswith("_"):
+        separator = " :"
     return f"{name}{separator} Any = null"
 
 
@@ -1439,15 +1443,12 @@ class Scala(metaclass=LanguageCls):
         always matches the rendered literal; it is therefore
         value-driven, not a pure ``cached_property``.
         """
-        element_type: type = (
-            int if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX else WideInt
-        )
+        element_type: type
+        element_type = WideInt
+        if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX:
+            element_type = int
         resolved_type = self._scalar_field_type_resolver(element_type)
-        return (
-            resolved_type
-            if resolved_type is not None and resolved_type != ""
-            else "Any"
-        )
+        return nonempty_or_default(value=resolved_type, default="Any")
 
     def _scala_record_field_type(
         self,
@@ -1510,8 +1511,9 @@ class Scala(metaclass=LanguageCls):
                     opener = self.sequence_open(value)
                     head = opener[: -len("(")]
                     field_type = _SCALA_UNTYPED_OPENERS.get(head, head)
-                case int() if not isinstance(value, bool) and not (
-                    I64_MIN <= value <= I64_MAX
+                case int() if (
+                    not isinstance(value, bool)
+                    and not I64_MIN <= value <= I64_MAX
                 ):
                     field_type = "BigInt"
                 case int() if not isinstance(value, bool):
@@ -1520,11 +1522,9 @@ class Scala(metaclass=LanguageCls):
                     resolved_type = self._scalar_field_type_resolver(
                         type(value)
                     )
-                    field_type = (
-                        resolved_type
-                        if resolved_type is not None and resolved_type != ""
-                        else "Any"
-                    )
+                    field_type = "Any"
+                    if resolved_type is not None and resolved_type != "":
+                        field_type = resolved_type
         return field_type
 
     @cached_property
@@ -1618,10 +1618,7 @@ class Scala(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        if len(scalar_types) != 1:
-            return None
-        (scalar_type,) = scalar_types
-        return None if scalar_type == "Any" else scalar_type
+        return single_concrete_type(types=scalar_types, fallback_type="Any")
 
     @cached_property
     def _derecordized_map_narrowing(self) -> _ScalaWidenedMapNarrowing:
@@ -1834,14 +1831,15 @@ class Scala(metaclass=LanguageCls):
     @cached_property
     def _openers(self) -> TypeOpeners:
         """Pre-built typed openers for sequence/set/dict literals."""
+        effective_set_opener_template = None
+        if self.set_format.value.set_opener_template != "":
+            effective_set_opener_template = (
+                self.set_format.value.set_opener_template
+            )
         return self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._datetime_type_name,
-            set_opener_template=(
-                self.set_format.value.set_opener_template
-                if self.set_format.value.set_opener_template != ""
-                else None
-            ),
+            set_opener_template=(effective_set_opener_template),
             narrow_dict_values=False,
             narrow_list_values=True,
             dict_key_type="",

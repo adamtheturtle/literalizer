@@ -476,11 +476,9 @@ def _instance_signature(
     signature: list[str] = []
     for key in shape.keys:
         field_value = instance[key]
-        nested_name = (
-            token_string_of[id(field_value)]
-            if isinstance(field_value, dict) and id(field_value) in id_to_shape
-            else None
-        )
+        nested_name = None
+        if isinstance(field_value, dict) and id(field_value) in id_to_shape:
+            nested_name = token_string_of[id(field_value)]
         element_name = _list_element_token(
             field_value=field_value,
             id_to_shape=id_to_shape,
@@ -828,10 +826,13 @@ def _list_element_record_name(
     """
     if not isinstance(field_value, list) or len(field_value) == 0:
         return None
-    shapes = [
-        id_to_shape.get(id(item)) if isinstance(item, dict) else None
-        for item in field_value
-    ]
+    collected_shapes: list[RecordShape | None] = []
+    for entry_item in field_value:
+        effective_id_to_shape = None
+        if isinstance(entry_item, dict):
+            effective_id_to_shape = id_to_shape.get(id(entry_item))
+        collected_shapes.append(effective_id_to_shape)
+    shapes = collected_shapes
     if any(shape is None for shape in shapes):
         return None
     # Every element is a record-shaped dict; the upstream mixed-shape
@@ -909,6 +910,70 @@ def _alias_record_ids(
 
 
 @beartype
+def _collect_strategy_shapes(
+    *,
+    data: Value,
+    renderer: RecordRenderer,
+    widen_unrecordizable_nested_sibling_maps: bool,
+    split_conflicting_field_types: bool,
+) -> Mapping[int, RecordShape]:
+    """Collect and refine the record shapes for the selected strategy."""
+    raw_shapes_by_id = collect_record_shapes(data=data)
+    widened_shapes_by_id = raw_shapes_by_id
+    if widen_unrecordizable_nested_sibling_maps:
+        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+            data=data,
+            shapes_by_id=raw_shapes_by_id,
+        )
+    shapes_by_id = widened_shapes_by_id
+    if split_conflicting_field_types:
+        shapes_by_id = _refine_record_shapes(
+            data=data,
+            shapes_by_id=widened_shapes_by_id,
+            recordizable_ids=frozenset(raw_shapes_by_id),
+            field_type=renderer.field_type,
+            field_type_names_nested_records=(
+                renderer.field_type_names_nested_records
+            ),
+        )
+    return shapes_by_id
+
+
+@beartype
+def _compute_wrap_ids(data: Value) -> frozenset[int]:
+    """Return ids of maps widened out of the record-shape mapping."""
+    raw_shapes_by_id = collect_record_shapes(data=data)
+    widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+        data=data,
+        shapes_by_id=raw_shapes_by_id,
+    )
+    return frozenset(set(raw_shapes_by_id) - set(widened_shapes_by_id))
+
+
+@beartype
+def _identity_scalar_wrapper(_raw: Scalar, formatted: str) -> str:
+    """Leave a scalar unchanged inside a top-type widened map."""
+    return formatted
+
+
+@beartype
+def _record_name_for_value(
+    value: ValueInput,
+    /,
+    *,
+    id_to_shape: Mapping[int, RecordShape],
+    name_by_shape: Mapping[RecordShape, str],
+) -> str | None:
+    """Return *value*'s assigned record name, if it is rendered as
+    a record.
+    """
+    shape = id_to_shape.get(id(value))
+    if shape is not None:
+        return name_by_shape.get(shape)
+    return None
+
+
+@beartype
 def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     *,
     renderer: RecordRenderer,
@@ -960,27 +1025,11 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         distinct shapes (see :func:`_refine_record_shapes`) so the
         naming and later the mixed-record-shape gate treat them apart.
         """
-        raw_shapes_by_id = collect_record_shapes(data=data)
-        widened_shapes_by_id = (
-            drop_unrecordizable_nested_sibling_maps(
-                data=data,
-                shapes_by_id=raw_shapes_by_id,
-            )
-            if widen_unrecordizable_nested_sibling_maps
-            else raw_shapes_by_id
-        )
-        shapes_by_id = (
-            _refine_record_shapes(
-                data=data,
-                shapes_by_id=widened_shapes_by_id,
-                recordizable_ids=frozenset(raw_shapes_by_id),
-                field_type=renderer.field_type,
-                field_type_names_nested_records=(
-                    renderer.field_type_names_nested_records
-                ),
-            )
-            if split_conflicting_field_types
-            else widened_shapes_by_id
+        shapes_by_id = _collect_strategy_shapes(
+            data=data,
+            renderer=renderer,
+            widen_unrecordizable_nested_sibling_maps=widen_unrecordizable_nested_sibling_maps,
+            split_conflicting_field_types=split_conflicting_field_types,
         )
         name_by_shape.clear()
         id_to_shape.clear()
@@ -1026,11 +1075,9 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         every other value is typed by the language from the value via
         its own collection openers.
         """
-        nested_name = (
-            name_by_shape.get(id_to_shape[id(field_value)])
-            if isinstance(field_value, dict) and id(field_value) in id_to_shape
-            else None
-        )
+        nested_name = None
+        if isinstance(field_value, dict) and id(field_value) in id_to_shape:
+            nested_name = name_by_shape.get(id_to_shape[id(field_value)])
         element_name = _list_element_record_name(
             field_value=field_value,
             id_to_shape=id_to_shape,
@@ -1075,50 +1122,32 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         ]
         return renderer.render_literal(name_by_shape[shape], literal_fields)
 
-    def _record_name_for_value(
-        value: ValueInput,
-        /,
-    ) -> str | None:
-        """Return *value*'s assigned record name, if it is rendered as
-        a record.
-        """
-        shape = id_to_shape.get(id(value))
-        return name_by_shape.get(shape) if shape is not None else None
+    record_name_for_value = functools.partial(
+        _record_name_for_value,
+        id_to_shape=id_to_shape,
+        name_by_shape=name_by_shape,
+    )
 
-    def _compute_wrap_ids(data: Value) -> frozenset[int]:
-        """Return ids of maps widened out of the record-shape mapping."""
-        raw_shapes_by_id = collect_record_shapes(data=data)
-        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
-            data=data,
-            shapes_by_id=raw_shapes_by_id,
+    effective_compute_wrap_ids = no_compute_wrap_ids
+    if widen_unrecordizable_nested_sibling_maps:
+        effective_compute_wrap_ids = _compute_wrap_ids
+    effective_wrap_scalar = None
+    if widen_unrecordizable_nested_sibling_maps:
+        effective_wrap_scalar = _identity_scalar_wrapper
+    effective_dict_open_for_wrap_ids = None
+    if derecordized_map_open is not None:
+        effective_dict_open_for_wrap_ids = _build_derecordized_map_open(
+            open_str=derecordized_map_open
         )
-        return frozenset(set(raw_shapes_by_id) - set(widened_shapes_by_id))
-
-    def _identity_scalar_wrapper(_raw: Scalar, formatted: str) -> str:
-        """Leave a scalar unchanged inside a top-type widened map."""
-        return formatted
-
     behavior = HeterogeneousBehavior(
         skip_scalar_checks=False,
-        compute_wrap_ids=(
-            _compute_wrap_ids
-            if widen_unrecordizable_nested_sibling_maps
-            else no_compute_wrap_ids
-        ),
-        wrap_scalar=(
-            _identity_scalar_wrapper
-            if widen_unrecordizable_nested_sibling_maps
-            else None
-        ),
+        compute_wrap_ids=(effective_compute_wrap_ids),
+        wrap_scalar=(effective_wrap_scalar),
         wrap_non_scalar=None,
         wrap_empty_container=None,
         empty_container_literal_overrides=no_empty_container_literal_overrides,
         compute_call_slot_wrap_ids=no_compute_call_slot_wrap_ids,
-        dict_open_for_wrap_ids=(
-            None
-            if derecordized_map_open is None
-            else _build_derecordized_map_open(open_str=derecordized_map_open)
-        ),
+        dict_open_for_wrap_ids=(effective_dict_open_for_wrap_ids),
         widens_nested_maps_by_wrapping_scalars=False,
         widens_unrecordizable_nested_sibling_maps=(
             widen_unrecordizable_nested_sibling_maps
@@ -1165,5 +1194,5 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     return ActiveRecordStrategy(
         behavior=behavior,
         preamble=_preamble,
-        record_name_for_value=_record_name_for_value,
+        record_name_for_value=record_name_for_value,
     )

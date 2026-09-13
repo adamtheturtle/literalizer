@@ -17,6 +17,7 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
     make_type_to_opener,
 )
+from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
@@ -43,7 +44,11 @@ from literalizer._formatters.format_floats import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
 )
-from literalizer._formatters.type_inference import infer_element_type
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    infer_element_type,
+)
 from literalizer._heterogeneous import (
     collect_heterogeneous_container_ids,
     collect_sibling_map_wrap_ids,
@@ -180,11 +185,16 @@ def _value_to_mojo_type(
     mappings are typed and any other shape (ordered maps, etc.) falls
     back to the same generic form.
     """
+    effective_element_type: type | ListType | DictType
+    effective_element_type_2: type | ListType | DictType
     match value:
         case list():
             element_type = infer_element_type(items=[value])
+            effective_element_type = list
+            if element_type is not None:
+                effective_element_type = element_type
             return _mojo_call_arg_element_to_type(
-                element_type if element_type is not None else list,
+                effective_element_type,
             )
         case OrderedMap():
             # An ordered map is written as a list of tuples, which no
@@ -195,8 +205,12 @@ def _value_to_mojo_type(
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"
             element_type = infer_element_type(items=[value])
+            fallback_type: type | ListType | DictType = dict
+            effective_element_type_2 = value_or_default(
+                value=element_type, default=fallback_type
+            )
             return _mojo_call_arg_element_to_type(
-                element_type if element_type is not None else dict,
+                effective_element_type_2,
             )
         case _:
             return _mojo_call_arg_element_to_type(type(value))
@@ -300,16 +314,15 @@ def _mojo_compute_slot_signatures(
     slots = _gather_mojo_call_slots(arg_values=arg_values)
     if len(slots) != len(params):
         return _MojoSlotInfo(typed_params=None, slots=())
-    wrap_ids = (
-        frozenset[int]().union(
+    if heterogeneous_value_type is not None:
+        wrap_ids = frozenset[int]().union(
             *(
                 collect_heterogeneous_container_ids(data=slot_values)
                 for slot_values in slots
             )
         )
-        if heterogeneous_value_type is not None
-        else frozenset[int]()
-    )
+    else:
+        wrap_ids = frozenset[int]()
     typed: list[str] = []
     slot_signatures: list[_MojoSlotSignature] = []
     for name, slot_values in zip(params, slots, strict=True):
@@ -491,7 +504,9 @@ def _mojo_call_preamble_stub(
         arg_values=args,
         heterogeneous_value_type=heterogeneous_value_type,
     )
-    return_suffix = " -> None" if stub_return is StubReturn.VALUE else ""
+    return_suffix = ""
+    if stub_return is StubReturn.VALUE:
+        return_suffix = " -> None"
     if len(parts) == 1:
         if typed_params is not None:
             param_list = ", ".join(typed_params)
@@ -1631,11 +1646,9 @@ class Mojo(metaclass=LanguageCls):
     ]:
         """Return file-scope stubs for a call expression."""
         cls = type(self.heterogeneous_strategy)
-        heterogeneous_value_type = (
-            self.heterogeneous_value_variant_name
-            if self.heterogeneous_strategy is cls.VARIANT
-            else None
-        )
+        heterogeneous_value_type = None
+        if self.heterogeneous_strategy is cls.VARIANT:
+            heterogeneous_value_type = self.heterogeneous_value_variant_name
         return partial(
             _mojo_call_preamble_stub,
             indent=self.indent,

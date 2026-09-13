@@ -124,7 +124,9 @@ def _clojure_call_stub(
     (issue #3957).  A ``defn`` cannot name a var outside the module it
     runs in, which is why the dotted form is spelled this way.
     """
-    body = "nil" if stub_return is StubReturn.VOID else "0"
+    body = "0"
+    if stub_return is StubReturn.VOID:
+        body = "nil"
     if len(parts) == 1:
         return (f"(defn {parts[0]} [& _args] {body})",)
     namespace = ".".join(parts[:-1])

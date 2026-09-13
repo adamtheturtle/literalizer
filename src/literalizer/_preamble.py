@@ -186,7 +186,10 @@ def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
         ):
             continue
         _add_collection_type(val=value, result=result)
-        children = value.values() if isinstance(value, dict) else value
+        if isinstance(value, dict):
+            children = list(value.values())
+        else:
+            children = list(value)
         for child in children:
             _add_collection_type(val=child, result=result)
             pending.append(child)
@@ -545,31 +548,32 @@ def compute_preamble(
         if scalar_type in types
         for line in preamble
     )
-    special_float = (
-        language.special_float_preamble
-        if float in types and data_has_special_float(data=data)
-        else ()
-    )
+    if float in types and data_has_special_float(data=data):
+        special_float = language.special_float_preamble
+    else:
+        special_float = ()
     collection = _collection_preamble(types=types, language=language)
     present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
     annotated_collection_types = frozenset[type]()
     if has_variable_declaration and bool(present_collection_types):
+        effective_annotated_collection_types = present_collection_types
+        if not _annotates_every_declaration(language=language):
+            effective_annotated_collection_types = (
+                _collect_annotated_collection_types(data=data)
+            )
         annotated_collection_types = (
-            present_collection_types
-            if _annotates_every_declaration(language=language)
-            else _collect_annotated_collection_types(data=data)
+            effective_annotated_collection_types
         ) | _collect_empty_collection_types(data=data)
     if has_variable_declaration and _has_union_in_type_hints(data=data):
         annotated_collection_types = annotated_collection_types | frozenset(
             {HeterogeneousElements}
         )
-    type_hint = (
-        language.type_hint_collection_preamble_lines(
+    if len(annotated_collection_types) > 0:
+        type_hint = language.type_hint_collection_preamble_lines(
             annotated_collection_types
         )
-        if len(annotated_collection_types) > 0
-        else ()
-    )
+    else:
+        type_hint = ()
     body = language.compute_body_preamble(types, data)
     leading = tuple(
         language.leading_preamble(

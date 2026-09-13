@@ -64,7 +64,11 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
     nested_record_sequence_type,
 )
-from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    single_concrete_type,
+)
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -325,12 +329,12 @@ def _format_datetime_go(value: datetime.datetime) -> str:
     month = _go_month_name(month=value.month)
     nanoseconds = value.microsecond * 1000
     offset = value.utcoffset()
-    offset_seconds = 0 if offset is None else int(offset.total_seconds())
-    location = (
-        "time.UTC"
-        if offset_seconds == 0
-        else f'time.FixedZone("", {offset_seconds})'
-    )
+    offset_seconds = 0
+    if offset is not None:
+        offset_seconds = int(offset.total_seconds())
+    location = "time.UTC"
+    if offset_seconds != 0:
+        location = f'time.FixedZone("", {offset_seconds})'
     return (
         f"time.Date({value.year}, {month}, {value.day}, "
         f"{value.hour}, {value.minute}, {value.second}, "
@@ -464,6 +468,18 @@ def _format_constructor_target(class_name: str, /) -> str:
 
 
 _constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+@beartype
+def _go_nested_record_type(*, request: RecordFieldType) -> str | None:
+    """Resolve a nested record or record-sequence field name."""
+    if request.record_name is not None and request.record_name != "":
+        nested_type = request.record_name
+    else:
+        nested_type = None
+        if request.element_record_name is not None:
+            nested_type = f"[]{request.element_record_name}"
+    return nested_type
 
 
 @beartype
@@ -994,7 +1010,9 @@ class Go(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n_ = {variable_name}" if variable_name != "" else ""
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n_ = {variable_name}"
         return f"\nfunc main() {{\n{content}{use_line}\n}}"
 
     @staticmethod
@@ -1133,6 +1151,22 @@ class Go(metaclass=LanguageCls):
         """Format a set entry."""
         return _format_go_set_entry
 
+    @beartype
+    def _go_integer_field_type(self, *, value: int) -> str:
+        """Return the Go integer field type respecting the suffix
+        policy.
+        """
+        suffix_is_auto = (
+            self.numeric_literal_suffix
+            is type(self.numeric_literal_suffix).AUTO
+        )
+        if value > I64_MAX:
+            return "uint64"
+        resolved_result_1: str = "int"
+        if suffix_is_auto or value < _GO_I32_MIN or value > _GO_I32_MAX:
+            resolved_result_1 = "int64"
+        return resolved_result_1
+
     def _go_record_field_type(
         self,
         request: RecordFieldType,
@@ -1167,13 +1201,7 @@ class Go(metaclass=LanguageCls):
         ``any`` (documented best effort), which the rendered literal
         still assigns into.
         """
-        nested_type = (
-            request.record_name
-            if request.record_name is not None and request.record_name != ""
-            else f"[]{request.element_record_name}"
-            if request.element_record_name is not None
-            else None
-        )
+        nested_type = _go_nested_record_type(request=request)
         if nested_type is not None:
             return nested_type
         value = request.value
@@ -1194,28 +1222,13 @@ class Go(metaclass=LanguageCls):
             case list():
                 opener = self.sequence_open(value)
             case int() if not isinstance(value, bool):
-                suffix_is_auto = (
-                    self.numeric_literal_suffix
-                    is type(self.numeric_literal_suffix).AUTO
-                )
-                return (
-                    "uint64"
-                    if value > I64_MAX
-                    else (
-                        "int64"
-                        if suffix_is_auto
-                        or value < _GO_I32_MIN
-                        or value > _GO_I32_MAX
-                        else "int"
-                    )
-                )
+                return self._go_integer_field_type(value=value)
             case _:
                 element_type = self._init_element_to_type(type(value))
-                return (
-                    element_type
-                    if element_type is not None and element_type != ""
-                    else "any"
-                )
+                resolved_result_2: str = "any"
+                if element_type is not None and element_type != "":
+                    resolved_result_2 = element_type
+                return resolved_result_2
         return opener[: -len("{")]
 
     def _go_render_declaration(
@@ -1290,10 +1303,7 @@ class Go(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        if len(scalar_types) != 1:
-            return None
-        (scalar_type,) = scalar_types
-        return None if scalar_type == "any" else scalar_type
+        return single_concrete_type(types=scalar_types, fallback_type="any")
 
     @cached_property
     def _derecordized_map_narrowing(self) -> _GoWidenedMapNarrowing:
@@ -1363,11 +1373,11 @@ class Go(metaclass=LanguageCls):
 
         def _preamble(data: Value) -> tuple[str, ...]:
             """Add ``math`` only when negative zero needs it."""
-            math_preamble = (
-                ('import "math"',)
-                if _data_has_negative_zero(data=data)
-                else ()
-            )
+            math_preamble: tuple[str, ...]
+            if _data_has_negative_zero(data=data):
+                math_preamble = ('import "math"',)
+            else:
+                math_preamble = ()
             return math_preamble + record_preamble(data)
 
         return _preamble
@@ -1477,7 +1487,9 @@ class Go(metaclass=LanguageCls):
             self.numeric_literal_suffix
             is type(self.numeric_literal_suffix).AUTO
         )
-        go_int_type = "int64" if suffix_is_auto else "int"
+        go_int_type = "int"
+        if suffix_is_auto:
+            go_int_type = "int64"
         _type_names[int] = go_int_type
         date_type = _type_names.get(self.date_format.value.type_produced)
         datetime_type = _type_names.get(
@@ -1557,15 +1569,12 @@ class Go(metaclass=LanguageCls):
             if nested_type is not None:
                 depth, name = nested_type
                 return f"{'[]' * depth}{name}{{"
-            return (
-                f"[]{self.default_sequence_element_type}{{"
-                if any(
-                    isinstance(item, dict)
-                    and not isinstance(item, _ordereddict)
-                    for item in items
-                )
-                else base(items)
-            )
+            if any(
+                isinstance(item, dict) and not isinstance(item, _ordereddict)
+                for item in items
+            ):
+                return f"[]{self.default_sequence_element_type}{{"
+            return base(items)
 
         return _open
 
@@ -1632,11 +1641,10 @@ class Go(metaclass=LanguageCls):
             self.numeric_literal_suffix
             is type(self.numeric_literal_suffix).AUTO
         )
-        base: Callable[[int], str] = (
-            make_int64_cast_formatter(base=base_int_formatter)
-            if suffix_is_auto
-            else base_int_formatter
-        )
+        base: Callable[[int], str]
+        base = base_int_formatter
+        if suffix_is_auto:
+            base = make_int64_cast_formatter(base=base_int_formatter)
         return make_overflow_fallback_formatter(
             base=base,
             fallback=make_unsigned_overflow_fallback(

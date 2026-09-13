@@ -14,6 +14,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
@@ -206,7 +207,9 @@ def _apply_fortran_entry(
         case bool():
             return formatted
         case datetime.datetime():
-            name = int_name if datetime_as_int else str_name
+            name = str_name
+            if datetime_as_int:
+                name = int_name
             return f"{name}({formatted})"
         case int():
             return f"{int_name}({formatted})"
@@ -549,14 +552,16 @@ def _fortran_call_stub(
     ``arg``.
     """
     method = parts[-1]
-    clean_params = [
-        p.lstrip("_") if p.lstrip("_") != "" else p for p in params
+    collected_clean_params = [
+        nonempty_or_default(value=param.lstrip("_"), default=param)
+        for param in params
     ]
+    clean_params = collected_clean_params
 
     if stub_return is StubReturn.VOID:
-        param_str = (
-            f"({', '.join(clean_params)})" if len(clean_params) > 0 else "()"
-        )
+        param_str = "()"
+        if len(clean_params) > 0:
+            param_str = f"({', '.join(clean_params)})"
         lines: list[str] = [f"subroutine {method}{param_str}"]
         lines.append(f"{indent}implicit none")
         if len(clean_params) > 0:
@@ -565,9 +570,9 @@ def _fortran_call_stub(
         lines.append(f"end subroutine {method}")
         return ("\n".join(lines),)
 
-    param_str = (
-        f"({', '.join(clean_params)})" if len(clean_params) > 0 else "()"
-    )
+    param_str = "()"
+    if len(clean_params) > 0:
+        param_str = f"({', '.join(clean_params)})"
     lines = [f"function {method}{param_str} result(r)"]
     lines.append(f"{indent}implicit none")
     if len(clean_params) > 0:
@@ -1119,16 +1124,14 @@ class Fortran(metaclass=LanguageCls):
         )
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
         has_bound_declarations = declaration.count("type(fval_t) ::") > 1
-        assignment_scope = (
-            f"{declaration}\n{assignment}"
-            if has_bound_declarations
-            else assignment
-        )
-        assignment_declaration = (
-            ""
-            if has_bound_declarations
-            else f"{self.indent}type(fval_t) :: {variable_name}\n"
-        )
+        assignment_scope = assignment
+        if has_bound_declarations:
+            assignment_scope = f"{declaration}\n{assignment}"
+        assignment_declaration = ""
+        if not has_bound_declarations:
+            assignment_declaration = (
+                f"{self.indent}type(fval_t) :: {variable_name}\n"
+            )
         assign_indented = textwrap.indent(
             text=assignment_scope,
             prefix=self.indent,

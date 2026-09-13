@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
+import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar
@@ -755,10 +756,7 @@ class Haxe(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         body_indent = self.indent + self.indent
-        indented = "\n".join(
-            f"{body_indent}{line}" if line.strip() != "" else line
-            for line in inner.split(sep="\n")
-        )
+        indented = textwrap.indent(text=inner, prefix=body_indent)
         return "\n".join(
             [
                 f"class {self.module_name} {{",

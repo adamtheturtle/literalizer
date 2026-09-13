@@ -169,11 +169,15 @@ def _case_id(
     string is still visible.  A part the case does not vary over is
     left out rather than written as an empty bracket.
     """
-    suffixes = [
-        part.name if isinstance(part, enum.Enum) else repr(part)
-        for part in parts
-        if part is not None
-    ]
+    collected_suffixes: list[str] = []
+    for entry_part in parts:
+        if entry_part is not None:
+            if isinstance(entry_part, enum.Enum):
+                effective_entry_part = entry_part.name
+            else:
+                effective_entry_part = repr(entry_part)
+            collected_suffixes.append(effective_entry_part)
+    suffixes = collected_suffixes
     return "".join([lang_cls.__name__, *(f"[{part}]" for part in suffixes)])
 
 
@@ -184,12 +188,15 @@ def _cases_for_languages(
     lang_classes: Sequence[literalizer.LanguageCls],
 ) -> tuple[RejectionCase, ...]:
     """Return every case *lang_classes* contribute to *manifest*."""
-    values: tuple[str | None, ...] = (
-        manifest.values if len(manifest.values) > 0 else (None,)
-    )
-    sources: tuple[str | None, ...] = (
-        manifest.call.sources if len(manifest.call.sources) > 0 else (None,)
-    )
+    values: tuple[str | None, ...]
+    values = (None,)
+    if len(manifest.values) > 0:
+        values = manifest.values
+    sources: tuple[str | None, ...]
+    if len(manifest.call.sources) > 0:
+        sources = manifest.call.sources
+    else:
+        sources = (None,)
     cases: list[RejectionCase] = []
     for lang_cls in lang_classes:
         for member in _option_members(manifest=manifest, lang_cls=lang_cls):
@@ -198,7 +205,9 @@ def _cases_for_languages(
                     # A single source is the manifest's whole subject,
                     # so naming it in every case identifier would say
                     # nothing the manifest does not already say.
-                    named_source = source if len(sources) > 1 else None
+                    named_source = None
+                    if len(sources) > 1:
+                        named_source = source
                     cases.append(
                         RejectionCase(
                             case_id=_case_id(

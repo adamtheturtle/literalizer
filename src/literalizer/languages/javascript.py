@@ -1062,11 +1062,10 @@ class JavaScript(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        config_cls = (
-            _JavaScriptComputedOrderedMapFormatConfig
-            if self.string_format.name == "MULTILINE"
-            else _JavaScriptObjectOrderedMapFormatConfig
-        )
+        config_cls: type[OrderedMapFormatConfig]
+        config_cls = _JavaScriptObjectOrderedMapFormatConfig
+        if self.string_format.name == "MULTILINE":
+            config_cls = _JavaScriptComputedOrderedMapFormatConfig
         return config_cls(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",

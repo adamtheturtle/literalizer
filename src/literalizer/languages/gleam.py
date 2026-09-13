@@ -1181,11 +1181,9 @@ class Gleam(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        use_line = (
-            f"\n{self.indent}let _ = {variable_name}"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}let _ = {variable_name}"
         return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(

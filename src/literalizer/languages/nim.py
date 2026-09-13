@@ -617,12 +617,15 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         Keep the integer widening tier in the shape as well, matching
         the magnitude-aware collection-literal inference.
         """
+        child_types: set[type | _NimContainerShape]
         match item:
             case bool():
                 return bool
             case int():
                 tier = int_widening_tier(items=[item])
-                return tier if tier is not None else int
+                if tier is not None:
+                    return tier
+                return int
             case list():
                 child_types = {_literal_type(item=child) for child in item}
                 return _NimContainerShape(
@@ -657,11 +660,11 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
         # ``[1, 2**31]`` stays a native ``seq[int64]`` rather than being
         # treated as mixed and wrapped in the object variant.
         widening_tier = int_widening_tier(items=children)
-        child_types = (
-            {widening_tier}
-            if widening_tier is not None
-            else {_literal_type(item=child) for child in children}
-        )
+        child_types: set[type | _NimContainerShape]
+        if widening_tier is not None:
+            child_types = {widening_tier}
+        else:
+            child_types = {_literal_type(item=child) for child in children}
         containers = [
             child for child in children if isinstance(child, (list, dict))
         ]
@@ -730,6 +733,30 @@ def _nim_wrapped_container_kinds(
 
 
 @beartype
+def _wrap_nim_collection(
+    raw_value: Value, formatted: str, *, variant_name: str
+) -> str:
+    """Wrap a nested native collection in its recursive branch."""
+    match raw_value:
+        case list():
+            payload = formatted
+            if len(raw_value) == 0:
+                payload = f"newSeq[{variant_name}]()"
+            return f"{variant_name}(kind: vkList, listVal: {payload})"
+        case dict() if not isinstance(raw_value, OrderedMap):
+            payload = formatted
+            if len(raw_value) == 0:
+                payload = f"initTable[string, {variant_name}]()"
+            return f"{variant_name}(kind: vkTable, tableVal: {payload})"
+        case _:
+            msg = (
+                "Nim OBJECT_VARIANT cannot represent a set or ordered "
+                "map alongside another value type"
+            )
+            raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _build_object_variant_behavior(
     variant_name: str,
     date_type: str,
@@ -751,39 +778,15 @@ def _build_object_variant_behavior(
         )
         if signature.field_name is None:
             return f"{variant_name}(kind: {signature.kind_name})"
-        payload = (
-            f"%*{formatted}"
-            if _needs_json_wrap_for_field(field_type=signature.field_type)
-            else formatted
-        )
+        payload = formatted
+        if _needs_json_wrap_for_field(field_type=signature.field_type):
+            payload = f"%*{formatted}"
         return (
             f"{variant_name}(kind: {signature.kind_name}, "
             f"{signature.field_name}: {payload})"
         )
 
-    def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
-        """Wrap a nested native collection in its recursive branch."""
-        match raw_value:
-            case list():
-                payload = (
-                    formatted
-                    if len(raw_value) > 0
-                    else f"newSeq[{variant_name}]()"
-                )
-                return f"{variant_name}(kind: vkList, listVal: {payload})"
-            case dict() if not isinstance(raw_value, OrderedMap):
-                payload = (
-                    formatted
-                    if len(raw_value) > 0
-                    else f"initTable[string, {variant_name}]()"
-                )
-                return f"{variant_name}(kind: vkTable, tableVal: {payload})"
-            case _:
-                msg = (
-                    "Nim OBJECT_VARIANT cannot represent a set or ordered "
-                    "map alongside another value type"
-                )
-                raise UnrepresentableInputError(msg)
+    _wrap_non_scalar = partial(_wrap_nim_collection, variant_name=variant_name)
 
     return HeterogeneousBehavior(
         skip_scalar_checks=True,
@@ -1071,7 +1074,9 @@ def _nim_call_stub(
 
     # VALUE: use a generic proc instead of a template
     type_params = [f"T{i}" for i in range(len(_params))]
-    type_clause = f"[{', '.join(type_params)}]" if len(type_params) > 0 else ""
+    type_clause = ""
+    if len(type_params) > 0:
+        type_clause = f"[{', '.join(type_params)}]"
     if len(parts) == 1:
         params_str = "; ".join(
             f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
@@ -1100,11 +1105,10 @@ def _nim_call_stub(
     params_str = "; ".join(
         f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
     )
-    self_and_params = (
-        f"self: {holder_type}; {params_str}"
-        if params_str != ""
-        else f"self: {holder_type}"
-    )
+    if params_str != "":
+        self_and_params = f"self: {holder_type}; {params_str}"
+    else:
+        self_and_params = f"self: {holder_type}"
     lines.append(
         f"proc {method}{type_clause}"
         f"({self_and_params}): int {{.discardable.}} = 0"
@@ -1890,11 +1894,9 @@ class Nim(metaclass=LanguageCls):
     @cached_property
     def _heterogeneous_variant_date_type(self) -> str:
         """Nim type used for :class:`datetime.date` variant payloads."""
-        return (
-            "string"
-            if self.date_format.value.type_produced is str
-            else "JsonNode"
-        )
+        if self.date_format.value.type_produced is str:
+            return "string"
+        return "JsonNode"
 
     @cached_property
     def _heterogeneous_variant_datetime_type(self) -> str:
@@ -2058,6 +2060,23 @@ class Nim(metaclass=LanguageCls):
         """
         return self._uses_object_variant or self._uses_record
 
+    @beartype
+    def _nim_list_field_type(self, *, value: list[Value]) -> str:
+        """Infer the Nim sequence field type from its elements."""
+        if len(value) == 0:
+            element_type = "string"
+        else:
+            element_type = "int64"
+            if infer_element_type(items=value) is not WideInt:
+                element_type = self._nim_value_field_type(value[0])
+        return f"seq[{element_type}]"
+
+    def _nim_temporal_field_type(self, value: datetime.date, /) -> str:
+        """Resolve the field type for the selected temporal representation."""
+        if isinstance(value, datetime.datetime):
+            return self._heterogeneous_variant_datetime_type
+        return self._heterogeneous_variant_date_type
+
     def _nim_value_field_type(
         self,
         value: Value,
@@ -2095,22 +2114,9 @@ class Nim(metaclass=LanguageCls):
             case str() | bytes() | datetime.time():
                 field_type = "string"
             case datetime.date():
-                field_type = (
-                    self._heterogeneous_variant_datetime_type
-                    if isinstance(value, datetime.datetime)
-                    else self._heterogeneous_variant_date_type
-                )
+                field_type = self._nim_temporal_field_type(value)
             case list():
-                element_type = (
-                    "string"
-                    if len(value) == 0
-                    else (
-                        "int64"
-                        if infer_element_type(items=value) is WideInt
-                        else self._nim_value_field_type(value[0])
-                    )
-                )
-                field_type = f"seq[{element_type}]"
+                field_type = self._nim_list_field_type(value=value)
             case _:
                 msg = (
                     "Nim cannot represent a set or non-record-dict "
@@ -2477,7 +2483,12 @@ class Nim(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
             )
+        effective_preamble_lines: tuple[str, ...]
         if self._uses_native_nim_collections:
+            if self._uses_record:
+                effective_preamble_lines = ()
+            else:
+                effective_preamble_lines = ("import tables",)
             return DictFormatConfig(
                 dict_open=fixed_open(open_str="{"),
                 close="}.toTable",
@@ -2486,9 +2497,7 @@ class Nim(metaclass=LanguageCls):
                     format_value=passthrough_sequence_entry,
                 ),
                 empty_dict="initTable[string, string]()",
-                preamble_lines=(
-                    () if self._uses_record else ("import tables",)
-                ),
+                preamble_lines=(effective_preamble_lines),
                 narrowed_open=None,
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
@@ -2749,18 +2758,16 @@ class Nim(metaclass=LanguageCls):
         """
         if self._uses_json_node:
             return {}
+        date_preamble: tuple[str, ...]
+        datetime_preamble: tuple[str, ...]
         if self._uses_object_variant:
             json_import = ("import json",)
-            date_preamble = (
-                ()
-                if self.date_format.value.type_produced is str
-                else json_import
-            )
-            datetime_preamble = (
-                ()
-                if self.datetime_format.value.type_produced in {str, int}
-                else json_import
-            )
+            date_preamble = json_import
+            if self.date_format.value.type_produced is str:
+                date_preamble = ()
+            datetime_preamble = json_import
+            if self.datetime_format.value.type_produced in {str, int}:
+                datetime_preamble = ()
             return {
                 datetime.date: date_preamble,
                 datetime.datetime: datetime_preamble,

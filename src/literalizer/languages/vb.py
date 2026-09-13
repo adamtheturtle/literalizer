@@ -1136,16 +1136,12 @@ class VisualBasic(metaclass=LanguageCls):
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Shared element-to-type mapping used by collection openers."""
-        datetime_type = (
-            "Integer"
-            if self.datetime_format.value.type_produced is int
-            else "String"
-        )
-        date_type = (
-            "DateOnly"
-            if self.date_format.value.type_produced is datetime.date
-            else "String"
-        )
+        datetime_type = "String"
+        if self.datetime_format.value.type_produced is int:
+            datetime_type = "Integer"
+        date_type = "String"
+        if self.date_format.value.type_produced is datetime.date:
+            date_type = "DateOnly"
         return make_element_to_type(
             dict_value_to_type=None,
             str_type="String",

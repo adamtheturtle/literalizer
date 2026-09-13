@@ -91,6 +91,14 @@ from literalizer._types import Value
 
 
 @beartype
+def _stub_parameter_signature(*, parameters: str) -> str:
+    """Use the C void parameter spelling for an empty stub signature."""
+    if parameters == "":
+        return "void"
+    return parameters
+
+
+@beartype
 def _format_date_objc(value: datetime.date) -> str:
     """Format a date as an ``NSDate`` at midnight UTC."""
     midnight = datetime.datetime.combine(
@@ -316,25 +324,32 @@ def _objc_call_stub(
     would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
-    return_keyword = "id" if is_value else "void"
-    proto = ", ".join(["id"] * len(params)) if len(params) > 0 else "void"
+    return_keyword = "void"
+    return_stmt = ""
+    if is_value:
+        return_keyword = "id"
+        return_stmt = " return nil;"
+    proto = "void"
+    if len(params) > 0:
+        proto = ", ".join(["id"] * len(params))
     stub_params = ", ".join(f"id _a{i}" for i in range(len(params)))
-    stub_signature = stub_params if stub_params != "" else "void"
+    stub_signature = _stub_parameter_signature(parameters=stub_params)
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
-    return_stmt = " return nil;" if is_value else ""
-    has_body = discards if discards != "" else is_value
-    stub_body = f"{{{discards}{return_stmt} }}" if bool(has_body) else "{}"
+    has_body = discards != "" or is_value
+    stub_body = "{}"
+    if has_body:
+        stub_body = f"{{{discards}{return_stmt} }}"
     # Long uniform-typed parameter lists trip clang-tidy's
     # ``bugprone-easily-swappable-parameters`` check past its
     # name-suffix-dissimilarity silencing heuristic.  The stub is
     # generated, so the warning is not actionable.  Suppress it on
     # stubs whose parameter count exceeds anything the existing call
     # cases use, to avoid touching shorter-stub golden files.
-    nolint = (
-        ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
-        if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
-        else ()
-    )
+    nolint: tuple[str, ...]
+    if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD:
+        nolint = ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
+    else:
+        nolint = ()
     if len(parts) == 1:
         return (
             *nolint,
@@ -1024,11 +1039,9 @@ class ObjectiveC(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = (
-            f"\n{self.indent}(void){variable_name};"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}(void){variable_name};"
         return (
             f"int {self.module_name}(void) {{\n"
             f"@autoreleasepool {{\n{content}{use_line}\n"

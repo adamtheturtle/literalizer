@@ -176,7 +176,9 @@ def _tcl_call_stub(
 ) -> tuple[str, ...]:
     """Return a Tcl proc stub that accepts any arguments."""
     name = ".".join(parts)
-    body = "return {}" if stub_return is StubReturn.VALUE else ""
+    body = ""
+    if stub_return is StubReturn.VALUE:
+        body = "return {}"
     return (f"proc {name} {{args}} {{{body}}}",)
 
 

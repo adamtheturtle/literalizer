@@ -134,7 +134,7 @@ type _RefData = (
 
 
 @beartype
-def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
+def collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
     """Recursively collect all ref name values from parsed data.
 
     Names are returned in first-use (document) order with duplicates
@@ -145,17 +145,19 @@ def _collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
         case dict():
             if len(data) == 1 and ref_key in data:
                 name = data[ref_key]
-                return [name] if isinstance(name, str) else []
+                if isinstance(name, str):
+                    return [name]
+                return []
             return [
                 n
                 for v in data.values()
-                for n in _collect_ref_names(data=v, ref_key=ref_key)
+                for n in collect_ref_names(data=v, ref_key=ref_key)
             ]
         case list():
             return [
                 n
                 for item in data
-                for n in _collect_ref_names(data=item, ref_key=ref_key)
+                for n in collect_ref_names(data=item, ref_key=ref_key)
             ]
         case _:
             return []
@@ -170,7 +172,7 @@ def _parse_ref_input(
     """Parse *input_source* into raw data for ref-name collection.
 
     Mirrors the format dispatch in :func:`literalizer.parse_input` but
-    yields plain Python containers so :func:`_collect_ref_names` can
+    yields plain Python containers so :func:`collect_ref_names` can
     walk them structurally.
     """
     parsed: object
@@ -253,18 +255,17 @@ def run_literalize_ref_golden_case(
         input_format=input_info.input_format,
         input_source=input_source,
     )
-    bound_refs_input: dict[str, ValueInput] = {
-        raw_name: json.loads(
-            s=config.value_sources.get(
-                raw_name,
-                '{"key": "value"}' if lang_cls is Matlab else '{"_": "_"}',
-            ),
+    collected_bound_refs_input: dict[str, ValueInput] = {}
+    for entry_raw_name in collect_ref_names(
+        data=raw_data, ref_key=config.ref_key
+    ):
+        effective_s = '{"_": "_"}'
+        if lang_cls is Matlab:
+            effective_s = '{"key": "value"}'
+        collected_bound_refs_input[entry_raw_name] = json.loads(
+            s=config.value_sources.get(entry_raw_name, effective_s)
         )
-        for raw_name in _collect_ref_names(
-            data=raw_data,
-            ref_key=config.ref_key,
-        )
-    }
+    bound_refs_input: dict[str, ValueInput] = collected_bound_refs_input
     bound_refs_input.update(
         {
             name: json.loads(s=source)
@@ -276,6 +277,15 @@ def run_literalize_ref_golden_case(
         golden_path=golden_path,
         prefix=lang_cls.__name__,
     ):
+        effective_bound_refs = None
+        if len(bound_refs_input) > 0:
+            effective_bound_refs = bound_refs_input
+        effective_ref_values = None
+        if len(config.explicit_ref_value_sources) > 0:
+            effective_ref_values = {
+                name: json.loads(s=source)
+                for name, source in (config.explicit_ref_value_sources.items())
+            }
         result = literalizer.literalize(
             source=input_source,
             input_format=input_info.input_format,
@@ -283,19 +293,8 @@ def run_literalize_ref_golden_case(
             variable_form=variable_form_obj,
             wrap_in_file=True,
             ref_case=ref_case,
-            bound_refs=(
-                bound_refs_input if len(bound_refs_input) > 0 else None
-            ),
-            ref_values=(
-                {
-                    name: json.loads(s=source)
-                    for name, source in (
-                        config.explicit_ref_value_sources.items()
-                    )
-                }
-                if len(config.explicit_ref_value_sources) > 0
-                else None
-            ),
+            bound_refs=(effective_bound_refs),
+            ref_values=(effective_ref_values),
             ref_key=config.ref_key,
             pre_indent_level=config.pre_indent_level,
             collection_layout=literalizer.CollectionLayout(

@@ -264,7 +264,9 @@ def _cobol_quoted_runs(literal: str, /) -> list[str]:
     used = 0
     index = 0
     while index < len(inner):
-        width = 2 if inner[index] == '"' else 1
+        width = 1
+        if inner[index] == '"':
+            width = 2
         piece = inner[index : index + width]
         size = len(piece.encode(encoding="utf-8"))
         if used + size > _COBOL_LITERAL_RUN_LENGTH:
@@ -574,11 +576,9 @@ def _format_cobol_dict_entry(
     """
     name = key
     if isinstance(raw_value, (list, dict, set)):
-        content = (
-            formatted_value
-            if "\n" in formatted_value
-            else formatted_value.strip()
-        )
+        content = formatted_value
+        if "\n" not in content:
+            content = formatted_value.strip()
         bumped = _bump_levels(content=content)
         nested = textwrap.indent(text=bumped, prefix="    ")
         return f"05 {name}.\n{nested}"
@@ -817,7 +817,10 @@ def _cobol_null_terminated_literal(text: str, /) -> _CobolStringLiteral:
     run = ""
     for byte in data:
         if _ASCII_PRINTABLE_MIN <= byte <= _ASCII_PRINTABLE_MAX:
-            run += '""' if byte == _ASCII_DOUBLE_QUOTE else chr(byte)
+            effective_value = '""'
+            if byte != _ASCII_DOUBLE_QUOTE:
+                effective_value = chr(byte)
+            run += effective_value
             if len(run) >= _COBOL_LITERAL_RUN_LENGTH:
                 tokens.append(f'"{run}"')
                 run = ""
@@ -902,9 +905,13 @@ def _cobol_cjson_scalar_node(
     )
     match node:
         case bool():
+            effective_value_line = 0
+            if node:
+                effective_value_line = 1
             return _CobolScalarNode(
                 value_line=(
-                    f"01 {name}-V PIC S9(9) COMP-5 VALUE {1 if node else 0}."
+                    f"01 {name}-V PIC S9(9) COMP-5 "
+                    f"VALUE {effective_value_line}."
                 ),
                 create_call=create.format(
                     verb="Bool", passing="BY VALUE", name=name
@@ -2006,11 +2013,9 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        config_cls = (
-            DictFormatConfig
-            if self._json_type_active
-            else _CobolDictFormatConfig
-        )
+        config_cls: type[DictFormatConfig] = _CobolDictFormatConfig
+        if self._json_type_active:
+            config_cls = DictFormatConfig
         return config_cls(
             dict_open=fixed_open(open_str=""),
             close="",
@@ -2068,11 +2073,9 @@ class Cobol(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        config_cls = (
-            OrderedMapFormatConfig
-            if self._json_type_active
-            else _CobolOrderedMapFormatConfig
-        )
+        config_cls: type[OrderedMapFormatConfig] = _CobolOrderedMapFormatConfig
+        if self._json_type_active:
+            config_cls = OrderedMapFormatConfig
         return config_cls(
             ordered_map_open=fixed_open(open_str=""),
             close="",

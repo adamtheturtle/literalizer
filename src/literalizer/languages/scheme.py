@@ -158,7 +158,9 @@ def _scheme_call_stub(
     parameter.  Stub bodies are ``(if #f #f)`` (the unspecified value)
     for void stubs and ``0`` for value stubs.
     """
-    body = "(if #f #f)" if stub_return is StubReturn.VOID else "0"
+    body = "0"
+    if stub_return is StubReturn.VOID:
+        body = "(if #f #f)"
     return tuple(
         f"(define {'.'.join(parts[: i + 1])} (lambda args {body}))"
         for i in range(len(parts))
@@ -642,7 +644,9 @@ class Scheme(metaclass=LanguageCls):
         uses the empty list, which is conventional for ``null`` in
         Scheme.
         """
-        return "'null" if self._json_type_active else "'()"
+        if self._json_type_active:
+            return "'null"
+        return "'()"
 
     @cached_property
     def static_preamble(self) -> Sequence[str]:

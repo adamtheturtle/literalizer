@@ -201,7 +201,9 @@ def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
     total_microseconds = (elapsed - offset) // datetime.timedelta(
         microseconds=1
     )
-    sign = "-" if total_microseconds < 0 else ""
+    sign = ""
+    if total_microseconds < 0:
+        sign = "-"
     seconds, microseconds = divmod(abs(total_microseconds), 1_000_000)
     if microseconds == 0:
         return f"{sign}{seconds}"
@@ -303,11 +305,9 @@ def _format_datetime_ymdhms(
             f"timezone awareness: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
-    selected = (
-        millisecond_template
-        if millisecond_template is not None and bool(value.microsecond)
-        else template
-    )
+    selected = template
+    if millisecond_template is not None and bool(value.microsecond):
+        selected = millisecond_template
     return selected.format(
         year=value.year,
         month=value.month,

@@ -707,11 +707,9 @@ class Nix(metaclass=LanguageCls):
 
         def format_i64(value: int) -> str:
             """Render the signed minimum without C-family suffixes."""
-            return (
-                "(-9223372036854775807 - 1)"
-                if value == I64_MIN
-                else str(object=value)
-            )
+            if value == I64_MIN:
+                return "(-9223372036854775807 - 1)"
+            return str(object=value)
 
         return make_overflow_fallback_formatter(
             base=format_i64,

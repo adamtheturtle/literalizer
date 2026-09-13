@@ -264,15 +264,14 @@ def _expected_call_shape_exception(
     if variable_form_exc is not None:
         return variable_form_exc
     styles = list(lang_cls.CallStyles)
-    effective_style = (
-        next(
+    if config.call_style_type is not None:
+        effective_style = next(
             style
             for style in styles
             if isinstance(style.value, config.call_style_type)
         )
-        if config.call_style_type is not None
-        else styles[0]
-    )
+    else:
+        effective_style = styles[0]
     bound_refs_wrap = (
         len(config.ref_declarations) > 0
         and len(config.unknown_ref_names) == 0
@@ -573,6 +572,9 @@ def _run_call_with_declarations(
                 )
             }
         )
+        effective_ref_values = None
+        if len(ref_values) > 0:
+            effective_ref_values = ref_values
         result = _literalize_call_case(
             config=config,
             spec=spec,
@@ -581,7 +583,7 @@ def _run_call_with_declarations(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=False,
-            ref_values=(ref_values if len(ref_values) > 0 else None),
+            ref_values=(effective_ref_values),
             bound_refs=None,
         )
     return _CallWithDeclarations(decl_results=decl_results, result=result)
@@ -713,11 +715,10 @@ def run_call_golden_case(
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    stub_return = (
-        StubReturn.VALUE
-        if config.call_transform is not None
-        else StubReturn.VOID
-    )
+    if config.call_transform is not None:
+        stub_return = StubReturn.VALUE
+    else:
+        stub_return = StubReturn.VOID
     target_function_parts = tuple(config.target_function.split(sep="."))
     call_arg_values = _arg_values_for_stub(
         source_data=result.source_data,

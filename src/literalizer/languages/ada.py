@@ -115,7 +115,10 @@ def _ada_special_float_kinds(*, data: Value) -> frozenset[str]:
             case float() if math.isnan(item):
                 kinds.add("nan")
             case float() if math.isinf(item):
-                kinds.add("pos_inf" if item > 0 else "neg_inf")
+                effective_value = "neg_inf"
+                if item > 0:
+                    effective_value = "pos_inf"
+                kinds.add(effective_value)
             case list() | set():
                 stack.extend(item)
             case dict():
@@ -145,7 +148,9 @@ def _format_ada_entry(
         case bool():
             return formatted
         case datetime.datetime():
-            tag = "AInt" if datetime_as_int else "AStr"
+            tag = "AStr"
+            if datetime_as_int:
+                tag = "AInt"
             return f"{tag} ({formatted})"
         case int():
             return f"AInt ({formatted})"

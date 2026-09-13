@@ -172,7 +172,9 @@ def _forth_scalar_marker(value: Value, *, datetime_as_int: bool) -> str:
         case float():
             return "+float"
         case datetime.datetime():
-            return "+int" if datetime_as_int else "+str"
+            if datetime_as_int:
+                return "+int"
+            return "+str"
         case str() | bytes() | datetime.date() | datetime.time():
             return "+str"
         case _:

@@ -59,7 +59,10 @@ def main() -> None:
     mode = sys.argv[1]
     last_label, n_label = mode.split(sep="-")
     n_attrs = int(n_label)
-    last_value: object = None if last_label == "none" else True
+    last_value: object
+    last_value = True
+    if last_label == "none":
+        last_value = None
 
     proto = make_protocol(n_attrs=n_attrs)
     instance = make_impl(n_attrs=n_attrs, last_value=last_value)

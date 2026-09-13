@@ -212,7 +212,10 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # Literalizer deliberately routes it through the round-trip
             # loader. Mirror that choice so discovery can inspect the same
             # valid fixtures as the public API.
-            yaml = YAML() if "=" in source else YAML(typ="safe")
+            yaml_type = "safe"
+            if "=" in source:
+                yaml_type = "rt"
+            yaml = YAML(typ=yaml_type)
             parsed = _demote_yaml_tags(
                 value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
                     stream=source,
@@ -655,27 +658,35 @@ def build_no_variable_form_cases() -> list[NoVariableFormCase]:
         manifest.case_dir.name: manifest
         for manifest in load_case_manifests(cases_dir=_CASES_DIR)
     }
-    return [
-        NoVariableFormCase(
-            name=(
-                f"{lang_cls.__name__}_no_variable_form"
-                if case_dir_name == "scalar_int"
-                else (f"{lang_cls.__name__}_no_variable_form_{case_dir_name}")
-            ),
-            lang_cls=lang_cls,
-            case_dir_name=case_dir_name,
-        )
-        for case_dir_name in case_dir_names_for_role(
-            cases_dir=_CASES_DIR,
-            role=NO_VARIABLE_FORM_ROLE,
-        )
-        for lang_cls in sorted_languages()
-        if lang_cls.supports_no_variable_wrap_in_file
-        and manifest_admits_language(
-            manifest=manifests[case_dir_name],
-            lang_cls=lang_cls,
-        )
-    ]
+    collected_entries: list[NoVariableFormCase] = []
+    for entry_case_dir_name in case_dir_names_for_role(
+        cases_dir=_CASES_DIR, role=NO_VARIABLE_FORM_ROLE
+    ):
+        for entry_lang_cls in sorted_languages():
+            if (
+                entry_lang_cls.supports_no_variable_wrap_in_file
+                and manifest_admits_language(
+                    manifest=manifests[entry_case_dir_name],
+                    lang_cls=entry_lang_cls,
+                )
+            ):
+                if entry_case_dir_name == "scalar_int":
+                    effective_name = (
+                        f"{entry_lang_cls.__name__}_no_variable_form"
+                    )
+                else:
+                    effective_name = (
+                        f"{entry_lang_cls.__name__}_no_variable_form_"
+                        f"{entry_case_dir_name}"
+                    )
+                collected_entries.append(
+                    NoVariableFormCase(
+                        name=effective_name,
+                        lang_cls=entry_lang_cls,
+                        case_dir_name=entry_case_dir_name,
+                    )
+                )
+    return collected_entries
 
 
 @functools.cache
