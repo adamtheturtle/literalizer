@@ -92,7 +92,7 @@ def _apply_backslash_formatter(
         or "\t" in value
     )
     if not has_base_escape and not any(
-        old in value for old, _new in extra_replacements
+        (old in value for old, _new in extra_replacements)
     ):
         return f"{quote_char}{value}{quote_char}"
 
@@ -319,7 +319,9 @@ def escape_control_chars(*, value: str, fmt: str, escape_delete: bool) -> str:
     some target languages reject as a raw byte in a string literal
     while others carry it verbatim.
     """
-    pattern = r"[\x00-\x1f\x7f]" if escape_delete else r"[\x00-\x1f]"
+    pattern = r"[\x00-\x1f]"
+    if escape_delete:
+        pattern = r"[\x00-\x1f\x7f]"
     return re.sub(
         pattern=pattern,
         repl=functools.partial(_format_control_char, fmt=fmt),

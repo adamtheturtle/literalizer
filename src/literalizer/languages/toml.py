@@ -590,12 +590,19 @@ class Toml(metaclass=LanguageCls):
             # ``str.splitlines`` also breaks on U+0085, U+2028 and
             # U+2029, which a basic string may carry raw, so split on
             # real line separators only (issue #4486).
-            table_lines = [
-                _strip_structural_trailing_comma(line=line)
-                if line != "" and not line[0].isspace()
-                else line
-                for line in dedented.split(sep="\n")
-            ]
+            collected_table_lines: list[str] = []
+            for entry_line in dedented.split(sep="\n"):
+                effective_strip_structural_trailing_comma = entry_line
+                if effective_strip_structural_trailing_comma != "" and (
+                    not effective_strip_structural_trailing_comma[0].isspace()
+                ):
+                    effective_strip_structural_trailing_comma = (
+                        _strip_structural_trailing_comma(line=entry_line)
+                    )
+                collected_table_lines.append(
+                    effective_strip_structural_trailing_comma
+                )
+            table_lines = collected_table_lines
             return f"[{variable_name}]\n" + "\n".join(table_lines)
         return wrap_in_file_noop(
             content=content,

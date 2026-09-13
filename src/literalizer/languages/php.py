@@ -165,7 +165,9 @@ def _php_integer_formatter(
 
     def _format(value: int) -> str:
         """Format one PHP integer."""
-        return "PHP_INT_MIN" if value == I64_MIN else checked(value)
+        if value == I64_MIN:
+            return "PHP_INT_MIN"
+        return checked(value)
 
     return _format
 

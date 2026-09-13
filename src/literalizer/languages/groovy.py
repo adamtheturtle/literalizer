@@ -249,7 +249,9 @@ def _groovy_call_stub_factory(
         /,
     ) -> tuple[str, ...]:
         """Return Groovy stub declarations for a call name."""
-        param_list = "Map _args" if keyword_style else ", ".join(params)
+        param_list = "Map _args"
+        if not keyword_style:
+            param_list = ", ".join(params)
         if len(parts) == 1:
             return (f"def {parts[0]}({param_list}) {{ null }}",)
         root = parts[0]

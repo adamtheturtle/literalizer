@@ -11,6 +11,7 @@ from typing import (
     Protocol,
     TypeGuard,
     assert_never,
+    overload,
     runtime_checkable,
 )
 
@@ -40,6 +41,7 @@ from literalizer._comments_resolve import (
     resolve_yaml_comments,
 )
 from literalizer._document_formatting import format_document_fast
+from literalizer._formatters.fallbacks import collection_or_default
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -401,6 +403,18 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
+def _format_scalar_integer(
+    *, value: int, spec: Language, int_formatter: Callable[[int], str] | None
+) -> str:
+    """Format an integer with the selected collection override."""
+    reject_excessive_integer_digits(value=value)
+    format_int = int_formatter
+    if format_int is None:
+        format_int = spec.format_integer
+    return format_int(value)
+
+
+@beartype
 def _format_scalar(
     *,
     value: Scalar,
@@ -418,15 +432,13 @@ def _format_scalar(
         case None:
             result = spec.null_literal
         case bool():
-            result = spec.true_literal if value else spec.false_literal
+            result = {True: spec.true_literal, False: spec.false_literal}[
+                value
+            ]
         case int():
-            reject_excessive_integer_digits(value=value)
-            format_int = (
-                int_formatter
-                if int_formatter is not None
-                else spec.format_integer
+            result = _format_scalar_integer(
+                value=value, spec=spec, int_formatter=int_formatter
             )
-            result = format_int(value)
         case float():
             result = spec.format_float(value)
         case str():
@@ -474,11 +486,9 @@ def _widened_int_formatter(
     Otherwise :func:`int_widening_tier` selects the tier without full
     element-type inference.
     """
-    mixed_numeric = (
-        spec.format_integer_in_mixed_numeric_collection
-        if isinstance(spec, _MixedNumericIntegerFormatter)
-        else None
-    )
+    mixed_numeric = None
+    if isinstance(spec, _MixedNumericIntegerFormatter):
+        mixed_numeric = spec.format_integer_in_mixed_numeric_collection
     if (
         mixed_numeric is not None
         and infer_element_type(items=items) is MixedNumeric
@@ -796,7 +806,9 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
     ``TUPLE`` style (the hook is ``None``).
     """
     compute = spec.heterogeneous_behavior.compute_tuple_list_ids
-    return compute(data) if compute is not None else frozenset[int]()
+    if compute is not None:
+        return compute(data)
+    return frozenset[int]()
 
 
 @beartype
@@ -907,18 +919,17 @@ def _accumulate_sibling_list_empty_overrides(
             items=non_empty,
             spec=spec,
         )
-        sibling_opener = (
-            next(iter(sibling_openers))
-            if len(sibling_openers) == 1
-            else widened_opener
-        )
+        sibling_opener = widened_opener
+        if len(sibling_openers) == 1:
+            sibling_opener = next(iter(sibling_openers))
         if len(empty) > 0 and sibling_opener is not None:
             narrowed = spec.sequence_format_config.narrowed_empty_form
-            replacement = (
-                narrowed(non_empty)
-                if narrowed is not None and widened_opener is None
-                else sibling_opener + spec.sequence_format_config.close
-            )
+            if narrowed is not None and widened_opener is None:
+                replacement = narrowed(non_empty)
+            else:
+                replacement = (
+                    sibling_opener + spec.sequence_format_config.close
+                )
             for item in empty:
                 _ = out.setdefault(id(item), replacement)
         for child in value:
@@ -1015,11 +1026,11 @@ def _build_dict_entry(
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
     config = spec.dict_format_config
-    formatted_key = (
-        config.format_key(raw_key=raw_key, formatted_key=key_str)
-        if isinstance(raw_key, str)
-        else key_str
-    )
+    formatted_key = key_str
+    if isinstance(raw_key, str):
+        formatted_key = config.format_key(
+            raw_key=raw_key, formatted_key=key_str
+        )
     return config.format_entry_from_source(
         raw_key=raw_key,
         formatted_key=formatted_key,
@@ -1200,10 +1211,13 @@ def _maybe_format_record_literal(
     if record_shape is None:
         return None
     is_multiline = ctx.collection_layout is CollectionLayout.MULTILINE
-    body_prefix = ctx.multiline_prefix + spec.indent if is_multiline else ""
-    field_ctx = ctx.with_prefix(
-        multiline_prefix=body_prefix if is_multiline else ctx.multiline_prefix
-    )
+    body_prefix = ""
+    if is_multiline:
+        body_prefix = ctx.multiline_prefix + spec.indent
+    effective_multiline_prefix = body_prefix
+    if not is_multiline:
+        effective_multiline_prefix = ctx.multiline_prefix
+    field_ctx = ctx.with_prefix(multiline_prefix=effective_multiline_prefix)
     # ``record_shape.keys`` holds *value*'s own keys in insertion order
     # (``record_shape_for_dict`` already guaranteed they are all
     # strings); missing-from-this-dict keys are filled in by the
@@ -1239,10 +1253,13 @@ def _maybe_format_record_literal(
     trailing_comma = spec.trailing_comma_config.multiline_trailing_comma
     sep = spec.element_separator.strip()
     last_idx = len(rendered.entries) - 1
-    body = "\n".join(
-        f"{body_prefix}{entry}{sep if i < last_idx or trailing_comma else ''}"
-        for i, entry in enumerate(iterable=rendered.entries)
-    )
+    collected_body: list[str] = []
+    for entry_i, entry_entry in enumerate(iterable=rendered.entries):
+        effective_sep = ""
+        if entry_i < last_idx or trailing_comma:
+            effective_sep = sep
+        collected_body.append(f"{body_prefix}{entry_entry}{(effective_sep)}")
+    body = "\n".join(collected_body)
     return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
 
 
@@ -1269,9 +1286,14 @@ def _maybe_format_tuple_literal(
     if id(value) not in ctx.tuple_list_ids:
         return None
     is_multiline = ctx.collection_layout is CollectionLayout.MULTILINE
-    body_prefix = ctx.multiline_prefix + spec.indent if is_multiline else ""
+    body_prefix = ""
+    if is_multiline:
+        body_prefix = ctx.multiline_prefix + spec.indent
+    effective_multiline_prefix_2 = body_prefix
+    if not is_multiline:
+        effective_multiline_prefix_2 = ctx.multiline_prefix
     element_ctx = ctx.with_prefix(
-        multiline_prefix=body_prefix if is_multiline else ctx.multiline_prefix
+        multiline_prefix=effective_multiline_prefix_2
     )
     # Tuple-eligible lists are all-scalar (see ``collect_tuple_list_ids``),
     # so every element formats to a single-line literal regardless of
@@ -1304,10 +1326,17 @@ def _maybe_format_tuple_literal(
     )
     sep = spec.element_separator.strip()
     last_idx = len(rendered.entries) - 1
-    body = "\n".join(
-        f"{body_prefix}{entry}{sep if i < last_idx or trailing_comma else ''}"
-        for i, entry in enumerate(iterable=rendered.entries)
-    )
+    collected_body_2: list[str] = []
+    for entry_entry_i, entry_entry_entry in enumerate(
+        iterable=rendered.entries
+    ):
+        effective_sep_2 = ""
+        if entry_entry_i < last_idx or trailing_comma:
+            effective_sep_2 = sep
+        collected_body_2.append(
+            f"{body_prefix}{entry_entry_entry}{(effective_sep_2)}"
+        )
+    body = "\n".join(collected_body_2)
     return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
 
 
@@ -1814,7 +1843,9 @@ def _gather_call_slot_values(
     """
     slots: list[list[Value]] = []
     for element in elements:
-        arg_values = element if isinstance(element, list) else [element]
+        arg_values = element
+        if not isinstance(arg_values, list):
+            arg_values = [element]
         for slot_index, arg_value in enumerate(iterable=arg_values):
             if slot_index >= len(slots):
                 slots.append([])
@@ -1929,11 +1960,9 @@ def _compute_sequence_dict_override(
     name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    sequence_open = (
-        sequence_open_override
-        if sequence_open_override is not None
-        else spec.sequence_open(items)
-    )
+    sequence_open = sequence_open_override
+    if sequence_open is None:
+        sequence_open = spec.sequence_open(items)
     widened = sequence_open == spec.sequence_open([])
     if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
@@ -2136,23 +2165,19 @@ def _format_sequence_child(
     the enclosing list inferred :class:`WideInt` or :class:`BeyondI64`;
     nested containers ignore it and compute their own.
     """
-    parent_override = (
-        child_sequence_open_overrides[position]
-        if (
-            position < len(child_sequence_open_overrides)
-            and child_sequence_open_overrides[position] is not None
-        )
-        else None
-    )
-    sibling_open = (
-        None
-        if parent_override is not None
-        else _empty_child_sibling_opener(
+    parent_override = None
+    if (
+        position < len(child_sequence_open_overrides)
+        and child_sequence_open_overrides[position] is not None
+    ):
+        parent_override = child_sequence_open_overrides[position]
+    sibling_open = None
+    if parent_override is None:
+        sibling_open = _empty_child_sibling_opener(
             value=value,
             position=position,
             spec=ctx.spec,
         )
-    )
     if (
         parent_override is None
         and isinstance(child, list)
@@ -2187,12 +2212,13 @@ def _format_sequence_child(
             if len(non_empty_map_siblings) > 0:
                 return narrowed_empty_dict(non_empty_map_siblings)
     child_ctx = _nested_collection_context(value=child, ctx=ctx)
+    effective_sequence_open_override = sibling_open
+    if parent_override is not None:
+        effective_sequence_open_override = parent_override
     return _format_value(
         value=child,
         dict_open_override=dict_open_override,
-        sequence_open_override=(
-            parent_override if parent_override is not None else sibling_open
-        ),
+        sequence_open_override=(effective_sequence_open_override),
         ctx=child_ctx,
         int_formatter=int_formatter,
     )
@@ -2247,8 +2273,9 @@ def _format_list_value(
             ctx=ctx,
         )
     inferred_value = _opener_inference_value(data=value, ctx=ctx)
+    effective_items = inferred_value
     dict_open_override = _compute_sequence_dict_override(
-        items=inferred_value if isinstance(inferred_value, list) else value,
+        items=effective_items,
         sequence_open_override=sequence_open_override,
         spec=spec,
         ref_key=ctx.ref_key,
@@ -2371,11 +2398,9 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
                 ref_case=ctx.ref_case,
                 language=spec,
             )
-            ref_value = (
-                ctx.ref_values.get(raw_ref_name)
-                if ctx.ref_values is not None
-                else None
-            )
+            ref_value = None
+            if ctx.ref_values is not None:
+                ref_value = ctx.ref_values.get(raw_ref_name)
             if not ctx.expand_refs:
                 return spec.format_call_ref_identifier(ref_name, ref_value)
             return _format_call_arg_ref_identifier(
@@ -2457,7 +2482,9 @@ def _wrap_body(
     dict_open_override: str | None,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
-    ci = spec.indent if spec.indent_closing_delimiter else ""
+    ci = ""
+    if spec.indent_closing_delimiter:
+        ci = spec.indent
     close_prefix = f"{line_prefix}{ci}"
     match data:
         case dict() if is_ordered_map:
@@ -2539,6 +2566,18 @@ def _substitute_known_refs(
             return value
 
 
+@overload
+def _opener_inference_value(
+    *, data: list[Value], ctx: _RenderContext
+) -> list[Value]: ...
+
+
+@overload
+def _opener_inference_value(
+    *, data: dict[Scalar, Value], ctx: _RenderContext
+) -> Value: ...
+
+
 @beartype
 def _opener_inference_value(
     *,
@@ -2553,16 +2592,14 @@ def _opener_inference_value(
     """
     if ctx.ref_key is _DISABLED_REF_KEY:
         return data
+    effective_ref_values_5: Mapping[str, Value]
     if ctx.expand_refs:
         ref_values = ctx.ref_values
+        effective_ref_values_5 = reference_values_or_empty(values=ref_values)
         return _strip_direct_refs_for_opener(
             value=_substitute_known_refs_in_container(
                 data=data,
-                ref_values=(
-                    ref_values
-                    if ref_values is not None and len(ref_values) > 0
-                    else {}
-                ),
+                ref_values=(effective_ref_values_5),
                 ref_key=ctx.ref_key,
             ),
             ref_key=ctx.ref_key,
@@ -2611,8 +2648,11 @@ def _ordered_map_open_for_ref_inference(
 ) -> str:
     """Return the ordered-map opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
+    effective_inferred = data
+    if isinstance(inferred, dict) and bool(inferred):
+        effective_inferred = inferred
     return ctx.spec.ordered_map_format_config.ordered_map_open(
-        inferred if isinstance(inferred, dict) and bool(inferred) else data
+        effective_inferred
     )
 
 
@@ -2622,9 +2662,10 @@ def _dict_open_for_ref_inference(
 ) -> str:
     """Return the dictionary opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
-    return ctx.spec.dict_format_config.dict_open(
-        inferred if isinstance(inferred, dict) and bool(inferred) else data
-    )
+    effective_inferred_2 = data
+    if isinstance(inferred, dict) and bool(inferred):
+        effective_inferred_2 = inferred
+    return ctx.spec.dict_format_config.dict_open(effective_inferred_2)
 
 
 @beartype
@@ -2633,9 +2674,10 @@ def _sequence_open_for_ref_inference(
 ) -> str:
     """Return the sequence opener using resolved refs when needed."""
     inferred = _opener_inference_value(data=data, ctx=ctx)
-    return ctx.spec.sequence_open(
-        inferred if isinstance(inferred, list) and bool(inferred) else data
-    )
+    effective_inferred_3 = data
+    if len(inferred) > 0:
+        effective_inferred_3 = inferred
+    return ctx.spec.sequence_open(effective_inferred_3)
 
 
 @beartype
@@ -2705,11 +2747,10 @@ def _collection_open_for_multiline_value(
                 sequence_open_override=sequence_open_override,
                 ctx=ctx,
             )
-            opener = (
-                delimiters[0]
-                if delimiters is not None
-                else _sequence_open_for_ref_inference(data=data, ctx=ctx)
-            )
+            if delimiters is not None:
+                opener = delimiters[0]
+            else:
+                opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
     return opener
 
 
@@ -2749,7 +2790,9 @@ def _format_multiline_collection_value(
         sequence_open_override=sequence_open_override,
         ctx=ctx,
     ).rstrip()
-    closing_indent = spec.indent if spec.indent_closing_delimiter else ""
+    closing_indent = ""
+    if spec.indent_closing_delimiter:
+        closing_indent = spec.indent
     close_prefix = ctx.multiline_prefix + closing_indent
     match value:
         case dict() if is_ordered_map:
@@ -2764,11 +2807,10 @@ def _format_multiline_collection_value(
                 sequence_open_override=sequence_open_override,
                 ctx=ctx,
             )
-            close = (
-                delimiters[1]
-                if delimiters is not None
-                else spec.sequence_format_config.close
-            )
+            if delimiters is not None:
+                close = delimiters[1]
+            else:
+                close = spec.sequence_format_config.close
     return f"{opening}\n{body}\n{close_prefix}{close}"
 
 
@@ -2845,7 +2887,9 @@ def _append_entries(
     rendered_elements: list[str] = []
     for i, entry in enumerate(iterable=formatted_entries):
         add_sep = i < last_idx or trailing_comma
-        sep = spec.element_separator.strip() if add_sep else ""
+        sep = ""
+        if add_sep:
+            sep = spec.element_separator.strip()
         rendered_elements.append(
             f"{body_prefix}{rstrip_lines(text=entry)}{sep}"
         )
@@ -2911,6 +2955,114 @@ def _filter_collection_comments(
 
 
 @beartype
+def _format_dict_lines(
+    *,
+    dict_data: dict[Scalar, Value],
+    data: Value,
+    spec: Language,
+    ctx: _RenderContext,
+    line_ctx: _RenderContext,
+    parent_id: int,
+    collection_comments: CollectionComments | None,
+    is_ordered_map: bool,
+    trailing_comma: bool,
+    body_prefix: str,
+    lines: list[str],
+) -> list[str]:
+    """Format dictionary entries and their collection comments."""
+    guard_dict_keys_supported(value=dict_data, spec=spec)
+    keep_entries = [
+        not (spec.skip_null_dict_values and value is None)
+        for value in dict_data.values()
+    ]
+    entries = [
+        (k, v)
+        for (k, v), keep_entry in zip(
+            dict_data.items(), keep_entries, strict=True
+        )
+        if keep_entry
+    ]
+    if collection_comments is not None:
+        collection_comments = _filter_collection_comments(
+            collection_comments=collection_comments,
+            keep=keep_entries,
+            redistribute=id(data) == ctx.comment_root_id,
+        )
+    sibling_list_values: list[list[Value]] = [
+        v for _, v in entries if isinstance(v, list)
+    ]
+    outer_sequence_override = _compute_sequence_open_override(
+        items=sibling_list_values,
+        spec=spec,
+    )
+    position_overrides = _compute_sibling_list_position_overrides(
+        list_values=sibling_list_values,
+        spec=spec,
+    )
+    map_int_formatter = ctx.dict_int_formatters.get(id(dict_data))
+    if map_int_formatter is None:
+        map_int_formatter = _map_widened_int_formatter(
+            items=[v for _, v in entries],
+            spec=spec,
+        )
+    formatted_entries: list[str] = []
+    for k, v in entries:
+        formatted_key: str = _format_value(
+            value=k,
+            dict_open_override=None,
+            sequence_open_override=None,
+            ctx=line_ctx.compact(),
+            int_formatter=None,
+        )
+        formatted_val = _maybe_wrap_child(
+            parent_id=parent_id,
+            raw_value=v,
+            formatted_value=_format_dict_entry_value(
+                value=v,
+                sibling_list_values=sibling_list_values,
+                outer_sequence_override=outer_sequence_override,
+                position_overrides=position_overrides,
+                ctx=line_ctx,
+                int_formatter=map_int_formatter,
+            ),
+            ctx=ctx,
+        )
+        if is_ordered_map:
+            entry = spec.ordered_map_format_config.format_entry_from_source(
+                raw_key=k,
+                formatted_key=_format_ordered_map_key(
+                    raw_key=k,
+                    key_str=formatted_key,
+                    spec=spec,
+                ),
+                raw_value=v,
+                formatted_value=formatted_val,
+                format_entry=spec.format_ordered_map_entry,
+            )
+        else:
+            entry = _build_dict_entry(
+                raw_key=k,
+                key_str=formatted_key,
+                raw_value=v,
+                formatted_value=formatted_val,
+                spec=spec,
+            )
+        formatted_entries.append(entry)
+    dict_trailing = (
+        trailing_comma and spec.dict_format_config.supports_trailing_comma
+    )
+    _append_entries(
+        formatted_entries=formatted_entries,
+        lines=lines,
+        body_prefix=body_prefix,
+        trailing_comma=dict_trailing,
+        spec=spec,
+        collection_comments=collection_comments,
+    )
+    return lines
+
+
+@beartype
 def _format_collection_lines(
     *,
     data: dict[Scalar, Value] | set[Scalar] | list[Value],
@@ -2933,96 +3085,18 @@ def _format_collection_lines(
     )
     match data:
         case dict() as dict_data:
-            guard_dict_keys_supported(value=dict_data, spec=spec)
-            keep_entries = [
-                not (spec.skip_null_dict_values and value is None)
-                for value in dict_data.values()
-            ]
-            entries = [
-                (k, v)
-                for (k, v), keep_entry in zip(
-                    dict_data.items(), keep_entries, strict=True
-                )
-                if keep_entry
-            ]
-            if collection_comments is not None:
-                collection_comments = _filter_collection_comments(
-                    collection_comments=collection_comments,
-                    keep=keep_entries,
-                    redistribute=id(data) == ctx.comment_root_id,
-                )
-            sibling_list_values: list[list[Value]] = [
-                v for _, v in entries if isinstance(v, list)
-            ]
-            outer_sequence_override = _compute_sequence_open_override(
-                items=sibling_list_values,
+            lines = _format_dict_lines(
+                dict_data=dict_data,
+                data=data,
                 spec=spec,
-            )
-            position_overrides = _compute_sibling_list_position_overrides(
-                list_values=sibling_list_values,
-                spec=spec,
-            )
-            map_int_formatter = ctx.dict_int_formatters.get(id(dict_data))
-            if map_int_formatter is None:
-                map_int_formatter = _map_widened_int_formatter(
-                    items=[v for _, v in entries],
-                    spec=spec,
-                )
-            formatted_entries: list[str] = []
-            for k, v in entries:
-                formatted_key: str = _format_value(
-                    value=k,
-                    dict_open_override=None,
-                    sequence_open_override=None,
-                    ctx=line_ctx.compact(),
-                    int_formatter=None,
-                )
-                formatted_val = _maybe_wrap_child(
-                    parent_id=parent_id,
-                    raw_value=v,
-                    formatted_value=_format_dict_entry_value(
-                        value=v,
-                        sibling_list_values=sibling_list_values,
-                        outer_sequence_override=outer_sequence_override,
-                        position_overrides=position_overrides,
-                        ctx=line_ctx,
-                        int_formatter=map_int_formatter,
-                    ),
-                    ctx=ctx,
-                )
-                entry = (
-                    spec.ordered_map_format_config.format_entry_from_source(
-                        raw_key=k,
-                        formatted_key=_format_ordered_map_key(
-                            raw_key=k,
-                            key_str=formatted_key,
-                            spec=spec,
-                        ),
-                        raw_value=v,
-                        formatted_value=formatted_val,
-                        format_entry=spec.format_ordered_map_entry,
-                    )
-                    if is_ordered_map
-                    else _build_dict_entry(
-                        raw_key=k,
-                        key_str=formatted_key,
-                        raw_value=v,
-                        formatted_value=formatted_val,
-                        spec=spec,
-                    )
-                )
-                formatted_entries.append(entry)
-            dict_trailing = (
-                trailing_comma
-                and spec.dict_format_config.supports_trailing_comma
-            )
-            _append_entries(
-                formatted_entries=formatted_entries,
-                lines=lines,
-                body_prefix=body_prefix,
-                trailing_comma=dict_trailing,
-                spec=spec,
+                ctx=ctx,
+                line_ctx=line_ctx,
+                parent_id=parent_id,
                 collection_comments=collection_comments,
+                is_ordered_map=is_ordered_map,
+                trailing_comma=trailing_comma,
+                body_prefix=body_prefix,
+                lines=lines,
             )
         case set() as set_data:
             sorted_items = sorted(
@@ -3072,26 +3146,18 @@ def _format_collection_lines(
             inferred_list_data = _opener_inference_value(
                 data=list_data, ctx=ctx
             )
+            effective_items_2 = inferred_list_data
             dict_open_override = _compute_sequence_dict_override(
-                items=(
-                    inferred_list_data
-                    if isinstance(inferred_list_data, list)
-                    else list_data
-                ),
+                items=(effective_items_2),
                 sequence_open_override=sequence_open_override,
                 spec=spec,
                 ref_key=ctx.ref_key,
             )
-            list_int_formatter = (
-                list_int_formatter
-                if (
-                    list_int_formatter := ctx.list_int_formatters.get(
-                        id(list_data)
-                    )
+            list_int_formatter = ctx.list_int_formatters.get(id(list_data))
+            if list_int_formatter is None:
+                list_int_formatter = _widened_int_formatter(
+                    items=list_data, spec=spec
                 )
-                is not None
-                else _widened_int_formatter(items=list_data, spec=spec)
-            )
             formatted_entries = [
                 spec.format_sequence_entry(
                     element,
@@ -3150,14 +3216,13 @@ def _normalized_mapping_objects(
     *, mapping: Mapping[object, object]
 ) -> dict[object, object]:
     """Index mapping values by their public-boundary key once."""
-    return {
-        (
-            unwrap_yaml_scalar(value=raw_key)
-            if isinstance(raw_key, TaggedScalar)
-            else raw_key
-        ): value
-        for raw_key, value in mapping.items()
-    }
+    collected_entries: dict[object, object] = {}
+    for entry_raw_key, entry_value in mapping.items():
+        unwrapped_key = entry_raw_key
+        if isinstance(unwrapped_key, TaggedScalar):
+            unwrapped_key = unwrap_yaml_scalar(value=unwrapped_key)
+        collected_entries[unwrapped_key] = entry_value
+    return collected_entries
 
 
 @beartype
@@ -3384,11 +3449,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
                 ref_case=ref_case,
                 language=language,
             )
-            ref_value = (
-                ref_values.get(raw_ref_name)
-                if ref_values is not None
-                else None
-            )
+            ref_value = None
+            if ref_values is not None:
+                ref_value = ref_values.get(raw_ref_name)
             identifier = language.format_call_ref_identifier(
                 ref_name, ref_value
             )
@@ -3426,11 +3489,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
             raw_value=raw_yaml_data,
             out=yaml_comment_nodes,
         )
-    toml_comments = (
-        None
-        if toml_comment_doc is None
-        else extract_toml_comments(toml_doc=toml_comment_doc)
-    )
+    toml_comments = None
+    if toml_comment_doc is not None:
+        toml_comments = extract_toml_comments(toml_doc=toml_comment_doc)
 
     inference_id_map = _inference_to_source_container_ids(
         source=data,
@@ -3463,16 +3524,20 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         id_map=inference_id_map,
     )
     source_empty_ids = _empty_source_container_ids(data)
-    context_wrap_ids: frozenset[int] = (
-        _compute_wrap_ids(data=record_context_data, spec=language)
-        if record_context_data is not None
-        else frozenset[int]()
-    )
-    context_tuple_list_ids: frozenset[int] = (
-        _compute_tuple_list_ids(data=record_context_data, spec=language)
-        if record_context_data is not None
-        else frozenset[int]()
-    )
+    context_wrap_ids: frozenset[int]
+    if record_context_data is not None:
+        context_wrap_ids = _compute_wrap_ids(
+            data=record_context_data, spec=language
+        )
+    else:
+        context_wrap_ids = frozenset[int]()
+    context_tuple_list_ids: frozenset[int]
+    if record_context_data is not None:
+        context_tuple_list_ids = _compute_tuple_list_ids(
+            data=record_context_data, spec=language
+        )
+    else:
+        context_tuple_list_ids = frozenset[int]()
     context_dict_open_overrides: dict[int, str] = {}
     if record_context_data is not None:
         # A bound map is emitted as a separate declaration, so it needs
@@ -3484,15 +3549,12 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
             out=context_dict_open_overrides,
             ref_key=ref_key,
         )
-        context_children = (
-            list(record_context_data)
-            if isinstance(record_context_data, list)
-            else (
-                list(record_context_data.values())
-                if isinstance(record_context_data, dict)
-                else []
-            )
-        )
+        if isinstance(record_context_data, list):
+            context_children = list(record_context_data)
+        elif isinstance(record_context_data, dict):
+            context_children = list(record_context_data.values())
+        else:
+            context_children = list[Value]()
         direct_dict_override = _compute_dict_open_override(
             items=context_children,
             spec=language,
@@ -3509,25 +3571,30 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
                 _ = context_dict_open_overrides.setdefault(
                     id(child), direct_dict_override
                 )
-    context_dict_int_formatters: Mapping[int, Callable[[int], str]] = (
-        _collect_dict_int_formatters(data=record_context_data, spec=language)
-        if record_context_data is not None
-        else dict[int, Callable[[int], str]]()
-    )
-    context_empty_overrides: Mapping[int, str] = (
-        _empty_container_literal_overrides(
+    context_dict_int_formatters: Mapping[int, Callable[[int], str]]
+    if record_context_data is not None:
+        context_dict_int_formatters = _collect_dict_int_formatters(
             data=record_context_data, spec=language
         )
-        if record_context_data is not None
-        else dict[int, str]()
-    )
-    context_list_int_formatters = (
-        _collect_list_int_formatters(data=record_context_data, spec=language)
-        if record_context_data is not None
-        else {}
-    )
+    else:
+        context_dict_int_formatters = dict[int, Callable[[int], str]]()
+    context_empty_overrides: Mapping[int, str]
+    if record_context_data is not None:
+        context_empty_overrides = _empty_container_literal_overrides(
+            data=record_context_data, spec=language
+        )
+    else:
+        context_empty_overrides = dict[int, str]()
+    context_list_int_formatters: dict[int, Callable[[int], str]] = {}
+    if record_context_data is not None:
+        context_list_int_formatters = _collect_list_int_formatters(
+            data=record_context_data, spec=language
+        )
     if record_context_data is not None:
         check_data(data=record_context_data, spec=language)
+    effective_comment_root_id = None
+    if len(yaml_comment_nodes) > 0 or bool(toml_comments):
+        effective_comment_root_id = id(data)
     ctx = _RenderContext(
         spec=language,
         wrap_ids=wrap_ids | context_wrap_ids,
@@ -3573,11 +3640,7 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         consume_inhibited_ref_names=frozenset(),
         yaml_comment_nodes=yaml_comment_nodes,
         toml_comments=toml_comments,
-        comment_root_id=(
-            id(data)
-            if len(yaml_comment_nodes) > 0 or bool(toml_comments)
-            else None
-        ),
+        comment_root_id=(effective_comment_root_id),
     )
 
     # Handle scalars (check ``str`` before Sequence since ``str`` is a
@@ -3623,9 +3686,10 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         and all(v is None for v in data.values())
     ):
         is_ordered_map = isinstance(data, OrderedMap)
-        empty_value: OrderedMap | dict[Scalar, Value] = (
-            OrderedMap() if is_ordered_map else {}
-        )
+        empty_value: OrderedMap | dict[Scalar, Value]
+        empty_value = {}
+        if is_ordered_map:
+            empty_value = OrderedMap()
         formatted = _format_value(
             value=empty_value,
             dict_open_override=None,
@@ -3655,9 +3719,9 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         if tuple_literal is not None:
             return f"{line_prefix}{tuple_literal}"
 
-    body_prefix = (
-        line_prefix + language.indent if include_delimiters else line_prefix
-    )
+    body_prefix = line_prefix
+    if include_delimiters:
+        body_prefix = line_prefix + language.indent
 
     is_ordered_map = isinstance(data, OrderedMap)
     trailing_comma = language.trailing_comma_config.multiline_trailing_comma
@@ -3676,14 +3740,11 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
     if not include_delimiters or body == "":
         return body
 
+    effective_data = collection_or_default(value=inference_data, default=data)
     return _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
-        data=(
-            inference_data
-            if isinstance(inference_data, (list, dict, set))
-            else data
-        ),
+        data=(effective_data),
         spec=language,
         line_prefix=line_prefix,
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
@@ -3707,16 +3768,18 @@ def _literalize_child_path(
     children: list[tuple[str | int, Value]]
     match data:
         case dict():
-            children = [
-                (
-                    key
-                    if isinstance(key, (str, int))
-                    and not isinstance(key, bool)
-                    else repr(key),
-                    value,
+            collected_children: list[tuple[str | int, Value]] = []
+            for entry_entry_key, entry_entry_entry_value in data.items():
+                effective_entry_entry_key = entry_entry_key
+                if not (
+                    isinstance(effective_entry_entry_key, (str, int))
+                    and (not isinstance(effective_entry_entry_key, bool))
+                ):
+                    effective_entry_entry_key = repr(entry_entry_key)
+                collected_children.append(
+                    (effective_entry_entry_key, entry_entry_entry_value)
                 )
-                for key, value in data.items()
-            ]
+            children = collected_children
         case list():
             children = list(enumerate(iterable=data))
         case _:
@@ -3841,11 +3904,12 @@ def _apply_variable_wrapper(
 
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
-            declaration_formatter = (
-                language.format_call_variable_declaration
-                if is_call_binding
-                else language.format_variable_declaration
-            )
+            if is_call_binding:
+                declaration_formatter = (
+                    language.format_call_variable_declaration
+                )
+            else:
+                declaration_formatter = language.format_variable_declaration
             validate_new_variable_name(
                 language=language,
                 name=name,
@@ -3858,11 +3922,10 @@ def _apply_variable_wrapper(
                 modifiers,
             )
         case _:
-            assignment_formatter = (
-                language.format_call_variable_assignment
-                if is_call_binding
-                else language.format_variable_assignment
-            )
+            if is_call_binding:
+                assignment_formatter = language.format_call_variable_assignment
+            else:
+                assignment_formatter = language.format_variable_assignment
             validate_new_variable_name(
                 language=language,
                 name=variable_form.name,
@@ -3920,7 +3983,9 @@ def _declaration_data(*, pre_form: _PreFormState, language: Language) -> Value:
         isinstance(language, _ResolvedRefDeclarationLanguage)
         and language.uses_resolved_ref_declaration_data
     )
-    return pre_form.data_for_declaration if uses_resolved else pre_form.data
+    if uses_resolved:
+        return pre_form.data_for_declaration
+    return pre_form.data
 
 
 @beartype
@@ -3956,6 +4021,12 @@ def _literalize_pre_form_impl(
 
     language.validate_spec_for_data(data=data)
 
+    effective_raw_yaml_data = None
+    if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve:
+        effective_raw_yaml_data = parsed.raw_data
+    effective_toml_comment_doc = None
+    if isinstance(parsed, ParsedToml):
+        effective_toml_comment_doc = parsed.toml_doc
     result = _literalize(
         data=data,
         language=language,
@@ -3965,21 +4036,15 @@ def _literalize_pre_form_impl(
         ref_values=ref_values,
         ref_key=active_ref_key,
         collection_layout=collection_layout,
-        raw_yaml_data=(
-            parsed.raw_data
-            if isinstance(parsed, ParsedYaml) and parsed.needs_comment_resolve
-            else None
-        ),
-        toml_comment_doc=(
-            parsed.toml_doc if isinstance(parsed, ParsedToml) else None
-        ),
+        raw_yaml_data=(effective_raw_yaml_data),
+        toml_comment_doc=(effective_toml_comment_doc),
         record_context_data=None,
         validate_data=True,
     )
 
-    comment_line_prefix = (
-        line_prefix + language.indent if include_delimiters else line_prefix
-    )
+    comment_line_prefix = line_prefix
+    if include_delimiters:
+        comment_line_prefix = line_prefix + language.indent
 
     resolved: ResolvedComments | None = None
     match parsed:
@@ -4014,30 +4079,26 @@ def _literalize_pre_form_impl(
 
     data_for_preamble: Value = data
     data_for_declaration: Value = data
+    effective_ref_values_3: Mapping[str, Value]
+    effective_ref_values_4: Mapping[str, Value]
     if active_ref_key is not disabled_ref_key():
+        effective_ref_values_3 = reference_values_or_empty(values=ref_values)
         data_for_declaration = _substitute_known_refs(
             value=data,
-            ref_values=(
-                ref_values
-                if ref_values is not None and len(ref_values) > 0
-                else {}
-            ),
+            ref_values=(effective_ref_values_3),
             ref_key=active_ref_key,
         )
         # A marker with no value supplied is stripped rather than left
         # in place, so preamble inference never sees the marker's own
         # ``{str: str}`` shape and an unrelated ``ref_values`` entry
         # cannot change the preamble of identical code (issue #4480).
+        effective_ref_values_4 = reference_values_or_empty(values=ref_values)
         resolution = _resolve_ref_for_preamble(
             value=data,
-            ref_values=(
-                ref_values
-                if ref_values is not None and len(ref_values) > 0
-                else {}
-            ),
+            ref_values=(effective_ref_values_4),
             ref_key=active_ref_key,
         )
-        data_for_preamble = resolution.value if resolution.include else []
+        data_for_preamble = resolution.inference_value()
 
     return _PreFormState(
         data=data,
@@ -4113,6 +4174,7 @@ def _substitute_record_nulls(
             _substitute_record_nulls(data=item, substitutions=substitutions)
             for item in data
         ]
+    collected_entries_2: dict[Scalar, Value]
     if isinstance(data, dict):
         if isinstance(data, OrderedMap):
             return OrderedMap(
@@ -4124,22 +4186,23 @@ def _substitute_record_nulls(
                 }
             )
         is_record = record_shape_for_dict(value=data) is not None
-        return {
-            key: (
-                materialize_value_input(
-                    value=substitutions[key],
+        collected_entries_2 = {}
+        for entry_key, entry_item in data.items():
+            if (
+                is_record
+                and isinstance(entry_key, str)
+                and (entry_item is None)
+                and (entry_key in substitutions)
+            ):
+                collected_entries_2[entry_key] = materialize_value_input(
+                    value=substitutions[entry_key],
                     argument_name="record_null_substitutions",
                 )
-                if is_record
-                and isinstance(key, str)
-                and item is None
-                and key in substitutions
-                else _substitute_record_nulls(
-                    data=item, substitutions=substitutions
+            else:
+                collected_entries_2[entry_key] = _substitute_record_nulls(
+                    data=entry_item, substitutions=substitutions
                 )
-            )
-            for key, item in data.items()
-        }
+        return collected_entries_2
     return data
 
 
@@ -4211,13 +4274,15 @@ def _validate_ref_output_name(
     # Compared with the language's own case sensitivity, as the bound
     # ref check is: an Ada or Fortran ref differing only in case is the
     # same identifier (issue #4506).
-    identifiers = frozenset(
-        ref_case.convert(name=name) if ref_case is not None else name
-        for name in _call_arg_ref_names_in_value(
-            value=pre_form.data,
-            ref_key=pre_form.active_ref_key,
-        )
-    )
+    collected_identifiers: list[str] = []
+    for entry_entry_entry_name in _call_arg_ref_names_in_value(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    ):
+        effective_ref_case = entry_entry_entry_name
+        if ref_case is not None:
+            effective_ref_case = ref_case.convert(name=entry_entry_entry_name)
+        collected_identifiers.append(effective_ref_case)
+    identifiers = frozenset(collected_identifiers)
     if is_reserved_identifier(
         case_sensitive=(language.reserved_variable_identifiers_case_sensitive),
         name=variable_form.name,
@@ -4345,7 +4410,9 @@ def literalize_apply_form(
             line_prefix=pre_form.line_prefix,
         )
 
-    variable_name = variable_form.name if variable_form is not None else None
+    variable_name = None
+    if variable_form is not None:
+        variable_name = variable_form.name
     is_declaration = isinstance(variable_form, NewVariable)
     computed = compute_preamble(
         data=pre_form.data_for_preamble,
@@ -4364,7 +4431,9 @@ def literalize_apply_form(
         )
     )
 
-    pre_decl = resolved.pending_scalar_before if resolved is not None else ()
+    pre_decl: tuple[str, ...] = ()
+    if resolved is not None:
+        pre_decl = resolved.pending_scalar_before
 
     if wrap_in_file:
         content = result
@@ -4375,13 +4444,12 @@ def literalize_apply_form(
             preamble=preamble,
             data_dependent_entries=data_dependent_preamble,
         )
+        effective_variable_name = ""
+        if variable_name is not None and variable_name != "":
+            effective_variable_name = variable_name
         wrapped = language.wrap_in_file(
             content=content,
-            variable_name=(
-                variable_name
-                if variable_name is not None and variable_name != ""
-                else ""
-            ),
+            variable_name=(effective_variable_name),
             body_preamble=scoped.body + computed.body,
         )
         if len(scoped.file_scope) > 0:
@@ -4566,6 +4634,16 @@ def _contextual_bound_ref_values(
 
 
 @beartype
+def _copy_parent_mapping(*, value: dict[Scalar, Value]) -> dict[Scalar, Value]:
+    """Copy a reference's parent while preserving ordered-map
+    semantics.
+    """
+    if isinstance(value, OrderedMap):
+        return OrderedMap(value)
+    return dict(value)
+
+
+@beartype
 def _bound_ref_parent_contexts(
     *,
     source: Value,
@@ -4600,11 +4678,7 @@ def _bound_ref_parent_contexts(
                     value=raw_child, ref_key=ref_key
                 )
                 if name is not None and name in bound_refs:
-                    dict_parent: dict[Scalar, Value] = (
-                        OrderedMap(inferred)
-                        if isinstance(inferred, OrderedMap)
-                        else dict(inferred)
-                    )
+                    dict_parent = _copy_parent_mapping(value=inferred)
                     dict_parent[key] = bound_refs[name]
                     _ = contexts.setdefault(name, dict_parent)
                 elif name is None:
@@ -4648,11 +4722,12 @@ def literalize_bound_refs(
     effective_ref_values: dict[str, Value] = {
         name: bound_refs[name] for name in ordered_names
     }
-    effective_ref_values.update(
-        explicit_ref_values
-        if explicit_ref_values is not None and len(explicit_ref_values) > 0
-        else {}
+    effective_explicit_ref_values: Mapping[str, Value]
+    effective_explicit_ref_values = reference_values_or_empty(
+        values=explicit_ref_values
     )
+    effective_ref_values.update(effective_explicit_ref_values)
+    effective_ref_values_2 = nonempty_mapping(values=effective_ref_values)
     pre_form = literalize_pre_form(
         source=source,
         input_format=input_format,
@@ -4660,23 +4735,19 @@ def literalize_bound_refs(
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         ref_case=ref_case,
-        ref_values=(
-            effective_ref_values if len(effective_ref_values) > 0 else None
-        ),
+        ref_values=(effective_ref_values_2),
         ref_key=ref_key,
         record_null_substitutions=record_null_substitutions,
         collection_layout=collection_layout,
         wrap_in_file=True,
         bound_ref_names=frozenset(bound_refs),
     )
-    declaration_form = (
-        NewVariable(
-            name=variable_form.name,
-            modifiers=variable_form.modifiers,
+    declaration_form = variable_form
+    if isinstance(declaration_form, BothVariableForms):
+        declaration_form = NewVariable(
+            name=declaration_form.name,
+            modifiers=declaration_form.modifiers,
         )
-        if isinstance(variable_form, BothVariableForms)
-        else variable_form
-    )
     # This route is reached only for a wrapped file, and the wrapping
     # happens in the composer below, so the self-containment guard runs
     # here rather than through ``literalize_apply_form`` (issue #4465).
@@ -4691,16 +4762,14 @@ def literalize_bound_refs(
         variable_form=declaration_form,
         wrap_in_file=False,
     )
-    assignment_result = (
-        literalize_apply_form(
+    assignment_result = None
+    if isinstance(variable_form, BothVariableForms):
+        assignment_result = literalize_apply_form(
             pre_form=pre_form,
             language=language,
             variable_form=ExistingVariable(name=variable_form.name),
             wrap_in_file=False,
         )
-        if isinstance(variable_form, BothVariableForms)
-        else None
-    )
     contextual_bound_refs = _contextual_bound_ref_values(
         source=pre_form.data,
         resolved=pre_form.data_for_preamble,
@@ -4717,9 +4786,9 @@ def literalize_bound_refs(
     for name in ordered_names:
         bound_value = contextual_bound_refs[name]
         language.validate_spec_for_data(data=bound_value)
-        converted_name = (
-            ref_case.convert(name=name) if ref_case is not None else name
-        )
+        converted_name = name
+        if ref_case is not None:
+            converted_name = ref_case.convert(name=name)
         decl_results.append(
             _literalize_value_binding(
                 value=bound_value,
@@ -4978,11 +5047,9 @@ def _validated_ref_name(
     language: Language,
 ) -> str:
     """Convert and validate a ref name before emitting source code."""
-    ref_name = (
-        ref_case.convert(name=raw_ref_name)
-        if ref_case is not None
-        else raw_ref_name
-    )
+    ref_name = raw_ref_name
+    if ref_case is not None:
+        ref_name = ref_case.convert(name=raw_ref_name)
     validate_new_variable_name(
         language=language,
         name=ref_name,
@@ -5067,7 +5134,9 @@ def reject_unbound_refs_in_file(
 
     def _spelled(name: str, /) -> str:
         """Return *name* as the emitted code spells it."""
-        return name if ref_case is None else ref_case.convert(name=name)
+        if ref_case is None:
+            return name
+        return ref_case.convert(name=name)
 
     bound = {_spelled(name) for name in bound_ref_names}
     unbound = {
@@ -5125,7 +5194,7 @@ def _resolve_refs_for_inference(
             ref_values=ref_values,
             ref_key=ref_key,
         )
-        return resolved.value if resolved.include else []
+        return resolved.inference_value()
     return _strip_refs_from_value(value=value, ref_key=ref_key)
 
 
@@ -5136,6 +5205,14 @@ class _PreambleRefResolution:
 
     include: bool
     value: Value
+
+    def inference_value(self) -> Value:
+        """Represent an omitted root marker as an empty inference
+        input.
+        """
+        if self.include:
+            return self.value
+        return []
 
 
 @beartype
@@ -5230,7 +5307,9 @@ def _compute_call_arg_ref_single_use_names(
     """
     counts: dict[str, int] = {}
     for element in elements:
-        arg_values = element if isinstance(element, list) else [element]
+        arg_values = element
+        if not isinstance(arg_values, list):
+            arg_values = [element]
         for value in arg_values:
             for ref_name in _call_arg_ref_names_in_value(
                 value=value,
@@ -5268,7 +5347,9 @@ def _compute_call_arg_ref_consume_inhibited_names(
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
     for element in elements:
-        arg_values = element if isinstance(element, list) else [element]
+        arg_values = element
+        if not isinstance(arg_values, list):
+            arg_values = [element]
         for value in arg_values:
             referenced.update(
                 _call_arg_ref_names_in_value(
@@ -5452,7 +5533,9 @@ def _resolve_call_preamble_data(
             ref_values=ref_values,
             ref_key=ref_key,
         )
-        value = resolved.value if resolved.include else []
+        value: Value = []
+        if resolved.include:
+            value = resolved.value
         return _ResolvedCallPreambleData(value=value, rows=None)
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is not None:
         return _ResolvedCallPreambleData(value=[], rows=None)
@@ -5509,8 +5592,8 @@ def _format_single_call_arg(
             ref_case=ref_case,
             language=language,
         )
-        ref_value = (
-            ref_values.get(raw_ref_name) if ref_values is not None else None
+        ref_value = reference_values_or_empty(values=ref_values).get(
+            raw_ref_name
         )
         return _format_call_arg_ref_identifier(
             raw_ref_name=raw_ref_name,
@@ -5681,11 +5764,10 @@ def _format_call_args(
                 params=params,
                 formatted=formatted,
             )
-            result = (
-                sep.join(f"({value})" for value in formatted)
-                if parenthesize_each_arg
-                else f"({sep.join(formatted)})"
-            )
+            if parenthesize_each_arg:
+                result = sep.join(f"({value})" for value in formatted)
+            else:
+                result = f"({sep.join(formatted)})"
         case KeywordCallStyle(separator=kw_sep):
             _validate_call_parameter_count(
                 params=params,
@@ -5701,11 +5783,24 @@ def _format_call_args(
                 params=params,
                 formatted=formatted,
             )
-            named = ", ".join(
-                f"{f'[{name!r}]' if name in style.computed_names else name}"
-                f"{kw_sep}{val}"
-                for name, val in zip(params, formatted, strict=True)
-            )
+            collected_named: list[str] = []
+            for entry_entry_entry_entry_entry_name, entry_val in zip(
+                params, formatted, strict=True
+            ):
+                effective_entry_entry_entry_entry_entry_name = (
+                    entry_entry_entry_entry_entry_name
+                )
+                if (
+                    effective_entry_entry_entry_entry_entry_name
+                    in style.computed_names
+                ):
+                    effective_entry_entry_entry_entry_entry_name = (
+                        f"[{entry_entry_entry_entry_entry_name!r}]"
+                    )
+                collected_named.append(
+                    f"{(effective_entry_entry_entry_entry_entry_name)}{kw_sep}{entry_val}"
+                )
+            named = ", ".join(collected_named)
             result = f"({{ {named} }})"
         case (
             PostfixCallStyle(arg_separator=sep)
@@ -5748,32 +5843,25 @@ def _assemble_bare_call_expr(
     """
     match style:
         case PostfixCallStyle():
-            return (
-                f"{args_str} {target_function}"
-                if args_str != ""
-                else target_function
-            )
+            resolved_result_1: str = target_function
+            if args_str != "":
+                resolved_result_1 = f"{args_str} {target_function}"
+            return resolved_result_1
         case PositionalCallStyle() | KeywordCallStyle() | ObjectCallStyle():
             return f"{target_function}{args_str}"
         case PrefixCallStyle(arg_separator=sep):
-            inside = (
-                f"{target_function}{sep}{args_str}"
-                if args_str != ""
-                else target_function
-            )
+            inside = target_function
+            if args_str != "":
+                inside = f"{target_function}{sep}{args_str}"
             return f"({inside})"
-        case DottedCommandCallStyle(arg_separator=sep):
-            return (
-                f"{target_function}{sep}{args_str}"
-                if args_str != ""
-                else target_function
-            )
-        case CommandCallStyle(arg_separator=sep):
-            return (
-                f"{target_function}{sep}{args_str}"
-                if args_str != ""
-                else target_function
-            )
+        case (
+            DottedCommandCallStyle(arg_separator=sep)
+            | CommandCallStyle(arg_separator=sep)
+        ):
+            command = target_function
+            if args_str != "":
+                command = f"{target_function}{sep}{args_str}"
+            return command
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -5989,7 +6077,9 @@ def _render_call_per_element(
     )
     rendered_elements: list[str] = []
     for index, element in enumerate(iterable=data):
-        arg_values = element if isinstance(element, list) else [element]
+        arg_values = element
+        if not isinstance(arg_values, list):
+            arg_values = [element]
         non_ref_args = [
             v
             for v in arg_values
@@ -6025,10 +6115,12 @@ def _render_call_per_element(
             ref_key=ref_key,
             collection_layout=collection_layout,
         )
-        zipped = zip_literals[index] if zip_literals is not None else None
-        comment = (
-            comment_literals[index] if comment_literals is not None else ""
-        )
+        zipped = None
+        if zip_literals is not None:
+            zipped = zip_literals[index]
+        comment = ""
+        if comment_literals is not None:
+            comment = comment_literals[index]
         if variable_form is not None:
             # Exactly one element here: ``_validate_call_variable_form``
             # rejected any other call count, so the single name binds
@@ -6478,11 +6570,12 @@ def _validate_call_target(
     # no dot in it reserves those names here.  PHP matches a function
     # name without regard to case, which ``head_case_sensitive``
     # already carries (issue #4495).
-    bare_target_identifiers = (
-        frozenset[str]()
-        if len(target_function_parts[1:]) > 0
-        else language.reserved_bare_call_target_identifiers
-    )
+    if len(target_function_parts[1:]) > 0:
+        bare_target_identifiers = frozenset[str]()
+    else:
+        bare_target_identifiers = (
+            language.reserved_bare_call_target_identifiers
+        )
     if is_reserved_identifier(
         case_sensitive=head_case_sensitive,
         name=head,
@@ -6598,6 +6691,14 @@ def _validate_wrapped_call_declarations(
 
 
 @beartype
+def _comparison_identifier(*, name: str, case_sensitive: bool) -> str:
+    """Normalize an identifier for the target language's case rules."""
+    if case_sensitive:
+        return name
+    return name.casefold()
+
+
+@beartype
 def _validate_wrapped_call_parameter_shadowing(
     *,
     language: Language,
@@ -6621,22 +6722,20 @@ def _validate_wrapped_call_parameter_shadowing(
             assert_never(unreachable)
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
     declared = {
-        part if case_sensitive else part.casefold() for part in declared_parts
+        _comparison_identifier(name=part, case_sensitive=case_sensitive)
+        for part in declared_parts
     }
-    shadowing = next(
-        (
-            name
-            for name in parameter_names
-            if (name if case_sensitive else name.casefold()) in declared
-        ),
-        None,
-    )
-    if shadowing is not None:
-        raise InvalidCallParameterNameError(
-            language_name=type(language).__name__,
-            parameter_name=shadowing,
-            reason="it shadows the generated call-target declaration",
+    for parameter_name in parameter_names:
+        comparison_name = _comparison_identifier(
+            name=parameter_name,
+            case_sensitive=case_sensitive,
         )
+        if comparison_name in declared:
+            raise InvalidCallParameterNameError(
+                language_name=type(language).__name__,
+                parameter_name=parameter_name,
+                reason="it shadows the generated call-target declaration",
+            )
 
 
 @beartype
@@ -6685,10 +6784,13 @@ def _validate_wrapped_call_scaffold(
         isinstance(language, _NormalizesDottedCallPartCase)
         and language.dotted_call_stub_normalizes_part_case
     )
-    compared_parts = [
-        part.casefold() if normalizes_case else part
-        for part in target_function_parts
-    ]
+    collected_compared_parts: list[str] = []
+    for entry_entry_part in target_function_parts:
+        effective_entry_entry_part = entry_entry_part
+        if normalizes_case:
+            effective_entry_entry_part = entry_entry_part.casefold()
+        collected_compared_parts.append(effective_entry_entry_part)
+    compared_parts = collected_compared_parts
     if (
         isinstance(language, _RequiresUniqueDottedCallParts)
         and language.dotted_call_stub_requires_unique_parts
@@ -6717,10 +6819,13 @@ def _validate_wrapped_call_scaffold(
                 f"stub {variable_form.name!r}"
             ),
         )
-    converted_bound_ref_names = {
-        ref_case.convert(name=name) if ref_case is not None else name
-        for name in bound_ref_names
-    }
+    collected_converted_bound_ref_names: set[str] = set()
+    for entry_name in bound_ref_names:
+        effective_ref_case_2 = entry_name
+        if ref_case is not None:
+            effective_ref_case_2 = ref_case.convert(name=entry_name)
+        collected_converted_bound_ref_names.add(effective_ref_case_2)
+    converted_bound_ref_names = collected_converted_bound_ref_names
     colliding_names = converted_bound_ref_names.intersection(
         target_function_parts
     )
@@ -6878,20 +6983,19 @@ def _wrap_call_in_file(
     or by binding it to a ``variable_form``; otherwise the call result
     is discarded and a void stub suffices.
     """
-    stub_return = (
-        StubReturn.VALUE
-        if call_transform is not None or variable_form is not None
-        else StubReturn.VOID
-    )
+    if call_transform is not None or variable_form is not None:
+        stub_return = StubReturn.VALUE
+    else:
+        stub_return = StubReturn.VOID
     body_stubs = language.format_call_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
-    wrap_variable_name = (
-        variable_form.name if variable_form is not None else ""
-    )
+    wrap_variable_name = ""
+    if variable_form is not None:
+        wrap_variable_name = variable_form.name
     wrap_in_file_hook = language.wrap_in_file
     if variable_form is not None and isinstance(
         language, _SupportsCallVariableWrapInFile
@@ -6979,35 +7083,32 @@ def _compose_call_with_bound_ref_declarations(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
-    stub_arg_values: Sequence[Value] = (
-        data_for_preamble
-        if per_element and isinstance(data_for_preamble, list)
-        else [data_for_preamble]
-    )
-    decl_results = [
-        _literalize_value_binding(
-            value=value,
-            language=language,
-            variable_form=NewVariable(
-                name=(
-                    ref_case.convert(name=name)
-                    if ref_case is not None
-                    else name
+    stub_arg_values: Sequence[Value]
+    stub_arg_values = [data_for_preamble]
+    if per_element and isinstance(data_for_preamble, list):
+        stub_arg_values = data_for_preamble
+    collected_decl_results: list[LiteralizeResult] = []
+    for entry_entry_name, entry_entry_value in bound_refs.items():
+        effective_name = entry_entry_name
+        if ref_case is not None:
+            effective_name = ref_case.convert(name=entry_entry_name)
+        collected_decl_results.append(
+            _literalize_value_binding(
+                value=entry_entry_value,
+                language=language,
+                variable_form=NewVariable(
+                    name=effective_name, modifiers=frozenset()
                 ),
-                modifiers=frozenset(),
-            ),
-            collection_layout=collection_layout,
-            record_context_data=None,
-            # The call path composes its own file and applies no
-            # caller margin to the calls, so the declarations take
-            # none either.
-            line_prefix="",
+                collection_layout=collection_layout,
+                record_context_data=None,
+                line_prefix="",
+            )
         )
-        for name, value in bound_refs.items()
-    ]
-    stub_return = (
-        StubReturn.VALUE if call_transform is not None else StubReturn.VOID
-    )
+    decl_results = collected_decl_results
+    if call_transform is not None:
+        stub_return = StubReturn.VALUE
+    else:
+        stub_return = StubReturn.VOID
     body_stubs = language.format_call_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
@@ -7123,6 +7224,53 @@ def _wrap_call_result_in_file(
 
 
 @beartype
+def materialize_value_mapping(
+    *,
+    values: Mapping[str, ValueInput] | None,
+    argument_name: str,
+) -> dict[str, Value]:
+    """Materialize each supplied reference or substitution value."""
+    if values is None:
+        return {}
+    return {
+        name: materialize_value_input(value=value, argument_name=argument_name)
+        for name, value in values.items()
+    }
+
+
+@beartype
+def reference_values_or_empty(
+    *,
+    values: Mapping[str, Value] | None,
+) -> Mapping[str, Value]:
+    """Normalize absent materialized reference values to an empty
+    mapping.
+    """
+    if values is None:
+        return dict[str, Value]()
+    return values
+
+
+@beartype
+def reference_inputs_or_empty(
+    *,
+    values: Mapping[str, ValueInput] | None,
+) -> Mapping[str, ValueInput]:
+    """Normalize absent reference inputs to an empty mapping."""
+    if values is None:
+        return dict[str, ValueInput]()
+    return values
+
+
+@beartype
+def nonempty_mapping[T](*, values: Mapping[str, T]) -> Mapping[str, T] | None:
+    """Return a reference mapping only when it contains entries."""
+    if len(values) == 0:
+        return None
+    return values
+
+
+@beartype
 def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
     """Convert a user-supplied ``ValueInput`` into the internal ``Value``
     form, replacing any non-``list`` ``Sequence`` and non-``dict``
@@ -7195,14 +7343,21 @@ def _preamble_data_with_zip(
     # and body-type inference, while giving container-sensitive language
     # preambles the precise values that appear as call arguments.
     rows = per_element_rows
-    argument_values = tuple(
-        argument
-        for row in rows
-        for argument in (row if isinstance(row, list) else [row])
-    )
-    normalized_rows = tuple(
-        row if isinstance(row, list) else [row] for row in rows
-    )
+    collected_argument_values: list[Value] = []
+    for entry_row in rows:
+        if isinstance(entry_row, list):
+            effective_entry_row = entry_row
+        else:
+            effective_entry_row = [entry_row]
+        collected_argument_values.extend(effective_entry_row)
+    argument_values = tuple(collected_argument_values)
+    collected_normalized_rows: list[list[Value]] = []
+    for entry_entry_row in rows:
+        effective_entry_entry_row = entry_entry_row
+        if not isinstance(effective_entry_entry_row, list):
+            effective_entry_entry_row = [entry_entry_row]
+        collected_normalized_rows.append(effective_entry_entry_row)
+    normalized_rows = tuple(collected_normalized_rows)
     argument_slots = tuple(
         [row[index] for row in normalized_rows if index < len(row)]
         for index in range(
@@ -7355,169 +7510,28 @@ def _resolve_zip_literals(
 
 
 @beartype
-def literalize_call_parsed(
+def _render_parsed_call(
     *,
+    data: Value,
+    per_element_data: list[Value] | None,
     parsed: ParsedInput,
     language: Language,
+    style: CallStyle,
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[CallContext], str] | None,
-    zip_source: str | None,
-    zip_input_format: InputFormat | None,
-    comment_source: Sequence[str] | None,
-    per_element: bool,
-    wrap_in_file: bool,
+    zip_literals: Sequence[str] | None,
     ref_case: IdentifierCase | None,
     consumable_refs: frozenset[str],
-    ref_values: Mapping[str, ValueInput] | None,
-    bound_refs: Mapping[str, ValueInput] | None,
+    materialized_ref_values: Mapping[str, Value],
     ref_key: str,
-    collection_layout: CollectionLayout,
+    comment_literals: Sequence[str] | None,
     variable_form: NewVariable | ExistingVariable | None,
-) -> LiteralizeResult:
-    """Render a call from input parsed by :func:`parse_input`.
-
-    This is the shared rendering core behind :func:`literalize_call`.
-    Keeping parsing outside the core lets the golden-file harness select
-    the call-row array from a TOML document, whose root is necessarily a
-    table, while exercising the same production renderer as the public
-    entry point.
+    collection_layout: CollectionLayout,
+) -> str:
+    """Render one whole-document call or a sequence of per-element
+    calls.
     """
-    data = parsed.data
-    reject_unbound_refs_in_file(
-        data=data,
-        ref_key=ref_key,
-        ref_case=ref_case,
-        bound_ref_names=(
-            frozenset(bound_refs)
-            if bound_refs is not None and len(bound_refs) > 0
-            else frozenset()
-        ),
-        language=language,
-        wrap_in_file=wrap_in_file,
-    )
-    _validate_ref_case_is_injective(
-        value=data,
-        ref_key=ref_key,
-        ref_case=ref_case,
-    )
-    contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
-    match language.call_style_config:
-        case CallSupport.NOT_IN_LANGUAGE:
-            raise CallsNotSupportedByLanguageError(
-                language_name=type(language).__name__,
-            )
-        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
-            raise CallsNotSupportedByToolError(
-                language_name=type(language).__name__,
-            )
-        case _ as style:
-            pass
-
-    per_element_data: list[Value] | None = None
-    if per_element:
-        if not isinstance(data, list):
-            msg = (
-                "per_element=True requires a top-level list, "
-                f"got {type(data).__name__}"
-            )
-            raise PerElementNotListError(msg)
-        per_element_data = data
-    arg_values: Sequence[Value] = (
-        per_element_data if per_element_data is not None else [data]
-    )
-
-    target_function_parts = tuple(target_function.split(sep="."))
-    _validate_call_preconditions(
-        language=language,
-        target_function=target_function,
-        target_function_parts=target_function_parts,
-        parameter_names=parameter_names,
-        arg_values=arg_values,
-        ref_key=ref_key,
-        ref_case=ref_case,
-        call_transform=call_transform,
-        style=style,
-        variable_form=variable_form,
-        wrap_in_file=wrap_in_file,
-        bound_ref_names=(
-            tuple(bound_refs)
-            if bound_refs is not None and len(bound_refs) > 0
-            else ()
-        ),
-    )
-    if (
-        isinstance(style, DottedCommandCallStyle)
-        and len(target_function_parts) > 1
-    ):
-        style = style.dotted_call_style
-    zip_resolution = _resolve_zip_literals(
-        zip_source=zip_source,
-        zip_input_format=zip_input_format,
-        call_transform=call_transform,
-        per_element=per_element,
-        call_count=len(arg_values),
-        language=language,
-        collection_layout=collection_layout,
-    )
-    zip_literals = (
-        zip_resolution.literals if zip_resolution is not None else None
-    )
-    comment_literals = _resolve_comment_literals(
-        comment_source=comment_source,
-        call_count=len(arg_values),
-    )
-    _validate_comment_source_supported(
-        language=language,
-        comment_literals=comment_literals,
-    )
-    _validate_wrap_in_file_supports_standalone_comments(
-        language=language,
-        wrap_in_file=wrap_in_file,
-        contains_standalone_comments=contains_standalone_comments,
-    )
-    target_function = language.format_call_target(target_function_parts)
-
-    source_ref_values: Mapping[str, ValueInput] = (
-        ref_values
-        if ref_values is not None and len(ref_values) > 0
-        else dict[str, ValueInput]()
-    )
-    explicit_ref_values: dict[str, Value] = {
-        name: materialize_value_input(
-            value=value,
-            argument_name="ref_values",
-        )
-        for name, value in source_ref_values.items()
-    }
-    source_bound_refs: Mapping[str, ValueInput] = (
-        bound_refs
-        if bound_refs is not None and len(bound_refs) > 0
-        else dict[str, ValueInput]()
-    )
-    materialized_bound_refs: dict[str, Value] = {
-        name: materialize_value_input(
-            value=value,
-            argument_name="bound_refs",
-        )
-        for name, value in source_bound_refs.items()
-    }
-    # ``bound_refs`` entries double as ``ref_values`` so a name need not
-    # be repeated in both mappings; an explicit ``ref_values`` entry for
-    # the same name wins (it is the caller's stated type intent).  This
-    # mirrors :func:`literalize`'s ``bound_refs``/``ref_values`` rule.
-    materialized_ref_values: Mapping[str, Value] = {
-        **materialized_bound_refs,
-        **explicit_ref_values,
-    }
-
-    resolved_preamble_data = _resolve_call_preamble_data(
-        data=data,
-        per_element_data=per_element_data,
-        ref_key=ref_key,
-        ref_values=materialized_ref_values,
-    )
-
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
         if (
@@ -7550,6 +7564,12 @@ def literalize_call_parsed(
             collection_layout=collection_layout,
         )
     else:
+        effective_zip_literal = None
+        if zip_literals is not None:
+            effective_zip_literal = zip_literals[0]
+        effective_comment = ""
+        if comment_literals is not None:
+            effective_comment = comment_literals[0]
         result = _render_call_whole(
             data=data,
             language=language,
@@ -7557,23 +7577,195 @@ def literalize_call_parsed(
             target_function=target_function,
             parameter_names=parameter_names,
             call_transform=call_transform,
-            zip_literal=zip_literals[0] if zip_literals is not None else None,
+            zip_literal=effective_zip_literal,
             ref_case=ref_case,
             consumable_ref_names=consumable_refs,
             ref_values=materialized_ref_values,
             ref_key=ref_key,
-            comment=(
-                comment_literals[0] if comment_literals is not None else ""
-            ),
+            comment=(effective_comment),
             collection_layout=collection_layout,
             variable_form=variable_form,
         )
+    return result
+
+
+@beartype
+def _call_argument_rows(
+    *,
+    data: Value,
+    per_element: bool,
+) -> tuple[list[Value] | None, Sequence[Value]]:
+    """Validate and select the values supplying each rendered call."""
+    if not per_element:
+        return None, [data]
+    if not isinstance(data, list):
+        msg = (
+            "per_element=True requires a top-level list, "
+            f"got {type(data).__name__}"
+        )
+        raise PerElementNotListError(msg)
+    return data, data
+
+
+@beartype
+def literalize_call_parsed(
+    *,
+    parsed: ParsedInput,
+    language: Language,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[CallContext], str] | None,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    comment_source: Sequence[str] | None,
+    per_element: bool,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+    consumable_refs: frozenset[str],
+    ref_values: Mapping[str, ValueInput] | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    variable_form: NewVariable | ExistingVariable | None,
+) -> LiteralizeResult:
+    """Render a call from input parsed by :func:`parse_input`.
+
+    This is the shared rendering core behind :func:`literalize_call`.
+    Keeping parsing outside the core lets the golden-file harness select
+    the call-row array from a TOML document, whose root is necessarily a
+    table, while exercising the same production renderer as the public
+    entry point.
+    """
+    data = parsed.data
+    effective_bound_ref_names = frozenset(
+        reference_inputs_or_empty(values=bound_refs)
+    )
+    reject_unbound_refs_in_file(
+        data=data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        bound_ref_names=(effective_bound_ref_names),
+        language=language,
+        wrap_in_file=wrap_in_file,
+    )
+    _validate_ref_case_is_injective(
+        value=data,
+        ref_key=ref_key,
+        ref_case=ref_case,
+    )
+    contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
+    match language.call_style_config:
+        case CallSupport.NOT_IN_LANGUAGE:
+            raise CallsNotSupportedByLanguageError(
+                language_name=type(language).__name__,
+            )
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            raise CallsNotSupportedByToolError(
+                language_name=type(language).__name__,
+            )
+        case _ as style:
+            pass
+
+    per_element_data, arg_values = _call_argument_rows(
+        data=data, per_element=per_element
+    )
+    target_function_parts = tuple(target_function.split(sep="."))
+    effective_bound_ref_names_2 = tuple(
+        reference_inputs_or_empty(values=bound_refs)
+    )
+    _validate_call_preconditions(
+        language=language,
+        target_function=target_function,
+        target_function_parts=target_function_parts,
+        parameter_names=parameter_names,
+        arg_values=arg_values,
+        ref_key=ref_key,
+        ref_case=ref_case,
+        call_transform=call_transform,
+        style=style,
+        variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+        bound_ref_names=(effective_bound_ref_names_2),
+    )
+    if (
+        isinstance(style, DottedCommandCallStyle)
+        and len(target_function_parts) > 1
+    ):
+        style = style.dotted_call_style
+    zip_resolution = _resolve_zip_literals(
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        call_transform=call_transform,
+        per_element=per_element,
+        call_count=len(arg_values),
+        language=language,
+        collection_layout=collection_layout,
+    )
+    zip_literals = None
+    if zip_resolution is not None:
+        zip_literals = zip_resolution.literals
+    comment_literals = _resolve_comment_literals(
+        comment_source=comment_source,
+        call_count=len(arg_values),
+    )
+    _validate_comment_source_supported(
+        language=language,
+        comment_literals=comment_literals,
+    )
+    _validate_wrap_in_file_supports_standalone_comments(
+        language=language,
+        wrap_in_file=wrap_in_file,
+        contains_standalone_comments=contains_standalone_comments,
+    )
+    target_function = language.format_call_target(target_function_parts)
+
+    explicit_ref_values = materialize_value_mapping(
+        values=ref_values,
+        argument_name="ref_values",
+    )
+    materialized_bound_refs = materialize_value_mapping(
+        values=bound_refs,
+        argument_name="bound_refs",
+    )
+    materialized_ref_values: Mapping[str, Value] = {
+        **materialized_bound_refs,
+        **explicit_ref_values,
+    }
+
+    resolved_preamble_data = _resolve_call_preamble_data(
+        data=data,
+        per_element_data=per_element_data,
+        ref_key=ref_key,
+        ref_values=materialized_ref_values,
+    )
+
+    result = _render_parsed_call(
+        data=data,
+        per_element_data=per_element_data,
+        parsed=parsed,
+        language=language,
+        style=style,
+        target_function=target_function,
+        parameter_names=parameter_names,
+        call_transform=call_transform,
+        zip_literals=zip_literals,
+        ref_case=ref_case,
+        consumable_refs=consumable_refs,
+        materialized_ref_values=materialized_ref_values,
+        ref_key=ref_key,
+        comment_literals=comment_literals,
+        variable_form=variable_form,
+        collection_layout=collection_layout,
+    )
     rendered_uses_zip = zip_resolution is not None and any(
         literal in result for literal in zip_resolution.literals
     )
+    effective_zip_resolution = None
+    if rendered_uses_zip:
+        effective_zip_resolution = zip_resolution
     preamble_data = _preamble_data_with_zip(
         data_for_preamble=resolved_preamble_data.value,
-        zip_resolution=zip_resolution if rendered_uses_zip else None,
+        zip_resolution=effective_zip_resolution,
         per_element_rows=resolved_preamble_data.rows,
     )
     computed = compute_preamble(

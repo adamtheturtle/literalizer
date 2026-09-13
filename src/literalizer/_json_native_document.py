@@ -189,7 +189,9 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
             case None:
                 return null_literal
             case bool():
-                return true_literal if value else false_literal
+                if value:
+                    return true_literal
+                return false_literal
             case int():
                 if not int_range.minimum <= value <= int_range.maximum:
                     raise _SharedRendererRequiredError
@@ -257,36 +259,46 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
     def root(value: dict[Scalar, Value] | list[Value], /) -> str:
         """Format the root collection over multiple lines."""
         is_dict = isinstance(value, dict)
-        config_supports_trailing_comma = (
-            dict_config.supports_trailing_comma
-            if is_dict
-            else sequence_config.supports_trailing_comma
-        )
+        if is_dict:
+            config_supports_trailing_comma = (
+                dict_config.supports_trailing_comma
+            )
+        else:
+            config_supports_trailing_comma = (
+                sequence_config.supports_trailing_comma
+            )
         trailing_comma = (
             language.trailing_comma_config.multiline_trailing_comma
             and config_supports_trailing_comma
         )
-        head = dict_head if is_dict else sequence_head
-        closer = dict_close if is_dict else sequence_close
-        entries = (
-            dict_entries(value)
-            if isinstance(value, dict)
-            else sequence_entries(value)
-        )
+        head = sequence_head
+        if is_dict:
+            head = dict_head
+        closer = sequence_close
+        if is_dict:
+            closer = dict_close
+        if isinstance(value, dict):
+            entries = dict_entries(value)
+        else:
+            entries = sequence_entries(value)
         body_prefix = line_prefix + language.indent
         separator_text = separator.strip()
         last_index = len(entries) - 1
         # Trim per line, not just at the end of the entry: that is what
         # the shared renderer does, and a scalar formatter that emits a
         # multi-line literal would otherwise diverge from it.
-        lines = [
-            f"{body_prefix}{rstrip_lines(text=entry)}"
-            f"{separator_text if index < last_index or trailing_comma else ''}"
-            for index, entry in enumerate(iterable=entries)
-        ]
-        closing_indent = (
-            language.indent if language.indent_closing_delimiter else ""
-        )
+        collected_lines: list[str] = []
+        for entry_index, entry_entry in enumerate(iterable=entries):
+            effective_separator_text = ""
+            if entry_index < last_index or trailing_comma:
+                effective_separator_text = separator_text
+            collected_lines.append(
+                f"{body_prefix}{rstrip_lines(text=entry_entry)}{(effective_separator_text)}"
+            )
+        lines = collected_lines
+        closing_indent = ""
+        if language.indent_closing_delimiter:
+            closing_indent = language.indent
         opening = (line_prefix + head).rstrip()
         return (
             f"{opening}\n{'\n'.join(lines)}\n"

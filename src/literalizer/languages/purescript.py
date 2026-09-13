@@ -16,6 +16,7 @@ from literalizer._checks import reject_negative_zero
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    replace_optional_type_name,
 )
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
@@ -566,7 +567,10 @@ def _build_purescript_body_preamble(
         needs_prelude = bool(
             types & {int, float}
         ) and _purescript_needs_prelude(val=data)
-        lines: list[str] = ["import Prelude"] if needs_prelude else []
+        lines: list[str]
+        lines = []
+        if needs_prelude:
+            lines = ["import Prelude"]
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
         first_line = f"data {type_name}\n    = {constructors[0]}"
@@ -716,10 +720,8 @@ def _build_purescript_call_output(
     module-scope declarations to insert before ``main``.
     """
     if "import Prelude" not in preamble:
-        preamble = (
-            "import Prelude\n" + preamble
-            if preamble != ""
-            else "import Prelude"
+        preamble = "\n".join(
+            part for part in ("import Prelude", preamble) if part != ""
         )
     preamble = _hoist_purescript_imports(preamble=preamble)
     return (
@@ -1424,7 +1426,9 @@ class PureScript(metaclass=LanguageCls):
         """
         preamble = "\n".join(body_preamble)
         declaration_block = "\n".join(declarations)
-        decl_part = "\n" + declaration_block if declaration_block != "" else ""
+        decl_part = ""
+        if declaration_block != "":
+            decl_part = "\n" + declaration_block
         return _build_purescript_call_output(
             preamble=preamble,
             decl_part=decl_part,
@@ -1590,7 +1594,9 @@ class PureScript(metaclass=LanguageCls):
         Under :attr:`json_type` the stub's parameter types are ``Json``
         rather than the generated ``Val`` ADT.
         """
-        stub_type_name = "Json" if self._json_type_active else self.type_name
+        stub_type_name = "Json"
+        if not self._json_type_active:
+            stub_type_name = self.type_name
         return _build_purescript_call_stub(type_name=stub_type_name)
 
     @cached_property
@@ -1823,7 +1829,9 @@ class PureScript(metaclass=LanguageCls):
         def _format_float_with_specials(value: float) -> str:
             """Format a float, handling inf and nan."""
             if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
+                if value < 0:
+                    return _neg_inf
+                return _pos_inf
             if math.isnan(value):
                 return _nan_val
             return _float_finite(value)
@@ -1862,10 +1870,8 @@ class PureScript(metaclass=LanguageCls):
             return _format_purescript_json_declaration
         _base_declaration = self.declaration_style.value.formatter
         _raw_declared = self.sequence_format.value.declared_type
-        _sequence_declared_type = (
-            _raw_declared.replace("Val", self.type_name)
-            if _raw_declared is not None
-            else None
+        _sequence_declared_type = replace_optional_type_name(
+            template=_raw_declared, placeholder="Val", type_name=self.type_name
         )
         _scalar_type = self.type_name
 
@@ -1878,11 +1884,10 @@ class PureScript(metaclass=LanguageCls):
         ) -> str:
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data, _modifiers)
-            decl_type = (
-                _sequence_declared_type
-                if isinstance(data, list)
-                else _scalar_type
-            )
+            decl_type: str | None
+            decl_type = _scalar_type
+            if isinstance(data, list):
+                decl_type = _sequence_declared_type
             return f"{name} :: {decl_type}\n{base}"
 
         return _purescript_declaration

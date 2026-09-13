@@ -114,7 +114,9 @@ def _skip_for_error(
     indicate a divergence between the two.
     """
     entry = next(entry for entry in reasons if isinstance(exc, entry.error))
-    detail = f": {exc.reason}" if isinstance(exc, _ReasonedError) else ""
+    detail = ""
+    if isinstance(exc, _ReasonedError):
+        detail = f": {exc.reason}"
     skip_golden(
         reason=f"{prefix} {entry.reason}{detail}{suffix}",
         golden_path=golden_path,

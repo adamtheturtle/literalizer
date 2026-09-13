@@ -5,6 +5,7 @@ import datetime
 import enum
 import functools
 import re
+import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import ClassVar, assert_never
@@ -359,9 +360,9 @@ def _dart_opener_hint(
     language's default ones.
     """
     arguments = opener.removesuffix(delimiter)
-    resolved_arguments = (
-        arguments if arguments != "" else f"<{default_arguments}>"
-    )
+    resolved_arguments = arguments
+    if resolved_arguments == "":
+        resolved_arguments = f"<{default_arguments}>"
     return f"{prefix}{resolved_arguments}"
 
 
@@ -1089,10 +1090,7 @@ class Dart(metaclass=LanguageCls):
         # Class/function stubs go at file scope; call expressions and
         # declarations from reference values go inside void main(). Add a
         # top-level my_data sentinel so the CI lint harness can import it.
-        indented = "\n".join(
-            f"{self.indent}{line}" if line.strip() != "" else line
-            for line in content.split(sep="\n")
-        )
+        indented = textwrap.indent(text=content, prefix=self.indent)
         return "\n".join(
             [
                 *body_preamble,
@@ -1412,7 +1410,9 @@ class Dart(metaclass=LanguageCls):
     def _dart_keyword(self) -> str:
         """Keyword prefix derived from the declaration style."""
         kw = self.declaration_style.name.lower()
-        return "" if kw == "var" else f"{kw} "
+        if kw == "var":
+            return ""
+        return f"{kw} "
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1531,23 +1531,20 @@ class Dart(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        effective_date_hint = "DateTime"
+        if self.date_format.value.type_produced is str:
+            effective_date_hint = "String"
+        if self.datetime_format.value.type_produced is int:
+            effective_datetime_hint = "int"
+        else:
+            effective_datetime_hint = "DateTime"
+            if self.datetime_format.value.type_produced is str:
+                effective_datetime_hint = "String"
         return self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self._dart_keyword,
-            date_hint=(
-                "String"
-                if self.date_format.value.type_produced is str
-                else "DateTime"
-            ),
-            datetime_hint=(
-                "int"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "String"
-                    if self.datetime_format.value.type_produced is str
-                    else "DateTime"
-                )
-            ),
+            date_hint=(effective_date_hint),
+            datetime_hint=(effective_datetime_hint),
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,
             default_dict_value_type=self.default_dict_value_type,

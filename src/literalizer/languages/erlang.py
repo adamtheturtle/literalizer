@@ -303,7 +303,9 @@ def _erlang_call_stub(
     single stub is emitted per call name; unused arguments use the
     ``_`` pattern so no per-argument naming is needed.
     """
-    body = "ok" if stub_return is StubReturn.VOID else "undefined"
+    body = "undefined"
+    if stub_return is StubReturn.VOID:
+        body = "ok"
     target = _erlang_format_call_target(parts)
     arg_list = ", ".join("_" for _ in params)
     return (f"{target}({arg_list}) -> {body}.",)
@@ -820,7 +822,9 @@ class Erlang(metaclass=LanguageCls):
         code = last[:comment_start].rstrip()
         gap = last[len(code) : comment_start]
         trimmed_last = f"{code.removesuffix(',')}{gap}{last[comment_start:]}"
-        trimmed = f"{head}\n{trimmed_last}" if head != "" else trimmed_last
+        trimmed = trimmed_last
+        if head != "":
+            trimmed = f"{head}\n{trimmed_last}"
         indented = textwrap.indent(text=trimmed, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
         parts.extend(body_preamble)

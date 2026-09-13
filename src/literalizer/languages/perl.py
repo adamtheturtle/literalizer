@@ -237,9 +237,13 @@ def _format_perl_string_double(value: str) -> str:
     )
     if base.isascii():
         return base
-    return "".join(
-        char if char.isascii() else f"\\x{{{ord(char):x}}}" for char in base
-    )
+    collected_entries: list[str] = []
+    for entry_char in base:
+        effective_entry_char = entry_char
+        if not effective_entry_char.isascii():
+            effective_entry_char = f"\\x{{{ord(entry_char):x}}}"
+        collected_entries.append(effective_entry_char)
+    return "".join(collected_entries)
 
 
 @beartype
@@ -956,23 +960,28 @@ class Perl(metaclass=LanguageCls):
         the literal-Unicode string-format contribution so a value triggering
         both gets both preamble lines in a stable order.
         """
+        effective_contributors: tuple[Callable[[Value], tuple[str, ...]], ...]
+        if (
+            self.integer_width_strategy
+            is type(self.integer_width_strategy).MATH_BIG_INT
+        ):
+            effective_contributors = (_perl_math_bigint_preamble,)
+        else:
+            effective_contributors = ()
+        effective_contributors_2: tuple[
+            Callable[[Value], tuple[str, ...]], ...
+        ]
+        if self.string_format in {
+            type(self.string_format).DOUBLE_UTF8,
+            type(self.string_format).SINGLE,
+        }:
+            effective_contributors_2 = (_perl_use_utf8_preamble,)
+        else:
+            effective_contributors_2 = ()
         contributors: tuple[Callable[[Value], tuple[str, ...]], ...] = (
             _perl_math_bigfloat_preamble,
-            *(
-                (_perl_math_bigint_preamble,)
-                if self.integer_width_strategy
-                is type(self.integer_width_strategy).MATH_BIG_INT
-                else ()
-            ),
-            *(
-                (_perl_use_utf8_preamble,)
-                if self.string_format
-                in {
-                    type(self.string_format).DOUBLE_UTF8,
-                    type(self.string_format).SINGLE,
-                }
-                else ()
-            ),
+            *(effective_contributors),
+            *(effective_contributors_2),
         )
 
         def _composed(data: Value, /) -> tuple[str, ...]:
@@ -1221,9 +1230,10 @@ class Perl(metaclass=LanguageCls):
         format.
         """
         bool_preamble = self.bool_format.value.preamble_lines
-        extra: dict[type, tuple[str, ...]] | None = (
-            {bool: bool_preamble} if len(bool_preamble) > 0 else None
-        )
+        extra: dict[type, tuple[str, ...]] | None
+        extra = None
+        if len(bool_preamble) > 0:
+            extra = {bool: bool_preamble}
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,

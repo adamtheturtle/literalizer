@@ -178,13 +178,14 @@ def _entry_line(
     and the script intentionally avoids Prelude imports so the
     ``lint-fast`` job does not need network or a populated import cache.
     """
-    sep = "" if is_first else ","
+    sep = ","
+    if is_first:
+        sep = ""
     expression = f"{_VAR_NAME}.{key}"
-    converted = (
-        f"valueToJson {expression}"
-        if has_union
-        else _scalar_to_json(expression=expression, value=value)
-    )
+    if has_union:
+        converted = f"valueToJson {expression}"
+    else:
+        converted = _scalar_to_json(expression=expression, value=value)
     return f'"{sep}\\"{key}\\":" ++ {converted}'
 
 
@@ -233,9 +234,10 @@ def _build_program(json_text: str) -> str:
         )
         for index, (key, value) in enumerate(iterable=parsed.items())
     )
-    helpers = _TEXT_HELPERS + (
-        _value_to_json(variants=variants) if has_union else ""
-    )
+    effective_helpers = ""
+    if has_union:
+        effective_helpers = _value_to_json(variants=variants)
+    helpers = _TEXT_HELPERS + (effective_helpers)
     return (
         f"{preamble_text}\n"
         f"{binding_without_tail}"

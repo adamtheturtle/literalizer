@@ -106,7 +106,9 @@ def _section(*, result: literalizer.LiteralizeResult, name: str) -> str:
         if section.name == name:
             return section.content
     section_names = ", ".join(section.name for section in result.sections)
-    available = section_names if section_names != "" else "none"
+    available = "none"
+    if section_names != "":
+        available = section_names
     msg = (
         f"Expected a {name!r} file section in the literalized COBOL "
         f"result, but found: {available}; the backend's section layout "

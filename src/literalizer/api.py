@@ -31,7 +31,9 @@ from literalizer._literalize import (
     literalize_bound_refs,
     literalize_call_parsed,
     literalize_pre_form,
-    materialize_value_input,
+    materialize_value_mapping,
+    nonempty_mapping,
+    reference_inputs_or_empty,
 )
 from literalizer._parsing import (
     InputFormat,
@@ -86,10 +88,13 @@ def _validate_bound_ref_output_name(
         return
     if not isinstance(variable_form, NewVariable | BothVariableForms):
         return
-    declared = {
-        ref_case.convert(name=name) if ref_case is not None else name
-        for name in bound_ref_names
-    }
+    collected_declared: set[str] = set()
+    for entry_name in bound_ref_names:
+        effective_ref_case = entry_name
+        if ref_case is not None:
+            effective_ref_case = ref_case.convert(name=entry_name)
+        collected_declared.add(effective_ref_case)
+    declared = collected_declared
     if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
         name=variable_form.name,
@@ -143,10 +148,13 @@ def _validate_module_name_variable_collision(
         or not language.module_name_shares_variable_scope
     ):
         return
-    declared = {
-        ref_case.convert(name=name) if ref_case is not None else name
-        for name in bound_ref_names
-    }
+    collected_declared_2: set[str] = set()
+    for entry_entry_name in bound_ref_names:
+        effective_ref_case_2 = entry_entry_name
+        if ref_case is not None:
+            effective_ref_case_2 = ref_case.convert(name=entry_entry_name)
+        collected_declared_2.add(effective_ref_case_2)
+    declared = collected_declared_2
     if isinstance(variable_form, NewVariable | ExistingVariable):
         declared.add(variable_form.name)
     module_name = vars(language)["module_name"]
@@ -411,60 +419,40 @@ def literalize(
             file-statement scope).
     """
     language = _fresh_language(language=language)
-    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
+    effective_ref_key = ref_key
+    if effective_ref_key is None:
+        effective_ref_key = disabled_ref_key()
+    effective_bound_ref_names: Mapping[str, ValueInput]
+    effective_bound_ref_names = reference_inputs_or_empty(values=bound_refs)
     _validate_render_arguments(
         language=language,
         pre_indent_level=pre_indent_level,
         include_delimiters=include_delimiters,
         variable_form=variable_form,
-        bound_ref_names=(
-            bound_refs
-            if bound_refs is not None and len(bound_refs) > 0
-            else {}
-        ),
+        bound_ref_names=(effective_bound_ref_names),
         wrap_in_file=wrap_in_file,
         ref_case=ref_case,
     )
-    explicit_ref_values: dict[str, Value] = (
-        {
-            name: materialize_value_input(
-                value=value,
-                argument_name="ref_values",
-            )
-            for name, value in ref_values.items()
-        }
-        if ref_values is not None
-        else {}
+    explicit_ref_values = materialize_value_mapping(
+        values=ref_values,
+        argument_name="ref_values",
     )
-    materialized_bound_refs: dict[str, Value] = (
-        {
-            name: materialize_value_input(
-                value=value,
-                argument_name="bound_refs",
-            )
-            for name, value in bound_refs.items()
-        }
-        if bound_refs is not None
-        else {}
+    materialized_bound_refs = materialize_value_mapping(
+        values=bound_refs,
+        argument_name="bound_refs",
     )
-    materialized_record_null_substitutions: Mapping[str, Value] | None = (
-        {
-            name: materialize_value_input(
-                value=value,
-                argument_name="record_null_substitutions",
-            )
-            for name, value in record_null_substitutions.items()
-        }
-        if record_null_substitutions is not None
-        else None
-    )
+    materialized_record_null_substitutions: Mapping[str, Value] | None = None
+    if record_null_substitutions is not None:
+        materialized_record_null_substitutions = materialize_value_mapping(
+            values=record_null_substitutions,
+            argument_name="record_null_substitutions",
+        )
     # ``bound_refs`` entries double as ``ref_values`` so a name need not
     # be repeated in both mappings; an explicit ``ref_values`` entry for
     # the same name wins (it is the caller's stated type intent).
     combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
-    materialized_ref_values: Mapping[str, Value] | None = (
-        combined_ref_values if len(combined_ref_values) > 0 else None
-    )
+    materialized_ref_values: Mapping[str, Value] | None
+    materialized_ref_values = nonempty_mapping(values=combined_ref_values)
     _validate_bound_ref_output_name(
         language=language,
         variable_form=variable_form,
@@ -496,6 +484,9 @@ def literalize(
                 f"{language.declaration_style.name!r} does not."
             )
             raise ValueError(msg)
+        effective_explicit_ref_values = nonempty_mapping(
+            values=explicit_ref_values
+        )
         return literalize_both_forms(
             source=source,
             input_format=input_format,
@@ -505,9 +496,7 @@ def literalize(
             variable_form=variable_form,
             ref_case=ref_case,
             ref_values=materialized_ref_values,
-            explicit_ref_values=(
-                explicit_ref_values if len(explicit_ref_values) > 0 else None
-            ),
+            explicit_ref_values=(effective_explicit_ref_values),
             bound_refs=materialized_bound_refs,
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
@@ -519,6 +508,9 @@ def literalize(
         and wrap_in_file
         and isinstance(variable_form, NewVariable | ExistingVariable)
     ):
+        effective_explicit_ref_values_2 = nonempty_mapping(
+            values=explicit_ref_values
+        )
         return literalize_bound_refs(
             source=source,
             input_format=input_format,
@@ -527,9 +519,7 @@ def literalize(
             include_delimiters=include_delimiters,
             variable_form=variable_form,
             ref_case=ref_case,
-            explicit_ref_values=(
-                explicit_ref_values if len(explicit_ref_values) > 0 else None
-            ),
+            explicit_ref_values=(effective_explicit_ref_values_2),
             bound_refs=materialized_bound_refs,
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
@@ -818,30 +808,28 @@ def literalize_call(
         raise InvalidSequenceArgumentError(argument_name="parameter_names")
     if isinstance(comment_source, str):
         raise InvalidSequenceArgumentError(argument_name="comment_source")
-    effective_ref_key = disabled_ref_key() if ref_key is None else ref_key
+    effective_ref_key = ref_key
+    if effective_ref_key is None:
+        effective_ref_key = disabled_ref_key()
     _validate_variable_modifiers(
         language=language,
         variable_form=variable_form,
     )
+    effective_bound_ref_names_2: Mapping[str, ValueInput]
+    effective_bound_ref_names_2 = reference_inputs_or_empty(values=bound_refs)
     _validate_bound_ref_output_name(
         language=language,
         variable_form=variable_form,
-        bound_ref_names=(
-            bound_refs
-            if bound_refs is not None and len(bound_refs) > 0
-            else {}
-        ),
+        bound_ref_names=(effective_bound_ref_names_2),
         ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )
+    effective_bound_ref_names_3: Mapping[str, ValueInput]
+    effective_bound_ref_names_3 = reference_inputs_or_empty(values=bound_refs)
     _validate_module_name_variable_collision(
         language=language,
         variable_form=variable_form,
-        bound_ref_names=(
-            bound_refs
-            if bound_refs is not None and len(bound_refs) > 0
-            else {}
-        ),
+        bound_ref_names=(effective_bound_ref_names_3),
         ref_case=ref_case,
         wrap_in_file=wrap_in_file,
     )

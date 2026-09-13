@@ -19,6 +19,7 @@ from literalizer._checks import (
 )
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
@@ -251,9 +252,15 @@ def _indent_code_preserving_raw_strings(text: str, prefix: str) -> str:
     result: list[str] = []
     split_lines = text.split(sep="\n")
     for index, line_without_lf in enumerate(iterable=split_lines):
-        line = line_without_lf + ("\n" if index < len(split_lines) - 1 else "")
+        effective_line = ""
+        if index < len(split_lines) - 1:
+            effective_line = "\n"
+        line = line_without_lf + (effective_line)
         should_indent = raw_hashes is None and bool(line.strip())
-        result.append(prefix + line if should_indent else line)
+        effective_prefix = line
+        if should_indent:
+            effective_prefix = prefix + line
+        result.append(effective_prefix)
         position = 0
         while True:
             if raw_hashes is None:
@@ -566,11 +573,9 @@ def _rust_scalar_type(
         case str() | bytes():
             result = "&str"
         case datetime.date():
-            result = (
-                datetime_type
-                if isinstance(data, datetime.datetime)
-                else date_type
-            )
+            result = date_type
+            if isinstance(data, datetime.datetime):
+                result = datetime_type
         case datetime.time():
             result = "&str"
         case None:
@@ -609,10 +614,10 @@ def _rust_homogeneous_element_type(
         or not isinstance(element, (list, dict, set))
         or (sequence_encodes_length and isinstance(element, list))
     ]
-    types = [
-        infer(element)
-        for element in (informative if len(informative) > 0 else elements)
-    ]
+    effective_informative = nonempty_or_default(
+        value=informative, default=elements
+    )
+    types = [infer(element) for element in effective_informative]
     return _unify_rust_types(types=types)
 
 
@@ -864,7 +869,9 @@ def _format_let_declaration(
     value can be mutated through the name (issue #2537).  Modifier
     members of other languages' enums are silently ignored.
     """
-    keyword = "let mut" if _RustModifiers.MUT in modifiers else "let"
+    keyword = "let"
+    if _RustModifiers.MUT in modifiers:
+        keyword = "let mut"
     return f"{keyword} {name} = {value};"
 
 
@@ -933,6 +940,18 @@ class _VariantSignature:
 
 
 @beartype
+def _datetime_variant_signature(*, datetime_type: str) -> _VariantSignature:
+    """Return the variant signature for the selected datetime type."""
+    effective_name = "DateTime"
+    if datetime_type in {"i32", "i64", "i128"}:
+        effective_name = datetime_type.upper()
+    return _VariantSignature(
+        name=(effective_name),
+        inner_type=datetime_type,
+    )
+
+
+@beartype
 def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
     *,
     value: Scalar,
@@ -967,13 +986,8 @@ def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
                 inner_type="&'static str",
             )
         case datetime.datetime():
-            signature = _VariantSignature(
-                name=(
-                    datetime_type.upper()
-                    if datetime_type in {"i32", "i64", "i128"}
-                    else "DateTime"
-                ),
-                inner_type=datetime_type,
+            signature = _datetime_variant_signature(
+                datetime_type=datetime_type
             )
         case datetime.date():
             signature = _VariantSignature(name="Date", inner_type=date_type)
@@ -1098,7 +1112,9 @@ def _rust_mark_container_subtree(*, item: Value, ids: set[int]) -> None:
     if not isinstance(item, (list, dict)):
         return
     ids.add(id(item))
-    children = item.values() if isinstance(item, dict) else item
+    children = list(item)
+    if isinstance(item, dict):
+        children = list(item.values())
     for child in children:
         _rust_mark_container_subtree(item=child, ids=ids)
 
@@ -1108,9 +1124,11 @@ def _rust_visit_container_wrap_ids(*, item: Value, ids: set[int]) -> None:
     """Find scalar-plus-container lists and mark nested contents."""
     if not isinstance(item, (list, dict)):
         return
-    children: list[Value] = list(
-        item.values() if isinstance(item, dict) else item
-    )
+    if isinstance(item, dict):
+        effective_children = list(item.values())
+    else:
+        effective_children = list(item)
+    children: list[Value] = list(effective_children)
     for child in children:
         _rust_visit_container_wrap_ids(item=child, ids=ids)
     if not isinstance(item, list):
@@ -1455,36 +1473,35 @@ def _rust_value_enum_lines(
         seen.add(signature.name)
         variants.append(signature)
     if include_list_variant:
+        effective_inner_type = nonempty_or_default(
+            value=list_inner_type, default=f"Vec<{enum_name}>"
+        )
         variants.append(
             _VariantSignature(
                 name="List",
-                inner_type=(
-                    list_inner_type
-                    if list_inner_type is not None and list_inner_type != ""
-                    else f"Vec<{enum_name}>"
-                ),
+                inner_type=(effective_inner_type),
             )
         )
     if include_map_variant:
+        effective_inner_type_2 = map_inner_type
+        if not (
+            effective_inner_type_2 is not None and effective_inner_type_2 != ""
+        ):
+            effective_inner_type_2 = f"HashMap<&'static str, {enum_name}>"
         variants.append(
             _VariantSignature(
                 name="Map",
-                inner_type=(
-                    map_inner_type
-                    if map_inner_type is not None and map_inner_type != ""
-                    else f"HashMap<&'static str, {enum_name}>"
-                ),
+                inner_type=(effective_inner_type_2),
             )
         )
     if len(variants) == 0:
         return []
     lines: list[str] = [f"enum {enum_name} {{"]
     for variant in variants:
-        body = (
-            variant.name
-            if variant.inner_type is None
-            else f"{variant.name}({variant.inner_type})"
-        )
+        if variant.inner_type is None:
+            body = variant.name
+        else:
+            body = f"{variant.name}({variant.inner_type})"
         lines.append(f"    {body},")
     lines.append("}")
     return lines
@@ -1499,12 +1516,9 @@ def _build_tagged_enum_preamble(
 
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
-        values: tuple[Value, ...] = (
-            data.argument_values
-            if isinstance(data, CallPreambleData)
-            else (data,)
-        )
+        values: tuple[Value, ...]
         if isinstance(data, CallPreambleData):
+            values = data.argument_values
             # Argument slots are artificial lists used only to infer
             # cross-call scalar/map widening. A scalar and a container in
             # the same parameter slot are never siblings in one rendered
@@ -1525,6 +1539,7 @@ def _build_tagged_enum_preamble(
             )
             wrap_ids = slot_wrap_ids | value_wrap_ids
         else:
+            values = (data,)
             wrap_ids = _tagged_enum_wrap_ids(data)
         if len(wrap_ids) == 0:
             return ()
@@ -1611,11 +1626,11 @@ def _rust_derecordized_map_ids(
     type is the widened ``HashMap``.
     """
     raw_shapes_by_id = collect_record_shapes(data=data)
-    unified_shapes_by_id = (
-        unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
-        if unify_optional_fields
-        else raw_shapes_by_id
-    )
+    unified_shapes_by_id = raw_shapes_by_id
+    if unify_optional_fields:
+        unified_shapes_by_id = unify_record_shapes(
+            data=data, shapes_by_id=raw_shapes_by_id
+        )
     widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
         data=data,
         shapes_by_id=unified_shapes_by_id,
@@ -1782,6 +1797,21 @@ def _rust_narrowing_scalar_wrapper(
 
 
 @beartype
+def _rust_scalar_record_field_type(
+    *, value: Scalar, date_type: str, datetime_type: str
+) -> str:
+    """Return the Rust field type for a scalar value."""
+    signature = _heterogeneous_variant_for_scalar(
+        value=value,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    if signature.inner_type is None:
+        return "Option<()>"
+    return signature.inner_type
+
+
+@beartype
 def _rust_record_field_type(
     *,
     value: Value,
@@ -1844,7 +1874,9 @@ def _rust_record_field_type(
                 )
                 for item in value
             ]
-            trailing_comma = "," if len(element_types) == 1 else ""
+            trailing_comma = ""
+            if len(element_types) == 1:
+                trailing_comma = ","
             return f"({', '.join(element_types)}{trailing_comma})"
         case list():
             inner_types = [
@@ -1887,15 +1919,8 @@ def _rust_record_field_type(
             )
             raise UnrepresentableInputError(msg)
         case _:
-            signature = _heterogeneous_variant_for_scalar(
-                value=value,
-                date_type=date_type,
-                datetime_type=datetime_type,
-            )
-            return (
-                "Option<()>"
-                if signature.inner_type is None
-                else signature.inner_type
+            return _rust_scalar_record_field_type(
+                value=value, date_type=date_type, datetime_type=datetime_type
             )
 
 
@@ -1995,6 +2020,21 @@ def _unify_signatures(*, signatures: Sequence[Hashable]) -> Hashable:
 
 
 @beartype
+def _scalar_field_type_signature(
+    *, value: Scalar, date_type: str, datetime_type: str
+) -> Hashable:
+    """Return the field signature for a scalar value."""
+    signature = _heterogeneous_variant_for_scalar(
+        value=value,
+        date_type=date_type,
+        datetime_type=datetime_type,
+    )
+    if signature.inner_type is None:
+        return "Option<()>"
+    return signature.inner_type
+
+
+@beartype
 def _record_field_type_signature(
     *,
     value: Value,
@@ -2051,15 +2091,8 @@ def _record_field_type_signature(
         case set():
             fallback_signature = "<set>"
         case _:
-            signature = _heterogeneous_variant_for_scalar(
-                value=value,
-                date_type=date_type,
-                datetime_type=datetime_type,
-            )
-            return (
-                "Option<()>"
-                if signature.inner_type is None
-                else signature.inner_type
+            return _scalar_field_type_signature(
+                value=value, date_type=date_type, datetime_type=datetime_type
             )
     return fallback_signature
 
@@ -2112,20 +2145,22 @@ def _instance_signature(
     """Return the per-key field-type signatures of *instance*, in
     shape-key order, with :data:`_ABSENT_FIELD` for a key it lacks.
     """
-    return tuple(
-        _record_field_type_signature(
-            value=instance[key],
-            group_of=group_of,
-            tuple_list_ids=tuple_list_ids,
-            date_type=date_type,
-            datetime_type=datetime_type,
-            sequence_format_type_annotation=sequence_format_type_annotation,
-            sequence_supports_heterogeneity=(sequence_supports_heterogeneity),
-        )
-        if key in instance
-        else _ABSENT_FIELD
-        for key in shape.keys
-    )
+    collected_entries: list[Hashable] = []
+    field_signature: Hashable
+    for entry_key in shape.keys:
+        field_signature = _ABSENT_FIELD
+        if entry_key in instance:
+            field_signature = _record_field_type_signature(
+                value=instance[entry_key],
+                group_of=group_of,
+                tuple_list_ids=tuple_list_ids,
+                date_type=date_type,
+                datetime_type=datetime_type,
+                sequence_format_type_annotation=sequence_format_type_annotation,
+                sequence_supports_heterogeneity=sequence_supports_heterogeneity,
+            )
+        collected_entries.append(field_signature)
+    return tuple(collected_entries)
 
 
 @beartype
@@ -2362,6 +2397,45 @@ def _assign_record_struct_names(
 
 
 @beartype
+def _collect_rust_record_shapes(
+    *,
+    data: Value,
+    params: _StrategyParams,
+    enable_tuples: bool,
+    raw_shapes_by_id: dict[int, RecordShape],
+) -> tuple[Mapping[int, RecordShape], frozenset[int]]:
+    """Collect, widen and refine the Rust record shapes."""
+    unified_shapes_by_id = raw_shapes_by_id
+    if params.unify_optional_fields:
+        unified_shapes_by_id = unify_record_shapes(
+            data=data, shapes_by_id=raw_shapes_by_id
+        )
+    widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+        data=data,
+        shapes_by_id=unified_shapes_by_id,
+    )
+    if enable_tuples:
+        effective_tuple_list_ids = collect_tuple_list_ids(data=data)
+    else:
+        effective_tuple_list_ids = frozenset[int]()
+    shapes_by_id = _refine_record_shapes(
+        data=data,
+        shapes_by_id=widened_shapes_by_id,
+        tuple_list_ids=(effective_tuple_list_ids),
+        date_type=params.date_type,
+        datetime_type=params.datetime_type,
+        sequence_format_type_annotation=(
+            params.sequence_format_type_annotation
+        ),
+        sequence_supports_heterogeneity=(
+            params.sequence_supports_heterogeneity
+        ),
+    )
+
+    return shapes_by_id, effective_tuple_list_ids
+
+
+@beartype
 def _record_behavior_impl(
     params: _StrategyParams,
     /,
@@ -2388,32 +2462,11 @@ def _record_behavior_impl(
         caches in document order so the preamble's struct names match
         the rendered literals.
         """
-        raw_shapes_by_id = collect_record_shapes(data=data)
-        unified_shapes_by_id = (
-            unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
-            if params.unify_optional_fields
-            else raw_shapes_by_id
-        )
-        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+        shapes_by_id, _ = _collect_rust_record_shapes(
             data=data,
-            shapes_by_id=unified_shapes_by_id,
-        )
-        shapes_by_id = _refine_record_shapes(
-            data=data,
-            shapes_by_id=widened_shapes_by_id,
-            tuple_list_ids=(
-                collect_tuple_list_ids(data=data)
-                if enable_tuples
-                else frozenset()
-            ),
-            date_type=params.date_type,
-            datetime_type=params.datetime_type,
-            sequence_format_type_annotation=(
-                params.sequence_format_type_annotation
-            ),
-            sequence_supports_heterogeneity=(
-                params.sequence_supports_heterogeneity
-            ),
+            params=params,
+            enable_tuples=enable_tuples,
+            raw_shapes_by_id=collect_record_shapes(data=data),
         )
         name_cache.clear()
         id_to_shape.clear()
@@ -2569,12 +2622,9 @@ def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
 
     def _eligible(value: list[Value], /) -> bool:
         """Return whether one list needs a tuple around mixed shapes."""
-        return len(
-            {
-                "list" if isinstance(item, list) else type(item)
-                for item in value
-            }
-        ) > 1 and any(isinstance(item, (dict, list, set)) for item in value)
+        return len({type(item) for item in value}) > 1 and any(
+            isinstance(item, (dict, list, set)) for item in value
+        )
 
     def _compatible(left: Value, right: Value, /) -> bool:
         """Return whether two values can occupy one Vec slot."""
@@ -2736,32 +2786,11 @@ def _record_preamble_impl(
         raw_shapes_by_id = collect_record_shapes(data=data)
         if len(raw_shapes_by_id) == 0:
             return ()
-        tuple_list_ids = (
-            collect_tuple_list_ids(data=data)
-            if enable_tuples
-            else frozenset[int]()
-        )
-        unified_shapes_by_id: Mapping[int, RecordShape] = (
-            unify_record_shapes(data=data, shapes_by_id=raw_shapes_by_id)
-            if params.unify_optional_fields
-            else raw_shapes_by_id
-        )
-        widened_shapes_by_id = drop_unrecordizable_nested_sibling_maps(
+        shapes_by_id, tuple_list_ids = _collect_rust_record_shapes(
             data=data,
-            shapes_by_id=unified_shapes_by_id,
-        )
-        shapes_by_id: Mapping[int, RecordShape] = _refine_record_shapes(
-            data=data,
-            shapes_by_id=widened_shapes_by_id,
-            tuple_list_ids=tuple_list_ids,
-            date_type=params.date_type,
-            datetime_type=params.datetime_type,
-            sequence_format_type_annotation=(
-                params.sequence_format_type_annotation
-            ),
-            sequence_supports_heterogeneity=(
-                params.sequence_supports_heterogeneity
-            ),
+            params=params,
+            enable_tuples=enable_tuples,
+            raw_shapes_by_id=raw_shapes_by_id,
         )
         ordered_shapes: list[RecordShape] = []
         seen: set[RecordShape] = set()
@@ -2807,14 +2836,15 @@ def _record_preamble_impl(
             block: list[str] = [f"struct {record_names[shape]} {{"]
             for key in shape.keys:
                 example = field_values[shape].get(key)
+                effective_derecordized_map_value_type = narrow_value_type
+                if effective_derecordized_map_value_type is None:
+                    effective_derecordized_map_value_type = params.enum_name
                 field_type = _rust_record_field_type(
                     value=example,
                     date_type=params.date_type,
                     datetime_type=params.datetime_type,
                     derecordized_map_value_type=(
-                        narrow_value_type
-                        if narrow_value_type is not None
-                        else params.enum_name
+                        effective_derecordized_map_value_type
                     ),
                     record_names=record_names,
                     shapes_by_id=shapes_by_id,
@@ -2832,10 +2862,11 @@ def _record_preamble_impl(
                 block.append(f"    {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
-        enum_lines = (
-            ()
-            if narrow_value_type is not None
-            else _rust_value_enum_lines(
+        enum_lines: Sequence[str]
+        if narrow_value_type is not None:
+            enum_lines = ()
+        else:
+            enum_lines = _rust_value_enum_lines(
                 scalars=iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
                 enum_name=params.enum_name,
                 date_type=params.date_type,
@@ -2845,8 +2876,9 @@ def _record_preamble_impl(
                 list_inner_type=None,
                 map_inner_type=None,
             )
-        )
-        enum_block = ("\n".join(enum_lines),) if len(enum_lines) > 0 else ()
+        enum_block: tuple[str, ...] = ()
+        if len(enum_lines) > 0:
+            enum_block = ("\n".join(enum_lines),)
         return enum_block + tuple(struct_blocks)
 
     return _preamble
@@ -2946,7 +2978,7 @@ def _gather_record_field_values(
             # one is still found, even though
             # :func:`_rust_record_field_type` later rejects such a dict
             # when it is itself a record field.
-            children = data.values()
+            children = list(data.values())
         case list():
             children = data
         case _:
@@ -2989,7 +3021,9 @@ def _rust_call_stub(
     # Use generic type parameters so any argument type is accepted.
     type_vars = [_rust_type_var(index=i) for i in range(len(params))]
     generic_decl = ", ".join(type_vars)
-    generic_clause = f"<{generic_decl}>" if generic_decl != "" else ""
+    generic_clause = ""
+    if generic_decl != "":
+        generic_clause = f"<{generic_decl}>"
     if len(parts) == 1:
         param_list = ", ".join(
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
@@ -3000,7 +3034,9 @@ def _rust_call_stub(
     param_list = ", ".join(
         f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
     )
-    method_param_list = f"&self, {param_list}" if param_list != "" else "&self"
+    method_param_list = "&self"
+    if param_list != "":
+        method_param_list = f"&self, {param_list}"
     fields = parts[1:-1]
     if len(fields) == 0:
         type_name = f"{root.title()}Type_"
@@ -3506,9 +3542,9 @@ class Rust(metaclass=LanguageCls):
             ) -> str:
                 """Format a local JSON-backed declaration."""
                 expr = _rust_json_value_expression(data, value)
-                effective_keyword = (
-                    "let mut" if _RustModifiers.MUT in modifiers else keyword
-                )
+                effective_keyword = keyword
+                if _RustModifiers.MUT in modifiers:
+                    effective_keyword = "let mut"
                 return f"{effective_keyword} {name}: {json_type} = {expr};"
 
             return _local_formatter
@@ -3953,11 +3989,9 @@ class Rust(metaclass=LanguageCls):
             text=content,
             prefix=self.indent,
         )
-        use_line = (
-            f"\n{self.indent}let _ = {variable_name};"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}let _ = {variable_name};"
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(
@@ -4105,11 +4139,9 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def _heterogeneous_variant_date_type(self) -> str:
         """Rust type used for :class:`datetime.date` variant payloads."""
-        return (
-            "&'static str"
-            if self.date_format.value.type_produced is str
-            else "NaiveDate"
-        )
+        if self.date_format.value.type_produced is str:
+            return "&'static str"
+        return "NaiveDate"
 
     @cached_property
     def _heterogeneous_variant_datetime_type(self) -> str:
@@ -4163,21 +4195,26 @@ class Rust(metaclass=LanguageCls):
                 render_tuple_literal=_render_rust_tuple,
                 compute_tuple_list_ids=_rust_tuple_list_ids,
             )
-        return dataclasses.replace(
-            base,
-            empty_container_literal_overrides=(
+        if (
+            self.sequence_format is type(self.sequence_format).TUPLE_NESTED_VEC
+            or self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).TUPLE
+        ):
+            effective_empty_container_literal_overrides = (
                 _rust_tuple_nested_vec_empty_override_hook(
                     self._strategy_params
                 )
-                if (
-                    self.sequence_format
-                    is type(self.sequence_format).TUPLE_NESTED_VEC
-                    or self.heterogeneous_strategy
-                    is type(self.heterogeneous_strategy).TUPLE
-                )
-                else _rust_empty_container_literal_override_hook(
+            )
+        else:
+            effective_empty_container_literal_overrides = (
+                _rust_empty_container_literal_override_hook(
                     self._strategy_params
                 )
+            )
+        return dataclasses.replace(
+            base,
+            empty_container_literal_overrides=(
+                effective_empty_container_literal_overrides
             ),
         )
 
@@ -4465,7 +4502,8 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        if self._json_type_active:
+        if self.json_type is not None:
+            effective_declared_type = self.json_type.value
             return SequenceFormatConfig(
                 sequence_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}(["),
                 close="])",
@@ -4479,11 +4517,7 @@ class Rust(metaclass=LanguageCls):
                 typed_opener_fallback=None,
                 uses_typed_literal_for_scalars=False,
                 requires_uniform_record_shapes=False,
-                declared_type=(
-                    self.json_type.value
-                    if self.json_type is not None
-                    else None
-                ),
+                declared_type=(effective_declared_type),
                 narrowed_empty_form=None,
             )
         return self.sequence_format(
@@ -4723,11 +4757,9 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def _declaration_date_type(self) -> str:
         """Rust type used to annotate :class:`datetime.date` values."""
-        return (
-            "&str"
-            if self.date_format.value.type_produced is str
-            else "NaiveDate"
-        )
+        if self.date_format.value.type_produced is str:
+            return "&str"
+        return "NaiveDate"
 
     @cached_property
     def _declaration_datetime_type(self) -> str:

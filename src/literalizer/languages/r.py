@@ -140,8 +140,12 @@ def _format_datetime_r(value: datetime.datetime, /) -> str:
         rendered += f".{value.microsecond:06d}"
     if aware:
         rendered += "+0000"
-    offset_format = "%z" if aware else ""
-    timezone = ', tz = "UTC"' if aware else ""
+    offset_format = ""
+    if aware:
+        offset_format = "%z"
+    timezone = ""
+    if aware:
+        timezone = ', tz = "UTC"'
     return (
         f'as.POSIXct("{rendered}", '
         f'format = "%Y-%m-%d %H:%M:%OS{offset_format}"{timezone})'

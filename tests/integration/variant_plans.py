@@ -708,11 +708,10 @@ def _offered_placeholders(*, axis: _ExpandedAxis) -> frozenset[str]:
                 named |= {_CATEGORY_PLACEHOLDER}
             return named
         case _CrossProductPlan():
-            primary = (
-                frozenset[str]()
-                if axis.primary is None and axis.primary_axis is None
-                else frozenset({_FORMAT_PLACEHOLDER})
-            )
+            if axis.primary is None and axis.primary_axis is None:
+                primary = frozenset[str]()
+            else:
+                primary = frozenset({_FORMAT_PLACEHOLDER})
             return primary | {
                 _LANG_PLACEHOLDER,
                 _TAG_PLACEHOLDER,
@@ -1144,6 +1143,40 @@ def _behavior_flag_member(
 
 
 @beartype
+def _nondefault_kwarg_selection(
+    *,
+    axis_key: str,
+    override: _NonDefaultKwargOverride,
+    metadata: LanguageMetadata,
+) -> _ResolvedOverrides:
+    """Resolve a non-default keyword and its optional display name."""
+    value = _sample_kwarg(
+        axis_key=axis_key,
+        kwarg=override.kwarg,
+        metadata=metadata,
+    )
+    effective_name_value = None
+    if override.name_value:
+        effective_name_value = value
+    return _ResolvedOverrides(
+        kwargs={override.kwarg: value},
+        name_value=effective_name_value,
+    )
+
+
+@beartype
+def _metadata_table_selection(
+    *, override: _MetadataTableOverride, metadata: LanguageMetadata
+) -> _ResolvedOverrides | None:
+    """Resolve a metadata table when the language supplies it."""
+    table = _metadata_table(override=override, metadata=metadata)
+    resolved = None
+    if table is not None:
+        resolved = _ResolvedOverrides(kwargs=table, name_value=None)
+    return resolved
+
+
+@beartype
 def _override_selection(
     *,
     axis_key: str,
@@ -1156,14 +1189,8 @@ def _override_selection(
     resolved: _ResolvedOverrides | None
     match override:
         case _NonDefaultKwargOverride():
-            value = _sample_kwarg(
-                axis_key=axis_key,
-                kwarg=override.kwarg,
-                metadata=metadata,
-            )
-            resolved = _ResolvedOverrides(
-                kwargs={override.kwarg: value},
-                name_value=value if override.name_value else None,
+            resolved = _nondefault_kwarg_selection(
+                axis_key=axis_key, override=override, metadata=metadata
             )
         case _EnumMemberOverride():
             option = OPTIONS[override.option]
@@ -1187,11 +1214,8 @@ def _override_selection(
                 name_value=None,
             )
         case _MetadataTableOverride():
-            table = _metadata_table(override=override, metadata=metadata)
-            resolved = (
-                None
-                if table is None
-                else _ResolvedOverrides(kwargs=table, name_value=None)
+            resolved = _metadata_table_selection(
+                override=override, metadata=metadata
             )
         case _TrueFlagOverride():
             resolved = _ResolvedOverrides(
@@ -1213,14 +1237,12 @@ def _override_selection(
                 lang_cls=lang_cls,
                 default_spec=default_spec,
             )
-            resolved = (
-                None
-                if member is None
-                else _ResolvedOverrides(
+            resolved = None
+            if member is not None:
+                resolved = _ResolvedOverrides(
                     kwargs={OPTIONS[override.option].kwarg: member},
                     name_value=None,
                 )
-            )
         case _ as unreachable:
             assert_never(unreachable)
     return resolved
@@ -1525,25 +1547,23 @@ def _kwarg_value_selections(
     metadata: LanguageMetadata,
 ) -> list[_Selection]:
     """Return the parameter values an axis passes for one language."""
-    return [
-        _Selection(
-            kwargs={
-                axis.kwarg: (
-                    _sample_kwarg(
-                        axis_key=axis_key,
-                        kwarg=axis.kwarg,
-                        metadata=metadata,
-                    )
-                    if choice.value is None
-                    else choice.value
-                )
-            },
-            format_name=choice.name,
-            tag=None,
-            secondary_name=None,
+    collected_entries: list[_Selection] = []
+    for entry_choice in axis.values:
+        if entry_choice.value is None:
+            effective_kwargs = _sample_kwarg(
+                axis_key=axis_key, kwarg=axis.kwarg, metadata=metadata
+            )
+        else:
+            effective_kwargs = entry_choice.value
+        collected_entries.append(
+            _Selection(
+                kwargs={axis.kwarg: effective_kwargs},
+                format_name=entry_choice.name,
+                tag=None,
+                secondary_name=None,
+            )
         )
-        for choice in axis.values
-    ]
+    return collected_entries
 
 
 @beartype
@@ -1745,23 +1765,22 @@ def _fixture_context(
     """Return the fixture preamble and record version an axis pins."""
     if not isinstance(axis, _FixedOverridesPlan):
         return _FixtureContext(fixture_prefix="", record_version={})
+    effective_fixture_prefix = ""
+    if axis.external_record_shape_fixture:
+        effective_fixture_prefix = _external_record_shape_prefix(
+            lang_cls=lang_cls,
+            metadata=metadata,
+        )
+    effective_record_version: Mapping[str, object]
+    effective_record_version = {}
+    if axis.record_language_version:
+        effective_record_version = _record_language_version(
+            metadata=metadata,
+            default_spec=default_spec,
+        )
     return _FixtureContext(
-        fixture_prefix=(
-            _external_record_shape_prefix(
-                lang_cls=lang_cls,
-                metadata=metadata,
-            )
-            if axis.external_record_shape_fixture
-            else ""
-        ),
-        record_version=(
-            _record_language_version(
-                metadata=metadata,
-                default_spec=default_spec,
-            )
-            if axis.record_language_version
-            else {}
-        ),
+        fixture_prefix=(effective_fixture_prefix),
+        record_version=(effective_record_version),
     )
 
 
@@ -1774,7 +1793,9 @@ def _axis_variants(
 ) -> list[Variant]:
     """Expand one declared axis into its variants."""
     variants: list[Variant] = []
-    primary_gates = [] if primary_plan is None else primary_plan.gates
+    primary_gates = list[SuiteGate]()
+    if primary_plan is not None:
+        primary_gates = primary_plan.gates
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         default_spec = make_spec(lang_cls=lang_cls)

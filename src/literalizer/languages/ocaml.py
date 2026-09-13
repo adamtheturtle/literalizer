@@ -15,6 +15,7 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
+from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -120,7 +121,9 @@ def _ocaml_entry_tag(
     if isinstance(original, datetime.datetime):
         if datetime_type is datetime.datetime:
             return None
-        return "Int" if datetime_type is int else "Str"
+        if datetime_type is int:
+            return "Int"
+        return "Str"
     if isinstance(original, datetime.date):
         if date_type is datetime.date:
             return None
@@ -146,7 +149,9 @@ def _apply_ocaml_entry(
     )
     if tag is None:
         return formatted
-    literal = f"({formatted})" if formatted.startswith("-") else formatted
+    literal = formatted
+    if literal.startswith("-"):
+        literal = f"({formatted})"
     return f"{prefix}{tag} {literal}"
 
 
@@ -207,7 +212,9 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
             tag = "Float"
         case _:
             tag = "String"
-    literal = f"({formatted})" if formatted.startswith("-") else formatted
+    literal = formatted
+    if literal.startswith("-"):
+        literal = f"({formatted})"
     return f"`{tag} {literal}"
 
 
@@ -311,11 +318,9 @@ def _apply_ocaml_declaration(
     entry_formatter: Callable[[Value, str], str],
 ) -> str:
     """Format a variable declaration."""
-    decl_type = (
-        sequence_declared_type
-        if isinstance(data, list)
-        else scalar_declared_type
-    )
+    decl_type = scalar_declared_type
+    if isinstance(data, list):
+        decl_type = sequence_declared_type
     wrapped = entry_formatter(data, value)
     return f"let {name} : {decl_type} = {wrapped}"
 
@@ -1130,11 +1135,9 @@ class OCaml(metaclass=LanguageCls):
         """Configuration for the chosen set format."""
         # ``Yojson.Safe.t`` has no set constructor: render sets as JSON
         # arrays (``\`List``) the same as sequences.
-        set_open_str = (
-            "`List ["
-            if self._json_type_active
-            else f"{self.constructor_prefix}Set ["
-        )
+        set_open_str = "`List ["
+        if not self._json_type_active:
+            set_open_str = f"{self.constructor_prefix}Set ["
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(open_str=set_open_str),
@@ -1143,11 +1146,9 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        dict_open_str = (
-            "`Assoc ["
-            if self._json_type_active
-            else f"{self.constructor_prefix}Map ["
-        )
+        dict_open_str = "`Assoc ["
+        if not self._json_type_active:
+            dict_open_str = f"{self.constructor_prefix}Map ["
         return DictFormatConfig(
             dict_open=fixed_open(open_str=dict_open_str),
             close="]",
@@ -1218,11 +1219,10 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        fallback: Callable[[int], str] = (
-            _yojson_intlit_fallback
-            if self._json_type_active
-            else raise_for_unrepresentable_int(language_name="OCaml")
-        )
+        fallback: Callable[[int], str]
+        fallback = _yojson_intlit_fallback
+        if not self._json_type_active:
+            fallback = raise_for_unrepresentable_int(language_name="OCaml")
         return make_overflow_fallback_formatter(
             base=self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
@@ -1250,11 +1250,9 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        ordered_open_str = (
-            "`Assoc ["
-            if self._json_type_active
-            else f"{self.constructor_prefix}Map ["
-        )
+        ordered_open_str = "`Assoc ["
+        if not self._json_type_active:
+            ordered_open_str = f"{self.constructor_prefix}Map ["
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str=ordered_open_str),
             close="]",
@@ -1277,10 +1275,8 @@ class OCaml(metaclass=LanguageCls):
             )
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
-            _raw_declared.replace("val_t", self.type_name)
-            if _raw_declared is not None
-            else self.type_name
-        )
+            value_or_default(value=_raw_declared, default="val_t")
+        ).replace("val_t", self.type_name)
         return _build_ocaml_declaration(
             sequence_declared_type=_sequence_declared_type,
             scalar_declared_type=self.type_name,
@@ -1348,21 +1344,18 @@ class OCaml(metaclass=LanguageCls):
             return {}
         p = self.constructor_prefix
         _h = f"type {self.type_name} ="
-        _date_constructor = (
-            f"  | {p}Str of string"
-            if self.date_format.value.type_produced is str
-            else f"  | {p}Date of (int * int * int)"
-        )
-        _datetime_constructor = (
-            f"  | {p}Int of int"
-            if self.datetime_format.value.type_produced is int
-            else (
-                f"  | {p}Str of string"
-                if self.datetime_format.value.type_produced is str
-                else f"  | {p}Datetime of "
-                "((int * int * int) * (int * int * int))"
+        if self.date_format.value.type_produced is str:
+            _date_constructor = f"  | {p}Str of string"
+        else:
+            _date_constructor = f"  | {p}Date of (int * int * int)"
+        if self.datetime_format.value.type_produced is int:
+            _datetime_constructor = f"  | {p}Int of int"
+        elif self.datetime_format.value.type_produced is str:
+            _datetime_constructor = f"  | {p}Str of string"
+        else:
+            _datetime_constructor = (
+                f"  | {p}Datetime of ((int * int * int) * (int * int * int))"
             )
-        )
         return {
             type(None): (_h, f"  | {p}Null"),
             bool: (_h, f"  | {p}Bool of bool"),

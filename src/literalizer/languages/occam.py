@@ -107,8 +107,12 @@ def _format_occam_entry(
         case bool():
             return formatted
         case datetime.datetime():
-            tag = "int" if datetime_as_int else "str"
-            suffix = "" if datetime_as_int else "MOBILE []BYTE "
+            tag = "str"
+            if datetime_as_int:
+                tag = "int"
+            suffix = "MOBILE []BYTE "
+            if datetime_as_int:
+                suffix = ""
             return f"MOBILE LIT(lit.{tag}; {suffix}{formatted})"
         case int():
             return f"MOBILE LIT(lit.int; {formatted})"
@@ -576,9 +580,9 @@ class Occam(metaclass=LanguageCls):
     ) -> str:
         """Wrap an occam-pi VAL declaration in a PROC."""
         del variable_name
-        top_level_preamble = (
-            "\n".join(body_preamble) + "\n" if len(body_preamble) > 0 else ""
-        )
+        top_level_preamble = ""
+        if len(body_preamble) > 0:
+            top_level_preamble = "\n".join(body_preamble) + "\n"
         indented = textwrap.indent(text=content, prefix=self.indent)
         return (
             f"\n{top_level_preamble}PROC {self.module_name} ()\n"

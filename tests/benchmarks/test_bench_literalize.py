@@ -94,7 +94,10 @@ def _build_yaml_source(*, n_records: int, with_comments: bool) -> str:
         lines.append(f"  - id: {i}")
         lines.append(f"    name: user_{i}")
         lines.append(f"    score: {i * 1.5}")
-        lines.append(f"    active: {'true' if i % 2 == 0 else 'false'}")
+        effective_value = "false"
+        if i % 2 == 0:
+            effective_value = "true"
+        lines.append(f"    active: {effective_value}")
         if with_comments:
             lines.append(f"    # record {i}")
     return "\n".join(lines) + "\n"

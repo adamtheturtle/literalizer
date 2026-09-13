@@ -163,10 +163,13 @@ def _elixir_params(params: Sequence[str]) -> tuple[str, ...]:
     """Return distinct ignored-variable names for stub parameters."""
     ignored = tuple(_elixir_param(name=param) for param in params)
     counts = Counter(ignored)
-    return tuple(
-        f"{name}_{index}" if counts[name] > 1 else name
-        for index, name in enumerate(iterable=ignored)
-    )
+    collected_entries: list[str] = []
+    for entry_index, entry_name in enumerate(iterable=ignored):
+        effective_entry_name = entry_name
+        if counts[effective_entry_name] > 1:
+            effective_entry_name = f"{entry_name}_{entry_index}"
+        collected_entries.append(effective_entry_name)
+    return tuple(collected_entries)
 
 
 @beartype

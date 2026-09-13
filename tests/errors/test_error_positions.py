@@ -8,6 +8,7 @@ file.
 import json
 
 import pytest
+from tomlkit.exceptions import TOMLKitError
 
 from literalizer import InputFormat, literalize
 from literalizer._language import Language
@@ -95,3 +96,24 @@ def test_renderer_error_exposes_deep_input_path(
         )
 
     assert caught.value.path == ("outer", 0, 0)
+
+
+def test_toml_error_without_position(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A parser failure without location metadata retains its cause."""
+    cause = TOMLKitError("unpositioned failure")
+
+    def fail_parse(*, string: str) -> None:
+        """Simulate a parser failure without line and column metadata."""
+        del string
+        raise cause
+
+    monkeypatch.setattr(target="tomlkit.parse", name=fail_parse)
+    with pytest.raises(expected_exception=TOMLParseError) as caught:
+        _ = literalize(
+            source="a = 1",
+            input_format=InputFormat.TOML,
+            language=Rust(),
+        )
+    assert caught.value.line is None
+    assert caught.value.column is None
+    assert caught.value.__cause__ is cause

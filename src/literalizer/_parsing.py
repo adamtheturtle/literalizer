@@ -70,7 +70,9 @@ class _ParserMark(Protocol):
 def _parser_mark(*, exc: Exception) -> _ParserMark | None:
     """Return parser position metadata when an exception provides it."""
     mark = vars(exc).get("problem_mark")
-    return mark if isinstance(mark, _ParserMark) else None
+    if isinstance(mark, _ParserMark):
+        return mark
+    return None
 
 
 @runtime_checkable
@@ -771,10 +773,16 @@ def _parse_json5(*, source: str) -> ParsedInput:
             pattern=r"<string>:(?P<line>\d+).* column (?P<column>\d+)",
             string=str(object=exc),
         )
+        effective_line = None
+        if position is not None:
+            effective_line = int(position["line"])
+        effective_column = None
+        if position is not None:
+            effective_column = int(position["column"])
         raise JSON5ParseError(
             message,
-            line=int(position["line"]) if position is not None else None,
-            column=(int(position["column"]) if position is not None else None),
+            line=effective_line,
+            column=(effective_column),
         ) from exc
     return ParsedPlain(data=_combine_surrogate_pairs(data=data))
 
@@ -1020,10 +1028,15 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             detail = _yaml_load_detail(exc=exc)
             message = f"Invalid YAML: {detail}"
             mark = _parser_mark(exc=exc)
+            effective_line_4 = None
+            effective_column_4 = None
+            if mark is not None:
+                effective_line_4 = mark.line + 1
+                effective_column_4 = mark.column + 1
             raise YAMLParseError(
                 message,
-                line=mark.line + 1 if mark is not None else None,
-                column=mark.column + 1 if mark is not None else None,
+                line=effective_line_4,
+                column=effective_column_4,
             ) from exc
         _validate_yaml_mapping_keys(data=raw_data)
         data = _unwrap_yaml_data(data=raw_data)
@@ -1047,10 +1060,15 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         detail = _yaml_load_detail(exc=exc)
         message = f"Invalid YAML: {detail}"
         mark = _parser_mark(exc=exc)
+        effective_line_2 = None
+        effective_column_2 = None
+        if mark is not None:
+            effective_line_2 = mark.line + 1
+            effective_column_2 = mark.column + 1
         raise YAMLParseError(
             message,
-            line=mark.line + 1 if mark is not None else None,
-            column=mark.column + 1 if mark is not None else None,
+            line=effective_line_2,
+            column=effective_column_2,
         ) from exc
     _validate_yaml_mapping_keys(data=plain_data)
     data = _unwrap_yaml_data(data=plain_data)
@@ -1149,11 +1167,15 @@ def _parse_toml(*, source: str) -> ParsedInput:
         toml_doc = tomlkit.parse(string=source)
     except TOMLKitError as exc:
         message = f"Invalid TOML: {exc}"
-        positioned = exc if isinstance(exc, _PositionedTomlError) else None
+        effective_line_3 = None
+        effective_column_3 = None
+        if isinstance(exc, _PositionedTomlError):
+            effective_line_3 = exc.line
+            effective_column_3 = exc.col + 1
         raise TOMLParseError(
             message,
-            line=positioned.line if positioned is not None else None,
-            column=positioned.col + 1 if positioned is not None else None,
+            line=effective_line_3,
+            column=effective_column_3,
         ) from exc
     try:
         _validate_toml_float_tokens(data=toml_doc)

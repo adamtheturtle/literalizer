@@ -309,7 +309,9 @@ def _ts_dict_hint(
     dict_hint_template: str,
 ) -> str:
     """Derive a TypeScript type annotation for a dict value."""
-    template = "Record<string, {val}>" if is_ordered else dict_hint_template
+    template = dict_hint_template
+    if is_ordered:
+        template = "Record<string, {val}>"
     # The MAP opener always uses ``unknown`` as the value type, so
     # the annotation must match.
     if is_empty or "Map<" in template:
@@ -339,12 +341,16 @@ def _ts_list_hint(
 ) -> str:
     """Derive a TypeScript type annotation for a list value."""
     if len(data) == 0:
-        return "readonly []" if sequence_is_tuple else "unknown[]"
+        if sequence_is_tuple:
+            return "readonly []"
+        return "unknown[]"
     elem_types = [recurse(data=e) for e in data]
     if sequence_is_tuple:
         return f"readonly [{', '.join(elem_types)}]"
     elem_union = _ts_element_union(types=elem_types)
-    return f"({elem_union})[]" if " | " in elem_union else f"{elem_union}[]"
+    if " | " in elem_union:
+        return f"({elem_union})[]"
+    return f"{elem_union}[]"
 
 
 @beartype
@@ -1501,11 +1507,10 @@ class TypeScript(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        config_cls = (
-            _TypeScriptComputedOrderedMapFormatConfig
-            if self.string_format.name == "MULTILINE"
-            else _TypeScriptObjectOrderedMapFormatConfig
-        )
+        config_cls: type[OrderedMapFormatConfig]
+        config_cls = _TypeScriptObjectOrderedMapFormatConfig
+        if self.string_format.name == "MULTILINE":
+            config_cls = _TypeScriptComputedOrderedMapFormatConfig
         return config_cls(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
@@ -1525,28 +1530,24 @@ class TypeScript(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        effective_date_hint = "Date"
+        if self.date_format.value.type_produced is str:
+            effective_date_hint = "string"
+        if self.datetime_format.value.type_produced is int:
+            effective_datetime_hint = "number"
+        else:
+            effective_datetime_hint = "Date"
+            if self.datetime_format.value.type_produced is str:
+                effective_datetime_hint = "string"
+        effective_dict_hint_template = "Record<string, {val}>"
+        if self.dict_format is type(self.dict_format).MAP:
+            effective_dict_hint_template = "Map<string, {val}>"
         base_decl = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
-            date_hint=(
-                "string"
-                if self.date_format.value.type_produced is str
-                else "Date"
-            ),
-            datetime_hint=(
-                "number"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "string"
-                    if self.datetime_format.value.type_produced is str
-                    else "Date"
-                )
-            ),
-            dict_hint_template=(
-                "Map<string, {val}>"
-                if self.dict_format is type(self.dict_format).MAP
-                else "Record<string, {val}>"
-            ),
+            date_hint=(effective_date_hint),
+            datetime_hint=(effective_datetime_hint),
+            dict_hint_template=(effective_dict_hint_template),
             dict_is_object_literal=(
                 self.dict_format is type(self.dict_format).OBJECT
             ),

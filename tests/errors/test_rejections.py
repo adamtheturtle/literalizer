@@ -111,6 +111,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     if call.api == "literalize":
         assert case.source is not None
         assert call.input_format is not None
+        effective_bound_refs_2 = None
+        if len(call.bound_refs) > 0:
+            effective_bound_refs_2 = dict(call.bound_refs)
         _ = literalizer.literalize(
             source=case.source,
             input_format=call.input_format,
@@ -121,27 +124,31 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             include_delimiters=call.include_delimiters,
             ref_key=call.ref_key,
             ref_case=ref_case,
-            bound_refs=(
-                dict(call.bound_refs) if len(call.bound_refs) > 0 else None
-            ),
+            bound_refs=(effective_bound_refs_2),
         )
         return
     assert case.source is not None
     assert call.input_format is not None
     assert call.target_function is not None
-    parameter_names = (
-        call.parameter_names_bare
-        if "parameter_names_bare" in call.model_fields_set
-        else [
+    parameter_names: str | list[str]
+    if "parameter_names_bare" in call.model_fields_set:
+        parameter_names = call.parameter_names_bare
+    else:
+        parameter_names = [
             substituted(template=name, value=case.value)
             for name in call.parameter_names
         ]
-    )
-    comment_source = (
-        call.comment_source_bare
-        if "comment_source_bare" in call.model_fields_set
-        else call.comment_source
-    )
+    comment_source: str | tuple[str, ...] | None
+    if "comment_source_bare" in call.model_fields_set:
+        comment_source = call.comment_source_bare
+    else:
+        comment_source = call.comment_source
+    effective_bound_refs = None
+    if len(call.bound_refs) > 0:
+        effective_bound_refs = dict(call.bound_refs)
+    effective_variable_form = None
+    if call.variable_form is not None:
+        effective_variable_form = variable_form
     _ = literalizer.literalize_call(
         source=case.source,
         input_format=call.input_format,
@@ -155,13 +162,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         wrap_in_file=call.wrap_in_file,
         ref_key=call.ref_key,
         ref_case=ref_case,
-        bound_refs=(
-            dict(call.bound_refs) if len(call.bound_refs) > 0 else None
-        ),
+        bound_refs=(effective_bound_refs),
         comment_source=comment_source,
-        variable_form=(
-            variable_form if call.variable_form is not None else None
-        ),
+        variable_form=(effective_variable_form),
     )
 
 

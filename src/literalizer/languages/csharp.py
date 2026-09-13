@@ -72,7 +72,10 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
     nested_record_sequence_type,
 )
-from literalizer._formatters.type_inference import record_shape_for_dict
+from literalizer._formatters.type_inference import (
+    record_shape_for_dict,
+    single_concrete_type,
+)
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -1382,11 +1385,7 @@ class CSharp(metaclass=LanguageCls):
         Otherwise the content is emitted as a top-level statement,
         which is the only context where ``var`` declarations are valid.
         """
-        first_token = (
-            content.lstrip().split(sep=" ", maxsplit=1)[0]
-            if content.strip() != ""
-            else ""
-        )
+        first_token = content.lstrip().partition(" ")[0]
         is_class_field = first_token in {
             "public",
             "private",
@@ -1395,11 +1394,7 @@ class CSharp(metaclass=LanguageCls):
             "readonly",
         }
         if is_class_field:
-            preamble_block = (
-                "\n".join(body_preamble) + "\n"
-                if len(body_preamble) > 0
-                else ""
-            )
+            preamble_block = "\n".join((*body_preamble, ""))
             return (
                 f"{preamble_block}class Check {{\n"
                 f"{content}\n"
@@ -1638,6 +1633,15 @@ class CSharp(metaclass=LanguageCls):
             dict_key_type="",
         )
 
+    @beartype
+    def _csharp_scalar_field_type(self, *, value: Value) -> str:
+        """Resolve the scalar field type with the object fallback."""
+        scalar_type = self._csharp_record_scalar_resolver(type(value))
+        field_type = "object"
+        if scalar_type is not None and scalar_type != "":
+            field_type = scalar_type
+        return field_type
+
     def _csharp_record_field_type(
         self,
         request: RecordFieldType,
@@ -1701,12 +1705,7 @@ class CSharp(metaclass=LanguageCls):
                 opener = self.sequence_open(value)
                 field_type = opener.removeprefix("new ").removesuffix(" {")
             case _:
-                scalar_type = self._csharp_record_scalar_resolver(type(value))
-                field_type = (
-                    scalar_type
-                    if scalar_type is not None and scalar_type != ""
-                    else "object"
-                )
+                field_type = self._csharp_scalar_field_type(value=value)
         return field_type
 
     @cached_property
@@ -1817,10 +1816,7 @@ class CSharp(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        if len(scalar_types) != 1:
-            return None
-        (scalar_type,) = scalar_types
-        return None if scalar_type == "object" else scalar_type
+        return single_concrete_type(types=scalar_types, fallback_type="object")
 
     @cached_property
     def _derecordized_map_narrowing(self) -> _CSharpWidenedMapNarrowing:
@@ -1981,14 +1977,15 @@ class CSharp(metaclass=LanguageCls):
     def _openers(self) -> TypeOpeners:
         """Typed openers built from the opener config."""
         cfg = self._opener_config
+        effective_set_opener_template = None
+        if self._base_set_format_config.set_opener_template != "":
+            effective_set_opener_template = (
+                self._base_set_format_config.set_opener_template
+            )
         return cfg.build(
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
-            set_opener_template=(
-                self._base_set_format_config.set_opener_template
-                if self._base_set_format_config.set_opener_template != ""
-                else None
-            ),
+            set_opener_template=(effective_set_opener_template),
             narrow_dict_values=False,
             narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
@@ -2022,7 +2019,8 @@ class CSharp(metaclass=LanguageCls):
         language-level array literal, never ``Array.Empty<T>()``, so the
         array path needs no ``using System;``.
         """
-        if self._json_type_active:
+        if self.json_type is not None:
+            effective_declared_type = self.json_type.value
             return SequenceFormatConfig(
                 sequence_open=fixed_open(open_str=_CSHARP_JSON_ARRAY_OPEN),
                 close="}",
@@ -2036,20 +2034,14 @@ class CSharp(metaclass=LanguageCls):
                 typed_opener_fallback=None,
                 uses_typed_literal_for_scalars=False,
                 requires_uniform_record_shapes=False,
-                declared_type=(
-                    self.json_type.value
-                    if self.json_type is not None
-                    else None
-                ),
+                declared_type=(effective_declared_type),
                 narrowed_empty_form=None,
             )
         element_type = self.default_sequence_element_type
         base = self.sequence_format(default_type=element_type)
-        empty = (
-            f"new {element_type}[] {{}}"
-            if self.sequence_format is type(self.sequence_format).ARRAY
-            else "ValueTuple.Create()"
-        )
+        empty = "ValueTuple.Create()"
+        if self.sequence_format is type(self.sequence_format).ARRAY:
+            empty = f"new {element_type}[] {{}}"
 
         def _narrowed_empty_form(
             _siblings: Sequence[list[Value]],
@@ -2339,20 +2331,15 @@ class CSharp(metaclass=LanguageCls):
             return _csharp_json_declaration_formatter(
                 json_type=json_type.value,
             )
-        date_hint = (
-            "string"
-            if self.date_format.value.type_produced is str
-            else "DateOnly"
-        )
-        datetime_hint = (
-            "long"
-            if self.datetime_format.value.type_produced is int
-            else (
-                "string"
-                if self.datetime_format.value.type_produced is str
-                else "DateTime"
-            )
-        )
+        date_hint = "DateOnly"
+        if self.date_format.value.type_produced is str:
+            date_hint = "string"
+        if self.datetime_format.value.type_produced is int:
+            datetime_hint = "long"
+        else:
+            datetime_hint = "DateTime"
+            if self.datetime_format.value.type_produced is str:
+                datetime_hint = "string"
         dict_value_type = self.default_dict_value_type
 
         def _formatter(

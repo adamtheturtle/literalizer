@@ -40,11 +40,9 @@ def _build_document(json_text: str) -> str:
         wrap_in_file=False,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    return (
-        f"{preamble}\n{result.code}\n"
-        if preamble != ""
-        else f"{result.code}\n"
-    )
+    if preamble != "":
+        return f"{preamble}\n{result.code}\n"
+    return f"{result.code}\n"
 
 
 def main() -> None:

@@ -29,8 +29,7 @@ def _logical_stem(*, path: Path) -> str:
     stable across both forms so the same source can resolve to either
     path.
     """
-    stem = path.stem
-    return stem.rsplit(sep="@", maxsplit=1)[0] if "@" in stem else stem
+    return path.stem.rsplit(sep="@", maxsplit=1)[0]
 
 
 @beartype

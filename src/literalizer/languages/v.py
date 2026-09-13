@@ -423,9 +423,10 @@ def _v_call_preamble_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
-    receiver_type = (
-        _cap_type(fields[-1]) if len(fields) > 0 else _cap_type(root)
-    )
+    if len(fields) > 0:
+        receiver_type = _cap_type(fields[-1])
+    else:
+        receiver_type = _cap_type(root)
 
     if stub_return is StubReturn.VOID:
         method_line = (
@@ -546,10 +547,12 @@ def _v_inner_type(items: list[Value], /) -> str:
     formatter emits.
     """
     inner = infer_element_type(items=items)
-    resolved = _v_element_to_type(inner) if inner is not None else None
-    return (
-        resolved if resolved is not None and resolved != "" else _V_IFACE_NAME
-    )
+    resolved = None
+    if inner is not None:
+        resolved = _v_element_to_type(inner)
+    if resolved is not None and resolved != "":
+        return resolved
+    return _V_IFACE_NAME
 
 
 @beartype
@@ -1163,11 +1166,9 @@ class V(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         indented = textwrap.indent(text=content, prefix=self.indent)
-        use_line = (
-            f"\n{self.indent}_ = {variable_name}"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}_ = {variable_name}"
         return f"\nfn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(
@@ -1317,11 +1318,9 @@ class V(metaclass=LanguageCls):
                 return f"[]{_v_inner_type(value)}"
             case _:
                 scalar_type = _V_SCALAR_FIELD_TYPE.get(type(value))
-                return (
-                    scalar_type
-                    if scalar_type is not None and scalar_type != ""
-                    else _V_IFACE_NAME
-                )
+                if scalar_type is not None and scalar_type != "":
+                    return scalar_type
+                return _V_IFACE_NAME
 
     def _v_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the V ``struct`` field type for a record field.

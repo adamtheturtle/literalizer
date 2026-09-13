@@ -175,6 +175,32 @@ class _ZigDeclarationStyleConfig:
 
 
 @beartype
+def _zig_integer_variant(*, original: int) -> str:
+    """Choose the union variant that preserves the integer value."""
+    if original < I64_MIN:
+        msg = (
+            f"Zig cannot represent negative integer {original} "
+            "below the signed 64-bit range using the ZVal "
+            "union's unsigned variant."
+        )
+        raise UnrepresentableIntegerError(msg)
+    tag = "int"
+    if original > I64_MAX:
+        tag = "uint"
+    return tag
+
+
+@beartype
+def _zig_temporal_variant(*, produced_type: type) -> str:
+    """Choose the union variant for the selected temporal
+    representation.
+    """
+    if produced_type is str:
+        return "str"
+    return "int"
+
+
+@beartype
 def _format_zig_entry(
     *,
     original: Value,
@@ -193,24 +219,17 @@ def _format_zig_entry(
         case bool():
             return formatted
         case int():
-            if original < I64_MIN:
-                msg = (
-                    f"Zig cannot represent negative integer {original} "
-                    "below the signed 64-bit range using the ZVal "
-                    "union's unsigned variant."
-                )
-                raise UnrepresentableIntegerError(msg)
-            tag = "uint" if original > I64_MAX else "int"
+            tag = _zig_integer_variant(original=original)
         case float():
             tag = "float"
         case str() | bytes():
             tag = "str"
         case datetime.datetime():
-            tag = "str" if datetime_type is str else "int"
+            tag = _zig_temporal_variant(produced_type=datetime_type)
         case datetime.time():
             tag = "str"
         case datetime.date():
-            tag = "str" if date_type is str else "int"
+            tag = _zig_temporal_variant(produced_type=date_type)
         case _:
             return formatted
     return f".{{ .{tag} = {formatted} }}"
@@ -252,9 +271,9 @@ def _make_zig_call_preamble_stub(
         /,
     ) -> tuple[str, ...]:
         """Return file-scope Zig stub declarations for a call name."""
-        param_type = (
-            "anytype" if record_mode or list(params) == ["_arg"] else "ZVal"
-        )
+        param_type = "ZVal"
+        if record_mode or list(params) == ["_arg"]:
+            param_type = "anytype"
         param_discards = "".join(f" _ = {p};" for p in params)
         method = parts[-1]
         if len(parts) == 1:
@@ -342,7 +361,9 @@ def _zig_int_sort_key(value: Value, /) -> int:
     representative -- and the int-vs-other branch is exercised by the
     int and string record-list fixtures alike.
     """
-    return value if isinstance(value, int) else 0
+    if isinstance(value, int):
+        return value
+    return 0
 
 
 # Zig keywords, shared by the variable-name collision check and the
@@ -686,6 +707,15 @@ def _format_zig_json_assignment(name: str, _value: str, data: Value) -> str:
 def _format_zig_json_call_arg(raw_value: Value, _formatted: str) -> str:
     """Format a direct call argument as a ``std.json.Value`` literal."""
     return _zig_parse_expression(data=raw_value)
+
+
+@beartype
+def _zig_integer_field_type(*, value: int) -> str:
+    """Choose the Zig integer field type covering the value."""
+    value_type = "i64"
+    if value > I64_MAX:
+        value_type = "u64"
+    return value_type
 
 
 @beartype
@@ -1115,11 +1145,9 @@ class Zig(metaclass=LanguageCls):
                 flags=re.MULTILINE,
             ),
         )
-        effective_body_preamble = (
-            _STD_JSON_BODY_PREAMBLE + body_preamble
-            if json_mode
-            else body_preamble
-        )
+        effective_body_preamble = body_preamble
+        if json_mode:
+            effective_body_preamble = _STD_JSON_BODY_PREAMBLE + body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=effective_body_preamble,
@@ -1141,7 +1169,9 @@ class Zig(metaclass=LanguageCls):
                 # the final statement uses the variable without tripping
                 # the Zig "pointless discard of local variable" error
                 # after a preceding write.
-                ref = f"&{variable_name}" if is_var else variable_name
+                ref = variable_name
+                if is_var:
+                    ref = f"&{variable_name}"
                 use = f"{self.indent}_ = {ref};"
             case _, False, True:
                 use = f"{self.indent}{variable_name} = .nil;"
@@ -1365,7 +1395,9 @@ class Zig(metaclass=LanguageCls):
         ``RECORD`` a null record field is a raw Zig ``null`` (its field
         type is the optional ``?i64``).
         """
-        return "null" if self._record_strategy_active else ".nil"
+        if self._record_strategy_active:
+            return "null"
+        return ".nil"
 
     @cached_property
     def true_literal(self) -> str:
@@ -1389,6 +1421,13 @@ class Zig(metaclass=LanguageCls):
             return "false"
         return ".{ .bool = false }"
 
+    @beartype
+    def _zig_ordered_map_type(self, *, value: OrderedMap) -> str:
+        """Infer the value type of an ordered map field."""
+        value_for_type = next(iter(value.values()), 0)
+        val_type = self._zig_value_type(value_for_type)
+        return f"[]const struct {{ key: []const u8, val: {val_type} }}"
+
     def _zig_value_type(self, value: Value, /) -> str:
         """Return the Zig type for a raw record field *value*.
 
@@ -1405,7 +1444,7 @@ class Zig(metaclass=LanguageCls):
             case bool():
                 value_type = "bool"
             case int():
-                value_type = "u64" if value > I64_MAX else "i64"
+                value_type = _zig_integer_field_type(value=value)
             case float():
                 value_type = "f64"
             case None:
@@ -1429,12 +1468,7 @@ class Zig(metaclass=LanguageCls):
                 # (its ``&.{}`` literal coerces to any slice element type);
                 # ``or`` is not a coverage branch, so no unreachable arm is
                 # added for a corpus that has no empty ordered-map field.
-                values = list(value.values())
-                value_for_type = values[0] if len(values) > 0 else 0
-                val_type = self._zig_value_type(value_for_type)
-                value_type = (
-                    f"[]const struct {{ key: []const u8, val: {val_type} }}"
-                )
+                value_type = self._zig_ordered_map_type(value=value)
             case list():
                 value_type = self._zig_list_type(items=value)
             case _:
@@ -1580,11 +1614,9 @@ class Zig(metaclass=LanguageCls):
 
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
-                value_preamble = (
-                    _ZVAL_STATIC_PREAMBLE
-                    if len(compute_wrap_ids(data)) > 0
-                    else ()
-                )
+                value_preamble = _ZVAL_STATIC_PREAMBLE
+                if len(compute_wrap_ids(data)) == 0:
+                    value_preamble = ()
                 return (*value_preamble, *record_preamble(data))
 
             return _record_preamble

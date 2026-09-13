@@ -9,7 +9,16 @@ file to hold (issue #4699).
 import pytest
 
 from literalizer._formatters.collection_openers import (
+    TypedOpenerConfig,
+    make_narrowed_empty_form,
+    replace_optional_type_name,
     sequence_surrogate_set_open,
+)
+from literalizer._formatters.fallbacks import nonempty_or_default
+from literalizer._formatters.type_inference import (
+    BeyondI64,
+    WideInt,
+    single_concrete_type,
 )
 from literalizer._language import Language
 from literalizer._types import OrderedMap, Scalar, Value
@@ -92,3 +101,79 @@ def test_sequence_surrogate_set_entries_delegate(language: Language) -> None:
     contract.
     """
     assert language.format_set_entry(1, "one") == "one"
+
+
+@pytest.mark.parametrize(
+    argnames="resolved_type",
+    argvalues=[None, "", "Element"],
+)
+def test_narrowed_empty_form_resolver_fallback(
+    resolved_type: str | None,
+) -> None:
+    """Unknown and empty type names preserve the documented fallback."""
+    opener = make_narrowed_empty_form(
+        element_to_type=lambda _kind: resolved_type,
+        template="List[{type}]()",
+        fallback_type="Fallback",
+    )
+    expected_type = nonempty_or_default(
+        value=resolved_type, default="Fallback"
+    )
+    assert opener([[1]]) == f"List[{expected_type}]()"
+    assert opener([[1, "two"]]) == "List[Fallback]()"
+
+
+def test_integer_type_fallbacks() -> None:
+    """Unspecified wider integer types inherit the base integer type."""
+    config = TypedOpenerConfig(
+        str_type=None,
+        bool_type=None,
+        int_type="Integer",
+        float_type=None,
+        bytes_type=None,
+        mixed_numeric_type=None,
+        date_type=None,
+        datetime_type=None,
+        time_type=None,
+        list_template="List[{type}]",
+        sequence_opener_template="List[{type}](",
+        dict_opener_template="Map[{type}](",
+        set_opener_template="Set[{type}](",
+        dict_type_template=None,
+        fallback_value_type=None,
+        wide_int_type=None,
+        beyond_i64_type=None,
+    )
+    assert config.type_name(py_type=WideInt) == "Integer"
+    assert config.type_name(py_type=BeyondI64) == "Integer"
+
+
+@pytest.mark.parametrize(
+    argnames=("names", "expected"),
+    argvalues=[
+        (set[str](), None),
+        ({"Integer"}, "Integer"),
+        ({"Any"}, None),
+        ({"Integer", "String"}, None),
+        ({"Any", "Integer"}, None),
+    ],
+)
+def test_shared_concrete_type(names: set[str], expected: str | None) -> None:
+    """A type can narrow only when every value shares a concrete type."""
+    assert single_concrete_type(types=names, fallback_type="Any") == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("template", "expected"),
+    argvalues=[(None, None), ("", ""), ("List[Val]", "List[Custom]")],
+)
+def test_optional_declared_type_template(
+    template: str | None, expected: str | None
+) -> None:
+    """Substitution preserves absent hints and empty configured hints."""
+    assert (
+        replace_optional_type_name(
+            template=template, placeholder="Val", type_name="Custom"
+        )
+        == expected
+    )

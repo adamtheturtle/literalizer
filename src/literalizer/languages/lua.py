@@ -900,16 +900,21 @@ class Lua(metaclass=LanguageCls):
         """
         base = self.integer_format
         fallback = raise_for_unrepresentable_int(language_name="Lua")
-        return lambda value: (
-            "math.mininteger"
-            if value == I64_MIN
-            else make_overflow_fallback_formatter(
-                base=base,
-                fallback=fallback,
-                min_value=I64_MIN,
-                max_value=I64_MAX,
-            )(value)
+        checked = make_overflow_fallback_formatter(
+            base=base,
+            fallback=fallback,
+            min_value=I64_MIN,
+            max_value=I64_MAX,
         )
+
+        @beartype
+        def format_signed(value: int) -> str:
+            """Format the signed minimum using its named constant."""
+            if value == I64_MIN:
+                return "math.mininteger"
+            return checked(value)
+
+        return format_signed
 
     @cached_property
     def comment_config(self) -> CommentConfig:

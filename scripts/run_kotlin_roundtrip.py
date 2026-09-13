@@ -73,18 +73,19 @@ def main() -> None:
     # to ``/tmp/kotlinx-jars/*`` for the per-fixture compile host.  The
     # ``kotlin`` script wrapper does not forward the JVM ``dir/*``
     # wildcard intact, so expand it here to an explicit jar list.
+    collected_classpath: list[str] = []
+    for entry_entry in os.environ["LITERALIZER_LINT_CLASSPATH"].split(sep=":"):
+        if entry_entry.endswith("/*"):
+            classpath_paths = list(
+                Path(entry_entry.removesuffix("/*")).glob(pattern="*.jar")
+            )
+        else:
+            classpath_paths = [Path(entry_entry)]
+        collected_classpath.extend(
+            str(object=path) for path in classpath_paths
+        )
     classpath = ":".join(
-        sorted(
-            str(object=p)
-            for entry in os.environ["LITERALIZER_LINT_CLASSPATH"].split(
-                sep=":",
-            )
-            for p in (
-                Path(entry.removesuffix("/*")).glob(pattern="*.jar")
-                if entry.endswith("/*")
-                else [Path(entry)]
-            )
-        ),
+        sorted(collected_classpath),
     )
     roundtrip_common.execute(
         label=_LABEL,

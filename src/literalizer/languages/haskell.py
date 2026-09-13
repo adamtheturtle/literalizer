@@ -5,6 +5,7 @@ import datetime
 import enum
 import itertools
 import re
+import textwrap
 import unicodedata
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -194,7 +195,9 @@ def _build_haskell_call_stub_lines(
     arg_type = _haskell_arg_type_str(
         params=params, type_name=type_name, curried=effective_curried
     )
-    lhs_wildcards = " ".join("_" for _ in params) if effective_curried else "_"
+    lhs_wildcards = "_"
+    if effective_curried:
+        lhs_wildcards = " ".join("_" for _ in params)
     lambda_wildcards = lhs_wildcards
     if len(parts) == 1:
         if is_wrapper_stub:
@@ -834,7 +837,15 @@ def _haskell_num_instances(
         # The numeric catch-all for ``negate`` is redundant when ``Val``
         # has only numeric constructors, because the specific
         # ``HInt`` / ``HFloat`` clauses cover the type.
-        num_constructor_count = (1 if has_int else 0) + (1 if has_float else 0)
+        effective_num_constructor_count = 0
+        if has_int:
+            effective_num_constructor_count = 1
+        effective_num_constructor_count_2 = 0
+        if has_float:
+            effective_num_constructor_count_2 = 1
+        num_constructor_count = (effective_num_constructor_count) + (
+            effective_num_constructor_count_2
+        )
         needs_catchall = len(data_val_parts) > num_constructor_count
         instances.append(
             _num_instance(
@@ -1028,11 +1039,9 @@ def _build_declaration_formatters(
     """Build declaration/assignment formatters with type annotations."""
     base_declaration = declaration_config.formatter
     raw_declared = sequence_config.declared_type
-    sequence_declared_type = (
-        raw_declared.replace("Val", type_name)
-        if raw_declared is not None
-        else None
-    )
+    sequence_declared_type = None
+    if raw_declared is not None:
+        sequence_declared_type = raw_declared.replace("Val", type_name)
 
     def _haskell_declaration(
         name: str,
@@ -2043,20 +2052,19 @@ class Haskell(metaclass=LanguageCls):
             or self.sequence_format is not type(self.sequence_format).TUPLE
         ):
             return
-        nested_list = (
-            any(
+        if isinstance(data, list):
+            nested_list = any(
                 value_contains(
                     data=item,
                     predicate=lambda value: isinstance(value, list),
                 )
                 for item in data
             )
-            if isinstance(data, list)
-            else value_contains(
+        else:
+            nested_list = value_contains(
                 data=data,
                 predicate=lambda value: isinstance(value, list),
             )
-        )
         if nested_list:
             msg = (
                 "Haskell sequence_format=TUPLE cannot represent a tuple "
@@ -2145,16 +2153,18 @@ class Haskell(metaclass=LanguageCls):
         where they would need ``let`` injection.
         """
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
-        indented_calls = "\n".join(
-            f"{self.indent}_ <- {line}" if line.strip() != "" else line
-            for line in calls.split(sep="\n")
+        indented_calls = textwrap.indent(
+            text=calls, prefix=f"{self.indent}_ <- "
         )
         declaration_block = "\n".join(declarations)
+        effective_declaration_block = ""
+        if declaration_block != "":
+            effective_declaration_block = declaration_block + "\n"
         return (
             f"module {self.module_name} where\n"
             + preamble
             + "\n"
-            + (declaration_block + "\n" if declaration_block != "" else "")
+            + (effective_declaration_block)
             + "main :: IO ()\nmain = do\n"
             + indented_calls
             + f"\n{self.indent}pure ()"
@@ -2622,7 +2632,9 @@ class Haskell(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Callable that returns Haskell stub declarations for a call."""
-        stub_type_name = "Value" if self._json_type_active else self.type_name
+        stub_type_name = "Value"
+        if not self._json_type_active:
+            stub_type_name = self.type_name
         return _build_haskell_call_stub(
             type_name=stub_type_name,
             curried=isinstance(self.call_style.value, CommandCallStyle),

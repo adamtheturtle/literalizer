@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     make_element_to_type,
     make_narrowed_empty_form,
 )
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_epoch_seconds,
@@ -138,7 +139,9 @@ _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 @beartype
 def _format_crystal_tuple_entry(_original: Value, formatted: str) -> str:
     """Separate adjacent tuple openers from Crystal macro syntax."""
-    return f" {formatted}" if formatted.startswith("{") else formatted
+    if formatted.startswith("{"):
+        return f" {formatted}"
+    return formatted
 
 
 @beartype
@@ -149,7 +152,9 @@ def _format_crystal_percent_dict_entry(
     entry = dict_entry_with_separator(
         separator=" => ", format_value=passthrough_sequence_entry
     )(key, value, formatted_value)
-    return f" {entry}" if key.startswith("%") else entry
+    if key.startswith("%"):
+        return f" {entry}"
+    return entry
 
 
 @beartype
@@ -1358,6 +1363,44 @@ class Crystal(metaclass=LanguageCls):
             is type(self.heterogeneous_strategy).RECORD
         )
 
+    @beartype
+    def _crystal_list_type(self, *, value: list[Value]) -> str:
+        """Infer the Crystal array type from informative elements."""
+        narrowed_kinds: tuple[type, ...] = tuple(
+            kind
+            for kind in (list, dict, set)
+            if any(bool(item) and isinstance(item, kind) for item in value)
+        )
+        informative = [
+            item
+            for item in value
+            if bool(item)
+            or not isinstance(item, (list, dict, set))
+            or (not isinstance(item, narrowed_kinds))
+        ]
+        collected_parts: set[str] = set()
+        effective_informative = nonempty_or_default(
+            value=informative, default=value
+        )
+        for entry_item in effective_informative:
+            collected_parts.add(self._crystal_type_for_value(entry_item))
+        parts = collected_parts
+        return f"Array({_crystal_union(parts)})"
+
+    @beartype
+    def _crystal_scalar_type(self, *, value: Value) -> str:
+        """Resolve a Crystal scalar type under the selected date
+        format.
+        """
+        scalar_type = _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value))
+        if (
+            isinstance(value, datetime.date)
+            and not isinstance(value, datetime.datetime)
+            and self.date_format.value.type_produced is datetime.date
+        ):
+            return "Time"
+        return nonempty_or_default(value=scalar_type, default="Nil")
+
     def _crystal_type_for_value(self, value: Value, /) -> str:
         """Return the Crystal type the rendered literal for *value*
         compiles to.
@@ -1396,27 +1439,7 @@ class Crystal(metaclass=LanguageCls):
                 # sibling of the same kind gives it one; an empty list
                 # among scalars still renders ``[] of Nil``, so its own
                 # type has to stay in the union.
-                narrowed_kinds: tuple[type, ...] = tuple(
-                    kind
-                    for kind in (list, dict, set)
-                    if any(
-                        bool(item) and isinstance(item, kind) for item in value
-                    )
-                )
-                informative = [
-                    item
-                    for item in value
-                    if bool(item)
-                    or not isinstance(item, (list, dict, set))
-                    or (not isinstance(item, narrowed_kinds))
-                ]
-                parts = {
-                    self._crystal_type_for_value(item)
-                    for item in (
-                        informative if len(informative) > 0 else value
-                    )
-                }
-                return f"Array({_crystal_union(parts)})"
+                return self._crystal_list_type(value=value)
             case dict() if len(value) == 0 or isinstance(value, OrderedMap):
                 parts = {
                     self._crystal_type_for_value(item)
@@ -1427,26 +1450,15 @@ class Crystal(metaclass=LanguageCls):
                 # to ``default_dict_value_type`` (``or`` keeps the
                 # never-empty corpus path branch-free).
                 union_type = _crystal_union(parts)
-                value_type = (
-                    union_type
-                    if union_type != ""
-                    else self.default_dict_value_type
-                )
+                value_type = union_type
+                if value_type == "":
+                    value_type = self.default_dict_value_type
                 return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
                 # A set or non-empty non-record dict field is out of scope for
                 # the base ``RECORD`` port (#2317) and is not reached
                 # by any record golden; the ``or`` widens it to ``Nil``.
-                scalar_type = _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value))
-                return (
-                    "Time"
-                    if isinstance(value, datetime.date)
-                    and not isinstance(value, datetime.datetime)
-                    and self.date_format.value.type_produced is datetime.date
-                    else scalar_type
-                    if scalar_type is not None and scalar_type != ""
-                    else "Nil"
-                )
+                return self._crystal_scalar_type(value=value)
 
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Crystal ``record`` field type for a record field.
@@ -1873,12 +1885,11 @@ class Crystal(metaclass=LanguageCls):
             /,
         ) -> tuple[str, ...]:
             """Record declaration lines precede scalar body lines."""
-            alias = (
-                (_CRYSTAL_RECORD_MAP_ALIAS,)
-                if len(self._record_strategy.behavior.compute_wrap_ids(data))
-                > 0
-                else ()
-            )
+            alias: tuple[str, ...]
+            if len(self._record_strategy.behavior.compute_wrap_ids(data)) > 0:
+                alias = (_CRYSTAL_RECORD_MAP_ALIAS,)
+            else:
+                alias = ()
             return alias + record_preamble(data) + scalar_body(types, data)
 
         return _compute

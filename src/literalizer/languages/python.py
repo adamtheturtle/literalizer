@@ -239,7 +239,9 @@ def _format_datetime_python(
             parts.append(f"tzinfo={utc_tzinfo_expr}")
         else:
             total_seconds = int(offset.total_seconds())
-            sign = -1 if total_seconds < 0 else 1
+            sign = 1
+            if total_seconds < 0:
+                sign = -1
             abs_seconds = abs(total_seconds)
             hours = sign * (abs_seconds // 3600)
             minutes = sign * ((abs_seconds % 3600) // 60)
@@ -479,7 +481,9 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
         match elem:
             case dict():
                 is_ordered = isinstance(elem, OrderedMap)
-                target = ordered_vals if is_ordered else plain_vals
+                target = plain_vals
+                if is_ordered:
+                    target = ordered_vals
                 target.extend(elem.values())
                 if is_ordered:
                     has_ordered = True
@@ -597,10 +601,12 @@ def _python_type_hint(
 
     match data:
         case dict():
-            outer = (
-                "OrderedDict" if isinstance(data, OrderedMap) else dict_hint
-            )
-            key_hint = default_dict_key_type if len(data) == 0 else "str"
+            outer = dict_hint
+            if isinstance(data, OrderedMap):
+                outer = "OrderedDict"
+            key_hint = "str"
+            if len(data) == 0:
+                key_hint = default_dict_key_type
             val_union = _collection_element_union(
                 elements=list(data.values()),
                 recurse=recurse,
@@ -629,11 +635,10 @@ def _python_type_hint(
                 default_type=default_sequence_element_type,
                 join_union=join_union,
             )
-            hint = (
-                f"{sequence_hint}[{elem_union}, ...]"
-                if sequence_hint.casefold() == "tuple"
-                else f"{sequence_hint}[{elem_union}]"
-            )
+            if sequence_hint.casefold() == "tuple":
+                hint = f"{sequence_hint}[{elem_union}, ...]"
+            else:
+                hint = f"{sequence_hint}[{elem_union}]"
         case _:
             hint = _python_scalar_hint(
                 data=data,
@@ -1223,7 +1228,9 @@ class Python(metaclass=LanguageCls):
         @property
         def type_hint(self) -> str:
             """Python type hint name for this sequence format."""
-            return "tuple" if self is type(self).TUPLE else "list"
+            if self is type(self).TUPLE:
+                return "tuple"
+            return "list"
 
     class SetFormats(enum.Enum):
         """Set type options for Python."""
@@ -1250,7 +1257,9 @@ class Python(metaclass=LanguageCls):
         @property
         def type_hint(self) -> str:
             """Python type hint name for this set format."""
-            return "frozenset" if self is type(self).FROZENSET else "set"
+            if self is type(self).FROZENSET:
+                return "frozenset"
+            return "set"
 
     class VariableTypeHints(enum.Enum):
         """Variable type hint options for Python."""
@@ -1779,11 +1788,11 @@ class Python(metaclass=LanguageCls):
             if request.record_name is not None:
                 return request.record_name
             if request.element_record_name is not None:
-                return (
-                    f"{sequence_hint}[{request.element_record_name}, ...]"
-                    if sequence_hint.casefold() == "tuple"
-                    else f"{sequence_hint}[{request.element_record_name}]"
-                )
+                if sequence_hint.casefold() == "tuple":
+                    return (
+                        f"{sequence_hint}[{request.element_record_name}, ...]"
+                    )
+                return f"{sequence_hint}[{request.element_record_name}]"
             return _python_type_hint(
                 data=request.value,
                 bytes_hint=self.bytes_format.type_hint,
@@ -1861,11 +1870,11 @@ class Python(metaclass=LanguageCls):
             blocks = record_preamble(data)
             if len(blocks) == 0:
                 return ()
-            typing_import = (
-                ("from typing import Union",)
-                if any("Union[" in block for block in blocks)
-                else ()
-            )
+            typing_import: tuple[str, ...]
+            if any("Union[" in block for block in blocks):
+                typing_import = ("from typing import Union",)
+            else:
+                typing_import = ()
             return ("import dataclasses", *typing_import, *blocks)
 
         return _preamble
@@ -2151,9 +2160,9 @@ class Python(metaclass=LanguageCls):
     @cached_property
     def _join_union(self) -> Callable[[list[str]], str]:
         """Return the configured union-annotation formatter."""
-        return (
-            _join_union_typing if self._uses_typing_union else _join_union_pipe
-        )
+        if self._uses_typing_union:
+            return _join_union_typing
+        return _join_union_pipe
 
     @cached_property
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:

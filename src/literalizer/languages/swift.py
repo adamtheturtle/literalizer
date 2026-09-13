@@ -131,7 +131,7 @@ def _reject_date_midnight_collisions(data: Value) -> None:
     """Reject Swift ``Date`` keys that can denote the same instant."""
     match data:
         case dict() | set():
-            values = data.keys() if isinstance(data, dict) else data
+            values = list(data)
             dates = {
                 (scalar.year, scalar.month, scalar.day): scalar
                 for scalar in values
@@ -150,7 +150,9 @@ def _reject_date_midnight_collisions(data: Value) -> None:
                         second=scalar,
                         rendered="the same Date instant",
                     )
-            children = data.values() if isinstance(data, dict) else ()
+            children: list[Value] = []
+            if isinstance(data, dict):
+                children = list(data.values())
             for child in children:
                 _reject_date_midnight_collisions(data=child)
         case list():
@@ -245,7 +247,9 @@ def _swift_param(*, name: str, accepts_nil: bool) -> str:
     a ``nil`` default so a caller may pass ``nil``; otherwise it is
     ``Any`` with a ``0`` default.
     """
-    type_and_default = "Any? = nil" if accepts_nil else "Any = 0"
+    type_and_default = "Any = 0"
+    if accepts_nil:
+        type_and_default = "Any? = nil"
     if name.startswith("_"):
         return f"_ {name}: {type_and_default}"
     return f"{name}: {type_and_default}"
@@ -381,9 +385,9 @@ def _swift_list_hint(
 ) -> str:
     """Derive a Swift array/tuple type annotation."""
     if is_empty:
-        return (
-            "()" if sequence_is_tuple else f"[{default_sequence_element_type}]"
-        )
+        if sequence_is_tuple:
+            return "()"
+        return f"[{default_sequence_element_type}]"
     if sequence_is_tuple:
         return f"({', '.join(elem_types)})"
     return f"[{_swift_collapse(types=elem_types)}]"
@@ -525,7 +529,9 @@ def _swift_record_field_identifier(
     Swift property identifiers preserve the dict keys (no case conversion),
     escaping reserved words with backticks in declarations.
     """
-    return f"`{key}`" if key in reserved_identifiers else key
+    if key in reserved_identifiers:
+        return f"`{key}`"
+    return key
 
 
 @beartype

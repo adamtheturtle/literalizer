@@ -80,6 +80,7 @@ from literalizer._formatters.type_inference import (
     DictType,
     ListType,
     record_shape_for_dict,
+    single_concrete_type,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._json_native_document import (
@@ -201,10 +202,16 @@ def _format_string_multiline(value: str) -> str:
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_backslash_dollar_nul(value=value)
-    escaped = "".join(
-        "${'$'}" if char == "$" else "${'\"'}" if char == '"' else char
-        for char in value
-    )
+    collected_escaped: list[str] = []
+    for entry_char in value:
+        if entry_char == "$":
+            effective_value = "${'$'}"
+        else:
+            effective_value = entry_char
+            if effective_value == '"':
+                effective_value = "${'\"'}"
+        collected_escaped.append(effective_value)
+    escaped = "".join(collected_escaped)
     return f'"""{escaped}"""'
 
 
@@ -311,7 +318,9 @@ def _kotlin_type_to_opener(
             return None
         case ListType():
             inner = _kotlin_type_to_opener(element_type=element_type.inner)
-            return "arrayOf(" if inner is not None else None
+            if inner is not None:
+                return "arrayOf("
+            return None
         case _:
             return scalar_openers.get(element_type)
 
@@ -327,6 +336,14 @@ _KOTLIN_PRIMITIVE_ARRAY_TYPES: dict[type, str] = {
 ``Array<Int>``, so a map value carrying one has to be annotated with
 the primitive array type (issue #3941).
 """
+
+
+@beartype
+def _kotlin_array_type(*, element_name: str | None) -> str | None:
+    """Wrap a resolved Kotlin element type in an array type."""
+    if element_name is None:
+        return None
+    return f"Array<{element_name}>"
 
 
 @beartype
@@ -349,7 +366,7 @@ def _kotlin_list_value_type_name(
                 element_type=inner,
                 scalar_resolver=scalar_resolver,
             )
-            return None if nested is None else f"Array<{nested}>"
+            return _kotlin_array_type(element_name=nested)
         case DictType():
             return None
         case _:
@@ -363,7 +380,7 @@ def _kotlin_list_value_type_name(
             if _kotlin_type_to_opener(element_type=inner) is None:
                 return None
             scalar = scalar_resolver(inner)
-            return None if scalar is None else f"Array<{scalar}>"
+            return _kotlin_array_type(element_name=scalar)
 
 
 @beartype
@@ -404,11 +421,23 @@ def _kotlin_dict_value_type_name(
         key_type=key_type,
         fallback=fallback,
     )
-    return f"Map<{key_type}, {inner if inner is not None else fallback}>"
+    effective_inner = fallback
+    if inner is not None:
+        effective_inner = inner
+    return f"Map<{key_type}, {effective_inner}>"
 
 
 _KOTLIN_I32_MIN = -(2**31)
 _KOTLIN_I32_MAX = 2**31 - 1
+
+
+@beartype
+def _kotlin_integer_hint(*, data: int) -> str:
+    """Choose the Kotlin integer type covering the value."""
+    hint = "Int"
+    if not _KOTLIN_I32_MIN <= data <= _KOTLIN_I32_MAX:
+        hint = "Long"
+    return hint
 
 
 @beartype
@@ -423,11 +452,7 @@ def _kotlin_scalar_hint(
         case bool():
             hint = "Boolean"
         case int():
-            hint = (
-                "Long"
-                if not _KOTLIN_I32_MIN <= data <= _KOTLIN_I32_MAX
-                else "Int"
-            )
+            hint = _kotlin_integer_hint(data=data)
         case float():
             hint = "Double"
         case str() | bytes():
@@ -456,11 +481,15 @@ def _kotlin_dict_hint(
     dict_outer: str,
 ) -> str:
     """Derive a Kotlin map type annotation."""
-    outer = "LinkedHashMap" if is_ordered else dict_outer
+    outer = dict_outer
+    if is_ordered:
+        outer = "LinkedHashMap"
     if is_empty:
         return f"{outer}<{default_dict_key_type}, {default_dict_value_type}>"
     unique = list(dict.fromkeys(val_types))
-    val_type = unique[0] if len(unique) == 1 else "Any?"
+    val_type = "Any?"
+    if len(unique) == 1:
+        val_type = unique[0]
     return f"{outer}<{default_dict_key_type}, {val_type}>"
 
 
@@ -528,9 +557,9 @@ def _kotlin_list_hint(
 ) -> str:
     """Derive a Kotlin sequence type annotation."""
     if len(data) == 0:
-        return (
-            "Array<Any?>" if sequence_format_name == "ARRAY" else "List<Any?>"
-        )
+        if sequence_format_name == "ARRAY":
+            return "Array<Any?>"
+        return "List<Any?>"
     if sequence_format_name == "ARRAY":
         return "Array<Any?>"
     elem_types = [recurse(data=e) for e in data]
@@ -626,11 +655,9 @@ def _format_kotlin_typed_declaration(
         sequence_format_name=sequence_format_name,
     )
     explicit_hint = _kotlin_explicit_initializer_type(value)
-    hint = (
-        explicit_hint
-        if explicit_hint is not None and explicit_hint != ""
-        else inferred_hint
-    )
+    hint = inferred_hint
+    if explicit_hint is not None and explicit_hint != "":
+        hint = explicit_hint
     return f"{keyword} {name}: {hint} = {value}"
 
 
@@ -1970,6 +1997,17 @@ class Kotlin(metaclass=LanguageCls):
             return f"List<{request.element_record_name}>"
         return self._kotlin_value_field_type(request.value)
 
+    @beartype
+    def _kotlin_list_field_type(self, *, value: list[Value]) -> str:
+        """Resolve the Kotlin array field type from its opener."""
+        opener = self.sequence_open(value)
+        if opener == "arrayOf(":
+            element = self._kotlin_value_field_type(value[0])
+            field_type = f"Array<{element}>"
+        else:
+            field_type = _kotlin_opener_to_type(opener)
+        return field_type
+
     def _kotlin_value_field_type(
         self,
         value: Value,
@@ -1979,13 +2017,15 @@ class Kotlin(metaclass=LanguageCls):
         value, descending into an ``arrayOf(`` element type.
         """
         match value:
-            case int() if not isinstance(value, bool) and not (
-                I64_MIN <= value <= I64_MAX
+            case int() if (
+                not isinstance(value, bool) and not I64_MIN <= value <= I64_MAX
             ):
                 field_type = "BigInteger"
             case int() if not isinstance(value, bool):
                 in_i32 = _KOTLIN_I32_MIN <= value <= _KOTLIN_I32_MAX
-                field_type = "Int" if in_i32 else "Long"
+                field_type = "Long"
+                if in_i32:
+                    field_type = "Int"
             case datetime.datetime():
                 field_type = self._kotlin_record_datetime_type(value)
             case OrderedMap():
@@ -1995,19 +2035,12 @@ class Kotlin(metaclass=LanguageCls):
             case dict() if record_shape_for_dict(value=value) is not None:
                 field_type = self._kotlin_derecordized_map_field_type()
             case list():
-                opener = self.sequence_open(value)
-                if opener == "arrayOf(":
-                    element = self._kotlin_value_field_type(value[0])
-                    field_type = f"Array<{element}>"
-                else:
-                    field_type = _kotlin_opener_to_type(opener)
+                field_type = self._kotlin_list_field_type(value=value)
             case _:
                 scalar_type = self._kotlin_record_scalar_resolver(type(value))
-                field_type = (
-                    scalar_type
-                    if scalar_type is not None and scalar_type != ""
-                    else "Any?"
-                )
+                field_type = "Any?"
+                if scalar_type is not None and scalar_type != "":
+                    field_type = scalar_type
         return field_type
 
     def _kotlin_tuple_field_type(self, elements: list[Value], /) -> str:
@@ -2084,10 +2117,7 @@ class Kotlin(metaclass=LanguageCls):
         scalar_types = {
             self._kotlin_value_field_type(scalar) for scalar in scalars
         }
-        if len(scalar_types) != 1:
-            return None
-        (scalar_type,) = scalar_types
-        return None if scalar_type == "Any?" else scalar_type
+        return single_concrete_type(types=scalar_types, fallback_type="Any?")
 
     @cached_property
     def _derecordized_map_narrowing(self) -> _KotlinWidenedMapNarrowing:
@@ -2348,14 +2378,12 @@ class Kotlin(metaclass=LanguageCls):
                 (name,) = names
                 if name is not None:
                     return f"listOf<{name}>("
-            return (
-                "listOf<Any?>("
-                if any(
-                    isinstance(item, dict) and not isinstance(item, OrderedMap)
-                    for item in items
-                )
-                else base(items)
-            )
+            if any(
+                isinstance(item, dict) and not isinstance(item, OrderedMap)
+                for item in items
+            ):
+                return "listOf<Any?>("
+            return base(items)
 
         return _open
 
@@ -2365,14 +2393,13 @@ class Kotlin(metaclass=LanguageCls):
         if self._json_type_active:
             return _JSON_NODE_SET_CONFIG
         base = self.set_format(default_type=self.default_set_element_type)
+        effective_set_opener_template = None
+        if base.set_opener_template != "":
+            effective_set_opener_template = base.set_opener_template
         openers = self._opener_config.build(
             date_type=self._date_type_name,
             datetime_type=self._dt_type_name,
-            set_opener_template=(
-                base.set_opener_template
-                if base.set_opener_template != ""
-                else None
-            ),
+            set_opener_template=(effective_set_opener_template),
             narrow_dict_values=False,
             narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
@@ -2522,10 +2549,16 @@ class Kotlin(metaclass=LanguageCls):
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+
+        @beartype
+        def format_signed(value: int) -> str:
+            """Format the signed minimum using its named constant."""
+            if value == I64_MIN:
+                return "Long.MIN_VALUE"
+            return base(value)
+
         return make_overflow_fallback_formatter(
-            base=lambda value: (
-                "Long.MIN_VALUE" if value == I64_MIN else base(value)
-            ),
+            base=format_signed,
             fallback=_format_kotlin_biginteger_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,
@@ -2540,10 +2573,16 @@ class Kotlin(metaclass=LanguageCls):
             numeric_separator=self.numeric_separator,
         )
         suffixed = make_long_suffix_formatter(base=base)
+
+        @beartype
+        def format_signed(value: int) -> str:
+            """Format the signed minimum using its named constant."""
+            if value == I64_MIN:
+                return "Long.MIN_VALUE"
+            return suffixed(value)
+
         return make_overflow_fallback_formatter(
-            base=lambda value: (
-                "Long.MIN_VALUE" if value == I64_MIN else suffixed(value)
-            ),
+            base=format_signed,
             fallback=_format_kotlin_biginteger_literal,
             min_value=I64_MIN,
             max_value=I64_MAX,
@@ -2594,36 +2633,31 @@ class Kotlin(metaclass=LanguageCls):
             return _make_format_kotlin_json_declaration(
                 keyword=self.declaration_style.name.lower(),
             )
+        effective_date_hint = "LocalDate"
+        if self.date_format.value.type_produced is str:
+            effective_date_hint = "String"
+        if self.datetime_format.value.type_produced is int:
+            effective_datetime_hint = "Long"
+        else:
+            effective_datetime_hint = "LocalDateTime"
+            if self.datetime_format.value.type_produced is str:
+                effective_datetime_hint = "String"
+        effective_dict_outer = "Map"
+        if self.dict_format is type(self.dict_format).HASH_MAP:
+            effective_dict_outer = "HashMap"
+        effective_set_outer = "Set"
+        if self.set_format is type(self.set_format).SORTED_SET:
+            effective_set_outer = "MutableSet"
         formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
-            date_hint=(
-                "String"
-                if self.date_format.value.type_produced is str
-                else "LocalDate"
-            ),
-            datetime_hint=(
-                "Long"
-                if self.datetime_format.value.type_produced is int
-                else (
-                    "String"
-                    if self.datetime_format.value.type_produced is str
-                    else "LocalDateTime"
-                )
-            ),
+            date_hint=(effective_date_hint),
+            datetime_hint=(effective_datetime_hint),
             default_set_element_type=self.default_set_element_type,
             default_dict_key_type=self.default_dict_key_type,
             default_dict_value_type=self.default_dict_value_type,
-            dict_outer=(
-                "HashMap"
-                if self.dict_format is type(self.dict_format).HASH_MAP
-                else "Map"
-            ),
-            set_outer=(
-                "MutableSet"
-                if self.set_format is type(self.set_format).SORTED_SET
-                else "Set"
-            ),
+            dict_outer=(effective_dict_outer),
+            set_outer=(effective_set_outer),
             sequence_format_name=self.sequence_format.name,
         )
         if (

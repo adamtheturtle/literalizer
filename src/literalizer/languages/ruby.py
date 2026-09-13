@@ -235,7 +235,9 @@ def _format_datetime_ruby(value: datetime.datetime) -> str:
     if offset.total_seconds() == 0:
         return f"Time.utc({args})"
     total_seconds = int(offset.total_seconds())
-    sign = "+" if total_seconds >= 0 else "-"
+    sign = "-"
+    if total_seconds >= 0:
+        sign = "+"
     abs_seconds = abs(total_seconds)
     hours, remainder = divmod(abs_seconds, 3600)
     minutes = remainder // 60
@@ -956,11 +958,9 @@ class Ruby(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         (format_entry,) = self.dict_entry_style.value
-        config_cls = (
-            _RubyDictFormatConfig
-            if self.dict_entry_style.name == "SYMBOL"
-            else DictFormatConfig
-        )
+        config_cls = DictFormatConfig
+        if self.dict_entry_style.name == "SYMBOL":
+            config_cls = _RubyDictFormatConfig
         return config_cls(
             dict_open=fixed_open(open_str="{"),
             close="}",

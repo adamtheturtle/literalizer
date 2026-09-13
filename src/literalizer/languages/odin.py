@@ -1136,7 +1136,9 @@ class Odin(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = f"\n_ = {variable_name}" if variable_name != "" else ""
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n_ = {variable_name}"
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
     @staticmethod

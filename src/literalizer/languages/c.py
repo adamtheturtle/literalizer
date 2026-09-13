@@ -122,6 +122,14 @@ from literalizer.exceptions import (
 
 
 @beartype
+def _stub_parameter_signature(*, parameters: str) -> str:
+    """Use the C void parameter spelling for an empty stub signature."""
+    if parameters == "":
+        return "void"
+    return parameters
+
+
+@beartype
 def _apply_format_c_entry(
     *,
     original: Value,
@@ -135,7 +143,9 @@ def _apply_format_c_entry(
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
         case datetime.datetime():
-            field = int_field if datetime_as_int else string_field
+            field = string_field
+            if datetime_as_int:
+                field = int_field
         case str() | bytes() | datetime.date():
             field = string_field
         case bool():
@@ -588,29 +598,34 @@ def _c_call_stub(
     would otherwise fail at link time.
     """
     is_value = stub_return is StubReturn.VALUE
-    return_keyword = value_type if is_value else "void"
-    proto = (
-        ", ".join([value_type] * len(params)) if len(params) > 0 else "void"
-    )
+    return_keyword = "void"
+    return_stmt = ""
+    if is_value:
+        return_keyword = value_type
+        return_stmt = f" return {value_zero};"
+    proto = "void"
+    if len(params) > 0:
+        proto = ", ".join([value_type] * len(params))
     stub_params = ", ".join(
         _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
     )
-    stub_signature = stub_params if stub_params != "" else "void"
+    stub_signature = _stub_parameter_signature(parameters=stub_params)
     discards = "".join(f" (void)_a{i};" for i in range(len(params)))
-    return_stmt = f" return {value_zero};" if is_value else ""
-    has_body = discards if discards != "" else is_value
-    stub_body = f"{{{discards}{return_stmt} }}" if bool(has_body) else "{}"
+    has_body = discards != "" or is_value
+    stub_body = "{}"
+    if has_body:
+        stub_body = f"{{{discards}{return_stmt} }}"
     # Long uniform-typed parameter lists trip clang-tidy's
     # ``bugprone-easily-swappable-parameters`` check past its
     # name-suffix-dissimilarity silencing heuristic.  The stub is
     # generated, so the warning is not actionable.  Suppress it on
     # stubs whose parameter count exceeds anything the existing call
     # cases use, to avoid touching shorter-stub golden files.
-    nolint = (
-        ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
-        if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD
-        else ()
-    )
+    nolint: tuple[str, ...]
+    if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD:
+        nolint = ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
+    else:
+        nolint = ()
     match parts:
         case [single]:
             return (
@@ -812,7 +827,10 @@ def _c_cjson_scalar_create(
     """
     match value:
         case bool():
-            return f"cJSON_CreateBool({1 if value else 0})"
+            effective_value = 0
+            if value:
+                effective_value = 1
+            return f"cJSON_CreateBool({effective_value})"
         case int():
             return f"cJSON_CreateNumber((double){format_integer(value)})"
         case float():
@@ -879,6 +897,26 @@ def _c_cjson_build(
 
     root = _emit(jsonable)
     return _CJsonBuild(lines=tuple(lines), root=root)
+
+
+@beartype
+def _c_integer_field_type(*, value: int) -> str:
+    """Return the C field type covering the integer value."""
+    field_type = "long long"
+    if value > I64_MAX:
+        field_type = "unsigned long long"
+    return field_type
+
+
+@beartype
+def _c_temporal_field_type(
+    *, value: str | bytes | datetime.date | datetime.time, epoch: bool
+) -> str:
+    """Choose the C field type for string and temporal values."""
+    field_type = "const char *"
+    if epoch and isinstance(value, datetime.datetime):
+        field_type = "long long"
+    return field_type
 
 
 @beartype
@@ -1405,11 +1443,9 @@ class C(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = (
-            f"\n{self.indent}(void){variable_name};"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}(void){variable_name};"
         return (
             f"int {self.module_name}(void) {{\n{content}{use_line}\n"
             f"{self.indent}return 0;\n}}"
@@ -1542,19 +1578,13 @@ class C(metaclass=LanguageCls):
             case bool():
                 field_type = "bool"
             case int():
-                field_type = (
-                    "unsigned long long" if value > I64_MAX else "long long"
-                )
+                field_type = _c_integer_field_type(value=value)
             case float():
                 field_type = "double"
             case None:
                 field_type = "const void *"
             case str() | bytes() | datetime.date() | datetime.time():
-                field_type = (
-                    "long long"
-                    if epoch and isinstance(value, datetime.datetime)
-                    else "const char *"
-                )
+                field_type = _c_temporal_field_type(value=value, epoch=epoch)
             case list():
                 field_type = "const CVal *"
             case _:
@@ -1985,11 +2015,11 @@ class C(metaclass=LanguageCls):
             self.numeric_literal_suffix
             is type(self.numeric_literal_suffix).AUTO
         )
-        base: Callable[[int], str] = (
-            make_long_suffix_formatter(base=self.integer_format)
-            if suffix_is_auto
-            else self.integer_format
-        )
+        base: Callable[[int], str]
+        if suffix_is_auto:
+            base = make_long_suffix_formatter(base=self.integer_format)
+        else:
+            base = self.integer_format
         if self.integer_format is not type(self.integer_format).DECIMAL:
             base = make_negative_nondecimal_i64_formatter(
                 base=base,

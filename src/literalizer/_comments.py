@@ -17,6 +17,7 @@ from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import AoT, Comment, Item, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
+from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._parsing import unwrap_yaml_scalar
 from literalizer._types import Scalar
 
@@ -175,14 +176,15 @@ def _parse_after_token(
     before_next = [
         _strip_comment_marker(text=line) for line in standalone_lines
     ]
+    effective_standalone_column = None
+    if len(standalone_lines) > 0:
+        effective_standalone_column = len(standalone_lines[0]) - len(
+            standalone_lines[0].lstrip()
+        )
     return _ParsedAfterToken(
         inline=inline,
         before_next=before_next,
-        standalone_column=(
-            len(standalone_lines[0]) - len(standalone_lines[0].lstrip())
-            if len(standalone_lines) > 0
-            else None
-        ),
+        standalone_column=(effective_standalone_column),
     )
 
 
@@ -374,17 +376,17 @@ def _collection_end_comments(
     trailing node has, so that is read at every level.
     """
     comment = ca.comment
-    closing = (
-        ()
-        if nested
-        else (
-            comment if comment is not None and len(comment) > 0 else (None,)
-        )[:1]
-    )
-    return [
+    closing_lines: list[str] = []
+    if (
+        not nested
+        and comment is not None
+        and len(comment) > 0
+        and comment[0] is not None
+    ):
+        closing_lines = _comment_token_lines(token=comment[0])
+    return closing_lines + [
         line
-        for stored in (*closing, *ca.end)
-        if stored is not None
+        for stored in ca.end
         for line in _comment_token_lines(token=stored)
     ]
 
@@ -474,7 +476,9 @@ def _nested_inline_comment(*, value: object) -> str:
             token_idx=targets.token_idx,
         )
         if parsed.inline != "" or bool(deeper):
-            return parsed.inline if parsed.inline != "" else deeper
+            if parsed.inline != "":
+                return parsed.inline
+            return deeper
     return ""
 
 
@@ -544,21 +548,24 @@ def _outdented_trailing_comments(
         )
     )
     if claimed:
+        if hoist_inline:
+            effective_inline = _nested_inline_comment(value=value)
+        elif parsed.inline != "":
+            effective_inline = parsed.inline
+        else:
+            effective_inline = deeper.inline
         return ElementComments(
             before=(*deeper.before, *parsed.before_next),
-            inline=(
-                _nested_inline_comment(value=value)
-                if hoist_inline
-                else parsed.inline
-                if parsed.inline != ""
-                else deeper.inline
-            ),
+            inline=(effective_inline),
         )
     if hoist_inline:
         nested_inline = _nested_inline_comment(value=value)
+        effective_inline_2 = nested_inline
+        if effective_inline_2 == "":
+            effective_inline_2 = deeper.inline
         return ElementComments(
             before=deeper.before,
-            inline=nested_inline if nested_inline != "" else deeper.inline,
+            inline=effective_inline_2,
         )
     return deeper
 
@@ -602,6 +609,7 @@ def extract_yaml_comments(
     # correct (a "before element N" comment is stored in the after-token
     # of element N-1 in insertion order).
     element_map: dict[object, ElementComments] = {}
+    gap_indices: tuple[int, ...]
     for key in targets.keys:
         element_value = _collection_element_value(
             ruamel_data=ruamel_data,
@@ -610,14 +618,13 @@ def extract_yaml_comments(
         # A collection written under its key keeps a comment above it in
         # its own header slot too, so reading the gap slot as well would
         # emit that comment twice.
-        gap_indices = (
-            ()
-            if isinstance(
-                element_value,
-                CommentedSeq | CommentedMap | CommentedSet,
-            )
-            else targets.value_gap_token_indices
-        )
+        if isinstance(
+            element_value,
+            CommentedSeq | CommentedMap | CommentedSet,
+        ):
+            gap_indices = ()
+        else:
+            gap_indices = targets.value_gap_token_indices
         before = list(pending_before) + _element_before_comments(
             ca=ca,
             key=key,
@@ -637,8 +644,12 @@ def extract_yaml_comments(
             and parsed.standalone_column is not None
             and parsed.standalone_column < own_column
         )
-        inline = "" if outdented else parsed.inline
-        pending_before = [] if outdented else parsed.before_next
+        inline = ""
+        if not outdented:
+            inline = parsed.inline
+        pending_before = list[str]()
+        if not outdented:
+            pending_before = parsed.before_next
         # ruamel.yaml stores a comment written between two elements of
         # this collection on the last element of the nested collection
         # that precedes it, so collect it from there.
@@ -649,7 +660,8 @@ def extract_yaml_comments(
             hoist_inline=hoist_nested_inline,
         )
         pending_before += list(nested_comments.before)
-        inline = inline if inline != "" else nested_comments.inline
+        if inline == "":
+            inline = nested_comments.inline
 
         element_map[key] = ElementComments(
             before=tuple(before),
@@ -726,7 +738,8 @@ def _toml_body_comments(
                 inline = _toml_inline_comment(item=child)
                 hoisted.extend(pending)
                 pending = list(inner.trailing)
-                hoisted.extend((inline,) if inline != "" else ())
+                if inline != "":
+                    hoisted.append(inline)
                 hoisted.extend(inner.hoisted)
     return _TomlNestedComments(
         hoisted=tuple(hoisted),
@@ -786,16 +799,19 @@ def extract_toml_comments(
                 continue
             case _:
                 pass
-        inline = (
-            "" if isinstance(item, Table) else _toml_inline_comment(item=item)
-        )
+        inline = ""
+        if not isinstance(item, Table):
+            inline = _toml_inline_comment(item=item)
         nested = _toml_nested_comments(item=item)
         before = (*pending_before, *nested.hoisted)
         pending_before = list(nested.trailing)
         merged = elements.get(key, ElementComments(before=(), inline=""))
+        effective_inline_3 = nonempty_or_default(
+            value=merged.inline, default=inline
+        )
         elements[key] = ElementComments(
             before=(*merged.before, *before),
-            inline=merged.inline if merged.inline != "" else inline,
+            inline=effective_inline_3,
         )
 
     return CollectionComments(
@@ -899,11 +915,10 @@ def neutralize_comment_terminator(
         )
     if terminator == "" or terminator not in text:
         return text
-    replacement = (
-        " ".join(character for character in terminator)
-        if len(terminator) > 1
-        else f"<U+{ord(terminator):04X}>"
-    )
+    if len(terminator) > 1:
+        replacement = " ".join(character for character in terminator)
+    else:
+        replacement = f"<U+{ord(terminator):04X}>"
     return text.replace(terminator, replacement)
 
 
@@ -968,7 +983,9 @@ def _extract_scalar_comments(
         if isinstance(inline_token, CommentToken):
             value = inline_token.value
             trailing = _split_scalar_after_token(value=value)
-        before_tokens = comment[1] if len(comment) > 1 else None
+        before_tokens = None
+        if len(comment) > 1:
+            before_tokens = comment[1]
         if isinstance(before_tokens, list):
             for before_token in before_tokens:
                 before_comments.extend(
@@ -1100,8 +1117,13 @@ def literalize_yaml_scalar(
     # Trailing standalone comments can only follow the value where an
     # inline comment could: both need the value to end the declaration,
     # or the rest of the declaration would land inside the comment.
-    trailing = formatted_after if supports_scalar_inline_comments else ()
-    pending += () if supports_scalar_inline_comments else formatted_after
+    trailing = formatted_after
+    if not supports_scalar_inline_comments:
+        trailing = ()
+    effective_value = formatted_after
+    if supports_scalar_inline_comments:
+        effective_value = ()
+    pending += effective_value
 
     if supports_scalar_before_comments:
         parts = [*formatted_before, inline_value, *trailing]

@@ -262,9 +262,9 @@ def _bash_validate_dict_keys(data: Value) -> None:
     match data:
         case dict():
             for raw_key in data:
-                rendered_key = (
-                    raw_key if isinstance(raw_key, str) else f"{raw_key!r}"
-                )
+                rendered_key = raw_key
+                if not isinstance(rendered_key, str):
+                    rendered_key = f"{raw_key!r}"
                 if (
                     rendered_key == ""
                     or not rendered_key.isprintable()
@@ -310,7 +310,9 @@ def _format_variable_declaration(
         and bool(data)
         and value.lstrip().startswith("(")
     )
-    flag = " -A" if is_associative_initializer else ""
+    flag = ""
+    if is_associative_initializer:
+        flag = " -A"
     return f"declare{flag} {name}={value}"
 
 

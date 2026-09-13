@@ -122,29 +122,38 @@ def make_element_to_type(
             fallback_value_type="any",
         )
     """
-    scalar_types: dict[type, str] = {
-        py_type: name
-        for py_type, name in (
+    collected_scalar_types: dict[type, str]
+    effective_wide_int_type: str | None
+
+    if wide_int_type is not None:
+        effective_wide_int_type = wide_int_type
+    else:
+        effective_wide_int_type = int_type
+    effective_beyond_i64_type: str | None
+
+    if beyond_i64_type is not None:
+        effective_beyond_i64_type = beyond_i64_type
+    else:
+        effective_beyond_i64_type = int_type
+    collected_collected_scalar_types: dict[type, str] = {
+        entry_py_type: entry_name
+        for entry_py_type, entry_name in (
             (str, str_type),
             (bool, bool_type),
             (int, int_type),
             (float, float_type),
             (bytes, bytes_type),
             (MixedNumeric, mixed_numeric_type),
-            (
-                WideInt,
-                wide_int_type if wide_int_type is not None else int_type,
-            ),
-            (
-                BeyondI64,
-                beyond_i64_type if beyond_i64_type is not None else int_type,
-            ),
+            (WideInt, effective_wide_int_type),
+            (BeyondI64, effective_beyond_i64_type),
             (datetime.date, date_type),
             (datetime.datetime, datetime_type),
             (datetime.time, time_type),
         )
-        if name is not None
+        if entry_name is not None
     }
+    collected_scalar_types = collected_collected_scalar_types
+    scalar_types: dict[type, str] = collected_scalar_types
 
     def element_to_type(
         element_type: type | ListType | DictType,
@@ -217,12 +226,12 @@ def _narrowed_type_name(
     *element_to_type* does not handle).
     """
     inner = infer_element_type(items=items)
-    type_name = element_to_type(inner) if inner is not None else None
-    return (
-        type_name
-        if type_name is not None and len(type_name) > 0
-        else fallback_type
-    )
+    type_name = None
+    if inner is not None:
+        type_name = element_to_type(inner)
+    if type_name is not None and len(type_name) > 0:
+        return type_name
+    return fallback_type
 
 
 @beartype
@@ -295,13 +304,16 @@ def _resolve_element_to_type(
                     dict_value_to_type=dict_value_to_type,
                     fallback_value_type=fallback_value_type,
                 )
-            inner = resolved if resolved is not None else fallback_value_type
+            inner = fallback_value_type
+            if resolved is not None:
+                inner = resolved
             if inner is None:
                 return None
             return dict_type_template.format(inner=inner)
         case ListType():
-            inner = (
-                _resolve_element_to_type(
+            inner = None
+            if enable_list_type:
+                inner = _resolve_element_to_type(
                     element_type=element_type.inner,
                     scalar_types=scalar_types,
                     list_template=list_template,
@@ -310,9 +322,6 @@ def _resolve_element_to_type(
                     dict_value_to_type=dict_value_to_type,
                     fallback_value_type=fallback_value_type,
                 )
-                if enable_list_type
-                else None
-            )
             if inner is None:
                 return None
             return list_template.format(inner=inner)
@@ -407,7 +416,9 @@ def _typed_collection_open_impl(
     if element_type is None:
         return fallback
     opener = type_to_opener(element_type)
-    return opener if opener is not None and len(opener) > 0 else fallback
+    if opener is not None and len(opener) > 0:
+        return opener
+    return fallback
 
 
 @beartype
@@ -458,7 +469,9 @@ def _typed_dict_open_impl(
     if element_type is None:
         return fallback
     opener = type_to_opener(element_type)
-    return opener if opener is not None and len(opener) > 0 else fallback
+    if opener is not None and len(opener) > 0:
+        return opener
+    return fallback
 
 
 @beartype
@@ -561,33 +574,36 @@ class TypedOpenerConfig:
 
     def _scalar_types(self) -> dict[type, str]:
         """Build a dict mapping Python types to language type names."""
-        return {
-            py_type: name
-            for py_type, name in (
+        collected_entries: dict[type, str]
+        effective_self: str | None
+        effective_self_2: str | None
+        if self._wide_int_type is not None:
+            effective_self = self._wide_int_type
+        else:
+            effective_self = self._int_type
+        if self._beyond_i64_type is not None:
+            effective_self_2 = self._beyond_i64_type
+        else:
+            effective_self_2 = self._int_type
+        collected_collected_entries: dict[type, str] = {
+            entry_py_type: entry_name
+            for entry_py_type, entry_name in (
                 (str, self._str_type),
                 (bool, self._bool_type),
                 (int, self._int_type),
                 (float, self._float_type),
                 (bytes, self._bytes_type),
                 (MixedNumeric, self._mixed_numeric_type),
-                (
-                    WideInt,
-                    self._wide_int_type
-                    if self._wide_int_type is not None
-                    else self._int_type,
-                ),
-                (
-                    BeyondI64,
-                    self._beyond_i64_type
-                    if self._beyond_i64_type is not None
-                    else self._int_type,
-                ),
+                (WideInt, effective_self),
+                (BeyondI64, effective_self_2),
                 (datetime.date, self._date_type),
                 (datetime.datetime, self._datetime_type),
                 (datetime.time, self._time_type),
             )
-            if name is not None
+            if entry_name is not None
         }
+        collected_entries = collected_collected_entries
+        return collected_entries
 
     def element_to_type(
         self,
@@ -615,12 +631,26 @@ class TypedOpenerConfig:
         ``dict_type_template`` are resolved before the template is
         used.
         """
-        raw_template = self._dict_type_template if enable_dict_type else None
-        resolved_template = (
-            raw_template.replace("{key_type}", dict_key_type)
-            if raw_template is not None and len(dict_key_type) > 0
-            else raw_template
-        )
+        raw_template = None
+        if enable_dict_type:
+            raw_template = self._dict_type_template
+        resolved_template = raw_template
+        if resolved_template is not None and len(dict_key_type) > 0:
+            resolved_template = resolved_template.replace(
+                "{key_type}", dict_key_type
+            )
+        effective_date_type = date_type
+        if effective_date_type is None:
+            effective_date_type = self._date_type
+        effective_datetime_type = datetime_type
+        if effective_datetime_type is None:
+            effective_datetime_type = self._datetime_type
+        effective_list_template = list_template
+        if effective_list_template is None:
+            effective_list_template = self._list_template
+        effective_fallback_value_type = None
+        if enable_dict_type:
+            effective_fallback_value_type = self._fallback_value_type
         return make_element_to_type(
             dict_value_to_type=dict_value_to_type,
             str_type=self._str_type,
@@ -631,25 +661,13 @@ class TypedOpenerConfig:
             float_type=self._float_type,
             bytes_type=self._bytes_type,
             mixed_numeric_type=self._mixed_numeric_type,
-            date_type=(
-                date_type if date_type is not None else self._date_type
-            ),
-            datetime_type=(
-                datetime_type
-                if datetime_type is not None
-                else self._datetime_type
-            ),
+            date_type=(effective_date_type),
+            datetime_type=(effective_datetime_type),
             time_type=self._time_type,
-            list_template=(
-                list_template
-                if list_template is not None
-                else self._list_template
-            ),
+            list_template=(effective_list_template),
             enable_list_type=enable_list_type,
             dict_type_template=resolved_template,
-            fallback_value_type=(
-                self._fallback_value_type if enable_dict_type else None
-            ),
+            fallback_value_type=(effective_fallback_value_type),
         )
 
     def build(
@@ -704,14 +722,16 @@ class TypedOpenerConfig:
             dict_value_to_type=dict_set_resolver,
             dict_key_type=dict_key_type,
         )
-        resolved_dict_opener = (
-            self._dict_opener_template.replace(
+        if len(dict_key_type) > 0:
+            resolved_dict_opener = self._dict_opener_template.replace(
                 "{key_type}",
                 dict_key_type,
             )
-            if len(dict_key_type) > 0
-            else self._dict_opener_template
-        )
+        else:
+            resolved_dict_opener = self._dict_opener_template
+        effective_opener_template = set_opener_template
+        if effective_opener_template is None:
+            effective_opener_template = self._set_opener_template
         return TypeOpeners(
             seq=make_type_to_opener(
                 element_to_type=seq_resolver,
@@ -723,10 +743,18 @@ class TypedOpenerConfig:
             ),
             set=make_type_to_opener(
                 element_to_type=dict_set_resolver,
-                opener_template=(
-                    set_opener_template
-                    if set_opener_template is not None
-                    else self._set_opener_template
-                ),
+                opener_template=(effective_opener_template),
             ),
         )
+
+
+@beartype
+def replace_optional_type_name(
+    *, template: str | None, placeholder: str, type_name: str
+) -> str | None:
+    """Substitute a configured type name while preserving an absent
+    hint.
+    """
+    if template is None:
+        return None
+    return template.replace(placeholder, type_name)

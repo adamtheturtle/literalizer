@@ -233,7 +233,9 @@ def validate_call_parameter_names(
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
     seen: set[str] = set()
     for name in names:
-        comparison_name = name if case_sensitive else name.casefold()
+        comparison_name = name
+        if not case_sensitive:
+            comparison_name = name.casefold()
         if comparison_name in seen:
             raise InvalidCallParameterNameError(
                 language_name=language_name,
@@ -386,8 +388,11 @@ def date_scalar_preamble(
         A dict mapping Python types to their required preamble lines,
         omitting entries whose preamble is empty.
     """
+    effective_extra = dict[type, tuple[str, ...]]()
+    if extra is not None and len(extra) > 0:
+        effective_extra = extra
     return {
-        **(extra if extra is not None and len(extra) > 0 else {}),
+        **(effective_extra),
         **{
             t: p
             for t, p in (
@@ -3345,9 +3350,9 @@ def _default_wrap_calls_with_declarations(
     *declarations* and *calls* and route through :meth:`wrap_in_file`
     in call mode.
     """
-    content = (
-        "\n".join((*declarations, calls)) if len(declarations) > 0 else calls
-    )
+    content = calls
+    if len(declarations) > 0:
+        content = "\n".join((*declarations, calls))
     return self.wrap_in_file(
         content=content,
         variable_name="",

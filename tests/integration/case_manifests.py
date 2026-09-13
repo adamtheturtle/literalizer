@@ -22,6 +22,7 @@ from pydantic import (
 )
 
 import literalizer
+from literalizer._formatters.fallbacks import value_or_default
 from literalizer._types import ValueInput
 from literalizer.languages import ALL_LANGUAGES
 
@@ -449,9 +450,8 @@ class _OwnedCaseSpec(
     ) -> Mapping[str, object]:
         """Add the owning case directory name from the load context."""
         raw_context = info.context
-        context: Mapping[str, str] = (
-            dict[str, str]() if raw_context is None else raw_context
-        )
+        context: Mapping[str, str]
+        context = value_or_default(value=raw_context, default=dict[str, str]())
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 

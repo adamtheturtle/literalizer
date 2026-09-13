@@ -166,7 +166,10 @@ def _build_program(*, json_text: str) -> str:
     parsed = roundtrip_common.json_object_from_text(text=trimmed_json)
     walk = ['        out = "{";']
     for index, (key, value) in enumerate(iterable=parsed.items()):
-        fragment = ("," if index != 0 else "") + json.dumps(obj=key) + ":"
+        effective_fragment = ""
+        if index != 0:
+            effective_fragment = ","
+        fragment = (effective_fragment) + json.dumps(obj=key) + ":"
         expr = _value_expr(value=value, access=f"{_VAR_NAME}[{index}].v")
         walk.append(
             f"        out = {{out, {_sv_string_literal(text=fragment)}, "

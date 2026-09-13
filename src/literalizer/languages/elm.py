@@ -14,6 +14,7 @@ from beartype import beartype
 from literalizer._checks import reject_negative_zero
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    replace_optional_type_name,
 )
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
@@ -221,9 +222,9 @@ def _apply_elm_integer_formatter(
     value: int, prefix: str, base: Callable[[int], str]
 ) -> str:
     """Format an integer with a constructor prefix."""
-    formatted = (
-        "(-9223372036854775807 - 1)" if value == I64_MIN else base(value)
-    )
+    formatted = "(-9223372036854775807 - 1)"
+    if value != I64_MIN:
+        formatted = base(value)
     if value < 0:
         return f"{prefix}Int ({formatted})"
     return f"{prefix}Int {formatted}"
@@ -434,7 +435,7 @@ def _elm_flatten_dotted(parts: Sequence[str]) -> str:
     if len(parts) == 1:
         return parts[0]
     first = parts[0]
-    rest = "".join(p[0].upper() + p[1:] if p != "" else "" for p in parts[1:])
+    rest = "".join(part[:1].upper() + part[1:] for part in parts[1:])
     return first + rest
 
 
@@ -1527,11 +1528,9 @@ class Elm(metaclass=LanguageCls):
         ``Json.Encode.object [ ( "k", v ) ]`` rather than the ADT
         ``{prefix}Dict [ ( "k", v ) ]`` form.
         """
-        open_str = (
-            _JSON_ENC_OBJECT_OPEN
-            if self._json_active
-            else f"{self.constructor_prefix}Dict ["
-        )
+        open_str = _JSON_ENC_OBJECT_OPEN
+        if not self._json_active:
+            open_str = f"{self.constructor_prefix}Dict ["
         return DictFormatConfig(
             dict_open=fixed_open(open_str=open_str),
             close="]",
@@ -1642,7 +1641,9 @@ class Elm(metaclass=LanguageCls):
         def _format_float_with_specials(value: float) -> str:
             """Format a float, handling inf and nan."""
             if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
+                if value < 0:
+                    return _neg_inf
+                return _pos_inf
             if math.isnan(value):
                 return _nan_val
             return _float_finite(value)
@@ -1657,11 +1658,9 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        open_str = (
-            _JSON_ENC_OBJECT_OPEN
-            if self._json_active
-            else f"{self.constructor_prefix}Dict ["
-        )
+        open_str = _JSON_ENC_OBJECT_OPEN
+        if not self._json_active:
+            open_str = f"{self.constructor_prefix}Dict ["
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str=open_str),
             close="]",
@@ -1702,10 +1701,8 @@ class Elm(metaclass=LanguageCls):
 
         _raw_declared = self.sequence_format.value.declared_type
         _type_name = self.type_name
-        _sequence_declared_type = (
-            _raw_declared.replace("Val", _type_name)
-            if _raw_declared is not None
-            else None
+        _sequence_declared_type = replace_optional_type_name(
+            template=_raw_declared, placeholder="Val", type_name=self.type_name
         )
 
         @beartype
@@ -1717,11 +1714,10 @@ class Elm(metaclass=LanguageCls):
         ) -> str:
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data, _modifiers)
-            decl_type = (
-                _sequence_declared_type
-                if isinstance(data, list)
-                else _type_name
-            )
+            decl_type: str | None
+            decl_type = _type_name
+            if isinstance(data, list):
+                decl_type = _sequence_declared_type
             return f"{name} : {decl_type}\n{base}"
 
         return _elm_declaration
@@ -1824,7 +1820,9 @@ class Elm(metaclass=LanguageCls):
         def _format(value: float) -> str:
             """Format a float, handling inf and nan."""
             if math.isinf(value):
-                return _neg_inf if value < 0 else _pos_inf
+                if value < 0:
+                    return _neg_inf
+                return _pos_inf
             if math.isnan(value):
                 return _nan_val
             return _finite(value)

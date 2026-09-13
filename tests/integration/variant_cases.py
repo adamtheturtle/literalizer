@@ -191,11 +191,10 @@ def build_multiline_string_context_cases(
         spec = base_variant.spec
         redefinition_styles = find_redefinition_styles(spec=spec)
         if len(redefinition_styles) > 0:
-            declaration_style = (
-                spec.declaration_style
-                if spec.declaration_style in redefinition_styles
-                else redefinition_styles[0]
-            )
+            if spec.declaration_style in redefinition_styles:
+                declaration_style = spec.declaration_style
+            else:
+                declaration_style = redefinition_styles[0]
             name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(

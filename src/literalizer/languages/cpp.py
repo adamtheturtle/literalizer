@@ -306,7 +306,10 @@ def _raw_string_delimiters(*, base: str) -> itertools.chain[str]:
     limit.
     """
     suffix_width = _CPP_RAW_STRING_DELIMITER_MAX_LENGTH - len(base)
-    suffix_indexes = range(10**suffix_width) if suffix_width != 0 else range(0)
+    if suffix_width != 0:
+        suffix_indexes = range(10**suffix_width)
+    else:
+        suffix_indexes = range(0)
     suffixed = (f"{base}{index}" for index in suffix_indexes)
     return itertools.chain(("", base), suffixed)
 
@@ -633,14 +636,16 @@ def _cpp_array_type(
         ],
     )
     element_to_type = type_ctx.element_to_type(int_type=int_type)
-    element_types = [
-        (
-            _cpp_array_type(items=item, type_ctx=type_ctx)
-            if isinstance(item, list)
-            else element_to_type(type(item))
-        )
-        for item in items
-    ]
+    collected_element_types: list[str | None] = []
+    for entry_item in items:
+        if isinstance(entry_item, list):
+            effective_cpp_array_type = _cpp_array_type(
+                items=entry_item, type_ctx=type_ctx
+            )
+        else:
+            effective_cpp_array_type = element_to_type(type(entry_item))
+        collected_element_types.append(effective_cpp_array_type)
+    element_types = collected_element_types
     first = element_types[0]
     if first is None or any(item != first for item in element_types):
         return None
@@ -864,7 +869,10 @@ def _compute_cpp_type(
             )
         case _:
             scalar_type = element_to_type(type(item))
-            return scalar_type if scalar_type is not None else "std::nullptr_t"
+            resolved_result_1: str = "std::nullptr_t"
+            if scalar_type is not None:
+                resolved_result_1 = scalar_type
+            return resolved_result_1
 
 
 @beartype
@@ -896,6 +904,23 @@ def _is_cpp_value_list(value: Value, /) -> TypeGuard[list[Value]]:
 
 
 @beartype
+def _infer_cpp_collection_element(
+    *, items: list[Value], type_ctx: _CppTypeCtx
+) -> type | ListType | DictType | None:
+    """Infer a homogeneous type unless tuple rendering needs per-item
+    types.
+    """
+    has_tuple_item = type_ctx.tuple_strategy and any(
+        isinstance(item, list) and is_tuple_eligible(value=item)
+        for item in items
+    )
+    element_type = None
+    if not has_tuple_item:
+        element_type = infer_element_type(items=items)
+    return element_type
+
+
+@beartype
 def _compute_element_type_for_items(
     *,
     items: list[Value],
@@ -917,11 +942,9 @@ def _compute_element_type_for_items(
     """
     if len(items) == 0:
         return "std::nullptr_t"
-    has_tuple_item = type_ctx.tuple_strategy and any(
-        isinstance(item, list) and is_tuple_eligible(value=item)
-        for item in items
+    element_type = _infer_cpp_collection_element(
+        items=items, type_ctx=type_ctx
     )
-    element_type = None if has_tuple_item else infer_element_type(items=items)
     if element_type is not None:
         match element_type:
             case DictType(value_type=None, values=dict_values):
@@ -964,11 +987,10 @@ def _compute_element_type_for_items(
             )
             for position in zip(*sibling_lists, strict=True)
         ]
-        inner = (
-            positional_types[0]
-            if len(set(positional_types)) == 1
-            else type_ctx.variant_type(positional_types)
-        )
+        if len(set(positional_types)) == 1:
+            inner = positional_types[0]
+        else:
+            inner = type_ctx.variant_type(positional_types)
         return type_ctx.sequence_type(
             inner=inner,
             length=len(sibling_lists[0]),
@@ -1266,13 +1288,11 @@ def _build_tuple_preamble(
     def _tuple_preamble(data: Value, /) -> tuple[str, ...]:
         """Return the variant headers plus ``<tuple>`` when needed."""
         tuple_list_ids = _cpp_tuple_list_ids(data=data)
+        # C++14 tuple output uses the separate record-preamble builder.
+        # This path infers native std::variant headers for nested values.
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
-            tuple_list_ids=(
-                tuple_list_ids
-                if type_ctx.variant_type_name != "std::variant"
-                else frozenset()
-            ),
+            tuple_list_ids=frozenset(),
             record_dict_ids=frozenset(),
         )
         lines = list(variant_preamble(data))
@@ -1551,17 +1571,15 @@ def _cpp14_explicit_variant_behavior(
     def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
         """Combine strategy-specific and fallback-variant parent ids."""
         compute_record_shapes = base.compute_record_shapes
-        record_ids = (
-            frozenset[int]()
-            if compute_record_shapes is None
-            else frozenset(compute_record_shapes(data))
-        )
+        if compute_record_shapes is None:
+            record_ids = frozenset[int]()
+        else:
+            record_ids = frozenset(compute_record_shapes(data))
         compute_tuple_list_ids = base.compute_tuple_list_ids
-        tuple_ids = (
-            frozenset[int]()
-            if compute_tuple_list_ids is None
-            else compute_tuple_list_ids(data)
-        )
+        if compute_tuple_list_ids is None:
+            tuple_ids = frozenset[int]()
+        else:
+            tuple_ids = compute_tuple_list_ids(data)
         return base.compute_wrap_ids(data) | _cpp14_variant_parent_ids(
             data=data,
             type_ctx=type_ctx,
@@ -1817,11 +1835,16 @@ def _cpp_render_record_declaration(
     field omits it (its default constructor already value-initializes
     it, which the redundant-init check would otherwise flag).
     """
-    members = " ".join(
-        f"{field.type_name} {field.identifier}"
-        f"{'{}' if field.type_name in _CPP_SCALAR_FIELD_TYPES else ''};"
-        for field in fields
-    )
+    collected_members: list[str] = []
+    for entry_field in fields:
+        effective_value = ""
+        if entry_field.type_name in _CPP_SCALAR_FIELD_TYPES:
+            effective_value = "{}"
+        collected_members.append(
+            f"{entry_field.type_name} {entry_field.identifier}"
+            f"{effective_value};"
+        )
+    members = " ".join(collected_members)
     return f"struct {name} {{ {members} }};"
 
 
@@ -2020,40 +2043,36 @@ def _build_cpp_record_preamble(
         # render-time cache already holds the field requests that the
         # declaration preamble consumes.  The raw shape walk is enough to
         # distinguish individual struct fields from map values.
-        record_dict_ids = (
-            frozenset[int]()
-            if type_ctx.variant_type_name == "std::variant"
-            else frozenset(collect_record_shapes(data=data))
-        )
+        if type_ctx.variant_type_name == "std::variant":
+            record_dict_ids = frozenset[int]()
+        else:
+            record_dict_ids = frozenset(collect_record_shapes(data=data))
         # A list the active behavior wraps in the carrier is rendered
         # as a carrier-typed vector rather than a tuple, so it still
         # asks for the carrier declaration (issue #4568).
         tuple_list_ids = _cpp_tuple_list_ids(data=data) - carrier_ids
+        effective_tuple_list_ids_2 = tuple_list_ids
+        if type_ctx.variant_type_name == "std::variant":
+            effective_tuple_list_ids_2 = frozenset[int]()
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
-            tuple_list_ids=(
-                tuple_list_ids
-                if type_ctx.variant_type_name != "std::variant"
-                else frozenset()
-            ),
+            tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
         )
         value_alias: tuple[str, ...] = ()
-        headers = (
-            []
-            if native_only
-            or (
-                _contains_external_record(
-                    data=data,
-                    record_shape_names=record_shape_names,
-                )
-                and _is_external_record_graph(
-                    data=data,
-                    record_shape_names=record_shape_names,
-                )
+        if native_only or (
+            _contains_external_record(
+                data=data,
+                record_shape_names=record_shape_names,
             )
-            else list(variant_preamble(data))
-        )
+            and _is_external_record_graph(
+                data=data,
+                record_shape_names=record_shape_names,
+            )
+        ):
+            headers = list[str]()
+        else:
+            headers = list(variant_preamble(data))
         if include_tuple_header and bool(tuple_list_ids):
             headers.append("#include <tuple>")
         if (
@@ -2070,17 +2089,16 @@ def _build_cpp_record_preamble(
             # scalar in the carrier type, so the alias must name the
             # carrier even when the widened scalars share one concrete
             # C++ type.
-            value_type = (
-                type_ctx.variant_type_name
-                if type_ctx.variant_type_name != "std::variant"
-                else _compute_element_type_for_items(
+            if type_ctx.variant_type_name != "std::variant":
+                value_type = type_ctx.variant_type_name
+            else:
+                value_type = _compute_element_type_for_items(
                     items=list(
                         iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
                     ),
                     type_ctx=type_ctx,
                     in_mapping_value=True,
                 )
-            )
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
         return (*headers, *value_alias, *record_preamble(data))
 
@@ -2115,9 +2133,9 @@ def _apply_cpp_variant_dict_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    map_kind = (
-        "std::unordered_map" if "unordered" in opener_template else "std::map"
-    )
+    map_kind = "std::map"
+    if "unordered" in opener_template:
+        map_kind = "std::unordered_map"
     return f"{map_kind}<std::string, {value_type}>{{"
 
 
@@ -2347,7 +2365,9 @@ def _cpp_call_stub(
     else:
         parameter_pack = "Args..."
         template_prefix = "template <typename... Args> "
-    nodiscard_prefix = "[[nodiscard]] " if supports_nodiscard else ""
+    nodiscard_prefix = ""
+    if supports_nodiscard:
+        nodiscard_prefix = "[[nodiscard]] "
     if len(parts) == 1:
         return (
             (
@@ -3562,11 +3582,9 @@ class Cpp(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
-        use_line = (
-            f"\n{self.indent}(void){variable_name};"
-            if variable_name != ""
-            else ""
-        )
+        use_line = ""
+        if variable_name != "":
+            use_line = f"\n{self.indent}(void){variable_name};"
         if self._json_type_active:
             return (
                 f"int {self.module_name}() {{\n"
@@ -3759,11 +3777,10 @@ class Cpp(metaclass=LanguageCls):
                 """Assign a ``nlohmann::json`` value to an existing
                 binding.
                 """
-                expr = (
-                    _cpp_nlohmann_json_parse_expression(value)
-                    if self._json_inline_document_active
-                    else _cpp_nlohmann_json_value_expression(data, value)
-                )
+                if self._json_inline_document_active:
+                    expr = _cpp_nlohmann_json_parse_expression(value)
+                else:
+                    expr = _cpp_nlohmann_json_value_expression(data, value)
                 return f"{name} = {expr};"
 
             return _formatter
@@ -4044,6 +4061,9 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
         """C++ syntax hooks for the ``RECORD`` strategy."""
+        effective_render_literal = _cpp_record_literal_positional
+        if self._uses_cpp20:
+            effective_render_literal = _cpp_record_literal
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=self.record_shape_names,
@@ -4054,11 +4074,7 @@ class Cpp(metaclass=LanguageCls):
             field_identifier_key=identity_field_identifier_key,
             field_type=self._cpp_record_field_type,
             render_declaration=_cpp_render_record_declaration,
-            render_literal=(
-                _cpp_record_literal
-                if self._uses_cpp20
-                else _cpp_record_literal_positional
-            ),
+            render_literal=(effective_render_literal),
             field_type_names_nested_records=True,
             suppress_custom_name_declarations=True,
         )
@@ -4172,21 +4188,19 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
+        effective_variant_type_name = "std::variant"
+        if self.language_version is self.version_formats.CPP14:
+            effective_variant_type_name = self.heterogeneous_value_variant_name
+        effective_dict_type_name = "std::map"
+        if self.dict_format.name == "UNORDERED_MAP":
+            effective_dict_type_name = "std::unordered_map"
         return _CppTypeCtx(
             int_resolver=self.numeric_literal_suffix.int_resolver,
             date_type=self._cpp_date_type,
             datetime_type=self._cpp_datetime_type,
             tuple_strategy=self._tuple_strategy_active,
-            variant_type_name=(
-                self.heterogeneous_value_variant_name
-                if self.language_version is self.version_formats.CPP14
-                else "std::variant"
-            ),
-            dict_type_name=(
-                "std::unordered_map"
-                if self.dict_format.name == "UNORDERED_MAP"
-                else "std::map"
-            ),
+            variant_type_name=(effective_variant_type_name),
+            dict_type_name=(effective_dict_type_name),
             record_name_for_value=self._rendered_record_name,
             sequence_is_array=(
                 self.sequence_format is type(self.sequence_format).ARRAY
@@ -4249,11 +4263,10 @@ class Cpp(metaclass=LanguageCls):
             or len(self.record_shape_names) == 0
         ):
             return base_open
-        record_strategy = (
-            self._record_strategy
-            if self._record_strategy_active
-            else self._tuple_record_strategy
-        )
+        if self._record_strategy_active:
+            record_strategy = self._record_strategy
+        else:
+            record_strategy = self._tuple_record_strategy
         record_name_for_value = record_strategy.record_name_for_value
 
         def _open(items: list[Value]) -> str:
@@ -4269,11 +4282,9 @@ class Cpp(metaclass=LanguageCls):
                         record_rendering_active=record_rendering_active,
                         record_name_for_value=record_name_for_value,
                     )
-                    return (
-                        record_open
-                        if record_open is not None and record_open != ""
-                        else base_open(base_items)
-                    )
+                    if record_open is not None and record_open != "":
+                        return record_open
+                    return base_open(base_items)
                 return "std::vector{"
             nested_type = nested_record_sequence_type(
                 value=items,
@@ -4414,11 +4425,12 @@ class Cpp(metaclass=LanguageCls):
         )
         if not record_rendering_active:
             return config
-        record_name_for_value = (
-            self._record_strategy.record_name_for_value
-            if self._record_strategy_active
-            else self._tuple_record_strategy.record_name_for_value
-        )
+        if self._record_strategy_active:
+            record_name_for_value = self._record_strategy.record_name_for_value
+        else:
+            record_name_for_value = (
+                self._tuple_record_strategy.record_name_for_value
+            )
 
         def _record_aware_open(data: dict[Scalar, Value]) -> str:
             """Type ordered-map values from rendered record lists."""
@@ -4568,11 +4580,10 @@ class Cpp(metaclass=LanguageCls):
                 considers explicitly-typed local variables); the deduced
                 type is the same.
                 """
-                expr = (
-                    _cpp_nlohmann_json_parse_expression(value)
-                    if self._json_inline_document_active
-                    else _cpp_nlohmann_json_value_expression(data, value)
-                )
+                if self._json_inline_document_active:
+                    expr = _cpp_nlohmann_json_parse_expression(value)
+                else:
+                    expr = _cpp_nlohmann_json_value_expression(data, value)
                 prefix = _cpp_modifier_prefix(modifiers=modifiers)
                 return f"{prefix}auto {name} = {expr};"
 
