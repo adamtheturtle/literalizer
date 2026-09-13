@@ -141,6 +141,13 @@ def _build_json_flat_records(*, n_records: int) -> list[Value]:
 
 _YAML_FAST = _build_yaml_source(n_records=100, with_comments=False)
 _YAML_WITH_COMMENTS = _build_yaml_source(n_records=100, with_comments=True)
+_YAML_WIDE_MAPPING_WITH_COMMENTS = (
+    "# generated fixture\n"
+    + "\n".join(
+        f"key_{index}: {index} # value {index}" for index in range(1_000)
+    )
+    + "\n"
+)
 _JSON_NESTED = _build_json_source(depth=4, fanout=4)
 _PREAMBLE_DATA = _build_json_flat_records(n_records=1_000)
 _JSON_LARGE_FLAT_RECORDS = json.dumps(obj=_PREAMBLE_DATA)
@@ -184,6 +191,15 @@ def test_yaml_with_comments(benchmark: BenchmarkFixture) -> None:
     _ = benchmark(
         _run,
         source=_YAML_WITH_COMMENTS,
+        input_format=InputFormat.YAML,
+    )
+
+
+def test_yaml_wide_mapping_comments(benchmark: BenchmarkFixture) -> None:
+    """A wide mapping guards linear comment-node lookup."""
+    _ = benchmark(
+        _run,
+        source=_YAML_WIDE_MAPPING_WITH_COMMENTS,
         input_format=InputFormat.YAML,
     )
 
