@@ -90,6 +90,13 @@ class _YamlScalarNode(Protocol):
 
 
 @runtime_checkable
+class _AnchoredYamlEvent(Protocol):
+    """Anchor metadata consumed from ruamel parser events."""
+
+    anchor: str | None
+
+
+@runtime_checkable
 class _PositionedTomlError(Protocol):
     """A tomlkit exception carrying its parser cursor."""
 
@@ -914,6 +921,14 @@ def _record_anchor_binding(
 
 
 @beartype
+def _yaml_event_anchor(*, event: _AnchoredYamlEvent) -> str:
+    """Return *event*'s anchor, or the empty string when absent."""
+    if event.anchor is None:
+        return ""
+    return event.anchor
+
+
+@beartype
 def _self_referential_alias(*, source: str) -> str | None:
     """Return the anchor of an alias written inside the node it names.
 
@@ -930,7 +945,7 @@ def _self_referential_alias(*, source: str) -> str | None:
         for event in YAML().parse(stream=source):  # pyright: ignore[reportUnknownMemberType]
             match event:
                 case CollectionStartEvent():
-                    opened: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    opened = _yaml_event_anchor(event=event)
                     binding_count += 1
                     _record_anchor_binding(
                         anchor=opened,
@@ -942,7 +957,7 @@ def _self_referential_alias(*, source: str) -> str | None:
                 case CollectionEndEvent():
                     open_bindings.discard(open_collections.pop())
                 case ScalarEvent():
-                    named: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    named = _yaml_event_anchor(event=event)
                     binding_count += 1
                     _record_anchor_binding(
                         anchor=named,
@@ -950,7 +965,7 @@ def _self_referential_alias(*, source: str) -> str | None:
                         latest_binding=latest_binding,
                     )
                 case AliasEvent():
-                    alias: str = str(object=event.anchor or "")  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+                    alias = _yaml_event_anchor(event=event)
                     if latest_binding.get(alias) in open_bindings:
                         return alias
                 case _:
