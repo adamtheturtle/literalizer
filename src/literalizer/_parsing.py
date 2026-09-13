@@ -420,61 +420,58 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     :attr:`Language.supports_non_string_dict_keys` in
     :mod:`literalizer._literalize`.
     """
-    # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict``
-    # and ``list`` respectively, so their cases collapse into the plain
-    # ``dict()`` / ``list()`` arms below.  ``CommentedOrderedMap`` must
-    # stay on its own arm because it is *also* a ``dict`` subclass but
-    # represents ``!!omap`` and must become an ``OrderedMap``.
-    match data:
-        case (
-            TaggedScalar()
-            | bool()
-            | int()
-            | float()
-            | str()
-            | datetime.datetime()
-            | datetime.date()
-            | datetime.time()
-            | bytes()
-            | None
-        ):
-            return unwrap_yaml_scalar(value=data)
-        case CommentedOrderedMap():
-            omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
-            return OrderedMap(
-                [
-                    (
-                        unwrap_yaml_scalar(value=k),
-                        _unwrap_yaml_data(data=v),
-                    )
-                    for k, v in omap_src.items()
-                ]
-            )
-        case dict():  # pyrefly: ignore [unreachable-match-case]
-            unwrapped: dict[Scalar, Value] = {
-                unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
-                for k, v in data.items()
-            }
-            return unwrapped
-        case list():  # pyrefly: ignore [unreachable-match-case]
-            return [_unwrap_yaml_data(data=item) for item in data]
-        case tuple():  # pyrefly: ignore [unreachable-match-case]
-            # A ``!!pairs`` node resolves to a list of two-tuples.  The
-            # tag is defined as a sequence of single-key mappings, and
-            # unlike ``!!omap`` it admits a repeated key, so each pair
-            # becomes its own mapping rather than one merged map
-            # (issue #3922).
-            pair_key, pair_value = data
-            return {
-                unwrap_yaml_scalar(value=pair_key): _unwrap_yaml_data(
-                    data=pair_value
+    if isinstance(
+        data,
+        (
+            TaggedScalar,
+            bool,
+            int,
+            float,
+            str,
+            datetime.datetime,
+            datetime.date,
+            datetime.time,
+            bytes,
+            type(None),
+        ),
+    ):
+        return unwrap_yaml_scalar(value=data)
+    # ``CommentedOrderedMap`` is a ``dict`` subclass, but represents
+    # ``!!omap`` and must become an ``OrderedMap`` rather than a plain dict.
+    if isinstance(data, CommentedOrderedMap):
+        omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
+        return OrderedMap(
+            [
+                (
+                    unwrap_yaml_scalar(value=k),
+                    _unwrap_yaml_data(data=v),
                 )
-            }
-        case CommentedSet():  # pyrefly: ignore [unreachable-match-case]
-            members: set[Scalar | TaggedScalar] = set(data)
-            return {unwrap_yaml_scalar(value=item) for item in members}
-        case _ as unreachable:
-            assert_never(unreachable)
+                for k, v in omap_src.items()
+            ]
+        )
+    # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict`` and
+    # ``list`` respectively, so ordinary collection checks unwrap them too.
+    if isinstance(data, dict):
+        unwrapped: dict[Scalar, Value] = {
+            unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
+            for k, v in data.items()
+        }
+        return unwrapped
+    if isinstance(data, list):
+        return [_unwrap_yaml_data(data=item) for item in data]
+    if isinstance(data, tuple):
+        # A ``!!pairs`` node resolves to a list of two-tuples.  The tag is
+        # defined as a sequence of single-key mappings, and unlike ``!!omap``
+        # it admits a repeated key, so each pair becomes its own mapping
+        # rather than one merged map (issue #3922).
+        pair_key, pair_value = data
+        return {
+            unwrap_yaml_scalar(value=pair_key): _unwrap_yaml_data(
+                data=pair_value
+            )
+        }
+    members: set[Scalar | TaggedScalar] = set(data)
+    return {unwrap_yaml_scalar(value=item) for item in members}
 
 
 class _InvalidJSONConstantError(ValueError):
