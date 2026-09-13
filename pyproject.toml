@@ -154,6 +154,12 @@ zip-safe = false
 # Code to match this is in ``conf.py``.
 version_scheme = "post-release"
 
+[tool.uv]
+# setup-uv uses this pin instead of fetching its latest-version manifest;
+# transient manifest failures are tracked at
+# https://github.com/astral-sh/setup-uv/issues/869.
+required-version = "==0.11.7"
+
 [tool.ruff]
 line-length = 79
 lint.select = [ "ALL" ]
