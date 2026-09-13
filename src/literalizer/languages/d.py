@@ -1282,7 +1282,7 @@ class D(metaclass=LanguageCls):
             format_value=_format_d_entry,
         )
 
-    def _d_value_type(self, value: Value, /) -> str:  # noqa: PLR0911
+    def _d_value_type(self, value: Value, /) -> str:
         """Return the D type for a raw record field *value*.
 
         Derived structurally from the value (never by re-parsing the
@@ -1301,27 +1301,30 @@ class D(metaclass=LanguageCls):
         #2317), so a value reaching the final branch is a string or
         bytes.
         """
-        if isinstance(value, bool):
-            return "bool"
-        if isinstance(value, int):
-            return _d_int_field_type(value)
-        if isinstance(value, float):
-            return "double"
-        if value is None:
-            return "typeof(null)"
-        if isinstance(value, datetime.datetime):
-            return _D_EPOCH_INT_FIELD_TYPES.get(
-                self.datetime_format.value.type_produced,
-                "string",
-            )
-        if isinstance(value, datetime.date):
-            return _D_EPOCH_INT_FIELD_TYPES.get(
-                self.date_format.value.type_produced,
-                "string",
-            )
-        if isinstance(value, list):
-            return self._d_list_type(items=value)
-        return "string"
+        match value:
+            case bool():
+                value_type = "bool"
+            case int():
+                value_type = _d_int_field_type(value)
+            case float():
+                value_type = "double"
+            case None:
+                value_type = "typeof(null)"
+            case datetime.datetime():
+                value_type = _D_EPOCH_INT_FIELD_TYPES.get(
+                    self.datetime_format.value.type_produced,
+                    "string",
+                )
+            case datetime.date():
+                value_type = _D_EPOCH_INT_FIELD_TYPES.get(
+                    self.date_format.value.type_produced,
+                    "string",
+                )
+            case list():
+                value_type = self._d_list_type(items=value)
+            case _:
+                value_type = "string"
+        return value_type
 
     def _d_list_type(self, *, items: list[Value]) -> str:
         """Return the D type for a list record field.
