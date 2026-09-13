@@ -1255,7 +1255,7 @@ class Odin(metaclass=LanguageCls):
             return _format_odin_json_assignment
         return variable_formatter(template="{name} = {value}")
 
-    def _odin_record_field_type(  # noqa: PLR0911  # pylint: disable=too-complex
+    def _odin_record_field_type(
         self,
         request: RecordFieldType,
         /,
@@ -1282,27 +1282,26 @@ class Odin(metaclass=LanguageCls):
         value = request.value
         match value:
             case None:
-                return "any"
+                field_type = "any"
             case bool():
-                return "bool"
+                field_type = "bool"
             case int():
-                return _odin_int_field_type(value)
+                field_type = _odin_int_field_type(value)
             case float():
-                return "f64"
-            case str() | bytes():
-                return "string"
+                field_type = "f64"
             case datetime.datetime() if (
                 self.datetime_format.value.type_produced is int
             ):
-                return _odin_int_field_type(
+                field_type = _odin_int_field_type(
                     datetime_epoch_seconds(value=value),
                 )
-            case datetime.date() | datetime.time():
-                return "string"
+            case str() | bytes() | datetime.date() | datetime.time():
+                field_type = "string"
             case list():
-                return "[dynamic]any"
+                field_type = "[dynamic]any"
             case _:
-                return "map[string]any"
+                field_type = "map[string]any"
+        return field_type
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
