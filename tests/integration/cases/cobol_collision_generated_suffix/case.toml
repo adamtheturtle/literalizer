@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Cobol"]
+languages_reason = "COBOL-specific: source data names and generated collision suffixes must not shadow each other."
+suites = ["base"]
