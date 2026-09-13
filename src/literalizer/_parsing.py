@@ -402,7 +402,7 @@ def _validate_yaml_mapping_keys(*, data: object) -> None:
 
 
 @beartype
-def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
+def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     """Recursively unwrap ruamel YAML wrappers to plain Python types.
 
     The round-trip loader returns ``CommentedOrderedMap`` for YAML
@@ -426,7 +426,18 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
     # stay on its own arm because it is *also* a ``dict`` subclass but
     # represents ``!!omap`` and must become an ``OrderedMap``.
     match data:
-        case TaggedScalar():
+        case (
+            TaggedScalar()
+            | bool()
+            | int()
+            | float()
+            | str()
+            | datetime.datetime()
+            | datetime.date()
+            | datetime.time()
+            | bytes()
+            | None
+        ):
             return unwrap_yaml_scalar(value=data)
         case CommentedOrderedMap():
             omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
@@ -462,18 +473,6 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:  # noqa: PLR0911
         case CommentedSet():  # pyrefly: ignore [unreachable-match-case]
             members: set[Scalar | TaggedScalar] = set(data)
             return {unwrap_yaml_scalar(value=item) for item in members}
-        case (  # pyrefly: ignore [unreachable-match-case]
-            bool()
-            | int()
-            | float()
-            | str()
-            | datetime.datetime()
-            | datetime.date()
-            | datetime.time()
-            | bytes()
-            | None
-        ):
-            return unwrap_yaml_scalar(value=data)
         case _ as unreachable:
             assert_never(unreachable)
 
