@@ -45,6 +45,7 @@ ELM_JSON = json.dumps(
 # A directory whose name ends in ``.noindex`` is skipped by Spotlight,
 # which reduces (but in our testing does not eliminate) the failure
 # rate.  The retry loop in ``run_elm_make`` covers what remains.
+# The compiler failure is tracked at https://github.com/elm/compiler/issues/2258.
 # The suffix is a no-op on Linux (where CI runs) and on Windows.
 NOINDEX_SUFFIX = ".noindex"
 
