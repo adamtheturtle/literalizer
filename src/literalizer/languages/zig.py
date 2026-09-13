@@ -1389,7 +1389,7 @@ class Zig(metaclass=LanguageCls):
             return "false"
         return ".{ .bool = false }"
 
-    def _zig_value_type(self, value: Value, /) -> str:  # noqa: PLR0911
+    def _zig_value_type(self, value: Value, /) -> str:
         """Return the Zig type for a raw record field *value*.
 
         Derived structurally from the value (never by re-parsing the
@@ -1401,40 +1401,45 @@ class Zig(metaclass=LanguageCls):
         resolves it to its generated name in
         :meth:`_zig_record_field_type`.
         """
-        if isinstance(value, bool):
-            return "bool"
-        if isinstance(value, int):
-            return "u64" if value > I64_MAX else "i64"
-        if isinstance(value, float):
-            return "f64"
-        if value is None:
-            return "?i64"
-        if isinstance(value, datetime.datetime):
-            return _ZIG_EPOCH_INT_FIELD_TYPES.get(
-                self.datetime_format.value.type_produced,
-                "[]const u8",
-            )
-        if isinstance(value, datetime.date):
-            return _ZIG_EPOCH_INT_FIELD_TYPES.get(
-                self.date_format.value.type_produced,
-                "[]const u8",
-            )
-        if isinstance(value, OrderedMap):
-            # An ordered-map field is out of scope for the base RECORD
-            # port (the cross-language decision is tracked in #2317); it
-            # is typed imprecisely from the first value's type, like the
-            # other ports' non-record-dict fallback.  ``... or [0]``
-            # keeps an empty ordered map from raising ``StopIteration``
-            # (its ``&.{}`` literal coerces to any slice element type);
-            # ``or`` is not a coverage branch, so no unreachable arm is
-            # added for a corpus that has no empty ordered-map field.
-            values = list(value.values())
-            value_for_type = values[0] if len(values) > 0 else 0
-            val_type = self._zig_value_type(value_for_type)
-            return f"[]const struct {{ key: []const u8, val: {val_type} }}"
-        if isinstance(value, list):
-            return self._zig_list_type(items=value)
-        return "[]const u8"
+        match value:
+            case bool():
+                value_type = "bool"
+            case int():
+                value_type = "u64" if value > I64_MAX else "i64"
+            case float():
+                value_type = "f64"
+            case None:
+                value_type = "?i64"
+            case datetime.datetime():
+                value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
+                    self.datetime_format.value.type_produced,
+                    "[]const u8",
+                )
+            case datetime.date():
+                value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
+                    self.date_format.value.type_produced,
+                    "[]const u8",
+                )
+            case OrderedMap():
+                # An ordered-map field is out of scope for the base RECORD
+                # port (the cross-language decision is tracked in #2317); it
+                # is typed imprecisely from the first value's type, like the
+                # other ports' non-record-dict fallback.  ``... or [0]``
+                # keeps an empty ordered map from raising ``StopIteration``
+                # (its ``&.{}`` literal coerces to any slice element type);
+                # ``or`` is not a coverage branch, so no unreachable arm is
+                # added for a corpus that has no empty ordered-map field.
+                values = list(value.values())
+                value_for_type = values[0] if len(values) > 0 else 0
+                val_type = self._zig_value_type(value_for_type)
+                value_type = (
+                    f"[]const struct {{ key: []const u8, val: {val_type} }}"
+                )
+            case list():
+                value_type = self._zig_list_type(items=value)
+            case _:
+                value_type = "[]const u8"
+        return value_type
 
     def _zig_list_type(self, *, items: list[Value]) -> str:
         """Return the Zig type for a list record field.
