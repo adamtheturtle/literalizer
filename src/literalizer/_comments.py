@@ -2,12 +2,12 @@
 
 import dataclasses
 import re
+from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
 from ruamel.yaml.comments import (
-    CommentedBase,
     CommentedMap,
     CommentedSeq,
     CommentedSet,
@@ -223,6 +223,30 @@ class _CommentAssociation(Protocol):
 
 
 @runtime_checkable
+class _LineCol(Protocol):
+    """Typed boundary for ruamel.yaml source position metadata."""
+
+    col: int
+
+
+@runtime_checkable
+class _CommentedCollection(Protocol):
+    """Collection metadata exposed by the public ``ruamel.yaml``
+    properties.
+    """
+
+    @property
+    @abstractmethod
+    def ca(self) -> _CommentAssociation:
+        """Return the collection's comment associations."""
+
+    @property
+    @abstractmethod
+    def lc(self) -> _LineCol:
+        """Return the collection's source position."""
+
+
+@runtime_checkable
 class _CommentedToken(Protocol):
     """Scanner token carrying ruamel comment metadata."""
 
@@ -232,12 +256,10 @@ class _CommentedToken(Protocol):
 @beartype
 def _comment_association(
     *,
-    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+    ruamel_data: _CommentedCollection,
 ) -> _CommentAssociation:
     """Return ruamel.yaml comment association metadata when available."""
-    ca_descriptor: Any = CommentedBase.__dict__["ca"]  # pyrefly: ignore [explicit-any]
-    ca: _CommentAssociation = ca_descriptor.fget(ruamel_data)
-    return ca
+    return ruamel_data.ca
 
 
 @beartype
@@ -422,22 +444,13 @@ def _collection_element_value(
             assert_never(unreachable)
 
 
-@runtime_checkable
-class _LineCol(Protocol):
-    """Typed boundary for ruamel.yaml source position metadata."""
-
-    col: int
-
-
 @beartype
 def _collection_column(
     *,
-    ruamel_data: CommentedSeq | CommentedMap | CommentedSet,
+    ruamel_data: _CommentedCollection,
 ) -> int:
     """Return the source column this collection is written at."""
-    lc_descriptor: Any = CommentedBase.__dict__["lc"]  # pyrefly: ignore [explicit-any]
-    lc: _LineCol = lc_descriptor.fget(ruamel_data)  # ty: ignore[unsound-assignment]
-    return lc.col
+    return ruamel_data.lc.col
 
 
 @beartype
