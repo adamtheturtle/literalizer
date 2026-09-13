@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
 from typing import (
     Final,
@@ -4516,7 +4516,7 @@ class _BoundRefComposition:
 
 
 @beartype
-def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
+def _contextual_bound_ref_values(
     *,
     source: Value,
     resolved: Value,
@@ -4528,52 +4528,38 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
     """
     contextual: dict[str, Value] = dict(bound_refs)
 
-    def _visit(  # noqa: C901, PLR0912  # pylint: disable=too-many-branches
-        *, raw: Value, inferred: Value
-    ) -> None:
+    def _visit(*, raw: Value, inferred: Value) -> None:
         """Find markers whose resolved siblings require float bindings."""
+        raw_children: Iterable[Value]
+        inferred_children: Iterable[Value]
+        child_pairs: Iterable[tuple[Value, Value]]
         if isinstance(raw, list) and isinstance(inferred, list):
-            if any(isinstance(item, float) for item in inferred):
-                for child in raw:
-                    name = _extract_call_arg_ref_name(
-                        value=child, ref_key=ref_key
-                    )
-                    if name is not None and name in contextual:
-                        value = contextual[name]
-                        if isinstance(value, int) and not isinstance(
-                            value, bool
-                        ):
-                            contextual[name] = float(value)
-            for raw_child, inferred_child in zip(raw, inferred, strict=False):
-                if (
-                    _extract_call_arg_ref_name(
-                        value=raw_child, ref_key=ref_key
-                    )
-                    is None
-                ):
-                    _visit(raw=raw_child, inferred=inferred_child)
+            raw_children = raw
+            inferred_children = inferred
+            child_pairs = zip(raw, inferred, strict=False)
         elif isinstance(raw, dict) and isinstance(inferred, dict):
-            inferred_values = list(inferred.values())
-            if any(isinstance(item, float) for item in inferred_values):
-                for child in raw.values():
-                    name = _extract_call_arg_ref_name(
-                        value=child, ref_key=ref_key
-                    )
-                    if name is not None and name in contextual:
-                        value = contextual[name]
-                        if isinstance(value, int) and not isinstance(
-                            value, bool
-                        ):
-                            contextual[name] = float(value)
-            for key in raw.keys() & inferred.keys():
-                raw_child = raw[key]
-                if (
-                    _extract_call_arg_ref_name(
-                        value=raw_child, ref_key=ref_key
-                    )
-                    is None
-                ):
-                    _visit(raw=raw_child, inferred=inferred[key])
+            raw_children = raw.values()
+            inferred_children = inferred.values()
+            child_pairs = (
+                (raw[key], inferred[key])
+                for key in raw.keys() & inferred.keys()
+            )
+        else:
+            return
+
+        if any(isinstance(item, float) for item in inferred_children):
+            for child in raw_children:
+                name = _extract_call_arg_ref_name(value=child, ref_key=ref_key)
+                if name is not None and name in contextual:
+                    value = contextual[name]
+                    if isinstance(value, int) and not isinstance(value, bool):
+                        contextual[name] = float(value)
+        for raw_child, inferred_child in child_pairs:
+            if (
+                _extract_call_arg_ref_name(value=raw_child, ref_key=ref_key)
+                is None
+            ):
+                _visit(raw=raw_child, inferred=inferred_child)
 
     _visit(raw=source, inferred=resolved)
     return contextual
