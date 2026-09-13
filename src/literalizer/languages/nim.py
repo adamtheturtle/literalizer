@@ -62,7 +62,6 @@ from literalizer._formatters.record_strategy import (
     build_record_strategy,
 )
 from literalizer._formatters.type_inference import (
-    BeyondI64,
     WideInt,
     infer_element_type,
     int_widening_tier,
@@ -607,7 +606,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
             case _:
                 return None
 
-    def _literal_type(  # noqa: PLR0911
+    def _literal_type(
         item: Value,
     ) -> _NimLiteralShape:
         """Return the native Nim type shape inferred for *item*.
@@ -623,11 +622,7 @@ def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
                 return bool
             case int():
                 tier = int_widening_tier(items=[item])
-                if tier is WideInt:
-                    return WideInt
-                if tier is BeyondI64:
-                    return BeyondI64
-                return int
+                return tier if tier is not None else int
             case list():
                 child_types = {_literal_type(item=child) for child in item}
                 return _NimContainerShape(
