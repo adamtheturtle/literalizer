@@ -1,41 +1,58 @@
-"""Tests for COBOL data-name disambiguation.
+"""Tests for COBOL data-name disambiguation through literalize."""
 
-These drive the name suffixing directly, a thousand collisions deep,
-which no document of a size worth keeping would reach through the
-public API (issue #4699).
-"""
+import json
+import re
 
-# pylint: disable=import-private-name,useless-suppression
+import pytest
 
-from literalizer.languages.cobol import (
-    _NameScope,  # pyright: ignore[reportPrivateUsage]
-    _unique_cobol_name,  # pyright: ignore[reportPrivateUsage]
-)
+from literalizer import InputFormat, literalize
+from literalizer.languages import Cobol
 
 
 def test_cobol_collision_suffix_probe_advances() -> None:
-    """Repeated collisions retain the next suffix for their base."""
-    scope = _NameScope(level=5, used=set(), next_suffix={})
+    """A thousand distinct keys retain unique consecutive data names."""
     collision_count = 1_000
+    data = {
+        f"a{index:010b}b".replace("0", "-").replace("1", "_"): index
+        for index in range(collision_count)
+    }
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
+        language=Cobol(),
+    )
+    names = re.findall(pattern=r"05 (F-A-B(?:-\d+)?) ", string=result.code)
 
-    names = [
-        _unique_cobol_name(base="F-A-B", scope=scope)
-        for _ in range(collision_count)
+    assert names == [
+        "F-A-B",
+        *(f"F-A-B-{suffix}" for suffix in range(2, collision_count + 1)),
     ]
 
-    assert names[:3] == ["F-A-B", "F-A-B-2", "F-A-B-3"]
-    assert names[-1] == "F-A-B-1000"
-    assert scope.next_suffix["F-A-B"] == collision_count + 1
 
-
-def test_cobol_collision_suffix_skips_preexisting_name() -> None:
-    """A scope without a cursor can still skip an occupied suffix."""
-    expected_next_suffix = 4
-    scope = _NameScope(
-        level=5,
-        used={"F-A-B", "F-A-B-2"},
-        next_suffix={},
+@pytest.mark.parametrize(
+    argnames=("data", "expected_names"),
+    argvalues=[
+        (
+            {"a-b": 1, "a-b-2": 2, "a b": 3},
+            ["F-A-B", "F-A-B-2", "F-A-B-3"],
+        ),
+        (
+            {"a-b": 1, "a b": 2, "a-b-2": 3},
+            ["F-A-B", "F-A-B-2", "F-A-B-2-2"],
+        ),
+    ],
+)
+def test_cobol_collision_suffix_skips_preexisting_name(
+    *,
+    data: dict[str, int],
+    expected_names: list[str],
+) -> None:
+    """Source names and generated suffixes cannot shadow each other."""
+    result = literalize(
+        source=json.dumps(obj=data),
+        input_format=InputFormat.JSON,
+        language=Cobol(),
     )
+    names = re.findall(pattern=r"05 ([A-Z0-9-]+) ", string=result.code)
 
-    assert _unique_cobol_name(base="F-A-B", scope=scope) == "F-A-B-3"
-    assert scope.next_suffix["F-A-B"] == expected_next_suffix
+    assert names == expected_names
