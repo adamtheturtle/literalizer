@@ -348,7 +348,7 @@ class CallSpec(  # noqa: NOD001
         tuple[DeclaredName, ...],
         Field(strict=False),
     ] = Field(default_factory=_no_names)
-    parameter_names_bare: str | None = None
+    parameter_names_bare: str = ""
     per_element: bool = True
     wrap_in_file: bool = False
     ref_key: str | None = None
@@ -357,7 +357,7 @@ class CallSpec(  # noqa: NOD001
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None
     )
-    comment_source_bare: str | None = None
+    comment_source_bare: str = ""
     pre_indent_level: int = 0
     include_delimiters: bool = True
     variable_form: VariableFormName | None = None
