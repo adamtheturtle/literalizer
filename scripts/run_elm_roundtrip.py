@@ -30,11 +30,16 @@ calls.  No ``Val`` ADT or walker is needed: ``Json.Encode.encode 0``
 serializes the declared value directly.
 """
 
+import os
 import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 
 from literalizer.languages import Elm
 from scripts import roundtrip_common
-from scripts.elm_common import ELM_JSON
+from scripts.elm_common import ELM_JSON, NOINDEX_SUFFIX, run_elm_make
 
 _VAR_NAME = "myData"
 _LABEL = "Elm"
@@ -112,27 +117,50 @@ def main() -> None:
     node = shutil.which(cmd="node")
     if node is None or node == "":
         node = "node"
-    roundtrip_common.execute(
+    with tempfile.TemporaryDirectory(suffix=NOINDEX_SUFFIX) as tmpdir_name:
+        tmpdir = Path(tmpdir_name)
+        src_dir = tmpdir / "src"
+        src_dir.mkdir()
+        _ = (src_dir / "Main.elm").write_text(
+            data=program,
+            encoding="utf-8",
+        )
+        _ = (tmpdir / "elm.json").write_text(data=ELM_JSON, encoding="utf-8")
+        _ = (tmpdir / "run.js").write_text(data=_RUN_JS, encoding="utf-8")
+        compile_result = run_elm_make(
+            args=[elm, "make", "src/Main.elm", "--output=main.js"],
+            cwd=tmpdir,
+            env=os.environ,
+        )
+        if compile_result.returncode != 0:
+            _ = sys.stderr.write(
+                f"{_LABEL}: elm make error\n"
+                f"{compile_result.stdout}{compile_result.stderr}"
+                f"\nProgram:\n{program}\n",
+            )
+            sys.exit(1)
+        run_result = subprocess.run(
+            args=[node, "run.js"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+            encoding="utf-8",
+        )
+    if run_result.returncode != 0:
+        _ = sys.stderr.write(
+            f"{_LABEL}: node run error\n"
+            f"{run_result.stdout}{run_result.stderr}"
+            f"\nProgram:\n{program}\n",
+        )
+        sys.exit(1)
+    roundtrip_common.verify(
         label=_LABEL,
-        source_filename="src/Main.elm",
-        program=program,
-        steps=[
-            roundtrip_common.Step(
-                args=[elm, "make", "src/Main.elm", "--output=main.js"],
-                failure_label="elm make error",
-            ),
-            roundtrip_common.Step(
-                args=[node, "run.js"],
-                failure_label="node run error",
-            ),
-        ],
-        excluded_keys=_EXCLUDED_KEYS,
+        produced_json=run_result.stdout,
+        exclude_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
-        extra_files={
-            "elm.json": ELM_JSON,
-            "run.js": _RUN_JS,
-        },
     )
+    _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 
 if __name__ == "__main__":
