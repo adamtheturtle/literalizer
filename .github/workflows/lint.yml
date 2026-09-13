@@ -928,7 +928,7 @@ jobs:
       - name: Install npm-sourced linters
         timeout-minutes: 10
         run: |
-          npm ci --prefix .github/npm-linters
+          scripts/retry.sh npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Build tree-sitter-norg parser
@@ -1009,7 +1009,7 @@ jobs:
       - name: Install npm-sourced linters
         timeout-minutes: 10
         run: |
-          npm ci --prefix .github/npm-linters
+          scripts/retry.sh npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       # `uv` is needed by the `TypeScript roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
@@ -1058,7 +1058,7 @@ jobs:
       - name: Install npm-sourced linters
         timeout-minutes: 10
         run: |
-          npm ci --prefix .github/npm-linters
+          scripts/retry.sh npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
@@ -1097,7 +1097,7 @@ jobs:
       - name: Install npm-sourced linters
         timeout-minutes: 10
         run: |
-          npm ci --prefix .github/npm-linters
+          scripts/retry.sh npm ci --prefix .github/npm-linters
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
@@ -1531,7 +1531,10 @@ jobs:
         run: |-
           mkdir -p "$RUNNER_TEMP/lint-gleam-primed/src"
           cp scripts/lint-gleam.toml "$RUNNER_TEMP/lint-gleam-primed/gleam.toml"
-          (cd "$RUNNER_TEMP/lint-gleam-primed" && gleam deps download)
+          (
+            cd "$RUNNER_TEMP/lint-gleam-primed"
+            "$GITHUB_WORKSPACE/scripts/retry.sh" gleam deps download
+          )
 
       # All ~350 fixtures are checked in a single `gleam check` invocation
       # because each Gleam invocation boots the BEAM VM (~1s) and that
