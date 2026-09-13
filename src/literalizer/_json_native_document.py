@@ -125,33 +125,46 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
     sequence_config = language.sequence_format_config
     dict_open = dict_config.dict_open
     sequence_open = sequence_config.sequence_open
-    if (  # pylint: disable=too-many-boolean-expressions
+    if (
         not include_delimiters
         or collection_layout is not CollectionLayout.COMPACT
         or not isinstance(dict_open, FixedOpen)
         or not isinstance(sequence_open, FixedOpen)
-        or not _inference_is_inert(language=language)
+    ):
+        return None
+    requires_shared_inference = (
+        not _inference_is_inert(language=language)
         or language.skip_null_dict_values
         or sequence_config.single_element_trailing_comma
         or dict_config.narrowed_open is not None
-        or dict_config.narrowed_empty_form is not None
+    )
+    # An empty collection must render as its delimiters with nothing
+    # between them, either because the language declares no separate
+    # empty literal or because that literal spells the same thing.
+    # The shared renderer picks between the two per position -- an
+    # empty list beside a non-empty list sibling takes the sibling's
+    # opener rather than the empty literal -- and the fast path does
+    # not model that choice.  A non-empty closer additionally keeps
+    # an empty nested collection from rendering as the empty string,
+    # which the shared renderer drops from its parent rather than
+    # joining with a separator.
+    position_dependent_empty_form = (
+        dict_config.narrowed_empty_form is not None
         or sequence_config.narrowed_empty_form is not None
-        # An empty collection must render as its delimiters with nothing
-        # between them, either because the language declares no separate
-        # empty literal or because that literal spells the same thing.
-        # The shared renderer picks between the two per position -- an
-        # empty list beside a non-empty list sibling takes the sibling's
-        # opener rather than the empty literal -- and the fast path does
-        # not model that choice.  A non-empty closer additionally keeps
-        # an empty nested collection from rendering as the empty string,
-        # which the shared renderer drops from its parent rather than
-        # joining with a separator.
         or dict_config.close == ""
         or sequence_config.close == ""
-        or dict_config.empty_dict
-        not in (None, dict_open.open_str + dict_config.close)
-        or sequence_config.empty_sequence
-        not in (None, sequence_open.open_str + sequence_config.close)
+    )
+    distinct_empty_literal = dict_config.empty_dict not in (
+        None,
+        dict_open.open_str + dict_config.close,
+    ) or sequence_config.empty_sequence not in (
+        None,
+        sequence_open.open_str + sequence_config.close,
+    )
+    if (
+        requires_shared_inference
+        or position_dependent_empty_form
+        or distinct_empty_literal
     ):
         return None
 
