@@ -4580,7 +4580,7 @@ def _contextual_bound_ref_values(  # noqa: C901  # pylint: disable=too-complex
 
 
 @beartype
-def _bound_ref_parent_contexts(  # noqa: C901  # pylint: disable=too-complex
+def _bound_ref_parent_contexts(
     *,
     source: Value,
     resolved: Value,
@@ -4595,9 +4595,9 @@ def _bound_ref_parent_contexts(  # noqa: C901  # pylint: disable=too-complex
     def _visit(*, raw: Value, inferred: Value) -> None:
         """Pair each marker with a resolved copy of its parent."""
         if isinstance(raw, list) and isinstance(inferred, list):
-            for index, raw_child in enumerate(iterable=raw):
-                if index >= len(inferred):
-                    break
+            for index, (raw_child, inferred_child) in enumerate(
+                iterable=zip(raw, inferred, strict=False)
+            ):
                 name = _extract_call_arg_ref_name(
                     value=raw_child, ref_key=ref_key
                 )
@@ -4606,7 +4606,7 @@ def _bound_ref_parent_contexts(  # noqa: C901  # pylint: disable=too-complex
                     list_parent[index] = bound_refs[name]
                     _ = contexts.setdefault(name, list_parent)
                 elif name is None:
-                    _visit(raw=raw_child, inferred=inferred[index])
+                    _visit(raw=raw_child, inferred=inferred_child)
         elif isinstance(raw, dict) and isinstance(inferred, dict):
             for key in raw.keys() & inferred.keys():
                 raw_child = raw[key]
