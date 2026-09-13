@@ -933,7 +933,7 @@ class _VariantSignature:
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-complex
+def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
     *,
     value: Scalar,
     date_type: str,
@@ -966,14 +966,13 @@ def _heterogeneous_variant_for_scalar(  # noqa: C901  # pylint: disable=too-comp
                 name="Bytes",
                 inner_type="&'static str",
             )
-        case datetime.datetime() if datetime_type in {"i32", "i64", "i128"}:
-            signature = _VariantSignature(
-                name=datetime_type.upper(),
-                inner_type=datetime_type,
-            )
         case datetime.datetime():
             signature = _VariantSignature(
-                name="DateTime",
+                name=(
+                    datetime_type.upper()
+                    if datetime_type in {"i32", "i64", "i128"}
+                    else "DateTime"
+                ),
                 inner_type=datetime_type,
             )
         case datetime.date():
