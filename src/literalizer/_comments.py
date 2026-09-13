@@ -259,6 +259,8 @@ def _comment_association(
     ruamel_data: _CommentedCollection,
 ) -> _CommentAssociation:
     """Return ruamel.yaml comment association metadata when available."""
+    # Keep this typed boundary until ruamel.yaml exposes precise metadata:
+    # https://sourceforge.net/p/ruamel-yaml/tickets/572/
     return ruamel_data.ca
 
 
@@ -450,6 +452,8 @@ def _collection_column(
     ruamel_data: _CommentedCollection,
 ) -> int:
     """Return the source column this collection is written at."""
+    # Direct access has unknown types until the upstream metadata fix:
+    # https://sourceforge.net/p/ruamel-yaml/tickets/572/
     return ruamel_data.lc.col
 
 
