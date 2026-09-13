@@ -1500,7 +1500,7 @@ class C(metaclass=LanguageCls):
             is type(self.heterogeneous_strategy).RECORD
         )
 
-    def _c_record_field_type(  # noqa: C901, PLR0911
+    def _c_record_field_type(
         self,
         request: RecordFieldType,
         /,
@@ -1529,7 +1529,6 @@ class C(metaclass=LanguageCls):
         scope for the base port, #2476/#2317) keeps its own
         self-wrapping ``CVal`` form and is typed ``CVal``.
         """
-        # pylint: disable=too-complex
         if request.record_name is not None:
             return f"struct {request.record_name}"
         value = request.value
@@ -1541,25 +1540,26 @@ class C(metaclass=LanguageCls):
         epoch = self.datetime_format.value.type_produced is int
         match value:
             case bool():
-                return "bool"
-            case int() as int_value if int_value > I64_MAX:
-                return "unsigned long long"
+                field_type = "bool"
             case int():
-                return "long long"
+                field_type = (
+                    "unsigned long long" if value > I64_MAX else "long long"
+                )
             case float():
-                return "double"
-            case str() | bytes():
-                return "const char *"
+                field_type = "double"
             case None:
-                return "const void *"
-            case datetime.datetime():
-                return "long long" if epoch else "const char *"
-            case datetime.date() | datetime.time():
-                return "const char *"
+                field_type = "const void *"
+            case str() | bytes() | datetime.date() | datetime.time():
+                field_type = (
+                    "long long"
+                    if epoch and isinstance(value, datetime.datetime)
+                    else "const char *"
+                )
             case list():
-                return "const CVal *"
+                field_type = "const CVal *"
             case _:
-                return "CVal"
+                field_type = "CVal"
+        return field_type
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
