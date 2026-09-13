@@ -403,11 +403,63 @@ def _list_merge_dicts(*, elements: list[Value]) -> list[Value]:
     return merged
 
 
+def _collection_structural_type_id(*, value: _Collection) -> str:
+    """Return the structural type identifier for a collection value.
+
+    The decorated caller has already narrowed ``value`` to ``_Collection``;
+    another runtime-checking wrapper here would penalize every recursive
+    collection.
+    """
+    match value:
+        case list() if len(value) == 0:
+            structural_id = "empty_list"
+        case list():
+            merged = _list_merge_dicts(elements=value)
+            elem_ids = list(
+                dict.fromkeys(_structural_type_id(value=e) for e in merged)
+            )
+            structural_id = f"list({','.join(elem_ids)})"
+        case set() if len(value) == 0:
+            structural_id = "empty_set"
+        case set():
+            elem_ids = sorted({_structural_type_id(value=e) for e in value})
+            structural_id = f"set({','.join(elem_ids)})"
+        case OrderedMap() if len(value) == 0:
+            structural_id = "empty_odict"
+        case OrderedMap():
+            val_ids = sorted(
+                {_structural_type_id(value=ov) for ov in value.values()}
+            )
+            structural_id = f"odict({','.join(val_ids)})"
+        case dict() if len(value) == 0:
+            structural_id = "empty_dict"
+        case dict():
+            val_ids = sorted(
+                {_structural_type_id(value=v) for v in value.values()}
+            )
+            structural_id = f"dict({','.join(val_ids)})"
+        case _ as unreachable:
+            assert_never(unreachable)
+    return structural_id
+
+
+_COMMON_SCALAR_STRUCTURAL_TYPE_IDS: Final[dict[type, str]] = {
+    bool: "bool",
+    int: "int",
+    float: "float",
+    str: "str",
+    bytes: "bytes",
+    type(None): "None",
+}
+"""Structural IDs for common exact scalar types.
+
+The direct lookup keeps the hot path free of helper calls. Temporal values
+and scalar subclasses fall through to the canonical type logic below.
+"""
+
+
 @beartype
-def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
-    *,
-    value: Value,
-) -> str:
+def _structural_type_id(*, value: Value) -> str:
     """Return a structural type identifier for *value*.
 
     Two values produce the same ID if and only if Python's
@@ -419,55 +471,15 @@ def _structural_type_id(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-
     element types are heterogeneous without actually running the full
     type-hint formatter.
     """
+    structural_id = _COMMON_SCALAR_STRUCTURAL_TYPE_IDS.get(type(value))
+    if structural_id is not None:
+        return structural_id
     match value:
-        case bool():
-            return "bool"
-        case int():
-            return "int"
-        case float():
-            return "float"
-        case str():
-            return "str"
-        case bytes():
-            return "bytes"
-        case datetime.datetime():
-            return "datetime"
-        case datetime.time():
-            return "time"
-        case datetime.date():
-            return "date"
-        case None:
-            return "None"
-        case list() if len(value) == 0:
-            return "empty_list"
-        case list():
-            merged = _list_merge_dicts(elements=value)
-            elem_ids = list(
-                dict.fromkeys(_structural_type_id(value=e) for e in merged)
-            )
-            return f"list({','.join(elem_ids)})"
-        case set() if len(value) == 0:
-            return "empty_set"
-        case set():
-            elem_ids = sorted({_structural_type_id(value=e) for e in value})
-            return f"set({','.join(elem_ids)})"
-        case OrderedMap() if len(value) == 0:
-            return "empty_odict"
-        case OrderedMap():
-            val_set: set[str] = set()
-            for ov in value.values():
-                val_set.add(_structural_type_id(value=ov))
-            val_ids = sorted(val_set)
-            return f"odict({','.join(val_ids)})"
-        case dict() if len(value) == 0:
-            return "empty_dict"
-        case dict():
-            val_ids = sorted(
-                {_structural_type_id(value=v) for v in value.values()}
-            )
-            return f"dict({','.join(val_ids)})"
-        case _ as unreachable:
-            assert_never(unreachable)
+        case (dict() | set() | list()) as collection:
+            structural_id = _collection_structural_type_id(value=collection)
+        case _ as scalar:
+            structural_id = _preamble_scalar_type(value=scalar).__name__
+    return structural_id
 
 
 @beartype
