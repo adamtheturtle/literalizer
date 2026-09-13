@@ -1160,13 +1160,13 @@ def _parse_toml(*, source: str) -> ParsedInput:
     except _FiniteFloatRangeError as exc:
         message = f"Invalid TOML: {exc}"
         raise TOMLParseError(message) from exc
-    unwrapped: _TomlData = toml_doc.unwrap()  # ty: ignore[unsound-assignment]
-    unwrapped = _preserve_toml_negative_zero(
-        data=unwrapped,
-        raw_data=toml_doc,
-    )
     return ParsedToml(
-        data=_toml_data_to_value(data=unwrapped),
+        data=_toml_data_to_value(
+            data=_preserve_toml_negative_zero(
+                data=toml_doc.unwrap(),
+                raw_data=toml_doc,
+            ),
+        ),
         toml_doc=toml_doc,
     )
 
