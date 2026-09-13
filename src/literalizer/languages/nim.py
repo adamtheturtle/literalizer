@@ -2058,7 +2058,7 @@ class Nim(metaclass=LanguageCls):
         """
         return self._uses_object_variant or self._uses_record
 
-    def _nim_value_field_type(  # noqa: C901, PLR0911  # pylint: disable=too-complex
+    def _nim_value_field_type(
         self,
         value: Value,
         /,
@@ -2085,39 +2085,46 @@ class Nim(metaclass=LanguageCls):
         """
         match value:
             case None:
-                return "pointer"
+                field_type = "pointer"
             case bool():
-                return "bool"
+                field_type = "bool"
             case int():
-                return "int"
+                field_type = "int"
             case float():
-                return "float"
+                field_type = "float"
             case str() | bytes() | datetime.time():
-                return "string"
-            case datetime.datetime():
-                resolved = self._heterogeneous_variant_datetime_type
+                field_type = "string"
             case datetime.date():
-                resolved = self._heterogeneous_variant_date_type
+                field_type = (
+                    self._heterogeneous_variant_datetime_type
+                    if isinstance(value, datetime.datetime)
+                    else self._heterogeneous_variant_date_type
+                )
             case list():
-                if len(value) == 0:
-                    return "seq[string]"
-                if infer_element_type(items=value) is WideInt:
-                    return "seq[int64]"
-                return f"seq[{self._nim_value_field_type(value[0])}]"
+                element_type = (
+                    "string"
+                    if len(value) == 0
+                    else (
+                        "int64"
+                        if infer_element_type(items=value) is WideInt
+                        else self._nim_value_field_type(value[0])
+                    )
+                )
+                field_type = f"seq[{element_type}]"
             case _:
                 msg = (
                     "Nim cannot represent a set or non-record-dict "
                     "field under the RECORD heterogeneous strategy"
                 )
                 raise UnrepresentableInputError(msg)
-        if resolved == "JsonNode":
+        if field_type == "JsonNode":
             msg = (
                 "Nim cannot represent a NIM-table-literal date/datetime "
                 "field under the RECORD heterogeneous strategy; use the "
                 "ISO or EPOCH format"
             )
             raise UnrepresentableInputError(msg)
-        return resolved
+        return field_type
 
     def _nim_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Nim ``object`` field type for a record field.
