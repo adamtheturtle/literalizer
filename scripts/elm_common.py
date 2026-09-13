@@ -141,6 +141,7 @@ def worker_elm_home() -> Path:
 _ELM_TRANSIENT_BINARY_FILE_MARKERS = ("openBinaryFile", "withBinaryFile")
 _ELM_TRANSIENT_BUSY_MARKER = "resource busy (file is locked)"
 _ELM_TRANSIENT_CORRUPT_MARKER = "CORRUPT CACHE"
+_ELM_TRANSIENT_MVAR_MARKER = "thread blocked indefinitely in an MVar operation"
 _ELM_TRANSIENT_NETWORK_MARKER = "ConnectionTimeout"
 
 
@@ -149,8 +150,13 @@ def _is_elm_transient_error(result: subprocess.CompletedProcess[str]) -> bool:
     dependency-download error.
     """
     output = result.stderr + result.stdout
-    if _ELM_TRANSIENT_CORRUPT_MARKER in output or (
-        _ELM_TRANSIENT_NETWORK_MARKER in output
+    if any(
+        marker in output
+        for marker in (
+            _ELM_TRANSIENT_CORRUPT_MARKER,
+            _ELM_TRANSIENT_MVAR_MARKER,
+            _ELM_TRANSIENT_NETWORK_MARKER,
+        )
     ):
         return True
     if _ELM_TRANSIENT_BUSY_MARKER not in output:
