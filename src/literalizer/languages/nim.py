@@ -498,7 +498,7 @@ def _nim_variant_for_scalar(
 
 
 @beartype
-@dataclasses.dataclass(frozen=True, eq=False)
+@dataclasses.dataclass(frozen=True)
 class _HeterogeneousStrategyConfig:
     """Configuration for one Nim heterogeneous-values strategy.
 
@@ -508,12 +508,8 @@ class _HeterogeneousStrategyConfig:
     preamble callable (e.g. the object-variant type declaration).  Both
     receive the Nim instance's configurable variant-type name and
     scalar type names so the resulting functions can close over them.
-
-    ``eq=False`` keeps identity equality so two strategies that happen
-    to share builder functions (``ERROR`` and ``RECORD`` both reuse the
-    no-op error builders -- ``RECORD``'s real behavior/preamble are
-    resolved per-instance) stay distinct enum members instead of Python
-    folding the second into an alias of the first.
+    ``resolves_per_instance`` distinguishes strategies such as ``RECORD``
+    whose real behavior and preamble come from instance configuration.
     """
 
     build_behavior: Callable[[str, str, str], HeterogeneousBehavior]
@@ -521,6 +517,7 @@ class _HeterogeneousStrategyConfig:
         [str, str, str, str],
         Callable[[Value], tuple[str, ...]],
     ]
+    resolves_per_instance: bool
 
 
 @beartype
@@ -1637,6 +1634,7 @@ class Nim(metaclass=LanguageCls):
         ERROR = _HeterogeneousStrategyConfig(
             build_behavior=_build_error_behavior,
             build_preamble=_build_error_preamble,
+            resolves_per_instance=False,
         )
         """Raise
         :exc:`~literalizer.exceptions.HeterogeneousScalarCollectionError`
@@ -1651,6 +1649,7 @@ class Nim(metaclass=LanguageCls):
         OBJECT_VARIANT = _HeterogeneousStrategyConfig(
             build_behavior=_build_object_variant_behavior,
             build_preamble=_build_default_object_variant_preamble,
+            resolves_per_instance=False,
         )
         """Auto-generate a Nim object variant in the preamble containing
         only the branches actually present in the data, and wrap each
@@ -1671,15 +1670,10 @@ class Nim(metaclass=LanguageCls):
         ``CONST`` requires a compile-time-expressible initializer.
         """
 
-        # RECORD intentionally reuses the inert ERROR builders (its
-        # real behavior/preamble are resolved per-instance, see
-        # ``heterogeneous_behavior`` / ``data_dependent_preamble``);
-        # ``_HeterogeneousStrategyConfig`` uses identity equality so
-        # this stays a distinct member rather than an alias of ERROR,
-        # which ``PIE796`` cannot tell apart.
-        RECORD = _HeterogeneousStrategyConfig(  # noqa: PIE796
+        RECORD = _HeterogeneousStrategyConfig(
             build_behavior=_build_error_behavior,
             build_preamble=_build_error_preamble,
+            resolves_per_instance=True,
         )
         """Render each record-shaped dict (non-empty, string-keyed) as a
         generated module-scope ``type Record0 = object`` declaration plus
@@ -2061,8 +2055,7 @@ class Nim(metaclass=LanguageCls):
         """Whether the instance is configured for the RECORD
         heterogeneous strategy.
         """
-        cls = type(self.heterogeneous_strategy)
-        return self.heterogeneous_strategy is cls.RECORD
+        return self.heterogeneous_strategy.value.resolves_per_instance
 
     @cached_property
     def _uses_native_nim_collections(self) -> bool:
