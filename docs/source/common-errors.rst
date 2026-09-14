@@ -152,6 +152,12 @@ See :doc:`function-call-use-case`.
 .. autoexception:: literalizer.exceptions.PerElementNotListError
    :no-index:
 
+.. autoexception:: literalizer.exceptions.InputRootNotMappingError
+   :no-index:
+
+.. autoexception:: literalizer.exceptions.InputRootKeyNotFoundError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.ParameterCountMismatchError
    :no-index:
 

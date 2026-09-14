@@ -18,20 +18,6 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer import StubReturn
-
-# ``literalize_call_with_declarations`` is the shared call/declaration
-# reconciliation core; it is intentionally not part of the public API
-# (the public surface is ``literalize_call(bound_refs=...)``).  This
-# golden-file harness must interpose its own transform-wrapper stubs
-# between rendering and composition, so it uses the internal core
-# directly.  See issue #1946.
-from literalizer._literalize import (
-    literalize_call_parsed,
-    literalize_call_with_declarations,
-)
-from literalizer._parsing import ParsedInput, parse_input
-from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -380,34 +366,6 @@ def discover_call_cases() -> list[CallCase]:
 
 
 @beartype
-def select_call_input_root(
-    *,
-    source: str,
-    input_info: CaseInput,
-    input_root_key: str,
-) -> ParsedInput:
-    """Parse a case and select a table entry as the call-row root."""
-    parsed = parse_input(
-        source=source,
-        input_format=input_info.input_format,
-    )
-    if not isinstance(parsed.data, dict):
-        message = (
-            f"{input_info.path} config selects {input_root_key!r}, "
-            f"but its parsed root is {type(parsed.data).__name__}"
-        )
-        raise TypeError(message)
-    try:
-        selected = parsed.data[input_root_key]
-    except KeyError as exc:
-        message = (
-            f"{input_info.path} has no configured call root {input_root_key!r}"
-        )
-        raise KeyError(message) from exc
-    return dataclasses.replace(parsed, data=selected)
-
-
-@beartype
 def _literalize_call_case(
     *,
     config: CallCaseSpec,
@@ -419,39 +377,14 @@ def _literalize_call_case(
     | literalizer.ExistingVariable
     | None,
     wrap_in_file: bool,
-    ref_values: Mapping[str, ValueInput] | None,
-    bound_refs: Mapping[str, ValueInput] | None,
+    ref_values: Mapping[str, literalizer.ValueInput] | None,
+    bound_refs: Mapping[str, literalizer.ValueInput] | None,
 ) -> literalizer.LiteralizeResult:
-    """Run a configured call through the public or parsed-input path."""
-    if config.input_root_key is None:
-        return literalizer.literalize_call(
-            source=source,
-            input_format=input_info.input_format,
-            language=spec,
-            target_function=config.target_function,
-            parameter_names=config.parameter_names,
-            call_transform=config.call_transform,
-            zip_source=config.zip_source,
-            zip_input_format=config.zip_input_format,
-            comment_source=config.comment_source,
-            per_element=config.per_element,
-            wrap_in_file=wrap_in_file,
-            ref_case=effective_ref_case,
-            consumable_refs=config.consumable_refs,
-            ref_values=ref_values,
-            bound_refs=bound_refs,
-            ref_key=config.ref_key,
-            variable_form=variable_form,
-            collection_layout=literalizer.CollectionLayout(
-                value=config.collection_layout
-            ),
-        )
-    return literalize_call_parsed(
-        parsed=select_call_input_root(
-            source=source,
-            input_info=input_info,
-            input_root_key=config.input_root_key,
-        ),
+    """Run a configured call through the public API."""
+    return literalizer.literalize_call(
+        source=source,
+        input_format=input_info.input_format,
+        input_root_key=config.input_root_key,
         language=spec,
         target_function=config.target_function,
         parameter_names=config.parameter_names,
@@ -714,9 +647,9 @@ def run_call_golden_case(
     body_stubs: list[str] = []
     preamble_stubs: list[str] = []
     if config.call_transform is not None:
-        stub_return = StubReturn.VALUE
+        stub_return = literalizer.StubReturn.VALUE
     else:
-        stub_return = StubReturn.VOID
+        stub_return = literalizer.StubReturn.VOID
     target_function_parts = tuple(config.target_function.split(sep="."))
     call_arg_values = _arg_values_for_stub(
         source_data=result.source_data,
@@ -753,7 +686,7 @@ def run_call_golden_case(
             spec.format_call_stub(
                 wrapper_name_parts,
                 config.transform_stub_param_names,
-                StubReturn.VOID,
+                literalizer.StubReturn.VOID,
                 (),
             ),
         )
@@ -761,7 +694,7 @@ def run_call_golden_case(
             spec.format_call_preamble_stub(
                 wrapper_name_parts,
                 config.transform_stub_param_names,
-                StubReturn.VOID,
+                literalizer.StubReturn.VOID,
                 (),
             ),
         )
@@ -775,7 +708,7 @@ def run_call_golden_case(
     # preamble in front.  The call-stub lines this harness synthesizes
     # for the otherwise-undefined target/transform names are folded in
     # as the ``extra_*`` arguments.
-    composed = literalize_call_with_declarations(
+    composed = literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=decl_results,
         call=result,

@@ -49,6 +49,36 @@ Suppose you want to generate calls to ``throttler.check`` with two parameters (`
        print(throttler.check(user_id="user_2", ts=2000.5))""",
    )
 
+Selecting a nested input root
+-----------------------------
+
+Some formats require a mapping at the document root.
+For example, a TOML document cannot itself be an array of call rows.
+Use ``input_root_key`` to select such an array without parsing the document yourself:
+
+.. code-block:: python
+
+   """Render call rows stored below a TOML key."""
+
+   from literalizer import InputFormat, literalize_call
+   from literalizer.languages import Python
+
+   result = literalize_call(
+       source="calls = [[1], [2]]",
+       input_format=InputFormat.TOML,
+       input_root_key="calls",
+       language=Python(),
+       target_function="process",
+       parameter_names=["value"],
+   )
+
+   assert result.code == "process(value=1)\nprocess(value=2)"
+
+The parsed root must be a mapping and the key must exist.
+Violations raise
+:class:`~literalizer.exceptions.InputRootNotMappingError` and
+:class:`~literalizer.exceptions.InputRootKeyNotFoundError`, respectively.
+
 Calling conventions
 -------------------
 
@@ -219,6 +249,11 @@ This is the call-side counterpart of :func:`~literalizer.literalize`'s own ``bou
    assert composed.code.count("data Val = HInt Integer | HList [Val]") == 1
 
 ``bound_refs`` entries double as ``ref_values``, so a name need not be repeated in both mappings, and they are emitted in iteration order ahead of their first use.
+
+When you already have separate :class:`~literalizer.LiteralizeResult` objects, or need to add custom target or transform scaffolding, pass the declaration results and call result to
+:func:`~literalizer.literalize_call_with_declarations`.  It exposes the same
+preamble reconciliation and file assembly used by ``bound_refs``.
+Prefer ``bound_refs`` for the ordinary case where Literalizer can declare every reference itself.
 
 Snake case is the recommended authoring convention for ``$ref`` names: ``pyhumps`` converts ``snake_case`` to every other case without loss.
 Inputs in other conventions are normalized to ``snake_case`` first, so ``userObj`` or ``UserObj`` also convert correctly, but at the cost of losing any preserved acronyms: ``HTTPRequest`` normalizes to ``http_request`` and converts back to Pascal case as ``HttpRequest``.

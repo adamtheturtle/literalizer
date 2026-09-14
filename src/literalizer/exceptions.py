@@ -559,6 +559,33 @@ class InvalidRenderArgumentError(LiteralizerError, ValueError):
 
 
 @beartype
+class InputRootNotMappingError(InvalidRenderArgumentError):
+    """Raised when ``input_root_key`` is used on a non-mapping input."""
+
+    def __init__(self, *, input_root_key: str, root_type: type) -> None:
+        """Create an ``InputRootNotMappingError``."""
+        super().__init__(
+            f"input_root_key={input_root_key!r} requires the parsed input "
+            f"root to be a mapping, got {root_type.__name__}"
+        )
+        self.input_root_key = input_root_key
+        self.root_type = root_type
+
+
+@beartype
+class InputRootKeyNotFoundError(InvalidRenderArgumentError):
+    """Raised when ``input_root_key`` is absent from the parsed input."""
+
+    def __init__(self, *, input_root_key: str) -> None:
+        """Create an ``InputRootKeyNotFoundError``."""
+        super().__init__(
+            f"input_root_key={input_root_key!r} does not exist in the "
+            "parsed input root"
+        )
+        self.input_root_key = input_root_key
+
+
+@beartype
 class InvalidValueInputError(InvalidRenderArgumentError):
     """Raised when a supplemental Python value is cyclic or too deep."""
 

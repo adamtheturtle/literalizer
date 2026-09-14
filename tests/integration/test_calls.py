@@ -12,8 +12,12 @@ from typing import NoReturn
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import InputFormat
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer import InputFormat, literalize_call
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    InputRootKeyNotFoundError,
+    InputRootNotMappingError,
+)
 from literalizer.languages import Python
 
 from .call_cases import (
@@ -22,52 +26,59 @@ from .call_cases import (
     discover_call_cases,
     run_call_golden_case,
     run_wrap_in_file_case,
-    select_call_input_root,
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
 from .language_specs import make_golden_path, make_spec
 
 
-def test_select_call_input_root_rejects_non_table_root(
-    tmp_path: Path,
-) -> None:
+def test_literalize_call_input_root_rejects_non_table_root() -> None:
     """A configured root key requires a parsed table."""
-    input_info = CaseInput(
-        path=tmp_path / "input.json",
-        input_format=InputFormat.JSON,
-    )
-
     with pytest.raises(
-        expected_exception=TypeError,
-        match=(
-            r"input\.json config selects 'calls', "
-            r"but its parsed root is list"
-        ),
-    ):
-        _ = select_call_input_root(
+        expected_exception=InputRootNotMappingError,
+        match=r"input_root_key='calls'.*got list",
+    ) as exc_info:
+        _ = literalize_call(
             source="[]",
-            input_info=input_info,
+            input_format=InputFormat.JSON,
             input_root_key="calls",
+            language=Python(),
+            target_function="process",
+            parameter_names=("value",),
         )
+    assert exc_info.value.input_root_key == "calls"
+    assert exc_info.value.root_type is list
 
 
-def test_select_call_input_root_rejects_missing_key(tmp_path: Path) -> None:
+def test_literalize_call_input_root_rejects_missing_key() -> None:
     """A configured root key must exist in the parsed table."""
-    input_info = CaseInput(
-        path=tmp_path / "input.toml",
+    with pytest.raises(
+        expected_exception=InputRootKeyNotFoundError,
+        match=r"input_root_key='calls'.*does not exist",
+    ) as exc_info:
+        _ = literalize_call(
+            source="other = []",
+            input_format=InputFormat.TOML,
+            input_root_key="calls",
+            language=Python(),
+            target_function="process",
+            parameter_names=("value",),
+        )
+    assert exc_info.value.input_root_key == "calls"
+
+
+def test_literalize_call_selects_input_root() -> None:
+    """A public call can select rows nested below a mapping key."""
+    result = literalize_call(
+        source="calls = [[1], [2]]",
         input_format=InputFormat.TOML,
+        input_root_key="calls",
+        language=Python(),
+        target_function="process",
+        parameter_names=("value",),
     )
 
-    with pytest.raises(
-        expected_exception=KeyError,
-        match=r"input\.toml has no configured call root 'calls'",
-    ):
-        _ = select_call_input_root(
-            source="other = []",
-            input_info=input_info,
-            input_root_key="calls",
-        )
+    assert result.code == "process(value=1)\nprocess(value=2)"
 
 
 def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
