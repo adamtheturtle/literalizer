@@ -973,8 +973,149 @@ def _record_name_for_value(
     return None
 
 
+@dataclasses.dataclass(slots=True, kw_only=True)
+class _RecordStrategyState:
+    """Mutable caches and callbacks owned by one record strategy.
+
+    These methods replace closures created inside the runtime-checked
+    :func:`build_record_strategy` boundary.  Like those closures, the methods
+    have no decorators, so formatting a record does not add a second runtime
+    type check at every node.
+    """
+
+    renderer: RecordRenderer
+    split_conflicting_field_types: bool
+    widen_unrecordizable_nested_sibling_maps: bool
+    name_by_shape: dict[RecordShape, str]
+    id_to_shape: dict[int, RecordShape]
+    request_by_shape: dict[RecordShape, dict[str, RecordFieldType]]
+    emit_order: list[RecordShape]
+    preamble_by_value: dict[str, tuple[str, ...]]
+
+    def compute_shapes(self, data: Value) -> Mapping[int, RecordShape]:
+        """Assign record shapes and reset the per-pass caches."""
+        shapes_by_id = _collect_strategy_shapes(
+            data=data,
+            renderer=self.renderer,
+            widen_unrecordizable_nested_sibling_maps=(
+                self.widen_unrecordizable_nested_sibling_maps
+            ),
+            split_conflicting_field_types=self.split_conflicting_field_types,
+        )
+        self.name_by_shape.clear()
+        self.id_to_shape.clear()
+        self.request_by_shape.clear()
+        self.emit_order.clear()
+        self.id_to_shape.update(shapes_by_id)
+        ordered = _ordered_record_shapes(
+            data=data,
+            shapes_by_id=shapes_by_id,
+        )
+        _validate_field_identifiers(renderer=self.renderer, shapes=ordered)
+        self.name_by_shape.update(
+            _assign_names(
+                shapes=ordered,
+                prefix=self.renderer.name_prefix,
+                record_shape_names=self.renderer.record_shape_names,
+                reject_split_key_sets=self.split_conflicting_field_types,
+            ),
+        )
+        _accumulate_emit_order(
+            data=data,
+            shapes_by_id=shapes_by_id,
+            emit_ordered=self.emit_order,
+            emit_seen=set(),
+        )
+        _accumulate_field_requests(
+            value=data,
+            shapes_by_id=shapes_by_id,
+            request_by_shape=self.request_by_shape,
+            field_type_request=self.field_type_request,
+        )
+        return shapes_by_id
+
+    def field_type_request(self, field_value: Value) -> RecordFieldType:
+        """Build the structured field-type request for *field_value*."""
+        nested_name = None
+        if (
+            isinstance(field_value, dict)
+            and id(field_value) in self.id_to_shape
+        ):
+            nested_name = self.name_by_shape.get(
+                self.id_to_shape[id(field_value)],
+            )
+        element_name = _list_element_record_name(
+            field_value=field_value,
+            id_to_shape=self.id_to_shape,
+            name_by_shape=self.name_by_shape,
+        )
+        return RecordFieldType(
+            value=field_value,
+            record_name=nested_name,
+            element_record_name=element_name,
+        )
+
+    def render_literal(
+        self,
+        value: dict[Scalar, Value],
+        fields: Mapping[str, str],
+    ) -> RenderedRecordLiteral | None:
+        """Render a record dict and cache its declaration field types."""
+        if id(value) not in self.id_to_shape:
+            return None
+        shape = self.id_to_shape[id(value)]
+        _ = self.request_by_shape.setdefault(
+            shape,
+            {
+                key: self.field_type_request(field_value=value[key])
+                for key in shape.keys
+            },
+        )
+        literal_fields = [
+            RecordLiteralField(
+                identifier=self.renderer.field_identifier(key),
+                formatted=fields[key],
+                type_name=self.renderer.field_type(
+                    self.field_type_request(field_value=value[key]),
+                ),
+            )
+            for key in shape.keys
+        ]
+        return self.renderer.render_literal(
+            self.name_by_shape[shape],
+            literal_fields,
+        )
+
+    def preamble(self, data: Value, /) -> tuple[str, ...]:
+        """Build declarations in dependency order for one rendered
+        value.
+        """
+        blocks: list[str] = []
+        for shape in self.emit_order:
+            if (
+                self.renderer.suppress_custom_name_declarations
+                and frozenset(shape.keys) in self.renderer.record_shape_names
+            ):
+                continue
+            requests = self.request_by_shape[shape]
+            fields = [
+                RecordDeclarationField(
+                    identifier=self.renderer.field_identifier(key),
+                    type_name=self.renderer.field_type(requests[key]),
+                )
+                for key in shape.keys
+            ]
+            blocks.append(
+                self.renderer.render_declaration(
+                    self.name_by_shape[shape],
+                    fields,
+                ),
+            )
+        return self.preamble_by_value.setdefault(repr(data), tuple(blocks))
+
+
 @beartype
-def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
+def build_record_strategy(
     *,
     renderer: RecordRenderer,
     split_conflicting_field_types: bool,
@@ -1010,122 +1151,22 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
     provide *derecordized_map_open* to force the corresponding widened
     literal opener even when one map's raw values look homogeneous.
     """
-    name_by_shape: dict[RecordShape, str] = {}
-    id_to_shape: dict[int, RecordShape] = {}
-    request_by_shape: dict[RecordShape, dict[str, RecordFieldType]] = {}
-    emit_order_cache: list[RecordShape] = []
-    preamble_by_value: dict[str, tuple[str, ...]] = {}
-
-    def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
-        """Walk *data*, assign names in document order, and reset the
-        per-pass caches (a cached spec is reused across calls).
-
-        With *split_conflicting_field_types* on, same-key-set dicts
-        whose declared field types conflict are first refined into
-        distinct shapes (see :func:`_refine_record_shapes`) so the
-        naming and later the mixed-record-shape gate treat them apart.
-        """
-        shapes_by_id = _collect_strategy_shapes(
-            data=data,
-            renderer=renderer,
-            widen_unrecordizable_nested_sibling_maps=widen_unrecordizable_nested_sibling_maps,
-            split_conflicting_field_types=split_conflicting_field_types,
-        )
-        name_by_shape.clear()
-        id_to_shape.clear()
-        request_by_shape.clear()
-        emit_order_cache.clear()
-        id_to_shape.update(shapes_by_id)
-        ordered = _ordered_record_shapes(
-            data=data,
-            shapes_by_id=shapes_by_id,
-        )
-        _validate_field_identifiers(renderer=renderer, shapes=ordered)
-        name_by_shape.update(
-            _assign_names(
-                shapes=ordered,
-                prefix=renderer.name_prefix,
-                record_shape_names=renderer.record_shape_names,
-                reject_split_key_sets=split_conflicting_field_types,
-            ),
-        )
-        _accumulate_emit_order(
-            data=data,
-            shapes_by_id=shapes_by_id,
-            emit_ordered=emit_order_cache,
-            emit_seen=set(),
-        )
-
-        _accumulate_field_requests(
-            value=data,
-            shapes_by_id=shapes_by_id,
-            request_by_shape=request_by_shape,
-            field_type_request=_field_type_request,
-        )
-        return shapes_by_id
-
-    def _field_type_request(field_value: Value) -> RecordFieldType:
-        """Build the structured field-type request for *field_value*.
-
-        ``record_name`` is set only when *field_value* is itself a
-        nested record-shaped dict; ``element_record_name`` is set only
-        when *field_value* is a non-empty list whose every element is a
-        record-shaped dict of one shared shape (its generated name).
-        Both are pieces a language cannot recover from the raw value;
-        every other value is typed by the language from the value via
-        its own collection openers.
-        """
-        nested_name = None
-        if isinstance(field_value, dict) and id(field_value) in id_to_shape:
-            nested_name = name_by_shape.get(id_to_shape[id(field_value)])
-        element_name = _list_element_record_name(
-            field_value=field_value,
-            id_to_shape=id_to_shape,
-            name_by_shape=name_by_shape,
-        )
-        return RecordFieldType(
-            value=field_value,
-            record_name=nested_name,
-            element_record_name=element_name,
-        )
-
-    def _render_literal(
-        value: "dict[Scalar, Value]",
-        fields: Mapping[str, str],
-    ) -> RenderedRecordLiteral | None:
-        """Render a record-shape dict as a language-specific literal,
-        caching the first-seen field-type requests for its shape.
-
-        A record-eligible dict absent from ``id_to_shape`` was widened
-        to a plain map, so return ``None`` and let the shared formatter
-        fall through to normal map rendering.
-        """
-        if id(value) not in id_to_shape:
-            return None
-        shape = id_to_shape[id(value)]
-        _ = request_by_shape.setdefault(
-            shape,
-            {
-                key: _field_type_request(field_value=value[key])
-                for key in shape.keys
-            },
-        )
-        literal_fields = [
-            RecordLiteralField(
-                identifier=renderer.field_identifier(key),
-                formatted=fields[key],
-                type_name=renderer.field_type(
-                    _field_type_request(field_value=value[key]),
-                ),
-            )
-            for key in shape.keys
-        ]
-        return renderer.render_literal(name_by_shape[shape], literal_fields)
-
+    state = _RecordStrategyState(
+        renderer=renderer,
+        split_conflicting_field_types=split_conflicting_field_types,
+        widen_unrecordizable_nested_sibling_maps=(
+            widen_unrecordizable_nested_sibling_maps
+        ),
+        name_by_shape={},
+        id_to_shape={},
+        request_by_shape={},
+        emit_order=[],
+        preamble_by_value={},
+    )
     record_name_for_value = functools.partial(
         _record_name_for_value,
-        id_to_shape=id_to_shape,
-        name_by_shape=name_by_shape,
+        id_to_shape=state.id_to_shape,
+        name_by_shape=state.name_by_shape,
     )
 
     effective_compute_wrap_ids = no_compute_wrap_ids
@@ -1152,47 +1193,17 @@ def build_record_strategy(  # noqa: C901  # pylint: disable=too-complex
         widens_unrecordizable_nested_sibling_maps=(
             widen_unrecordizable_nested_sibling_maps
         ),
-        render_record_literal=_render_literal,
-        compute_record_shapes=_compute_shapes,
+        render_record_literal=state.render_literal,
+        compute_record_shapes=state.compute_shapes,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
         alias_record_ids=functools.partial(
             _alias_record_ids,
-            id_to_shape=id_to_shape,
+            id_to_shape=state.id_to_shape,
         ),
     )
-
-    def _preamble(data: Value, /) -> tuple[str, ...]:
-        """Build one declaration block per record shape, in dependency
-        order, typing each field from its first-seen
-        :class:`RecordFieldType` request.
-
-        Cache each completed block by value so bound-ref composition can
-        replay an earlier declaration without reading a later render's
-        shared shape caches.
-        """
-        blocks: list[str] = []
-        for shape in emit_order_cache:
-            if (
-                renderer.suppress_custom_name_declarations
-                and frozenset(shape.keys) in renderer.record_shape_names
-            ):
-                continue
-            requests = request_by_shape[shape]
-            fields = [
-                RecordDeclarationField(
-                    identifier=renderer.field_identifier(key),
-                    type_name=renderer.field_type(requests[key]),
-                )
-                for key in shape.keys
-            ]
-            blocks.append(
-                renderer.render_declaration(name_by_shape[shape], fields),
-            )
-        return preamble_by_value.setdefault(repr(data), tuple(blocks))
-
     return ActiveRecordStrategy(
         behavior=behavior,
-        preamble=_preamble,
+        preamble=state.preamble,
         record_name_for_value=record_name_for_value,
     )
