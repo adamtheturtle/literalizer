@@ -340,6 +340,7 @@ class CallSpec(  # noqa: NOD001
         default_factory=_no_sources,
     )
     input_format: RejectionInputFormat | None = None
+    input_root_key: str | None = None
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
     )
@@ -380,6 +381,9 @@ class CallSpec(  # noqa: NOD001
             msg = f"api = {self.api!r} requires exactly an input_format"
             raise ValueError(msg)
         calls = self.api == "literalize_call"
+        if not calls and self.input_root_key is not None:
+            msg = "input_root_key applies to api = 'literalize_call'"
+            raise ValueError(msg)
         if calls != (self.target_function is not None):
             msg = f"api = {self.api!r} requires exactly a target_function"
             raise ValueError(msg)

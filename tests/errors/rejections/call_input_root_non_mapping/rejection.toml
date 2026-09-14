@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A selected input-root key requires the parsed root to be a mapping."
+exceptions = ["InputRootNotMappingError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[]"]
+input_format = "yaml"
+input_root_key = "calls"
+target_function = "process"
+parameter_names = ["value"]

@@ -311,6 +311,17 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
+                    'api = "literalize"\nsources = ["1"]\n'
+                    'input_format = "json"\ninput_root_key = "calls"'
+                ),
+            ),
+            "input_root_key applies to api = 'literalize_call'",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
                     'api = "literalize"\nsources = ["1"]\ninput_format = "csv"'
                 ),
             ),

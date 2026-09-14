@@ -152,6 +152,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     _ = literalizer.literalize_call(
         source=case.source,
         input_format=call.input_format,
+        input_root_key=call.input_root_key,
         language=lang_cls(**case.kwargs),
         target_function=substituted(
             template=call.target_function,
