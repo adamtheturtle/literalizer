@@ -322,6 +322,30 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 selection=_JSON_TYPE_GATE,
                 extra=_NO_EXTRA,
                 call=(
+                    'api = "literalize"\nsources = ["1"]\n'
+                    'input_format = "json"\nzip_source = "[]"'
+                ),
+            ),
+            "zip_source applies to api = 'literalize_call'",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize_call"\nsources = ["[1]"]\n'
+                    'input_format = "json"\ntarget_function = "f"\n'
+                    'parameter_names = ["value"]\n'
+                    'call_transform = "emit({bogus})"'
+                ),
+            ),
+            "unknown call_transform placeholder 'bogus'",
+        ),
+        (
+            _manifest(
+                selection=_JSON_TYPE_GATE,
+                extra=_NO_EXTRA,
+                call=(
                     'api = "literalize"\nsources = ["1"]\ninput_format = "csv"'
                 ),
             ),

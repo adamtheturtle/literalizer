@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedCallShapeError]
+Tcl = "Tcl cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"

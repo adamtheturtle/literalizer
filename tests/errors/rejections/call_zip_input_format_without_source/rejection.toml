@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A companion input format cannot be supplied without a source."
+exceptions = ["ZipInputFormatWithoutSourceError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+zip_input_format = "json"

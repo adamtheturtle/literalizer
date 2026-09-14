@@ -51,6 +51,9 @@ GOLDEN_NAME = "expected.toml"
 VALUE_PLACEHOLDER = "value"
 """The only placeholder a manifest's constructor arguments substitute."""
 
+_CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
+"""Names a rejection-manifest call transform may substitute."""
+
 type ApiName = Literal["literalize", "literalize_call", "constructor"]
 type VariableFormName = Literal["new", "existing", "both"]
 
@@ -341,6 +344,9 @@ class CallSpec(  # noqa: NOD001
     )
     input_format: RejectionInputFormat | None = None
     input_root_key: str | None = None
+    call_transform: str | None = None
+    zip_source: str | None = None
+    zip_input_format: RejectionInputFormat | None = None
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
     )
@@ -381,9 +387,6 @@ class CallSpec(  # noqa: NOD001
             msg = f"api = {self.api!r} requires exactly an input_format"
             raise ValueError(msg)
         calls = self.api == "literalize_call"
-        if not calls and self.input_root_key is not None:
-            msg = "input_root_key applies to api = 'literalize_call'"
-            raise ValueError(msg)
         if calls != (self.target_function is not None):
             msg = f"api = {self.api!r} requires exactly a target_function"
             raise ValueError(msg)
@@ -410,6 +413,43 @@ class CallSpec(  # noqa: NOD001
         if self.api != "literalize" and bool(self.modifiers):
             msg = "modifiers apply to api = 'literalize'"
             raise ValueError(msg)
+        _ = self._validate_call_only_arguments()
+        _ = self._validate_call_transform()
+        return self
+
+    def _validate_call_only_arguments(self) -> Self:
+        """Reject call arguments declared for another API."""
+        call_only_arguments = {
+            "call_transform": self.call_transform,
+            "input_root_key": self.input_root_key,
+            "zip_input_format": self.zip_input_format,
+            "zip_source": self.zip_source,
+        }
+        invalid = sorted(
+            name
+            for name, value in call_only_arguments.items()
+            if self.api != "literalize_call" and value is not None
+        )
+        if len(invalid) > 0:
+            msg = f"{invalid[0]} applies to api = 'literalize_call'"
+            raise ValueError(msg)
+        return self
+
+    def _validate_call_transform(self) -> Self:
+        """Reject placeholders the declarative transform cannot fill."""
+        if self.call_transform is None:
+            return self
+        for _, field_name, _, _ in string.Formatter().parse(
+            format_string=self.call_transform
+        ):
+            if field_name is not None and (
+                field_name not in _CALL_TRANSFORM_PLACEHOLDERS
+            ):
+                msg = (
+                    f"unknown call_transform placeholder {field_name!r}; "
+                    f"expected one of {sorted(_CALL_TRANSFORM_PLACEHOLDERS)}"
+                )
+                raise ValueError(msg)
         return self
 
 

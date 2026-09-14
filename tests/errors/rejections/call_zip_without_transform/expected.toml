@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ZipValuesWithoutCallTransformError]
+Python = "zip_source was supplied without a call_transform; the paired values would be unused"
