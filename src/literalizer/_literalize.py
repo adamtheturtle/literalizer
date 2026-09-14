@@ -2349,7 +2349,60 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
 
 
 @beartype
-def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
+def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
+    """Format a reference marker found in a nested value."""
+    ref_name = _validated_ref_name(
+        raw_ref_name=raw_ref_name,
+        ref_case=ctx.ref_case,
+        language=ctx.spec,
+    )
+    ref_value = None
+    if ctx.ref_values is not None:
+        ref_value = ctx.ref_values.get(raw_ref_name)
+    if not ctx.expand_refs:
+        return ctx.spec.format_call_ref_identifier(ref_name, ref_value)
+    return _format_call_arg_ref_identifier(
+        raw_ref_name=raw_ref_name,
+        ref_name=ref_name,
+        ref_value=ref_value,
+        language=ctx.spec,
+        consumable_ref_names=ctx.consumable_ref_names,
+        single_use_ref_names=ctx.single_use_ref_names,
+        consume_inhibited_ref_names=ctx.consume_inhibited_ref_names,
+    )
+
+
+@beartype
+def _format_compact_collection_value(
+    *,
+    value: list[Value] | dict[Scalar, Value] | set[Scalar],
+    dict_open_override: str | None,
+    sequence_open_override: str | None,
+    ctx: _RenderContext,
+) -> str:
+    """Format a collection using its compact layout."""
+    match value:
+        case OrderedMap():
+            return _format_ordered_map_value(value=value, ctx=ctx)
+        case dict():
+            return _format_dict_value(
+                value=value,
+                open_override=dict_open_override,
+                ctx=ctx,
+            )
+        case set():
+            return _format_set_value(value=value, ctx=ctx)
+        case _:
+            return _format_list_value(
+                value=value,
+                sequence_open_override=sequence_open_override,
+                child_sequence_open_overrides=(),
+                ctx=ctx,
+            )
+
+
+@beartype
+def _format_value(
     *,
     value: Value,
     dict_open_override: str | None,
@@ -2393,24 +2446,9 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
             value=value, ref_key=ctx.ref_key
         )
         if raw_ref_name is not None:
-            ref_name = _validated_ref_name(
+            return _format_ref_value(
                 raw_ref_name=raw_ref_name,
-                ref_case=ctx.ref_case,
-                language=spec,
-            )
-            ref_value = None
-            if ctx.ref_values is not None:
-                ref_value = ctx.ref_values.get(raw_ref_name)
-            if not ctx.expand_refs:
-                return spec.format_call_ref_identifier(ref_name, ref_value)
-            return _format_call_arg_ref_identifier(
-                raw_ref_name=raw_ref_name,
-                ref_name=ref_name,
-                ref_value=ref_value,
-                language=spec,
-                consumable_ref_names=ctx.consumable_ref_names,
-                single_use_ref_names=ctx.single_use_ref_names,
-                consume_inhibited_ref_names=(ctx.consume_inhibited_ref_names),
+                ctx=ctx,
             )
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
@@ -2440,34 +2478,17 @@ def _format_value(  # noqa: C901, PLR0911, PLR0912  # pylint: disable=too-comple
             sequence_open_override=sequence_open_override,
             ctx=ctx,
         )
-    match value:
-        case OrderedMap():
-            result = _format_ordered_map_value(
-                value=value,
-                ctx=ctx,
-            )
-        case dict():
-            result = _format_dict_value(
-                value=value,
-                open_override=dict_open_override,
-                ctx=ctx,
-            )
-        case set():
-            result = _format_set_value(
-                value=value,
-                ctx=ctx,
-            )
-        case list():
-            result = _format_list_value(
-                value=value,
-                sequence_open_override=sequence_open_override,
-                child_sequence_open_overrides=(),
-                ctx=ctx,
-            )
-        case _:
-            result = _format_scalar(
-                value=value, spec=spec, int_formatter=int_formatter
-            )
+    if isinstance(value, (list, dict, set)):
+        result = _format_compact_collection_value(
+            value=value,
+            dict_open_override=dict_open_override,
+            sequence_open_override=sequence_open_override,
+            ctx=ctx,
+        )
+    else:
+        result = _format_scalar(
+            value=value, spec=spec, int_formatter=int_formatter
+        )
     return result
 
 
