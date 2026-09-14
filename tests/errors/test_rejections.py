@@ -7,6 +7,7 @@ language that joins a manifest's gates -- a new language declaring
 ``json_type``, say -- shows up as a new line rather than as silence.
 """
 
+from collections.abc import Callable
 from typing import assert_never
 
 import pytest
@@ -16,6 +17,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from tests.enum_members import enum_member_by_name
+from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
 
 from .rejection_cases import (
@@ -81,6 +83,16 @@ def _variable_form(
             )
         case _ as unreachable:
             assert_never(unreachable)
+
+
+@beartype
+def _call_transform(
+    *, template: str | None
+) -> Callable[[literalizer.CallContext], str] | None:
+    """Build the callable represented by a manifest template."""
+    if template is None:
+        return None
+    return CallTransform(template=template)
 
 
 @beartype
@@ -166,6 +178,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         bound_refs=(effective_bound_refs),
         comment_source=comment_source,
         variable_form=(effective_variable_form),
+        call_transform=_call_transform(template=call.call_transform),
+        zip_source=call.zip_source,
+        zip_input_format=call.zip_input_format,
     )
 
 

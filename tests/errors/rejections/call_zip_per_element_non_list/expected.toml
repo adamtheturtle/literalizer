@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[PerElementNotListError]
+Python = "per_element=True requires zip_source to parse to a top-level list, got str"

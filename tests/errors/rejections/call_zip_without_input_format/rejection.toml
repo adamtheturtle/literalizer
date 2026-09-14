@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A companion source requires its own input format."
+exceptions = ["ZipSourceWithoutInputFormatError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1], [2]]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+call_transform = "emit({call}, {zipped})"
+zip_source = "[true, false]"

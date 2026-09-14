@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Companion values require a call transform that consumes them."
+exceptions = ["ZipValuesWithoutCallTransformError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1], [2]]"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+zip_source = "[true, false]"
+zip_input_format = "json"
