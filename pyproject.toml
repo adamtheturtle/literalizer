@@ -111,7 +111,7 @@ dev = [
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
     "tree-sitter==0.26.0",
-    "ty==0.0.79",
+    "ty==0.0.80",
     "types-pygments==2.21.0.20260819",
     "types-pyyaml==6.0.12.20260906",
     "vale==3.20.0.0",
