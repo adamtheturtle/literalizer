@@ -40,7 +40,9 @@ from literalizer._formatters.type_inference import (
 )
 from literalizer._language import (
     CollectionLayout,
+    DictFormatConfig,
     Language,
+    SequenceFormatConfig,
     no_compute_wrap_ids,
     no_empty_container_literal_overrides,
 )
@@ -101,8 +103,223 @@ def _inference_is_inert(*, language: Language) -> bool:
     )
 
 
+def _configuration_requires_shared_renderer(
+    *,
+    language: Language,
+    dict_config: DictFormatConfig,
+    sequence_config: SequenceFormatConfig,
+    dict_head: str,
+    sequence_head: str,
+) -> bool:
+    """Return whether configuration semantics need the shared renderer."""
+    if (
+        not _inference_is_inert(language=language)
+        or language.skip_null_dict_values
+        or sequence_config.single_element_trailing_comma
+        or dict_config.narrowed_open is not None
+    ):
+        return True
+    # An empty collection must render as its delimiters with nothing
+    # between them, either because the language declares no separate
+    # empty literal or because that literal spells the same thing.
+    # The shared renderer picks between the two per position -- an
+    # empty list beside a non-empty list sibling takes the sibling's
+    # opener rather than the empty literal -- and the fast path does
+    # not model that choice.  A non-empty closer additionally keeps
+    # an empty nested collection from rendering as the empty string,
+    # which the shared renderer drops from its parent rather than
+    # joining with a separator.
+    if (
+        dict_config.narrowed_empty_form is not None
+        or sequence_config.narrowed_empty_form is not None
+        or dict_config.close == ""
+        or sequence_config.close == ""
+    ):
+        return True
+    return dict_config.empty_dict not in (
+        None,
+        dict_head + dict_config.close,
+    ) or sequence_config.empty_sequence not in (
+        None,
+        sequence_head + sequence_config.close,
+    )
+
+
+class _JsonNativeRenderer:
+    """Render one tree after the public fast-path boundary validates
+    it.
+
+    Keeping the recursive operations as undecorated implementation
+    methods preserves the single Beartype check at the registered
+    document boundary; checking every child would undo the fast path's
+    purpose.
+    """
+
+    def __init__(
+        self,
+        *,
+        language: Language,
+        dict_config: DictFormatConfig,
+        sequence_config: SequenceFormatConfig,
+        dict_head: str,
+        sequence_head: str,
+    ) -> None:
+        """Bind language hooks and collection strategies once per document."""
+        self.language = language
+        self.dict_config = dict_config
+        self.sequence_config = sequence_config
+        self.format_string = language.format_string
+        self.format_integer = language.format_integer
+        self.format_float = language.format_float
+        self.null_literal = language.null_literal
+        self.true_literal = language.true_literal
+        self.false_literal = language.false_literal
+        self.format_dict_entry = dict_config.format_entry
+        self.format_sequence_entry = language.format_sequence_entry
+        self.separator = language.element_separator
+        self.dict_head = dict_head
+        self.dict_close = dict_config.close
+        self.sequence_head = sequence_head
+        self.sequence_close = sequence_config.close
+        self.int_range = _renderable_int_range(language=language)
+
+        # Select each entry strategy once per document rather than
+        # branching or calling a no-op language hook for every node.
+        if (
+            isinstance(self.format_dict_entry, DictEntryWithSeparator)
+            and self.format_dict_entry.format_value
+            is passthrough_sequence_entry
+        ):
+            self.entry_separator = self.format_dict_entry.separator
+            self.dict_entries = self._direct_dict_entries
+        else:
+            self.entry_separator = ""
+            self.dict_entries = self._hook_dict_entries
+        if self.format_sequence_entry is passthrough_sequence_entry:
+            self.sequence_entries = self._direct_sequence_entries
+        else:
+            self.sequence_entries = self._hook_sequence_entries
+
+    def scalar(self, value: Value, /) -> str:
+        """Format one JSON-native scalar."""
+        match value:
+            case None:
+                return self.null_literal
+            case bool():
+                if value:
+                    return self.true_literal
+                return self.false_literal
+            case int():
+                if (
+                    not self.int_range.minimum
+                    <= value
+                    <= self.int_range.maximum
+                ):
+                    raise _SharedRendererRequiredError
+                return self.format_integer(value)
+            case float():
+                return self.format_float(value)
+            case str():
+                return self.format_string(value)
+            case _:
+                raise _SharedRendererRequiredError
+
+    def compact(self, value: Value, /) -> str:
+        """Format one value with compact nested collections."""
+        match value:
+            case dict():
+                entries = self.dict_entries(value)
+                return (
+                    self.dict_head
+                    + self.separator.join(entries)
+                    + self.dict_close
+                )
+            case list():
+                items = self.sequence_entries(value)
+                return (
+                    self.sequence_head
+                    + self.separator.join(items)
+                    + self.sequence_close
+                )
+            case _:
+                return self.scalar(value)
+
+    def _direct_dict_entries(self, value: dict[Scalar, Value], /) -> list[str]:
+        """Join each formatted key and value with the separator."""
+        guard_dict_keys_supported(value=value, spec=self.language)
+        return [
+            self.scalar(key) + self.entry_separator + self.compact(child)
+            for key, child in value.items()
+        ]
+
+    def _hook_dict_entries(self, value: dict[Scalar, Value], /) -> list[str]:
+        """Build each dict entry through the language's hook."""
+        guard_dict_keys_supported(value=value, spec=self.language)
+        return [
+            self.format_dict_entry(
+                self.scalar(key), child, self.compact(child)
+            )
+            for key, child in value.items()
+        ]
+
+    def _direct_sequence_entries(self, value: list[Value], /) -> list[str]:
+        """Format each element with no per-entry wrapping."""
+        return [self.compact(child) for child in value]
+
+    def _hook_sequence_entries(self, value: list[Value], /) -> list[str]:
+        """Build each element through the language's entry hook."""
+        return [
+            self.format_sequence_entry(child, self.compact(child))
+            for child in value
+        ]
+
+    def root(
+        self, value: dict[Scalar, Value] | list[Value], /, *, line_prefix: str
+    ) -> str:
+        """Format the root collection over multiple lines."""
+        is_dict = isinstance(value, dict)
+        config_supports_trailing_comma = (
+            self.dict_config.supports_trailing_comma
+            if is_dict
+            else self.sequence_config.supports_trailing_comma
+        )
+        trailing_comma = (
+            self.language.trailing_comma_config.multiline_trailing_comma
+            and config_supports_trailing_comma
+        )
+        head = self.dict_head if is_dict else self.sequence_head
+        closer = self.dict_close if is_dict else self.sequence_close
+        entries = (
+            self.dict_entries(value)
+            if isinstance(value, dict)
+            else self.sequence_entries(value)
+        )
+        body_prefix = line_prefix + self.language.indent
+        separator_text = self.separator.strip()
+        last_index = len(entries) - 1
+        # Trim per line, not just at the end of the entry: that is what
+        # the shared renderer does, and a scalar formatter that emits a
+        # multi-line literal would otherwise diverge from it.
+        collected_lines: list[str] = []
+        for entry_index, entry_entry in enumerate(iterable=entries):
+            effective_separator_text = ""
+            if entry_index < last_index or trailing_comma:
+                effective_separator_text = separator_text
+            collected_lines.append(
+                f"{body_prefix}{rstrip_lines(text=entry_entry)}{effective_separator_text}"
+            )
+        closing_indent = ""
+        if self.language.indent_closing_delimiter:
+            closing_indent = self.language.indent
+        opening = (line_prefix + head).rstrip()
+        return (
+            f"{opening}\n{'\n'.join(collected_lines)}\n"
+            f"{line_prefix}{closing_indent}{closer}"
+        )
+
+
 @beartype
-def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=too-complex
+def format_json_native_document_fast(
     language: Language,
     data: Value,
     *,
@@ -130,187 +347,29 @@ def format_json_native_document_fast(  # noqa: C901, PLR0915  # pylint: disable=
         or collection_layout is not CollectionLayout.COMPACT
         or not isinstance(dict_open, FixedOpen)
         or not isinstance(sequence_open, FixedOpen)
-    ):
-        return None
-    requires_shared_inference = (
-        not _inference_is_inert(language=language)
-        or language.skip_null_dict_values
-        or sequence_config.single_element_trailing_comma
-        or dict_config.narrowed_open is not None
-    )
-    # An empty collection must render as its delimiters with nothing
-    # between them, either because the language declares no separate
-    # empty literal or because that literal spells the same thing.
-    # The shared renderer picks between the two per position -- an
-    # empty list beside a non-empty list sibling takes the sibling's
-    # opener rather than the empty literal -- and the fast path does
-    # not model that choice.  A non-empty closer additionally keeps
-    # an empty nested collection from rendering as the empty string,
-    # which the shared renderer drops from its parent rather than
-    # joining with a separator.
-    position_dependent_empty_form = (
-        dict_config.narrowed_empty_form is not None
-        or sequence_config.narrowed_empty_form is not None
-        or dict_config.close == ""
-        or sequence_config.close == ""
-    )
-    distinct_empty_literal = dict_config.empty_dict not in (
-        None,
-        dict_open.open_str + dict_config.close,
-    ) or sequence_config.empty_sequence not in (
-        None,
-        sequence_open.open_str + sequence_config.close,
-    )
-    if (
-        requires_shared_inference
-        or position_dependent_empty_form
-        or distinct_empty_literal
+        or _configuration_requires_shared_renderer(
+            language=language,
+            dict_config=dict_config,
+            sequence_config=sequence_config,
+            dict_head=dict_open.open_str,
+            sequence_head=sequence_open.open_str,
+        )
     ):
         return None
 
-    format_string = language.format_string
-    format_integer = language.format_integer
-    format_float = language.format_float
-    null_literal = language.null_literal
-    true_literal = language.true_literal
-    false_literal = language.false_literal
-    format_dict_entry = dict_config.format_entry
-    format_sequence_entry = language.format_sequence_entry
-    separator = language.element_separator
-    dict_head = dict_open.open_str
-    dict_close = dict_config.close
-    sequence_head = sequence_open.open_str
-    sequence_close = sequence_config.close
-    int_range = _renderable_int_range(language=language)
-
-    def scalar(value: Value, /) -> str:
-        """Format one JSON-native scalar."""
-        match value:
-            case None:
-                return null_literal
-            case bool():
-                if value:
-                    return true_literal
-                return false_literal
-            case int():
-                if not int_range.minimum <= value <= int_range.maximum:
-                    raise _SharedRendererRequiredError
-                return format_integer(value)
-            case float():
-                return format_float(value)
-            case str():
-                return format_string(value)
-            case _:
-                raise _SharedRendererRequiredError
-
-    def compact(value: Value, /) -> str:
-        """Format one value with compact nested collections."""
-        match value:
-            case dict():
-                entries = dict_entries(value)
-                return dict_head + separator.join(entries) + dict_close
-            case list():
-                items = sequence_entries(value)
-                return sequence_head + separator.join(items) + sequence_close
-            case _:
-                return scalar(value)
-
-    # Bind the per-collection entry builders once.  A language whose
-    # entry hooks add nothing to the child literal -- a bare separator
-    # between key and value, an untouched sequence element -- would
-    # otherwise pay a hook call per node to be handed the string back
-    # unchanged.
-    if (
-        isinstance(format_dict_entry, DictEntryWithSeparator)
-        and format_dict_entry.format_value is passthrough_sequence_entry
-    ):
-        entry_separator = format_dict_entry.separator
-
-        def dict_entries(value: dict[Scalar, Value], /) -> list[str]:
-            """Join each formatted key and value with the separator."""
-            guard_dict_keys_supported(value=value, spec=language)
-            return [
-                scalar(key) + entry_separator + compact(child)
-                for key, child in value.items()
-            ]
-    else:
-
-        def dict_entries(value: dict[Scalar, Value], /) -> list[str]:
-            """Build each dict entry through the language's hook."""
-            guard_dict_keys_supported(value=value, spec=language)
-            return [
-                format_dict_entry(scalar(key), child, compact(child))
-                for key, child in value.items()
-            ]
-
-    if format_sequence_entry is passthrough_sequence_entry:
-
-        def sequence_entries(value: list[Value], /) -> list[str]:
-            """Format each element with no per-entry wrapping."""
-            return [compact(child) for child in value]
-    else:
-
-        def sequence_entries(value: list[Value], /) -> list[str]:
-            """Build each element through the language's entry hook."""
-            return [
-                format_sequence_entry(child, compact(child)) for child in value
-            ]
-
-    def root(value: dict[Scalar, Value] | list[Value], /) -> str:
-        """Format the root collection over multiple lines."""
-        is_dict = isinstance(value, dict)
-        if is_dict:
-            config_supports_trailing_comma = (
-                dict_config.supports_trailing_comma
-            )
-        else:
-            config_supports_trailing_comma = (
-                sequence_config.supports_trailing_comma
-            )
-        trailing_comma = (
-            language.trailing_comma_config.multiline_trailing_comma
-            and config_supports_trailing_comma
-        )
-        head = sequence_head
-        if is_dict:
-            head = dict_head
-        closer = sequence_close
-        if is_dict:
-            closer = dict_close
-        if isinstance(value, dict):
-            entries = dict_entries(value)
-        else:
-            entries = sequence_entries(value)
-        body_prefix = line_prefix + language.indent
-        separator_text = separator.strip()
-        last_index = len(entries) - 1
-        # Trim per line, not just at the end of the entry: that is what
-        # the shared renderer does, and a scalar formatter that emits a
-        # multi-line literal would otherwise diverge from it.
-        collected_lines: list[str] = []
-        for entry_index, entry_entry in enumerate(iterable=entries):
-            effective_separator_text = ""
-            if entry_index < last_index or trailing_comma:
-                effective_separator_text = separator_text
-            collected_lines.append(
-                f"{body_prefix}{rstrip_lines(text=entry_entry)}{(effective_separator_text)}"
-            )
-        lines = collected_lines
-        closing_indent = ""
-        if language.indent_closing_delimiter:
-            closing_indent = language.indent
-        opening = (line_prefix + head).rstrip()
-        return (
-            f"{opening}\n{'\n'.join(lines)}\n"
-            f"{line_prefix}{closing_indent}{closer}"
-        )
-
+    renderer = _JsonNativeRenderer(
+        language=language,
+        dict_config=dict_config,
+        sequence_config=sequence_config,
+        dict_head=dict_open.open_str,
+        sequence_head=sequence_open.open_str,
+    )
     try:
         # The shared renderer always lays out the root collection over
         # multiple lines; ``collection_layout`` controls nested values.
         if len(data) == 0:
-            return line_prefix + compact(data)
-        return root(data)
+            return line_prefix + renderer.compact(data)
+        return renderer.root(data, line_prefix=line_prefix)
     except _SharedRendererRequiredError:
         return None
 
