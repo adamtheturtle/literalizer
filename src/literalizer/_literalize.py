@@ -3376,8 +3376,322 @@ def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
     return frozenset(ids)
 
 
+@beartype
+@dataclasses.dataclass(frozen=True, slots=True)
+class _RecordContextFormatting:
+    """Formatting metadata inferred from composition-wide record data."""
+
+    wrap_ids: frozenset[int]
+    tuple_list_ids: frozenset[int]
+    dict_open_overrides: Mapping[int, str]
+    dict_int_formatters: Mapping[int, Callable[[int], str]]
+    empty_overrides: Mapping[int, str]
+    list_int_formatters: Mapping[int, Callable[[int], str]]
+
+
+@beartype
+def _record_context_formatting(
+    *,
+    data: Value,
+    language: Language,
+    ref_key: str,
+) -> _RecordContextFormatting:
+    """Infer formatting metadata shared by composed declarations."""
+    wrap_ids = _compute_wrap_ids(data=data, spec=language)
+    tuple_list_ids = _compute_tuple_list_ids(data=data, spec=language)
+    dict_open_overrides: dict[int, str] = {}
+    # A bound map is emitted as a separate declaration, so it needs the exact
+    # widened opener of the container that consumes it even for variant-based
+    # languages without a universal map fallback.
+    _accumulate_dict_open_overrides(
+        data=data,
+        spec=language,
+        out=dict_open_overrides,
+        ref_key=ref_key,
+    )
+    if isinstance(data, list):
+        children = list(data)
+    elif isinstance(data, dict):
+        children = list(data.values())
+    else:
+        children = list[Value]()
+    direct_dict_override = _compute_dict_open_override(
+        items=children,
+        spec=language,
+        ref_key=ref_key,
+    )
+    if direct_dict_override is not None:
+        plain_dict_children = [
+            child
+            for child in children
+            if isinstance(child, dict) and not isinstance(child, OrderedMap)
+        ]
+        for child in plain_dict_children:
+            _ = dict_open_overrides.setdefault(
+                id(child),
+                direct_dict_override,
+            )
+    formatting = _RecordContextFormatting(
+        wrap_ids=wrap_ids,
+        tuple_list_ids=tuple_list_ids,
+        dict_open_overrides=dict_open_overrides,
+        dict_int_formatters=_collect_dict_int_formatters(
+            data=data,
+            spec=language,
+        ),
+        empty_overrides=_empty_container_literal_overrides(
+            data=data,
+            spec=language,
+        ),
+        list_int_formatters=_collect_list_int_formatters(
+            data=data,
+            spec=language,
+        ),
+    )
+    check_data(data=data, spec=language)
+    return formatting
+
+
+@beartype
+def _build_render_context(
+    *,
+    data: Value,
+    inference_data: Value,
+    language: Language,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    line_prefix: str,
+    raw_yaml_data: object | None,
+    toml_comment_doc: TOMLDocument | None,
+    record_context_data: Value | None,
+) -> _RenderContext:
+    """Build the metadata used by recursive value rendering."""
+    yaml_comment_nodes: dict[
+        int, CommentedSeq | CommentedMap | CommentedSet
+    ] = {}
+    if raw_yaml_data is not None:
+        _collect_yaml_comment_nodes(
+            value=data,
+            raw_value=raw_yaml_data,
+            out=yaml_comment_nodes,
+        )
+    toml_comments = None
+    if toml_comment_doc is not None:
+        toml_comments = extract_toml_comments(toml_doc=toml_comment_doc)
+
+    inference_id_map = _inference_to_source_container_ids(
+        source=data,
+        inferred=inference_data,
+        ref_values=ref_values,
+        ref_key=ref_key,
+    )
+    alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+    if alias_record_ids is not None:
+        alias_record_ids(inference_id_map)
+    wrap_ids = _source_container_ids(
+        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
+        id_map=inference_id_map,
+    )
+    if record_context_data is not None:
+        # Computing the declaration-local wrap IDs above may update a
+        # language's type-inference cache. Restore the composition-wide record
+        # context before any opener or field type reads that cache.
+        check_data(data=record_context_data, spec=language)
+    tuple_list_ids = _source_container_ids(
+        inferred_ids=_compute_tuple_list_ids(
+            data=inference_data,
+            spec=language,
+        ),
+        id_map=inference_id_map,
+    )
+    inferred_empty_overrides = _source_container_id_mapping(
+        inferred_mapping=_empty_container_literal_overrides(
+            data=inference_data,
+            spec=language,
+        ),
+        id_map=inference_id_map,
+    )
+    context = _RecordContextFormatting(
+        wrap_ids=frozenset[int](),
+        tuple_list_ids=frozenset[int](),
+        dict_open_overrides={},
+        dict_int_formatters={},
+        empty_overrides={},
+        list_int_formatters={},
+    )
+    if record_context_data is not None:
+        context = _record_context_formatting(
+            data=record_context_data,
+            language=language,
+            ref_key=ref_key,
+        )
+    effective_comment_root_id = None
+    if len(yaml_comment_nodes) > 0 or bool(toml_comments):
+        effective_comment_root_id = id(data)
+    source_empty_ids = _empty_source_container_ids(data)
+    return _RenderContext(
+        spec=language,
+        wrap_ids=wrap_ids | context.wrap_ids,
+        tuple_list_ids=tuple_list_ids | context.tuple_list_ids,
+        dict_open_overrides={
+            **_source_container_id_mapping(
+                inferred_mapping=_collect_dict_open_overrides(
+                    data=inference_data,
+                    spec=language,
+                    ref_key=ref_key,
+                ),
+                id_map=inference_id_map,
+            ),
+            **context.dict_open_overrides,
+        },
+        dict_int_formatters={
+            **_source_container_id_mapping(
+                inferred_mapping=_collect_dict_int_formatters(
+                    data=inference_data,
+                    spec=language,
+                ),
+                id_map=inference_id_map,
+            ),
+            **context.dict_int_formatters,
+        },
+        empty_container_overrides={
+            container_id: literal
+            for container_id, literal in {
+                **inferred_empty_overrides,
+                **context.empty_overrides,
+            }.items()
+            if container_id in source_empty_ids
+        },
+        list_int_formatters={
+            **_collect_list_int_formatters(data=data, spec=language),
+            **context.list_int_formatters,
+        },
+        ref_case=ref_case,
+        ref_values=ref_values,
+        expand_refs=False,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        multiline_prefix=line_prefix,
+        consumable_ref_names=frozenset(),
+        single_use_ref_names=frozenset(),
+        consume_inhibited_ref_names=frozenset(),
+        yaml_comment_nodes=yaml_comment_nodes,
+        toml_comments=toml_comments,
+        comment_root_id=effective_comment_root_id,
+    )
+
+
+@beartype
+def _format_root_collection_override(
+    *,
+    data: dict[Scalar, Value] | list[Value] | set[Scalar] | OrderedMap,
+    language: Language,
+    line_prefix: str,
+    include_delimiters: bool,
+    ctx: _RenderContext,
+) -> str | None:
+    """Render a root collection that bypasses line-by-line layout."""
+    if len(data) == 0 and include_delimiters:
+        formatted = _format_value(
+            value=data,
+            dict_open_override=None,
+            sequence_open_override=None,
+            ctx=ctx,
+            int_formatter=None,
+        )
+        return f"{line_prefix}{formatted}"
+    if (
+        isinstance(data, dict)
+        and include_delimiters
+        and language.skip_null_dict_values
+        and all(value is None for value in data.values())
+    ):
+        empty_value: OrderedMap | dict[Scalar, Value] = {}
+        if isinstance(data, OrderedMap):
+            empty_value = OrderedMap()
+        formatted = _format_value(
+            value=empty_value,
+            dict_open_override=None,
+            sequence_open_override=None,
+            ctx=ctx,
+            int_formatter=None,
+        )
+        return f"{line_prefix}{formatted}"
+    if (
+        include_delimiters
+        and isinstance(data, dict)
+        and not isinstance(data, OrderedMap)
+    ):
+        record_literal = _maybe_format_record_literal(
+            value=data,
+            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
+        )
+        if record_literal is not None:
+            return f"{line_prefix}{record_literal}"
+    if include_delimiters and isinstance(data, list):
+        tuple_literal = _maybe_format_tuple_literal(
+            value=data,
+            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
+        )
+        if tuple_literal is not None:
+            return f"{line_prefix}{tuple_literal}"
+    return None
+
+
+@beartype
+def _format_root_collection(
+    *,
+    data: dict[Scalar, Value] | list[Value] | set[Scalar] | OrderedMap,
+    inference_data: Value,
+    language: Language,
+    line_prefix: str,
+    include_delimiters: bool,
+    collection_layout: CollectionLayout,
+    ctx: _RenderContext,
+) -> str:
+    """Render one root collection with its requested delimiters."""
+    override = _format_root_collection_override(
+        data=data,
+        language=language,
+        line_prefix=line_prefix,
+        include_delimiters=include_delimiters,
+        ctx=ctx,
+    )
+    if override is not None:
+        return override
+    body_prefix = line_prefix
+    if include_delimiters:
+        body_prefix = line_prefix + language.indent
+    is_ordered_map = isinstance(data, OrderedMap)
+    lines = _format_collection_lines(
+        data=data,
+        body_prefix=body_prefix,
+        trailing_comma=(
+            language.trailing_comma_config.multiline_trailing_comma
+        ),
+        is_ordered_map=is_ordered_map,
+        collection_layout=collection_layout,
+        sequence_open_override=None,
+        ctx=ctx,
+    )
+    body = "\n".join(lines)
+    if not include_delimiters or body == "":
+        return body
+    effective_data = collection_or_default(value=inference_data, default=data)
+    return _wrap_body(
+        body=body,
+        is_ordered_map=is_ordered_map,
+        data=effective_data,
+        spec=language,
+        line_prefix=line_prefix,
+        dict_open_override=ctx.dict_open_overrides.get(id(data)),
+    )
+
+
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
-def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disable=too-complex,too-many-branches,too-many-return-statements
+def _literalize_impl(
     *,
     data: Value,
     language: Language,
@@ -3480,274 +3794,35 @@ def _literalize_impl(  # noqa: C901, PLR0911, PLR0912, PLR0915  # pylint: disabl
         if fast_result is not None:
             return fast_result
 
-    yaml_comment_nodes: dict[
-        int, CommentedSeq | CommentedMap | CommentedSet
-    ] = {}
-    if raw_yaml_data is not None:
-        _collect_yaml_comment_nodes(
-            value=data,
-            raw_value=raw_yaml_data,
-            out=yaml_comment_nodes,
-        )
-    toml_comments = None
-    if toml_comment_doc is not None:
-        toml_comments = extract_toml_comments(toml_doc=toml_comment_doc)
-
-    inference_id_map = _inference_to_source_container_ids(
-        source=data,
-        inferred=inference_data,
-        ref_values=ref_values,
-        ref_key=ref_key,
-    )
-    alias_record_ids = language.heterogeneous_behavior.alias_record_ids
-    if alias_record_ids is not None:
-        alias_record_ids(inference_id_map)
-    wrap_ids = _source_container_ids(
-        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
-        id_map=inference_id_map,
-    )
-    if record_context_data is not None:
-        # Computing the declaration-local wrap IDs above may update a
-        # language's type-inference cache. Restore the composition-wide
-        # record context before any opener or field type reads that cache.
-        check_data(data=record_context_data, spec=language)
-    tuple_list_ids = _source_container_ids(
-        inferred_ids=_compute_tuple_list_ids(
-            data=inference_data, spec=language
-        ),
-        id_map=inference_id_map,
-    )
-    inferred_empty_overrides = _source_container_id_mapping(
-        inferred_mapping=_empty_container_literal_overrides(
-            data=inference_data, spec=language
-        ),
-        id_map=inference_id_map,
-    )
-    source_empty_ids = _empty_source_container_ids(data)
-    context_wrap_ids: frozenset[int]
-    if record_context_data is not None:
-        context_wrap_ids = _compute_wrap_ids(
-            data=record_context_data, spec=language
-        )
-    else:
-        context_wrap_ids = frozenset[int]()
-    context_tuple_list_ids: frozenset[int]
-    if record_context_data is not None:
-        context_tuple_list_ids = _compute_tuple_list_ids(
-            data=record_context_data, spec=language
-        )
-    else:
-        context_tuple_list_ids = frozenset[int]()
-    context_dict_open_overrides: dict[int, str] = {}
-    if record_context_data is not None:
-        # A bound map is emitted as a separate declaration, so it needs
-        # the exact widened opener of the container that consumes it even
-        # for variant-based languages without a universal map fallback.
-        _accumulate_dict_open_overrides(
-            data=record_context_data,
-            spec=language,
-            out=context_dict_open_overrides,
-            ref_key=ref_key,
-        )
-        if isinstance(record_context_data, list):
-            context_children = list(record_context_data)
-        elif isinstance(record_context_data, dict):
-            context_children = list(record_context_data.values())
-        else:
-            context_children = list[Value]()
-        direct_dict_override = _compute_dict_open_override(
-            items=context_children,
-            spec=language,
-            ref_key=ref_key,
-        )
-        if direct_dict_override is not None:
-            plain_dict_children = [
-                child
-                for child in context_children
-                if isinstance(child, dict)
-                and not isinstance(child, OrderedMap)
-            ]
-            for child in plain_dict_children:
-                _ = context_dict_open_overrides.setdefault(
-                    id(child), direct_dict_override
-                )
-    context_dict_int_formatters: Mapping[int, Callable[[int], str]]
-    if record_context_data is not None:
-        context_dict_int_formatters = _collect_dict_int_formatters(
-            data=record_context_data, spec=language
-        )
-    else:
-        context_dict_int_formatters = dict[int, Callable[[int], str]]()
-    context_empty_overrides: Mapping[int, str]
-    if record_context_data is not None:
-        context_empty_overrides = _empty_container_literal_overrides(
-            data=record_context_data, spec=language
-        )
-    else:
-        context_empty_overrides = dict[int, str]()
-    context_list_int_formatters: dict[int, Callable[[int], str]] = {}
-    if record_context_data is not None:
-        context_list_int_formatters = _collect_list_int_formatters(
-            data=record_context_data, spec=language
-        )
-    if record_context_data is not None:
-        check_data(data=record_context_data, spec=language)
-    effective_comment_root_id = None
-    if len(yaml_comment_nodes) > 0 or bool(toml_comments):
-        effective_comment_root_id = id(data)
-    ctx = _RenderContext(
-        spec=language,
-        wrap_ids=wrap_ids | context_wrap_ids,
-        tuple_list_ids=tuple_list_ids | context_tuple_list_ids,
-        dict_open_overrides={
-            **_source_container_id_mapping(
-                inferred_mapping=_collect_dict_open_overrides(
-                    data=inference_data, spec=language, ref_key=ref_key
-                ),
-                id_map=inference_id_map,
-            ),
-            **context_dict_open_overrides,
-        },
-        dict_int_formatters={
-            **_source_container_id_mapping(
-                inferred_mapping=_collect_dict_int_formatters(
-                    data=inference_data, spec=language
-                ),
-                id_map=inference_id_map,
-            ),
-            **context_dict_int_formatters,
-        },
-        empty_container_overrides={
-            container_id: literal
-            for container_id, literal in {
-                **inferred_empty_overrides,
-                **context_empty_overrides,
-            }.items()
-            if container_id in source_empty_ids
-        },
-        list_int_formatters={
-            **_collect_list_int_formatters(data=data, spec=language),
-            **context_list_int_formatters,
-        },
+    ctx = _build_render_context(
+        data=data,
+        inference_data=inference_data,
+        language=language,
         ref_case=ref_case,
         ref_values=ref_values,
-        expand_refs=False,
         ref_key=ref_key,
         collection_layout=collection_layout,
-        multiline_prefix=line_prefix,
-        consumable_ref_names=frozenset(),
-        single_use_ref_names=frozenset(),
-        consume_inhibited_ref_names=frozenset(),
-        yaml_comment_nodes=yaml_comment_nodes,
-        toml_comments=toml_comments,
-        comment_root_id=(effective_comment_root_id),
+        line_prefix=line_prefix,
+        raw_yaml_data=raw_yaml_data,
+        toml_comment_doc=toml_comment_doc,
+        record_context_data=record_context_data,
     )
 
-    # Handle scalars (check ``str`` before Sequence since ``str`` is a
-    # Sequence, and datetime before date since datetime subclasses
-    # date).
-    scalar_types = (
-        str,
-        bytes,
-        int,
-        float,
-        bool,
-        datetime.datetime,
-        datetime.date,
-        datetime.time,
-    )
-    if isinstance(data, scalar_types) or data is None:
+    if isinstance(data, _SCALAR_TYPES):
         formatted_scalar = _format_scalar(
             value=data,
             spec=language,
             int_formatter=None,
         )
         return f"{line_prefix}{formatted_scalar}"
-
-    # Empty collections have no elements to lay out line-by-line, so
-    # delegate to _format_value which already returns the correct
-    # compact representation (e.g. ``{}``, ``[]``).
-    if len(data) == 0 and include_delimiters:
-        formatted: str = _format_value(
-            value=data,
-            dict_open_override=None,
-            sequence_open_override=None,
-            ctx=ctx,
-            int_formatter=None,
-        )
-        return f"{line_prefix}{formatted}"
-
-    # When all dict values are null and the spec skips nulls, the dict
-    # collapses to an empty-collection literal.
-    if (
-        isinstance(data, dict)
-        and include_delimiters
-        and language.skip_null_dict_values
-        and all(v is None for v in data.values())
-    ):
-        is_ordered_map = isinstance(data, OrderedMap)
-        empty_value: OrderedMap | dict[Scalar, Value]
-        empty_value = {}
-        if is_ordered_map:
-            empty_value = OrderedMap()
-        formatted = _format_value(
-            value=empty_value,
-            dict_open_override=None,
-            sequence_open_override=None,
-            ctx=ctx,
-            int_formatter=None,
-        )
-        return f"{line_prefix}{formatted}"
-
-    if (
-        include_delimiters
-        and isinstance(data, dict)
-        and not isinstance(data, OrderedMap)
-    ):
-        record_literal = _maybe_format_record_literal(
-            value=data,
-            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
-        )
-        if record_literal is not None:
-            return f"{line_prefix}{record_literal}"
-
-    if include_delimiters and isinstance(data, list):
-        tuple_literal = _maybe_format_tuple_literal(
-            value=data,
-            ctx=ctx.with_multiline(multiline_prefix=line_prefix),
-        )
-        if tuple_literal is not None:
-            return f"{line_prefix}{tuple_literal}"
-
-    body_prefix = line_prefix
-    if include_delimiters:
-        body_prefix = line_prefix + language.indent
-
-    is_ordered_map = isinstance(data, OrderedMap)
-    trailing_comma = language.trailing_comma_config.multiline_trailing_comma
-    lines: list[str] = _format_collection_lines(
+    return _format_root_collection(
         data=data,
-        body_prefix=body_prefix,
-        trailing_comma=trailing_comma,
-        is_ordered_map=is_ordered_map,
-        collection_layout=collection_layout,
-        sequence_open_override=None,
-        ctx=ctx,
-    )
-
-    body = "\n".join(lines)
-
-    if not include_delimiters or body == "":
-        return body
-
-    effective_data = collection_or_default(value=inference_data, default=data)
-    return _wrap_body(
-        body=body,
-        is_ordered_map=is_ordered_map,
-        data=(effective_data),
-        spec=language,
+        inference_data=inference_data,
+        language=language,
         line_prefix=line_prefix,
-        dict_open_override=ctx.dict_open_overrides.get(id(data)),
+        include_delimiters=include_delimiters,
+        collection_layout=collection_layout,
+        ctx=ctx,
     )
 
 
