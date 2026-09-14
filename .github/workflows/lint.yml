@@ -2363,7 +2363,7 @@ jobs:
         uses: coursier/cache-action@v8
       - name: Install scala-cli
         timeout-minutes: 10
-        uses: VirtusLab/scala-cli-setup@v1.16.0
+        uses: VirtusLab/scala-cli-setup@v1.17.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
       # per fixture. Each fixture already carries a unique object name
