@@ -107,77 +107,88 @@ class _HasBytesFormat(Protocol):
 @beartype
 def _bool_format(spec: literalizer.Language) -> object:
     """Return the configured boolean literal spelling."""
-    assert isinstance(spec, _HasBoolFormat)  # noqa: S101
+    if not isinstance(spec, _HasBoolFormat):
+        raise NotImplementedError
     return spec.bool_format
 
 
 @beartype
 def _empty_dict_key(spec: literalizer.Language) -> object:
     """Return the configured empty-dict key policy."""
-    assert isinstance(spec, _HasEmptyDictKey)  # noqa: S101
+    if not isinstance(spec, _HasEmptyDictKey):
+        raise NotImplementedError
     return spec.empty_dict_key
 
 
 @beartype
 def _empty_dict_keys(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the empty-dict key policies a language offers."""
-    assert isinstance(spec, _HasEmptyDictKey)  # noqa: S101
+    if not isinstance(spec, _HasEmptyDictKey):
+        raise NotImplementedError
     return spec.empty_dict_keys
 
 
 @beartype
 def _annotation_evaluation(spec: literalizer.Language) -> object:
     """Return the configured annotation-evaluation mode."""
-    assert isinstance(spec, _HasAnnotationEvaluation)  # noqa: S101
+    if not isinstance(spec, _HasAnnotationEvaluation):
+        raise NotImplementedError
     return spec.annotation_evaluation
 
 
 @beartype
 def _annotation_evaluations(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the annotation-evaluation modes a language offers."""
-    assert isinstance(spec, _HasAnnotationEvaluation)  # noqa: S101
+    if not isinstance(spec, _HasAnnotationEvaluation):
+        raise NotImplementedError
     return spec.annotation_evaluations
 
 
 @beartype
 def _union_format(spec: literalizer.Language) -> object:
     """Return the configured union annotation syntax."""
-    assert isinstance(spec, _HasUnionFormat)  # noqa: S101
+    if not isinstance(spec, _HasUnionFormat):
+        raise NotImplementedError
     return spec.union_format
 
 
 @beartype
 def _union_formats(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the union annotation forms a language offers."""
-    assert isinstance(spec, _HasUnionFormat)  # noqa: S101
+    if not isinstance(spec, _HasUnionFormat):
+        raise NotImplementedError
     return spec.union_formats
 
 
 @beartype
 def _json_type(spec: literalizer.Language) -> object:
     """Return the configured JSON value type, if any."""
-    assert isinstance(spec, _HasJsonType)  # noqa: S101
+    if not isinstance(spec, _HasJsonType):
+        raise NotImplementedError
     return spec.json_type
 
 
 @beartype
 def _json_rendering(spec: literalizer.Language) -> object:
     """Return the configured JSON rendering, if any."""
-    assert isinstance(spec, _HasJsonRendering)  # noqa: S101
+    if not isinstance(spec, _HasJsonRendering):
+        raise NotImplementedError
     return spec.json_rendering
 
 
 @beartype
 def _json_renderings(spec: literalizer.Language) -> type[enum.Enum]:
     """Return the JSON renderings a language offers."""
-    assert isinstance(spec, _HasJsonRendering)  # noqa: S101
+    if not isinstance(spec, _HasJsonRendering):
+        raise NotImplementedError
     return spec.json_renderings
 
 
 @beartype
 def _record_map_value_typing(spec: literalizer.Language) -> object:
     """Return the configured widened record-map value typing."""
-    assert isinstance(spec, _HasRecordMapValueTyping)  # noqa: S101
+    if not isinstance(spec, _HasRecordMapValueTyping):
+        raise NotImplementedError
     return spec.record_map_value_typing
 
 
@@ -186,14 +197,16 @@ def _record_map_value_typings(
     spec: literalizer.Language,
 ) -> type[enum.Enum]:
     """Return the widened record-map value types a language offers."""
-    assert isinstance(spec, _HasRecordMapValueTyping)  # noqa: S101
+    if not isinstance(spec, _HasRecordMapValueTyping):
+        raise NotImplementedError
     return spec.record_map_value_typings
 
 
 @beartype
 def _bytes_format(spec: literalizer.Language) -> object:
     """Return the configured bytes format, despite JSON overrides."""
-    assert isinstance(spec, _HasBytesFormat)  # noqa: S101
+    if not isinstance(spec, _HasBytesFormat):
+        raise NotImplementedError
     return spec.bytes_format
 
 

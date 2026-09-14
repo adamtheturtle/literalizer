@@ -151,8 +151,10 @@ def _case_kwargs(
             _kwarg_values(kwarg=kwarg, lang_cls=lang_cls, value=value)
         )
     if member is not None:
-        assert manifest.option is not None  # noqa: S101
-        kwargs[OPTIONS[manifest.option].kwarg] = member
+        option_name = manifest.option
+        if option_name is None:
+            raise NotImplementedError
+        kwargs[OPTIONS[option_name].kwarg] = member
     return kwargs
 
 
