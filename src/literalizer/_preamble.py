@@ -56,7 +56,8 @@ class EmptyList(EmptyCollection):
 
 _ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset[type](
     # pylint does not model PEP 695 aliases, so it does not see the
-    # ``__value__`` every ``type`` statement defines.
+    # ``__value__`` every ``type`` statement defines:
+    # https://github.com/pylint-dev/pylint/issues/10091
     get_args(tp=Scalar.__value__)  # pylint: disable=no-member
 ) | frozenset[type]({OrderedMap, dict, list, set})
 """Every type :func:`_collect_value_types` can report.
