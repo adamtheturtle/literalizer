@@ -2911,12 +2911,11 @@ class Cpp(metaclass=LanguageCls):
         @property
         def cpp_type(self) -> str:
             """Return the C++ type name for this date format."""
-            cfg: DateFormatConfig = self.value
-            # Pylint does not yet infer the standardized Enum _value_
-            # annotation: https://github.com/pylint-dev/pylint/issues/11413
-            if cfg.type_produced is str:  # pylint: disable=no-member
-                return "std::string"
-            return "std::chrono::year_month_day"
+            match self:
+                case self.ISO:
+                    return "std::string"
+                case _:
+                    return "std::chrono::year_month_day"
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for C++."""
@@ -2943,14 +2942,13 @@ class Cpp(metaclass=LanguageCls):
         @property
         def cpp_type(self) -> str:
             """Return the C++ type name for this datetime format."""
-            cfg: DatetimeFormatConfig = self.value
-            # Pylint does not yet infer the standardized Enum _value_
-            # annotation: https://github.com/pylint-dev/pylint/issues/11413
-            if cfg.type_produced is str:  # pylint: disable=no-member
-                return "std::string"
-            if cfg.type_produced is int:  # pylint: disable=no-member
-                return "long long"
-            return "std::chrono::system_clock::time_point"
+            match self:
+                case self.ISO:
+                    return "std::string"
+                case self.EPOCH:
+                    return "long long"
+                case _:
+                    return "std::chrono::system_clock::time_point"
 
     class BytesFormats(enum.Enum):
         """Bytes formatting options."""
