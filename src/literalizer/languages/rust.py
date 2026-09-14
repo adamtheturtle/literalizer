@@ -940,19 +940,33 @@ class _VariantSignature:
 
 
 @beartype
-def _datetime_variant_signature(*, datetime_type: str) -> _VariantSignature:
-    """Return the variant signature for the selected datetime type."""
-    effective_name = "DateTime"
-    if datetime_type in {"i32", "i64", "i128"}:
-        effective_name = datetime_type.upper()
-    return _VariantSignature(
-        name=(effective_name),
-        inner_type=datetime_type,
-    )
+def _temporal_variant_signature(
+    *,
+    value: datetime.date | datetime.time,
+    date_type: str,
+    datetime_type: str,
+) -> _VariantSignature:
+    """Return the tagged-enum signature for one temporal value."""
+    match value:
+        case datetime.datetime():
+            effective_name = "DateTime"
+            if datetime_type in {"i32", "i64", "i128"}:
+                effective_name = datetime_type.upper()
+            return _VariantSignature(
+                name=effective_name,
+                inner_type=datetime_type,
+            )
+        case datetime.date():
+            return _VariantSignature(name="Date", inner_type=date_type)
+        case _:
+            return _VariantSignature(
+                name="Time",
+                inner_type="&'static str",
+            )
 
 
 @beartype
-def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
+def _heterogeneous_variant_for_scalar(
     *,
     value: Scalar,
     date_type: str,
@@ -985,16 +999,11 @@ def _heterogeneous_variant_for_scalar(  # pylint: disable=too-complex
                 name="Bytes",
                 inner_type="&'static str",
             )
-        case datetime.datetime():
-            signature = _datetime_variant_signature(
-                datetime_type=datetime_type
-            )
-        case datetime.date():
-            signature = _VariantSignature(name="Date", inner_type=date_type)
-        case datetime.time():
-            signature = _VariantSignature(
-                name="Time",
-                inner_type="&'static str",
+        case datetime.datetime() | datetime.date() | datetime.time():
+            signature = _temporal_variant_signature(
+                value=value,
+                date_type=date_type,
+                datetime_type=datetime_type,
             )
         case None:
             signature = _VariantSignature(name="Null", inner_type=None)

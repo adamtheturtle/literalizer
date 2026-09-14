@@ -413,7 +413,36 @@ class _VariantSignature:
 
 
 @beartype
-def _nim_variant_for_scalar(  # pylint: disable=too-complex
+def _nim_temporal_variant_signature(
+    *,
+    value: datetime.date | datetime.time,
+    date_type: str,
+    datetime_type: str,
+) -> _VariantSignature:
+    """Return the object-variant signature for one temporal value."""
+    match value:
+        case datetime.datetime():
+            return _VariantSignature(
+                kind_name="vkDateTime",
+                field_name="dateTimeVal",
+                field_type=datetime_type,
+            )
+        case datetime.date():
+            return _VariantSignature(
+                kind_name="vkDate",
+                field_name="dateVal",
+                field_type=date_type,
+            )
+        case _:
+            return _VariantSignature(
+                kind_name="vkTime",
+                field_name="timeVal",
+                field_type="string",
+            )
+
+
+@beartype
+def _nim_variant_for_scalar(
     *,
     value: Scalar,
     date_type: str,
@@ -451,23 +480,11 @@ def _nim_variant_for_scalar(  # pylint: disable=too-complex
                 field_name="bytesVal",
                 field_type="string",
             )
-        case datetime.datetime():
-            signature = _VariantSignature(
-                kind_name="vkDateTime",
-                field_name="dateTimeVal",
-                field_type=datetime_type,
-            )
-        case datetime.date():
-            signature = _VariantSignature(
-                kind_name="vkDate",
-                field_name="dateVal",
-                field_type=date_type,
-            )
-        case datetime.time():
-            signature = _VariantSignature(
-                kind_name="vkTime",
-                field_name="timeVal",
-                field_type="string",
+        case datetime.datetime() | datetime.date() | datetime.time():
+            signature = _nim_temporal_variant_signature(
+                value=value,
+                date_type=date_type,
+                datetime_type=datetime_type,
             )
         case None:
             signature = _VariantSignature(
