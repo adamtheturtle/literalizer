@@ -307,9 +307,9 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
         case bool():
             return value
         case int():
-            return int(value)  # pyrefly: ignore [unnecessary-type-conversion]
+            return value.real
         case float():
-            return float(value)  # pyrefly: ignore [unnecessary-type-conversion]
+            return value.real
         case str():
             return str(object=value)
         case datetime.datetime():
