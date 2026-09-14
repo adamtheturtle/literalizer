@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A selected input-root key must exist in the parsed mapping."
+exceptions = ["InputRootKeyNotFoundError"]
+languages = ["Python"]
+
+[call]
+api = "literalize_call"
+sources = ["other = []"]
+input_format = "toml"
+input_root_key = "calls"
+target_function = "process"
+parameter_names = ["value"]

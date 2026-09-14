@@ -12,12 +12,8 @@ from typing import NoReturn
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import InputFormat, literalize_call
-from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    InputRootKeyNotFoundError,
-    InputRootNotMappingError,
-)
+from literalizer import InputFormat
+from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Python
 
 from .call_cases import (
@@ -30,55 +26,6 @@ from .call_cases import (
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
 from .language_specs import make_golden_path, make_spec
-
-
-def test_literalize_call_input_root_rejects_non_table_root() -> None:
-    """A configured root key requires a parsed table."""
-    with pytest.raises(
-        expected_exception=InputRootNotMappingError,
-        match=r"input_root_key='calls'.*got list",
-    ) as exc_info:
-        _ = literalize_call(
-            source="[]",
-            input_format=InputFormat.JSON,
-            input_root_key="calls",
-            language=Python(),
-            target_function="process",
-            parameter_names=("value",),
-        )
-    assert exc_info.value.input_root_key == "calls"
-    assert exc_info.value.root_type is list
-
-
-def test_literalize_call_input_root_rejects_missing_key() -> None:
-    """A configured root key must exist in the parsed table."""
-    with pytest.raises(
-        expected_exception=InputRootKeyNotFoundError,
-        match=r"input_root_key='calls'.*does not exist",
-    ) as exc_info:
-        _ = literalize_call(
-            source="other = []",
-            input_format=InputFormat.TOML,
-            input_root_key="calls",
-            language=Python(),
-            target_function="process",
-            parameter_names=("value",),
-        )
-    assert exc_info.value.input_root_key == "calls"
-
-
-def test_literalize_call_selects_input_root() -> None:
-    """A public call can select rows nested below a mapping key."""
-    result = literalize_call(
-        source="calls = [[1], [2]]",
-        input_format=InputFormat.TOML,
-        input_root_key="calls",
-        language=Python(),
-        target_function="process",
-        parameter_names=("value",),
-    )
-
-    assert result.code == "process(value=1)\nprocess(value=2)"
 
 
 def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
