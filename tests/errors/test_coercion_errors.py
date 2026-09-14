@@ -26,6 +26,7 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer import InputFormat, literalize
+from literalizer._parsing import require_yaml
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
@@ -84,9 +85,9 @@ def _to_source(
             # Valid JSON is valid JSON5.
             return json.dumps(obj=data)
         case InputFormat.YAML:
-            yaml = YAML()
+            yaml = require_yaml(yaml=YAML())
             stream = StringIO()
-            yaml.dump(data=data, stream=stream)  # pyright: ignore[reportUnknownMemberType]
+            yaml.dump(data=data, stream=stream)
             return stream.getvalue()
         case InputFormat.TOML:
             toml_data: Mapping[str, _SourceData]

@@ -23,6 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
+from literalizer._parsing import require_yaml
 from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -185,10 +186,8 @@ def _parse_ref_input(
                 allow_duplicate_keys=False,
             )
         case literalizer.InputFormat.YAML:
-            ruamel_yaml = _YAML()
-            parsed = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-                stream=input_source,
-            )
+            ruamel_yaml = require_yaml(yaml=_YAML())
+            parsed = ruamel_yaml.load(stream=input_source)
         case literalizer.InputFormat.TOML:
             parsed = tomllib.loads(input_source)
         case _ as unreachable:

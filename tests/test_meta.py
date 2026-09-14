@@ -8,6 +8,7 @@ from pydantic import AliasPath, BaseModel, Field
 from ruamel.yaml import YAML
 
 from literalizer._language import LanguageCls
+from literalizer._parsing import require_yaml
 from literalizer.languages import ALL_LANGUAGES
 
 
@@ -43,10 +44,8 @@ def fixture_lint_workflow(
 ) -> _LintWorkflow:
     """Parse ``.github/workflows/lint.yml`` once per session."""
     lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
-    ruamel_yaml = YAML()
-    loaded: object = ruamel_yaml.load(  # pyright: ignore[reportUnknownMemberType]
-        stream=lint_yml,
-    )
+    ruamel_yaml = require_yaml(yaml=YAML())
+    loaded = ruamel_yaml.load(stream=lint_yml)
     return _LintWorkflow.model_validate(obj=loaded)
 
 
