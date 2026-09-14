@@ -7138,7 +7138,7 @@ def _compose_call_with_bound_ref_declarations(
     declaration (via :func:`_literalize_value_binding`) for every name
     in *bound_refs* in iteration order, then composes them with a no-op
     stub for the target function through
-    :func:`_literalize_call_with_declarations` so the duplicate-preamble
+    :func:`literalize_call_with_declarations` so the duplicate-preamble
     reconciliation is shared with every other call/declaration caller.
 
     The refs are now real declarations, so the target stub's parameter
@@ -7192,7 +7192,7 @@ def _compose_call_with_bound_ref_declarations(
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
-    return _literalize_call_with_declarations(
+    return literalize_call_with_declarations(
         language=language,
         declarations=decl_results,
         call=call_result,
@@ -7904,7 +7904,7 @@ def literalize_call_parsed(
 
 
 @beartype
-def _literalize_call_with_declarations(
+def literalize_call_with_declarations(
     *,
     language: Language,
     declarations: Sequence[LiteralizeResult],

@@ -7,8 +7,6 @@ those declarations into per-language cases.  The runner
 ``test_call_variant_golden_file``.
 """
 
-# pylint: disable=import-private-name,useless-suppression
-
 import dataclasses
 import enum
 import functools
@@ -22,15 +20,15 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 from literalizer import StubReturn
 
-# ``_literalize_call_with_declarations`` is the shared call/declaration
+# ``literalize_call_with_declarations`` is the shared call/declaration
 # reconciliation core; it is intentionally not part of the public API
 # (the public surface is ``literalize_call(bound_refs=...)``).  This
 # golden-file harness must interpose its own transform-wrapper stubs
 # between rendering and composition, so it uses the internal core
 # directly.  See issue #1946.
 from literalizer._literalize import (
-    _literalize_call_with_declarations,
     literalize_call_parsed,
+    literalize_call_with_declarations,
 )
 from literalizer._parsing import ParsedInput, parse_input
 from literalizer._types import ValueInput
@@ -777,7 +775,7 @@ def run_call_golden_case(
     # preamble in front.  The call-stub lines this harness synthesizes
     # for the otherwise-undefined target/transform names are folded in
     # as the ``extra_*`` arguments.
-    composed = _literalize_call_with_declarations(
+    composed = literalize_call_with_declarations(
         language=spec,
         declarations=decl_results,
         call=result,
