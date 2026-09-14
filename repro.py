@@ -21,25 +21,22 @@ Usage:
 """
 
 import sys
-from typing import Any
+from typing import Protocol, runtime_checkable
 
 
 def make_protocol(n_attrs: int) -> type:
     """Build a ``@runtime_checkable`` Protocol with *n_attrs* bool
     properties.
     """
-    body = "".join(
-        f"    @property\n    def p{i}(self) -> bool: ...\n"
-        for i in range(n_attrs)
-    )
-    src = (
-        "from typing import Protocol, runtime_checkable\n"
-        "@runtime_checkable\n"
-        f"class P(Protocol):\n{body}"
-    )
-    ns: dict[str, Any] = {}
-    exec(src, ns)  # noqa: S102
-    return ns["P"]
+
+    def protocol_member(_: object) -> bool:
+        """Stand in for a generated Protocol property."""
+        raise NotImplementedError
+
+    namespace: dict[str, object] = {
+        f"p{i}": property(fget=protocol_member) for i in range(n_attrs)
+    }
+    return runtime_checkable(cls=type("P", (Protocol,), namespace))
 
 
 def make_impl(n_attrs: int, last_value: object) -> object:
