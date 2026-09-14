@@ -2616,10 +2616,47 @@ def _rust_tuple_nested_vec_format(default_type: str) -> SequenceFormatConfig:
     )(default_type)
 
 
+# These compatibility helpers are reached only through the runtime-checked
+# _rust_tuple_list_ids boundary. Leaving them without runtime decorators
+# preserves the traversal cost of the former nested functions.
+def _rust_tuple_eligible(value: list[Value], /) -> bool:
+    """Return whether one list needs a tuple around mixed shapes."""
+    return len({type(item) for item in value}) > 1 and any(
+        isinstance(item, (dict, list, set)) for item in value
+    )
+
+
+def _rust_vec_values_compatible(left: Value, right: Value, /) -> bool:
+    """Return whether two values can occupy one Vec slot."""
+    if not isinstance(left, list) or not isinstance(right, list):
+        return type(left) is type(right)
+    if len(left) == 0:
+        return not _rust_tuple_eligible(right)
+    if len(right) == 0:
+        return not _rust_tuple_eligible(left)
+    left_tuple = _rust_tuple_eligible(left)
+    right_tuple = _rust_tuple_eligible(right)
+    if left_tuple != right_tuple:
+        return False
+    if left_tuple:
+        return len(left) == len(right) and all(
+            _rust_vec_values_compatible(left_item, right_item)
+            for left_item, right_item in zip(left, right, strict=True)
+        )
+    return _rust_vec_values_compatible(left[0], right[0])
+
+
+def _rust_vec_siblings_uniform(value: list[Value], /) -> bool:
+    """Return whether every item has one compatible Rust type."""
+    return all(
+        _rust_vec_values_compatible(left, right)
+        for index, left in enumerate(iterable=value)
+        for right in value[index + 1 :]
+    )
+
+
 @beartype
-def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
-    data: Value, /
-) -> frozenset[int]:
+def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     """Return scalar and mixed-shape lists rendered as Rust tuples.
 
     The shared collector handles heterogeneous scalar lists. Rust can
@@ -2629,68 +2666,28 @@ def _rust_tuple_list_ids(  # noqa: C901  # pylint: disable=too-complex
     """
     found = set(collect_tuple_list_ids(data=data))
 
-    def _eligible(value: list[Value], /) -> bool:
-        """Return whether one list needs a tuple around mixed shapes."""
-        return len({type(item) for item in value}) > 1 and any(
-            isinstance(item, (dict, list, set)) for item in value
-        )
-
-    def _compatible(left: Value, right: Value, /) -> bool:
-        """Return whether two values can occupy one Vec slot."""
-        if not isinstance(left, list) or not isinstance(right, list):
-            return type(left) is type(right)
-        if len(left) == 0:
-            return not _eligible(right)
-        if len(right) == 0:
-            return not _eligible(left)
-        left_tuple = _eligible(left)
-        right_tuple = _eligible(right)
-        if left_tuple != right_tuple:
-            return False
-        if left_tuple:
-            return len(left) == len(right) and all(
-                _compatible(left_item, right_item)
-                for left_item, right_item in zip(left, right, strict=True)
-            )
-        return _compatible(left[0], right[0])
-
-    def _uniform_siblings(value: list[Value], /) -> bool:
-        """Return whether every item has one compatible Rust type."""
-        return all(
-            _compatible(left, right)
-            for index, left in enumerate(iterable=value)
-            for right in value[index + 1 :]
-        )
-
     def _walk(value: Value, *, inside_uniform_list: bool) -> None:
         """Collect mixed scalar/collection lists recursively."""
         match value:
             case dict():
-                for item in value.values():
-                    if isinstance(item, list) and _eligible(item):
-                        found.add(id(item))
-                    _walk(value=item, inside_uniform_list=True)
+                children: Iterable[Value] = value.values()
+                children_inside_uniform_list = True
             case list():
-                if _eligible(value):
-                    for item in value:
-                        if isinstance(item, list) and _eligible(item):
-                            found.add(id(item))
-                        _walk(value=item, inside_uniform_list=True)
-                    return
-                uniform = inside_uniform_list and _uniform_siblings(value)
-                if uniform:
-                    found.update(
-                        id(item)
-                        for item in value
-                        if isinstance(item, list) and _eligible(item)
-                    )
-                for item in value:
-                    _walk(value=item, inside_uniform_list=uniform)
+                eligible = _rust_tuple_eligible(value)
+                if inside_uniform_list and eligible:
+                    found.add(id(value))
+                children = value
+                children_inside_uniform_list = eligible or (
+                    inside_uniform_list and _rust_vec_siblings_uniform(value)
+                )
             case _:
                 return
+        for item in children:
+            _walk(
+                value=item,
+                inside_uniform_list=children_inside_uniform_list,
+            )
 
-    if isinstance(data, list) and _eligible(data):
-        found.add(id(data))
     _walk(value=data, inside_uniform_list=True)
     return frozenset(found)
 
