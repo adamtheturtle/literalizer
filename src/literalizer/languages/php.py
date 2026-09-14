@@ -132,21 +132,25 @@ def _reject_numeric_string_keys(data: Value) -> None:
     stack = [data]
     while len(stack) > 0:
         value = stack.pop()
-        if isinstance(value, dict):
-            for key, child in value.items():
-                if (
-                    isinstance(key, str)
-                    and _INTEGER_STRING_KEY.fullmatch(string=key) is not None
-                ):
-                    msg = (
-                        "PHP arrays coerce numeric string mapping key "
-                        f"{key!r} "
-                        "to an integer key"
-                    )
-                    raise UnrepresentableInputError(msg)
-                stack.append(child)
-        elif isinstance(value, (list, set)):
-            stack.extend(value)
+        match value:
+            case dict():
+                for key, child in value.items():
+                    if (
+                        isinstance(key, str)
+                        and _INTEGER_STRING_KEY.fullmatch(string=key)
+                        is not None
+                    ):
+                        msg = (
+                            "PHP arrays coerce numeric string mapping key "
+                            f"{key!r} "
+                            "to an integer key"
+                        )
+                        raise UnrepresentableInputError(msg)
+                    stack.append(child)
+            case list() | set():
+                stack.extend(value)
+            case _:
+                pass
 
 
 @beartype

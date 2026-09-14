@@ -139,13 +139,15 @@ def _format_objc_entry(
     bare numeric literal so that clang-tidy's
     ``readability-redundant-parentheses`` check passes.
     """
-    is_numeric_datetime = (
-        isinstance(original, datetime.datetime) and datetime_as_number
-    )
-    if isinstance(original, bool) or not (
-        isinstance(original, (int, float)) or is_numeric_datetime
-    ):
-        return formatted
+    match original:
+        case bool():
+            return formatted
+        case datetime.datetime() if datetime_as_number:
+            pass
+        case int() | float():
+            pass
+        case _:
+            return formatted
     if _OBJC_BARE_NUMERIC.fullmatch(string=formatted) is not None:
         return f"@{formatted}"
     if formatted.startswith("(") and formatted.endswith(")"):
