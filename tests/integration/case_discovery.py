@@ -27,6 +27,7 @@ import literalizer
 from literalizer._language import NewVariableNameSyntax
 from literalizer._parsing import (
     escape_json5_line_separators,
+    require_yaml,
     unwrap_yaml_scalar,
 )
 from literalizer.exceptions import (
@@ -215,12 +216,8 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             yaml_type = "safe"
             if "=" in source:
                 yaml_type = "rt"
-            yaml = YAML(typ=yaml_type)
-            parsed = _demote_yaml_tags(
-                value=yaml.load(  # pyright: ignore[reportUnknownMemberType]
-                    stream=source,
-                )
-            )
+            yaml = require_yaml(yaml=YAML(typ=yaml_type))
+            parsed = _demote_yaml_tags(value=yaml.load(stream=source))
         case literalizer.InputFormat.TOML:
             parsed = tomllib.loads(source)
         case _ as unreachable:

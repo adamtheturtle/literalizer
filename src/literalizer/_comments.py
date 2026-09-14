@@ -965,7 +965,7 @@ def _split_scalar_after_token(*, value: str) -> _ScalarComments:
 @beartype
 def _extract_scalar_comments(
     *,
-    tokens: Iterable[_CommentedToken],
+    tokens: Iterable[object],
 ) -> _ScalarComments:
     """Extract comments from scanned YAML tokens for a scalar value.
 
@@ -979,6 +979,8 @@ def _extract_scalar_comments(
     before_comments: list[str] = []
     trailing = _ScalarComments(before=[], inline="", after=[])
     for token in tokens:
+        if not isinstance(token, _CommentedToken):
+            raise NotImplementedError
         comment = token.comment
         if comment is None or len(comment) == 0:
             continue
@@ -1036,7 +1038,7 @@ class ScalarCommentResult:
 @beartype
 def literalize_yaml_scalar(
     *,
-    tokens: Iterable[_CommentedToken],
+    tokens: Iterable[object],
     base: str,
     comment_prefix: str,
     comment_suffix: str,

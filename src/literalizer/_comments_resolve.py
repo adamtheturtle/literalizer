@@ -202,7 +202,7 @@ def resolve_yaml_comments(
             )
         case _:
             stream = StringIO(initial_value=yaml_string)
-            tokens = get_yaml().scan(stream=stream)  # pyright: ignore[reportUnknownMemberType]
+            tokens = get_yaml().scan(stream=stream)
             scalar_result = literalize_yaml_scalar(
                 tokens=tokens,
                 base=base,

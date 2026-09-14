@@ -89,6 +89,56 @@ class _YamlScalarNode(Protocol):
     value: str
 
 
+class _YamlConstructor(Protocol):
+    """Constructor operations Literalizer configures on a YAML parser."""
+
+    yaml_constructors: Mapping[
+        str,
+        Callable[[object, _YamlScalarNode], object],
+    ]
+
+    def add_constructor(
+        self,
+        tag: str,
+        constructor: Callable[[object, _YamlScalarNode], object],
+    ) -> None:
+        """Register *constructor* for *tag*."""
+        raise NotImplementedError
+
+
+@runtime_checkable
+class _Yaml(Protocol):
+    """The ruamel operations used across Literalizer and its tests."""
+
+    constructor: _YamlConstructor
+
+    def scan(self, stream: object) -> Iterable[object]:
+        """Yield tokens from *stream*."""
+        raise NotImplementedError
+
+    def parse(self, stream: object) -> Iterable[object]:
+        """Yield parser events from *stream*."""
+        raise NotImplementedError
+
+    def load(self, stream: object) -> object:
+        """Load one document from *stream*."""
+        raise NotImplementedError
+
+    def dump(self, data: object, stream: object) -> None:
+        """Write *data* to *stream*."""
+        raise NotImplementedError
+
+
+@beartype
+def require_yaml(*, yaml: object) -> _Yaml:
+    """Validate the ruamel surface whose annotations currently return
+    Any.
+    """
+    if isinstance(yaml, _Yaml):
+        return yaml
+    raise NotImplementedError
+
+
 @runtime_checkable
 class _AnchoredYamlEvent(Protocol):
     """Anchor metadata consumed from ruamel parser events."""
@@ -366,8 +416,20 @@ def _is_object_commented_set(value: object, /) -> TypeIs[Iterable[object]]:
 @beartype
 def _validate_yaml_mapping_key(*, key: object) -> None:
     """Reject one non-scalar YAML mapping or set key."""
-    if isinstance(
-        key,
+    if _is_yaml_scalar(key):
+        return
+    msg = (
+        "Invalid YAML: mapping keys must be scalar values; "
+        f"got {type(key).__name__}"
+    )
+    raise YAMLParseError(msg)
+
+
+@beartype
+def _is_yaml_scalar(value: object, /) -> TypeIs[Scalar | TaggedScalar]:
+    """Return whether *value* is a scalar produced by ruamel."""
+    return isinstance(
+        value,
         (
             str,
             int,
@@ -380,32 +442,39 @@ def _validate_yaml_mapping_key(*, key: object) -> None:
             TaggedScalar,
             type(None),
         ),
-    ):
-        return
-    msg = (
-        "Invalid YAML: mapping keys must be scalar values; "
-        f"got {type(key).__name__}"
     )
-    raise YAMLParseError(msg)
 
 
 @beartype
-def _validate_yaml_mapping_keys(*, data: object) -> None:
-    """Reject YAML mappings whose keys are not scalar values."""
+def _is_yaml_coercible(data: object, /) -> TypeIs[YamlCoercible]:
+    """Validate and narrow one recursively loaded YAML value."""
+    if _is_yaml_scalar(data):
+        return True
     if _is_object_dict(data):
         for key, value in data.items():
             _validate_yaml_mapping_key(key=key)
-            _validate_yaml_mapping_keys(data=value)
-    elif _is_object_commented_set(data):
+            if not _is_yaml_coercible(value):
+                raise NotImplementedError
+        return True
+    if _is_object_commented_set(data):
         for key in data:
             _validate_yaml_mapping_key(key=key)
-    elif _is_object_pair(data):
+        return True
+    if _is_object_pair(data):
         pair_key, pair_value = data
         _validate_yaml_mapping_key(key=pair_key)
-        _validate_yaml_mapping_keys(data=pair_value)
-    elif _is_object_sequence(data):
-        for item in data:
-            _validate_yaml_mapping_keys(data=item)
+        return _is_yaml_coercible(pair_value)
+    if _is_object_sequence(data):
+        return all(_is_yaml_coercible(item) for item in data)
+    raise NotImplementedError
+
+
+@beartype
+def _require_yaml_data(*, data: object) -> YamlCoercible:
+    """Return validated parser data or reject an unsupported value."""
+    if _is_yaml_coercible(data):
+        return data
+    raise NotImplementedError
 
 
 @beartype
@@ -580,9 +649,7 @@ def _validate_yaml_float_tokens(*, source: str) -> None:
     """Check plain YAML numeric tokens before their value is rounded."""
     if "e" not in source.lower():
         return
-    tokens: Iterable[object] = get_yaml().scan(  # pyright: ignore[reportUnknownMemberType]
-        stream=source
-    )  # ty: ignore[unsound-assignment]
+    tokens = get_yaml().scan(stream=source)
     for token in tokens:
         if not isinstance(token, _YamlScalarToken) or token.style is not None:
             continue
@@ -791,13 +858,11 @@ def _parse_json5(*, source: str) -> ParsedInput:
 
 
 @beartype
-def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
+def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: _Yaml) -> None:
     """Teach a ruamel loader to retain signed integer zero as ``-0.0``."""
     tag = "tag:yaml.org,2002:int"
     constructor = ruamel_yaml.constructor
-    original: Callable[[object, _YamlScalarNode], object] = (
-        constructor.yaml_constructors[tag]
-    )  # ty: ignore[unsound-assignment]
+    original = constructor.yaml_constructors[tag]
 
     def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
         """Construct a YAML integer while preserving signed zero.
@@ -821,15 +886,15 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: YAML) -> None:
 class _YamlParserCache(threading.local):
     """One pair of mutable ruamel parsers per calling thread."""
 
-    round_trip: YAML | None = None
-    safe: YAML | None = None
+    round_trip: _Yaml | None = None
+    safe: _Yaml | None = None
 
 
 _YAML_PARSERS = _YamlParserCache()
 
 
 @beartype
-def get_yaml() -> YAML:
+def get_yaml() -> _Yaml:
     """Return this thread's cached round-trip ``YAML`` instance.
 
     The round-trip loader is used everywhere so a single parse covers
@@ -840,14 +905,14 @@ def get_yaml() -> YAML:
     """
     cached = _YAML_PARSERS.round_trip
     if cached is None:
-        cached = YAML()
+        cached = require_yaml(yaml=YAML())
         _configure_negative_zero_yaml_constructor(ruamel_yaml=cached)
         _YAML_PARSERS.round_trip = cached
     return cached
 
 
 @beartype
-def _get_safe_yaml() -> YAML:
+def _get_safe_yaml() -> _Yaml:
     """Return this thread's safe (C-backed) ``YAML`` instance.
 
     Used for the comment-free fast path in :func:`_parse_yaml`: the
@@ -859,7 +924,7 @@ def _get_safe_yaml() -> YAML:
     """
     cached = _YAML_PARSERS.safe
     if cached is None:
-        cached = YAML(typ="safe", pure=False)
+        cached = require_yaml(yaml=YAML(typ="safe", pure=False))
         _configure_negative_zero_yaml_constructor(ruamel_yaml=cached)
         _YAML_PARSERS.safe = cached
     return cached
@@ -939,7 +1004,7 @@ def _self_referential_alias(*, source: str) -> str | None:
     open_bindings: set[int] = set()
     open_collections: list[int] = []
     try:
-        for event in YAML().parse(stream=source):  # pyright: ignore[reportUnknownMemberType]
+        for event in require_yaml(yaml=YAML()).parse(stream=source):
             match event:
                 case CollectionStartEvent():
                     opened = _yaml_event_anchor(event=event)
@@ -1024,7 +1089,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
         ruamel_yaml = get_yaml()
         try:
             # https://sourceforge.net/p/ruamel-yaml/tickets/564/
-            raw_data = ruamel_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+            raw_data = ruamel_yaml.load(stream=source)
         except (
             YAMLError,
             ValueError,
@@ -1049,8 +1114,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
                 line=effective_line_4,
                 column=effective_column_4,
             ) from exc
-        _validate_yaml_mapping_keys(data=raw_data)
-        data = _unwrap_yaml_data(data=raw_data)
+        data = _unwrap_yaml_data(data=_require_yaml_data(data=raw_data))
         return ParsedYaml(
             data=data,
             raw_data=raw_data,
@@ -1059,7 +1123,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
 
     safe_yaml = _get_safe_yaml()
     try:
-        plain_data = safe_yaml.load(stream=source)  # pyright: ignore[reportUnknownMemberType]
+        plain_data = safe_yaml.load(stream=source)
     except (
         YAMLError,
         ValueError,
@@ -1081,8 +1145,7 @@ def _parse_yaml(*, source: str) -> ParsedInput:
             line=effective_line_2,
             column=effective_column_2,
         ) from exc
-    _validate_yaml_mapping_keys(data=plain_data)
-    data = _unwrap_yaml_data(data=plain_data)
+    data = _unwrap_yaml_data(data=_require_yaml_data(data=plain_data))
     return ParsedYaml(
         data=data,
         raw_data=plain_data,
