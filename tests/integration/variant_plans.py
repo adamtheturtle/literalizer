@@ -95,14 +95,17 @@ class _EscapesNullByte(Protocol):
 @beartype
 def _comment_suffix(member: enum.Enum) -> bool:
     """Return whether a comment format closes with a terminator."""
-    assert isinstance(member.value, literalizer.CommentConfig)  # noqa: S101
-    return bool(member.value.suffix)
+    config: object = member.value
+    if not isinstance(config, literalizer.CommentConfig):
+        raise NotImplementedError
+    return bool(config.suffix)
 
 
 @beartype
 def _escapes_null_byte(member: enum.Enum) -> bool:
     """Return whether a member encodes an embedded null byte."""
-    assert isinstance(member, _EscapesNullByte)  # noqa: S101
+    if not isinstance(member, _EscapesNullByte):
+        raise NotImplementedError
     return member.string_literals_escape_null_byte
 
 
@@ -1314,9 +1317,11 @@ def _external_record_shape_prefix(
     """Return the fixture preamble hosting an external record shape."""
     declared = metadata.variants.external_record_shape_fixture_prefix
     if lang_cls.record_shape_names_emit_declarations:
-        assert declared is None  # noqa: S101
+        if declared is not None:
+            raise NotImplementedError
         return ""
-    assert declared is not None  # noqa: S101
+    if declared is None:
+        raise NotImplementedError
     return declared
 
 
