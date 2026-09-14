@@ -1,9 +1,8 @@
 """Public entry points for converting data to language literals.
 
 The rendering machinery lives in :mod:`literalizer._literalize`; this
-module holds the two supported entry points, re-exported from the
-package root as :func:`literalizer.literalize` and
-:func:`literalizer.literalize_call`.
+module holds the supported entry points re-exported from the package
+root.
 """
 
 import dataclasses
@@ -35,8 +34,12 @@ from literalizer._literalize import (
     nonempty_mapping,
     reference_inputs_or_empty,
 )
+from literalizer._literalize import (
+    literalize_call_with_declarations as _literalize_call_with_declarations,
+)
 from literalizer._parsing import (
     InputFormat,
+    ParsedInput,
     parse_input,
 )
 from literalizer._types import Value, ValueInput
@@ -45,6 +48,8 @@ from literalizer.exceptions import (
     DelimiterlessVariableError,
     DelimiterlessWrappedFileError,
     ImmutableVariableModifierError,
+    InputRootKeyNotFoundError,
+    InputRootNotMappingError,
     InvalidPreIndentLevelError,
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
@@ -55,6 +60,59 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+
+
+@beartype
+def literalize_call_with_declarations(
+    *,
+    language: Language,
+    declarations: Sequence[LiteralizeResult],
+    call: LiteralizeResult,
+    extra_body_preamble: tuple[str, ...] = (),
+    extra_preamble: tuple[str, ...] = (),
+) -> LiteralizeResult:
+    r"""Compose declarations and a call into one complete source file.
+
+    The declarations must be results returned by :func:`literalize`, and
+    *call* must be a result returned by :func:`literalize_call`, all rendered
+    with *language*.  Their header and body preambles are reconciled across
+    the combined data before :meth:`Language.wrap_calls_with_declarations`
+    assembles the file.  *extra_body_preamble* and *extra_preamble* let a
+    caller include supporting definitions required by its surrounding file.
+
+    Prefer :func:`literalize_call` with ``bound_refs=...`` and
+    ``wrap_in_file=True`` when it can declare every reference directly.  This
+    lower-level composition boundary is for callers that already have
+    separate render results or need to supply additional file scaffolding.
+    """
+    return _literalize_call_with_declarations(
+        language=language,
+        declarations=declarations,
+        call=call,
+        extra_body_preamble=extra_body_preamble,
+        extra_preamble=extra_preamble,
+    )
+
+
+@beartype
+def _select_input_root(
+    *, parsed: ParsedInput, input_root_key: str | None
+) -> ParsedInput:
+    """Select the configured mapping entry while retaining parse
+    metadata.
+    """
+    if input_root_key is None:
+        return parsed
+    if not isinstance(parsed.data, dict):
+        raise InputRootNotMappingError(
+            input_root_key=input_root_key,
+            root_type=type(parsed.data),
+        )
+    try:
+        selected = parsed.data[input_root_key]
+    except KeyError as exc:
+        raise InputRootKeyNotFoundError(input_root_key=input_root_key) from exc
+    return dataclasses.replace(parsed, data=selected)
 
 
 @beartype
@@ -556,6 +614,7 @@ def literalize_call(
     *,
     source: str,
     input_format: InputFormat,
+    input_root_key: str | None = None,
     language: Language,
     target_function: str,
     parameter_names: Sequence[str],
@@ -582,6 +641,15 @@ def literalize_call(
     Args:
         source: The input string to convert.
         input_format: The serialization format of *source*.
+        input_root_key: Optional key selecting the value to render from a
+            parsed mapping root.  This is useful for formats such as TOML,
+            whose document root must be a table even when ``per_element``
+            needs a nested array.  The selected value retains its parsing
+            metadata and is otherwise handled exactly like an ordinary
+            top-level input.  A non-mapping root raises
+            :class:`~literalizer.exceptions.InputRootNotMappingError`; a
+            missing key raises
+            :class:`~literalizer.exceptions.InputRootKeyNotFoundError`.
         language: A :class:`Language` instance describing how to format
             literals.
         target_function: The function expression to call
@@ -847,7 +915,10 @@ def literalize_call(
             ),
         )
     return literalize_call_parsed(
-        parsed=parse_input(source=source, input_format=input_format),
+        parsed=_select_input_root(
+            parsed=parse_input(source=source, input_format=input_format),
+            input_root_key=input_root_key,
+        ),
         language=language,
         target_function=target_function,
         parameter_names=parameter_names,

@@ -39,7 +39,12 @@ from literalizer._literalize import (
     VariableForm,
 )
 from literalizer._parsing import InputFormat
-from literalizer.api import literalize, literalize_call
+from literalizer._types import ValueInput
+from literalizer.api import (
+    literalize,
+    literalize_call,
+    literalize_call_with_declarations,
+)
 from literalizer.exceptions import LiteralizerError
 
 __all__ = [
@@ -75,8 +80,10 @@ __all__ = [
     "SetFormatConfig",
     "StubReturn",
     "TrailingCommaConfig",
+    "ValueInput",
     "VariableForm",
     "fixed_open",
     "literalize",
     "literalize_call",
+    "literalize_call_with_declarations",
 ]

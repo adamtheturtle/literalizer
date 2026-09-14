@@ -12,6 +12,8 @@ Core functions
 
 .. autofunction:: literalize_call
 
+.. autofunction:: literalize_call_with_declarations
+
 Result type
 -----------
 
@@ -100,6 +102,10 @@ Input formats
 .. autoclass:: InputFormat
    :members:
    :undoc-members:
+
+.. py:data:: ValueInput
+
+   The recursive input-value type accepted by the public rendering functions.
 
 Exceptions
 ----------
