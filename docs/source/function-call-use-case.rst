@@ -75,7 +75,9 @@ Use ``input_root_key`` to select such an array without parsing the document your
    assert result.code == "process(value=1)\nprocess(value=2)"
 
 The parsed root must be a mapping and the key must exist.
-Violations raise :class:`~literalizer.exceptions.InputRootNotMappingError` and :class:`~literalizer.exceptions.InputRootKeyNotFoundError`, respectively.
+Violations raise
+:class:`~literalizer.exceptions.InputRootNotMappingError` and
+:class:`~literalizer.exceptions.InputRootKeyNotFoundError`, respectively.
 
 Calling conventions
 -------------------
@@ -248,8 +250,9 @@ This is the call-side counterpart of :func:`~literalizer.literalize`'s own ``bou
 
 ``bound_refs`` entries double as ``ref_values``, so a name need not be repeated in both mappings, and they are emitted in iteration order ahead of their first use.
 
-When you already have separate :class:`~literalizer.LiteralizeResult` objects, or need to add custom target or transform scaffolding, pass the declaration results and call result to :func:`~literalizer.literalize_call_with_declarations`.
-It exposes the same preamble reconciliation and file assembly used by ``bound_refs``.
+When you already have separate :class:`~literalizer.LiteralizeResult` objects, or need to add custom target or transform scaffolding, pass the declaration results and call result to
+:func:`~literalizer.literalize_call_with_declarations`.  It exposes the same
+preamble reconciliation and file assembly used by ``bound_refs``.
 Prefer ``bound_refs`` for the ordinary case where Literalizer can declare every reference itself.
 
 Snake case is the recommended authoring convention for ``$ref`` names: ``pyhumps`` converts ``snake_case`` to every other case without loss.
