@@ -594,123 +594,129 @@ def _nim_child_shape(
 
 
 @beartype
-def _nim_object_variant_wrap_ids(  # noqa: C901  # pylint: disable=too-complex
-    *, data: Value
-) -> frozenset[int]:
+def _nim_container_children(item: Value) -> list[Value] | None:
+    """Return the direct children of a supported container."""
+    match item:
+        case dict():
+            return list(item.values())
+        case list():
+            return list(item)
+        case _:
+            return None
+
+
+@beartype
+def _nim_literal_shape(item: Value) -> _NimLiteralShape:
+    """Return the native Nim type shape inferred for *item*.
+
+    Python's ``type`` alone is not enough for nested collections: two dicts
+    can both be ``dict`` while rendering as incompatible
+    ``Table[string, seq[string]]`` and ``Table[string, seq[int]]``. Keep the
+    integer widening tier in the shape as well, matching the magnitude-aware
+    collection-literal inference.
+    """
+    child_types: set[type | _NimContainerShape]
+    match item:
+        case bool():
+            return bool
+        case int():
+            tier = int_widening_tier(items=[item])
+            return int if tier is None else tier
+        case list():
+            child_types = {_nim_literal_shape(item=child) for child in item}
+            return _NimContainerShape(
+                kind=_NimContainerKind.LIST,
+                child=_nim_child_shape(child_types=child_types),
+            )
+        case dict() if not isinstance(item, OrderedMap):
+            child_types = {
+                _nim_literal_shape(item=child) for child in item.values()
+            }
+            return _NimContainerShape(
+                kind=_NimContainerKind.DICT,
+                child=_nim_child_shape(child_types=child_types),
+            )
+        case _:
+            return type(item)
+
+
+@beartype
+def _mark_nim_object_variant_wrap_ids(
+    *, item: Value, wrap_ids: set[int]
+) -> None:
+    """Mark containers that require a recursive value type."""
+    children = _nim_container_children(item=item)
+    if children is None:
+        return
+    for child in children:
+        _mark_nim_object_variant_wrap_ids(item=child, wrap_ids=wrap_ids)
+    # Empty containers need a concrete type when placed beside a populated
+    # container; null is only representable by vkNull.
+    if len(children) == 0 or any(child is None for child in children):
+        wrap_ids.add(id(item))
+        return
+    # Collections widen integer siblings to their widest native Nim element
+    # type. Match that decision here so a list such as ``[1, 2**31]`` stays a
+    # native ``seq[int64]`` rather than being treated as mixed and wrapped.
+    widening_tier = int_widening_tier(items=children)
+    child_types: set[type | _NimContainerShape]
+    if widening_tier is not None:
+        child_types = {widening_tier}
+    else:
+        child_types = {_nim_literal_shape(item=child) for child in children}
+    containers = [
+        child for child in children if isinstance(child, (list, dict))
+    ]
+    # A native parent must use Value for any child container that already uses
+    # recursive Value elements, even when their native shapes match.
+    if len(child_types) > 1 or any(
+        id(child) in wrap_ids for child in containers
+    ):
+        wrap_ids.add(id(item))
+
+
+@beartype
+def _close_nim_object_variant_wrap_ids(
+    *, item: Value, ancestor_wrapped: bool, wrap_ids: set[int]
+) -> None:
+    """Mark nested containers below an already wrapped container."""
+    children = _nim_container_children(item=item)
+    if children is None:
+        return
+    wrapped = ancestor_wrapped or id(item) in wrap_ids
+    if ancestor_wrapped:
+        wrap_ids.add(id(item))
+    for child in children:
+        _close_nim_object_variant_wrap_ids(
+            item=child,
+            ancestor_wrapped=(wrapped and isinstance(child, (list, dict))),
+            wrap_ids=wrap_ids,
+        )
+
+
+@beartype
+def _nim_object_variant_wrap_ids(*, data: Value) -> frozenset[int]:
     """Return containers whose children need the recursive ``Value`` type.
 
     The Nim object variant has list and table payloads as well as scalar
-    payloads.  Once a container is represented by ``Value``, every
-    container below it must use the same recursive element/value type too;
-    otherwise (for example) ``Value(... tableVal: Table[string, int])``
-    cannot satisfy a ``Table[string, Value]`` field.
+    payloads. Once a container is represented by ``Value``, every container
+    below it must use the same recursive element/value type too; otherwise
+    (for example) ``Value(... tableVal: Table[string, int])`` cannot satisfy
+    a ``Table[string, Value]`` field.
     """
     wrap_ids = set(
         collect_heterogeneous_container_ids(data=data)
         | collect_sibling_map_wrap_ids(data=data)
     )
-
-    def _children(item: Value) -> list[Value] | None:
-        """Return the direct children of a supported container."""
-        match item:
-            case dict():
-                return list(item.values())
-            case list():
-                return list(item)
-            case _:
-                return None
-
-    def _literal_type(
-        item: Value,
-    ) -> _NimLiteralShape:
-        """Return the native Nim type shape inferred for *item*.
-
-        Python's ``type`` alone is not enough for nested collections:
-        two dicts can both be ``dict`` while rendering as incompatible
-        ``Table[string, seq[string]]`` and ``Table[string, seq[int]]``.
-        Keep the integer widening tier in the shape as well, matching
-        the magnitude-aware collection-literal inference.
-        """
-        child_types: set[type | _NimContainerShape]
-        match item:
-            case bool():
-                return bool
-            case int():
-                tier = int_widening_tier(items=[item])
-                if tier is not None:
-                    return tier
-                return int
-            case list():
-                child_types = {_literal_type(item=child) for child in item}
-                return _NimContainerShape(
-                    kind=_NimContainerKind.LIST,
-                    child=_nim_child_shape(child_types=child_types),
-                )
-            case dict() if not isinstance(item, OrderedMap):
-                child_types = {
-                    _literal_type(item=child) for child in item.values()
-                }
-                return _NimContainerShape(
-                    kind=_NimContainerKind.DICT,
-                    child=_nim_child_shape(child_types=child_types),
-                )
-            case _:
-                return type(item)
-
-    def _visit(item: Value) -> None:
-        """Mark containers that require a recursive value type."""
-        children = _children(item=item)
-        if children is None:
-            return
-        for child in children:
-            _visit(item=child)
-        # Empty containers need a concrete type when placed beside a
-        # populated container; null is only representable by vkNull.
-        if len(children) == 0 or any(child is None for child in children):
-            wrap_ids.add(id(item))
-            return
-        # Collections widen integer siblings to their widest native Nim
-        # element type. Match that decision here so a list such as
-        # ``[1, 2**31]`` stays a native ``seq[int64]`` rather than being
-        # treated as mixed and wrapped in the object variant.
-        widening_tier = int_widening_tier(items=children)
-        child_types: set[type | _NimContainerShape]
-        if widening_tier is not None:
-            child_types = {widening_tier}
-        else:
-            child_types = {_literal_type(item=child) for child in children}
-        containers = [
-            child for child in children if isinstance(child, (list, dict))
-        ]
-        wrapped_containers = [
-            child for child in containers if id(child) in wrap_ids
-        ]
-        # A native parent must use Value for any child container that
-        # already uses recursive Value elements. This applies even when
-        # every child is wrapped and their native shapes match.
-        if len(child_types) > 1 or bool(wrapped_containers):
-            wrap_ids.add(id(item))
-
-    _visit(item=data)
-
-    # Close over nested containers after the bottom-up decision above.
-    # This gives every list/table payload its declared seq[Value] or
+    _mark_nim_object_variant_wrap_ids(item=data, wrap_ids=wrap_ids)
+    # Close over nested containers after the bottom-up decision above. This
+    # gives every list/table payload its declared seq[Value] or
     # Table[string, Value] type, including otherwise homogeneous children.
-    def _close(item: Value, *, ancestor_wrapped: bool) -> None:
-        """Mark nested containers below an already wrapped container."""
-        children = _children(item=item)
-        if children is None:
-            return
-        wrapped = ancestor_wrapped or id(item) in wrap_ids
-        if ancestor_wrapped:
-            wrap_ids.add(id(item))
-        for child in children:
-            _close(
-                item=child,
-                ancestor_wrapped=(wrapped and isinstance(child, (list, dict))),
-            )
-
-    _close(item=data, ancestor_wrapped=False)
+    _close_nim_object_variant_wrap_ids(
+        item=data,
+        ancestor_wrapped=False,
+        wrap_ids=wrap_ids,
+    )
     return frozenset(wrap_ids)
 
 
