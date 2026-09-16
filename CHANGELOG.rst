@@ -3,6 +3,19 @@ Changelog
 
 .. towncrier release notes start
 
+2026.09.16
+----------
+
+- Type the Zig inferred-element mapping with the inference domain instead of ``object``.
+
+- Type record-name callbacks with Literalizer values instead of arbitrary objects.
+
+- Type Bash, D, and SystemVerilog language callbacks with their actual receiver and collection types.
+
+- Type internal bound-reference name collections independently of their values.
+
+- Expose nested-input selection and declaration/call composition through the public API.
+
 2026.09.04
 ----------
 
