@@ -831,7 +831,7 @@ jobs:
       # ``sudo``, which would target the system Perl instead).
       - name: Set up Perl
         timeout-minutes: 10
-        uses: shogo82148/actions-setup-perl@v1.43.1
+        uses: shogo82148/actions-setup-perl@v1.44.0
         with:
           perl-version: '5.36'
       - name: Install Perl DateTime
