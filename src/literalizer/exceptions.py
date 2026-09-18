@@ -78,6 +78,14 @@ class JSONParseError(ParseError):
     """
 
 
+class JSONCParseError(ParseError):
+    """Raised when a JSONC string cannot be parsed.
+
+    To resolve, fix the JSON syntax or comments, or choose the matching
+    ``input_format``.
+    """
+
+
 class YAMLParseError(ParseError):
     """Raised when a YAML string cannot be parsed.
 

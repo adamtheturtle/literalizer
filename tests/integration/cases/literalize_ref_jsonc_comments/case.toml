@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Python"]
+languages_reason = "Sampled: comment parsing is independent of the target language."
