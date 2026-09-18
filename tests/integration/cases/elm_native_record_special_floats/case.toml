@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm"]
+languages_reason = "Native float expressions cover finite and non-finite values."
+
+[[variants]]
+axis = "dict_format"

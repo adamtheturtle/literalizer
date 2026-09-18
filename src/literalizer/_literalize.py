@@ -1244,7 +1244,7 @@ def _maybe_format_record_literal(
         joined = ", ".join(rendered.entries)
         return (
             f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer}"
+            f"{rendered.compact_pad}{rendered.closer.lstrip()}"
         )
     # Respect the language's trailing-comma policy: Go/Rust permit a
     # trailing comma after the last field (config ``True`` -> unchanged),
