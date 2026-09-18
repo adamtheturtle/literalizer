@@ -21,6 +21,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -492,6 +493,7 @@ def _build_roc_body_preamble(
     return _compute
 
 
+@beartype
 def _roc_record_literal(
     _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
 ) -> RenderedRecordLiteral:
@@ -506,14 +508,10 @@ def _roc_record_literal(
     )
 
 
+@beartype
 def _roc_record_shapes(data: Value, /) -> Mapping[int, RecordShape]:
     """Collect the record-shaped dictionaries in a native Roc value."""
     return collect_record_shapes(data=data)
-
-
-def _roc_record_entry(key: str, _raw_value: Value, value: str) -> str:
-    """Render a field of an empty or non-record dict."""
-    return f"{key}: {value}"
 
 
 _ROC_RECORD_RESERVED_FIELDS = frozenset(
@@ -538,6 +536,7 @@ _ROC_RECORD_RESERVED_FIELDS = frozenset(
 )
 
 
+@beartype
 def _roc_native_type_shape(data: Value) -> str:
     """Describe a value's native type for sibling-record validation."""
     result: str
@@ -572,6 +571,7 @@ def _roc_native_type_shape(data: Value) -> str:
     return result
 
 
+@beartype
 def _validate_roc_record_data(data: Value) -> None:
     """Reject shapes that the opt-in native record mode cannot
     preserve.
@@ -1488,7 +1488,10 @@ class Roc(metaclass=LanguageCls):
             return DictFormatConfig(
                 dict_open=fixed_open(open_str="{"),
                 close="}",
-                format_entry=_roc_record_entry,
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
                 empty_dict=None,
                 preamble_lines=(),
                 narrowed_open=None,
