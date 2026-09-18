@@ -1,0 +1,4 @@
+positive = inf
+negative = -inf
+nan_value = nan
+finite = 1.5
