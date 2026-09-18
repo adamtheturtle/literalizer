@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Sml"]
+languages_reason = "SML native records are an opt-in representation."
+
+[[variants]]
+axis = "dict_format"

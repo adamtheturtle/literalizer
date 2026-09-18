@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Sml"]
+languages_reason = "Nested SML records and uniform record lists compile together."
+
+[[variants]]
+axis = "dict_format"
