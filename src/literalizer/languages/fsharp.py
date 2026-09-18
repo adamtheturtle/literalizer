@@ -277,7 +277,7 @@ def _validate_fsharp_anonymous_record(
         msg = "F# anonymous record mode cannot represent ordered maps"
         raise UnrepresentableInputError(msg)
     if isinstance(data, dict):
-        if not data:
+        if len(data) == 0:
             msg = "F# anonymous record mode cannot represent empty records"
             raise UnrepresentableInputError(msg)
         for key, value in data.items():
