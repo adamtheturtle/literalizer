@@ -52,6 +52,17 @@ from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    build_record_strategy,
+    identity_field_identifier_key,
+    nested_record_sequence_type,
+)
+from literalizer._formatters.type_inference import collect_record_shapes
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -79,6 +90,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -290,8 +302,8 @@ def _haskell_format_call_arg(_original: Value, formatted: str, /) -> str:
 
 
 @beartype
-def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
-    """Format a datetime as a Haskell datetime constructor.
+def _haskell_utc_time_expression(value: datetime.datetime) -> str:
+    """Format a datetime as a native Haskell UTC time expression.
 
     Timezone-aware datetimes are converted to UTC first, since
     ``UTCTime`` represents a point in time in UTC.
@@ -305,10 +317,16 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
     else:
         time_part = f"secondsToDiffTime {total_seconds}"
     return (
-        f"{prefix}Datetime (UTCTime "
+        "UTCTime "
         f"(fromGregorian {value.year} {value.month} {value.day}) "
-        f"({time_part}))"
+        f"({time_part})"
     )
+
+
+@beartype
+def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
+    """Wrap a UTC time expression in the tagged datetime constructor."""
+    return f"{prefix}Datetime ({_haskell_utc_time_expression(value=value)})"
 
 
 @beartype
@@ -327,6 +345,72 @@ def _build_haskell_datetime_formatter(
 
 
 _format_datetime_haskell = _build_haskell_datetime_formatter(prefix="H")
+
+
+@beartype
+def _haskell_native_record_declaration(
+    name: str, fields: Sequence[RecordDeclarationField], /
+) -> str:
+    """Declare a concrete Haskell record type and constructor."""
+    members = ", ".join(
+        f"{field.identifier} :: {field.type_name}" for field in fields
+    )
+    return f"data {name} = {name} {{ {members} }}"
+
+
+@beartype
+def _haskell_native_record_literal(
+    name: str, fields: Sequence[RecordLiteralField], /
+) -> RenderedRecordLiteral:
+    """Render a constructor application with named record fields."""
+    return RenderedRecordLiteral(
+        head=f"{name} {{",
+        entries=tuple(
+            f"{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer="}",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _haskell_native_field_identifier(key: str, /) -> str:
+    """Return a source-safe Haskell field selector."""
+    return key
+
+
+@beartype
+def _validate_haskell_native_record(
+    data: Value, *, reserved_fields: frozenset[str]
+) -> None:
+    """Reject values outside the concrete Haskell record subset."""
+    if isinstance(data, OrderedMap):
+        msg = "Haskell record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "Haskell record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_']*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = f"Haskell record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_haskell_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        for value in data:
+            _validate_haskell_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = f"Haskell record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
 
 
 @beartype
@@ -1503,6 +1587,13 @@ def _reject_negative_zero_call_arg(value: Value, /) -> None:
 
 
 @beartype
+def _reject_native_record_call_arg(_value: Value, /) -> None:
+    """Avoid emitting a call stub with the obsolete generic Val type."""
+    msg = "Haskell record mode cannot infer concrete call stub types"
+    raise IncompatibleFormatsError(msg)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Haskell(metaclass=LanguageCls):
     """Haskell language specification.
@@ -1559,6 +1650,11 @@ class Haskell(metaclass=LanguageCls):
               Requires the ``time`` package.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        dict_format: ``DEFAULT`` keeps the generated generic ``Val``;
+            ``RECORD`` emits concrete named record types for valid,
+            fixed-shape objects. Native records cannot currently be
+            passed through generated call stubs.
 
         type_name: Name of the generated custom type.  Defaults to
             ``"Val"``.
@@ -1875,6 +1971,7 @@ class Haskell(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -2047,6 +2144,25 @@ class Haskell(metaclass=LanguageCls):
         """
         if self.json_type is not None:
             reject_negative_zero(data=data, language_name="Haskell")
+        if self.dict_format is type(self.dict_format).RECORD:
+            if (
+                re.fullmatch(
+                    pattern=r"[A-Z][A-Za-z0-9_']*",
+                    string=self.type_name,
+                )
+                is None
+            ):
+                msg = "Haskell record mode requires a valid type_name"
+                raise UnrepresentableInputError(msg)
+            if self.json_type is not None:
+                msg = "Haskell records cannot be combined with json_type"
+                raise IncompatibleFormatsError(msg)
+            if self.sequence_format is not type(self.sequence_format).LIST:
+                msg = "Haskell records require sequence_format=LIST"
+                raise IncompatibleFormatsError(msg)
+            _validate_haskell_native_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
         if (
             self.json_type is not None
             or self.sequence_format is not type(self.sequence_format).TUPLE
@@ -2084,6 +2200,8 @@ class Haskell(metaclass=LanguageCls):
         """
         if self.json_type is not None:
             return _reject_negative_zero_call_arg
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _reject_native_record_call_arg
         return no_validate_call_arg
 
     @cached_property
@@ -2259,12 +2377,90 @@ class Haskell(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return _AESON_VALUE_STATIC_PREAMBLE
+        if self.dict_format is type(self.dict_format).RECORD:
+            return ("{-# LANGUAGE DuplicateRecordFields #-}",)
         return ()
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
+
+    def _native_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the concrete Haskell type of a record field."""
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"[{request.element_record_name}]"
+        return self._native_value_type(data=request.value)
+
+    def _native_value_type(self, data: Value) -> str:
+        """Return a concrete type for a native scalar or list."""
+        if isinstance(data, list):
+            if len(data) == 0:
+                msg = (
+                    "Haskell record mode cannot infer empty list element types"
+                )
+                raise UnrepresentableInputError(msg)
+            return f"[{self._native_value_type(data=data[0])}]"
+        scalar_types: dict[type, str] = {
+            bool: "Bool",
+            int: "Integer",
+            float: "Double",
+            str: "String",
+            bytes: "String",
+            datetime.time: "String",
+        }
+        scalar_type = scalar_types.get(type(data))
+        if scalar_type is not None:
+            return scalar_type
+        if isinstance(data, datetime.datetime):
+            datetime_types = {
+                int: "Integer",
+                str: "String",
+                datetime.datetime: "UTCTime",
+            }
+            return datetime_types[self.datetime_format.value.type_produced]
+        if isinstance(data, datetime.date):
+            date_types = {str: "String", datetime.date: "Day"}
+            return date_types[self.date_format.value.type_produced]
+        msg = (  # pragma: no cover
+            f"Haskell record mode cannot type {type(data).__name__}"
+        )
+        raise UnrepresentableInputError(msg)  # pragma: no cover
+
+    def _native_declared_type(self, data: Value) -> str:
+        """Name the record type of a bound value or infer its scalar
+        type.
+        """
+        lookup = self._native_record_strategy.record_name_for_value
+        nested = nested_record_sequence_type(
+            value=data, record_name_for_value=lookup
+        )
+        if nested is not None:
+            depth, name = nested
+            return "[" * depth + name + "]" * depth
+        return self._native_value_type(data=data)
+
+    @cached_property
+    def _native_record_strategy(self) -> ActiveRecordStrategy:
+        """Build shared record naming, rendering, and declarations."""
+        return build_record_strategy(
+            renderer=RecordRenderer(
+                name_prefix=self.type_name,
+                record_shape_names={},
+                field_identifier=_haskell_native_field_identifier,
+                field_identifier_key=identity_field_identifier_key,
+                field_type=self._native_record_field_type,
+                render_declaration=_haskell_native_record_declaration,
+                render_literal=_haskell_native_record_literal,
+                field_type_names_nested_records=True,
+                suppress_custom_name_declarations=False,
+            ),
+            split_conflicting_field_types=True,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
+        )
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
@@ -2284,6 +2480,8 @@ class Haskell(metaclass=LanguageCls):
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
             )
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self._native_record_strategy.behavior
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -2308,11 +2506,15 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "True"
         return f"{self.constructor_prefix}Bool True"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "False"
         return f"{self.constructor_prefix}Bool False"
 
     @cached_property
@@ -2327,6 +2529,13 @@ class Haskell(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
             return _AESON_VALUE_SEQUENCE_CONFIG
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                self.sequence_format.value,
+                sequence_open=fixed_open(open_str="["),
+                supports_heterogeneity=False,
+                declared_type=None,
+            )
         return self._seq_setup.format_config
 
     @cached_property
@@ -2334,6 +2543,8 @@ class Haskell(metaclass=LanguageCls):
         """Callable that returns the opening delimiter for a sequence."""
         if self._json_type_active:
             return _AESON_VALUE_SEQUENCE_CONFIG.sequence_open
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         return self._seq_setup.sequence_open
 
     @cached_property
@@ -2352,7 +2563,11 @@ class Haskell(metaclass=LanguageCls):
     def _string_fmts(self) -> _StringFormatters:
         """Shared string/bytes/dict-entry formatters."""
         return _build_string_formatters(
-            string_format_name=self.string_format.name,
+            string_format_name=(
+                "DOUBLE"
+                if self.dict_format is type(self.dict_format).RECORD
+                else self.string_format.name
+            ),
             constructor_prefix=self.constructor_prefix,
             base_format_bytes=self.bytes_format,
         )
@@ -2421,11 +2636,21 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            if self.date_format.value.type_produced is datetime.date:
+                return date_ymd_formatter(
+                    template="fromGregorian {year} {month} {day}"
+                )
+            return self.date_format
         return self._date_fmts.format_date
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            if self.datetime_format.value.type_produced is datetime.datetime:
+                return _haskell_utc_time_expression
+            return self.datetime_format
         if (
             self.datetime_format is type(self.datetime_format).EPOCH
             and self.numeric_style is type(self.numeric_style).EXPLICIT
@@ -2436,6 +2661,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_time_iso
         if self._string_fmts.is_explicit:
             _str_pfx = f"{self.constructor_prefix}Str "
 
@@ -2451,6 +2678,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self.float_format
         if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _float_prefix = f"{self.constructor_prefix}Float "
             _base_format_float: Callable[[float], str] = self.float_format
@@ -2469,6 +2698,8 @@ class Haskell(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self.integer_format
         if self.numeric_style is type(self.numeric_style).EXPLICIT:
             _int_prefix = f"{self.constructor_prefix}Int "
             _base_format_integer: Callable[[int], str] = self.integer_format
@@ -2509,6 +2740,31 @@ class Haskell(metaclass=LanguageCls):
         """Callable that formats a new variable declaration."""
         if self._json_type_active:
             return _format_haskell_json_declaration
+        if self.dict_format is type(self.dict_format).RECORD:
+            base = self.declaration_style.value.formatter
+
+            def _native_declaration(
+                name: str,
+                value: str,
+                data: Value,
+                modifiers: frozenset[enum.Enum],
+            ) -> str:
+                """Bind a native value with its concrete inferred type."""
+                if any(
+                    name in shape.keys
+                    for shape in collect_record_shapes(data=data).values()
+                ):
+                    msg = (
+                        "Haskell record mode cannot use a field label "
+                        f"as variable name {name!r}"
+                    )
+                    raise UnrepresentableInputError(msg)
+                declared_type = self._native_declared_type(data=data)
+                return f"{name} :: {declared_type}\n" + base(
+                    name, value, data, modifiers
+                )
+
+            return _native_declaration
         return self._decl_fmts.format_variable_declaration
 
     @cached_property
@@ -2596,6 +2852,8 @@ class Haskell(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return {}
+        if self.dict_format is type(self.dict_format).RECORD:
+            return {}
         return self._preamble.scalar_preamble
 
     @cached_property
@@ -2616,6 +2874,25 @@ class Haskell(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return _aeson_value_body_preamble
+        if self.dict_format is type(self.dict_format).RECORD:
+
+            def _native_body_preamble(
+                types: frozenset[type], data: Value, /
+            ) -> tuple[str, ...]:
+                """Import the time types needed by concrete fields."""
+                imports: tuple[str, ...] = ()
+                if (
+                    datetime.date in types
+                    and self.date_format.value.type_produced is datetime.date
+                ) or (
+                    datetime.datetime in types
+                    and self.datetime_format.value.type_produced
+                    is datetime.datetime
+                ):
+                    imports = ("import Data.Time",)
+                return imports + self._native_record_strategy.preamble(data)
+
+            return _native_body_preamble
         return self._preamble.compute_body_preamble
 
     @cached_property
