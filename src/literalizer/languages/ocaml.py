@@ -49,6 +49,15 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
 )
+from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    build_record_strategy,
+    identity_field_identifier_key,
+)
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -76,6 +85,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -96,11 +106,14 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 _OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
     int: "Int",
@@ -109,6 +122,79 @@ _OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
     bytes: "Str",
     datetime.time: "Str",
 }
+
+
+@beartype
+def _ocaml_native_record_declaration(
+    name: str, fields: Sequence[RecordDeclarationField], /
+) -> str:
+    """Declare one concrete OCaml record type."""
+    members = "; ".join(
+        f"{field.identifier} : {field.type_name}" for field in fields
+    )
+    return f"type {name} = {{ {members} }}"
+
+
+@beartype
+def _ocaml_native_record_literal(
+    name: str, fields: Sequence[RecordLiteralField], /
+) -> RenderedRecordLiteral:
+    """Render an annotated record to disambiguate shared labels."""
+    return RenderedRecordLiteral(
+        head="({",
+        entries=tuple(
+            f"{field.identifier} = {field.formatted}" for field in fields
+        ),
+        closer=f"}} : {name})",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _ocaml_native_field_identifier(key: str, /) -> str:
+    """Return a validated OCaml field label."""
+    return key
+
+
+@beartype
+def _validate_ocaml_native_record(
+    data: Value, *, reserved_fields: frozenset[str]
+) -> None:
+    """Reject values outside the concrete OCaml record subset."""
+    if isinstance(data, OrderedMap):
+        msg = "OCaml record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "OCaml record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_']*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = f"OCaml record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_ocaml_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        for value in data:
+            _validate_ocaml_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = f"OCaml record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _reject_ocaml_native_call_arg(_value: Value, /) -> None:
+    """Reject call stubs whose argument types still assume val_t."""
+    msg = "OCaml record mode cannot infer concrete call stub types"
+    raise IncompatibleFormatsError(msg)
 
 
 @beartype
@@ -367,6 +453,11 @@ class OCaml(metaclass=LanguageCls):
               e.g. ``((2024, 1, 15), (12, 30, 0))``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        dict_format: ``DEFAULT`` keeps the generated ``val_t`` union;
+            ``RECORD`` emits concrete annotated records for valid,
+            fixed-shape objects. Generated call stubs are not supported
+            in record mode.
 
         type_name: Name of the generated custom type.  Defaults to
             ``"val_t"``.
@@ -675,6 +766,7 @@ class OCaml(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -849,11 +941,34 @@ class OCaml(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Check values and formats for the native record mode."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            if (
+                re.fullmatch(
+                    pattern=r"[a-z][A-Za-z0-9_']*",
+                    string=self.type_name,
+                )
+                is None
+                or self.type_name in self.reserved_variable_identifiers
+            ):
+                msg = "OCaml record mode requires a valid type_name"
+                raise UnrepresentableInputError(msg)
+            if self.json_type is not None:
+                msg = "OCaml records cannot be combined with json_type"
+                raise IncompatibleFormatsError(msg)
+            if self.sequence_format is not type(self.sequence_format).LIST:
+                msg = "OCaml records require sequence_format=LIST"
+                raise IncompatibleFormatsError(msg)
+            _validate_ocaml_native_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _reject_ocaml_native_call_arg
         return no_validate_call_arg
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
@@ -947,7 +1062,73 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self._native_record_strategy.behavior
         return self.heterogeneous_strategy.value
+
+    def _native_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return the concrete type of a record field."""
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"{request.element_record_name} list"
+        return self._native_value_type(data=request.value)
+
+    def _native_value_type(self, data: Value) -> str:
+        """Infer the OCaml type of a scalar or list."""
+        if isinstance(data, list):
+            if len(data) == 0:
+                msg = "OCaml record mode cannot infer empty list element types"
+                raise UnrepresentableInputError(msg)
+            return f"{self._native_value_type(data=data[0])} list"
+        scalar_types: dict[type, str] = {
+            bool: "bool",
+            int: "int",
+            float: "float",
+            str: "string",
+            bytes: "string",
+            datetime.time: "string",
+        }
+        scalar_type = scalar_types.get(type(data))
+        if scalar_type is not None:
+            return scalar_type
+        if isinstance(data, datetime.datetime):
+            datetime_types: dict[type, str] = {
+                int: "int",
+                str: "string",
+                datetime.datetime: ("((int * int * int) * (int * int * int))"),
+            }
+            return datetime_types[self.datetime_format.value.type_produced]
+        if isinstance(data, datetime.date):
+            date_types: dict[type, str] = {
+                str: "string",
+                datetime.date: "(int * int * int)",
+            }
+            return date_types[self.date_format.value.type_produced]
+        msg = (  # pragma: no cover
+            f"OCaml record mode cannot type {type(data).__name__}"
+        )
+        raise UnrepresentableInputError(msg)  # pragma: no cover
+
+    @cached_property
+    def _native_record_strategy(self) -> ActiveRecordStrategy:
+        """Build shared record naming, rendering, and declarations."""
+        return build_record_strategy(
+            renderer=RecordRenderer(
+                name_prefix=self.type_name,
+                record_shape_names={},
+                field_identifier=_ocaml_native_field_identifier,
+                field_identifier_key=identity_field_identifier_key,
+                field_type=self._native_record_field_type,
+                render_declaration=_ocaml_native_record_declaration,
+                render_literal=_ocaml_native_record_literal,
+                field_type_names_nested_records=True,
+                suppress_custom_name_declarations=False,
+            ),
+            split_conflicting_field_types=True,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
+        )
 
     @cached_property
     def call_data_dependent_preamble(
@@ -1084,6 +1265,8 @@ class OCaml(metaclass=LanguageCls):
         """True literal using the configured constructor prefix."""
         if self._json_type_active:
             return "`Bool true"
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
@@ -1091,6 +1274,8 @@ class OCaml(metaclass=LanguageCls):
         """False literal using the configured constructor prefix."""
         if self._json_type_active:
             return "`Bool false"
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "false"
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
@@ -1111,6 +1296,13 @@ class OCaml(metaclass=LanguageCls):
         if self._json_type_active:
             _yojson_open = fixed_open(open_str="`List [")
             return dataclasses.replace(fmt, sequence_open=_yojson_open)
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                fmt,
+                sequence_open=fixed_open(open_str="["),
+                supports_heterogeneity=False,
+                declared_type=None,
+            )
         if self.sequence_format is type(self.sequence_format).LIST:
             _seq_open = fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
@@ -1124,6 +1316,8 @@ class OCaml(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if self._json_type_active:
             return fixed_open(open_str="`List [")
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         if self.sequence_format is type(self.sequence_format).LIST:
             return fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
@@ -1179,6 +1373,8 @@ class OCaml(metaclass=LanguageCls):
         if self._json_type_active:
             return format_date_iso
         if self.date_format is type(self.date_format).OCAML:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return date_ymd_formatter(template="({year}, {month}, {day})")
             return date_ymd_formatter(
                 template=(
                     f"{self.constructor_prefix}Date "
@@ -1196,6 +1392,12 @@ class OCaml(metaclass=LanguageCls):
         if self._json_type_active:
             return format_datetime_iso
         if self.datetime_format is type(self.datetime_format).OCAML:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return datetime_ymdhms_formatter(
+                    template="(({year}, {month}, {day}), "
+                    "({hour}, {minute}, {second}))",
+                    millisecond_template=None,
+                )
             return datetime_ymdhms_formatter(
                 template=(
                     f"{self.constructor_prefix}Datetime "
@@ -1240,6 +1442,8 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return passthrough_sequence_entry
         return self._entry_formatter
 
     @cached_property
@@ -1267,6 +1471,8 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def _ocaml_declaration(self) -> Callable[[str, str, Value], str]:
         """Declaration formatter built from the configured type name."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return lambda name, value, _data: f"let {name} = {value}"
         if self._json_type_active:
             return _build_ocaml_declaration(
                 sequence_declared_type=_YOJSON_SAFE_T,
@@ -1380,6 +1586,15 @@ class OCaml(metaclass=LanguageCls):
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
+        if self.dict_format is type(self.dict_format).RECORD:
+
+            def _native_body_preamble(
+                _types: frozenset[type], data: Value, /
+            ) -> tuple[str, ...]:
+                """Declare concrete record types inside the module."""
+                return self._native_record_strategy.preamble(data)
+
+            return _native_body_preamble
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,

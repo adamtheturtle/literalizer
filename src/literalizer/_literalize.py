@@ -1241,7 +1241,7 @@ def _maybe_format_record_literal(
         # #2910); fall through to normal map rendering.
         return None
     if not is_multiline:
-        joined = ", ".join(rendered.entries)
+        joined = spec.element_separator.join(rendered.entries)
         return (
             f"{rendered.head}{rendered.compact_pad}{joined}"
             f"{rendered.compact_pad}{rendered.closer.lstrip()}"
