@@ -1,0 +1,1 @@
+Exclude the optional YAML C accelerator from Emscripten installations, allowing Pyodide to resolve Literalizer's dependencies normally.
