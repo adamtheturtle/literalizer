@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["FSharp"]
+languages_reason = "Nested anonymous records and uniform record lists compile together."
+
+[[variants]]
+axis = "dict_format"
