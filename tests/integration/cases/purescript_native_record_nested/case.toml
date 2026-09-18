@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["PureScript"]
-languages_reason = "Nested records and uniform record arrays infer native rows."
-
-[[variants]]
-axis = "dict_format"

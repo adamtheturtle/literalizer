@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["Gleam"]
-languages_reason = "Nested Gleam records and uniform record lists have concrete types."
-
-[[variants]]
-axis = "dict_format"
