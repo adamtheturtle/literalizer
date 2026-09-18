@@ -955,6 +955,11 @@ jobs:
           find tests/integration/cases -name '*.json5' -print0 > /tmp/files-json5 && test -s /tmp/files-json5
           xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-json5 > /dev/null
 
+      - name: Lint Jsonc
+        run: |-
+          find tests/integration/cases -name '*.jsonc' -print0 > /tmp/files-jsonc && test -s /tmp/files-jsonc
+          xargs -0 node .github/npm-linters/lint-jsonc.cjs < /tmp/files-jsonc
+
       - name: Lint Norg
         run: |-
           find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg && test -s /tmp/files-norg
