@@ -1,4 +1,4 @@
-# languages rejecting: 39; languages accepting: 0
+# languages rejecting: 40; languages accepting: 0
 
 [UnrepresentableInputError]
 "Ada['1: one\\n2: two\\n']" = "Ada cannot represent dict key of type int"
@@ -55,6 +55,9 @@
 "Json5['1: one\\n2: two\\n']" = "Json5 cannot represent dict key of type int"
 "Json5['2024-01-01: new_year\\n']" = "Json5 cannot represent dict key of type date"
 "Json5['true: yes\\nfalse: no\\n']" = "Json5 cannot represent dict key of type bool"
+"Jsonc['1: one\\n2: two\\n']" = "Jsonc cannot represent dict key of type int"
+"Jsonc['2024-01-01: new_year\\n']" = "Jsonc cannot represent dict key of type date"
+"Jsonc['true: yes\\nfalse: no\\n']" = "Jsonc cannot represent dict key of type bool"
 "Jsonnet['1: one\\n2: two\\n']" = "Jsonnet cannot represent dict key of type int"
 "Jsonnet['2024-01-01: new_year\\n']" = "Jsonnet cannot represent dict key of type date"
 "Jsonnet['true: yes\\nfalse: no\\n']" = "Jsonnet cannot represent dict key of type bool"
