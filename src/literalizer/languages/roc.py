@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import ClassVar
 
@@ -21,6 +21,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -42,6 +43,10 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     escape_control_chars,
+)
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -66,6 +71,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -86,14 +92,16 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
 )
 from literalizer._statements import (
     insert_before_line_comment,
     split_statements,
 )
-from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 
 @beartype
@@ -486,6 +494,119 @@ def _build_roc_body_preamble(
 
 
 @beartype
+def _roc_record_literal(
+    _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+) -> RenderedRecordLiteral:
+    """Render a string-keyed object using native Roc record syntax."""
+    return RenderedRecordLiteral(
+        head="{",
+        entries=tuple(
+            f"{key}: {value}" for key, value in formatted_fields.items()
+        ),
+        closer="}",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _roc_record_shapes(data: Value, /) -> Mapping[int, RecordShape]:
+    """Collect the record-shaped dictionaries in a native Roc value."""
+    return collect_record_shapes(data=data)
+
+
+_ROC_RECORD_RESERVED_FIELDS = frozenset(
+    {
+        "app",
+        "as",
+        "dbg",
+        "else",
+        "expect",
+        "exposing",
+        "if",
+        "import",
+        "is",
+        "module",
+        "package",
+        "platform",
+        "return",
+        "then",
+        "try",
+        "when",
+    }
+)
+
+
+@beartype
+def _roc_native_type_shape(data: Value) -> str:
+    """Describe a value's native type for sibling-record validation."""
+    result: str
+    if isinstance(data, dict):
+        fields = tuple(
+            sorted(
+                (
+                    key if isinstance(key, str) else "<invalid>",
+                    _roc_native_type_shape(data=value),
+                )
+                for key, value in data.items()
+            )
+        )
+        result = f"record:{fields!r}"
+    elif isinstance(data, list):
+        element_types = sorted(
+            {_roc_native_type_shape(data=value) for value in data}
+        )
+        result = f"list:{element_types!r}"
+    elif isinstance(data, bool):
+        result = "bool"
+    elif isinstance(data, int):
+        result = "int"
+    elif isinstance(data, float):
+        result = "float"
+    elif isinstance(data, (str, bytes, datetime.date, datetime.time)):
+        result = "str"
+    elif data is None:
+        result = "null"
+    else:
+        result = type(data).__name__
+    return result
+
+
+@beartype
+def _validate_roc_record_data(data: Value) -> None:
+    """Reject shapes that the opt-in native record mode cannot
+    preserve.
+    """
+    if isinstance(data, OrderedMap):
+        msg = "Roc native record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_]*", string=key)
+                is None
+                or key in _ROC_RECORD_RESERVED_FIELDS
+            ):
+                msg = f"Roc native record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_roc_record_data(data=value)
+    elif isinstance(data, list):
+        record_types = {
+            _roc_native_type_shape(data=value)
+            for value in data
+            if isinstance(value, dict)
+        }
+        if len(record_types) > 1:
+            msg = "Roc native record mode requires uniform record list types"
+            raise UnrepresentableInputError(msg)
+        for value in data:
+            _validate_roc_record_data(data=value)
+    elif isinstance(data, set):
+        msg = "Roc native record mode cannot represent sets"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _roc_format_call_target(parts: Sequence[str]) -> str:
     """Flatten a sequence of call target parts to an underscored Roc
     identifier.
@@ -600,6 +721,12 @@ class Roc(metaclass=LanguageCls):
            RInt I128,
        ]
 
+    Set ``dict_format=Roc.dict_formats.RECORD`` to emit native Roc
+    records with scalar and list values without tags instead.  This mode
+    rejects keys that are not Roc field identifiers, ordered maps, and
+    sets; the default tagged representation remains available for them.
+    Null has no native Roc literal and remains an inferred ``RNull`` tag.
+
     Args:
         date_format: How to format :class:`datetime.date` values.
 
@@ -617,6 +744,8 @@ class Roc(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"R"``, producing constructors like ``RNull``,
             ``RBool``, ``RInt``, etc.
+        dict_format: ``DEFAULT`` for tagged pairs or ``RECORD`` for
+            native records.
     """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -847,6 +976,12 @@ class Roc(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        """Tagged key-value pairs, preserving arbitrary string keys."""
+
+        RECORD = enum.auto()
+        """Native records and untagged scalar/list values where
+        possible.
+        """
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -988,7 +1123,10 @@ class Roc(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Ensure native-record output has only representable shapes."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            _validate_roc_record_data(data=data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -1180,6 +1318,12 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                compute_record_shapes=_roc_record_shapes,
+                render_record_literal=_roc_record_literal,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1283,16 +1427,22 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "Bool.true"
         return f"{self.constructor_prefix}Bool Bool.true"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "Bool.false"
         return f"{self.constructor_prefix}Bool Bool.false"
 
     @cached_property
     def _seq_open(self) -> Callable[[list[Value]], str]:
         """Shared sequence opener with configured constructor prefix."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1308,6 +1458,12 @@ class Roc(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            supports_heterogeneity=(
+                self.dict_format is not type(self.dict_format).RECORD
+            ),
+            requires_uniform_record_shapes=(
+                self.dict_format is type(self.dict_format).RECORD
+            ),
         )
 
     @cached_property
@@ -1328,6 +1484,20 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{"),
+                close="}",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=None,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=True,
+                narrowed_empty_form=None,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
@@ -1349,6 +1519,12 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            tag = f"{self.constructor_prefix}Str "
+            formatter = _ROC_BYTES_FORMATTERS[self.bytes_format.name](
+                self.constructor_prefix
+            )
+            return lambda value: formatter(value).removeprefix(tag)
         if self.constructor_prefix == "R":
             return self.bytes_format
         return _ROC_BYTES_FORMATTERS[self.bytes_format.name](
@@ -1358,6 +1534,10 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            formatter = _build_roc_date_iso(prefix=self.constructor_prefix)
+            tag = f"{self.constructor_prefix}Str "
+            return lambda value: formatter(value).removeprefix(tag)
         if self.constructor_prefix == "R":
             return self.date_format
         return _build_roc_date_iso(prefix=self.constructor_prefix)
@@ -1365,6 +1545,18 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            if self.datetime_format is type(self.datetime_format).EPOCH:
+                formatter = _build_roc_datetime_epoch(
+                    prefix=self.constructor_prefix
+                )
+                tag = f"{self.constructor_prefix}Int "
+            else:
+                formatter = _build_roc_datetime_iso(
+                    prefix=self.constructor_prefix
+                )
+                tag = f"{self.constructor_prefix}Str "
+            return lambda value: formatter(value).removeprefix(tag)
         base_formatter: Callable[[datetime.datetime], str] = (
             self.datetime_format
         )
@@ -1377,11 +1569,17 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
-        return _build_roc_time_iso(prefix=self.constructor_prefix)
+        formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
+        if self.dict_format is type(self.dict_format).RECORD:
+            tag = f"{self.constructor_prefix}Str "
+            return lambda value: formatter(value).removeprefix(tag)
+        return formatter
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _format_roc_string_literal
         if self.constructor_prefix == "R":
             return _format_roc_string
         return _build_roc_str_formatter(prefix=self.constructor_prefix)
@@ -1389,6 +1587,13 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            formatter = _build_roc_integer_formatter(
+                prefix=self.constructor_prefix,
+                base=_ROC_INT_BASE[self.integer_format.name],
+            )
+            tag = f"{self.constructor_prefix}Int "
+            return lambda value: formatter(value).removeprefix(tag)
         if self.constructor_prefix == "R":
             return self.integer_format
         return _build_roc_integer_formatter(
@@ -1399,6 +1604,26 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            formatter = _build_roc_float_formatter(
+                prefix=self.constructor_prefix,
+                inner=_ROC_FLOAT_BASE[self.float_format.name],
+            )
+            tag = f"{self.constructor_prefix}Float "
+
+            def _bare_float(value: float) -> str:
+                """Render a float without a tag, including infinities."""
+                if math.isinf(value):
+                    return (
+                        "-Num.infinity_f64"
+                        if value < 0
+                        else "Num.infinity_f64"
+                    )
+                if math.isnan(value):
+                    return "Num.nan_f64"
+                return formatter(value).removeprefix(tag)
+
+            return _bare_float
         if self.constructor_prefix == "R":
             return self.float_format
         _pos_inf = f"{self.constructor_prefix}Float Num.infinity_f64"
@@ -1449,6 +1674,8 @@ class Roc(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         _base_declaration = self.declaration_style.value.formatter
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _base_declaration
         _type_name = self.type_name
 
         @beartype
@@ -1502,6 +1729,8 @@ class Roc(metaclass=LanguageCls):
         data — placed inside :meth:`wrap_in_file` so it sits after the
         module header.
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            return lambda _types, _data: ()
         return _build_roc_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,

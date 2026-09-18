@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Roc"]
+languages_reason = "Native Roc records cover special floating-point fields."
+
+[[variants]]
+axis = "dict_format"

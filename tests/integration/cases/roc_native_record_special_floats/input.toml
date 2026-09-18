@@ -1,0 +1,3 @@
+positive = inf
+negative = -inf
+nan_value = nan
