@@ -1,0 +1,1 @@
+Add an opt-in native record format for Roc, avoiding the generated Val union for record-shaped data.
