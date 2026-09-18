@@ -1,0 +1,11 @@
+module Check where
+
+
+import Prelude
+
+
+my_data = [
+    1.1,
+    -2.2,
+    3.3
+    ]

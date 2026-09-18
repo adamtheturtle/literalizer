@@ -6,7 +6,7 @@ import enum
 import itertools
 import math
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import ClassVar
 
@@ -25,6 +25,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     dict_entry_with_template,
     format_bytes_base64,
     format_bytes_hex,
@@ -44,6 +45,10 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
+)
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
 )
 from literalizer._json_native_document import (
     register_json_native_document_fast,
@@ -71,6 +76,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -95,7 +101,7 @@ from literalizer._language import (
     no_validate_call_arg,
 )
 from literalizer._statements import split_statements
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
@@ -659,6 +665,156 @@ def _purescript_format_call_arg(_original: Value, formatted: str, /) -> str:
 
 
 @beartype
+def _purescript_native_record_literal(
+    _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+) -> RenderedRecordLiteral:
+    """Render a string-keyed mapping as a PureScript record."""
+    return RenderedRecordLiteral(
+        head="{",
+        entries=tuple(
+            f"{key}: {value}" for key, value in formatted_fields.items()
+        ),
+        closer="}",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _purescript_native_record_shapes(
+    data: Value, /
+) -> Mapping[int, RecordShape]:
+    """Collect record-shaped dictionaries for native rendering."""
+    return collect_record_shapes(data=data)
+
+
+@beartype
+def _purescript_native_shape(data: Value) -> str:
+    """Describe the inferred type of a native record field."""
+    if isinstance(data, dict):
+        return repr(
+            tuple(
+                sorted(
+                    (key, _purescript_native_shape(data=value))
+                    for key, value in data.items()
+                )
+            )
+        )
+    if isinstance(data, list):
+        element_types = sorted(
+            {_purescript_native_shape(data=value) for value in data}
+        )
+        return f"array:{element_types!r}"
+    if isinstance(data, int) and not isinstance(data, bool):
+        return "Int" if _purescript_int_fits_in_int32(value=data) else "Number"
+    if isinstance(data, float):
+        return "Number"
+    if isinstance(data, (str, bytes, datetime.date, datetime.time)):
+        return "String"
+    return type(data).__name__
+
+
+@beartype
+def _check_purescript_native_int_widths(data: list[Value]) -> None:
+    """Require one numeric representation for array integers."""
+    int_widths = {
+        _purescript_native_shape(data=value)
+        for value in data
+        if isinstance(value, int) and not isinstance(value, bool)
+    }
+    if len(int_widths) > 1:
+        msg = "PureScript record mode requires uniform integer widths"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _validate_purescript_native_record(
+    data: Value, reserved_fields: frozenset[str]
+) -> None:
+    """Reject shapes that cannot be inferred as native records."""
+    if isinstance(data, OrderedMap):
+        msg = "PureScript record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "PureScript record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_]*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = f"PureScript record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_purescript_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        record_types = {
+            _purescript_native_shape(data=value)
+            for value in data
+            if isinstance(value, dict)
+        }
+        if len(record_types) > 1:
+            msg = "PureScript record mode requires uniform record array types"
+            raise UnrepresentableInputError(msg)
+        _check_purescript_native_int_widths(data=data)
+        for value in data:
+            _validate_purescript_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = f"PureScript record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _purescript_native_string(value: str) -> str:
+    """Reuse PureScript's escaping without its ``Val`` constructor."""
+    return _apply_purescript_string(value=value, prefix="P").removeprefix(
+        "PStr "
+    )
+
+
+@beartype
+def _purescript_native_integer(value: int, base: Callable[[int], str]) -> str:
+    """Emit an ``Int`` or exactly representable ``Number`` literal."""
+    if _purescript_int_fits_in_int32(value=value):
+        return base(value)
+    if not -(2**53) <= value <= 2**53:
+        msg = f"PureScript cannot represent integer {value} exactly"
+        raise UnrepresentableIntegerError(msg)
+    return f"{value}.0"
+
+
+@beartype
+def _build_purescript_native_float(
+    finite: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Build a bare Number formatter including non-finite values."""
+
+    @beartype
+    def _format(value: float) -> str:
+        """Render a Number without a ``Val`` constructor."""
+        if math.isinf(value):
+            return "(-(1.0 / 0.0))" if value < 0 else "(1.0 / 0.0)"
+        if math.isnan(value):
+            return "(0.0 / 0.0)"
+        return finite(value)
+
+    return _format
+
+
+@beartype
+def _purescript_native_body_preamble(
+    _types: frozenset[type], _data: Value, /
+) -> tuple[str, ...]:
+    """Import Prelude for native numeric expressions."""
+    return ("import Prelude",)
+
+
+@beartype
 def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     """Indent call expressions for a PureScript ``let`` block.
 
@@ -946,6 +1102,10 @@ class PureScript(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"P"``, producing constructors like ``PNull``,
             ``PBool``, ``PInt``, etc.
+
+        dict_format: ``RECORD`` emits native PureScript records for
+            valid string-keyed fields.  The default preserves the
+            generated tagged ``Val`` representation.
     """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -1190,6 +1350,7 @@ class PureScript(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -1341,6 +1502,13 @@ class PureScript(metaclass=LanguageCls):
         non-finite floats -- both inputs JSON cannot represent -- and
         negative zero, whose sign ``JSON.stringify`` drops (issue #4543).
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            if self._json_type_active:
+                msg = "PureScript records cannot be combined with json_type"
+                raise UnrepresentableInputError(msg)
+            _validate_purescript_native_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
         if self._json_type_active:
             reject_negative_zero(data=data, language_name="PureScript")
             self._validate_json_value(data)
@@ -1566,6 +1734,12 @@ class PureScript(metaclass=LanguageCls):
                 self.heterogeneous_strategy.value,
                 skip_scalar_checks=True,
             )
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                compute_record_shapes=_purescript_native_record_shapes,
+                render_record_literal=_purescript_native_record_literal,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1684,11 +1858,15 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def true_literal(self) -> str:
         """True literal using the configured constructor prefix."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
     def false_literal(self) -> str:
         """False literal using the configured constructor prefix."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "false"
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
@@ -1696,6 +1874,8 @@ class PureScript(metaclass=LanguageCls):
         """Sequence opener built from the configured constructor
         prefix.
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1708,6 +1888,9 @@ class PureScript(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            supports_heterogeneity=(
+                self.dict_format is not type(self.dict_format).RECORD
+            ),
         )
 
     @cached_property
@@ -1739,6 +1922,20 @@ class PureScript(metaclass=LanguageCls):
         """Configuration for dict formatting."""
         if self._json_type_active:
             return _ARGONAUT_JSON_DICT_CONFIG
+        if self.dict_format is type(self.dict_format).RECORD:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{"),
+                close="}",
+                format_entry=dict_entry_with_separator(
+                    separator=": ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=None,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=False,
+                narrowed_empty_form=None,
+            )
         return DictFormatConfig(
             dict_open=fixed_open(
                 open_str=f"{self.constructor_prefix}Dict [",
@@ -1760,6 +1957,11 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return {
+                "HEX": format_bytes_hex,
+                "BASE64": format_bytes_base64,
+            }[self.bytes_format.name]
         if self.constructor_prefix == "P":
             return self.bytes_format
         return _BYTES_FORMATTERS[self.bytes_format.name](
@@ -1769,6 +1971,8 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a date as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_date_iso
         if self.constructor_prefix == "P":
             return self.date_format
         return _build_purescript_date_iso(prefix=self.constructor_prefix)
@@ -1779,6 +1983,12 @@ class PureScript(metaclass=LanguageCls):
         base_formatter: Callable[[datetime.datetime], str] = (
             self.datetime_format
         )
+        if self.dict_format is type(self.dict_format).RECORD:
+            return (
+                datetime_epoch_formatter(format_integer=self.format_integer)
+                if self.datetime_format is type(self.datetime_format).EPOCH
+                else format_datetime_iso
+            )
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_purescript_datetime_epoch(
                 prefix=self.constructor_prefix,
@@ -1790,11 +2000,15 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a time as a string literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_time_iso
         return _build_purescript_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _purescript_native_string
         if self.constructor_prefix == "P":
             return _format_purescript_string
         return _build_purescript_str_formatter(
@@ -1804,6 +2018,15 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            base = _INT_BASE[self.integer_format.name]
+
+            @beartype
+            def _native_integer(value: int) -> str:
+                """Render a bare native numeric literal."""
+                return _purescript_native_integer(value=value, base=base)
+
+            return _native_integer
         if self.constructor_prefix == "P":
             return self.integer_format
         return _build_purescript_integer_formatter(
@@ -1814,6 +2037,10 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _build_purescript_native_float(
+                finite=_FLOAT_BASE[self.float_format.name]
+            )
         if self.constructor_prefix == "P":
             return self.float_format
         prefix = self.constructor_prefix
@@ -1869,6 +2096,8 @@ class PureScript(metaclass=LanguageCls):
         if self._json_type_active:
             return _format_purescript_json_declaration
         _base_declaration = self.declaration_style.value.formatter
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _base_declaration
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = replace_optional_type_name(
             template=_raw_declared, placeholder="Val", type_name=self.type_name
@@ -1933,6 +2162,8 @@ class PureScript(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return _argonaut_value_body_preamble
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _purescript_native_body_preamble
         return _build_purescript_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,

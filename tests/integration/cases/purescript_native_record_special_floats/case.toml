@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["PureScript"]
+languages_reason = "Bare native Number expressions cover non-finite values."
+
+[[variants]]
+axis = "dict_format"
