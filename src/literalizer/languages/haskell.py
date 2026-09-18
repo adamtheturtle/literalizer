@@ -2415,14 +2415,17 @@ class Haskell(metaclass=LanguageCls):
         if scalar_type is not None:
             return scalar_type
         if isinstance(data, datetime.datetime):
-            datetime_types = {
+            datetime_types: dict[type, str] = {
                 int: "Integer",
                 str: "String",
                 datetime.datetime: "UTCTime",
             }
             return datetime_types[self.datetime_format.value.type_produced]
         if isinstance(data, datetime.date):
-            date_types = {str: "String", datetime.date: "Day"}
+            date_types: dict[type, str] = {
+                str: "String",
+                datetime.date: "Day",
+            }
             return date_types[self.date_format.value.type_produced]
         msg = (  # pragma: no cover
             f"Haskell record mode cannot type {type(data).__name__}"
