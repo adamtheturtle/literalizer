@@ -29,6 +29,7 @@ EList
 ENull
 ESet
 EStr
+Emscripten
 Enum
 FBool
 FFloat
@@ -95,6 +96,7 @@ Php
 Postfix
 PureScript
 Pygments
+Pyodide
 RBool
 RDict
 RFloat
