@@ -4,7 +4,7 @@ import dataclasses
 import datetime
 import enum
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
 from typing import ClassVar
@@ -47,6 +47,10 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -71,6 +75,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -94,13 +99,17 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
+from literalizer._types import OrderedMap, Scalar, Value
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    WrapCombinedInFileNotSupportedError,
+)
 
 _ASCII_DELETE_CODE_POINT = 127
+_SML_NATIVE_INT_MIN = -(2**31)
+_SML_NATIVE_INT_MAX = 2**31 - 1
 
 
 @beartype
@@ -412,6 +421,117 @@ def _sml_format_call_arg(_original: Value, formatted: str, /) -> str:
 
 
 @beartype
+def _sml_native_record_literal(
+    _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+) -> RenderedRecordLiteral:
+    """Render a string-keyed dictionary as an SML record."""
+    return RenderedRecordLiteral(
+        head="{",
+        entries=tuple(
+            f"{key} = {value}" for key, value in formatted_fields.items()
+        ),
+        closer="}",
+        compact_pad="",
+    )
+
+
+@beartype
+def _sml_native_record_shapes(data: Value, /) -> Mapping[int, RecordShape]:
+    """Collect dictionary shapes for native record rendering."""
+    return collect_record_shapes(data=data)
+
+
+@beartype
+def _sml_native_shape(data: Value) -> str:
+    """Describe a field's inferred SML type for list consistency."""
+    if isinstance(data, dict):
+        return repr(
+            tuple(
+                sorted(
+                    (key, _sml_native_shape(data=value))
+                    for key, value in data.items()
+                )
+            )
+        )
+    if isinstance(data, list):
+        element_types = sorted(
+            {_sml_native_shape(data=value) for value in data}
+        )
+        return f"list:{element_types!r}"
+    return type(data).__name__
+
+
+@beartype
+def _sml_native_epoch(value: datetime.datetime) -> str:
+    """Use SML's negation syntax for an epoch timestamp."""
+    formatted = format_datetime_epoch(value=value)
+    if formatted.startswith("-"):
+        return "~" + formatted[1:]
+    return formatted
+
+
+@beartype
+def _validate_sml_native_scalar(data: Value, *, epoch_datetimes: bool) -> None:
+    """Check scalar values against native SML type and width limits."""
+    if isinstance(data, (set, type(None))):
+        msg = f"SML record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
+    if (
+        isinstance(data, int)
+        and not isinstance(data, bool)
+        and not _SML_NATIVE_INT_MIN <= data <= _SML_NATIVE_INT_MAX
+    ):
+        msg = "SML record mode requires 32-bit native integers"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, datetime.datetime) and epoch_datetimes:
+        timestamp = int(format_datetime_epoch(value=data))
+        if not _SML_NATIVE_INT_MIN <= timestamp <= _SML_NATIVE_INT_MAX:
+            msg = "SML record mode requires 32-bit epoch integers"
+            raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _validate_sml_native_record(
+    data: Value, reserved_fields: frozenset[str], *, epoch_datetimes: bool
+) -> None:
+    """Reject data that cannot be represented as native SML records."""
+    if isinstance(data, OrderedMap):
+        msg = "SML record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "SML record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_]*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = f"SML record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_sml_native_record(
+                data=value,
+                reserved_fields=reserved_fields,
+                epoch_datetimes=epoch_datetimes,
+            )
+    elif isinstance(data, list):
+        types = {_sml_native_shape(data=value) for value in data}
+        if len(types) > 1:
+            msg = "SML record mode requires uniform list element types"
+            raise UnrepresentableInputError(msg)
+        for value in data:
+            _validate_sml_native_record(
+                data=value,
+                reserved_fields=reserved_fields,
+                epoch_datetimes=epoch_datetimes,
+            )
+    else:
+        _validate_sml_native_scalar(data=data, epoch_datetimes=epoch_datetimes)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Sml(metaclass=LanguageCls):
     """Standard ML language specification.
@@ -430,6 +550,10 @@ class Sml(metaclass=LanguageCls):
               e.g. ``((2024, 1, 15), (12, 30, 0))``.
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
+
+        dict_format: ``DEFAULT`` keeps the generated tagged value type;
+            ``RECORD`` emits native SML records for valid field names and
+            uniform list element types.
 
         type_name: Name of the generated custom type.  Defaults to
             ``"val_t"``.
@@ -706,6 +830,7 @@ class Sml(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -865,7 +990,16 @@ class Sml(metaclass=LanguageCls):
         NON_KEBAB_REF_CASES
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Validate values for the selected dictionary representation."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            _validate_sml_native_record(
+                data=data,
+                reserved_fields=self.reserved_variable_identifiers,
+                epoch_datetimes=(
+                    self.datetime_format.value.type_produced is int
+                ),
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -983,6 +1117,12 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                compute_record_shapes=_sml_native_record_shapes,
+                render_record_literal=_sml_native_record_literal,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1026,6 +1166,10 @@ class Sml(metaclass=LanguageCls):
         call.
         """
         entry_formatter = self._entry_formatter
+        if self.dict_format is type(self.dict_format).RECORD:
+            if isinstance(self.call_style.value, CommandCallStyle):
+                return _sml_format_call_arg
+            return passthrough_sequence_entry
         if isinstance(self.call_style.value, CommandCallStyle):
 
             def _curried_arg(original: Value, formatted: str) -> str:
@@ -1115,11 +1259,15 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def true_literal(self) -> str:
         """Literal for the true value."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal for the false value."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "false"
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
@@ -1134,6 +1282,13 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                self.sequence_format.value,
+                sequence_open=fixed_open(open_str="["),
+                supports_heterogeneity=False,
+                declared_type=None,
+            )
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=fixed_open(
@@ -1144,6 +1299,8 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1191,6 +1348,8 @@ class Sml(metaclass=LanguageCls):
         """Callable that formats a date as a string literal."""
         base_formatter: Callable[[datetime.date], str] = self.date_format
         if self.date_format is type(self.date_format).SML:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return date_ymd_formatter(template="({year}, {month}, {day})")
             return date_ymd_formatter(
                 template=(
                     f"{self.constructor_prefix}Date "
@@ -1206,6 +1365,12 @@ class Sml(metaclass=LanguageCls):
             self.datetime_format
         )
         if self.datetime_format is type(self.datetime_format).SML:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return datetime_ymdhms_formatter(
+                    template="(({year}, {month}, {day}), "
+                    "({hour}, {minute}, {second}))",
+                    millisecond_template=None,
+                )
             return datetime_ymdhms_formatter(
                 template=(
                     f"{self.constructor_prefix}Datetime "
@@ -1214,6 +1379,11 @@ class Sml(metaclass=LanguageCls):
                 ),
                 millisecond_template=None,
             )
+        if (
+            self.dict_format is type(self.dict_format).RECORD
+            and self.datetime_format.value.type_produced is int
+        ):
+            return _sml_native_epoch
         return base_formatter
 
     @cached_property
@@ -1246,6 +1416,8 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return passthrough_sequence_entry
         return self._entry_formatter
 
     @cached_property
@@ -1272,6 +1444,8 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def _sml_decl(self) -> Callable[[str, str, Value], str]:
         """Shared SML variable declaration formatter."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return lambda name, value, _data: f"val {name} = {value}"
         _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
             value_or_default(value=_raw_declared, default="val_t")
@@ -1353,6 +1527,10 @@ class Sml(metaclass=LanguageCls):
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return body_preamble_from_scalars(
+                scalar_body_preamble={}, format_lines=tuple
+            )
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=partial(
