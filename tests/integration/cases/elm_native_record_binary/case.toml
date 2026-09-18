@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm"]
+languages_reason = "Binary values remain bare encoded strings in records."
+
+[[variants]]
+axis = "dict_format"

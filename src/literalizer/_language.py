@@ -946,7 +946,9 @@ class RenderedRecordLiteral:
     the closing delimiter (``}``).  ``compact_pad`` is inserted just
     inside the delimiters in compact form (a space for Rust's
     ``Name { a }``, empty for Go's ``Name{a}``) and is unused in the
-    multiline form.
+    multiline form.  Languages such as Elm can prefix ``closer`` with
+    spaces needed only for multiline layout; compact layout strips that
+    leading whitespace.
     """
 
     head: str

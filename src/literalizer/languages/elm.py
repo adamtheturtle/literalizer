@@ -5,7 +5,7 @@ import datetime
 import enum
 import math
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import ClassVar
 
@@ -23,6 +23,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
@@ -43,6 +44,10 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
+)
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
 )
 from literalizer._json_native_document import (
     register_json_native_document_fast,
@@ -70,12 +75,14 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
     TrailingCommaConfig,
     VariantMetadata,
+    body_preamble_from_scalars,
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     identity_call_ref_identifier,
@@ -93,7 +100,7 @@ from literalizer._language import (
     no_validate_call_arg,
 )
 from literalizer._statements import split_statements
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     WrapCombinedInFileNotSupportedError,
@@ -492,6 +499,125 @@ def _elm_format_call_arg(_original: Value, formatted: str, /) -> str:
     return f"({formatted})"
 
 
+@beartype
+def _build_elm_native_record_literal(
+    indent: str,
+) -> Callable[[dict[Scalar, Value], Mapping[str, str]], RenderedRecordLiteral]:
+    """Build a record renderer with the configured closing indentation."""
+
+    @beartype
+    def _render(
+        _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+    ) -> RenderedRecordLiteral:
+        """Render a string-keyed mapping as an Elm record."""
+        return RenderedRecordLiteral(
+            head="{",
+            entries=tuple(
+                f"{key} = {value}" for key, value in formatted_fields.items()
+            ),
+            closer=f"{indent}}}",
+            compact_pad=" ",
+        )
+
+    return _render
+
+
+@beartype
+def _elm_native_record_shapes(data: Value, /) -> Mapping[int, RecordShape]:
+    """Collect record-shaped dictionaries for native rendering."""
+    return collect_record_shapes(data=data)
+
+
+@beartype
+def _elm_native_shape(data: Value) -> str:
+    """Describe the inferred type of a native Elm record field."""
+    if isinstance(data, dict):
+        return repr(
+            tuple(
+                sorted(
+                    (key, _elm_native_shape(data=value))
+                    for key, value in data.items()
+                )
+            )
+        )
+    if isinstance(data, list):
+        element_types = sorted(
+            {_elm_native_shape(data=value) for value in data}
+        )
+        return f"list:{element_types!r}"
+    return type(data).__name__
+
+
+@beartype
+def _validate_elm_native_record(
+    data: Value, reserved_fields: frozenset[str]
+) -> None:
+    """Reject data that cannot become a valid Elm record expression."""
+    if isinstance(data, OrderedMap):
+        msg = "Elm record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "Elm record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][A-Za-z0-9_]*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = f"Elm record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_elm_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        record_types = {
+            _elm_native_shape(data=value)
+            for value in data
+            if isinstance(value, dict)
+        }
+        if len(record_types) > 1:
+            msg = "Elm record mode requires uniform record list types"
+            raise UnrepresentableInputError(msg)
+        for value in data:
+            _validate_elm_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = f"Elm record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _elm_native_string(value: str) -> str:
+    """Render a bare Elm string without a ``Val`` constructor."""
+    return format_string_backslash_control(
+        value=value,
+        control_char_fmt="\\u{{{:04x}}}",
+        escape_delete=False,
+    )
+
+
+@beartype
+def _build_elm_native_float(
+    finite: Callable[[float], str],
+) -> Callable[[float], str]:
+    """Build a bare Elm float formatter including non-finite values."""
+
+    @beartype
+    def _format(value: float) -> str:
+        """Render a float without a ``Val`` constructor."""
+        if math.isinf(value):
+            return "(-(1 / 0))" if value < 0 else "(1 / 0)"
+        if math.isnan(value):
+            return "(0 / 0)"
+        return finite(value)
+
+    return _format
+
+
 _INT_BASE: dict[str, Callable[[int], str]] = {
     "DECIMAL": str,
     "HEX": format_integer_hex,
@@ -767,6 +893,10 @@ class Elm(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"E"``, producing constructors like ``ENull``,
             ``EBool``, ``EInt``, etc.
+
+        dict_format: ``RECORD`` emits native Elm records for valid
+            string-keyed fields and lets Elm infer their structural type.
+            The default preserves the generated ``Val`` representation.
     """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -997,6 +1127,7 @@ class Elm(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -1159,6 +1290,13 @@ class Elm(metaclass=LanguageCls):
         ``Json.Encode.object`` only admits string keys, and negative zero
         cannot survive ``JSON.stringify`` (issue #4543).
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            if self._json_active:
+                msg = "Elm records cannot be combined with json_type"
+                raise UnrepresentableInputError(msg)
+            _validate_elm_native_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
         if self._json_active:
             reject_negative_zero(data=data, language_name="Elm")
         if self._json_active:
@@ -1340,6 +1478,14 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                compute_record_shapes=_elm_native_record_shapes,
+                render_record_literal=_build_elm_native_record_literal(
+                    indent=self.indent
+                ),
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1456,6 +1602,8 @@ class Elm(metaclass=LanguageCls):
         """Literal representing ``True``."""
         if self._json_active:
             return _JSON_ENC_TRUE
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "True"
         return f"{self.constructor_prefix}Bool True"
 
     @cached_property
@@ -1463,6 +1611,8 @@ class Elm(metaclass=LanguageCls):
         """Literal representing ``False``."""
         if self._json_active:
             return _JSON_ENC_FALSE
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "False"
         return f"{self.constructor_prefix}Bool False"
 
     @cached_property
@@ -1475,6 +1625,8 @@ class Elm(metaclass=LanguageCls):
         """
         if self._json_active:
             return fixed_open(open_str=_JSON_ENC_LIST_OPEN)
+        if self.dict_format is type(self.dict_format).RECORD:
+            return fixed_open(open_str="[")
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1492,6 +1644,9 @@ class Elm(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            supports_heterogeneity=(
+                self.dict_format is not type(self.dict_format).RECORD
+            ),
         )
 
     @cached_property
@@ -1528,6 +1683,20 @@ class Elm(metaclass=LanguageCls):
         ``Json.Encode.object [ ( "k", v ) ]`` rather than the ADT
         ``{prefix}Dict [ ( "k", v ) ]`` form.
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{"),
+                close="}",
+                format_entry=dict_entry_with_separator(
+                    separator=" = ",
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=None,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=False,
+                narrowed_empty_form=None,
+            )
         open_str = _JSON_ENC_OBJECT_OPEN
         if not self._json_active:
             open_str = f"{self.constructor_prefix}Dict ["
@@ -1552,6 +1721,11 @@ class Elm(metaclass=LanguageCls):
         """Callable that formats a bytes value as a string literal."""
         if self._json_active:
             return _JSON_BYTES_FORMATTERS[self.bytes_format.name]
+        if self.dict_format is type(self.dict_format).RECORD:
+            return {
+                "HEX": format_bytes_hex,
+                "BASE64": format_bytes_base64,
+            }[self.bytes_format.name]
         if self.constructor_prefix == "E":
             return self.bytes_format
         return _BYTES_FORMATTERS[self.bytes_format.name](
@@ -1563,6 +1737,8 @@ class Elm(metaclass=LanguageCls):
         """Callable that formats a date as a string literal."""
         if self._json_active:
             return _format_elm_json_date_iso
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_date_iso
         if self.constructor_prefix == "E":
             return self.date_format
         return _build_elm_date_iso(prefix=self.constructor_prefix)
@@ -1579,6 +1755,12 @@ class Elm(metaclass=LanguageCls):
                     format_integer=_build_elm_json_int_formatter(base=str),
                 )
             return _format_elm_json_datetime_iso
+        if self.dict_format is type(self.dict_format).RECORD:
+            return (
+                datetime_epoch_formatter(format_integer=self.format_integer)
+                if self.datetime_format is type(self.datetime_format).EPOCH
+                else format_datetime_iso
+            )
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_elm_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "E":
@@ -1590,6 +1772,8 @@ class Elm(metaclass=LanguageCls):
         """Callable that formats a time as a string literal."""
         if self._json_active:
             return _format_elm_json_time_iso
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_time_iso
         return _build_elm_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
@@ -1597,6 +1781,8 @@ class Elm(metaclass=LanguageCls):
         """Callable that formats a string value as a quoted literal."""
         if self._json_active:
             return _format_elm_json_string
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _elm_native_string
         if self.constructor_prefix == "E":
             return _format_elm_string
         return _build_elm_str_formatter(prefix=self.constructor_prefix)
@@ -1608,6 +1794,8 @@ class Elm(metaclass=LanguageCls):
             base_formatter = _build_elm_json_int_formatter(
                 base=_INT_BASE[self.integer_format.name],
             )
+        elif self.dict_format is type(self.dict_format).RECORD:
+            base_formatter = _INT_BASE[self.integer_format.name]
         elif self.constructor_prefix == "E":
             base_formatter = self.integer_format
         else:
@@ -1627,6 +1815,10 @@ class Elm(metaclass=LanguageCls):
         """Callable that formats a float value as a literal."""
         if self._json_active:
             return self._json_format_float
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _build_elm_native_float(
+                finite=_FLOAT_BASE[self.float_format.name]
+            )
         if self.constructor_prefix == "E":
             return self.float_format
         _pos_inf = f"{self.constructor_prefix}Float (1 / 0)"
@@ -1698,6 +1890,9 @@ class Elm(metaclass=LanguageCls):
                 return f"{name} : {_JSON_ENCODE_VALUE_TYPE}\n{base}"
 
             return _elm_json_declaration
+
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _base_declaration
 
         _raw_declared = self.sequence_format.value.declared_type
         _type_name = self.type_name
@@ -1799,6 +1994,10 @@ class Elm(metaclass=LanguageCls):
                 return ("import Json.Encode",)
 
             return _json_preamble
+        if self.dict_format is type(self.dict_format).RECORD:
+            return body_preamble_from_scalars(
+                scalar_body_preamble={}, format_lines=tuple
+            )
         return _build_elm_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
