@@ -50,7 +50,7 @@ def test_record_mode_preserves_tagged_default() -> None:
 def test_record_mode_rejects_unsupported_input(
     source: str, input_format: InputFormat, message: str
 ) -> None:
-    """Unrepresentable shapes fail before emitting invalid Elm syntax."""
+    """Unsupported shapes fail before emitting invalid Elm syntax."""
     with pytest.raises(
         expected_exception=UnrepresentableInputError, match=message
     ):
