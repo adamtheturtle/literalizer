@@ -1,0 +1,4 @@
+{
+  // This reference names an existing variable.
+  "$ref": "existing" /* reference target */
+}

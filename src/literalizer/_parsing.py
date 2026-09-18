@@ -704,7 +704,7 @@ def _parse_json(*, source: str) -> ParsedInput:
 @beartype
 def _jsonc_comment_end(*, source: str, index: int) -> int | None:
     """Return the end of a comment starting at *index*, if present."""
-    if index + 1 >= len(source) or source[index] != "/":
+    if index + 1 >= len(source):
         return None
     next_char = source[index + 1]
     if next_char == "/":
