@@ -266,8 +266,7 @@ The strategies that synthesize a declaration accept a constructor argument that 
    * - Argument
      - Applies to
    * - ``record_struct_name_prefix`` (default ``"Record"``)
-     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala, Cpp, Swift, Nim,
-       Odin, V, Crystal, D, and Zig
+     - ``RECORD`` on Rust, Go, Java, Python, Kotlin, Scala, Cpp, Swift, Nim, Odin, V, Crystal, D, and Zig
    * - ``heterogeneous_value_enum_name`` (default ``"Value"``)
      - ``TAGGED_ENUM`` on Rust
    * - ``heterogeneous_value_union_name`` (default ``"Value"``)
