@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Gleam"]
+languages_reason = "Concrete Gleam records are an opt-in representation."
+
+[[variants]]
+axis = "dict_format"
