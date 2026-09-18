@@ -27,6 +27,7 @@ import literalizer
 from literalizer._language import NewVariableNameSyntax
 from literalizer._parsing import (
     escape_json5_line_separators,
+    parse_input,
     require_yaml,
     unwrap_yaml_scalar,
 )
@@ -195,6 +196,10 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     match input_info.input_format:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=source)
+        case literalizer.InputFormat.JSONC:
+            parsed = parse_input(
+                source=source, input_format=literalizer.InputFormat.JSONC
+            ).data
         case literalizer.InputFormat.JSON5:
             # The library escapes a raw U+2028 or U+2029 inside a
             # string before handing the source to ``json5``, which

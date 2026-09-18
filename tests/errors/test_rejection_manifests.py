@@ -349,7 +349,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                     'api = "literalize"\nsources = ["1"]\ninput_format = "csv"'
                 ),
             ),
-            "Input should be 'json', 'json5', 'toml', 'yaml'",
+            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
         ),
         (
             _manifest(

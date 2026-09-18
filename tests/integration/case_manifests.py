@@ -149,6 +149,7 @@ _IDENTIFIER_CASES_BY_NAME: Mapping[str, literalizer.IdentifierCase] = {
 _INPUT_FORMATS_BY_NAME: Mapping[str, literalizer.InputFormat] = {
     "json": literalizer.InputFormat.JSON,
     "json5": literalizer.InputFormat.JSON5,
+    "jsonc": literalizer.InputFormat.JSONC,
     "toml": literalizer.InputFormat.TOML,
     "yaml": literalizer.InputFormat.YAML,
 }
