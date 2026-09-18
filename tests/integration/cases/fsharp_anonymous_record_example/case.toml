@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["FSharp"]
+languages_reason = "F# anonymous records are an opt-in native representation."
+
+[[variants]]
+axis = "dict_format"

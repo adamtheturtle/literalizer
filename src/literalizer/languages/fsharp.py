@@ -5,7 +5,7 @@ import datetime
 import enum
 import re
 import textwrap
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from typing import ClassVar
 
@@ -52,6 +52,10 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
 )
+from literalizer._formatters.type_inference import (
+    RecordShape,
+    collect_record_shapes,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -76,6 +80,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -101,7 +106,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
@@ -216,6 +221,97 @@ _FSHARP_JSON_ARRAY_OPEN = "JsonArray([|"
 _FSHARP_JSON_ARRAY_CLOSE = "|])"
 _FSHARP_JSON_EMPTY_OBJECT = "JsonObject()"
 _FSHARP_JSON_EMPTY_ARRAY = "JsonArray()"
+
+
+@beartype
+def _fsharp_anonymous_record_literal(
+    _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+) -> RenderedRecordLiteral:
+    """Render a dictionary as a native anonymous record."""
+    return RenderedRecordLiteral(
+        head="{|",
+        entries=tuple(
+            f"{key} = {value}" for key, value in formatted_fields.items()
+        ),
+        closer="|}",
+        compact_pad=" ",
+    )
+
+
+@beartype
+def _fsharp_anonymous_record_shapes(
+    data: Value, /
+) -> Mapping[int, RecordShape]:
+    """Collect dictionary shapes for native record rendering."""
+    return collect_record_shapes(data=data)
+
+
+@beartype
+def _fsharp_native_shape(data: Value) -> str:
+    """Describe the inferred type of a native F# record field."""
+    if isinstance(data, dict):
+        return repr(
+            tuple(
+                sorted(
+                    (key, _fsharp_native_shape(data=value))
+                    for key, value in data.items()
+                )
+            )
+        )
+    if isinstance(data, list):
+        element_types = sorted(
+            {_fsharp_native_shape(data=value) for value in data}
+        )
+        return f"list:{element_types!r}"
+    if isinstance(data, int) and not isinstance(data, bool):
+        return "bigint" if not I64_MIN <= data <= I64_MAX else "int64"
+    return type(data).__name__
+
+
+@beartype
+def _validate_fsharp_anonymous_record(
+    data: Value, reserved_fields: frozenset[str]
+) -> None:
+    """Reject values that cannot be represented as native records."""
+    if isinstance(data, OrderedMap):
+        msg = "F# anonymous record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if not data:
+            msg = "F# anonymous record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[A-Za-z_][A-Za-z0-9_]*", string=key)
+                is None
+                or key in reserved_fields
+            ):
+                msg = (
+                    f"F# anonymous record mode cannot represent field {key!r}"
+                )
+                raise UnrepresentableInputError(msg)
+            _validate_fsharp_anonymous_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        record_types = {
+            _fsharp_native_shape(data=value)
+            for value in data
+            if isinstance(value, dict)
+        }
+        if len(record_types) > 1:
+            msg = "F# anonymous record mode requires uniform record list types"
+            raise UnrepresentableInputError(msg)
+        for value in data:
+            _validate_fsharp_anonymous_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = (
+            f"F# anonymous record mode cannot represent {type(data).__name__}"
+        )
+        raise UnrepresentableInputError(msg)
 
 
 @beartype
@@ -476,6 +572,11 @@ class FSharp(metaclass=LanguageCls):
             is ``EPOCH``), heterogeneous collections are accepted, and
             non-string dict keys are rejected because JSON object keys
             must be strings.
+
+        dict_format: ``ANONYMOUS_RECORD`` emits native F# anonymous
+            records for string-keyed, record-shaped input, without a
+            generated ``Val`` union.  The default preserves the tagged
+            representation for arbitrary dictionaries.
 
     Notes:
         The default tagged ``Val`` discriminated union does not
@@ -806,6 +907,7 @@ class FSharp(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        ANONYMOUS_RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -963,6 +1065,13 @@ class FSharp(metaclass=LanguageCls):
         represented as JSON object keys, so a non-string dict key is
         rejected up-front.
         """
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            if self._json_type_active:
+                msg = "F# anonymous records cannot be combined with json_type"
+                raise UnrepresentableInputError(msg)
+            _validate_fsharp_anonymous_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
         if self._json_type_active:
             self._validate_json_value_keys(data)
 
@@ -1107,6 +1216,12 @@ class FSharp(metaclass=LanguageCls):
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
             )
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return dataclasses.replace(
+                NO_HETEROGENEOUS_BEHAVIOR,
+                compute_record_shapes=_fsharp_anonymous_record_shapes,
+                render_record_literal=_fsharp_anonymous_record_literal,
+            )
         return self.heterogeneous_strategy.value
 
     @cached_property
@@ -1148,6 +1263,8 @@ class FSharp(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return _format_fsharp_json_call_arg
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return passthrough_sequence_entry
         entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
 
@@ -1249,12 +1366,16 @@ class FSharp(metaclass=LanguageCls):
         """Literal representing ``True``."""
         if self._json_type_active:
             return "true"
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return "true"
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self._json_type_active:
+            return "false"
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
             return "false"
         return f"{self.constructor_prefix}Bool false"
 
@@ -1279,6 +1400,17 @@ class FSharp(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         fmt = self.sequence_format.value
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            opener = (
+                "[|"
+                if self.sequence_format is type(self.sequence_format).ARRAY
+                else "["
+            )
+            return dataclasses.replace(
+                fmt,
+                sequence_open=fixed_open(open_str=opener),
+                supports_heterogeneity=False,
+            )
         if self.sequence_format is type(self.sequence_format).ARRAY:
             return fmt
         return dataclasses.replace(
@@ -1324,6 +1456,19 @@ class FSharp(metaclass=LanguageCls):
                     format_value=_format_fsharp_json_entry,
                 ),
                 empty_dict=_FSHARP_JSON_EMPTY_OBJECT,
+                preamble_lines=(),
+                narrowed_open=None,
+                supports_trailing_comma=False,
+                narrowed_empty_form=None,
+            )
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return DictFormatConfig(
+                dict_open=fixed_open(open_str="{|"),
+                close="|}",
+                format_entry=tuple_dict_entry(
+                    format_value=passthrough_sequence_entry,
+                ),
+                empty_dict=None,
                 preamble_lines=(),
                 narrowed_open=None,
                 supports_trailing_comma=False,
@@ -1386,6 +1531,12 @@ class FSharp(metaclass=LanguageCls):
 
                 return _format_json_epoch
             return format_datetime_iso
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            if self.datetime_format is type(self.datetime_format).EPOCH:
+                return lambda value: self.format_integer(
+                    int(format_datetime_epoch(value=value))
+                )
+            return base_formatter
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_fsharp_datetime_epoch(
                 prefix=self.constructor_prefix,
@@ -1435,6 +1586,19 @@ class FSharp(metaclass=LanguageCls):
                 raise UnrepresentableIntegerError(msg)
 
             return _format
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            base = self.integer_format
+
+            def _native_integer(value: int) -> str:
+                """Give native integers an explicit 64-bit type."""
+                rendered = base(value)
+                return (
+                    f"{rendered}L"
+                    if I64_MIN <= value <= I64_MAX
+                    else f"{rendered}I"
+                )
+
+            return _native_integer
         return make_overflow_suffix_formatter(
             base=self.integer_format,
             min_value=I64_MIN,
@@ -1447,6 +1611,8 @@ class FSharp(metaclass=LanguageCls):
         """Callable that formats one sequence entry."""
         if self._json_type_active:
             return _format_fsharp_json_entry
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return passthrough_sequence_entry
         return self._entry_formatter
 
     @cached_property
@@ -1509,6 +1675,8 @@ class FSharp(metaclass=LanguageCls):
                     keyword=keyword,
                 ),
             )
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return self.declaration_style.value.formatter
         return declaration_formatter_ignoring_modifiers(
             formatter=_build_fsharp_declaration(
                 template=(
@@ -1527,6 +1695,8 @@ class FSharp(metaclass=LanguageCls):
         """Callable that formats an assignment to an existing variable."""
         if self._json_type_active:
             return _format_fsharp_json_assignment
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return variable_formatter(template="let {name} = {value}")
         return _build_fsharp_declaration(
             template="let {name}: {declared_type} = {wrapped}",
             sequence_declared_type=self._sequence_declared_type,
@@ -1638,6 +1808,10 @@ class FSharp(metaclass=LanguageCls):
                 return (_FSHARP_JSON_USING,)
 
             return _json_body_preamble
+        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+            return body_preamble_from_scalars(
+                scalar_body_preamble={}, format_lines=tuple
+            )
         static_compute = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
             format_lines=tuple,
