@@ -45,6 +45,15 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_braced_unicode,
 )
+from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
+    RecordDeclarationField,
+    RecordFieldType,
+    RecordLiteralField,
+    RecordRenderer,
+    build_record_strategy,
+    identity_field_identifier_key,
+)
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -70,6 +79,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -94,11 +104,14 @@ from literalizer._language import (
     no_leading_preamble,
     no_type_hint_preamble,
     no_validate_call_arg,
-    no_validate_spec_for_data,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import UnrepresentableSpecialFloatError
+from literalizer.exceptions import (
+    IncompatibleFormatsError,
+    UnrepresentableInputError,
+    UnrepresentableSpecialFloatError,
+)
 
 
 @beartype
@@ -107,6 +120,78 @@ def _gleam_signed_base_impl(value: int, base: Callable[[int], str]) -> str:
     if value < 0:
         return f"-{{{base(abs(value))}}}"
     return base(value)
+
+
+@beartype
+def _gleam_native_record_declaration(
+    name: str, fields: Sequence[RecordDeclarationField], /
+) -> str:
+    """Declare a one-variant custom type with labeled fields."""
+    members = ", ".join(
+        f"{field.identifier}: {field.type_name}" for field in fields
+    )
+    return f"pub type {name} {{\n  {name}({members})\n}}"
+
+
+@beartype
+def _gleam_native_record_literal(
+    name: str, fields: Sequence[RecordLiteralField], /
+) -> RenderedRecordLiteral:
+    """Render a labeled constructor application."""
+    return RenderedRecordLiteral(
+        head=f"{name}(",
+        entries=tuple(
+            f"{field.identifier}: {field.formatted}" for field in fields
+        ),
+        closer=")",
+        compact_pad="",
+    )
+
+
+@beartype
+def _gleam_native_field_identifier(key: str, /) -> str:
+    """Return a validated Gleam field label."""
+    return key
+
+
+@beartype
+def _validate_gleam_native_record(
+    data: Value, *, reserved_fields: frozenset[str]
+) -> None:
+    """Reject values that lack a concrete Gleam record representation."""
+    if isinstance(data, OrderedMap):
+        msg = "Gleam record mode cannot represent ordered maps"
+        raise UnrepresentableInputError(msg)
+    if isinstance(data, dict):
+        if len(data) == 0:
+            msg = "Gleam record mode cannot represent empty records"
+            raise UnrepresentableInputError(msg)
+        for key, value in data.items():
+            if (
+                not isinstance(key, str)
+                or re.fullmatch(pattern=r"[a-z][a-z0-9_]*", string=key) is None
+                or key in reserved_fields
+            ):
+                msg = f"Gleam record mode cannot represent field {key!r}"
+                raise UnrepresentableInputError(msg)
+            _validate_gleam_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, list):
+        for value in data:
+            _validate_gleam_native_record(
+                data=value, reserved_fields=reserved_fields
+            )
+    elif isinstance(data, (set, type(None))):
+        msg = f"Gleam record mode cannot represent {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
+def _reject_gleam_native_call_arg(_value: Value, /) -> None:
+    """Reject call stubs whose annotations still require GVal."""
+    msg = "Gleam record mode cannot infer concrete call stub types"
+    raise IncompatibleFormatsError(msg)
 
 
 @beartype
@@ -680,6 +765,11 @@ class Gleam(metaclass=LanguageCls):
             * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``GStr("2024-01-15T12:30:00")``.
 
+        dict_format: ``DEFAULT`` keeps the generated ``GVal`` union;
+            ``RECORD`` emits concrete one-variant types for valid,
+            fixed-shape objects. Generated call stubs are not supported
+            in record mode.
+
         sequence_format: Which Gleam sequence type to use.
 
             * ``sequence_formats.LIST`` — list literal,
@@ -945,6 +1035,7 @@ class Gleam(metaclass=LanguageCls):
         """Dict/map format options."""
 
         DEFAULT = enum.auto()
+        RECORD = enum.auto()
 
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
@@ -1150,11 +1241,32 @@ class Gleam(metaclass=LanguageCls):
         {IdentifierCase.SNAKE}
     )
 
-    validate_spec_for_data = no_validate_spec_for_data
+    def validate_spec_for_data(self, data: Value) -> None:
+        """Check that selected values fit the concrete record mode."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            if (
+                re.fullmatch(
+                    pattern=r"[A-Z][A-Za-z0-9_]*", string=self.type_name
+                )
+                is None
+            ):
+                msg = "Gleam record mode requires a valid type_name"
+                raise UnrepresentableInputError(msg)
+            if self.json_type is not None:
+                msg = "Gleam records cannot be combined with json_type"
+                raise IncompatibleFormatsError(msg)
+            if self.sequence_format is not type(self.sequence_format).LIST:
+                msg = "Gleam records require sequence_format=LIST"
+                raise IncompatibleFormatsError(msg)
+            _validate_gleam_native_record(
+                data=data, reserved_fields=self.reserved_variable_identifiers
+            )
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _reject_gleam_native_call_arg
         return no_validate_call_arg
 
     @cached_property
@@ -1288,6 +1400,8 @@ class Gleam(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return no_data_preamble
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self._native_record_strategy.preamble
         return _build_gleam_data_dependent_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
@@ -1307,7 +1421,65 @@ class Gleam(metaclass=LanguageCls):
                 NO_HETEROGENEOUS_BEHAVIOR,
                 skip_scalar_checks=True,
             )
+        if self.dict_format is type(self.dict_format).RECORD:
+            return self._native_record_strategy.behavior
         return self.heterogeneous_strategy.value
+
+    def _native_record_field_type(self, request: RecordFieldType, /) -> str:
+        """Return a concrete Gleam field type."""
+        if request.record_name is not None:
+            return request.record_name
+        if request.element_record_name is not None:
+            return f"List({request.element_record_name})"
+        return self._native_value_type(data=request.value)
+
+    def _native_value_type(self, data: Value) -> str:
+        """Infer a concrete type for a scalar or homogeneous list."""
+        if isinstance(data, list):
+            if len(data) == 0:
+                msg = "Gleam record mode cannot infer empty list element types"
+                raise UnrepresentableInputError(msg)
+            return f"List({self._native_value_type(data=data[0])})"
+        scalar_types: dict[type, str] = {
+            bool: "Bool",
+            int: "Int",
+            float: "Float",
+            str: "String",
+            bytes: "String",
+            datetime.time: "String",
+            datetime.date: "String",
+        }
+        scalar_type = scalar_types.get(type(data))
+        if scalar_type is not None:
+            return scalar_type
+        if isinstance(data, datetime.datetime):
+            if self.datetime_format.value.type_produced is int:
+                return "Int"
+            return "String"
+        msg = (  # pragma: no cover
+            f"Gleam record mode cannot type {type(data).__name__}"
+        )
+        raise UnrepresentableInputError(msg)  # pragma: no cover
+
+    @cached_property
+    def _native_record_strategy(self) -> ActiveRecordStrategy:
+        """Build shared record naming, rendering, and declarations."""
+        return build_record_strategy(
+            renderer=RecordRenderer(
+                name_prefix=self.type_name,
+                record_shape_names={},
+                field_identifier=_gleam_native_field_identifier,
+                field_identifier_key=identity_field_identifier_key,
+                field_type=self._native_record_field_type,
+                render_declaration=_gleam_native_record_declaration,
+                render_literal=_gleam_native_record_literal,
+                field_type_names_nested_records=True,
+                suppress_custom_name_declarations=False,
+            ),
+            split_conflicting_field_types=True,
+            widen_unrecordizable_nested_sibling_maps=False,
+            derecordized_map_open=None,
+        )
 
     @cached_property
     def call_data_dependent_preamble(
@@ -1409,6 +1581,8 @@ class Gleam(metaclass=LanguageCls):
         """Literal representing ``True``."""
         if self._json_type_active:
             return _GLEAM_JSON_TRUE
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "True"
         return f"{self.constructor_prefix}Bool(True)"
 
     @cached_property
@@ -1416,6 +1590,8 @@ class Gleam(metaclass=LanguageCls):
         """Literal representing ``False``."""
         if self._json_type_active:
             return _GLEAM_JSON_FALSE
+        if self.dict_format is type(self.dict_format).RECORD:
+            return "False"
         return f"{self.constructor_prefix}Bool(False)"
 
     @cached_property
@@ -1453,6 +1629,14 @@ class Gleam(metaclass=LanguageCls):
                 requires_uniform_record_shapes=False,
                 declared_type=None,
                 narrowed_empty_form=None,
+            )
+        if self.dict_format is type(self.dict_format).RECORD:
+            return dataclasses.replace(
+                self.sequence_format.value,
+                sequence_open=fixed_open(open_str="["),
+                close="]",
+                supports_heterogeneity=False,
+                declared_type=None,
             )
         fmt = self.sequence_format.value
         if self.sequence_format is type(self.sequence_format).LIST:
@@ -1540,6 +1724,11 @@ class Gleam(metaclass=LanguageCls):
         """Callable that formats a bytes value as a string literal."""
         if self._json_type_active:
             return _GLEAM_JSON_BYTES_FORMATTERS[self.bytes_format.name]
+        if self.dict_format is type(self.dict_format).RECORD:
+            return {
+                "HEX": format_bytes_hex,
+                "BASE64": format_bytes_base64,
+            }[self.bytes_format.name]
         if self.constructor_prefix == "G":
             return self.bytes_format
         return _GLEAM_BYTES_FORMATTERS[self.bytes_format.name](
@@ -1551,6 +1740,8 @@ class Gleam(metaclass=LanguageCls):
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return _format_gleam_json_date
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_date_iso
         if self.constructor_prefix == "G":
             return self.date_format
         return _build_gleam_date_iso(prefix=self.constructor_prefix)
@@ -1565,6 +1756,14 @@ class Gleam(metaclass=LanguageCls):
             if self.datetime_format is type(self.datetime_format).EPOCH:
                 return _format_gleam_json_datetime_epoch
             return _format_gleam_json_datetime_iso
+        if self.dict_format is type(self.dict_format).RECORD:
+            native_formatters: dict[
+                type, Callable[[datetime.datetime], str]
+            ] = {
+                int: format_datetime_epoch,
+                str: format_datetime_iso,
+            }
+            return native_formatters[self.datetime_format.value.type_produced]
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_gleam_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "G":
@@ -1576,6 +1775,8 @@ class Gleam(metaclass=LanguageCls):
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return _format_gleam_json_time
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_time_iso
         return _build_gleam_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
@@ -1583,6 +1784,8 @@ class Gleam(metaclass=LanguageCls):
         """Callable that formats a string value as a quoted literal."""
         if self._json_type_active:
             return _format_gleam_json_string
+        if self.dict_format is type(self.dict_format).RECORD:
+            return format_string_backslash_nul_braced_unicode
         if self.constructor_prefix == "G":
             return _format_gleam_string
         return _build_gleam_str_formatter(prefix=self.constructor_prefix)
@@ -1595,6 +1798,10 @@ class Gleam(metaclass=LanguageCls):
                 (self.integer_format.name, self.numeric_separator.name)
             ]
             return _format_gleam_json_integer_factory(base=base)
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _GLEAM_INT_BASE[
+                (self.integer_format.name, self.numeric_separator.name)
+            ]
         if self.constructor_prefix == "G":
             return self.integer_format.get_formatter(
                 numeric_separator=self.numeric_separator,
@@ -1624,6 +1831,8 @@ class Gleam(metaclass=LanguageCls):
             finite = _format_gleam_json_float_factory(
                 inner=_GLEAM_FLOAT_BASE[self.float_format.name],
             )
+        elif self.dict_format is type(self.dict_format).RECORD:
+            finite = _GLEAM_FLOAT_BASE[self.float_format.name]
         elif self.constructor_prefix == "G":
             finite = self.float_format
         else:
