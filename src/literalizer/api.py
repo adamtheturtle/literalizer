@@ -449,6 +449,8 @@ def literalize(
     Raises:
         JSONParseError: If *input_format* is ``JSON`` and *source* is
             not valid JSON.
+        JSONCParseError: If *input_format* is ``JSONC`` and *source* is
+            not valid JSONC.
         JSON5ParseError: If *input_format* is ``JSON5`` and *source*
             is not valid JSON5.
         YAMLParseError: If *input_format* is ``YAML`` and *source* is

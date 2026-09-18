@@ -1,0 +1,5 @@
+// A JSONC input case with both comment forms.
+{
+  "url": "https://example.org/a/*b*/", /* inline block */
+  "count": 2 // trailing line comment
+}

@@ -9,6 +9,7 @@ import literalizer
 
 _INPUT_FORMATS = {
     "input.json": literalizer.InputFormat.JSON,
+    "input.jsonc": literalizer.InputFormat.JSONC,
     "input.json5": literalizer.InputFormat.JSON5,
     "input.toml": literalizer.InputFormat.TOML,
     "input.yaml": literalizer.InputFormat.YAML,

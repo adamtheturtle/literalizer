@@ -23,7 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML as _YAML
 
 import literalizer
-from literalizer._parsing import require_yaml
+from literalizer._parsing import parse_input, require_yaml
 from literalizer._types import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -180,6 +180,11 @@ def _parse_ref_input(
     match input_format:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=input_source)
+        case literalizer.InputFormat.JSONC:
+            parsed = parse_input(
+                source=input_source,
+                input_format=literalizer.InputFormat.JSONC,
+            ).data
         case literalizer.InputFormat.JSON5:
             parsed = json5.loads(
                 s=input_source,

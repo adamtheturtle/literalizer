@@ -175,7 +175,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 "per_element = true\n"
                 'zip_input_format = "mystery"\n'
             ),
-            "Input should be 'json', 'json5', 'toml', 'yaml'",
+            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
         ),
         (
             (

@@ -1,4 +1,4 @@
-"""Parse JSON, JSON5, YAML, and TOML input into ``Value`` data."""
+"""Parse JSON, JSONC, JSON5, YAML, and TOML input into ``Value`` data."""
 
 import dataclasses
 import datetime
@@ -38,6 +38,7 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
     JSON5ParseError,
+    JSONCParseError,
     JSONParseError,
     ParseError,
     TOMLParseError,
@@ -176,11 +177,12 @@ class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
     YAML and TOML comments are preserved for rendering in the target
-    language. JSON and JSON5 are parsed as plain data, so JSON5 comments are
-    discarded.
+    language. JSON, JSONC and JSON5 are parsed as plain data, so their
+    comments are discarded.
     """
 
     JSON = enum.auto()
+    JSONC = enum.auto()
     JSON5 = enum.auto()
     YAML = enum.auto()
     TOML = enum.auto()
@@ -189,7 +191,7 @@ class InputFormat(enum.Enum):
 @beartype
 @dataclasses.dataclass(frozen=True)
 class ParsedPlain:
-    """Result of parsing a comment-free input (JSON or JSON5)."""
+    """Result of parsing JSON, JSONC or JSON5 input as plain data."""
 
     data: Value
 
@@ -269,6 +271,8 @@ def _format_parse_error(
     match input_format:
         case InputFormat.JSON:
             return JSONParseError(f"Invalid JSON: {detail}")
+        case InputFormat.JSONC:
+            return JSONCParseError(f"Invalid JSONC: {detail}")
         case InputFormat.JSON5:
             return JSON5ParseError(f"Invalid JSON5: {detail}")
         case InputFormat.YAML:
@@ -655,8 +659,8 @@ def _reject_json_constant(value: str) -> Value:
 
 
 @beartype
-def _parse_json(*, source: str) -> ParsedInput:
-    """Parse a JSON string into a ``ParsedInput``."""
+def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedInput:
+    """Parse JSON syntax with the error type of *input_format*."""
     try:
         data = json.loads(
             s=source,
@@ -665,25 +669,103 @@ def _parse_json(*, source: str) -> ParsedInput:
             parse_float=_parse_finite_float,
             parse_int=_parse_integer_preserving_negative_zero,
         )
-    except _DuplicateJSONKeyError as exc:
-        message = f"Invalid JSON: {exc}"
-        raise JSONParseError(message) from exc
-    except _InvalidJSONConstantError as exc:
-        message = f"Invalid JSON: {exc}"
-        raise JSONParseError(message) from exc
-    except _FiniteFloatRangeError as exc:
-        message = f"Invalid JSON: {exc}"
-        raise JSONParseError(message) from exc
+    except (
+        _DuplicateJSONKeyError,
+        _InvalidJSONConstantError,
+        _FiniteFloatRangeError,
+    ) as exc:
+        raise _format_parse_error(
+            input_format=input_format, detail=str(object=exc)
+        ) from exc
     except json.JSONDecodeError as exc:
-        message = (
-            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        error_type = (
+            JSONParseError
+            if input_format == InputFormat.JSON
+            else JSONCParseError
         )
-        raise JSONParseError(
+        message = (
+            f"Invalid {input_format.name}: {exc.msg} "
+            f"at line {exc.lineno} column {exc.colno}"
+        )
+        raise error_type(
             message,
             line=exc.lineno,
             column=exc.colno,
         ) from exc
     return ParsedPlain(data=data)
+
+
+@beartype
+def _parse_json(*, source: str) -> ParsedInput:
+    """Parse a JSON string into a ``ParsedInput``."""
+    return _parse_json_data(source=source, input_format=InputFormat.JSON)
+
+
+@beartype
+def _jsonc_comment_end(*, source: str, index: int) -> int | None:
+    """Return the end of a comment starting at *index*, if present."""
+    if index + 1 >= len(source) or source[index] != "/":
+        return None
+    next_char = source[index + 1]
+    if next_char == "/":
+        end = index + 2
+        while end < len(source) and source[end] not in "\r\n":
+            end += 1
+        return end
+    if next_char != "*":
+        return None
+    close = source.find("*/", index + 2)
+    if close == -1:
+        prefix = source[:index]
+        line = len(re.findall(pattern=r"\r\n|\r|\n", string=prefix)) + 1
+        column = index - max(prefix.rfind("\n"), prefix.rfind("\r"))
+        message = (
+            f"Invalid JSONC: unterminated comment "
+            f"at line {line} column {column}"
+        )
+        raise JSONCParseError(message, line=line, column=column)
+    return close + 2
+
+
+@beartype
+def _strip_jsonc_comments(*, source: str) -> str:
+    """Replace comments with spaces while keeping JSON error positions."""
+    result = list(source)
+    index = 0
+    in_string = False
+    while index < len(source):
+        char = source[index]
+        if in_string:
+            if char == "\\":
+                index += 2
+                continue
+            if char == '"':
+                in_string = False
+            index += 1
+            continue
+        if char == '"':
+            in_string = True
+            index += 1
+            continue
+        if char == "/":
+            end = _jsonc_comment_end(source=source, index=index)
+            if end is not None:
+                for position in range(index, end):
+                    if source[position] not in "\r\n":
+                        result[position] = " "
+                index = end
+                continue
+        index += 1
+    return "".join(result)
+
+
+@beartype
+def _parse_jsonc(*, source: str) -> ParsedInput:
+    """Parse JSON with comments, retaining JSON's strict syntax."""
+    return _parse_json_data(
+        source=_strip_jsonc_comments(source=source),
+        input_format=InputFormat.JSONC,
+    )
 
 
 type _Json5Value = (
@@ -1249,6 +1331,8 @@ def _parse_by_format(
     match input_format:
         case InputFormat.JSON:
             return _parse_json(source=source)
+        case InputFormat.JSONC:
+            return _parse_jsonc(source=source)
         case InputFormat.JSON5:
             return _parse_json5(source=source)
         case InputFormat.YAML:
