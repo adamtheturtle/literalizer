@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Haskell"]
+languages_reason = "Concrete Haskell records are an opt-in representation."
+
+[[variants]]
+axis = "dict_format"
