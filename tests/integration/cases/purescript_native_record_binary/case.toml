@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["PureScript"]
-languages_reason = "Binary values remain bare encoded strings in records."
-
-[[variants]]
-axis = "dict_format"
