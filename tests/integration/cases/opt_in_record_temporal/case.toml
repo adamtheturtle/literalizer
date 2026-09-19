@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm", "PureScript"]
+languages_reason = "Temporal fields stay bare ISO strings in these opt-in records."
+
+[[variants]]
+axis = "dict_format"
