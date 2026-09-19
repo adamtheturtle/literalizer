@@ -1,5 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-module Fixture_haskell_typed_record_example_Haskell_dict_format_record where
+module Fixture_opt_in_record_example_Haskell_dict_format_record where
 data Val0 = Val0 { name :: String, active :: Bool, scores :: [Integer] }
 my_data :: Val0
 my_data = Val0 {

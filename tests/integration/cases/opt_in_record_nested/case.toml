@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm", "FSharp", "Gleam", "Haskell", "OCaml", "PureScript", "Roc", "Sml"]
+languages_reason = "These languages support nested native records and uniform record lists."
+
+[[variants]]
+axis = "dict_format"
