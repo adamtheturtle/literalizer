@@ -2,6 +2,7 @@
 
 import ast
 import json
+import os
 import re
 
 from hypothesis import HealthCheck, given, settings
@@ -14,6 +15,11 @@ from literalizer import (
     literalize,
 )
 from literalizer.languages import Erlang, Python
+
+_HYPOTHESIS_BACKEND = os.environ.get(
+    key="HYPOTHESIS_BACKEND",
+    default="hypothesis",
+)
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
 # matching the JSON input directly without any conversion step.
@@ -89,7 +95,7 @@ json_arrays = st.lists(elements=json_values, max_size=5)
 json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=5)
 
 
-@settings(deadline=None)
+@settings(backend=_HYPOTHESIS_BACKEND, deadline=None)
 @given(data=json_arrays)
 def test_roundtrip_array(data: list[_JSONValue]) -> None:
     """JSON array -> Python literal -> ast.literal_eval round-trips."""
@@ -105,6 +111,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
     assert parsed == data
 
 
+@settings(backend=_HYPOTHESIS_BACKEND)
 @given(data=json_scalars)
 def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""
@@ -141,7 +148,11 @@ def test_roundtrip_multiline_string_contexts() -> None:
 # health check on unlucky seeds.  The filtering is expected behavior here,
 # so we suppress the check rather than change the strategy.
 @given(data=json_objects)
-@settings(deadline=None, suppress_health_check=[HealthCheck.filter_too_much])
+@settings(
+    backend=_HYPOTHESIS_BACKEND,
+    deadline=None,
+    suppress_health_check=[HealthCheck.filter_too_much],
+)
 def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     """JSON object -> Python literal -> ast.literal_eval round-trips."""
     result = literalize(
@@ -219,6 +230,7 @@ def test_multiline_string_pre_indent_round_trip() -> None:
     )
 
 
+@settings(backend=_HYPOTHESIS_BACKEND)
 @given(data=st.binary())
 def test_roundtrip_bytes_python(data: bytes) -> None:
     """Format_bytes_python -> ast.literal_eval round-trips."""
@@ -226,6 +238,7 @@ def test_roundtrip_bytes_python(data: bytes) -> None:
     assert ast.literal_eval(node_or_string=result) == data
 
 
+@settings(backend=_HYPOTHESIS_BACKEND)
 @given(data=st.binary())
 def test_roundtrip_bytes_hex(data: bytes) -> None:
     """Format_bytes_hex -> bytes.fromhex round-trips."""
@@ -241,6 +254,7 @@ def test_roundtrip_bytes_hex(data: bytes) -> None:
 ERLANG_LANG = Erlang()
 
 
+@settings(backend=_HYPOTHESIS_BACKEND)
 @given(data=st.binary())
 def test_roundtrip_bytes_erlang_binary(data: bytes) -> None:
     """Erlang binary literal round-trips."""

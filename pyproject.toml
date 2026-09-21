@@ -129,6 +129,10 @@ benchmark = [
     # in the same workflow.
     "pytest-test-groups==1.2.1",
 ]
+crosshair = [
+    "crosshair-tool==0.0.110",
+    "hypothesis-crosshair==0.0.30",
+]
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",

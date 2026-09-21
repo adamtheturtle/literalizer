@@ -136,15 +136,37 @@ jobs:
           # back onto ``src/``.
           PYTHONPATH: src
 
+  crosshair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Run property tests with CrossHair
+        run: |
+          uv run --group=dev --group=crosshair pytest -o addopts= -vvv tests/test_roundtrip.py
+        env:
+          HYPOTHESIS_BACKEND: crosshair
+          UV_PYTHON: '3.14'
+
   completion-ci:
-    needs: [build, benchmark-wheel, benchmarks]
+    needs: [build, benchmark-wheel, benchmarks, crosshair]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: always()
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' && needs.crosshair.result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi
