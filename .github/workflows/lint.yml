@@ -1948,11 +1948,9 @@ jobs:
         run: |-
           scripts/retry.sh sudo apt-get update
           scripts/retry.sh sudo apt-get install -y libcjson-dev
-      # Failed source downloads may not stop the action successfully:
-      # https://github.com/fabasoad/setup-cobol-action/issues/149.
       - name: Install GnuCOBOL
         timeout-minutes: 10
-        uses: fabasoad/setup-cobol-action@v1.6.2
+        uses: fabasoad/setup-cobol-action@v1.6.3
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
       - name: Install uv
