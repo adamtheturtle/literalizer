@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, Final
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from beartype import beartype
 
@@ -644,6 +644,15 @@ class _CSharpWidenedMapNarrowing:
     value_type: str | None
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CSharp(metaclass=LanguageCls):
@@ -924,8 +933,8 @@ class CSharp(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -1114,7 +1123,7 @@ class CSharp(metaclass=LanguageCls):
         _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_backslash_nul)
-        VERBATIM = enum.member(value=_format_string_verbatim)
+        VERBATIM = _StringEnumMember(value=_format_string_verbatim)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

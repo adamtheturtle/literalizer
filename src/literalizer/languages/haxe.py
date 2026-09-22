@@ -7,7 +7,7 @@ import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -224,6 +224,15 @@ def _format_haxe_hex(value: int) -> str:
     if value < -(1 << 31) or value >= 1 << 31:
         return f"{value}"
     return format_integer_hex(value=value)
+
+
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _IntegerEnumMember = enum.member[Callable[[int], str]]
+else:
+    _BytesEnumMember = enum.member
+    _IntegerEnumMember = enum.member
 
 
 @beartype
@@ -458,8 +467,8 @@ class Haxe(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -569,8 +578,10 @@ class Haxe(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=_format_haxe_hex)
+        _value_: Callable[[int], str]
+
+        DECIMAL = _IntegerEnumMember(value=str)
+        HEX = _IntegerEnumMember(value=_format_haxe_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""

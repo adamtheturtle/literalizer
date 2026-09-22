@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, TypeGuard
+from typing import TYPE_CHECKING, ClassVar, TypeGuard
 
 from beartype import beartype
 
@@ -2622,6 +2622,15 @@ def _format_cpp_json_inline_call_arg(_raw_value: Value, formatted: str) -> str:
     return _cpp_nlohmann_json_parse_expression(formatted)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
@@ -2955,8 +2964,8 @@ class Cpp(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -3172,8 +3181,8 @@ class Cpp(metaclass=LanguageCls):
 
         _value_: Callable[[str], str]
 
-        DOUBLE = enum.member(value=_format_string_cpp_escaped)
-        MULTILINE = enum.member(value=_format_string_multiline)
+        DOUBLE = _StringEnumMember(value=_format_string_cpp_escaped)
+        MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

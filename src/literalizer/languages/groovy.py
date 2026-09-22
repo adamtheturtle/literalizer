@@ -7,7 +7,7 @@ import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from beartype import beartype
 
@@ -285,6 +285,15 @@ def _groovy_call_stub_factory(
     return _stub
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Groovy(metaclass=LanguageCls):
@@ -492,8 +501,8 @@ class Groovy(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -616,7 +625,7 @@ class Groovy(metaclass=LanguageCls):
         _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=format_string_backslash_dollar_nul_unicode)
-        MULTILINE = enum.member(value=_format_string_multiline)
+        MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

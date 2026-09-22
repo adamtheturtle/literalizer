@@ -643,29 +643,11 @@ executionEnvironments = [
 ]
 
 [tool.ty]
-rules.blanket-ignore-comment = "error"
-rules.division-by-zero = "warn"
-rules.dynamic-function-decorator-return = "error"
-rules.missing-type-argument = "error"
-rules.possibly-missing-attribute = "warn"
-rules.possibly-missing-import = "warn"
-rules.possibly-unresolved-reference = "warn"
-rules.unsound-assignment = "error"
-rules.unsound-return-statement = "error"
-rules.unsound-yield = "error"
-rules.unsupported-dynamic-base = "warn"
+rules.all = "error"
 terminal.error-on-warning = true
 analysis.respect-type-ignore-comments = false
 analysis.strict-equality-semantics = true
 analysis.strict-generic-narrowing = true
-
-[[tool.ty.overrides]]
-include = [ "src/literalizer/languages/**/*.py" ]
-# ty 0.0.72 currently loses callable signatures for functions stored as enum
-# members. Keep the workaround scoped to the language enum implementations.
-rules.invalid-assignment = "ignore"
-rules.too-many-positional-arguments = "ignore"
-rules.unknown-argument = "ignore"
 
 [tool.pytest]
 ini_options.addopts = "-n auto"

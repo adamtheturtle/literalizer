@@ -16,6 +16,7 @@ from typing import (
     Literal,
     Protocol,
     assert_never,
+    override,
     runtime_checkable,
 )
 
@@ -1657,6 +1658,7 @@ class LanguageCls(type):
         mcs._language_classes.append(created)
         return created
 
+    @override
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         unsupported = kwargs.keys() - cls.__dataclass_fields__.keys()

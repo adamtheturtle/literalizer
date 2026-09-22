@@ -7,7 +7,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -168,6 +168,13 @@ def _julia_call_stub(
         inner_inst = f"{cls}({inner_inst})"
     lines.append(f"{root} = {root_cls}({inner_inst})")
     return tuple(lines)
+
+
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+else:
+    _BytesEnumMember = enum.member
 
 
 @beartype
@@ -385,8 +392,8 @@ class Julia(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

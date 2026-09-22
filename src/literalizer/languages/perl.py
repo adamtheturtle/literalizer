@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -321,6 +321,15 @@ class _BoolFormatConfig:
     preamble_lines: tuple[str, ...]
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Perl(metaclass=LanguageCls):
@@ -591,8 +600,8 @@ class Perl(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -752,10 +761,10 @@ class Perl(metaclass=LanguageCls):
 
         _value_: Callable[[str], str]
 
-        DOUBLE = enum.member(value=_format_perl_string_double)
-        DOUBLE_UTF8 = enum.member(value=_format_perl_string_double_utf8)
-        SINGLE = enum.member(value=_format_perl_string_single)
-        MULTILINE = enum.member(value=_format_perl_string_multiline)
+        DOUBLE = _StringEnumMember(value=_format_perl_string_double)
+        DOUBLE_UTF8 = _StringEnumMember(value=_format_perl_string_double_utf8)
+        SINGLE = _StringEnumMember(value=_format_perl_string_single)
+        MULTILINE = _StringEnumMember(value=_format_perl_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

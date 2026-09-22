@@ -7,7 +7,7 @@ import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from beartype import beartype
 
@@ -293,6 +293,17 @@ _format_string_r = make_backslash_string_formatter(
 )
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _RSourceEntryEnumMember = enum.member[_RSourceEntryFormatter]
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _IntegerEnumMember = enum.member[Callable[[int], str]]
+else:
+    _RSourceEntryEnumMember = enum.member
+    _BytesEnumMember = enum.member
+    _IntegerEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class R(metaclass=LanguageCls):
@@ -502,8 +513,10 @@ class R(metaclass=LanguageCls):
 
         _value_: _RSourceEntryFormatter
 
-        POSITIONAL = enum.member(value=_format_r_dict_entry_positional)
-        ERROR = enum.member(value=_format_r_dict_entry_error)
+        POSITIONAL = _RSourceEntryEnumMember(
+            value=_format_r_dict_entry_positional
+        )
+        ERROR = _RSourceEntryEnumMember(value=_format_r_dict_entry_error)
 
         def __call__(
             self,
@@ -523,8 +536,8 @@ class R(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -607,8 +620,10 @@ class R(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        _value_: Callable[[int], str]
+
+        DECIMAL = _IntegerEnumMember(value=str)
+        HEX = _IntegerEnumMember(value=format_integer_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""

@@ -7,7 +7,7 @@ import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -213,6 +213,17 @@ def _lua_call_stub(
     return (f"{root} = {nested}",)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _IntegerEnumMember = enum.member[Callable[[int], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _IntegerEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Lua(metaclass=LanguageCls):
@@ -389,8 +400,8 @@ class Lua(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -482,8 +493,10 @@ class Lua(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
+        _value_: Callable[[int], str]
+
+        DECIMAL = _IntegerEnumMember(value=str)
+        HEX = _IntegerEnumMember(value=format_integer_hex)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""
@@ -512,7 +525,7 @@ class Lua(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=_format_string_lua_escaped)
         SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
-        MULTILINE = enum.member(value=_format_string_multiline)
+        MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

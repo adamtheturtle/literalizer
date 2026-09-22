@@ -7,7 +7,7 @@ import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -297,6 +297,13 @@ def _format_constructor_target(class_name: str, /) -> str:
 
 
 _constructor_target: Callable[[str], str] = _format_constructor_target
+
+
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+else:
+    _BytesEnumMember = enum.member
 
 
 @beartype
@@ -609,8 +616,8 @@ class VisualBasic(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

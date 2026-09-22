@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -107,6 +107,15 @@ def _format_jsonc_dict_entry(
 ) -> str:
     """Format a JSONC dict entry as ``key: value``."""
     return f"{key}: {formatted_value}"
+
+
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _FloatEnumMember = enum.member[Callable[[float], str]]
+else:
+    _BytesEnumMember = enum.member
+    _FloatEnumMember = enum.member
 
 
 @beartype
@@ -258,8 +267,8 @@ class Jsonc(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -334,9 +343,9 @@ class Jsonc(metaclass=LanguageCls):
 
         _value_: Callable[[float], str]
 
-        REPR = enum.member(value=format_float_repr)
-        SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        REPR = _FloatEnumMember(value=format_float_repr)
+        SCIENTIFIC = _FloatEnumMember(value=format_float_scientific)
+        FIXED = _FloatEnumMember(value=format_float_fixed)
 
         def __call__(self, value: float, /) -> str:
             """Format a finite JSONC number."""

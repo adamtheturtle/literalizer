@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -636,6 +636,13 @@ def _build_v_record_preamble(
     return _record_pre
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+else:
+    _BytesEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class V(metaclass=LanguageCls):
@@ -841,8 +848,8 @@ class V(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=_format_v_bytes_hex)
-        BASE64 = enum.member(value=_format_v_bytes_base64)
+        HEX = _BytesEnumMember(value=_format_v_bytes_hex)
+        BASE64 = _BytesEnumMember(value=_format_v_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

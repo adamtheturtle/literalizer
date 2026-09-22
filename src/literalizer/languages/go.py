@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 from ruamel.yaml.compat import ordereddict as _ordereddict
@@ -482,6 +482,15 @@ def _go_nested_record_type(*, request: RecordFieldType) -> str | None:
     return nested_type
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Go(metaclass=LanguageCls):
@@ -701,8 +710,8 @@ class Go(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -866,7 +875,7 @@ class Go(metaclass=LanguageCls):
         _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_go)
-        MULTILINE = enum.member(value=_format_string_multiline)
+        MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
