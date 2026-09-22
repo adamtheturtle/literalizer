@@ -1016,6 +1016,7 @@ def _format_kotlin_json_call_arg(raw_value: Value, _formatted: str) -> str:
     return _kotlin_parse_to_json_element_expression(data=raw_value)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

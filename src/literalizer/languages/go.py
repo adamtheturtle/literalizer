@@ -482,6 +482,7 @@ def _go_nested_record_type(*, request: RecordFieldType) -> str | None:
     return nested_type
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

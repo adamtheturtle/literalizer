@@ -636,6 +636,7 @@ def _build_v_record_preamble(
     return _record_pre
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

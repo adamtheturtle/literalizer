@@ -216,6 +216,7 @@ def _powershell_call_ref_identifier(name: str, _value: Value | None, /) -> str:
     return f"${name}"
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

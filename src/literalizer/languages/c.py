@@ -919,6 +919,7 @@ def _c_temporal_field_type(
     return field_type
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _IntegerEnumMember = enum.member[Callable[[int], str]]

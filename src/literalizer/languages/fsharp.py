@@ -540,6 +540,7 @@ def _fsharp_format_call_arg(_original: Value, formatted: str, /) -> str:
     return f"({formatted})"
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _IntegerEnumMember = enum.member[Callable[[int], str]]

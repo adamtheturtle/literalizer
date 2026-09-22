@@ -630,6 +630,7 @@ def _build_union_type_preamble(
     return _preamble
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

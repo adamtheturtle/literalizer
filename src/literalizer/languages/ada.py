@@ -89,6 +89,7 @@ from literalizer._types import Value
 _ADA_EMPTY_LITERAL = "AList'[]"
 _C0_CONTROL_LIMIT = 32
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

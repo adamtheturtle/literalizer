@@ -103,6 +103,7 @@ def _escape_c1_control(match: re.Match[str]) -> str:
     return f"\\x{ord(match.group()):02x}"
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

@@ -466,6 +466,7 @@ def _crystal_call_stub(
     return tuple(lines)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

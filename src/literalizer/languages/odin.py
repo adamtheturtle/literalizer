@@ -525,6 +525,7 @@ def _format_odin_json_call_arg(raw_value: Value, _formatted: str) -> str:
     return _odin_parse_expression(data=raw_value)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

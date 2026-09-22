@@ -98,6 +98,7 @@ _format_string_safe = reject_nul_string_formatter(
 )
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

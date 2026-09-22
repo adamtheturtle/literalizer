@@ -207,6 +207,7 @@ def _split_top_level_statements(*, content: str) -> list[str]:
     return statements
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

@@ -109,6 +109,7 @@ def _format_jsonc_dict_entry(
     return f"{key}: {formatted_value}"
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _FloatEnumMember = enum.member[Callable[[float], str]]

@@ -299,6 +299,7 @@ def _format_constructor_target(class_name: str, /) -> str:
 _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

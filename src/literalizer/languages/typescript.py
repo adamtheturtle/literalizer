@@ -530,6 +530,7 @@ data-dependent preamble (``as const`` needs no imports).
 """
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

@@ -362,6 +362,7 @@ def _format_systemverilog_call_assignment(
     return f"{name} = {value};"
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _IntegerEnumMember = enum.member[Callable[[int], str]]

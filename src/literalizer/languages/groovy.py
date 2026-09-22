@@ -285,6 +285,7 @@ def _groovy_call_stub_factory(
     return _stub
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

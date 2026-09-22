@@ -170,6 +170,7 @@ def _julia_call_stub(
     return tuple(lines)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

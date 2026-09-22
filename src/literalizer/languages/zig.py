@@ -718,6 +718,7 @@ def _zig_integer_field_type(*, value: int) -> str:
     return value_type
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

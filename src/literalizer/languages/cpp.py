@@ -2622,6 +2622,7 @@ def _format_cpp_json_inline_call_arg(_raw_value: Value, formatted: str) -> str:
     return _cpp_nlohmann_json_parse_expression(formatted)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
     _StringEnumMember = enum.member[Callable[[str], str]]

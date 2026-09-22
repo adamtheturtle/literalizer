@@ -531,6 +531,7 @@ def _validate_sml_native_record(
         _validate_sml_native_scalar(data=data, epoch_datetimes=epoch_datetimes)
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
 else:

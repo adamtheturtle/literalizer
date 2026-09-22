@@ -293,6 +293,7 @@ _format_string_r = make_backslash_string_formatter(
 )
 
 
+# Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
     _RSourceEntryEnumMember = enum.member[_RSourceEntryFormatter]
     _BytesEnumMember = enum.member[Callable[[bytes], str]]
