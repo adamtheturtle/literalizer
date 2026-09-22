@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -96,6 +96,12 @@ _format_string_safe = reject_nul_string_formatter(
     format_string_backslash,
     language_name="Norg",
 )
+
+
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+else:
+    _BytesEnumMember = enum.member
 
 
 @beartype
@@ -265,8 +271,8 @@ class Norg(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""

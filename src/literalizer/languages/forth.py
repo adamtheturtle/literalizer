@@ -7,7 +7,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -285,6 +285,14 @@ def _forth_call_stub(
     return tuple(stubs)
 
 
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Forth(metaclass=LanguageCls):
@@ -435,8 +443,8 @@ class Forth(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=_format_bytes_hex_forth)
-        BASE64 = enum.member(value=_format_bytes_base64_forth)
+        HEX = _BytesEnumMember(value=_format_bytes_hex_forth)
+        BASE64 = _BytesEnumMember(value=_format_bytes_base64_forth)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -546,7 +554,7 @@ class Forth(metaclass=LanguageCls):
 
         _value_: Callable[[str], str]
 
-        ESCAPED = enum.member(value=_format_string_forth)
+        ESCAPED = _StringEnumMember(value=_format_string_forth)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

@@ -7,7 +7,7 @@ import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property, partial
-from typing import ClassVar, assert_never, override
+from typing import TYPE_CHECKING, ClassVar, assert_never, override
 
 from beartype import beartype
 
@@ -999,6 +999,14 @@ class _MojoOrderedMapFormatConfig(OrderedMapFormatConfig):
         return "List[Tuple[String, String]]()"
 
 
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _SequenceEnumMember = enum.member[Callable[[str], SequenceFormatConfig]]
+else:
+    _BytesEnumMember = enum.member
+    _SequenceEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Mojo(metaclass=LanguageCls):
@@ -1201,8 +1209,8 @@ class Mojo(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -1213,7 +1221,7 @@ class Mojo(metaclass=LanguageCls):
 
         _value_: Callable[[str], SequenceFormatConfig]
 
-        LIST = enum.member(value=_mojo_list_format)
+        LIST = _SequenceEnumMember(value=_mojo_list_format)
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""

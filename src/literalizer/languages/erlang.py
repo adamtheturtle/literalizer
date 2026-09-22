@@ -7,7 +7,7 @@ import re
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -311,6 +311,14 @@ def _erlang_call_stub(
     return (f"{target}({arg_list}) -> {body}.",)
 
 
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _IntegerEnumMember = enum.member[Callable[[int], str]]
+else:
+    _BytesEnumMember = enum.member
+    _IntegerEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Erlang(metaclass=LanguageCls):
@@ -519,8 +527,8 @@ class Erlang(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        BINARY = enum.member(value=_format_bytes)
-        BASE64 = enum.member(value=format_bytes_base64)
+        BINARY = _BytesEnumMember(value=_format_bytes)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -622,9 +630,11 @@ class Erlang(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex_erlang)
-        BINARY = enum.member(value=format_integer_binary_erlang)
+        _value_: Callable[[int], str]
+
+        DECIMAL = _IntegerEnumMember(value=str)
+        HEX = _IntegerEnumMember(value=format_integer_hex_erlang)
+        BINARY = _IntegerEnumMember(value=format_integer_binary_erlang)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""

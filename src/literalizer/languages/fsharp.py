@@ -7,7 +7,7 @@ import re
 import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -540,6 +540,14 @@ def _fsharp_format_call_arg(_original: Value, formatted: str, /) -> str:
     return f"({formatted})"
 
 
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _IntegerEnumMember = enum.member[Callable[[int], str]]
+else:
+    _BytesEnumMember = enum.member
+    _IntegerEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class FSharp(metaclass=LanguageCls):
@@ -814,8 +822,8 @@ class FSharp(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -930,10 +938,12 @@ class FSharp(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options."""
 
-        DECIMAL = enum.member(value=str)
-        HEX = enum.member(value=format_integer_hex)
-        OCTAL = enum.member(value=format_integer_octal)
-        BINARY = enum.member(value=format_integer_binary)
+        _value_: Callable[[int], str]
+
+        DECIMAL = _IntegerEnumMember(value=str)
+        HEX = _IntegerEnumMember(value=format_integer_hex)
+        OCTAL = _IntegerEnumMember(value=format_integer_octal)
+        BINARY = _IntegerEnumMember(value=format_integer_binary)
 
         def __call__(self, value: int, /) -> str:
             """Format an integer."""

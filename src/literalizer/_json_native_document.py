@@ -149,8 +149,8 @@ class _JsonNativeRenderer:
     """Render one tree after the public fast-path boundary validates
     it.
 
-    Keeping the recursive operations as undecorated implementation
-    methods preserves the single Beartype check at the registered
+    Keeping decorators off the recursive implementation methods
+    preserves the single Beartype check at the registered
     document boundary; checking every child would undo the fast path's
     purpose.
     """

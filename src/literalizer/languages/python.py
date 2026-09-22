@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import ClassVar, assert_never
+from typing import TYPE_CHECKING, ClassVar, assert_never
 
 from beartype import beartype
 
@@ -868,6 +868,14 @@ def _python_record_literal(
     )
 
 
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+    _StringEnumMember = enum.member[Callable[[str], str]]
+else:
+    _BytesEnumMember = enum.member
+    _StringEnumMember = enum.member
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Python(metaclass=LanguageCls):
@@ -1174,9 +1182,9 @@ class Python(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
-        PYTHON = enum.member(value=_format_bytes_python)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
+        PYTHON = _BytesEnumMember(value=_format_bytes_python)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
@@ -1467,8 +1475,8 @@ class Python(metaclass=LanguageCls):
 
         DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
-        RAW = enum.member(value=_format_string_raw)
-        MULTILINE = enum.member(value=_format_string_multiline)
+        RAW = _StringEnumMember(value=_format_string_raw)
+        MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""

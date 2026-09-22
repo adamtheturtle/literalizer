@@ -6,7 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
@@ -101,6 +101,12 @@ from literalizer.exceptions import (
 def _escape_c1_control(match: re.Match[str]) -> str:
     r"""Return the ``\x`` escape for the C1 control character in *match*."""
     return f"\\x{ord(match.group()):02x}"
+
+
+if TYPE_CHECKING:
+    _BytesEnumMember = enum.member[Callable[[bytes], str]]
+else:
+    _BytesEnumMember = enum.member
 
 
 @beartype
@@ -263,8 +269,8 @@ class Yaml(metaclass=LanguageCls):
 
         _value_: Callable[[bytes], str]
 
-        HEX = enum.member(value=format_bytes_hex)
-        BASE64 = enum.member(value=format_bytes_base64)
+        HEX = _BytesEnumMember(value=format_bytes_hex)
+        BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
