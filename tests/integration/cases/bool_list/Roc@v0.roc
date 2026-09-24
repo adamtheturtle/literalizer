@@ -10,4 +10,4 @@ my_data = RList [
     RBool Bool.true,
     RBool Bool.false,
     RBool Bool.true,
-    ]
+]

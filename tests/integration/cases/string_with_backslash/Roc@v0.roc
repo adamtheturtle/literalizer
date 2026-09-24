@@ -14,4 +14,4 @@ my_data = RList [
     RStr "trailing\\",
     RStr "both \"quotes''' here",
     RStr "line1\\nline2\nwith newline",
-    ]
+]

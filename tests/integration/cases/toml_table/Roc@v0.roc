@@ -9,4 +9,4 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("section", RDict [("value", RInt 1i128)]),
-    ]
+]

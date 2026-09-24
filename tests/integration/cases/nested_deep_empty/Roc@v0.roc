@@ -7,4 +7,4 @@ Val : [
 my_data : Val
 my_data = RList [
     RList [RList [], RList []],
-    ]
+]

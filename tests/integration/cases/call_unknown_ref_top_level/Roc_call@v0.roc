@@ -10,7 +10,7 @@ process = \_ -> {}
 unknown_value : Val
 unknown_value = RList [
     RInt 1i128,
-    ]
+]
 main =
     dbg (process unknown_value)
     {}

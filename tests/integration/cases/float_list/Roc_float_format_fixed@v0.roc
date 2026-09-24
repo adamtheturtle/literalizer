@@ -10,4 +10,4 @@ my_data = RList [
     RFloat 1.100000,
     RFloat -2.200000,
     RFloat 3.300000,
-    ]
+]

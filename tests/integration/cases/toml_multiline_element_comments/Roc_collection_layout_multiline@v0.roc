@@ -12,6 +12,6 @@ my_data = RDict [
     ("first", RList [
         RInt 1i128,
         RInt 2i128,
-        ]),
+    ]),
     ("second", RInt 3i128),  # About the second key.
-    ]
+]

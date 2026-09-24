@@ -12,4 +12,4 @@ my_data = RDict [
     ("answer", RInt 42i128),  # inline
     ("plain", RStr "ok"),
     # trailing
-    ]
+]

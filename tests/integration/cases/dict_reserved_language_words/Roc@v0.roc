@@ -27,4 +27,4 @@ my_data = RDict [
     ("then", RInt 1i128),
     ("true", RInt 1i128),
     ("ordinary", RInt 1i128),
-    ]
+]

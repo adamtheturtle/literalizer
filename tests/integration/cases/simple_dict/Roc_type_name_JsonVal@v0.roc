@@ -14,4 +14,4 @@ my_data = RDict [
     ("age", RInt 30i128),
     ("active", RBool Bool.true),
     ("score", RNull),
-    ]
+]

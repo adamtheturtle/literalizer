@@ -11,4 +11,4 @@ my_data : Val
 my_data = RDict [
     ("a", RList []),
     ("b", RInt 1i128),
-    ]
+]

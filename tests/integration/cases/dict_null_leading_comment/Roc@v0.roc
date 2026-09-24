@@ -11,4 +11,4 @@ my_data = RDict [
     # comment
     ("name", RStr "Alice"),
     ("score", RNull),
-    ]
+]

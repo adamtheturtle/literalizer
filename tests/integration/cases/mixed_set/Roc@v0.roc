@@ -12,4 +12,4 @@ my_data = RSet [
     RBool Bool.true,
     RInt 42i128,
     RStr "apple",
-    ]
+]

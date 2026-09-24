@@ -10,4 +10,4 @@ my_data = RList [
     RInt 0o1i128,
     RInt 0o2i128,
     RInt 0o3i128,
-    ]
+]

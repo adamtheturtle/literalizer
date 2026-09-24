@@ -11,4 +11,4 @@ my_data = RList [
     RStr "a",
     # second
     RStr "b",
-    ]
+]

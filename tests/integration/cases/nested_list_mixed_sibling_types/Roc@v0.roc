@@ -11,4 +11,4 @@ my_data = RList [
     RList [RInt 1i128, RInt 2i128],
     RList [],
     RList [RStr "a", RStr "b"],
-    ]
+]

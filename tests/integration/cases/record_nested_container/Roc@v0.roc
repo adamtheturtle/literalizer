@@ -12,4 +12,4 @@ my_data = RDict [
     ("title", RStr "report"),
     ("tags", RList [RStr "draft", RStr "urgent", RStr "review"]),
     ("priority", RInt 2i128),
-    ]
+]

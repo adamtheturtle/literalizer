@@ -9,4 +9,4 @@ my_data : Val
 my_data = RDict [
     ("x", RStr "\u(0000)"),
     ("y", RStr "\u(0000)1"),
-    ]
+]

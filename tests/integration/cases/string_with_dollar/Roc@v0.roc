@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     RStr "price $10",
     RStr "$HOME",
-    ]
+]

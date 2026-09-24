@@ -10,4 +10,4 @@ my_data = RDict [
     ("key\nwith\nnewlines", RStr "value1"),
     ("key\twith\ttabs", RStr "value2"),
     ("", RStr "value3"),
-    ]
+]

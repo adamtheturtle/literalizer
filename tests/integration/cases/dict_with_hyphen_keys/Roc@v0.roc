@@ -10,4 +10,4 @@ my_data = RDict [
     ("my-key", RStr "value1"),
     ("another-key", RStr "value2"),
     ("normal_key", RStr "value3"),
-    ]
+]

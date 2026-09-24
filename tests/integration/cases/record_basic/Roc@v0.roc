@@ -14,4 +14,4 @@ my_data = RDict [
     ("label", RStr "She said \"hello\", then waved"),
     ("enabled", RBool Bool.false),
     ("related_ids", RList [RInt 1i128, RInt 2i128, RInt 3i128]),
-    ]
+]

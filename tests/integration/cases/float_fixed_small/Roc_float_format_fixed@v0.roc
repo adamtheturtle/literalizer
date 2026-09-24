@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     RFloat 0.000000001,
     RFloat -0.000000001,
-    ]
+]

@@ -8,4 +8,4 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("key", RStr "\"bang!\""),  # real
-    ]
+]

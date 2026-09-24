@@ -11,4 +11,4 @@ my_data = RSet [
     RStr "apple",
     RStr "banana",  # banana inline
     # trailing
-    ]
+]

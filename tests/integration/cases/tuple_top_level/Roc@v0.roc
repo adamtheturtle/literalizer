@@ -12,4 +12,4 @@ my_data = RList [
     RStr "email",
     RStr "a@gmail.com",
     RInt 100i128,
-    ]
+]

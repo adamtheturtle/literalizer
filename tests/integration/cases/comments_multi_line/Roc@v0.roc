@@ -10,4 +10,4 @@ my_data = RList [
     # line 1
     # line 2
     RStr "a",
-    ]
+]

@@ -12,4 +12,4 @@ my_data = RList [
     RInt 1i128,
     RStr "hello",
     RBool Bool.true,
-    ]
+]

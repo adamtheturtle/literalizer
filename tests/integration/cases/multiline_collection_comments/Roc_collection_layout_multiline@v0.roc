@@ -13,6 +13,6 @@ my_data = RDict [
         RInt 1i128,
         RInt 2i128,
         RInt 3i128,
-        ]),  # inline a
+    ]),  # inline a
     ("b", RInt 2i128),  # inline b
-    ]
+]

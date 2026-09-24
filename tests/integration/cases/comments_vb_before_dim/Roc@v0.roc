@@ -12,4 +12,4 @@ my_data = RDict [
     ("name", RStr "app"),
     # Port setting
     ("port", RInt 3000i128),
-    ]
+]

@@ -10,4 +10,4 @@ my_data : Val
 my_data = RList [
     RDict [("first", RStr "Alice"), ("last", RStr "Smith")],
     RDict [("first", RStr "Bob"), ("last", RStr "Jones")],
-    ]
+]

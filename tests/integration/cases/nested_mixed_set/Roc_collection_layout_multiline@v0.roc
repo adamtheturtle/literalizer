@@ -15,5 +15,5 @@ my_data = RDict [
         RBool Bool.true,
         RInt 42i128,
         RStr "apple",
-        ]),
-    ]
+    ]),
+]

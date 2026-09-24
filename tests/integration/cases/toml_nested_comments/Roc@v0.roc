@@ -18,4 +18,4 @@ my_data = RDict [
     ("entries", RList [RDict [("name", RStr "one")], RDict [("name", RStr "two")]]),
     # Inside the table.
     ("table", RDict [("inner", RInt 4i128)]),
-    ]
+]

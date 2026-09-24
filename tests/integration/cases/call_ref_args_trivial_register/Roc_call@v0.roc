@@ -20,7 +20,7 @@ my_list = RList [
     RInt 1i128,
     RInt 2i128,
     RInt 3i128,
-    ]
+]
 main =
     dbg (process my_int (RInt 42i128))
     dbg (process my_bool (RInt 7i128))

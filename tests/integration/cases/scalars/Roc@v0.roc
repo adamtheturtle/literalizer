@@ -15,4 +15,4 @@ my_data = RList [
     RBool Bool.true,
     RBool Bool.false,
     RStr "hello \"world\"",
-    ]
+]

@@ -9,4 +9,4 @@ Val : [
 my_data : Val
 my_data = RList [
     RSet [RStr "a", RStr "b"],
-    ]
+]
