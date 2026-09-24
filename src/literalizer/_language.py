@@ -1829,6 +1829,8 @@ class Language(Protocol):
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
+        # Pylint rejects ellipsis bodies here until
+        # https://github.com/pylint-dev/pylint/issues/11459 is fixed.
         @property
         @abstractmethod
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
