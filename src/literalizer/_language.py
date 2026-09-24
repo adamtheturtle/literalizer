@@ -44,6 +44,9 @@ from literalizer.exceptions import (
     UnsupportedOptionError,
 )
 
+if TYPE_CHECKING:
+    from abc import abstractmethod
+
 
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
@@ -510,7 +513,7 @@ class DictFormatBuilder(Protocol):
         default_key_type: str,
     ) -> DictFormatConfig:
         """Build a dict format configuration."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
 
 @beartype
@@ -710,7 +713,7 @@ class LeadingPreamble(Protocol):
         self, data: Value, /, *, has_variable_declaration: bool
     ) -> tuple[str, ...]:
         """Return the leading preamble lines for *data*."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
 
 class CallSupport(enum.Enum):
@@ -1745,105 +1748,108 @@ class Language(Protocol):
     @property
     def accepts_type_name_call_target(self) -> bool:
         """Whether a bare type name may be a call target."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def call_parameter_shadowing(self) -> CallParameterShadowing:
         """Return the wrapped-call parameter shadowing rule."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def contextual_call_target_identifiers(self) -> frozenset[str]:
         """Return contextual identifiers permitted as call targets."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def declares_type_name_call_target(self) -> bool:
         """Whether a wrapped file can declare a type-name call target."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dotted_call_root_shares_entrypoint_namespace(self) -> bool:
         """Whether dotted call roots share entry-point identifiers."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def immutable_variable_modifiers(self) -> frozenset[enum.Enum]:
         """Return modifiers that prevent later assignment."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def module_name_shares_variable_scope(self) -> bool:
         """Whether module and variable names share a scope."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def new_variable_name_syntax(self) -> NewVariableNameSyntax:
         """Return the grammar for new variable names."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def pools_map_integer_width(self) -> bool:
         """Whether map values share one integer width."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def reserved_bare_call_target_identifiers(self) -> frozenset[str]:
         """Return identifiers reserved only for bare call targets."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def reserved_call_target_head_identifiers(self) -> frozenset[str]:
         """Return identifiers reserved at the head of a call target."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def reserved_call_target_keywords_case_sensitive(self) -> bool:
         """Whether reserved call-target keywords are case-sensitive."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_module_name(self) -> bool:
         """Whether this language supports a module name."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_multiline_dict_layout(self) -> bool:
         """Whether mappings may use a multiline layout."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_record_struct_name_prefix(self) -> bool:
         """Whether record struct names accept a configurable prefix."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def wrap_in_file_tolerates_pre_indent(self) -> bool:
         """Whether a wrapped file tolerates pre-indentation."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     if TYPE_CHECKING:
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
         @property
+        @abstractmethod
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
             """Return the specialized call-target grammar, when
             present.
             """
-            ...  # pylint: disable=unnecessary-ellipsis
+            raise NotImplementedError
 
         @property
+        @abstractmethod
         def max_variable_identifier_length(self) -> int | None:
             """Return the maximum identifier length, when bounded."""
-            ...  # pylint: disable=unnecessary-ellipsis
+            raise NotImplementedError
 
         @property
+        @abstractmethod
         def reserved_variable_identifier_pattern(
             self,
         ) -> re.Pattern[str] | None:
             """Return the reserved variable-name pattern, when present."""
-            ...  # pylint: disable=unnecessary-ellipsis
+            raise NotImplementedError
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
@@ -1860,42 +1866,42 @@ class Language(Protocol):
         """Enum class whose members list the bytes formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def sequence_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the sequence formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def set_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the set formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def date_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the date formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def datetime_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the datetime formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def comment_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the comment formats this language
         supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def variable_type_hints_formats(self) -> type[enum.Enum]:
@@ -1913,42 +1919,42 @@ class Language(Protocol):
         unless annotated ``Record<string, V>``); for languages without a
         custom predicate it produces the same output as ``NEVER``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def declaration_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the declaration style options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dict_entry_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the dict entry style options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dict_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the dict/map format options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def float_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the float format options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def integer_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the integer format options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def integer_width_strategies(self) -> type[enum.Enum]:
@@ -1961,56 +1967,56 @@ class Language(Protocol):
         Perl past ``2**53``) expose additional opt-in strategies that
         wrap wide values in an arbitrary-precision constructor.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_literal_suffixes(self) -> type[enum.Enum]:
         """Enum class whose members list the numeric literal suffix
         options this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_separators(self) -> type[enum.Enum]:
         """Enum class whose members list the numeric separator options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the numeric literal style
         options this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def string_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the string format options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def trailing_commas(self) -> type[enum.Enum]:
         """Enum class whose members list the trailing comma options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def statement_terminator_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the statement terminator options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def call_styles(self) -> type[enum.Enum]:
         """Enum class whose members list the call style options
         this language supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def modifiers(self) -> type[enum.Enum]:
@@ -2019,7 +2025,7 @@ class Language(Protocol):
 
         Languages without modifier vocabulary expose an empty enum.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def heterogeneous_strategies(self) -> type[enum.Enum]:
@@ -2031,7 +2037,7 @@ class Language(Protocol):
         ``ERROR``.  Languages with richer strategies (e.g. Rust's
         ``TAGGED_ENUM``) expose additional members.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def json_types(self) -> type[JsonType]:
@@ -2042,7 +2048,7 @@ class Language(Protocol):
         empty enum so consumers can enumerate options uniformly without
         reflection.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def bool_formats(self) -> type[enum.Enum]:
@@ -2053,14 +2059,14 @@ class Language(Protocol):
         enum so consumers can enumerate options uniformly without
         reflection.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def version_formats(self) -> type[enum.Enum]:
         """Enum class whose members list the target language versions
         this language class supports.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def identifier_cases(self) -> tuple[IdentifierCase, ...]:
@@ -2074,7 +2080,7 @@ class Language(Protocol):
         ``SNAKE`` while still syntactically supporting ``CAMEL``,
         ``PASCAL``, and ``UPPER_SNAKE``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supported_ref_cases(self) -> frozenset[IdentifierCase]:
@@ -2090,7 +2096,7 @@ class Language(Protocol):
         Independent of :attr:`identifier_cases`, which records
         stylistic preference rather than syntactic validity.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     extension: str
     """The file extension for this language, including the leading dot."""
@@ -2148,7 +2154,7 @@ class Language(Protocol):
         :func:`~literalizer.literalize_call` rejects such targets with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def reserved_variable_identifiers(self) -> frozenset[str]:
@@ -2159,14 +2165,14 @@ class Language(Protocol):
         forbidden for a variable declaration (for example, TypeScript's
         ``class`` in JavaScript and TypeScript).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def reserved_variable_identifiers_case_sensitive(self) -> bool:
         """Whether reserved variable identifiers must match case
         exactly.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     supports_variable_names: bool
     """Whether the language supports wrapping output in a named variable
@@ -2218,7 +2224,7 @@ class Language(Protocol):
     @property
     def language_version(self) -> enum.Enum:
         """The selected version of the target language."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def pygments_name(self) -> str | None:
@@ -2226,22 +2232,22 @@ class Language(Protocol):
 
         ``None`` if Pygments does not support this language.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def null_literal(self) -> str:
         """The literal representing null/None."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def true_literal(self) -> str:
         """The literal representing true/True."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def false_literal(self) -> str:
         """The literal representing false/False."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def sequence_open(self) -> Callable[[list[Value]], str]:
@@ -2251,17 +2257,17 @@ class Language(Protocol):
         can depend on the element types when needed.  For a fixed delimiter
         use :func:`~literalizer.fixed_open`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def trailing_comma_config(self) -> TrailingCommaConfig:
@@ -2270,89 +2276,89 @@ class Language(Protocol):
         Trailing commas are only added to collection formats that support
         them.  See :class:`TrailingCommaConfig` for details.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a :class:`bytes` value as a string
         literal.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_date(self) -> Callable[[datetime.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
         literal.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_time(self) -> Callable[[datetime.time], str]:
         """Callable that formats a :class:`datetime.time` as a string
         literal.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def indent(self) -> str:
         """The indentation step for elements inside delimiters in
         multi-line structures (e.g. ``"    "`` for 4-space indent).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def indent_closing_delimiter(self) -> bool:
         """Whether to indent the closing delimiter of multi-line
         structures by one ``indent`` step.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def element_separator(self) -> str:
         """The separator placed between elements in inline sequences."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def skip_null_dict_values(self) -> bool:
         """Whether to omit dict entries whose value is ``None``."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_collection_comments(self) -> bool:
@@ -2364,7 +2370,7 @@ class Language(Protocol):
         (or before the variable declaration when a variable name is
         supplied) rather than being placed inside the ``{...}`` block.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_scalar_before_comments(self) -> bool:
@@ -2381,7 +2387,7 @@ class Language(Protocol):
         variable declaration rather than between the ``=`` and the
         value.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_scalar_inline_comments(self) -> bool:
@@ -2398,7 +2404,7 @@ class Language(Protocol):
         variable declaration rather than being appended after the
         value.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_variable_declaration(
@@ -2415,7 +2421,7 @@ class Language(Protocol):
         :attr:`Modifiers` enum; values that are not members of that
         enum are silently ignored.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
@@ -2425,7 +2431,7 @@ class Language(Protocol):
         *name* is the variable name, *value* is the already-formatted literal
         value, and *data* is the original parsed data structure.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_integer_widened(self) -> Callable[[int], str] | None:
@@ -2440,7 +2446,7 @@ class Language(Protocol):
         common case) return ``None`` via
         :data:`no_format_integer_widened`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_integer_beyond_i64(self) -> Callable[[int], str] | None:
@@ -2455,7 +2461,7 @@ class Language(Protocol):
         with no such widening return ``None`` via
         :data:`no_format_integer_beyond_i64`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_variable_declaration(
@@ -2471,7 +2477,7 @@ class Language(Protocol):
         tag reuse :attr:`format_variable_declaration` unchanged via
         :data:`default_format_call_variable_declaration`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_variable_assignment(
@@ -2486,7 +2492,7 @@ class Language(Protocol):
         value-type tag reuse :attr:`format_variable_assignment`
         unchanged via :data:`default_format_call_variable_assignment`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def sequence_binding_declarations(
         self, declarations: tuple[str, ...]
@@ -2500,7 +2506,7 @@ class Language(Protocol):
         every executable one) or structural nesting (Nix's chained
         ``let``) override this.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def format_call_binding_body_preamble(self) -> tuple[str, ...]:
         """Module-internal body-preamble lines required only when a
@@ -2510,7 +2516,7 @@ class Language(Protocol):
         :data:`no_call_binding_body_preamble`.  PureScript overrides
         this with ``import Prelude`` (its call stub returns ``Unit``).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def format_call_binding_file_pragmas(self) -> tuple[str, ...]:
         """File-level compiler-pragma lines required only when a
@@ -2521,27 +2527,27 @@ class Language(Protocol):
         suppress ``-Wmissing-signatures`` for the binding, whose type
         the renderer cannot annotate.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def variable_type_hints(self) -> enum.Enum:
         """The variable type hint option chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def sequence_format(self) -> enum.Enum:
@@ -2550,104 +2556,104 @@ class Language(Protocol):
         ``sequence_format_config`` exposes the format-specific
         configuration (e.g. ``supports_heterogeneity``).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def set_format(self) -> enum.Enum:
         """The set format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def comment_format(self) -> enum.Enum:
         """The comment format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def date_format(self) -> enum.Enum:
         """The date format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def datetime_format(self) -> enum.Enum:
         """The datetime format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def declaration_style(self) -> enum.Enum:
         """The declaration style chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dict_entry_style(self) -> enum.Enum:
         """The dict entry style chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def dict_format(self) -> enum.Enum:
         """The dict/map format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def float_format(self) -> enum.Enum:
         """The float format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def integer_format(self) -> enum.Enum:
         """The integer format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def integer_width_strategy(self) -> enum.Enum:
         """The integer-width strategy chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_literal_suffix(self) -> enum.Enum:
         """The numeric literal suffix chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_separator(self) -> enum.Enum:
         """The numeric separator option chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def numeric_style(self) -> enum.Enum:
         """The numeric literal style chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def string_format(self) -> enum.Enum:
         """The string format chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def trailing_comma(self) -> enum.Enum:
         """The trailing comma option chosen for this language instance."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def statement_terminator_style(self) -> enum.Enum:
         """The statement terminator option chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def heterogeneous_strategy(self) -> enum.Enum:
         """The heterogeneous-scalar strategy chosen for this language
         instance.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def static_preamble(self) -> Sequence[str]:
@@ -2655,7 +2661,7 @@ class Language(Protocol):
         emitted before the generated code, regardless of what types
         appear in the data.  Use an empty sequence when none are needed.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def leading_preamble(self) -> LeadingPreamble:
@@ -2668,7 +2674,7 @@ class Language(Protocol):
         annotations`` only when the rendered code actually contains an
         annotation, since that import must be the first statement.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
@@ -2677,7 +2683,7 @@ class Language(Protocol):
         needs ``import datetime`` when dates are present would include
         ``{datetime.date: ("import datetime",)}``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def static_body_preamble(self) -> Sequence[str]:
@@ -2686,7 +2692,7 @@ class Language(Protocol):
         header preamble but before the code body.  Use an empty sequence
         when none are needed.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
@@ -2696,7 +2702,7 @@ class Language(Protocol):
         Most languages leave this empty.  Haskell uses it for typeclass
         instance definitions.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def compute_body_preamble(
@@ -2712,7 +2718,7 @@ class Language(Protocol):
         determine whether datetime microsecond-precision imports are
         required).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def data_dependent_preamble(
@@ -2726,7 +2732,7 @@ class Language(Protocol):
         C++ uses this to conditionally emit its ``Any`` helper struct
         only when the data contains heterogeneous collections.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def call_data_dependent_preamble(
@@ -2738,7 +2744,7 @@ class Language(Protocol):
         :attr:`data_dependent_preamble`.  Languages whose declaration
         preamble does not apply to inline call arguments override it.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
@@ -2751,7 +2757,7 @@ class Language(Protocol):
         :class:`HeterogeneousBehavior` whose ``wrap_scalar`` and
         ``compute_wrap_ids`` implement the wrapping.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def type_hint_collection_preamble_lines(
@@ -2765,7 +2771,7 @@ class Language(Protocol):
         to emit ``from typing import Any`` only when the specific empty
         collection types present actually require it.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def special_float_preamble(self) -> tuple[str, ...]:
@@ -2775,7 +2781,7 @@ class Language(Protocol):
         (e.g. Go needs ``import "math"``) populate this field so the
         import is only emitted when actually needed.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def call_style_config(self) -> CallStyle | CallSupport:
@@ -2788,12 +2794,12 @@ class Language(Protocol):
         has no call syntax at all, or literalizer has not yet
         implemented call rendering for it).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def allows_empty_call_parens(self) -> bool:
         """Whether an empty argument list is written as ``()``."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_zero_parameter_calls(self) -> bool:
@@ -2803,7 +2809,7 @@ class Language(Protocol):
         ``parameter_names`` with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def max_call_parameters(self) -> int:
@@ -2814,7 +2820,7 @@ class Language(Protocol):
         ``parameter_names`` than this, it raises
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def call_returns_expression(self) -> bool:
@@ -2824,7 +2830,7 @@ class Language(Protocol):
         ``call_transform`` (whose output wraps the call as a value)
         with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     supports_non_string_dict_keys: bool
     """Whether the language can represent a dict whose keys include
@@ -2854,14 +2860,14 @@ class Language(Protocol):
         produce a multi-key dict argument with
         :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def supports_standalone_comments_in_wrapped_calls(self) -> bool:
         """Whether manually wrapped call output can contain standalone
         comment lines between call statements.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def statement_terminator(self) -> str:
@@ -2872,7 +2878,7 @@ class Language(Protocol):
         languages where a bare expression is a valid statement use
         ``""``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_stub(
@@ -2910,7 +2916,7 @@ class Language(Protocol):
         built-in functions, or in languages whose lint checks only
         verify syntax).
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_preamble_stub(
@@ -2927,7 +2933,7 @@ class Language(Protocol):
         :attr:`format_call_stub`.  Languages like Go that cannot
         declare types inside function bodies use this instead.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
@@ -2938,7 +2944,7 @@ class Language(Protocol):
         :data:`identity_call_target`.  PHP overrides this to produce
         ``$app->client->fetch``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_constructor_target(self) -> Callable[[str], str]:
@@ -2952,7 +2958,7 @@ class Language(Protocol):
         targets such as ``new ClassName``, ``NewClassName``,
         ``ClassName.new``, or ``ClassName::new``.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_arg(self) -> FormatCallArg:
@@ -2964,7 +2970,7 @@ class Language(Protocol):
         languages such as C and Objective-C override this to wrap each
         argument in a canonical parameter type.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def validate_call_arg(self) -> Callable[[Value], None]:
@@ -2974,7 +2980,7 @@ class Language(Protocol):
         :data:`no_validate_call_arg`; languages with additional call
         argument restrictions override it.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_statement(self) -> Callable[[str], str]:
@@ -2984,7 +2990,7 @@ class Language(Protocol):
         :data:`identity_call_statement`; languages that need a wrapper
         such as ``let _ = ...`` override it.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_ref_identifier(self) -> Callable[[str, Value | None], str]:
@@ -3007,7 +3013,7 @@ class Language(Protocol):
         identifier in a type-sensitive way (V's ``.clone()`` for
         non-scalars) inspect the value to choose the right form.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_arg_ref_identifier(
@@ -3026,7 +3032,7 @@ class Language(Protocol):
         to allow call-argument ``$ref`` values that would otherwise be
         rejected.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def format_call_arg_ref_identifier_consumable(
@@ -3045,7 +3051,7 @@ class Language(Protocol):
         whose call-argument ``$ref`` semantics consume the variable
         (notably C++ ``std::move``) override this.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     @property
     def consumable_ref_value_inhibits_consuming_form(
@@ -3064,7 +3070,7 @@ class Language(Protocol):
         (``Int``, ``Bool``, ``Float64``) is a hard error under
         ``--Werror``, so those value types inhibit the consume form.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def wrap_in_file(
         self,
@@ -3073,7 +3079,7 @@ class Language(Protocol):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def wrap_combined_in_file(
         self,
@@ -3083,7 +3089,7 @@ class Language(Protocol):
         body_preamble: tuple[str, ...],
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def wrap_calls_with_declarations(
         self,
@@ -3104,7 +3110,7 @@ class Language(Protocol):
         bindings (e.g. Haskell's ``main = do`` block, where bindings
         belong at module scope) override this method.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Raise if the spec cannot produce valid code for *data*.
@@ -3116,7 +3122,7 @@ class Language(Protocol):
         literalize time.  Languages with no such constraints assign
         :func:`no_validate_spec_for_data` as a no-op.
         """
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
 
 @beartype

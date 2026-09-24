@@ -422,7 +422,7 @@ class _CollectionValues(Protocol):
 
     def __getitem__(self, key: object, /) -> object:
         """Return a collection value by key or index."""
-        ...  # pylint: disable=unnecessary-ellipsis
+        ...
 
 
 @beartype
