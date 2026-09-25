@@ -12,4 +12,4 @@ my_data : Val
 my_data = RList [
     RDict [("x", RInt 1i128), ("y", RFloat 2.5)],
     RDict [("x", RInt 3i128), ("y", RFloat 4.0)],
-    ]
+]

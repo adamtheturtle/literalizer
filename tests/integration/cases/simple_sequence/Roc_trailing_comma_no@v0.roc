@@ -14,4 +14,4 @@ my_data = RList [
     RStr "hello",
     RBool Bool.true,
     RNull
-    ]
+]

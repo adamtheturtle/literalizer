@@ -10,4 +10,4 @@ my_data = RList [
     RFloat Num.infinity_f64,
     RFloat -Num.infinity_f64,
     RFloat Num.nan_f64,
-    ]
+]

@@ -9,4 +9,4 @@ my_data : Val
 my_data = RDict [
     ("explicit_string", RStr "5"),
     ("six", RStr "explicitly tagged key"),
-    ]
+]

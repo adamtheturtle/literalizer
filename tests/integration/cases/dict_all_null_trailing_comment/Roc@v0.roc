@@ -11,4 +11,4 @@ my_data = RDict [
     ("a", RNull),
     ("b", RNull),
     # trailing
-    ]
+]

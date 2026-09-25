@@ -14,4 +14,4 @@ my_data = RList [
     RStr "hi",
     RList [RInt 1i128, RInt 2i128],
     RNull,
-    ]
+]

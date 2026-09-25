@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     # # section
     RStr "a",
-    ]
+]

@@ -11,7 +11,7 @@ process = \_ -> {}
 big_list : Val
 big_list = RList [
     RStr "x",
-    ]
+]
 main =
     dbg (process (RDict [("m", big_list)]))
     {}

@@ -12,5 +12,5 @@ my_data = RList [
         RStr "DEL",
         RStr "bob",
         RStr "5",  # removes "world"
-        ],
-    ]
+    ],
+]

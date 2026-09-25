@@ -10,4 +10,4 @@ my_data : Val
 my_data = RDict [
     ("a", RInt 1i128),
     ("b", RStr "x"),
-    ]
+]

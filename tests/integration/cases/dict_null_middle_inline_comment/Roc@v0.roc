@@ -13,5 +13,5 @@ my_data = RDict [
         ("host", RStr "localhost"),
         ("port", RNull),  # not configured yet
         ("debug", RBool Bool.true),
-        ]),
-    ]
+    ]),
+]

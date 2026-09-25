@@ -10,4 +10,4 @@ my_data = RDict [
     ("morning", RStr "09:30:00"),
     ("afternoon", RStr "14:15:00"),
     ("evening", RStr "23:59:59"),
-    ]
+]

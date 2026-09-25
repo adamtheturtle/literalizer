@@ -10,4 +10,4 @@ my_data = RSet [
     RStr "apple",
     RStr "banana",
     RStr "cherry"
-    ]
+]

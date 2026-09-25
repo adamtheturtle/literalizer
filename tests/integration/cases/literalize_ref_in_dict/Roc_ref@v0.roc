@@ -11,4 +11,4 @@ my_var = RInt 1i128
 my_data : Val
 my_data = RDict [
     ("key", my_var),
-    ]
+]

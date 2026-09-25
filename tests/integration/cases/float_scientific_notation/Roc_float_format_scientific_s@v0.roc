@@ -12,4 +12,4 @@ my_data = RList [
     RFloat 1.5e3,
     RFloat 1.0e-3,
     RFloat 1.0e16,
-    ]
+]

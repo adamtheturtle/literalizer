@@ -14,13 +14,13 @@ my_data = RDict [
             ("tags", RList [
                 RStr "admin",
                 RStr "user",
-                ]),
-            ],
+            ]),
+        ],
         RDict [
             ("name", RStr "Carol"),
             ("tags", RList [
                 RStr "guest",
-                ]),
-            ],
-        ]),
-    ]
+            ]),
+        ],
+    ]),
+]

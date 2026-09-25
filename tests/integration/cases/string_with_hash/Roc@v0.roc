@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     RStr "issue #{42}",
     RStr "color #red",
-    ]
+]

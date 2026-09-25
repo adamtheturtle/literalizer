@@ -10,4 +10,4 @@ my_data : Val
 my_data = RList [
     RDict [],
     RDict [],
-    ]
+]

@@ -11,4 +11,4 @@ my_data = RList [
     RList [RInt 2i128, RStr "hello"],  # trailing note
     # next element
     RList [RInt 3i128, RStr "world"],
-    ]
+]

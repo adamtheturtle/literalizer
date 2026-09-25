@@ -12,9 +12,9 @@ my_data = RDict [
     ("a", RDict [
         # inner note
         ("b", RInt 1i128),  # inline b
-        ]),
+    ]),
     ("list", RList [
         RInt 1i128,  # first
         RInt 2i128,  # second
-        ]),
-    ]
+    ]),
+]

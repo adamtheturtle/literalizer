@@ -11,6 +11,6 @@ my_data = RDict [
     ("a", RDict [
         # indented
         ("x", RInt 1i128),
-        ]),
+    ]),
     ("b", RInt 2i128),
-    ]
+]

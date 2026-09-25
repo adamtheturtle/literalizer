@@ -13,7 +13,7 @@ my_data = RDict [
         ("b", RList [RInt 1i128]),
         # Outdented from the sequence, so the inner mapping claims this.
         ("c", RInt 2i128),
-        ]),
+    ]),
     # Outdented from the inner mapping too, so the root claims this.
     ("d", RInt 3i128),
-    ]
+]

@@ -13,4 +13,4 @@ my_data = RDict [
     ("user-name", RInt 3i128),
     ("field_name_that_is_really_quite_long_one", RInt 4i128),
     ("field_name_that_is_really_quite_long_two", RInt 5i128),
-    ]
+]

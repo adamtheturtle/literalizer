@@ -1281,7 +1281,7 @@ class Roc(metaclass=LanguageCls):
     type_name: str = "Val"
     constructor_prefix: str = "R"
 
-    indent_closing_delimiter: ClassVar[bool] = True
+    indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True

@@ -10,4 +10,4 @@ my_data = RDict [
     ("first", RStr "one"),
     ("second", RStr "two"),
     ("third", RStr "three"),
-    ]
+]

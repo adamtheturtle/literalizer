@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     RStr "100% done",
     RStr "%(name) is here",
-    ]
+]

@@ -14,4 +14,4 @@ my_data = RDict [
     ("port", RInt 8080i128),
     # Enable debug mode
     ("debug", RBool Bool.true),
-    ]
+]

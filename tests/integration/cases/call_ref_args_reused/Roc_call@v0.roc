@@ -12,7 +12,7 @@ single_var = RList [
     RInt 4i128,
     RInt 5i128,
     RInt 6i128,
-    ]
+]
 repeated_var : Val
 repeated_var = RInt 1i128
 main =

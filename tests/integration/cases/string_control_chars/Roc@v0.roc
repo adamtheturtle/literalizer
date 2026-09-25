@@ -10,4 +10,4 @@ my_data = RList [
     RStr "line1\r\nline2",
     RStr "line1\rline2",
     RStr "\u(0001)",
-    ]
+]

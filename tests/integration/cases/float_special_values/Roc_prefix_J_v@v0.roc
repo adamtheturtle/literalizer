@@ -10,4 +10,4 @@ my_data = JList [
     JFloat Num.infinity_f64,
     JFloat -Num.infinity_f64,
     JFloat Num.nan_f64,
-    ]
+]

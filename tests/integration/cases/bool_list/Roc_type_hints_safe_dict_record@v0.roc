@@ -4,4 +4,4 @@ my_data = [
     Bool.true,
     Bool.false,
     Bool.true,
-    ]
+]

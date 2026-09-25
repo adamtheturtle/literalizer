@@ -13,7 +13,7 @@ my_data = RDict [
         RInt 1i128,
         # After the first element.
         RInt 2i128,
-        ]),
+    ]),
     # Between the key and its value.
     ("gap", RInt 3i128),
     # On the block scalar header.
@@ -22,8 +22,8 @@ my_data = RDict [
         RInt 1i128,
         RInt 1i128,
         # On the nested alias.
-        ]),
+    ]),
     ("anchored", RInt 4i128),
     ("alias", RInt 4i128),
     # On the alias.
-    ]
+]

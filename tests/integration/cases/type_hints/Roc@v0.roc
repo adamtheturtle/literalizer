@@ -17,4 +17,4 @@ my_data = RDict [
     ("joined", RStr "2024-01-15"),
     ("last_login", RStr "2024-01-15T12:30:00+00:00"),
     ("avatar", RStr "48656c6c6f"),
-    ]
+]

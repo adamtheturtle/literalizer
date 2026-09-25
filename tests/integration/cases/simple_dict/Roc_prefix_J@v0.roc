@@ -14,4 +14,4 @@ my_data = JDict [
     ("age", JInt 30i128),
     ("active", JBool Bool.true),
     ("score", JNull),
-    ]
+]

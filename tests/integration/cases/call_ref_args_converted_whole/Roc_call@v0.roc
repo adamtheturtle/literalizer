@@ -12,7 +12,7 @@ my_var = RList [
     RInt 1i128,
     RInt 2i128,
     RInt 3i128,
-    ]
+]
 main =
     dbg (process my_var)
     {}

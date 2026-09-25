@@ -9,4 +9,4 @@ my_data : Val
 my_data = RList [
     RStr "48656c6c6f",
     RList [],
-    ]
+]

@@ -10,4 +10,4 @@ my_data : Val
 my_data = RList [
     RStr "hello",
     RInt 42i128,
-    ]
+]

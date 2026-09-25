@@ -12,4 +12,4 @@ my_data = RDict [
     ("a", RInt 1i128),
     ("b", RFloat 2.5),
     ("c", RInt 3i128),
-    ]
+]

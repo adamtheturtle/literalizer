@@ -12,4 +12,4 @@ my_data = RDict [
     ("a-b", RInt 2i128),
     ("averyveryverylongkeynamethatgoesonandonandon", RInt 3i128),
     ("averyveryverylongkeynamethatgoesonandmore", RInt 4i128),
-    ]
+]

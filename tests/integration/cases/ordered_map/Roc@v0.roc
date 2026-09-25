@@ -12,4 +12,4 @@ my_data = RDict [
     ("name", RStr "Alice"),
     ("age", RInt 30i128),
     ("active", RBool Bool.true),
-    ]
+]

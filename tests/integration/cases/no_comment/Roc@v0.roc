@@ -8,4 +8,4 @@ Val : [
 my_data : Val
 my_data = RDict [
     ("message", RStr "no comment here"),
-    ]
+]

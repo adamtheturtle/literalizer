@@ -10,4 +10,4 @@ my_data = RList [
     RStr "foo",
     RStr "bar",
     RStr "baz",
-    ]
+]
