@@ -1682,6 +1682,9 @@ jobs:
         id: setup-haskell
         with:
           ghc-version: latest
+          # Keep the Cabal toolchain stable when updating the setup action.
+          # A cold 3.18.1.0 store takes longer than the install retry budget.
+          cabal-version: 3.16.1.0
 
       # Cache the cabal store (compiled aeson and its deps) used by the
       # `Haskell roundtrip` step's cabal-script. Keyed on the resolved
