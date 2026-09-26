@@ -1738,7 +1738,9 @@ class Language(Protocol):
 
     # The standard library DataclassInstance protocol uses Field[Any], and this
     # member makes Language valid input to dataclasses.fields/replace.
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]  # pyrefly: ignore [explicit-any]
+    __dataclass_fields__: ClassVar[
+        dict[str, dataclasses.Field[Any]]  # pyrefly: ignore [explicit-any]
+    ]
     variant_metadata: ClassVar[VariantMetadata]
     language_id: ClassVar[str]
 
@@ -3575,6 +3577,27 @@ def wrap_combined_in_file_noop(
         variable_name=variable_name,
         body_preamble=body_preamble,
     )
+
+
+# Reuse static descriptors without losing their class and instance call
+# signatures. Language classes still opt in to each wrapper explicitly.
+_wrap_in_file_noop_callable: Callable[[str, str, tuple[str, ...]], str] = (
+    wrap_in_file_noop
+)
+wrap_in_file_noop_static: "staticmethod[[str, str, tuple[str, ...]], str]" = (
+    staticmethod(_wrap_in_file_noop_callable)
+)
+"""Static descriptor for the shared file wrapper."""
+_wrap_combined_in_file_noop_callable: Callable[
+    [str, str, str, tuple[str, ...]], str
+] = wrap_combined_in_file_noop
+type _CombinedFileNoopStatic = (
+    "staticmethod[[str, str, str, tuple[str, ...]], str]"
+)
+wrap_combined_in_file_noop_static: _CombinedFileNoopStatic = staticmethod(
+    _wrap_combined_in_file_noop_callable
+)
+"""Static descriptor for the shared combined file wrapper."""
 
 
 @beartype
