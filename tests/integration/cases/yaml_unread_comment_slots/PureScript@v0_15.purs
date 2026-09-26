@@ -15,7 +15,7 @@ my_data = PDict [
         PInt 1,
         -- After the first element.
         PInt 2
-        ])),
+    ])),
     -- Between the key and its value.
     (Tuple "gap" (PInt 3)),
     -- On the block scalar header.
@@ -24,8 +24,8 @@ my_data = PDict [
         PInt 1,
         PInt 1
         -- On the nested alias.
-        ])),
+    ])),
     (Tuple "anchored" (PInt 4)),
     (Tuple "alias" (PInt 4))
     -- On the alias.
-    ]
+]

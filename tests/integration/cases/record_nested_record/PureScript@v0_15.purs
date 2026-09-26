@@ -12,4 +12,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "id" (PInt 1)),
     (Tuple "owner" (PDict [(Tuple "name" (PStr "Alice")), (Tuple "age" (PInt 30))]))
-    ]
+]

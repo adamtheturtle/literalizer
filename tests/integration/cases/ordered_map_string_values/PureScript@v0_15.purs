@@ -12,4 +12,4 @@ my_data = PDict [
     (Tuple "first" (PStr "one")),
     (Tuple "second" (PStr "two")),
     (Tuple "third" (PStr "three"))
-    ]
+]

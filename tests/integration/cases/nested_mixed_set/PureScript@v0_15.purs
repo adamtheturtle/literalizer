@@ -14,4 +14,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "name" (PStr "Alice")),
     (Tuple "tags" (PSet [PBool true, PInt 42, PStr "apple"]))
-    ]
+]

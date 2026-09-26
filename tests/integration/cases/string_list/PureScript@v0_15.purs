@@ -11,4 +11,4 @@ my_data = PList [
     PStr "foo",
     PStr "bar",
     PStr "baz"
-    ]
+]

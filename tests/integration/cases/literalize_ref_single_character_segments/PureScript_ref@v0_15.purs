@@ -10,6 +10,6 @@ data Val
 aBC :: Val
 aBC = PDict [
     (Tuple "_" (PStr "_"))
-    ]
+]
 my_data :: Val
 my_data = aBC

@@ -11,4 +11,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "mixed" (PList [PList [PStr "09:30:00"], PList []]))
-    ]
+]

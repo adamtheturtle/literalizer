@@ -14,8 +14,8 @@ my_data = PList [
         PDict [(Tuple "item" (PStr "existing"))],
         PStr "kept"
         -- This comment trails the first pair.
-        ],
+    ],
     PList [PDict [(Tuple "item" (PStr "next"))], PStr "also kept"],
     -- This comment describes the last pair.
     PList [PDict [(Tuple "item" (PStr "last"))], PStr "kept too"]
-    ]
+]

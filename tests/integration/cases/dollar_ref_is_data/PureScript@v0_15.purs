@@ -10,4 +10,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "value" (PDict [(Tuple "$ref" (PStr "foo"))]))
-    ]
+]

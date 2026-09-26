@@ -13,4 +13,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "call" (PStr "send")),
     (Tuple "args" (PList [PInt 1, PStr "email", PStr "a@gmail.com", PInt 100]))
-    ]
+]

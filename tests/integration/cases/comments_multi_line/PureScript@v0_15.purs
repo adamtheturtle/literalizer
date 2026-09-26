@@ -11,4 +11,4 @@ my_data = PList [
     -- line 1
     -- line 2
     PStr "a"
-    ]
+]

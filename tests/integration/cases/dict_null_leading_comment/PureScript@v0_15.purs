@@ -13,4 +13,4 @@ my_data = PDict [
     -- comment
     (Tuple "name" (PStr "Alice")),
     (Tuple "score" (PNull))
-    ]
+]

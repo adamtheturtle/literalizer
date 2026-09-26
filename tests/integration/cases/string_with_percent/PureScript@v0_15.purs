@@ -10,4 +10,4 @@ my_data :: Val
 my_data = PList [
     PStr "100% done",
     PStr "%(name) is here"
-    ]
+]

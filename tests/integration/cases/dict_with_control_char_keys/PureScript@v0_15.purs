@@ -12,4 +12,4 @@ my_data = PDict [
     (Tuple "key\nwith\nnewlines" (PStr "value1")),
     (Tuple "key\twith\ttabs" (PStr "value2")),
     (Tuple "" (PStr "value3"))
-    ]
+]

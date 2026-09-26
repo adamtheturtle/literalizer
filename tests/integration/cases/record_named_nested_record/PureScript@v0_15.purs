@@ -14,4 +14,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "collection" (PStr "alpha")),
     (Tuple "featured_entry" (PDict [(Tuple "id" (PInt 100)), (Tuple "label" (PStr "first entry")), (Tuple "enabled" (PBool false)), (Tuple "related_ids" (PList [PInt 102, PInt 103]))]))
-    ]
+]

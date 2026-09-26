@@ -16,4 +16,4 @@ my_data = JDict [
     (Tuple "age" (JInt 30)),
     (Tuple "active" (JBool true)),
     (Tuple "score" (JNull))
-    ]
+]

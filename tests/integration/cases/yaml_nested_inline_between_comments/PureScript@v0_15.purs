@@ -12,4 +12,4 @@ my_data = PList [
     PList [PInt 2, PStr "hello"],  -- trailing note
     -- next element
     PList [PInt 3, PStr "world"]
-    ]
+]

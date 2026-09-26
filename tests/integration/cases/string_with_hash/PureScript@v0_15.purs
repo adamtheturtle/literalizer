@@ -10,4 +10,4 @@ my_data :: Val
 my_data = PList [
     PStr "issue #{42}",
     PStr "color #red"
-    ]
+]

@@ -12,4 +12,4 @@ my_data :: Val
 my_data = PDict [
     {- nested openers /* and { - remain -}
     (Tuple "x" (PInt 1))
-    ]
+]

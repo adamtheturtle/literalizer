@@ -16,4 +16,4 @@ my_data = PDict [
     (Tuple "label" (PStr "She said \"hello\", then waved")),
     (Tuple "enabled" (PBool false)),
     (Tuple "related_ids" (PList [PInt 1, PInt 2, PInt 3]))
-    ]
+]
