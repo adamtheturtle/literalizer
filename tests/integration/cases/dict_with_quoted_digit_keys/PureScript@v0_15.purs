@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "0a" (PStr "first")),
     (Tuple "1b" (PStr "second"))
-    ]
+]

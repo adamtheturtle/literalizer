@@ -13,7 +13,7 @@ process _ _ = unit
 big_list :: Val
 big_list = PList [
     PStr "x"
-    ]
+]
 
 
 main :: Unit

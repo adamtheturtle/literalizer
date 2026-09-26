@@ -15,7 +15,7 @@ my_data = PDict [
         (Tuple "b" (PList [PInt 1])),
         -- Outdented from the sequence, so the inner mapping claims this.
         (Tuple "c" (PInt 2))
-        ])),
+    ])),
     -- Outdented from the inner mapping too, so the root claims this.
     (Tuple "d" (PInt 3))
-    ]
+]

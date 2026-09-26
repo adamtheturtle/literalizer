@@ -13,4 +13,4 @@ my_data = PList [
     {- before second: */ |# - } *) (* ) =# ]] %} ]# % #> -}
     PStr "second"
     {- trailing: */ |# - } *) (* ) =# ]] %} ]# % #> -}
-    ]
+]

@@ -13,4 +13,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "scores" (PList [PInt 10, PInt 20, PInt 30])),
     (Tuple "args" (PList [PInt 1, PStr "email", PStr "a@gmail.com", PInt 100]))
-    ]
+]

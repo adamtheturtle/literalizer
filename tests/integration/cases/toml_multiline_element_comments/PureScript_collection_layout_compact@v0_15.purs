@@ -13,4 +13,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "first" (PList [PInt 1, PInt 2])),
     (Tuple "second" (PInt 3))  -- About the second key.
-    ]
+]

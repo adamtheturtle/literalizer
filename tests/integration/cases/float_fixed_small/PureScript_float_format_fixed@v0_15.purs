@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PList [
     PFloat 0.000000001,
     PFloat (-0.000000001)
-    ]
+]

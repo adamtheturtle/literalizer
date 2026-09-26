@@ -13,4 +13,4 @@ my_data = PDict [
     (Tuple "a" (PNull)),
     (Tuple "b" (PNull))
     -- trailing
-    ]
+]

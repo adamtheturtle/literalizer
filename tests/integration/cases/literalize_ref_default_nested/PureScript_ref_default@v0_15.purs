@@ -11,8 +11,8 @@ data Val
 item_var :: Val
 item_var = PDict [
     (Tuple "_" (PStr "_"))
-    ]
+]
 my_data :: Val
 my_data = PDict [
     (Tuple "items" (PList [item_var, PDict [(Tuple "fallback" (PStr "value"))]]))
-    ]
+]

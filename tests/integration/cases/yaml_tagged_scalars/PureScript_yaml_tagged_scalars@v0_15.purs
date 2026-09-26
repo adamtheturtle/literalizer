@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "explicit_string" (PStr "5")),
     (Tuple "six" (PStr "explicitly tagged key"))
-    ]
+]

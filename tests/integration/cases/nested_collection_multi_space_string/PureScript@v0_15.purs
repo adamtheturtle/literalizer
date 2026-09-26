@@ -12,4 +12,4 @@ data Val
 my_data :: Val
 my_data = PList [
     PDict [(Tuple "key" (PStr "hello   world")), (Tuple "value" (PInt 1))]
-    ]
+]

@@ -14,4 +14,4 @@ my_data = PDict [
     (Tuple "name" (PStr "app")),
     -- Port setting
     (Tuple "port" (PInt 3000))
-    ]
+]

@@ -13,5 +13,5 @@ my_data = PList [
         PStr "DEL",
         PStr "bob",
         PStr "5"  -- removes "world"
-        ]
     ]
+]

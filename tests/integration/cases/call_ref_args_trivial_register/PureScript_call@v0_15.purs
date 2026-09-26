@@ -20,7 +20,7 @@ my_list = PList [
     PInt 1,
     PInt 2,
     PInt 3
-    ]
+]
 
 
 main :: Unit

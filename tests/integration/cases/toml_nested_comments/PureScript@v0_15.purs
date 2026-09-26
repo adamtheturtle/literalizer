@@ -20,4 +20,4 @@ my_data = PDict [
     (Tuple "entries" (PList [PDict [(Tuple "name" (PStr "one"))], PDict [(Tuple "name" (PStr "two"))]])),
     -- Inside the table.
     (Tuple "table" (PDict [(Tuple "inner" (PInt 4))]))
-    ]
+]

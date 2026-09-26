@@ -15,4 +15,4 @@ my_data = PDict [
     (Tuple "user-name" (PInt 3)),
     (Tuple "field_name_that_is_really_quite_long_one" (PInt 4)),
     (Tuple "field_name_that_is_really_quite_long_two" (PInt 5))
-    ]
+]

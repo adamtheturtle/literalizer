@@ -15,5 +15,5 @@ my_data = PDict [
         (Tuple "host" (PStr "localhost")),
         (Tuple "port" (PNull)),  -- not configured yet
         (Tuple "debug" (PBool true))
-        ]))
-    ]
+    ]))
+]
