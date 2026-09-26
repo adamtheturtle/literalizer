@@ -11,4 +11,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "section" (PDict [(Tuple "value" (PInt 1))]))
-    ]
+]

@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PList [
     PList [PInt 1, PStr "a"],
     PList [PInt 2, PStr "b"]
-    ]
+]

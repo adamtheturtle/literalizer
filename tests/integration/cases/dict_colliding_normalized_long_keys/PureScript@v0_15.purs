@@ -14,4 +14,4 @@ my_data = PDict [
     (Tuple "a-b" (PInt 2)),
     (Tuple "averyveryverylongkeynamethatgoesonandonandon" (PInt 3)),
     (Tuple "averyveryverylongkeynamethatgoesonandmore" (PInt 4))
-    ]
+]

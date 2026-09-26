@@ -16,13 +16,13 @@ my_data = PDict [
             (Tuple "tags" (PList [
                 PStr "admin",
                 PStr "user"
-                ]))
-            ],
+            ]))
+        ],
         PDict [
             (Tuple "name" (PStr "Carol")),
             (Tuple "tags" (PList [
                 PStr "guest"
-                ]))
-            ]
-        ]))
-    ]
+            ]))
+        ]
+    ]))
+]

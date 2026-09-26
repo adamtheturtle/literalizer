@@ -11,4 +11,4 @@ my_data = PSet [
     PStr "apple",
     PStr "banana",
     PStr "cherry"
-    ]
+]

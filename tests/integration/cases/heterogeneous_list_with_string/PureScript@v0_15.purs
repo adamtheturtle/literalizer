@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PList [
     PStr "hello",
     PInt 42
-    ]
+]

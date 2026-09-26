@@ -14,4 +14,4 @@ my_data = PDict [
     (Tuple "answer" (PInt 42)),  -- inline
     (Tuple "plain" (PStr "ok"))
     -- trailing
-    ]
+]

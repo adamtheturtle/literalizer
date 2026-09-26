@@ -11,4 +11,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "description" (PStr "# not a comment\n")),
     (Tuple "name" (PStr "foo"))
-    ]
+]

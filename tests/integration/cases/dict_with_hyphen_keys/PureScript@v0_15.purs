@@ -12,4 +12,4 @@ my_data = PDict [
     (Tuple "my-key" (PStr "value1")),
     (Tuple "another-key" (PStr "value2")),
     (Tuple "normal_key" (PStr "value3"))
-    ]
+]

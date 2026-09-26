@@ -10,4 +10,4 @@ my_data :: Val
 my_data = PList [
     -- # section
     PStr "a"
-    ]
+]

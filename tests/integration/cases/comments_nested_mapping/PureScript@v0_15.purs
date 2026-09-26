@@ -13,6 +13,6 @@ my_data = PDict [
     (Tuple "a" (PDict [
         -- indented
         (Tuple "x" (PInt 1))
-        ])),
+    ])),
     (Tuple "b" (PInt 2))
-    ]
+]

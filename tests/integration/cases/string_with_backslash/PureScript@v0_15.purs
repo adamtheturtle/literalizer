@@ -15,4 +15,4 @@ my_data = PList [
     PStr "trailing\\",
     PStr "both \"quotes''' here",
     PStr "line1\\nline2\nwith newline"
-    ]
+]

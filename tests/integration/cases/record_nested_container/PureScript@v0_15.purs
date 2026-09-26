@@ -14,4 +14,4 @@ my_data = PDict [
     (Tuple "title" (PStr "report")),
     (Tuple "tags" (PList [PStr "draft", PStr "urgent", PStr "review"])),
     (Tuple "priority" (PInt 2))
-    ]
+]

@@ -18,5 +18,5 @@ my_data = {
             name: "Bob",
             score: 2.5
         }
-        ]
+    ]
 }

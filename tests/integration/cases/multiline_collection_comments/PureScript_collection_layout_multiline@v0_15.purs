@@ -15,6 +15,6 @@ my_data = PDict [
         PInt 1,
         PInt 2,
         PInt 3
-        ])),  -- inline a
+    ])),  -- inline a
     (Tuple "b" (PInt 2))  -- inline b
-    ]
+]

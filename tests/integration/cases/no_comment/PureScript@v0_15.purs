@@ -10,4 +10,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "message" (PStr "no comment here"))
-    ]
+]

@@ -14,9 +14,9 @@ my_data = PDict [
     (Tuple "a" (PDict [
         -- inner note
         (Tuple "b" (PInt 1))  -- inline b
-        ])),
+    ])),
     (Tuple "list" (PList [
         PInt 1,  -- first
         PInt 2  -- second
-        ]))
-    ]
+    ]))
+]

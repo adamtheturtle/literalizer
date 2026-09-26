@@ -13,4 +13,4 @@ myVar = PInt 1
 my_data :: Val
 my_data = PDict [
     (Tuple "key" (myVar))
-    ]
+]

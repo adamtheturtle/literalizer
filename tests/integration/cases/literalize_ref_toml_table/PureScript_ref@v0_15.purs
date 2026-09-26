@@ -10,8 +10,8 @@ data Val
 myVar :: Val
 myVar = PDict [
     (Tuple "_" (PStr "_"))
-    ]
+]
 my_data :: Val
 my_data = PDict [
     (Tuple "key" (myVar))
-    ]
+]

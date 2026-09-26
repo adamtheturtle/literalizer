@@ -10,6 +10,6 @@ data Val
 userObj :: Val
 userObj = PDict [
     (Tuple "_" (PStr "_"))
-    ]
+]
 my_data :: Val
 my_data = userObj

@@ -13,4 +13,4 @@ my_data = PList [
     PFloat 1500.000000,
     PFloat 0.001000,
     PFloat 10000000000000000.000000
-    ]
+]

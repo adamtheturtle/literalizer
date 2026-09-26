@@ -13,4 +13,4 @@ my_data = PSet [
     PBool true,
     PInt 42,
     PStr "apple"
-    ]
+]

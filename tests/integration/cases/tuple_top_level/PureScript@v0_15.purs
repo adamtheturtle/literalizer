@@ -13,4 +13,4 @@ my_data = PList [
     PStr "email",
     PStr "a@gmail.com",
     PInt 100
-    ]
+]

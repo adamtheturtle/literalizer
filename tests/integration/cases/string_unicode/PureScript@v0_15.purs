@@ -11,4 +11,4 @@ my_data = PList [
     PStr "café",
     PStr "中文",
     PStr "😀"
-    ]
+]

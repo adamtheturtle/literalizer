@@ -21,4 +21,4 @@ my_data = PDict [
     (Tuple "d" (PStr "2024-01-15")),
     (Tuple "dt" (PStr "2024-01-15T12:00:00")),
     (Tuple "by" (PStr "48656c6c6f"))
-    ]
+]

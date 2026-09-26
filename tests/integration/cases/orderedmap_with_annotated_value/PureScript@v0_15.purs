@@ -13,4 +13,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "a" (PList [])),
     (Tuple "b" (PInt 1))
-    ]
+]

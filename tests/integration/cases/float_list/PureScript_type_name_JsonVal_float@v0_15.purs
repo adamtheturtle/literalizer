@@ -12,4 +12,4 @@ my_data = PList [
     PFloat 1.1,
     PFloat (-2.2),
     PFloat 3.3
-    ]
+]

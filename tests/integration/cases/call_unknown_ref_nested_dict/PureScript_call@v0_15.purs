@@ -12,7 +12,7 @@ process _ = unit
 my_list :: Val
 my_list = PDict [
     (Tuple "unused" (PStr "value"))
-    ]
+]
 
 
 main :: Unit

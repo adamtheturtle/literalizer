@@ -12,4 +12,4 @@ my_data :: Val
 my_data = PList [
     PDict [(Tuple "first" (PStr "Alice")), (Tuple "last" (PStr "Smith"))],
     PDict [(Tuple "first" (PStr "Bob")), (Tuple "last" (PStr "Jones"))]
-    ]
+]

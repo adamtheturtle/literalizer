@@ -11,4 +11,4 @@ my_data = PList [
     PStr "line1\r\nline2",
     PStr "line1\rline2",
     PStr "\x01"
-    ]
+]

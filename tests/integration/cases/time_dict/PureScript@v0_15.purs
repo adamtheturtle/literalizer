@@ -12,4 +12,4 @@ my_data = PDict [
     (Tuple "morning" (PStr "09:30:00")),
     (Tuple "afternoon" (PStr "14:15:00")),
     (Tuple "evening" (PStr "23:59:59"))
-    ]
+]

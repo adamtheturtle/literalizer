@@ -11,4 +11,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "value" (PFloat 1.2345678901234567))
-    ]
+]

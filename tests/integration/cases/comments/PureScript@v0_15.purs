@@ -16,4 +16,4 @@ my_data = PDict [
     (Tuple "port" (PInt 8080)),
     -- Enable debug mode
     (Tuple "debug" (PBool true))
-    ]
+]

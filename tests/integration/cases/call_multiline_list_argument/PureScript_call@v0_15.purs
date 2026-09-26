@@ -15,9 +15,9 @@ main =
         _ = process (PList [
             PInt 1,
             PInt 2
-            ])
+        ])
         _ = process (PList [
             PInt 3
-            ])
+        ])
     in
     unit

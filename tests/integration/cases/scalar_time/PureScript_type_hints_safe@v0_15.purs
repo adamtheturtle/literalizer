@@ -10,4 +10,4 @@ data Val
 my_data :: Val
 my_data = PDict [
     (Tuple "starts_at" (PStr "09:30:00"))
-    ]
+]

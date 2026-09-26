@@ -12,4 +12,4 @@ my_data = PList [
     PStr "a",
     -- second
     PStr "b"
-    ]
+]

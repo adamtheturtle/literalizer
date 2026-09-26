@@ -12,4 +12,4 @@ my_data = PSet [
     PStr "apple",
     PStr "banana"  -- banana inline
     -- trailing
-    ]
+]

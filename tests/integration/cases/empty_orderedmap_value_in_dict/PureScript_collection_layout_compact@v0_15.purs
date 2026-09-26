@@ -12,4 +12,4 @@ my_data :: Val
 my_data = PDict [
     (Tuple "a" (PDict [])),
     (Tuple "b" (PInt 1))
-    ]
+]

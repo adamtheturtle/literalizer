@@ -10,7 +10,7 @@ process _ = unit
 unknown_value :: Val
 unknown_value = PList [
     PInt 1
-    ]
+]
 
 
 main :: Unit

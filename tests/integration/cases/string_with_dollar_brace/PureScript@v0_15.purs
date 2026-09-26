@@ -10,4 +10,4 @@ my_data :: Val
 my_data = PList [
     PStr "prefix ${HOME} suffix",
     PStr "${interpolated}"
-    ]
+]

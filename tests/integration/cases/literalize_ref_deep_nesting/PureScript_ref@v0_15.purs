@@ -13,17 +13,17 @@ deep = PList [
     PList [
         PStr "one",
         PStr "two"
-        ],
+    ],
     PList [
         PStr "three",
         PStr "four"
-        ]
     ]
+]
 my_data :: Val
 my_data = PDict [
     (Tuple "a" (PDict [
         (Tuple "b" (PDict [
             (Tuple "c" (deep))
-            ]))
         ]))
-    ]
+    ]))
+]

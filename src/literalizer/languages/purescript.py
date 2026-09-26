@@ -1684,7 +1684,7 @@ class PureScript(metaclass=LanguageCls):
     type_name: str = "Val"
     constructor_prefix: str = "P"
 
-    indent_closing_delimiter: ClassVar[bool] = True
+    indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
     supports_scalar_before_comments: ClassVar[bool] = False
