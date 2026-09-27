@@ -91,7 +91,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_validate_call_arg,
-    wrap_in_file_noop,
+    wrap_in_file_noop_static,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
@@ -620,18 +620,9 @@ class Nix(metaclass=LanguageCls):
         chained_parts.append(declarations[-1])
         return "\n".join(chained_parts)
 
-    @staticmethod
-    def wrap_in_file(
-        content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_in_file: ClassVar[
+        "staticmethod[[str, str, tuple[str, ...]], str]"
+    ] = wrap_in_file_noop_static
 
     @staticmethod
     def wrap_combined_in_file(

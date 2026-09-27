@@ -98,8 +98,8 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
-    wrap_combined_in_file_noop,
-    wrap_in_file_noop,
+    wrap_combined_in_file_noop_static,
+    wrap_in_file_noop_static,
 )
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
@@ -751,33 +751,13 @@ class Ruby(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    @staticmethod
-    def wrap_in_file(
-        content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap code in a valid file (no-op)."""
-        return wrap_in_file_noop(
-            content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_in_file: ClassVar[
+        "staticmethod[[str, str, tuple[str, ...]], str]"
+    ] = wrap_in_file_noop_static
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = wrap_combined_in_file_noop_static
 
     date_format: DateFormats = DateFormats.RUBY
     datetime_format: DatetimeFormats = DatetimeFormats.RUBY

@@ -103,7 +103,7 @@ from literalizer._language import (
     no_validate_call_arg,
     no_validate_spec_for_data,
     parenthesize_bare_object,
-    wrap_combined_in_file_noop,
+    wrap_combined_in_file_noop_static,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
@@ -804,20 +804,9 @@ class JavaScript(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap declaration and assignment in a valid file (no-op)."""
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = wrap_combined_in_file_noop_static
 
     date_format: DateFormats = DateFormats.JS
     datetime_format: DatetimeFormats = DatetimeFormats.JS
