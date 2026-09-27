@@ -81,21 +81,23 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
+    default_call_data_dependent_preamble,
+    default_consumable_ref_value_inhibits_consuming_form,
+    default_format_call_arg_ref_identifier_consumable,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
+    default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_call_statement,
     identity_call_target,
-    never_inhibits_consuming_form,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_call_stub,
     no_data_preamble,
     no_leading_preamble,
-    no_type_hint_preamble,
     no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
@@ -1046,19 +1048,11 @@ class VisualBasic(metaclass=LanguageCls):
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
 
-    @cached_property
-    def call_data_dependent_preamble(
-        self,
-    ) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines for call rendering."""
-        return self.data_dependent_preamble
+    call_data_dependent_preamble = default_call_data_dependent_preamble
 
-    @cached_property
-    def type_hint_collection_preamble_lines(
-        self,
-    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
-        """Return preamble lines for empty-collection type hints."""
-        return no_type_hint_preamble
+    type_hint_collection_preamble_lines = (
+        default_type_hint_collection_preamble_lines
+    )
 
     @cached_property
     def format_call_stub(
@@ -1114,29 +1108,13 @@ class VisualBasic(metaclass=LanguageCls):
         """
         return self.format_call_ref_identifier
 
-    @cached_property
-    def format_call_arg_ref_identifier_consumable(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Format a ``$ref`` the caller authorized as consumable.
+    format_call_arg_ref_identifier_consumable = (
+        default_format_call_arg_ref_identifier_consumable
+    )
 
-        Delegates to :attr:`format_call_arg_ref_identifier`.  Override
-        this to opt into a consuming form (e.g. C++ ``std::move``).
-        """
-        return self.format_call_arg_ref_identifier
-
-    @cached_property
-    def consumable_ref_value_inhibits_consuming_form(
-        self,
-    ) -> Callable[[Value], bool]:
-        """Predicate deciding whether a ref's underlying value type
-        inhibits the consume form.
-
-        Delegates to :data:`never_inhibits_consuming_form`.  Languages
-        whose consume operator rejects certain value types (notably
-        the Mojo ``^`` on register-trivial scalars) override this.
-        """
-        return never_inhibits_consuming_form
+    consumable_ref_value_inhibits_consuming_form = (
+        default_consumable_ref_value_inhibits_consuming_form
+    )
 
     @cached_property
     def _element_to_type(
