@@ -11,8 +11,9 @@ from typing_extensions import get_protocol_members
 
 import literalizer.languages
 from literalizer import Language, LanguageCls
+from literalizer._preamble import EmptyList
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
-from literalizer.languages import Python, Raku
+from literalizer.languages import Cpp, Lua, Mojo, Python, Raku
 
 
 def _language_class_name(language_cls: LanguageCls, /) -> str:
@@ -163,6 +164,32 @@ def test_protocol_properties_accessible(
     assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
     assert isinstance(spec.supports_multi_param_call_wrapper_stub, bool)
     assert isinstance(spec.supports_dict_literal_as_free_expression, bool)
+
+
+def test_shared_call_callbacks_delegate_to_language_callbacks() -> None:
+    """Shared callbacks use the language's selected call behavior."""
+    spec = Lua()
+    assert spec.call_data_dependent_preamble is spec.data_dependent_preamble
+    assert (
+        spec.format_call_arg_ref_identifier_consumable
+        is spec.format_call_arg_ref_identifier
+    )
+    assert (
+        spec.type_hint_collection_preamble_lines(frozenset({EmptyList})) == ()
+    )
+    assert spec.consumable_ref_value_inhibits_consuming_form(1) is False
+    assert (
+        spec.format_call_arg_ref_identifier_consumable("item", None) == "item"
+    )
+
+
+def test_language_specific_call_callback_overrides() -> None:
+    """Language-specific consuming callbacks still apply."""
+    assert (
+        Cpp().format_call_arg_ref_identifier_consumable("item", None)
+        == "std::move(item)"
+    )
+    assert Mojo().consumable_ref_value_inhibits_consuming_form(1) is True
 
 
 def test_language_protocol_members_are_not_class_level_none() -> None:
