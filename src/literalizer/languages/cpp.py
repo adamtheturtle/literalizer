@@ -118,9 +118,11 @@ from literalizer._language import (
     VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    default_call_data_dependent_preamble,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
+    default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
@@ -137,7 +139,6 @@ from literalizer._language import (
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
-    no_type_hint_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
 )
@@ -3802,19 +3803,11 @@ class Cpp(metaclass=LanguageCls):
             return _format_cpp_json_call_arg
         return identity_call_arg
 
-    @cached_property
-    def call_data_dependent_preamble(
-        self,
-    ) -> Callable[[Value], tuple[str, ...]]:
-        """Return data-dependent preamble lines for call rendering."""
-        return self.data_dependent_preamble
+    call_data_dependent_preamble = default_call_data_dependent_preamble
 
-    @cached_property
-    def type_hint_collection_preamble_lines(
-        self,
-    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
-        """Return preamble lines for empty-collection type hints."""
-        return no_type_hint_preamble
+    type_hint_collection_preamble_lines = (
+        default_type_hint_collection_preamble_lines
+    )
 
     @cached_property
     def format_call_stub(

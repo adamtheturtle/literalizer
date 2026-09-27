@@ -1346,12 +1346,15 @@ class LanguageCls(type):
     explicit_language_attributes: ClassVar[frozenset[str]] = frozenset(
         {
             "accepts_type_name_call_target",
+            "call_data_dependent_preamble",
             "call_parameter_shadowing",
             "call_target_name_syntax",
+            "consumable_ref_value_inhibits_consuming_form",
             "contextual_call_target_identifiers",
             "declares_call_parameter_names",
             "declares_type_name_call_target",
             "dotted_call_root_shares_entrypoint_namespace",
+            "format_call_arg_ref_identifier_consumable",
             "immutable_variable_modifiers",
             "max_variable_identifier_length",
             "module_name_must_start_uppercase",
@@ -1366,6 +1369,7 @@ class LanguageCls(type):
             "reserved_module_identifiers",
             "reserved_variable_identifier_pattern",
             "supports_multiline_dict_layout",
+            "type_hint_collection_preamble_lines",
             "wrap_in_file_tolerates_pre_indent",
         }
     )
@@ -3223,6 +3227,54 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
 
 
 @beartype
+def _default_type_hint_collection_preamble_lines(
+    self: "Language",
+) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    """Use the shared no-op collection type-hint preamble."""
+    del self
+    return no_type_hint_preamble
+
+
+default_type_hint_collection_preamble_lines: property = property(
+    fget=_default_type_hint_collection_preamble_lines
+)
+"""Shared descriptor for languages with no collection type-hint
+preamble.
+"""
+
+
+@beartype
+def _default_format_call_arg_ref_identifier_consumable(
+    self: "Language",
+) -> Callable[[str, Value | None], str]:
+    """Use the ordinary call-argument ref formatter for consumable
+    refs.
+    """
+    return self.format_call_arg_ref_identifier
+
+
+default_format_call_arg_ref_identifier_consumable: property = property(
+    fget=_default_format_call_arg_ref_identifier_consumable
+)
+"""Shared descriptor for refs without a distinct consuming form."""
+
+
+@beartype
+def _default_consumable_ref_value_inhibits_consuming_form(
+    self: "Language",
+) -> Callable[[Value], bool]:
+    """Allow the consuming form for every referenced value."""
+    del self
+    return never_inhibits_consuming_form
+
+
+default_consumable_ref_value_inhibits_consuming_form: property = property(
+    fget=_default_consumable_ref_value_inhibits_consuming_form
+)
+"""Shared descriptor for languages with no value-based inhibition."""
+
+
+@beartype
 def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
     """Return no preamble lines — used by languages that do not need
     data-dependent preamble.
@@ -3232,6 +3284,20 @@ def _no_data_preamble(_data: Value, /) -> tuple[str, ...]:
 
 no_data_preamble: Callable[[Value], tuple[str, ...]] = _no_data_preamble
 """Shared callable for languages with no data-dependent preamble."""
+
+
+@beartype
+def _default_call_data_dependent_preamble(
+    self: "Language",
+) -> Callable[[Value], tuple[str, ...]]:
+    """Use the language's data-dependent preamble for calls too."""
+    return self.data_dependent_preamble
+
+
+default_call_data_dependent_preamble: property = property(
+    fget=_default_call_data_dependent_preamble
+)
+"""Shared descriptor using the language's data preamble for calls."""
 
 
 @beartype
