@@ -85,19 +85,21 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
+    default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
+    default_format_call_ref_identifier,
+    default_format_call_statement,
+    default_format_call_stub,
+    default_format_call_target,
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
+    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
-    identity_call_ref_identifier,
-    identity_call_statement,
-    identity_call_target,
     new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
-    no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
     no_data_preamble,
@@ -105,7 +107,6 @@ from literalizer._language import (
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
-    no_validate_call_arg,
     no_validate_spec_for_data,
     parenthesize_bare_object,
     prepend_body_preamble,
@@ -1214,15 +1215,9 @@ class TypeScript(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @cached_property
-    def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        return no_validate_call_arg
+    validate_call_arg = default_validate_call_arg
 
-    @cached_property
-    def format_call_statement(self) -> Callable[[str], str]:
-        """Return call-statement formatting for this language."""
-        return identity_call_statement
+    format_call_statement = default_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1343,43 +1338,13 @@ class TypeScript(metaclass=LanguageCls):
         """Return stub declarations for a call expression."""
         return _ts_call_stub
 
-    @cached_property
-    def format_call_preamble_stub(
-        self,
-    ) -> Callable[
-        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
-    ]:
-        """Return file-scope stubs for a call expression."""
-        return no_call_stub
+    format_call_preamble_stub = default_format_call_stub
 
-    @cached_property
-    def format_call_target(self) -> Callable[[Sequence[str]], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
-        """
-        return identity_call_target
+    format_call_target = default_format_call_target
 
-    @cached_property
-    def format_call_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
-        """
-        return identity_call_ref_identifier
+    format_call_ref_identifier = default_format_call_ref_identifier
 
-    @cached_property
-    def format_call_arg_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
-        return self.format_call_ref_identifier
+    format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
 
     format_call_arg_ref_identifier_consumable = (
         default_format_call_arg_ref_identifier_consumable

@@ -94,15 +94,16 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
+    default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
+    default_format_call_ref_identifier,
+    default_format_call_stub,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    identity_call_ref_identifier,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
-    no_call_stub,
     no_data_preamble,
     no_format_integer_beyond_i64,
     no_format_integer_widened,
@@ -1182,15 +1183,7 @@ class OCaml(metaclass=LanguageCls):
             return _curried_arg
         return entry_formatter
 
-    @cached_property
-    def format_call_preamble_stub(
-        self,
-    ) -> Callable[
-        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
-    ]:
-        """Return file-scope stubs for a call expression."""
-        return no_call_stub
+    format_call_preamble_stub = default_format_call_stub
 
     @cached_property
     def format_call_statement(self) -> Callable[[str], str]:
@@ -1204,26 +1197,9 @@ class OCaml(metaclass=LanguageCls):
         """
         return _ocaml_call_target
 
-    @cached_property
-    def format_call_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
-        """
-        return identity_call_ref_identifier
+    format_call_ref_identifier = default_format_call_ref_identifier
 
-    @cached_property
-    def format_call_arg_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
-        return self.format_call_ref_identifier
+    format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
 
     format_call_arg_ref_identifier_consumable = (
         default_format_call_arg_ref_identifier_consumable

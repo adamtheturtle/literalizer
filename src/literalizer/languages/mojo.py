@@ -86,15 +86,16 @@ from literalizer._language import (
     VariantMetadata,
     body_preamble_from_scalars,
     default_call_data_dependent_preamble,
+    default_format_call_statement,
+    default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
+    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
-    identity_call_statement,
-    identity_call_target,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -103,7 +104,6 @@ from literalizer._language import (
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
-    no_validate_call_arg,
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
@@ -1465,15 +1465,9 @@ class Mojo(metaclass=LanguageCls):
 
     validate_spec_for_data = no_validate_spec_for_data
 
-    @cached_property
-    def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        return no_validate_call_arg
+    validate_call_arg = default_validate_call_arg
 
-    @cached_property
-    def format_call_statement(self) -> Callable[[str], str]:
-        """Return call-statement formatting for this language."""
-        return identity_call_statement
+    format_call_statement = default_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1657,12 +1651,7 @@ class Mojo(metaclass=LanguageCls):
             heterogeneous_value_type=heterogeneous_value_type,
         )
 
-    @cached_property
-    def format_call_target(self) -> Callable[[Sequence[str]], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
-        """
-        return identity_call_target
+    format_call_target = default_format_call_target
 
     @cached_property
     def format_call_ref_identifier(

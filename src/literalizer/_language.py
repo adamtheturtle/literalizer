@@ -1354,7 +1354,13 @@ class LanguageCls(type):
             "declares_call_parameter_names",
             "declares_type_name_call_target",
             "dotted_call_root_shares_entrypoint_namespace",
+            "format_call_arg_ref_identifier",
             "format_call_arg_ref_identifier_consumable",
+            "format_call_preamble_stub",
+            "format_call_ref_identifier",
+            "format_call_statement",
+            "format_call_stub",
+            "format_call_target",
             "immutable_variable_modifiers",
             "max_variable_identifier_length",
             "module_name_must_start_uppercase",
@@ -1370,6 +1376,7 @@ class LanguageCls(type):
             "reserved_variable_identifier_pattern",
             "supports_multiline_dict_layout",
             "type_hint_collection_preamble_lines",
+            "validate_call_arg",
             "wrap_in_file_tolerates_pre_indent",
         }
     )
@@ -3224,6 +3231,90 @@ no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
     _no_type_hint_preamble
 )
 """Shared callable for languages that need no type-hint preamble."""
+
+
+@beartype
+def _default_format_call_arg_ref_identifier(
+    self: "Language",
+) -> Callable[[str, Value | None], str]:
+    """Use the language's ref formatter for call arguments."""
+    return self.format_call_ref_identifier
+
+
+default_format_call_arg_ref_identifier: property = property(
+    fget=_default_format_call_arg_ref_identifier
+)
+"""Use the language's ref formatter for call arguments."""
+
+
+@beartype
+def _default_format_call_statement(self: "Language") -> Callable[[str], str]:
+    """Use the shared identity call-statement formatter."""
+    del self
+    return identity_call_statement
+
+
+default_format_call_statement: property = property(
+    fget=_default_format_call_statement
+)
+"""Use the shared identity call-statement formatter."""
+
+
+@beartype
+def _default_format_call_stub(
+    self: "Language",
+) -> Callable[
+    [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+    tuple[str, ...],
+]:
+    """Use the shared empty call-stub formatter."""
+    del self
+    return no_call_stub
+
+
+default_format_call_stub: property = property(fget=_default_format_call_stub)
+"""Use the shared empty call-stub formatter."""
+
+
+@beartype
+def _default_validate_call_arg(self: "Language") -> Callable[[Value], None]:
+    """Use the shared no-op call-argument validation."""
+    del self
+    return no_validate_call_arg
+
+
+default_validate_call_arg: property = property(fget=_default_validate_call_arg)
+"""Use the shared no-op call-argument validation."""
+
+
+@beartype
+def _default_format_call_target(
+    self: "Language",
+) -> Callable[[Sequence[str]], str]:
+    """Use the shared dotted call-target formatter."""
+    del self
+    return identity_call_target
+
+
+default_format_call_target: property = property(
+    fget=_default_format_call_target
+)
+"""Use the shared dotted call-target formatter."""
+
+
+@beartype
+def _default_format_call_ref_identifier(
+    self: "Language",
+) -> Callable[[str, Value | None], str]:
+    """Use the shared unchanged ref-identifier formatter."""
+    del self
+    return identity_call_ref_identifier
+
+
+default_format_call_ref_identifier: property = property(
+    fget=_default_format_call_ref_identifier
+)
+"""Use the shared unchanged ref-identifier formatter."""
 
 
 @beartype

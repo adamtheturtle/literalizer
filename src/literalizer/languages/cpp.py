@@ -119,19 +119,20 @@ from literalizer._language import (
     body_preamble_from_scalars,
     date_scalar_preamble,
     default_call_data_dependent_preamble,
+    default_format_call_statement,
+    default_format_call_stub,
+    default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
+    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_call_ref_identifier,
-    identity_call_statement,
-    identity_call_target,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
-    no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_compute_wrap_ids,
     no_data_preamble,
@@ -139,7 +140,6 @@ from literalizer._language import (
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
-    no_validate_call_arg,
     prepend_body_preamble,
 )
 from literalizer._types import OrderedMap, Scalar, Value, ValueInput
@@ -3516,15 +3516,9 @@ class Cpp(metaclass=LanguageCls):
             case _:
                 return
 
-    @cached_property
-    def validate_call_arg(self) -> Callable[[Value], None]:
-        """Return call-argument validation for this language."""
-        return no_validate_call_arg
+    validate_call_arg = default_validate_call_arg
 
-    @cached_property
-    def format_call_statement(self) -> Callable[[str], str]:
-        """Return call-statement formatting for this language."""
-        return identity_call_statement
+    format_call_statement = default_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -3809,15 +3803,7 @@ class Cpp(metaclass=LanguageCls):
         default_type_hint_collection_preamble_lines
     )
 
-    @cached_property
-    def format_call_stub(
-        self,
-    ) -> Callable[
-        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
-    ]:
-        """Return stub declarations for a call expression."""
-        return no_call_stub
+    format_call_stub = default_format_call_stub
 
     @cached_property
     def format_call_preamble_stub(
@@ -3852,12 +3838,7 @@ class Cpp(metaclass=LanguageCls):
 
         return _formatter
 
-    @cached_property
-    def format_call_target(self) -> Callable[[Sequence[str]], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
-        """
-        return identity_call_target
+    format_call_target = default_format_call_target
 
     @cached_property
     def format_call_ref_identifier(
