@@ -116,6 +116,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_arg,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -1967,19 +1968,7 @@ class Java(metaclass=LanguageCls):
             "}"
         )
 
-    def wrap_combined_in_file(
-        self,
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap Java declaration + assignment in a static method."""
-        return self.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     date_format: DateFormats = DateFormats.JAVA
     datetime_format: DatetimeFormats = DatetimeFormats.INSTANT

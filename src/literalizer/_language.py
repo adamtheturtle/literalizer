@@ -42,6 +42,7 @@ from literalizer.exceptions import (
     UnrepresentableEmptyDictError,
     UnrepresentableNullError,
     UnsupportedOptionError,
+    WrapCombinedInFileNotSupportedError,
 )
 
 if TYPE_CHECKING:
@@ -1377,6 +1378,7 @@ class LanguageCls(type):
             "supports_multiline_dict_layout",
             "type_hint_collection_preamble_lines",
             "validate_call_arg",
+            "wrap_combined_in_file",
             "wrap_in_file_tolerates_pre_indent",
         }
     )
@@ -3748,13 +3750,58 @@ wrap_in_file_noop_static: "staticmethod[[str, str, tuple[str, ...]], str]" = (
 _wrap_combined_in_file_noop_callable: Callable[
     [str, str, str, tuple[str, ...]], str
 ] = wrap_combined_in_file_noop
-type _CombinedFileNoopStatic = (
+type _CombinedFileStatic = (
     "staticmethod[[str, str, str, tuple[str, ...]], str]"
 )
-wrap_combined_in_file_noop_static: _CombinedFileNoopStatic = staticmethod(
+wrap_combined_in_file_noop_static: _CombinedFileStatic = staticmethod(
     _wrap_combined_in_file_noop_callable
 )
 """Static descriptor for the shared combined file wrapper."""
+
+
+@beartype
+def _default_wrap_combined_in_file(
+    self: "Language",
+    declaration: str,
+    assignment: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Join both forms and use the language's selected file wrapper."""
+    return self.wrap_in_file(
+        content=declaration + "\n" + assignment,
+        variable_name=variable_name,
+        body_preamble=body_preamble,
+    )
+
+
+default_wrap_combined_in_file: Callable[
+    ["Language", str, str, str, tuple[str, ...]], str
+] = _default_wrap_combined_in_file
+"""Shared combined wrapper that delegates to the language's file
+wrapper.
+"""
+
+
+@beartype
+def _unsupported_wrap_combined_in_file(
+    declaration: str,
+    assignment: str,
+    variable_name: str,
+    body_preamble: tuple[str, ...],
+) -> str:
+    """Reject combined variable forms for an unsupported language."""
+    del declaration, assignment, variable_name, body_preamble
+    raise WrapCombinedInFileNotSupportedError
+
+
+_unsupported_wrap_combined_in_file_callable: Callable[
+    [str, str, str, tuple[str, ...]], str
+] = _unsupported_wrap_combined_in_file
+unsupported_wrap_combined_in_file_static: _CombinedFileStatic = staticmethod(
+    _unsupported_wrap_combined_in_file_callable
+)
+"""Static descriptor rejecting unsupported combined variable forms."""
 
 
 @beartype

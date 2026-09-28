@@ -105,6 +105,7 @@ from literalizer._language import (
     no_data_preamble,
     no_format_integer_widened,
     no_leading_preamble,
+    unsupported_wrap_combined_in_file_static,
     value_contains,
     wrap_in_file_noop,
 )
@@ -112,7 +113,6 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableIntegerError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 
@@ -1115,18 +1115,9 @@ class Dart(metaclass=LanguageCls):
         """Return the generated complete-file entry-point name."""
         return "main"
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.DART
     datetime_format: DatetimeFormats = DatetimeFormats.DART

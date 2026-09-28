@@ -109,6 +109,7 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
@@ -1174,19 +1175,7 @@ class V(metaclass=LanguageCls):
             use_line = f"\n{self.indent}_ = {variable_name}"
         return f"\nfn main() {{\n{indented}{use_line}\n}}"
 
-    def wrap_combined_in_file(
-        self,
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap V declaration + assignment in ``fn main()``."""
-        return self.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

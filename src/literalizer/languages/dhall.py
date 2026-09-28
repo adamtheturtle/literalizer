@@ -89,6 +89,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_pygments_name,
+    unsupported_wrap_combined_in_file_static,
     wrap_in_file_noop,
 )
 from literalizer._types import Scalar, Value
@@ -96,7 +97,6 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     InvalidDictKeyError,
     UnrepresentableInputError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 _IDENTIFIER_RE = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_/\-]*$")
@@ -1075,18 +1075,9 @@ class Dhall(metaclass=LanguageCls):
             wrapped += "\nin {=}"
         return wrapped
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
