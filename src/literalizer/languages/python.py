@@ -44,6 +44,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     bidi_escape_replacements,
+    escape_trailing_whitespace,
     has_bidi_formatting_character,
     make_backslash_string_formatter,
 )
@@ -186,14 +187,6 @@ def _format_string_raw(value: str) -> str:
 
 
 @beartype
-def _escape_trailing_whitespace(match: re.Match[str]) -> str:
-    r"""Return one ``\x20`` escape per character of the whitespace run
-    *match*.
-    """
-    return r"\x20" * len(match[0])
-
-
-@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Python triple-quoted string.
 
@@ -210,7 +203,7 @@ def _format_string_multiline(value: str) -> str:
     for character, escape in _BIDI_REPLACEMENTS:
         escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
-        repl=_escape_trailing_whitespace,
+        repl=escape_trailing_whitespace,
         string=escaped,
     )
     return f'"""\\\n{escaped}"""'
