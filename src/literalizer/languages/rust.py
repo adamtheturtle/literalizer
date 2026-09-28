@@ -113,19 +113,20 @@ from literalizer._language import (
     date_scalar_preamble,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
+    default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
+    default_format_call_ref_identifier,
+    default_format_call_statement,
+    default_format_call_stub,
+    default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     identity_call_arg,
-    identity_call_ref_identifier,
-    identity_call_statement,
-    identity_call_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
-    no_call_stub,
     no_compute_call_slot_wrap_ids,
     no_data_preamble,
     no_empty_container_literal_overrides,
@@ -4274,43 +4275,13 @@ class Rust(metaclass=LanguageCls):
         """Return stub declarations for a call expression."""
         return _rust_call_stub
 
-    @cached_property
-    def format_call_preamble_stub(
-        self,
-    ) -> Callable[
-        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
-    ]:
-        """Return file-scope stubs for a call expression."""
-        return no_call_stub
+    format_call_preamble_stub = default_format_call_stub
 
-    @cached_property
-    def format_call_target(self) -> Callable[[Sequence[str]], str]:
-        """Rewrite a dotted call target into the language's call
-        syntax.
-        """
-        return identity_call_target
+    format_call_target = default_format_call_target
 
-    @cached_property
-    def format_call_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier into the
-        language's call expression syntax.
-        """
-        return identity_call_ref_identifier
+    format_call_ref_identifier = default_format_call_ref_identifier
 
-    @cached_property
-    def format_call_arg_ref_identifier(
-        self,
-    ) -> Callable[[str, Value | None], str]:
-        """Rewrite a ``{"$ref": "name"}`` identifier in a call-argument
-        context.
-
-        Delegates to :attr:`format_call_ref_identifier`.  Override this to
-        allow call-argument ``$ref`` values that would otherwise be rejected.
-        """
-        return self.format_call_ref_identifier
+    format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
 
     format_call_arg_ref_identifier_consumable = (
         default_format_call_arg_ref_identifier_consumable
@@ -4443,10 +4414,7 @@ class Rust(metaclass=LanguageCls):
         """
         return self.validate_spec_for_data
 
-    @cached_property
-    def format_call_statement(self) -> Callable[[str], str]:
-        """Return call-statement formatting for this language."""
-        return identity_call_statement
+    format_call_statement = default_format_call_statement
 
     def validate_spec_for_data(self, data: Value) -> None:
         """Validate Rust-specific data/format combinations."""
