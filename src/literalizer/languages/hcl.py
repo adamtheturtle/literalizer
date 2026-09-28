@@ -91,10 +91,10 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    unsupported_wrap_combined_in_file_static,
     wrap_in_file_noop,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 _HCL_DECLARATION_PATTERN = re.compile(pattern=r"^\s*[A-Za-z_]\w*\s*=")
 # Prevent HCL template interpolation and directive syntax.
@@ -645,18 +645,9 @@ class Hcl(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

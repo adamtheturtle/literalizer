@@ -81,6 +81,7 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_ref_identifier,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -853,19 +854,7 @@ class SystemVerilog(metaclass=LanguageCls):
             f"initial begin\n{content}\nend\nendmodule"
         )
 
-    def wrap_combined_in_file(
-        self,
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap SystemVerilog declaration + assignment in a module."""
-        return self.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     def wrap_call_variable_in_file(
         self,

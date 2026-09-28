@@ -103,11 +103,11 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 _ASCII_DELETE_CODE_POINT = 127
@@ -1031,18 +1031,9 @@ class Sml(metaclass=LanguageCls):
             force_line = f"\nval _ = {variable_name}"
         return content + force_line
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.SML
     datetime_format: DatetimeFormats = DatetimeFormats.SML

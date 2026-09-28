@@ -101,9 +101,9 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_spec_for_data,
     prepend_body_preamble,
+    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import Value
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 
 # Prevent Elixir from interpreting ``#{…}`` as string interpolation.
 _format_string = make_backslash_string_formatter(
@@ -839,18 +839,9 @@ class Elixir(metaclass=LanguageCls):
         parts.append("end")
         return "\n".join(parts)
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ELIXIR
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

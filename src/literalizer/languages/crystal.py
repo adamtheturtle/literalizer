@@ -112,6 +112,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_arg,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -1197,19 +1198,7 @@ class Crystal(metaclass=LanguageCls):
         )
         return f"module {self.module_name}\nextend self\n{body}\nend"
 
-    def wrap_combined_in_file(
-        self,
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Wrap Crystal declaration + assignment in a module."""
-        return self.wrap_in_file(
-            content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
-        )
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     module_name: str = "Check"
     date_format: DateFormats = DateFormats.CRYSTAL

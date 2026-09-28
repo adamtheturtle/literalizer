@@ -95,6 +95,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._statements import (
     insert_before_line_comment,
@@ -104,7 +105,6 @@ from literalizer._types import Value
 from literalizer.exceptions import (
     InvalidModuleNameError,
     UnrepresentableInputError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 _MAX_ATOM_LENGTH = 255
@@ -875,18 +875,9 @@ class Erlang(metaclass=LanguageCls):
         parts.append(f"{self.indent}{erlang_varname}.")
         return "\n".join(parts)
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

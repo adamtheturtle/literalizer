@@ -110,12 +110,12 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
+    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 _OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
@@ -997,18 +997,9 @@ class OCaml(metaclass=LanguageCls):
         )
         return "module Check = struct\n\n" + content + "\n\nend"
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.OCAML
     datetime_format: DatetimeFormats = DatetimeFormats.OCAML

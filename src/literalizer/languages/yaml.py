@@ -90,12 +90,12 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_validate_spec_for_data,
+    unsupported_wrap_combined_in_file_static,
     wrap_in_file_noop_static,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
     UnrepresentableStringError,
-    WrapCombinedInFileNotSupportedError,
 )
 
 
@@ -478,18 +478,9 @@ class Yaml(metaclass=LanguageCls):
         "staticmethod[[str, str, tuple[str, ...]], str]"
     ] = wrap_in_file_noop_static
 
-    @staticmethod
-    def wrap_combined_in_file(
-        declaration: str,
-        assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
-    ) -> str:
-        """Unsupported: literalize() rejects BothVariableForms
-        upstream.
-        """
-        del declaration, assignment, variable_name, body_preamble
-        raise WrapCombinedInFileNotSupportedError
+    wrap_combined_in_file: ClassVar[
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.YAML
     datetime_format: DatetimeFormats = DatetimeFormats.YAML
