@@ -48,6 +48,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     bidi_escape_replacements,
+    escape_trailing_whitespace,
     make_backslash_string_formatter,
 )
 from literalizer._formatters.type_inference import (
@@ -162,14 +163,6 @@ _DART_PRIVATE_NAME = re.compile(pattern=r"_.*")
 
 
 @beartype
-def _escape_trailing_whitespace(match: re.Match[str]) -> str:
-    r"""Return one ``\x20`` escape per character of the whitespace run
-    *match*.
-    """
-    return r"\x20" * len(match[0])
-
-
-@beartype
 def _format_string_multiline(value: str) -> str:
     r"""Format *value* as an exact Dart triple-quoted string."""
     first_line, first_newline, _ = value.partition("\n")
@@ -187,7 +180,7 @@ def _format_string_multiline(value: str) -> str:
     for character, escape in _BIDI_REPLACEMENTS:
         escaped = escaped.replace(character, escape)
     escaped = _TRAILING_LINE_WHITESPACE.sub(
-        repl=_escape_trailing_whitespace,
+        repl=escape_trailing_whitespace,
         string=escaped,
     )
     # Dart discards a whitespace-only physical line immediately after

@@ -10,6 +10,12 @@ from beartype import beartype
 from literalizer.exceptions import UnrepresentableStringError
 
 
+@beartype
+def escape_trailing_whitespace(match: re.Match[str]) -> str:
+    r"""Return one ``\x20`` escape per character of the whitespace run."""
+    return r"\x20" * len(match[0])
+
+
 @runtime_checkable
 class _StringFormatter(Protocol):
     """Protocol for string formatting functions."""
