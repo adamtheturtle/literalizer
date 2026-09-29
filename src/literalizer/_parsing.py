@@ -499,7 +499,10 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     # ``CommentedOrderedMap`` is a ``dict`` subclass, but represents
     # ``!!omap`` and must become an ``OrderedMap`` rather than a plain dict.
     if isinstance(data, CommentedOrderedMap):
-        omap_src: dict[Scalar | TaggedScalar, YamlCoercible] = dict(data)
+        # Explicit type arguments work around recursive-alias inference in ty.
+        # https://github.com/astral-sh/ty/issues/4598
+        # Remove once the pinned ty version includes the released fix.
+        omap_src = dict[Scalar | TaggedScalar, YamlCoercible](data)
         return OrderedMap(
             [
                 (

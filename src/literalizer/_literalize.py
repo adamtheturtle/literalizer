@@ -4738,7 +4738,10 @@ def _copy_parent_mapping(*, value: dict[Scalar, Value]) -> dict[Scalar, Value]:
     """
     if isinstance(value, OrderedMap):
         return OrderedMap(value)
-    return dict(value)
+    # Explicit type arguments work around recursive-alias inference in ty.
+    # https://github.com/astral-sh/ty/issues/4598
+    # Remove once the pinned ty version includes the released fix.
+    return dict[Scalar, Value](value)
 
 
 @beartype
