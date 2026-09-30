@@ -968,8 +968,6 @@ class Dart(metaclass=LanguageCls):
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
-        # Keep _DartHintOpeners unquoted for the package import hook:
-        # https://github.com/beartype/beartype/issues/707
         def formatter(
             self,
             *,
