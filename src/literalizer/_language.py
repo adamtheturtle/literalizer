@@ -3740,8 +3740,11 @@ def wrap_combined_in_file_noop(
 
 # Reuse static descriptors without losing their class and instance call
 # signatures. Language classes still opt in to each wrapper explicitly.
-# Keep the narrower descriptor hints for static checkers and expose Callable
-# at runtime:
+# Type checkers use TYPE_CHECKING branches to retain precise ``staticmethod``
+# descriptor types for assignments to language classes. At runtime, the else
+# branches create the same descriptors with Callable annotations, which
+# Beartype supports. Its import hook evaluates annotations, and Python 3.14's
+# ``staticmethod[...]`` hints cannot be hashed even when quoted:
 # https://github.com/beartype/beartype/issues/704
 _wrap_in_file_noop_callable: Callable[[str, str, tuple[str, ...]], str] = (
     wrap_in_file_noop
