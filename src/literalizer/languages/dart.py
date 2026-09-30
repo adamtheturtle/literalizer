@@ -968,6 +968,8 @@ class Dart(metaclass=LanguageCls):
         ALWAYS = enum.auto()
         SAFE = enum.auto()
 
+        # Keep _DartHintOpeners unquoted for the package import hook:
+        # https://github.com/beartype/beartype/issues/707
         def formatter(
             self,
             *,
@@ -981,7 +983,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-            openers: "_DartHintOpeners",
+            openers: _DartHintOpeners,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:

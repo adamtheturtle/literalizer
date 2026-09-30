@@ -84,6 +84,7 @@ class _YamlScalarToken(Protocol):
     style: str | None
 
 
+@runtime_checkable
 class _YamlScalarNode(Protocol):
     """Scalar node value exposed to a ruamel constructor."""
 

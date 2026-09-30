@@ -3740,23 +3740,31 @@ def wrap_combined_in_file_noop(
 
 # Reuse static descriptors without losing their class and instance call
 # signatures. Language classes still opt in to each wrapper explicitly.
+# Keep the narrower descriptor hints for static checkers and expose Callable
+# at runtime:
+# https://github.com/beartype/beartype/issues/704
 _wrap_in_file_noop_callable: Callable[[str, str, tuple[str, ...]], str] = (
     wrap_in_file_noop
 )
-wrap_in_file_noop_static: "staticmethod[[str, str, tuple[str, ...]], str]" = (
-    staticmethod(_wrap_in_file_noop_callable)
-)
-"""Static descriptor for the shared file wrapper."""
+#: Static descriptor for the shared file wrapper.
+if TYPE_CHECKING:
+    wrap_in_file_noop_static: "staticmethod[[str, str, tuple[str, ...]], str]"
+else:
+    wrap_in_file_noop_static: Callable[[str, str, tuple[str, ...]], str] = (
+        staticmethod(_wrap_in_file_noop_callable)
+    )
 _wrap_combined_in_file_noop_callable: Callable[
     [str, str, str, tuple[str, ...]], str
 ] = wrap_combined_in_file_noop
-type _CombinedFileStatic = (
-    "staticmethod[[str, str, str, tuple[str, ...]], str]"
-)
-wrap_combined_in_file_noop_static: _CombinedFileStatic = staticmethod(
-    _wrap_combined_in_file_noop_callable
-)
-"""Static descriptor for the shared combined file wrapper."""
+#: Static descriptor for the shared combined file wrapper.
+if TYPE_CHECKING:
+    wrap_combined_in_file_noop_static: (
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    )
+else:
+    wrap_combined_in_file_noop_static: Callable[
+        [str, str, str, tuple[str, ...]], str
+    ] = staticmethod(_wrap_combined_in_file_noop_callable)
 
 
 @beartype
@@ -3798,10 +3806,15 @@ def _unsupported_wrap_combined_in_file(
 _unsupported_wrap_combined_in_file_callable: Callable[
     [str, str, str, tuple[str, ...]], str
 ] = _unsupported_wrap_combined_in_file
-unsupported_wrap_combined_in_file_static: _CombinedFileStatic = staticmethod(
-    _unsupported_wrap_combined_in_file_callable
-)
-"""Static descriptor rejecting unsupported combined variable forms."""
+#: Static descriptor rejecting unsupported combined variable forms.
+if TYPE_CHECKING:
+    unsupported_wrap_combined_in_file_static: (
+        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+    )
+else:
+    unsupported_wrap_combined_in_file_static: Callable[
+        [str, str, str, tuple[str, ...]], str
+    ] = staticmethod(_unsupported_wrap_combined_in_file_callable)
 
 
 @beartype
