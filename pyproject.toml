@@ -651,8 +651,9 @@ analysis.strict-equality-semantics = true
 analysis.strict-generic-narrowing = true
 
 [tool.pytest]
-# Source functions already use @beartype; the import hook fails on the
-# staticmethod annotations in literalizer._language.
+# Source functions already use @beartype. Enable beartype_packages for
+# literalizer once Beartype handles the staticmethod annotations in
+# literalizer._language: https://github.com/beartype/beartype/issues/704
 addopts = [ "-n", "auto" ]
 beartype_test_fixtures = true
 beartype_tests = true
