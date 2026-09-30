@@ -651,10 +651,13 @@ analysis.strict-equality-semantics = true
 analysis.strict-generic-narrowing = true
 
 [tool.pytest]
-# Source functions already use @beartype. Enable beartype_packages for
-# literalizer once Beartype handles the staticmethod annotations in
-# literalizer._language: https://github.com/beartype/beartype/issues/704
 addopts = [ "-n", "auto" ]
+# Source functions already use @beartype. Package import checking adds false
+# missing branches to the 100% coverage gate:
+# https://github.com/beartype/beartype/issues/706
+# When enabling beartype_packages, exclude literalizer._json_native_document:
+# per-level wrappers exhaust the stack below the shared parse-depth guard.
+# Its public entry points already use @beartype.
 beartype_test_fixtures = true
 beartype_tests = true
 log_cli = true
