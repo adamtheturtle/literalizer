@@ -49,6 +49,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 [dependency-groups]
 dev = [
     "actionlint-py==1.7.12.25",
+    "beartype==0.23.0rc2",
     "check-manifest==0.51",
     "clang-tidy==22.1.8",
     "deptry==0.25.1",
@@ -74,7 +75,7 @@ dev = [
     "pyright==1.1.414",
     "pyroma==5.0.1",
     "pytest==9.1.1",
-    "pytest-beartype-tests==2026.8.16",
+    "pytest-beartype==0.3.0",
     "pytest-codspeed==5.0.3",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
@@ -650,9 +651,14 @@ analysis.strict-equality-semantics = true
 analysis.strict-generic-narrowing = true
 
 [tool.pytest]
-ini_options.addopts = "-n auto"
-ini_options.xfail_strict = true
-ini_options.log_cli = true
+# Source functions already use @beartype. Enable beartype_packages for
+# literalizer once Beartype handles the staticmethod annotations in
+# literalizer._language: https://github.com/beartype/beartype/issues/704
+addopts = [ "-n", "auto" ]
+beartype_test_fixtures = true
+beartype_tests = true
+log_cli = true
+xfail_strict = true
 
 [tool.coverage]
 run.omit = [

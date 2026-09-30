@@ -3,7 +3,6 @@
 from typing import Annotated
 
 import pytest
-from beartype import beartype
 from pydantic import AliasPath, BaseModel, Field
 from ruamel.yaml import YAML
 
@@ -38,7 +37,6 @@ class _LintWorkflow(BaseModel):
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
-@beartype
 def fixture_lint_workflow(
     pytestconfig: pytest.Config,
 ) -> _LintWorkflow:
