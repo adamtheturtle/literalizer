@@ -221,7 +221,7 @@ hooks = [
     stages = ["pre-push"],
     groups = ["typecheck"],
     priority = 520,
-    entry = "uv run --group=dev -m mypy --num-workers=4",
+    entry = "uv run --group=dev -m mypy",
     language = "python",
     types_or = [
       "python",
