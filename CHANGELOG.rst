@@ -2325,7 +2325,7 @@ No significant changes.
   Four unit tests in ``tests/test_languages.py`` that drove the Elm helpers directly with constructed multi-line input have been removed in favor of the existing golden-file contract.
 
 - ``Mojo`` :func:`~literalizer.literalize_call` now supports refs nested inside dict literals and commented dict-literal call arguments.
-  The typed-stub work landed in #1972 made both shapes compile cleanly under ``mojo run --Werror``, so the corresponding ``supports_call_refs_in_dict_literals`` and ``supports_commented_dict_call_args`` flags flip to ``True`` for Mojo and two new ``call_*`` golden cases are exercised.
+  The typed-stub changes merged in #1972 made both shapes compile cleanly under ``mojo run --Werror``, so the corresponding ``supports_call_refs_in_dict_literals`` and ``supports_commented_dict_call_args`` flags flip to ``True`` for Mojo and two new ``call_*`` golden cases are exercised.
 
 - ``Mojo`` and ``C++`` :func:`~literalizer.literalize_call` no longer
   wrap a consumable ``$ref`` in the language's consume form when the
