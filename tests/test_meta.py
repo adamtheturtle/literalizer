@@ -1,9 +1,11 @@
 """Meta-tests for project structure and CI configuration."""
 
+from pathlib import Path
 from typing import Annotated
 
 import pytest
 from pydantic import AliasPath, BaseModel, Field
+from pyprojroot import find_root, has_file
 from ruamel.yaml import YAML
 
 from literalizer._language import LanguageCls
@@ -37,11 +39,17 @@ class _LintWorkflow(BaseModel):
 
 
 @pytest.fixture(scope="session", name="lint_workflow")
-def fixture_lint_workflow(
-    pytestconfig: pytest.Config,
-) -> _LintWorkflow:
+def fixture_lint_workflow() -> _LintWorkflow:
     """Parse ``.github/workflows/lint.yml`` once per session."""
-    lint_yml = pytestconfig.rootpath / ".github" / "workflows" / "lint.yml"
+    lint_yml = (
+        find_root(
+            criterion=has_file(file="pyproject.toml"),
+            start=Path(__file__).resolve(),
+        )
+        / ".github"
+        / "workflows"
+        / "lint.yml"
+    )
     ruamel_yaml = require_yaml(yaml=YAML())
     loaded = ruamel_yaml.load(stream=lint_yml)
     return _LintWorkflow.model_validate(obj=loaded)
