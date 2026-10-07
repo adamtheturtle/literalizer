@@ -1351,3 +1351,17 @@ overrides = [
 [axes.python_yaml_tagged_scalars]
 plan = "fixed_overrides"
 name_template = "{lang}_yaml_tagged_scalars"
+
+# Record inference with an explicitly selected list sequence format.
+[axes.record_list_sequence]
+plan = "fixed_overrides"
+name_template = "{lang}_record_list_sequence"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "LIST" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "sequence_format", member = "LIST" },
+]

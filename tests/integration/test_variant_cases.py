@@ -16,6 +16,7 @@ from .case_manifests import (
     RenderContext,
     VariantCapabilityName,
     case_dir_names_for_variant_axis,
+    load_case_manifest,
     load_case_manifests,
 )
 from .language_specs import make_spec, sorted_languages
@@ -197,6 +198,12 @@ def test_multiline_string_variants_follow_capability(
 
     assert len(case_dir_names) > 0
     for case_dir_name in case_dir_names:
+        manifest = load_case_manifest(case_dir=cases_dir / case_dir_name)
+        selected = {
+            lang_cls
+            for lang_cls in expected
+            if manifest.selection.admits_language(lang_cls=lang_cls)
+        }
         actual = {
             case.variant.lang_cls
             for case in build_variant_cases()
@@ -206,7 +213,7 @@ def test_multiline_string_variants_follow_capability(
                 literalizer.BothVariableForms,
             )
         }
-        assert actual == expected
+        assert actual == selected
     multiline_members = {
         lang_cls: enum_member_by_name(
             enum_cls=lang_cls.StringFormats,
