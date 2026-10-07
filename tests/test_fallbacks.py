@@ -11,7 +11,7 @@ from literalizer._formatters.fallbacks import (
 )
 
 if TYPE_CHECKING:
-    from literalizer._types import Scalar, Value
+    from tests.integration.parsed_values import ParsedValue, Scalar
 
 
 @pytest.mark.parametrize(
@@ -37,9 +37,9 @@ def test_optional_and_empty_fallbacks(
 
 def test_collection_fallback_preserves_identity() -> None:
     """Only collection-valued inference may replace the source opener data."""
-    source: list[Value] = [1]
-    mapping: dict[Scalar, Value] = {"a": 2}
-    sequence: list[Value] = [3]
+    source: list[ParsedValue] = [1]
+    mapping: dict[Scalar, ParsedValue] = {"a": 2}
+    sequence: list[ParsedValue] = [3]
     scalar_set: set[Scalar] = {4}
     assert collection_or_default(value=mapping, default=source) is mapping
     assert collection_or_default(value=sequence, default=source) is sequence

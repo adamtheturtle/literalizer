@@ -10,8 +10,7 @@ import json
 import pytest
 from tomlkit.exceptions import TOMLKitError
 
-from literalizer import InputFormat, literalize
-from literalizer._language import Language
+from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     JSON5ParseError,

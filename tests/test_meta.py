@@ -8,9 +8,9 @@ from pydantic import AliasPath, BaseModel, Field
 from pyprojroot import find_root, has_file
 from ruamel.yaml import YAML
 
-from literalizer._language import LanguageCls
-from literalizer._parsing import require_yaml
+from literalizer import LanguageCls
 from literalizer.languages import ALL_LANGUAGES
+from tests.yaml_support import as_yaml_parser
 
 
 class _NamedLintStep(BaseModel):
@@ -50,7 +50,7 @@ def fixture_lint_workflow() -> _LintWorkflow:
         / "workflows"
         / "lint.yml"
     )
-    ruamel_yaml = require_yaml(yaml=YAML())
+    ruamel_yaml = as_yaml_parser(parser=YAML())
     loaded = ruamel_yaml.load(stream=lint_yml)
     return _LintWorkflow.model_validate(obj=loaded)
 
@@ -102,7 +102,7 @@ def test_all_lint_jobs_in_completion_gate(
 def test_every_language_declares_the_explicit_attributes() -> None:
     """No language inherits a behavior it has not said something about.
 
-    :attr:`~literalizer._language.LanguageCls.explicit_language_attributes`
+    :attr:`~literalizer.LanguageCls.explicit_language_attributes`
     names what each language declares for itself.  No default is
     held for any of them, so a language that leaves one out reads as an
     attribute error at render time (issue #4655).
