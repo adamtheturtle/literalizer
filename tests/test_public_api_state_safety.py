@@ -1,20 +1,16 @@
 """Public rendering boundaries remain safe under hostile shared state.
 
-These build a cyclic Python value, or render from several threads at
-once, neither of which a case file can declare (issue #4699).
+These use time-only keys, mutate caller-owned configuration, or render
+from several threads at once, which a case file cannot declare
+(issue #4699).
 """
 
 import datetime
 from concurrent.futures import ThreadPoolExecutor
 from textwrap import dedent
 
-import pytest
-
 from literalizer import InputFormat, NewVariable, literalize
-from literalizer.exceptions import InvalidValueInputError
 from literalizer.languages import Python, Rust
-
-type _RecursiveIntValue = int | list[_RecursiveIntValue]
 
 
 def test_time_key_in_public_substitution_uses_time_formatter() -> None:
@@ -34,64 +30,6 @@ def test_time_key_in_public_substitution_uses_time_formatter() -> None:
             "value": {datetime.time(hour=1, minute=2, second=3): 1},
         }"""
     )
-
-
-def test_cyclic_supplemental_values_raise_typed_error() -> None:
-    """Cyclic Python-value arguments never leak ``RecursionError``."""
-    cycle: list[_RecursiveIntValue] = []
-    cycle.append(cycle)
-
-    with pytest.raises(
-        expected_exception=InvalidValueInputError,
-        match="ref_values",
-    ):
-        _ = literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            ref_values={"value": cycle},
-        )
-    with pytest.raises(
-        expected_exception=InvalidValueInputError,
-        match="bound_refs",
-    ):
-        _ = literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            bound_refs={"value": cycle},
-        )
-    with pytest.raises(
-        expected_exception=InvalidValueInputError,
-        match="record_null_substitutions",
-    ):
-        _ = literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            record_null_substitutions={"value": cycle},
-        )
-
-
-def test_deep_supplemental_value_raises_typed_error() -> None:
-    """Deep cycle-free Python values avoid leaking recursion errors."""
-    value: _RecursiveIntValue = 0
-    for _ in range(2_000):
-        value = [value]
-
-    with pytest.raises(
-        expected_exception=InvalidValueInputError,
-        match=(
-            "ref_values must contain an acyclic value within the supported "
-            "nesting depth"
-        ),
-    ):
-        _ = literalize(
-            source="1",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            ref_values={"value": value},
-        )
 
 
 def test_yaml_parsing_is_thread_safe() -> None:

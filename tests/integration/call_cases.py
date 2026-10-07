@@ -436,7 +436,10 @@ def run_wrap_in_file_case(
             variable_form=config.variable_form,
             wrap_in_file=True,
             ref_values=None,
-            bound_refs=None,
+            bound_refs={
+                ref_name: json.loads(s=ref_source)
+                for ref_name, ref_source in config.ref_declarations.items()
+            },
         )
     check_golden(
         contents=wrap_result.code + "\n",

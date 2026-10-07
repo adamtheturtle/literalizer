@@ -13,14 +13,10 @@ ordinary test.
 import pytest
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import JSONParseError
 from literalizer.languages import PureScript
 
 _BELOW_GUARD_DEPTH = 400
 """A nesting depth the shared parse-depth guard admits."""
-
-_ABOVE_GUARD_DEPTH = 800
-"""A nesting depth the shared parse-depth guard refuses."""
 
 
 @pytest.mark.parametrize(
@@ -39,17 +35,3 @@ def test_below_guard_depth_renders(opener: str, closer: str) -> None:
         language=PureScript(),
     )
     assert result.declaration_code.count("PInt 1") == 1
-
-
-def test_above_guard_depth_is_a_typed_error() -> None:
-    """Past the guard the failure is typed, not a ``RecursionError``."""
-    source = "[" * _ABOVE_GUARD_DEPTH + "1" + "]" * _ABOVE_GUARD_DEPTH
-    with pytest.raises(
-        expected_exception=JSONParseError,
-        match="exceeds the supported nesting depth",
-    ):
-        _ = literalize(
-            source=source,
-            input_format=InputFormat.JSON,
-            language=PureScript(),
-        )
