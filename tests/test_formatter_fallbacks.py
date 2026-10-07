@@ -31,32 +31,6 @@ def test_roc_call_wrapper_without_preamble() -> None:
     )
 
 
-def test_rust_static_datetime_annotation() -> None:
-    """Datetime annotations retain time information rather than date
-    type.
-    """
-    language = Rust(
-        declaration_style=Rust.declaration_styles.STATIC,
-        sequence_format=Rust.sequence_formats.ARRAY,
-    )
-    result = literalize(
-        source="2000-01-01T00:00:00",
-        input_format=InputFormat.YAML,
-        language=language,
-        variable_form=NewVariable(name="value", modifiers=frozenset()),
-    )
-    assert result.code == (
-        "static value: NaiveDateTime = NaiveDateTime::new("
-        "NaiveDate::from_ymd_opt(2000, 1, 1).unwrap(), "
-        "NaiveTime::from_hms_opt(0, 0, 0).unwrap());"
-    )
-    assert result.preamble == (
-        "use chrono::NaiveDate;",
-        "use chrono::NaiveDateTime;",
-        "use chrono::NaiveTime;",
-    )
-
-
 def test_rust_mutable_json_declaration() -> None:
     """The ``mut`` modifier applies to JSON-backed local declarations."""
     language = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)

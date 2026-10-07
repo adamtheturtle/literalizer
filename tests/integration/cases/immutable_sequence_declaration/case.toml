@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp", "Java"]
+languages_reason = "Samples single-declaration acceptance of C++ const and Java final sequence bindings."
+
+[[variants]]
+axis = "modifiers"
