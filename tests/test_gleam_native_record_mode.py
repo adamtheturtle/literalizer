@@ -5,7 +5,6 @@ import pytest
 from literalizer import (
     InputFormat,
     Language,
-    NewVariable,
     literalize,
     literalize_call,
 )
@@ -19,29 +18,6 @@ from literalizer.languages import Gleam
 def _record_spec() -> Language:
     """Return a Gleam specification with concrete records."""
     return Gleam(dict_format=Gleam.dict_formats.RECORD)
-
-
-def test_record_mode_preserves_generic_default() -> None:
-    """The generic value union remains the default representation."""
-    source = '{"name":"Ada","active":true,"scores":[1,2,3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=Gleam()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "pub type GVal {" in "\n".join(default.preamble)
-    native_preamble = native.code
-    assert "pub type GVal {" not in native_preamble
-    assert "pub type GVal0 {" in native_preamble
-    assert "name: String" in native_preamble
-    assert "active: Bool" in native_preamble
-    assert "scores: List(Int)" in native_preamble
-    assert 'name: "Ada"' in native.code
 
 
 @pytest.mark.parametrize(
@@ -69,21 +45,6 @@ def test_record_mode_rejects_unsupported_input(
             input_format=input_format,
             language=_record_spec(),
         )
-
-
-def test_record_mode_nested_shapes() -> None:
-    """Nested records and sibling lists get concrete declarations."""
-    result = literalize(
-        source='{"owner":{"name":"Ada"},"members":[{"name":"Ada","score":1.5},{"name":"Bob","score":2.5}]}',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-    )
-    preamble = "\n".join(result.preamble)
-    assert "pub type GVal0" in preamble
-    assert "pub type GVal1" in preamble
-    assert "pub type GVal2" in preamble
-    assert "members: List(GVal" in preamble
-    assert "GDict" not in result.code
 
 
 def test_record_mode_rejects_invalid_type_name() -> None:

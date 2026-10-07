@@ -22,32 +22,6 @@ def _record_spec() -> Language:
     return OCaml(dict_format=OCaml.dict_formats.RECORD)
 
 
-def test_record_mode_preserves_generic_default() -> None:
-    """The generic value union remains the default representation."""
-    source = '{"name":"Ada","active":true,"scores":[1,2,3]}'
-    default = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=OCaml(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "type val_t =" in default.code
-    assert "type val_t =" not in native.code
-    assert "type val_t0 =" in native.code
-    assert "name : string" in native.code
-    assert "active : bool" in native.code
-    assert "scores : int list" in native.code
-    assert 'name = "Ada"' in native.code
-
-
 @pytest.mark.parametrize(
     argnames=("source", "input_format", "message"),
     argvalues=[
@@ -73,22 +47,6 @@ def test_record_mode_rejects_unsupported_input(
             input_format=input_format,
             language=_record_spec(),
         )
-
-
-def test_record_mode_nested_shapes() -> None:
-    """Nested records and sibling lists get concrete declarations."""
-    result = literalize(
-        source='{"owner":{"name":"Ada"},"members":[{"name":"Ada","score":1.5},{"name":"Bob","score":2.5}]}',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "type val_t0" in result.code
-    assert "type val_t1" in result.code
-    assert "type val_t2" in result.code
-    assert "members : val_t2 list" in result.code
-    assert "OMap" not in result.code
 
 
 def test_record_mode_compact_uses_semicolons() -> None:

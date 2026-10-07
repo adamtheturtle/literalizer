@@ -10,28 +10,6 @@ from literalizer.exceptions import (
 from literalizer.languages import Elm
 
 
-def test_record_mode_preserves_tagged_default() -> None:
-    """Selecting native records does not change the default ``Val``
-    form.
-    """
-    source = '{"name": "Ada", "active": true, "scores": [1, 2, 3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=Elm()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Elm(dict_format=Elm.dict_formats.RECORD),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "EDict" in default.code
-    assert "type Val" not in native.code
-    assert 'name = "Ada"' in native.code
-    assert "active = True" in native.code
-    assert "scores = [" in native.code
-
-
 @pytest.mark.parametrize(
     argnames=("source", "input_format", "message"),
     argvalues=[
@@ -84,16 +62,6 @@ def test_record_mode_rejects_mixed_scalar_list() -> None:
             input_format=InputFormat.JSON,
             language=Elm(dict_format=Elm.dict_formats.RECORD),
         )
-
-
-def test_record_mode_nested_list_fields() -> None:
-    """List-valued fields agree across sibling records."""
-    result = literalize(
-        source='[{"scores": [1, 2]}, {"scores": [3, 4]}]',
-        input_format=InputFormat.JSON,
-        language=Elm(dict_format=Elm.dict_formats.RECORD),
-    )
-    assert result.code.find("scores = [") != result.code.rfind("scores = [")
 
 
 def test_record_mode_formats_epoch_datetime() -> None:

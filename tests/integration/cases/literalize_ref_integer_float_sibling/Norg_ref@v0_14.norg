@@ -1,0 +1,11 @@
+* integer_value
+@code javascript
+1.0
+@end
+* my_data
+@code javascript
+[
+    integer_value,
+    1.5
+]
+@end

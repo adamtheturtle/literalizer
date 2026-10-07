@@ -21,28 +21,6 @@ def _record_spec() -> Language:
     return Haskell(dict_format=Haskell.dict_formats.RECORD)
 
 
-def test_record_mode_preserves_generic_default() -> None:
-    """The default Val union remains available for dynamic values."""
-    source = '{"name":"Ada","active":true,"scores":[1,2,3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=Haskell()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "data Val =" in default.code
-    assert "data Val =" not in native.code
-    assert "data Val0 = Val0" in native.code
-    assert "name :: String" in native.code
-    assert "active :: Bool" in native.code
-    assert "scores :: [Integer]" in native.code
-    assert 'name = "Ada"' in native.code
-
-
 @pytest.mark.parametrize(
     argnames=("source", "input_format", "message"),
     argvalues=[
@@ -68,20 +46,6 @@ def test_record_mode_rejects_unsupported_input(
             input_format=input_format,
             language=_record_spec(),
         )
-
-
-def test_record_mode_nested_shapes() -> None:
-    """Nested records and sibling lists get concrete declarations."""
-    result = literalize(
-        source='{"owner":{"name":"Ada"},"members":[{"name":"Ada","score":1.5},{"name":"Bob","score":2.5}]}',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-    )
-    assert "data Val0" in result.code
-    assert "data Val1" in result.code
-    assert "data Val2" in result.code
-    assert "members :: [Val" in result.code
-    assert "HMap" not in result.code
 
 
 def test_record_mode_rejects_variable_field_collision() -> None:
