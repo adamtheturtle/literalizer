@@ -1,10 +1,10 @@
 """Formatter contracts for combinations outside the golden corpus."""
 
-import datetime
 from textwrap import dedent
 
 from literalizer import (
     InputFormat,
+    NewVariable,
     literalize,
 )
 from literalizer.languages import (
@@ -20,6 +20,8 @@ from literalizer.languages import (
 
 def test_elm_integer_format_handles_i64_minimum() -> None:
     """The raw format preserves its special minimum-integer spelling."""
+    # The public API rejects integers outside Elm's supported range before
+    # invoking the formatter, so this spelling needs a direct formatter test.
     assert Elm.integer_formats.DECIMAL(-(2**63)) == (
         "EInt ((-9223372036854775807 - 1))"
     )
@@ -27,9 +29,12 @@ def test_elm_integer_format_handles_i64_minimum() -> None:
 
 def test_crystal_plain_dictionary_entry() -> None:
     """A quoted key does not need the percent-literal spacing escape."""
-    assert Crystal(
-        string_format=Crystal.string_formats.MULTILINE
-    ).dict_format_config.format_entry('"a"', 1, "1") == ('"a" => 1')
+    result = literalize(
+        source='{"a|b": 1}',
+        input_format=InputFormat.JSON,
+        language=Crystal(string_format=Crystal.string_formats.MULTILINE),
+    )
+    assert result.code == '{\n    "a|b" => 1,\n}'
 
 
 def test_kotlin_unresolved_record_list_opener() -> None:
@@ -42,15 +47,27 @@ def test_kotlin_unresolved_record_list_opener() -> None:
 
 def test_roc_wrappers_without_preamble() -> None:
     """Empty preambles do not add separator lines."""
-    language = Roc()
-    assert language.wrap_in_file(
-        content="test", variable_name="test", body_preamble=()
-    ) == dedent(
+    language = Roc(dict_format=Roc.dict_formats.RECORD)
+    result = literalize(
+        source="{}",
+        input_format=InputFormat.JSON,
+        language=language,
+        variable_form=NewVariable(name="test", modifiers=frozenset()),
+        wrap_in_file=True,
+    )
+    assert result.code == dedent(
         text="""\
         module [test]
 
-        test"""
+        test = {}"""
     )
+
+
+def test_roc_call_wrapper_without_preamble() -> None:
+    """An empty call preamble does not add separator lines."""
+    # Wrapped public calls always generate a stub in the body preamble.
+    # Only the wrapper itself accepts a call with no stub or declarations.
+    language = Roc()
     assert language.wrap_calls_with_declarations(
         declarations=(), calls="call", body_preamble=()
     ) == dedent(
@@ -91,25 +108,37 @@ def test_rust_static_datetime_annotation() -> None:
         declaration_style=Rust.declaration_styles.STATIC,
         sequence_format=Rust.sequence_formats.ARRAY,
     )
-    assert (
-        language.format_variable_declaration(
-            "value",
-            "stamp",
-            datetime.datetime(year=2000, month=1, day=1, tzinfo=datetime.UTC),
-            frozenset(),
-        )
-        == "static value: NaiveDateTime = stamp;"
+    result = literalize(
+        source="2000-01-01T00:00:00",
+        input_format=InputFormat.YAML,
+        language=language,
+        variable_form=NewVariable(name="value", modifiers=frozenset()),
+    )
+    assert result.code == (
+        "static value: NaiveDateTime = NaiveDateTime::new("
+        "NaiveDate::from_ymd_opt(2000, 1, 1).unwrap(), "
+        "NaiveTime::from_hms_opt(0, 0, 0).unwrap());"
+    )
+    assert result.preamble == (
+        "use chrono::NaiveDate;",
+        "use chrono::NaiveDateTime;",
+        "use chrono::NaiveTime;",
     )
 
 
 def test_rust_mutable_json_declaration() -> None:
     """The ``mut`` modifier applies to JSON-backed local declarations."""
     language = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
-    assert (
-        language.format_variable_declaration(
-            "data", "1", 1, frozenset({Rust.Modifiers["MUT"]})
-        )
-        == "let mut data: serde_json::Value = serde_json::json!(1);"
+    result = literalize(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=language,
+        variable_form=NewVariable(
+            name="data", modifiers=frozenset({Rust.modifiers.MUT})
+        ),
+    )
+    assert result.code == (
+        "let mut data: serde_json::Value = serde_json::json!(1);"
     )
 
 
