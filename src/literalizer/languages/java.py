@@ -482,12 +482,13 @@ def _java_common_element_type(
         if boxed:
             resolved_result_1 = _java_box(type_name=result)
         return resolved_result_1
-    # int + double → double (widening)
+    # Primitive arrays widen int + double to double. Generic collections
+    # retain the boxed Integer/Long and Double values, which share Number.
     double_t = "double"
     if unique == {int_type, double_t}:
         resolved_result_2: str = "double"
         if boxed:
-            resolved_result_2 = "Double"
+            resolved_result_2 = "Number"
         return resolved_result_2
     # int + long → long (integer-width widening for mixed-magnitude
     # int collections, e.g. ``{1, 1099511627776}``)

@@ -11,7 +11,6 @@ from literalizer.languages import (
     Cpp,
     Crystal,
     Elm,
-    Java,
     Roc,
     Rust,
 )
@@ -68,22 +67,6 @@ def test_roc_call_wrapper_without_preamble() -> None:
         main =
             dbg (call)
             {}"""
-    )
-
-
-def test_java_boxed_mixed_numeric_annotation() -> None:
-    """A set annotation boxes its widened numeric element type."""
-    # Keep the formatter contract here: the public renderer currently emits
-    # Set<Double> with integer elements that javac rejects, so this combination
-    # cannot yet be covered by a compiling golden.
-    language = Java(
-        variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-    )
-    assert (
-        language.format_variable_declaration(
-            "data", "value", {1, 2.5}, frozenset()
-        )
-        == "Set<Double> data = value;"
     )
 
 

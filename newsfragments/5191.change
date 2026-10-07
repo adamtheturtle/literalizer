@@ -1,0 +1,1 @@
+Fix Java mixed integer/float collection type hints to use ``Number`` for boxed elements, preserving integer values and producing set declarations that compile.
