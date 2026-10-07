@@ -2984,8 +2984,8 @@ class Cpp(metaclass=LanguageCls):
             type_ctx: _CppTypeCtx,
         ) -> SequenceFormatConfig:
             """Return the sequence format config for the given context."""
-            factory: Callable[..., SequenceFormatConfig] = self.value
-            return factory(type_ctx=type_ctx)
+            config: SequenceFormatConfig = self.value(type_ctx=type_ctx)
+            return config
 
     class SetFormats(enum.Enum):
         """Set type options for C++."""
