@@ -154,16 +154,21 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
 
 
 def test_typed_dict_null_filtering_follows_capability() -> None:
-    """Null-filtering variants select typed dict languages explicitly."""
+    """Static null-filtering variants cover every typed dict language."""
     variants = list(build_typed_dict_null_filtering_variants())
-
-    assert len(variants) > 0
-    incapable = [
-        variant
-        for variant in variants
-        if not variant.lang_cls.supports_typed_dict_open
+    expected = [
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls.supports_typed_dict_open
     ]
-    assert incapable == []
+
+    assert [variant.lang_cls for variant in variants] == expected
+    assert [variant.name for variant in variants] == [
+        f"{lang_cls.__name__}_skip_null_dict_values" for lang_cls in expected
+    ]
+    for variant in variants:
+        assert type(variant.spec).__bases__ == (variant.lang_cls,)
+        assert variant.spec.skip_null_dict_values is True
 
 
 def test_multiline_string_variants_follow_capability(
