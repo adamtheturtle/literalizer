@@ -24,18 +24,13 @@ from ruamel.yaml.comments import TaggedScalar
 from typing_extensions import TypeIs
 
 import literalizer
-from literalizer._language import NewVariableNameSyntax
-from literalizer._parsing import (
-    escape_json5_line_separators,
-    parse_input,
-    require_yaml,
-    unwrap_yaml_scalar,
-)
+from literalizer._parsing import escape_json5_line_separators
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
 )
 from literalizer.languages import Matlab
+from tests.yaml_support import as_yaml_parser
 
 from .case_inputs import CaseInput
 from .case_manifests import (
@@ -80,11 +75,7 @@ def kebab_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
     return tuple(
         lang_cls
         for lang_cls in sorted_languages()
-        if lang_cls.new_variable_name_syntax
-        in {
-            NewVariableNameSyntax.ASCII_KEBAB,
-            NewVariableNameSyntax.ASCII_KEBAB_LETTER_BOUNDED,
-        }
+        if lang_cls.new_variable_name_syntax.accepts(name="my-data")
     )
 
 
@@ -94,11 +85,7 @@ def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
     return tuple(
         lang_cls
         for lang_cls in sorted_languages()
-        if lang_cls.new_variable_name_syntax
-        in {
-            NewVariableNameSyntax.LOWER_ASCII_PRIME_SUFFIX,
-            NewVariableNameSyntax.LOWER_LETTER_ASCII_PRIME_SUFFIX,
-        }
+        if lang_cls.new_variable_name_syntax.accepts(name="my_data'")
     )
 
 
@@ -170,7 +157,7 @@ def _is_object_list(value: object, /) -> TypeIs[list[object]]:
 def _demote_yaml_tags(*, value: object) -> object:
     """Demote round-trip-only tagged scalar wrappers for discovery."""
     if isinstance(value, TaggedScalar):
-        return unwrap_yaml_scalar(value=value)
+        value = str(object=value)
     if _is_object_dict(value):
         return {
             _demote_yaml_tags(value=key): _demote_yaml_tags(value=item)
@@ -182,30 +169,21 @@ def _demote_yaml_tags(*, value: object) -> object:
 
 
 @beartype
-def load_case_data(*, input_info: CaseInput) -> CaseData:
-    """Parse a case input file according to its declared format.
-
-    Dispatches on :attr:`_CaseInput.input_format` so discovery code can
-    inspect any case's data without knowing which serialization backs
-    it.  ``tomllib``/``json``/``json5`` yield plain containers and
-    ``ruamel`` yields its comment-tracking mappings; both are walked
-    structurally by the ``has_*`` predicates.
-    """
-    source = input_info.path.read_text(encoding="utf-8")
-    parsed: object
-    match input_info.input_format:
+def _load_case_source(
+    *, source: str, input_format: literalizer.InputFormat
+) -> object:
+    """Load raw fixture data through the third-party format parsers."""
+    match input_format:
         case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=source)
-        case literalizer.InputFormat.JSONC:
-            parsed = parse_input(
-                source=source, input_format=literalizer.InputFormat.JSONC
-            ).data
-        case literalizer.InputFormat.JSON5:
+            return json.loads(s=source)
+        case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
+            # JSONC fixtures are valid JSON5. Rendering exercises the
+            # stricter JSONC parser through the public API separately.
             # The library escapes a raw U+2028 or U+2029 inside a
             # string before handing the source to ``json5``, which
             # refuses one; parse the same way so a case may hold
             # what the library accepts (issue #4518).
-            parsed = json5.loads(
+            return json5.loads(
                 s=escape_json5_line_separators(source=source),
                 allow_duplicate_keys=False,
             )
@@ -224,12 +202,28 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             # The pure loader accepts rebound anchors, like the public
             # parser; the C loader rejects these otherwise valid cases.
             # https://sourceforge.net/p/ruamel-yaml/tickets/43/
-            yaml = require_yaml(yaml=YAML(typ=yaml_type, pure=True))
-            parsed = _demote_yaml_tags(value=yaml.load(stream=source))
+            yaml = as_yaml_parser(parser=YAML(typ=yaml_type, pure=True))
+            return _demote_yaml_tags(value=yaml.load(stream=source))
         case literalizer.InputFormat.TOML:
-            parsed = tomllib.loads(source)
+            return tomllib.loads(source)
         case _ as unreachable:
             assert_never(unreachable)
+
+
+@beartype
+def load_case_data(*, input_info: CaseInput) -> CaseData:
+    """Parse a case input file according to its declared format.
+
+    Dispatches on :attr:`_CaseInput.input_format` so discovery code can
+    inspect any case's data without knowing which serialization backs
+    it.  ``tomllib``/``json``/``json5`` yield plain containers and
+    ``ruamel`` yields its comment-tracking mappings; both are walked
+    structurally by the ``has_*`` predicates.
+    """
+    parsed = _load_case_source(
+        source=input_info.path.read_text(encoding="utf-8"),
+        input_format=input_info.input_format,
+    )
     return TypeAdapter[CaseData](type=CaseData).validate_python(
         parsed,
         strict=True,
