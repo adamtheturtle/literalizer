@@ -4,7 +4,7 @@ The rejections are declared in ``tests/errors/rejections`` and run by
 ``test_rejections.py``.  What is left here is the acceptance side --
 the modifier that names a storage class rather than a binding. Single
 declaration acceptance is covered by the ``immutable_sequence_declaration``
-modifier goldens.
+modifier golden fixtures.
 """
 
 import enum
