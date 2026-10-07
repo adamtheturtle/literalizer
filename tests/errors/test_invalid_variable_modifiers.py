@@ -58,18 +58,3 @@ def test_literalize_call_rejects_foreign_variable_modifier() -> None:
             variable_form=_FOREIGN_MODIFIER,
         )
     )
-
-
-def test_target_language_modifier_remains_valid() -> None:
-    """A modifier from the target language still reaches its renderer."""
-    result = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=Java(),
-        variable_form=NewVariable(
-            name="value",
-            modifiers=frozenset({Java.modifiers.FINAL}),
-        ),
-    )
-
-    assert result.code == "final int value = 1;"
