@@ -1,11 +1,9 @@
 """Declaration-name checks driven by each language's own reserved set.
 
 The fixed-name rejections are declared in ``tests/errors/rejections``
-and run by ``test_rejections.py``.  What is left here is the pair a
-manifest cannot express -- a manifest applies one name to every
-language it selects, and these read the name out of the language
-itself -- together with the acceptances that show where each
-restriction stops.
+and run by ``test_rejections.py``. The remaining tests read reserved
+names from the language itself, rather than applying one manifest name
+to every selected language. Acceptance boundaries use shared goldens.
 """
 
 import re
@@ -18,72 +16,14 @@ from literalizer import (
     LanguageCls,
     NewVariable,
     literalize,
-    literalize_call,
 )
 from literalizer.exceptions import ReservedVariableNameError
-from literalizer.languages import (
-    ALL_LANGUAGES,
-    Erlang,
-    Fortran,
-    JavaScript,
-    Swift,
-    TypeScript,
-)
+from literalizer.languages import ALL_LANGUAGES
 
 
 def _language_class_name(language_cls: LanguageCls, /) -> str:
     """Return the language class name."""
     return language_cls.__name__
-
-
-def test_fortran_accepts_variable_name_at_standard_limit() -> None:
-    """The 63-character Fortran name boundary remains valid."""
-    _ = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=Fortran(),
-        variable_form=NewVariable(
-            name="v" * 63,
-            modifiers=frozenset(),
-        ),
-    )
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=[JavaScript, TypeScript],
-    ids=lambda language_cls: language_cls.__name__,
-)
-def test_ecmascript_reserved_property_call_remains_valid(
-    language_cls: LanguageCls,
-) -> None:
-    """Reserved variable names do not block valid property calls."""
-    result = literalize_call(
-        source="[1]",
-        input_format=InputFormat.JSON,
-        language=language_cls(),
-        target_function="foo.class",
-        parameter_names=["value"],
-    )
-
-    assert result.code == "foo.class({ value: 1 });"
-
-
-def test_erlang_lowercase_keyword_is_valid_variable_name() -> None:
-    """Erlang variables capitalize names, so lowercase keywords are
-    valid.
-    """
-    result = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=Erlang(),
-        variable_form=NewVariable(name="if", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-
-    assert result.code == (
-        "-module(module).\n-export([x/0]).\nx() ->\n    If = 1,\n    If."
-    )
 
 
 @beartype
@@ -191,19 +131,3 @@ def test_generated_record_name_is_reserved_for_record_strategy(
             ),
             wrap_in_file=True,
         )
-
-
-def test_generated_record_name_is_valid_without_record_strategy() -> None:
-    """The generated-name reservation is specific to RECORD output."""
-    result = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=Swift(),
-        variable_form=NewVariable(
-            name="Record0",
-            modifiers=frozenset(),
-        ),
-        wrap_in_file=True,
-    )
-
-    assert result.code == "let Record0 = 1"
