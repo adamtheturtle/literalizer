@@ -125,7 +125,7 @@ jobs:
           uv pip install --group=benchmark
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v5.2.1
+        uses: CodSpeedHQ/action@v5.4.0
         with:
           mode: simulation
           run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
