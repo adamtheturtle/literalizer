@@ -27,19 +27,6 @@ def test_jsonc_output_uses_json_keys_and_no_trailing_commas() -> None:
     }
 
 
-def test_jsonc_output_preserves_yaml_comments() -> None:
-    """JSONC comments use the supported double-slash spelling."""
-    result = literalize(
-        source="# server\nhost: localhost # default\n",
-        input_format=InputFormat.YAML,
-        language=Jsonc(),
-    )
-
-    assert result.code == (
-        '{\n    // server\n    "host": "localhost"  // default\n}'
-    )
-
-
 def test_jsonc_output_rejects_nonfinite_numbers() -> None:
     """Non-finite numeric tokens cannot leak into JSONC output."""
     with pytest.raises(expected_exception=UnrepresentableSpecialFloatError):

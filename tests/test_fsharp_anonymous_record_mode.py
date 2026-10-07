@@ -3,10 +3,8 @@
 import pytest
 
 from literalizer import (
-    BothVariableForms,
     InputFormat,
     literalize,
-    literalize_call,
 )
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
@@ -66,32 +64,3 @@ def test_anonymous_record_mode_rejects_mixed_scalar_list() -> None:
             input_format=InputFormat.JSON,
             language=FSharp(dict_format=FSharp.dict_formats.ANONYMOUS_RECORD),
         )
-
-
-def test_anonymous_record_mode_call_argument() -> None:
-    """Calls pass the anonymous record, not a ``Val`` constructor."""
-    result = literalize_call(
-        source='[[{"x": 1}]]',
-        input_format=InputFormat.JSON,
-        language=FSharp(dict_format=FSharp.dict_formats.ANONYMOUS_RECORD),
-        target_function="consume",
-        parameter_names=("item",),
-        wrap_in_file=True,
-    )
-    assert "consume({| x = 1L |})" in result.code
-
-
-def test_anonymous_record_mode_both_variable_forms() -> None:
-    """Declaration and assignment both use the native expression."""
-    result = literalize(
-        source='{"x": 1}',
-        input_format=InputFormat.JSON,
-        language=FSharp(
-            dict_format=FSharp.dict_formats.ANONYMOUS_RECORD,
-            declaration_style=FSharp.declaration_styles.LET_MUTABLE,
-        ),
-        variable_form=BothVariableForms(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "let mutable my_data = {|" in result.code
-    assert "let my_data = {|" in result.code

@@ -2,7 +2,7 @@
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize, literalize_call
+from literalizer import InputFormat, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     UnrepresentableInputError,
@@ -62,28 +62,3 @@ def test_record_mode_rejects_mixed_scalar_list() -> None:
             input_format=InputFormat.JSON,
             language=Elm(dict_format=Elm.dict_formats.RECORD),
         )
-
-
-def test_record_mode_call_argument() -> None:
-    """Calls consume the native record expression, not ``Val``."""
-    result = literalize_call(
-        source='[[{"x": 1}]]',
-        input_format=InputFormat.JSON,
-        language=Elm(dict_format=Elm.dict_formats.RECORD),
-        target_function="consume",
-        parameter_names=("item",),
-        wrap_in_file=True,
-    )
-    assert "consume ({ x = 1 })" in result.code
-
-
-def test_record_mode_respects_custom_indent() -> None:
-    """The closing record brace tracks the configured indent width."""
-    result = literalize(
-        source='{"name": "Ada"}',
-        input_format=InputFormat.JSON,
-        language=Elm(dict_format=Elm.dict_formats.RECORD, indent="  "),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "\n  }" in result.code

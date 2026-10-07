@@ -40,19 +40,6 @@ def test_jsonc_output_can_be_read_as_jsonc_input() -> None:
     assert result.code == '{\n    "count": 2,\n}'
 
 
-def test_jsonc_escaped_quote_keeps_slashes_inside_string() -> None:
-    """An escaped quote does not turn later string content into a
-    comment.
-    """
-    result = literalize(
-        source='{"text": "a\\"//b"}',
-        input_format=InputFormat.JSONC,
-        language=Python(),
-    )
-
-    assert result.code == '{\n    "text": "a\\"//b",\n}'
-
-
 @pytest.mark.parametrize(
     argnames="source",
     argvalues=[

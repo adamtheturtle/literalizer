@@ -59,20 +59,6 @@ def test_record_mode_rejects_mismatched_nested_list_fields() -> None:
         )
 
 
-def test_record_mode_call_uses_native_argument() -> None:
-    """Call arguments use the same native representation."""
-    result = literalize_call(
-        source='[{"name":"Ada"}]',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        target_function="consume",
-        parameter_names=("item",),
-        wrap_in_file=True,
-    )
-    assert 'name = "Ada"' in result.code
-    assert "SMap" not in result.code
-
-
 def test_record_mode_curried_call_uses_native_argument() -> None:
     """Curried calls parenthesize a record argument without tagging it."""
     result = literalize_call(

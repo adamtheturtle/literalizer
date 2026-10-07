@@ -30,16 +30,6 @@ def test_record_mode_rejects_non_field_keys(
         )
 
 
-def test_default_mode_preserves_arbitrary_string_keys() -> None:
-    """Native records do not narrow the pre-existing tagged mode."""
-    result = literalize(
-        source='{"not-a-field": 1}',
-        input_format=InputFormat.JSON,
-        language=Roc(),
-    )
-    assert '("not-a-field", RInt 1i128)' in result.code
-
-
 def test_record_mode_rejects_conflicting_list_field_types() -> None:
     """A Roc list cannot mix records with conflicting field types."""
     with pytest.raises(

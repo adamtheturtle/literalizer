@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "variant"
+languages = ["PureScript"]
+languages_reason = "PureScript native records widen values beyond Int32 to exact Number literals."
+
+[[variants]]
+axis = "native_record"
+
+[[variants]]
+axis = "native_record"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }

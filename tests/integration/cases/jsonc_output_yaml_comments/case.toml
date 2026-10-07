@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Jsonc"]
+languages_reason = "JSONC preserves YAML comments using double slashes."
