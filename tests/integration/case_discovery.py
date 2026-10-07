@@ -223,6 +223,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
                 yaml_type = "rt"
             # The pure loader accepts rebound anchors, like the public
             # parser; the C loader rejects these otherwise valid cases.
+            # https://sourceforge.net/p/ruamel-yaml/tickets/43/
             yaml = require_yaml(yaml=YAML(typ=yaml_type, pure=True))
             parsed = _demote_yaml_tags(value=yaml.load(stream=source))
         case literalizer.InputFormat.TOML:
