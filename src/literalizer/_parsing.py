@@ -188,6 +188,22 @@ class InputFormat(enum.Enum):
     YAML = enum.auto()
     TOML = enum.auto()
 
+    @property
+    def supports_null(self) -> bool:
+        """Whether the format can represent a null value."""
+        match self:
+            case (
+                InputFormat.JSON
+                | InputFormat.JSONC
+                | InputFormat.JSON5
+                | InputFormat.YAML
+            ):
+                return True
+            case InputFormat.TOML:
+                return False
+            case _ as unreachable:
+                assert_never(unreachable)
+
 
 @beartype
 @dataclasses.dataclass(frozen=True)
