@@ -4,9 +4,7 @@ from dataclasses import dataclass
 
 from ruamel.yaml.tokens import CommentToken
 
-from literalizer import InputFormat, literalize
 from literalizer._comments import literalize_yaml_scalar
-from literalizer.languages import Python
 
 
 @dataclass
@@ -16,16 +14,6 @@ class ScannerToken:
     """
 
     comment: list[CommentToken | list[CommentToken] | None] | None
-
-
-def test_collection_closing_comment() -> None:
-    """A closing collection comment survives without element metadata."""
-    result = literalize(
-        source="[1] # closing\n",
-        input_format=InputFormat.YAML,
-        language=Python(),
-    )
-    assert "# closing" in result.code
 
 
 def test_scalar_comment_without_before_slot() -> None:

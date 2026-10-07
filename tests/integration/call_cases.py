@@ -568,6 +568,14 @@ def run_call_golden_case(
     _skip_if_wrapper_unsupported(
         config=config, lang_cls=lang_cls, golden_path=golden_path
     )
+    if config.call_style_type is not None:
+        # Apply the manifest's style to variant specs as well as defaults.
+        style = next(
+            member
+            for member in lang_cls.CallStyles
+            if isinstance(member.value, config.call_style_type)
+        )
+        spec = dataclasses.replace(spec, call_style=style)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:

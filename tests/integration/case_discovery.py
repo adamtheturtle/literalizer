@@ -221,7 +221,9 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             yaml_type = "safe"
             if "=" in source:
                 yaml_type = "rt"
-            yaml = require_yaml(yaml=YAML(typ=yaml_type))
+            # The pure loader accepts rebound anchors, like the public
+            # parser; the C loader rejects these otherwise valid cases.
+            yaml = require_yaml(yaml=YAML(typ=yaml_type, pure=True))
             parsed = _demote_yaml_tags(value=yaml.load(stream=source))
         case literalizer.InputFormat.TOML:
             parsed = tomllib.loads(source)
