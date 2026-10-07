@@ -66,27 +66,6 @@ def test_record_mode_rejects_mixed_scalar_array() -> None:
         )
 
 
-def test_record_mode_boolean_fields_in_record_array() -> None:
-    """Boolean fields share one inferred record type across siblings."""
-    result = literalize(
-        source='[{"active": true}, {"active": false}]',
-        input_format=InputFormat.JSON,
-        language=PureScript(dict_format=PureScript.dict_formats.RECORD),
-    )
-    assert "active: true" in result.code
-    assert "active: false" in result.code
-
-
-def test_record_mode_formats_large_integer_as_number() -> None:
-    """Values beyond Int32 use an exact Number literal."""
-    result = literalize(
-        source='{"value": 2147483648}',
-        input_format=InputFormat.JSON,
-        language=PureScript(dict_format=PureScript.dict_formats.RECORD),
-    )
-    assert "value: 2147483648.0" in result.code
-
-
 def test_record_mode_rejects_integer_beyond_number_precision() -> None:
     """Avoid silently rounding beyond the safe integer range."""
     with pytest.raises(expected_exception=UnrepresentableIntegerError):
@@ -99,6 +78,8 @@ def test_record_mode_rejects_integer_beyond_number_precision() -> None:
 
 def test_record_mode_call_argument() -> None:
     """Calls receive a native record rather than a ``Val`` constructor."""
+    # The wrapped call still declares its stub as Val -> Unit, although
+    # native-record mode emits no Val type, so it has no compiling golden.
     result = literalize_call(
         source='[[{"x": 1}]]',
         input_format=InputFormat.JSON,

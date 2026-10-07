@@ -3,7 +3,6 @@
 import pytest
 
 from literalizer import (
-    CollectionLayout,
     InputFormat,
     Language,
     literalize,
@@ -51,18 +50,6 @@ def test_record_mode_rejects_unsupported_input(
             input_format=input_format,
             language=_record_spec(),
         )
-
-
-def test_record_mode_compact_uses_semicolons() -> None:
-    """Compact records use OCaml separators rather than commas."""
-    result = literalize(
-        source='[{"name":"Ada","active":true}]',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        collection_layout=CollectionLayout.COMPACT,
-    )
-    assert 'name = "Ada"; active = true' in result.code
-    assert 'name = "Ada",' not in result.code
 
 
 def test_record_mode_rejects_invalid_type_name() -> None:

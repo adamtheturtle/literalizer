@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm"]
+languages_reason = "Elm native-record closing braces must follow the configured indent width."
+
+[[variants]]
+axis = "native_record_indent"

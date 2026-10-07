@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "native_record"
+
+[[variants]]
+axis = "anonymous_record"
+
+[[variants]]
+axis = "native_record"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }
+
+[[variants]]
+axis = "anonymous_record"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }

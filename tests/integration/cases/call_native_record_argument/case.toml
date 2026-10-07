@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Elm", "FSharp"]
+languages_reason = "These native-record call arguments use record expressions instead of tagged values."
+target_function = "consume"
+parameter_names = ["item"]
+per_element = true
+wrap_in_file = true
+variant_only = true
+
+[[call.variants]]
+axis = "native_record"
+
+[[call.variants]]
+axis = "anonymous_record"
