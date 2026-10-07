@@ -988,9 +988,8 @@ def _extract_scalar_comments(
         if isinstance(inline_token, CommentToken):
             value = inline_token.value
             trailing = _split_scalar_after_token(value=value)
-        before_tokens = None
-        if len(comment) > 1:
-            before_tokens = comment[1]
+        # The round-trip scanner always creates both inline and before slots.
+        before_tokens = comment[1]
         if isinstance(before_tokens, list):
             for before_token in before_tokens:
                 before_comments.extend(
