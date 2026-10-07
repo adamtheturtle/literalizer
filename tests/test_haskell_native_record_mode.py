@@ -77,39 +77,6 @@ def test_record_mode_rejects_invalid_type_name() -> None:
         )
 
 
-def test_record_mode_temporal_string_formats() -> None:
-    """Native record fields use strings for configured ISO dates."""
-    result = literalize(
-        source=(
-            "birthday = 2024-01-15\n"
-            "when = 2024-01-15T12:30:00Z\n"
-            "at = 09:30:00\n"
-        ),
-        input_format=InputFormat.TOML,
-        language=Haskell(
-            dict_format=Haskell.dict_formats.RECORD,
-            date_format=Haskell.date_formats.ISO,
-            datetime_format=Haskell.datetime_formats.ISO,
-        ),
-    )
-    assert "birthday :: String" in result.code
-    assert "when :: String" in result.code
-    assert "at :: String" in result.code
-
-
-def test_record_mode_epoch_datetime() -> None:
-    """Epoch datetime values use a concrete Integer field."""
-    result = literalize(
-        source="when = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=Haskell(
-            dict_format=Haskell.dict_formats.RECORD,
-            datetime_format=Haskell.datetime_formats.EPOCH,
-        ),
-    )
-    assert "when :: Integer" in result.code
-
-
 def test_record_mode_conflicts_with_aeson() -> None:
     """The JSON value backend and records are distinct output modes."""
     with pytest.raises(

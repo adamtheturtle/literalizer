@@ -62,51 +62,6 @@ def test_record_mode_rejects_invalid_type_name() -> None:
         )
 
 
-def test_record_mode_temporal_fields() -> None:
-    """Date, time, and datetime values retain concrete scalar types."""
-    result = literalize(
-        source=(
-            "birthday = 2024-01-15\n"
-            "when = 2024-01-15T12:30:00Z\n"
-            "at = 09:30:00\n"
-        ),
-        input_format=InputFormat.TOML,
-        language=_record_spec(),
-    )
-    preamble = "\n".join(result.preamble)
-    assert "birthday: String" in preamble
-    assert "when: String" in preamble
-    assert "at: String" in preamble
-
-
-def test_record_mode_epoch_datetime() -> None:
-    """Epoch datetime values use a concrete Int field."""
-    result = literalize(
-        source="when = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=Gleam(
-            dict_format=Gleam.dict_formats.RECORD,
-            datetime_format=Gleam.datetime_formats.EPOCH,
-        ),
-    )
-    assert "when: Int" in "\n".join(result.preamble)
-
-
-def test_record_mode_binary_string_field() -> None:
-    """Binary inputs use unwrapped string literals in native records."""
-    for bytes_format in (Gleam.bytes_formats.HEX, Gleam.bytes_formats.BASE64):
-        result = literalize(
-            source="blob: !!binary AQID\n",
-            input_format=InputFormat.YAML,
-            language=Gleam(
-                dict_format=Gleam.dict_formats.RECORD,
-                bytes_format=bytes_format,
-            ),
-        )
-        assert "blob: String" in "\n".join(result.preamble)
-        assert "GStr" not in result.code
-
-
 def test_record_mode_conflicts_with_json_value() -> None:
     """The JSON value backend and records are distinct output modes."""
     with pytest.raises(

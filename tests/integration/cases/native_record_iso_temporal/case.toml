@@ -2,4 +2,4 @@ schema_version = 1
 owner = "variant"
 
 [[variants]]
-axis = "native_record_bytes"
+axis = "native_record_iso_temporal"

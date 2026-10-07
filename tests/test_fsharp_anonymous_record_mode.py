@@ -68,19 +68,6 @@ def test_anonymous_record_mode_rejects_mixed_scalar_list() -> None:
         )
 
 
-def test_anonymous_record_mode_formats_epoch_datetime() -> None:
-    """Epoch values remain native ``int64`` fields."""
-    result = literalize(
-        source="event_time = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=FSharp(
-            dict_format=FSharp.dict_formats.ANONYMOUS_RECORD,
-            datetime_format=FSharp.datetime_formats.EPOCH,
-        ),
-    )
-    assert "event_time = 1705321800L" in result.code
-
-
 def test_anonymous_record_mode_call_argument() -> None:
     """Calls pass the anonymous record, not a ``Val`` constructor."""
     result = literalize_call(

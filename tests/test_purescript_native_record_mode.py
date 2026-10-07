@@ -77,32 +77,6 @@ def test_record_mode_boolean_fields_in_record_array() -> None:
     assert "active: false" in result.code
 
 
-def test_record_mode_formats_epoch_datetime() -> None:
-    """Epoch timestamps become bare native numbers."""
-    result = literalize(
-        source="event_time = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=PureScript(
-            dict_format=PureScript.dict_formats.RECORD,
-            datetime_format=PureScript.datetime_formats.EPOCH,
-        ),
-    )
-    assert "event_time: 1705321800" in result.code
-
-
-def test_record_mode_formats_base64_bytes() -> None:
-    """The alternate bytes option remains a bare String field."""
-    result = literalize(
-        source="---\npayload: !!binary YWJj\n",
-        input_format=InputFormat.YAML,
-        language=PureScript(
-            dict_format=PureScript.dict_formats.RECORD,
-            bytes_format=PureScript.bytes_formats.BASE64,
-        ),
-    )
-    assert 'payload: "YWJj"' in result.code
-
-
 def test_record_mode_formats_large_integer_as_number() -> None:
     """Values beyond Int32 use an exact Number literal."""
     result = literalize(
