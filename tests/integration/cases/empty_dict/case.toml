@@ -29,3 +29,6 @@ axis = "annotation_evaluation"
 [[variants]]
 axis = "json_rendering"
 suffix = "_empty"
+
+[[variants]]
+axis = "native_record"

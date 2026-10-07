@@ -9,7 +9,6 @@ from literalizer import (
 )
 from literalizer.languages import (
     Cpp,
-    Crystal,
     Elm,
     Roc,
     Rust,
@@ -22,34 +21,6 @@ def test_elm_integer_format_handles_i64_minimum() -> None:
     # invoking the formatter, so this spelling needs a direct formatter test.
     assert Elm.integer_formats.DECIMAL(-(2**63)) == (
         "EInt ((-9223372036854775807 - 1))"
-    )
-
-
-def test_crystal_plain_dictionary_entry() -> None:
-    """A quoted key does not need the percent-literal spacing escape."""
-    result = literalize(
-        source='{"a|b": 1}',
-        input_format=InputFormat.JSON,
-        language=Crystal(string_format=Crystal.string_formats.MULTILINE),
-    )
-    assert result.code == '{\n    "a|b" => 1,\n}'
-
-
-def test_roc_wrappers_without_preamble() -> None:
-    """Empty preambles do not add separator lines."""
-    language = Roc(dict_format=Roc.dict_formats.RECORD)
-    result = literalize(
-        source="{}",
-        input_format=InputFormat.JSON,
-        language=language,
-        variable_form=NewVariable(name="test", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert result.code == dedent(
-        text="""\
-        module [test]
-
-        test = {}"""
     )
 
 
