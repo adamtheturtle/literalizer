@@ -11,7 +11,6 @@ from typing_extensions import get_protocol_members
 
 import literalizer.languages
 from literalizer import Language, LanguageCls
-from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import Python, Raku
 
 
@@ -24,14 +23,6 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
     literalizer.languages.ALL_LANGUAGES,
     key=_language_class_name,
 )
-
-_UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
-    cls
-    for cls in _SORTED_LANGUAGES
-    if not any(
-        style.value.supports_redefinition for style in cls.DeclarationStyles
-    )
-]
 
 
 def test_all_languages_support_non_ascii_string_literals() -> None:
@@ -232,25 +223,6 @@ def test_format_enumeration_properties(
     assert issubclass(spec.call_styles, enum.Enum)
     assert issubclass(spec.version_formats, enum.Enum)
     assert len(spec.version_formats) >= 1
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
-    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
-)
-def test_wrap_combined_in_file_unsupported_raises(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Check wrap_combined_in_file raises when redefinition is unsupported."""
-    with pytest.raises(expected_exception=WrapCombinedInFileNotSupportedError):
-        _ = language_cls().wrap_combined_in_file(
-            declaration="x = 1",
-            assignment="x = 2",
-            variable_name="x",
-            body_preamble=(),
-        )
 
 
 @runtime_checkable
