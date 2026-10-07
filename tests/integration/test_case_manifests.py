@@ -689,17 +689,22 @@ def test_variant_axis_lookup_finds_no_case_for_an_unused_axis(
         ("both", literalizer.BothVariableForms),
     ],
 )
+@pytest.mark.parametrize(
+    argnames="variable_name", argvalues=["my_data", "custom_name"]
+)
 def test_variable_form_for_context(
     name: VariableFormName,
     expected_type: type[literalizer.VariableForm],
+    variable_name: str,
 ) -> None:
     """Every manifest variable form maps to its public API
     representation.
     """
     variable_form = variable_form_for_context(
-        context=RenderContext(variable_form=name)
+        context=RenderContext(variable_form=name, variable_name=variable_name)
     )
     assert isinstance(variable_form, expected_type)
+    assert variable_form.name == variable_name
 
 
 def test_duplicate_golden_target_is_actionable() -> None:

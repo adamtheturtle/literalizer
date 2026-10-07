@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Erlang"]
+languages_reason = "Erlang capitalizes variable names, so a lowercase keyword remains a valid variable."
+suites = ["base"]
+
+[base_context]
+variable_name = "if"

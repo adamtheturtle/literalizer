@@ -278,6 +278,7 @@ class RenderContext(  # noqa: NOD001
     """Simple render arguments declared by a case rather than a runner."""
 
     variable_form: VariableFormName = "new"
+    variable_name: str = "my_data"
     collection_layout: CollectionLayoutName | None = None
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
     record_null_substitutions: Mapping[str, ValueInput] | None = None
@@ -761,10 +762,11 @@ def manifest_admits_language(
 def variable_form_for_context(
     *, context: RenderContext
 ) -> literalizer.VariableForm:
-    """Translate a validated manifest variable-form name to the API
-    type.
-    """
-    return _VARIABLE_FORMS_BY_NAME[context.variable_form]
+    """Build the API variable form with the manifest's declared name."""
+    return dataclasses.replace(
+        _VARIABLE_FORMS_BY_NAME[context.variable_form],
+        name=context.variable_name,
+    )
 
 
 def _fail(*, path: Path, message: str) -> CaseManifestError:
