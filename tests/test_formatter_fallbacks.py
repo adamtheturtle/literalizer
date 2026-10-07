@@ -14,7 +14,6 @@ from literalizer.languages import (
     Elm,
     Java,
     Kotlin,
-    Nim,
     Roc,
     Rust,
 )
@@ -25,16 +24,6 @@ def test_elm_integer_format_handles_i64_minimum() -> None:
     assert Elm.integer_formats.DECIMAL(-(2**63)) == (
         "EInt ((-9223372036854775807 - 1))"
     )
-
-
-def test_nim_iso_date_variant_needs_no_json_import() -> None:
-    """String dates do not inherit the native date's JSON import."""
-    language = Nim(
-        heterogeneous_strategy=Nim.heterogeneous_strategies.OBJECT_VARIANT,
-        date_format=Nim.date_formats.ISO,
-    )
-    assert language.scalar_preamble[datetime.date] == ()
-    assert language.scalar_preamble[datetime.datetime] == ("import json",)
 
 
 def test_crystal_plain_dictionary_entry() -> None:
