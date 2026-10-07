@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+
+[ref.value_sources]
+integer_value = "1"

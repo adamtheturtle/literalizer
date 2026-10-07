@@ -2,33 +2,13 @@
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize, literalize_call
+from literalizer import InputFormat, literalize, literalize_call
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     UnrepresentableInputError,
     UnrepresentableIntegerError,
 )
 from literalizer.languages import PureScript
-
-
-def test_record_mode_preserves_tagged_default() -> None:
-    """The native option does not alter the default ``Val`` output."""
-    source = '{"name": "Ada", "active": true, "scores": [1, 2, 3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=PureScript()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=PureScript(dict_format=PureScript.dict_formats.RECORD),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "PDict" in default.code
-    assert "data Val" not in native.code
-    assert 'name: "Ada"' in native.code
-    assert "active: true" in native.code
-    assert "scores: [" in native.code
 
 
 @pytest.mark.parametrize(
@@ -84,16 +64,6 @@ def test_record_mode_rejects_mixed_scalar_array() -> None:
             input_format=InputFormat.JSON,
             language=PureScript(dict_format=PureScript.dict_formats.RECORD),
         )
-
-
-def test_record_mode_nested_array_fields() -> None:
-    """Sibling records with matching array field types infer one row."""
-    result = literalize(
-        source='[{"scores": [1, 2]}, {"scores": [3, 4]}]',
-        input_format=InputFormat.JSON,
-        language=PureScript(dict_format=PureScript.dict_formats.RECORD),
-    )
-    assert result.code.find("scores: [") != result.code.rfind("scores: [")
 
 
 def test_record_mode_boolean_fields_in_record_array() -> None:

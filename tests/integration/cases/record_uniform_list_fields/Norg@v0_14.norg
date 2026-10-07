@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    {"scores": [1, 2]},
+    {"scores": [3, 4]}
+]
+@end

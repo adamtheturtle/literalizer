@@ -5,7 +5,6 @@ import pytest
 from literalizer import (
     BothVariableForms,
     InputFormat,
-    NewVariable,
     literalize,
     literalize_call,
 )
@@ -14,27 +13,6 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 from literalizer.languages import FSharp
-
-
-def test_anonymous_record_mode_preserves_tagged_default() -> None:
-    """The opt-in form must not change the existing default output."""
-    source = '{"name": "Ada", "active": true, "scores": [1, 2, 3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=FSharp()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=FSharp(dict_format=FSharp.dict_formats.ANONYMOUS_RECORD),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "FMap" in default.code
-    assert "type Val =" not in native.code
-    assert 'name = "Ada"' in native.code
-    assert "active = true" in native.code
-    assert "scores = [" in native.code
-    assert "1L" in native.code
 
 
 @pytest.mark.parametrize(
@@ -88,16 +66,6 @@ def test_anonymous_record_mode_rejects_mixed_scalar_list() -> None:
             input_format=InputFormat.JSON,
             language=FSharp(dict_format=FSharp.dict_formats.ANONYMOUS_RECORD),
         )
-
-
-def test_anonymous_record_mode_nested_list_fields() -> None:
-    """Lists inside sibling records have the same inferred field type."""
-    result = literalize(
-        source='[{"scores": [1, 2]}, {"scores": [3, 4]}]',
-        input_format=InputFormat.JSON,
-        language=FSharp(dict_format=FSharp.dict_formats.ANONYMOUS_RECORD),
-    )
-    assert result.code.find("scores = [") != result.code.rfind("scores = [")
 
 
 def test_anonymous_record_mode_formats_epoch_datetime() -> None:

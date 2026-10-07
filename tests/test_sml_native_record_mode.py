@@ -5,7 +5,6 @@ import pytest
 from literalizer import (
     InputFormat,
     Language,
-    NewVariable,
     literalize,
     literalize_call,
 )
@@ -16,27 +15,6 @@ from literalizer.languages import Sml
 def _record_spec() -> Language:
     """Return an SML specification using native records."""
     return Sml(dict_format=Sml.dict_formats.RECORD)
-
-
-def test_record_mode_preserves_tagged_default() -> None:
-    """Opting in does not change the existing tagged representation."""
-    source = '{"name":"Ada","active":true,"scores":[1,2,3]}'
-    default = literalize(
-        source=source, input_format=InputFormat.JSON, language=Sml()
-    )
-    native = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "SMap" in default.code
-    assert "datatype val_t" not in native.code
-    assert 'name = "Ada"' in native.code
-    assert "active = true" in native.code
-    assert "scores = [" in native.code
-    assert "val my_data = {" in native.code
 
 
 @pytest.mark.parametrize(
@@ -67,29 +45,6 @@ def test_record_mode_rejects_unsupported_input(
             input_format=input_format,
             language=_record_spec(),
         )
-
-
-def test_record_mode_nested_records_and_lists() -> None:
-    """Nested records and uniform sibling record lists remain native."""
-    result = literalize(
-        source='{"owner":{"name":"Ada"},"members":[{"score":1.5},{"score":2.5}]}',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-    )
-    assert "owner = {" in result.code
-    assert "score = 1.5" in result.code
-    assert "score = 2.5" in result.code
-    assert "SMap" not in result.code
-
-
-def test_record_mode_uniform_nested_list_fields() -> None:
-    """Sibling records with list fields share a concrete element type."""
-    result = literalize(
-        source='[{"scores":[1,2]},{"scores":[3,4]}]',
-        input_format=InputFormat.JSON,
-        language=_record_spec(),
-    )
-    assert "scores = [" in result.code
 
 
 def test_record_mode_rejects_mismatched_nested_list_fields() -> None:
