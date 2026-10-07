@@ -12,3 +12,6 @@ axis = "heterogeneous_value_union_name"
 
 [[variants]]
 axis = "heterogeneous_value_variant_name"
+
+[[variants]]
+axis = "cpp14_heterogeneous_strategy_tuple"

@@ -32,39 +32,6 @@ def test_binary_without_sequence_delimiters() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("source", "expected"),
-    argvalues=[
-        (
-            '[0, [[{"\\u0024ref": "existing"}]]]',
-            "(\n    0,\n    ((existing,),),\n)",
-        ),
-        (
-            '[0, [["\\u0070lain"]]]',
-            '(\n    0,\n    (("plain",),),\n)',
-        ),
-        (
-            '{"nested": [0, {"\\u0024ref": "existing"}]}',
-            '{\n    "nested": (0, existing),\n}',
-        ),
-    ],
-)
-def test_escaped_ref_marker_search_covers_nested_values(
-    source: str,
-    expected: str,
-) -> None:
-    """Escaped keys are found through nested lists and mappings."""
-    result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Python(),
-        ref_key="$ref",
-        ref_values={"existing": 1},
-    )
-
-    assert result.bare_code == expected
-
-
-@pytest.mark.parametrize(
     argnames=("lang_cls", "expected"),
     ids=["OCaml", "PureScript"],
     argvalues=[

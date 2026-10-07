@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Python"]
+languages_reason = "Python list-form record fields need list annotations without tuple ellipses."
+
+[[variants]]
+axis = "record_list_sequence"
