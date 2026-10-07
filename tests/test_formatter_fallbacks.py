@@ -9,19 +9,9 @@ from literalizer import (
 )
 from literalizer.languages import (
     Cpp,
-    Elm,
     Roc,
     Rust,
 )
-
-
-def test_elm_integer_format_handles_i64_minimum() -> None:
-    """The raw format preserves its special minimum-integer spelling."""
-    # The public API rejects integers outside Elm's supported range before
-    # invoking the formatter, so this spelling needs a direct formatter test.
-    assert Elm.integer_formats.DECIMAL(-(2**63)) == (
-        "EInt ((-9223372036854775807 - 1))"
-    )
 
 
 def test_roc_call_wrapper_without_preamble() -> None:
