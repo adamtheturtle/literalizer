@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void process(CVal _a0, CVal _a1, CVal _a2, CVal _a3) { (void)_a0; (void)_a1; (void)_a2; (void)_a3; }
+static void process(CVal _a0, CVal _a1, CVal _a2, CVal _a3) { (void)_a0, (void)_a1, (void)_a2, (void)_a3; }
 int main(void) {
 process(((CVal){.i = 1}), ((CVal){.i = 2}), ((CVal){.i = 3}), ((CVal){.i = 4}));
 process(((CVal){.i = 5}), ((CVal){.i = 6}), ((CVal){.i = 7}), ((CVal){.i = 8}));
