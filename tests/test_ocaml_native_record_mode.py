@@ -57,6 +57,11 @@ def test_record_mode_preserves_generic_default() -> None:
         ("{}", InputFormat.JSON, "empty records"),
         ('{"x":null}', InputFormat.JSON, "NoneType"),
         ('{"x":[]}', InputFormat.JSON, "empty list"),
+        (
+            '{"x":[[{"y":1}]]}',
+            InputFormat.JSON,
+            "^OCaml record mode cannot type dict$",
+        ),
         ("--- !!omap\n- a: 1\n", InputFormat.YAML, "ordered maps"),
         ("--- !!set\na:\n", InputFormat.YAML, "set"),
     ],
