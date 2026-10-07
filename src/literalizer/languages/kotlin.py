@@ -1705,13 +1705,13 @@ class Kotlin(metaclass=LanguageCls):
     # `scripts/lint-kotlin.main.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
+    skip_null_dict_values: bool = False
 
     null_literal: ClassVar[str] = "null"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
-    skip_null_dict_values: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
     static_body_preamble: ClassVar[Sequence[str]] = ()

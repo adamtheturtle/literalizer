@@ -1083,13 +1083,13 @@ class Go(metaclass=LanguageCls):
     # `.github/workflows/lint.yml`.
     language_version: VersionFormats = VersionFormats.V1_18
     indent: str = "\t"
+    skip_null_dict_values: bool = False
 
     null_literal: ClassVar[str] = "nil"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
-    skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True

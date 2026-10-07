@@ -37,6 +37,26 @@ Create an instance with its defaults, or override individual format options:
        ),
    )
 
+Filtering null dictionary values
+--------------------------------
+
+C#, Dart, Go, Kotlin, and Scala accept ``skip_null_dict_values=True`` to omit dictionary entries whose value is ``null``.
+The default is ``False``, which preserves those entries.
+This option also applies to nested dictionaries, but preserves ``null`` values in sequences and at the top level.
+
+.. code-block:: python
+
+   """Omit null dictionary entries when rendering Go."""
+
+   from literalizer import InputFormat, literalize
+   from literalizer.languages import Go
+
+   result = literalize(
+       source='{"keep": 1, "omit": null}',
+       input_format=InputFormat.JSON,
+       language=Go(skip_null_dict_values=True),
+   )
+
 Format options
 --------------
 

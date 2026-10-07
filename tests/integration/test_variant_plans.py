@@ -16,7 +16,6 @@ from .variant_cases import (
     check_axis_coverage,
     variants_for_axis,
 )
-from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
 from .variant_plans import (
     AxisPlanError,
     declared_axis_names,
@@ -25,11 +24,6 @@ from .variant_plans import (
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
-
-# The axes that resolve to a typed Python builder instead of a declared
-# plan.  This list may shrink, never grow: a new axis belongs in
-# ``axes.toml``.
-_EXPECTED_ESCAPE_HATCH_AXES = frozenset({"typed_dict_null_filtering"})
 
 _VALID_AXIS = """
 schema_version = 1
@@ -124,19 +118,12 @@ def _write_registry(*, tmp_path: Path, contents: str) -> Path:
     return path
 
 
-def test_escape_hatch_set_does_not_grow() -> None:
-    """The irregular tail stays exactly as small as it is today."""
-    assert ESCAPE_HATCH_VARIANT_AXES == _EXPECTED_ESCAPE_HATCH_AXES
-
-
 def test_every_axis_resolves_to_exactly_one_expansion() -> None:
-    """Each expandable axis has one plan or one escape-hatch builder."""
+    """Each expandable axis has a declared plan."""
     declared = declared_axis_names()
 
-    assert declared & ESCAPE_HATCH_VARIANT_AXES == frozenset()
-    assert declared | ESCAPE_HATCH_VARIANT_AXES == (
-        KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
-    )
+    assert declared & SPECIAL_VARIANT_AXES == frozenset()
+    assert declared == KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
 
 
 def test_special_axes_are_declared() -> None:
@@ -372,7 +359,7 @@ def test_sole_member_template_drops_a_pointless_format_name() -> None:
 
 
 def test_unknown_axis_is_actionable() -> None:
-    """An axis with no plan and no builder names both options."""
+    """An axis with no declared plan names the missing axis."""
     with pytest.raises(
         expected_exception=AxisPlanError,
         match="no plan declared for variant axis 'mystery'",
@@ -603,35 +590,15 @@ def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
         _ = load_axis_registry(path=path)
 
 
-@pytest.mark.parametrize(
-    argnames=("declared", "escape_hatch", "special", "message"),
-    argvalues=[
-        (
-            frozenset({"date", "json_type"}),
-            frozenset({"json_type"}),
-            frozenset[str](),
-            "both declared in axes.toml and registered",
-        ),
-        (
-            frozenset({"date"}),
-            frozenset({"json_type"}),
-            frozenset({"date"}),
-            r"also expand as ordinary ones: \['date'\]",
-        ),
-    ],
-)
-def test_axis_coverage_gaps_are_actionable(
-    declared: frozenset[str],
-    escape_hatch: frozenset[str],
-    special: frozenset[str],
-    message: str,
-) -> None:
+def test_axis_coverage_gaps_are_actionable() -> None:
     """An axis registered twice names what to do about it."""
-    with pytest.raises(expected_exception=CaseManifestError, match=message):
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match=r"also expand as ordinary ones: \['date'\]",
+    ):
         check_axis_coverage(
-            declared=declared,
-            escape_hatch=escape_hatch,
-            special=special,
+            declared=frozenset({"date"}),
+            special=frozenset({"date"}),
         )
 
 

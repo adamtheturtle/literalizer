@@ -3,13 +3,11 @@ schema_version = 1
 # Declared variant axes.  Each entry under ``axes`` names one typed
 # expansion plan from ``variant_plans.py`` and supplies that plan's
 # parameters.  This file selects and parameterizes plans; it never
-# expresses a condition.  Axes whose expansion is genuinely irregular
-# stay as registered escape-hatch builders in
-# ``variant_escape_hatches.py``; a ``filtered`` plan narrows one of
-# those, or another declared axis, to the languages its gates admit.
+# expresses a condition.  A ``filtered`` plan narrows another declared
+# axis to the languages its gates admit.
 #
-# Between the two tables here and those builders, every axis name the
-# suite knows is registered exactly once.
+# Between the two tables here, every axis name the suite knows is
+# registered exactly once.
 
 # Axes a case manifest may name that do not expand to a list of
 # variants at all.  Each names an input whose cases are assembled with
@@ -1112,6 +1110,12 @@ secondaries = [
   { tag = "set", option = "set_format" },
   { tag = "nls", option = "numeric_literal_suffix" },
 ]
+
+[axes.typed_dict_null_filtering]
+plan = "fixed_overrides"
+name_template = "{lang}_skip_null_dict_values"
+gates = [{ kind = "capability_flag", flag = "supports_typed_dict_open" }]
+overrides = [{ kind = "true_flag", kwarg = "skip_null_dict_values" }]
 
 [axes.type_name]
 plan = "fixed_overrides"

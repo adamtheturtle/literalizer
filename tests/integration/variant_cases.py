@@ -5,8 +5,7 @@ non-default formatter spec; each :class:`VariantCase` pairs a variant
 with one of the input case directories under ``tests/integration/cases``.
 
 Axes declare their expansion in ``axes.toml`` and are built by the
-typed plans in :mod:`variant_plans`, bar the one registered as an
-escape-hatch builder in :mod:`variant_escape_hatches`.  What remains
+typed plans in :mod:`variant_plans`.  What remains
 here is the assembly of variants and manifest inputs into cases.
 """
 
@@ -35,10 +34,6 @@ from .language_specs import (
     sorted_languages,
 )
 from .variant_axis_names import SPECIAL_VARIANT_AXES
-from .variant_escape_hatches import (
-    ESCAPE_HATCH_VARIANT_AXES,
-    escape_hatch_variants,
-)
 from .variant_metadata_builders import build_modifier_variant_cases
 from .variant_plans import (
     declared_axis_names,
@@ -239,24 +234,16 @@ def build_multiline_string_context_cases(
 def check_axis_coverage(
     *,
     declared: frozenset[str],
-    escape_hatch: frozenset[str],
     special: frozenset[str],
 ) -> None:
     """Fail when an axis resolves to more than one expansion.
 
     Every axis name the case manifests may use comes from exactly one of
-    the three registries, so an axis registered twice would silently
+    the two registries, so an axis registered twice would silently
     expand through whichever one :func:`variants_for_axis` consults
     first.
     """
-    both = sorted(declared & escape_hatch)
-    if len(both) > 0:
-        msg = (
-            "variant axes are both declared in axes.toml and registered as "
-            f"escape-hatch builders: {both}"
-        )
-        raise CaseManifestError(msg)
-    contextual = sorted(special & (declared | escape_hatch))
+    contextual = sorted(special & declared)
     if len(contextual) > 0:
         msg = (
             "variant axes are declared as special axes in axes.toml and also "
@@ -267,7 +254,6 @@ def check_axis_coverage(
 
 check_axis_coverage(
     declared=declared_axis_names(),
-    escape_hatch=ESCAPE_HATCH_VARIANT_AXES,
     special=SPECIAL_VARIANT_AXES,
 )
 
@@ -276,13 +262,9 @@ check_axis_coverage(
 def variants_for_axis(*, axis_key: str) -> list[Variant]:
     """Return the variants for an axis key.
 
-    Most axes name a typed plan in ``axes.toml``; the irregular tail
-    dispatches to its registered escape-hatch builder.  A declared plan
-    that narrows another axis resolves its base through here too, so a
-    narrowing may sit over either kind of expansion.
+    Each axis names a typed plan in ``axes.toml``.  A declared plan
+    that narrows another axis resolves its base through here too.
     """
-    if axis_key in ESCAPE_HATCH_VARIANT_AXES:
-        return escape_hatch_variants(axis_key=axis_key)
     return variants_for_declared_axis(
         axis_key=axis_key,
         resolve_axis=variants_for_axis,
