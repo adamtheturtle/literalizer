@@ -6,6 +6,7 @@ one.
 """
 
 import datetime
+from textwrap import dedent
 
 import pytest
 
@@ -53,4 +54,10 @@ def test_aware_time_allowed_when_string_formatter_preserves_offset() -> None:
         wrap_in_file=True,
     )
 
-    assert '"12:30:15+02:00"' in result.code
+    assert result.code == dedent(
+        text="""\
+        value = "12:30:15+02:00"
+        out = {
+            "x" = value,
+        }"""
+    )

@@ -206,4 +206,4 @@ def test_generated_record_name_is_valid_without_record_strategy() -> None:
         wrap_in_file=True,
     )
 
-    assert "let Record0 = 1" in result.code
+    assert result.code == "let Record0 = 1"

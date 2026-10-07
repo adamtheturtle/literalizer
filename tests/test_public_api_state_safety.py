@@ -7,6 +7,7 @@ from several threads at once, which a case file cannot declare
 
 import datetime
 from concurrent.futures import ThreadPoolExecutor
+from textwrap import dedent
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Python, Rust
@@ -23,7 +24,12 @@ def test_time_key_in_public_substitution_uses_time_formatter() -> None:
         },
     )
 
-    assert "datetime.time(hour=1, minute=2, second=3): 1" in result.bare_code
+    assert result.bare_code == dedent(
+        text="""\
+        {
+            "value": {datetime.time(hour=1, minute=2, second=3): 1},
+        }"""
+    )
 
 
 def test_yaml_parsing_is_thread_safe() -> None:

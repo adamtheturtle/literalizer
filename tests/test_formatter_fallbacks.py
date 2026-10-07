@@ -1,6 +1,7 @@
 """Formatter contracts for combinations outside the golden corpus."""
 
 import datetime
+from textwrap import dedent
 
 from literalizer import (
     InputFormat,
@@ -55,17 +56,23 @@ def test_kotlin_unresolved_record_list_opener() -> None:
 def test_roc_wrappers_without_preamble() -> None:
     """Empty preambles do not add separator lines."""
     language = Roc()
-    assert (
-        language.wrap_in_file(
-            content="test", variable_name="test", body_preamble=()
-        )
-        == "module [test]\n\ntest"
+    assert language.wrap_in_file(
+        content="test", variable_name="test", body_preamble=()
+    ) == dedent(
+        text="""\
+        module [test]
+
+        test"""
     )
-    assert (
-        language.wrap_calls_with_declarations(
-            declarations=(), calls="call", body_preamble=()
-        )
-        == "module [main]\n\nmain =\n    dbg (call)\n    {}"
+    assert language.wrap_calls_with_declarations(
+        declarations=(), calls="call", body_preamble=()
+    ) == dedent(
+        text="""\
+        module [main]
+
+        main =
+            dbg (call)
+            {}"""
     )
 
 

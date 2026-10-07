@@ -7,6 +7,7 @@ single form these modifiers were made for.
 """
 
 import enum
+from textwrap import dedent
 
 import pytest
 
@@ -21,16 +22,72 @@ from literalizer.languages import Cpp, CSharp, Java
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "modifier"),
+    argnames=("language", "modifier", "expected"),
     argvalues=[
-        pytest.param(Cpp(), Cpp.modifiers.STATIC, id="cpp"),
-        pytest.param(Java(), Java.modifiers.STATIC, id="java"),
-        pytest.param(CSharp(), CSharp.modifiers.STATIC, id="csharp"),
+        pytest.param(
+            Cpp(),
+            Cpp.modifiers.STATIC,
+            dedent(
+                text="""\
+                #include <initializer_list>
+                #include <vector>
+                int Module() {
+                static auto my_val = std::vector<int>{
+                    1,
+                    2,
+                };
+                (void)my_val;
+                my_val = std::vector<int>{
+                    1,
+                    2,
+                };
+                    (void)my_val;
+                    return 0;
+                }"""
+            ),
+            id="cpp",
+        ),
+        pytest.param(
+            Java(),
+            Java.modifiers.STATIC,
+            dedent(
+                text="""\
+                class Module {
+                static int[] my_val = new int[]{
+                    1,
+                    2
+                };
+                my_val = new int[]{
+                    1,
+                    2
+                };
+                }"""
+            ),
+            id="java",
+        ),
+        pytest.param(
+            CSharp(),
+            CSharp.modifiers.STATIC,
+            dedent(
+                text="""\
+                using System;
+                static int[] my_val = (
+                    1,
+                    2
+                );
+                my_val = (
+                    1,
+                    2
+                );"""
+            ),
+            id="csharp",
+        ),
     ],
 )
 def test_rebindable_modifier_accepted(
     language: Language,
     modifier: enum.Enum,
+    expected: str,
 ) -> None:
     """``static`` names a storage class, not a once-only binding."""
     result = literalize(
@@ -43,19 +100,52 @@ def test_rebindable_modifier_accepted(
         ),
         wrap_in_file=True,
     )
-    assert "static" in result.code
+    assert result.code == expected
 
 
 @pytest.mark.parametrize(
-    argnames=("language", "modifier"),
+    argnames=("language", "modifier", "expected"),
     argvalues=[
-        pytest.param(Cpp(), Cpp.modifiers.CONST, id="cpp-const"),
-        pytest.param(Java(), Java.modifiers.FINAL, id="java-final"),
+        pytest.param(
+            Cpp(),
+            Cpp.modifiers.CONST,
+            dedent(
+                text="""\
+                #include <initializer_list>
+                #include <vector>
+                int Module() {
+                const auto my_val = std::vector<int>{
+                    1,
+                    2,
+                };
+                    (void)my_val;
+                    return 0;
+                }"""
+            ),
+            id="cpp-const",
+        ),
+        pytest.param(
+            Java(),
+            Java.modifiers.FINAL,
+            dedent(
+                text="""\
+                class Module {
+                    public static void module() {
+                final int[] my_val = new int[]{
+                    1,
+                    2
+                };
+                    }
+                }"""
+            ),
+            id="java-final",
+        ),
     ],
 )
 def test_immutable_modifier_accepted_for_one_form(
     language: Language,
     modifier: enum.Enum,
+    expected: str,
 ) -> None:
     """A single declaration is where such a modifier belongs."""
     result = literalize(
@@ -68,6 +158,4 @@ def test_immutable_modifier_accepted_for_one_form(
         ),
         wrap_in_file=True,
     )
-    modifier_value: object = modifier.value
-    assert isinstance(modifier_value, str)
-    assert modifier_value in result.code
+    assert result.code == expected

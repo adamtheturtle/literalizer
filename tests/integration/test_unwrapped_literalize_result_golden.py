@@ -1,6 +1,7 @@
 """Golden coverage for unwrapped :class:`LiteralizeResult` prefixes."""
 
 from pathlib import Path
+from textwrap import dedent
 from typing import Literal
 
 import pytest
@@ -26,7 +27,6 @@ from .language_specs import make_golden_path
 
 _GOLDEN_DIR = Path(__file__).parent / "unwrapped_literalize_results"
 _LANGUAGES = (Elm, FSharp, Haskell, PureScript)
-_RECORD_LANGUAGES = (Cpp, Go, Java, Kotlin, Rust, Scala)
 
 
 @pytest.mark.parametrize(
@@ -72,13 +72,74 @@ def test_unwrapped_literalize_result_golden(
 
 
 @pytest.mark.parametrize(
-    argnames="lang_cls",
-    argvalues=_RECORD_LANGUAGES,
-    ids=[lang_cls.__name__ for lang_cls in _RECORD_LANGUAGES],
+    argnames=("lang_cls", "expected_code"),
+    argvalues=[
+        pytest.param(
+            Cpp,
+            dedent(
+                text="""\
+                Record0{
+                    .a = 1,
+                    .b = "x",
+                }"""
+            ),
+            id="Cpp",
+        ),
+        pytest.param(
+            Go,
+            'Record0{\n\tA: 1,\n\tB: "x",\n}',
+            id="Go",
+        ),
+        pytest.param(
+            Java,
+            dedent(
+                text="""\
+                new Record0(
+                    1,
+                    "x"
+                )"""
+            ),
+            id="Java",
+        ),
+        pytest.param(
+            Kotlin,
+            dedent(
+                text="""\
+                Record0(
+                    a = 1,
+                    b = "x",
+                )"""
+            ),
+            id="Kotlin",
+        ),
+        pytest.param(
+            Rust,
+            dedent(
+                text="""\
+                Record0 {
+                    a: 1,
+                    b: "x",
+                }"""
+            ),
+            id="Rust",
+        ),
+        pytest.param(
+            Scala,
+            dedent(
+                text="""\
+                Record0(
+                    a = 1,
+                    b = "x",
+                )"""
+            ),
+            id="Scala",
+        ),
+    ],
 )
 def test_unwrapped_record_preamble_golden(
     *,
     lang_cls: literalizer.LanguageCls,
+    expected_code: str,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Pin where ``RECORD`` declarations land on unwrapped results.
@@ -101,7 +162,7 @@ def test_unwrapped_record_preamble_golden(
     )
     assert len(result.preamble) > 0
     assert len(result.body_preamble) == 0
-    assert not any(entry in result.code for entry in result.preamble)
+    assert result.code == expected_code
     check_golden(
         contents="\n".join((*result.preamble, result.code)) + "\n",
         extension=spec.extension,
