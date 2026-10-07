@@ -296,11 +296,6 @@ def _objc_format_call_target(parts: Sequence[str], /) -> str:
     return ".".join((_objc_global_root(parts[0]), *parts[1:]))
 
 
-# Maximum parameter count of any existing call case; stubs above this
-# get a ``// NOLINTNEXTLINE`` for ``bugprone-easily-swappable-parameters``.
-_SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
-
-
 @beartype
 def _objc_call_stub(
     parts: Sequence[str],
@@ -339,25 +334,17 @@ def _objc_call_stub(
         proto = ", ".join(["id"] * len(params))
     stub_params = ", ".join(f"id _a{i}" for i in range(len(params)))
     stub_signature = _stub_parameter_signature(parameters=stub_params)
-    discards = "".join(f" (void)_a{i};" for i in range(len(params)))
+    # Discard the parameters together: the stub treats every argument alike.
+    discards = ""
+    if len(params) > 0:
+        expressions = ", ".join(f"(void)_a{i}" for i in range(len(params)))
+        discards = f" {expressions};"
     has_body = discards != "" or is_value
     stub_body = "{}"
     if has_body:
         stub_body = f"{{{discards}{return_stmt} }}"
-    # Long uniform-typed parameter lists trip clang-tidy's
-    # ``bugprone-easily-swappable-parameters`` check past its
-    # name-suffix-dissimilarity silencing heuristic.  The stub is
-    # generated, so the warning is not actionable.  Suppress it on
-    # stubs whose parameter count exceeds anything the existing call
-    # cases use, to avoid touching shorter-stub golden files.
-    nolint: tuple[str, ...]
-    if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD:
-        nolint = ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
-    else:
-        nolint = ()
     if len(parts) == 1:
         return (
-            *nolint,
             (
                 f"static {return_keyword} {parts[0]}({stub_signature}) "
                 f"{stub_body}"
@@ -370,7 +357,6 @@ def _objc_call_stub(
     if len(fields) == 0:
         type_name = f"{root}Type_"
         return (
-            *nolint,
             f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
             (
                 f"struct {type_name} "
@@ -382,7 +368,6 @@ def _objc_call_stub(
             ),
         )
     lines: list[str] = [
-        *nolint,
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"

@@ -14,7 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void process(CVal _a0, CVal _a1) { (void)_a0; (void)_a1; }
+static void process(CVal _a0, CVal _a1) { (void)_a0, (void)_a1; }
 int main(void) {
 CVal my_int = ((CVal){.i = 1});
 CVal my_bool = ((CVal){.b = true});

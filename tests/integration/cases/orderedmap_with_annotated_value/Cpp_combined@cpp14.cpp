@@ -17,7 +17,7 @@ struct Value {
   template <typename T> struct TypedHolder : Holder {
     explicit TypedHolder(T value) : value_(std::move(value)) {}
     T& get() { return value_; }
-    const T& get() const { return value_; } // NOLINT(modernize-use-nodiscard)
+    const T& get() const { return value_; }
    private:
     T value_;
   }; // TypedHolder
@@ -31,7 +31,7 @@ struct Value {
  public:
   Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
   template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
-  template <typename T> bool is() const { // NOLINT(modernize-use-nodiscard)
+  template <typename T> bool is() const {
     return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
   }
   template <typename T> T& get() {

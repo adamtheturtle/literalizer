@@ -551,11 +551,6 @@ def _c_record_literal(
     )
 
 
-# Maximum parameter count of any existing call case; stubs above this
-# get a ``// NOLINTNEXTLINE`` for ``bugprone-easily-swappable-parameters``.
-_SWAPPABLE_PARAMS_NOLINT_THRESHOLD = 4
-
-
 @beartype
 def _c_stub_param(value_type: str, ident: str, /) -> str:
     """Return a stub parameter declaration, abutting a pointer ``*``.
@@ -613,26 +608,18 @@ def _c_call_stub(
         _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
     )
     stub_signature = _stub_parameter_signature(parameters=stub_params)
-    discards = "".join(f" (void)_a{i};" for i in range(len(params)))
+    # Discard the parameters together: the stub treats every argument alike.
+    discards = ""
+    if len(params) > 0:
+        expressions = ", ".join(f"(void)_a{i}" for i in range(len(params)))
+        discards = f" {expressions};"
     has_body = discards != "" or is_value
     stub_body = "{}"
     if has_body:
         stub_body = f"{{{discards}{return_stmt} }}"
-    # Long uniform-typed parameter lists trip clang-tidy's
-    # ``bugprone-easily-swappable-parameters`` check past its
-    # name-suffix-dissimilarity silencing heuristic.  The stub is
-    # generated, so the warning is not actionable.  Suppress it on
-    # stubs whose parameter count exceeds anything the existing call
-    # cases use, to avoid touching shorter-stub golden files.
-    nolint: tuple[str, ...]
-    if len(params) > _SWAPPABLE_PARAMS_NOLINT_THRESHOLD:
-        nolint = ("// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)",)
-    else:
-        nolint = ()
     match parts:
         case [single]:
             return (
-                *nolint,
                 (
                     f"static {return_keyword} {single}({stub_signature}) "
                     f"{stub_body}"
@@ -642,7 +629,6 @@ def _c_call_stub(
             stub_fn = f"{root}_{method}_stub_"
             type_name = f"{root}Type_"
             return (
-                *nolint,
                 (
                     f"static {return_keyword} {stub_fn}({stub_signature}) "
                     f"{stub_body}"
@@ -663,7 +649,6 @@ def _c_call_stub(
     fields = parts[1:-1]
     stub_fn = "_".join((*parts, "stub_"))
     lines: list[str] = [
-        *nolint,
         f"static {return_keyword} {stub_fn}({stub_signature}) {stub_body}",
     ]
     inner_type = f"{fields[-1]}Type_"
