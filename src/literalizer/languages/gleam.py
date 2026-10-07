@@ -1445,10 +1445,8 @@ class Gleam(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is int:
                 return "Int"
             return "String"
-        msg = (  # pragma: no cover
-            f"Gleam record mode cannot type {type(data).__name__}"
-        )
-        raise UnrepresentableInputError(msg)  # pragma: no cover
+        msg = f"Gleam record mode cannot type {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
 
     @cached_property
     def _native_record_strategy(self) -> ActiveRecordStrategy:

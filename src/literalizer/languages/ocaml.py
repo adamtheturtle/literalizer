@@ -1106,10 +1106,8 @@ class OCaml(metaclass=LanguageCls):
                 datetime.date: "(int * int * int)",
             }
             return date_types[self.date_format.value.type_produced]
-        msg = (  # pragma: no cover
-            f"OCaml record mode cannot type {type(data).__name__}"
-        )
-        raise UnrepresentableInputError(msg)  # pragma: no cover
+        msg = f"OCaml record mode cannot type {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
 
     @cached_property
     def _native_record_strategy(self) -> ActiveRecordStrategy:

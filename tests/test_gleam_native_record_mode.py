@@ -29,6 +29,11 @@ def _record_spec() -> Language:
         ("{}", InputFormat.JSON, "empty records"),
         ('{"x":null}', InputFormat.JSON, "NoneType"),
         ('{"x":[]}', InputFormat.JSON, "empty list"),
+        (
+            '{"x":[[{"y":1}]]}',
+            InputFormat.JSON,
+            "^Gleam record mode cannot type dict$",
+        ),
         ("--- !!omap\n- a: 1\n", InputFormat.YAML, "ordered maps"),
         ("--- !!set\na:\n", InputFormat.YAML, "set"),
     ],

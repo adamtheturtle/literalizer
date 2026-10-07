@@ -2429,10 +2429,8 @@ class Haskell(metaclass=LanguageCls):
                 datetime.date: "Day",
             }
             return date_types[self.date_format.value.type_produced]
-        msg = (  # pragma: no cover
-            f"Haskell record mode cannot type {type(data).__name__}"
-        )
-        raise UnrepresentableInputError(msg)  # pragma: no cover
+        msg = f"Haskell record mode cannot type {type(data).__name__}"
+        raise UnrepresentableInputError(msg)
 
     def _native_declared_type(self, data: Value) -> str:
         """Name the record type of a bound value or infer its scalar
