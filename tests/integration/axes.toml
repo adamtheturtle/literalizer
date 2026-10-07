@@ -154,6 +154,19 @@ name_template = "{lang}_declaration_style_{format}"
 option = "declaration_style"
 declaration_style_sequence_override = true
 
+# Static datetime declarations must infer a datetime type rather than a date.
+[axes.static_datetime_declaration]
+plan = "fixed_overrides"
+name_template = "{lang}_declaration_style_static"
+gates = [
+  { kind = "enum_member_present", option = "declaration_style", member = "STATIC" },
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+overrides = [
+  { kind = "enum_member", option = "declaration_style", member = "STATIC" },
+  { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
+]
+
 [axes.default_dict_key_type]
 plan = "fixed_overrides"
 name_template = "{lang}_default_dict_key_type"
@@ -1011,6 +1024,17 @@ overrides = [
 plan = "every_non_default_member"
 name_template = "{lang}_sequence_{format}"
 option = "sequence_format"
+
+# An interface carrier can represent a sequence containing only nulls.
+[axes.interface_null_sequence]
+plan = "fixed_overrides"
+name_template = "{lang}_heterogeneous_strategy_interface"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "INTERFACE" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "INTERFACE" },
+]
 
 # Nested tuple openers exercise tuple syntax specifically.  Restricting this
 # axis to languages that expose that member avoids asking unrelated ARRAY and

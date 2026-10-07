@@ -430,9 +430,13 @@ def build_variant_cases() -> list[VariantCase]:
         if entry.axis == "modifier_sequence_format"
     }
     cases.extend(
-        build_modifier_variant_cases(
+        case
+        for case in build_modifier_variant_cases(
             case_dir_names=modifier_inputs,
             sequence_case_dirs=modifier_sequence_inputs,
+        )
+        if selection_by_case[case.case_dir_name].admits_language(
+            lang_cls=case.variant.lang_cls,
         )
     )
 

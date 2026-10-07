@@ -2,6 +2,9 @@ schema_version = 1
 suites = ["base", "combined"]
 
 [[variants]]
+axis = "interface_null_sequence"
+
+[[variants]]
 axis = "typed_dict_null_filtering"
 
 [[variants]]
