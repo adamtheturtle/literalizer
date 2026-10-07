@@ -1,7 +1,5 @@
 """Dart mixed-numeric container validation."""
 
-from textwrap import dedent
-
 import pytest
 
 from literalizer import InputFormat, literalize
@@ -18,19 +16,3 @@ def test_dart_rejects_integer_too_large_to_convert_to_double() -> None:
             input_format=InputFormat.JSON,
             language=Dart(),
         )
-
-
-def test_dart_mixed_numeric_set_keeps_integer_identity() -> None:
-    """A set infers ``num`` and need not convert its integer to double."""
-    result = literalize(
-        source="!!set\n1.5: null\n9007199254740993: null\n",
-        input_format=InputFormat.YAML,
-        language=Dart(),
-    )
-    assert result.code == dedent(
-        text="""\
-        {
-            1.5,
-            9007199254740993,
-        }"""
-    )

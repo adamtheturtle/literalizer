@@ -767,6 +767,20 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
 ]
 
+# ISO dates need no JSON import under OBJECT_VARIANT, while native
+# datetimes still do. Both inputs use this exact option combination.
+[axes.object_variant_iso_date]
+plan = "fixed_overrides"
+name_template = "{lang}_object_variant_iso_date"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+  { kind = "enum_member_present", option = "date_format", member = "ISO" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "OBJECT_VARIANT" },
+  { kind = "enum_member", option = "date_format", member = "ISO" },
+]
+
 [axes.record_epoch_i32_overflow]
 plan = "fixed_overrides"
 name_template = "{lang}_record_epoch_i32_overflow"
@@ -978,6 +992,19 @@ primary_axis = "sequence"
 gates = [{ kind = "metadata_field", field = "language_id", value = "rust" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+# Scalar leaves are valid even when nested tuple records are rejected.
+[axes.record_tuple_sequence]
+plan = "fixed_overrides"
+name_template = "{lang}_record_tuple_sequence"
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "sequence_format", member = "TUPLE" },
 ]
 
 [axes.sequence]

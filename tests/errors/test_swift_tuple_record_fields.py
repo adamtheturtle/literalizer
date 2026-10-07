@@ -24,12 +24,3 @@ def test_ordered_map_nested_tuple_record_is_rejected() -> None:
             input_format=InputFormat.YAML,
             language=_tuple_record_swift(),
         )
-
-
-def test_scalar_has_no_nested_tuple_record() -> None:
-    """The recursive validation accepts a scalar leaf."""
-    _ = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=_tuple_record_swift(),
-    )
