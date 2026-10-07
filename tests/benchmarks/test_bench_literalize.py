@@ -33,7 +33,6 @@ from pytest_codspeed import BenchmarkFixture
 
 from literalizer import InputFormat, Language, literalize
 from literalizer._preamble import compute_preamble
-from literalizer._types import Scalar, Value
 from literalizer.languages import (
     C,
     Cpp,
@@ -51,6 +50,7 @@ from literalizer.languages import (
     Scala,
     Zig,
 )
+from tests.integration.parsed_values import ParsedValue, Scalar
 
 PYTHON = Python(
     date_format=Python.date_formats.PYTHON,
@@ -117,17 +117,17 @@ def _build_json_source(*, depth: int, fanout: int) -> str:
     return json.dumps(obj=build(level=depth))
 
 
-def _build_json_flat_records(*, n_records: int) -> list[Value]:
+def _build_json_flat_records(*, n_records: int) -> list[ParsedValue]:
     """Return repeated record-shaped mappings for a large JSON array."""
-    records: list[Value] = []
+    records: list[ParsedValue] = []
     for i in range(n_records):
-        tags: list[Value] = [f"tag_{i % 10}", f"group_{i % 25}"]
-        metrics: dict[Scalar, Value] = {
+        tags: list[ParsedValue] = [f"tag_{i % 10}", f"group_{i % 25}"]
+        metrics: dict[Scalar, ParsedValue] = {
             "views": i * 3,
             "clicks": i % 17,
             "ratio": (i % 100) / 100,
         }
-        record: dict[Scalar, Value] = {
+        record: dict[Scalar, ParsedValue] = {
             "id": i,
             "name": f"user_{i}",
             "active": i % 2 == 0,

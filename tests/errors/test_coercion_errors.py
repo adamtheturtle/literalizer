@@ -26,7 +26,6 @@ from beartype import beartype
 from ruamel.yaml import YAML
 
 from literalizer import InputFormat, literalize
-from literalizer._parsing import require_yaml
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     HeterogeneousSiblingListsError,
@@ -35,6 +34,7 @@ from literalizer.exceptions import (
     MixedListValuesError,
 )
 from literalizer.languages import Dhall, Mojo, Python
+from tests.yaml_support import as_yaml_parser
 
 type _SourceData = (
     dict[str, _SourceData]
@@ -85,7 +85,7 @@ def _to_source(
             # Valid JSON is valid JSON5.
             return json.dumps(obj=data)
         case InputFormat.YAML:
-            yaml = require_yaml(yaml=YAML())
+            yaml = as_yaml_parser(parser=YAML())
             stream = StringIO()
             yaml.dump(data=data, stream=stream)
             return stream.getvalue()

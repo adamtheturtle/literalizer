@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from beartype import beartype
 
 import literalizer
-from literalizer._types import ValueInput
+from literalizer import ValueInput
 
 
 @beartype

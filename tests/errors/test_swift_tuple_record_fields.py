@@ -2,8 +2,7 @@
 
 import pytest
 
-from literalizer import InputFormat, literalize
-from literalizer._language import Language
+from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Swift
 

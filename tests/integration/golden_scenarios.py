@@ -23,8 +23,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
-from literalizer._formatters.fallbacks import nonempty_or_default
-from literalizer._types import ValueInput
+from literalizer import ValueInput
 from literalizer.exceptions import (
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
@@ -358,8 +357,10 @@ def _base_renderings(
     renderings: list[GoldenRendering] = []
     for case_name in grouped.get(lang_cls, []):
         context = manifests[case_name].base_context
-        effective_value = nonempty_or_default(
-            value=context.collection_layout, default="compact"
+        effective_value = (
+            "compact"
+            if context.collection_layout is None
+            else context.collection_layout
         )
         renderings.append(
             unprefixed_rendering(

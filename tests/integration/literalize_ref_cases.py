@@ -20,11 +20,10 @@ import json5
 from beartype import beartype
 from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
-from ruamel.yaml import YAML as _YAML
+from ruamel.yaml import YAML
 
 import literalizer
-from literalizer._parsing import parse_input, require_yaml
-from literalizer._types import ValueInput
+from literalizer import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
@@ -33,6 +32,7 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 from literalizer.languages import Matlab
+from tests.yaml_support import as_yaml_parser
 
 from .case_manifests import (
     REF_DEFAULT_OWNER,
@@ -180,18 +180,15 @@ def _parse_ref_input(
     match input_format:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=input_source)
-        case literalizer.InputFormat.JSONC:
-            parsed = parse_input(
-                source=input_source,
-                input_format=literalizer.InputFormat.JSONC,
-            ).data
-        case literalizer.InputFormat.JSON5:
+        case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
+            # JSONC fixtures are also valid JSON5. The public API checks
+            # the stricter input grammar when rendering each fixture.
             parsed = json5.loads(
                 s=input_source,
                 allow_duplicate_keys=False,
             )
         case literalizer.InputFormat.YAML:
-            ruamel_yaml = require_yaml(yaml=_YAML())
+            ruamel_yaml = as_yaml_parser(parser=YAML())
             parsed = ruamel_yaml.load(stream=input_source)
         case literalizer.InputFormat.TOML:
             parsed = tomllib.loads(input_source)

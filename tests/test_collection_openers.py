@@ -8,27 +8,27 @@ file to hold (issue #4699).
 
 import pytest
 
+from literalizer import Language
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     make_narrowed_empty_form,
     replace_optional_type_name,
     sequence_surrogate_set_open,
 )
-from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.type_inference import (
     BeyondI64,
     WideInt,
     single_concrete_type,
 )
-from literalizer._language import Language
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import OrderedMap
 from literalizer.languages import Cpp, Haxe, Nim, Raku
+from tests.integration.parsed_values import ParsedValue, Scalar
 
 
 def test_sequence_surrogate_set_open_delegates() -> None:
     """The semantic marker preserves its wrapped opener's behavior."""
 
-    def opener(items: list[Value]) -> str:
+    def opener(items: list[ParsedValue]) -> str:
         """Return an opener string that exposes the delegated items."""
         return f"sequence({len(items)})"
 
@@ -40,7 +40,7 @@ def test_sequence_surrogate_set_open_delegates() -> None:
 def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     """C++'s rejected surrogate still has internally consistent typing."""
 
-    def make_set(*items: Scalar) -> Value:
+    def make_set(*items: Scalar) -> ParsedValue:
         """Return a recursively typed scalar set."""
         result: set[Scalar] = set(items)
         return result
@@ -64,7 +64,7 @@ def test_cpp_sequence_surrogate_set_helpers_remain_consistent() -> None:
     )
 
     cpp14 = Cpp(language_version=Cpp.version_formats.CPP14)
-    outer: Value = [nested_set, "two"]
+    outer: ParsedValue = [nested_set, "two"]
     assert cpp14.heterogeneous_behavior.compute_wrap_ids(outer) == frozenset(
         {id(outer)}
     )
@@ -78,10 +78,10 @@ def test_cpp_record_ordered_map_opener_falls_back_without_one_record() -> None:
         heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
     )
     value = OrderedMap()
-    first_record: dict[Scalar, Value] = {"id": 1}
-    second_record: dict[Scalar, Value] = {"name": "example"}
-    first: list[Value] = []
-    second: list[Value] = []
+    first_record: dict[Scalar, ParsedValue] = {"id": 1}
+    second_record: dict[Scalar, ParsedValue] = {"name": "example"}
+    first: list[ParsedValue] = []
+    second: list[ParsedValue] = []
     first.append(first_record)
     second.append(second_record)
     value["first"] = first
@@ -104,20 +104,18 @@ def test_sequence_surrogate_set_entries_delegate(language: Language) -> None:
 
 
 @pytest.mark.parametrize(
-    argnames="resolved_type",
-    argvalues=[None, "", "Element"],
+    argnames=("resolved_type", "expected_type"),
+    argvalues=[(None, "Fallback"), ("", "Fallback"), ("Element", "Element")],
 )
 def test_narrowed_empty_form_resolver_fallback(
     resolved_type: str | None,
+    expected_type: str,
 ) -> None:
     """Unknown and empty type names preserve the documented fallback."""
     opener = make_narrowed_empty_form(
         element_to_type=lambda _kind: resolved_type,
         template="List[{type}]()",
         fallback_type="Fallback",
-    )
-    expected_type = nonempty_or_default(
-        value=resolved_type, default="Fallback"
     )
     assert opener([[1]]) == f"List[{expected_type}]()"
     assert opener([[1, "two"]]) == "List[Fallback]()"

@@ -7,7 +7,6 @@ from literalizer import (
     InputFormat,
     literalize,
 )
-from literalizer._types import Scalar, Value
 from literalizer.languages import (
     Cpp,
     Crystal,
@@ -49,8 +48,7 @@ def test_kotlin_unresolved_record_list_opener() -> None:
     language = Kotlin(
         heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
     )
-    record: dict[Scalar, Value] = {"a": 1}
-    assert language.sequence_open([record, 2]) == "listOf<Any?>("
+    assert language.sequence_open([{"a": 1}, 2]) == "listOf<Any?>("
 
 
 def test_roc_wrappers_without_preamble() -> None:
@@ -78,9 +76,7 @@ def test_roc_wrappers_without_preamble() -> None:
 
 def test_cpp_positional_empty_lists_share_element_type() -> None:
     """Empty positional cousins inherit the common nested list type."""
-    empty: list[Value] = [list[Value](), list[Value]()]
-    populated: list[Value] = [list[Value]([1]), list[Value]([1])]
-    assert Cpp().sequence_open([empty, populated]) == (
+    assert Cpp().sequence_open([[[], []], [[1], [1]]]) == (
         "std::vector<std::vector<std::vector<int>>>{"
     )
 
@@ -90,10 +86,9 @@ def test_java_boxed_mixed_numeric_annotation() -> None:
     language = Java(
         variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
     )
-    data: Value = set[Scalar]({1, 2.5})
     assert (
         language.format_variable_declaration(
-            "data", "value", data, frozenset()
+            "data", "value", {1, 2.5}, frozenset()
         )
         == "Set<Double> data = value;"
     )
