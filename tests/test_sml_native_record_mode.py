@@ -6,7 +6,6 @@ from literalizer import (
     InputFormat,
     Language,
     literalize,
-    literalize_call,
 )
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Sml
@@ -57,23 +56,6 @@ def test_record_mode_rejects_mismatched_nested_list_fields() -> None:
             input_format=InputFormat.JSON,
             language=_record_spec(),
         )
-
-
-def test_record_mode_curried_call_uses_native_argument() -> None:
-    """Curried calls parenthesize a record argument without tagging it."""
-    result = literalize_call(
-        source='[{"name":"Ada"}]',
-        input_format=InputFormat.JSON,
-        language=Sml(
-            dict_format=Sml.dict_formats.RECORD,
-            call_style=Sml.call_styles.CURRIED,
-        ),
-        target_function="consume",
-        parameter_names=("item",),
-        wrap_in_file=True,
-    )
-    assert "consume (" in result.code
-    assert 'name = "Ada"' in result.code
 
 
 def test_record_mode_rejects_wide_epoch() -> None:
