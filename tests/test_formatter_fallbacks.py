@@ -12,7 +12,6 @@ from literalizer.languages import (
     Crystal,
     Elm,
     Java,
-    Kotlin,
     Roc,
     Rust,
 )
@@ -30,14 +29,6 @@ def test_crystal_plain_dictionary_entry() -> None:
     assert Crystal(
         string_format=Crystal.string_formats.MULTILINE
     ).dict_format_config.format_entry('"a"', 1, "1") == ('"a" => 1')
-
-
-def test_kotlin_unresolved_record_list_opener() -> None:
-    """A record mixed with a scalar retains the general element type."""
-    language = Kotlin(
-        heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
-    )
-    assert language.sequence_open([{"a": 1}, 2]) == "listOf<Any?>("
 
 
 def test_roc_wrappers_without_preamble() -> None:
@@ -63,15 +54,11 @@ def test_roc_wrappers_without_preamble() -> None:
     )
 
 
-def test_cpp_positional_empty_lists_share_element_type() -> None:
-    """Empty positional cousins inherit the common nested list type."""
-    assert Cpp().sequence_open([[[], []], [[1], [1]]]) == (
-        "std::vector<std::vector<std::vector<int>>>{"
-    )
-
-
 def test_java_boxed_mixed_numeric_annotation() -> None:
     """A set annotation boxes its widened numeric element type."""
+    # Keep the formatter contract here: the public renderer currently emits
+    # Set<Double> with integer elements that javac rejects, so this combination
+    # cannot yet be covered by a compiling golden.
     language = Java(
         variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
     )

@@ -1192,6 +1192,12 @@ class CSharp(metaclass=LanguageCls):
 
     modifier_combinations: ClassVar[tuple[ModifierCombination, ...]] = (
         ModifierCombination(
+            name="private_protected",
+            modifiers=frozenset(
+                {_CSharpModifiers.PRIVATE, _CSharpModifiers.PROTECTED},
+            ),
+        ),
+        ModifierCombination(
             name="public_static_readonly",
             modifiers=frozenset(
                 {
