@@ -17,7 +17,6 @@ from literalizer._formatters.collection_openers import (
     make_narrowed_empty_form,
     make_type_to_opener,
 )
-from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     format_date_iso,
     format_datetime_epoch,
@@ -47,6 +46,7 @@ from literalizer._formatters.format_strings import (
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    infer_dict_type,
     infer_element_type,
 )
 from literalizer._heterogeneous import (
@@ -187,7 +187,6 @@ def _value_to_mojo_type(
     back to the same generic form.
     """
     effective_element_type: type | ListType | DictType
-    effective_element_type_2: type | ListType | DictType
     match value:
         case list():
             element_type = infer_element_type(items=[value])
@@ -205,13 +204,8 @@ def _value_to_mojo_type(
         case dict():
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"
-            element_type = infer_element_type(items=[value])
-            fallback_type: type | ListType | DictType = dict
-            effective_element_type_2 = value_or_default(
-                value=element_type, default=fallback_type
-            )
             return _mojo_call_arg_element_to_type(
-                effective_element_type_2,
+                infer_dict_type(values=list(value.values())),
             )
         case _:
             return _mojo_call_arg_element_to_type(type(value))

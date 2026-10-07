@@ -221,11 +221,7 @@ def _resolve_single_type(
     ``the_type`` itself otherwise.
     """
     if the_type is dict:
-        value_type = infer_element_type(items=all_dict_values)
-        return DictType(
-            value_type=value_type,
-            values=tuple(all_dict_values),
-        )
+        return infer_dict_type(values=all_dict_values)
     if the_type is int:
         if _int_needs_beyond_i64(items=items):
             return BeyondI64
@@ -268,6 +264,17 @@ def _unify_element_types(
         }
         return result_by_rank[max(rank[item] for item in element_types)]
     return None
+
+
+@beartype
+def infer_dict_type(*, values: list[Value]) -> DictType:
+    """Infer a dictionary type even when its values have no common
+    type.
+    """
+    return DictType(
+        value_type=infer_element_type(items=values),
+        values=tuple(values),
+    )
 
 
 @beartype

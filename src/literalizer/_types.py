@@ -18,6 +18,7 @@ type Scalar = (
     | None
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
+type CollectionValue = list[Value] | dict[Scalar, Value] | set[Scalar]
 
 
 @beartype

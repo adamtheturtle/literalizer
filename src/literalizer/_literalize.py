@@ -41,7 +41,6 @@ from literalizer._comments_resolve import (
     resolve_yaml_comments,
 )
 from literalizer._document_formatting import format_document_fast
-from literalizer._formatters.fallbacks import collection_or_default
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -91,6 +90,7 @@ from literalizer._preamble import (
 )
 from literalizer._types import (
     CallPreambleData,
+    CollectionValue,
     OrderedMap,
     Scalar,
     Value,
@@ -3714,10 +3714,63 @@ def _format_root_collection_override(
 
 
 @beartype
+def _prepare_root_render(
+    *,
+    data: CollectionValue,
+    inference_data: CollectionValue,
+    language: Language,
+    line_prefix: str,
+    include_delimiters: bool,
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+    collection_layout: CollectionLayout,
+    raw_yaml_data: object | None,
+    toml_comment_doc: TOMLDocument | None,
+    validate_data: bool,
+    record_context_data: Value | None,
+) -> str | _RenderContext:
+    """Validate a collection and return its fast rendering or recursive
+    context.
+    """
+    if validate_data:
+        check_data(data=inference_data, spec=language)
+
+    if (
+        ref_key is _DISABLED_REF_KEY
+        and raw_yaml_data is None
+        and toml_comment_doc is None
+    ):
+        fast_result = format_document_fast(
+            language,
+            data=data,
+            line_prefix=line_prefix,
+            include_delimiters=include_delimiters,
+            collection_layout=collection_layout,
+        )
+        if fast_result is not None:
+            return fast_result
+
+    return _build_render_context(
+        data=data,
+        inference_data=inference_data,
+        language=language,
+        ref_case=ref_case,
+        ref_values=ref_values,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        line_prefix=line_prefix,
+        raw_yaml_data=raw_yaml_data,
+        toml_comment_doc=toml_comment_doc,
+        record_context_data=record_context_data,
+    )
+
+
+@beartype
 def _format_root_collection(
     *,
     data: dict[Scalar, Value] | list[Value] | set[Scalar] | OrderedMap,
-    inference_data: Value,
+    inference_data: CollectionValue,
     language: Language,
     line_prefix: str,
     include_delimiters: bool,
@@ -3752,11 +3805,10 @@ def _format_root_collection(
     body = "\n".join(lines)
     if not include_delimiters or body == "":
         return body
-    effective_data = collection_or_default(value=inference_data, default=data)
     return _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
-        data=effective_data,
+        data=inference_data,
         spec=language,
         line_prefix=line_prefix,
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
@@ -3844,50 +3896,53 @@ def _literalize_impl(
             )
             return f"{line_prefix}{identifier}"
 
-    inference_data = _resolve_refs_for_inference(
-        value=data,
-        ref_values=ref_values,
-        ref_key=ref_key,
-    )
-    if validate_data:
-        check_data(data=inference_data, spec=language)
-
-    if (
-        ref_key is _DISABLED_REF_KEY
-        and raw_yaml_data is None
-        and toml_comment_doc is None
-    ):
-        fast_result = format_document_fast(
-            language,
-            data=data,
-            line_prefix=line_prefix,
-            include_delimiters=include_delimiters,
-            collection_layout=collection_layout,
-        )
-        if fast_result is not None:
-            return fast_result
-
-    ctx = _build_render_context(
-        data=data,
-        inference_data=inference_data,
-        language=language,
-        ref_case=ref_case,
-        ref_values=ref_values,
-        ref_key=ref_key,
-        collection_layout=collection_layout,
-        line_prefix=line_prefix,
-        raw_yaml_data=raw_yaml_data,
-        toml_comment_doc=toml_comment_doc,
-        record_context_data=record_context_data,
-    )
-
     if isinstance(data, _SCALAR_TYPES):
+        if validate_data:
+            check_data(data=data, spec=language)
+        _ = _build_render_context(
+            data=data,
+            inference_data=data,
+            language=language,
+            line_prefix=line_prefix,
+            ref_case=ref_case,
+            ref_values=ref_values,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            raw_yaml_data=raw_yaml_data,
+            toml_comment_doc=toml_comment_doc,
+            record_context_data=record_context_data,
+        )
         formatted_scalar = _format_scalar(
             value=data,
             spec=language,
             int_formatter=None,
         )
         return f"{line_prefix}{formatted_scalar}"
+
+    # Root ref markers returned above. Only child refs can change here,
+    # so inference retains a collection rather than resolving to a scalar.
+    inference_data = _resolve_child_refs_for_inference(
+        value=data,
+        ref_values=ref_values,
+        ref_key=ref_key,
+    )
+    prepared = _prepare_root_render(
+        data=data,
+        inference_data=inference_data,
+        language=language,
+        line_prefix=line_prefix,
+        include_delimiters=include_delimiters,
+        ref_case=ref_case,
+        ref_values=ref_values,
+        ref_key=ref_key,
+        collection_layout=collection_layout,
+        raw_yaml_data=raw_yaml_data,
+        toml_comment_doc=toml_comment_doc,
+        validate_data=validate_data,
+        record_context_data=record_context_data,
+    )
+    if isinstance(prepared, str):
+        return prepared
     return _format_root_collection(
         data=data,
         inference_data=inference_data,
@@ -3895,7 +3950,7 @@ def _literalize_impl(
         line_prefix=line_prefix,
         include_delimiters=include_delimiters,
         collection_layout=collection_layout,
-        ctx=ctx,
+        ctx=prepared,
     )
 
 
@@ -5301,6 +5356,16 @@ def reject_unbound_refs_in_file(
         )
 
 
+@overload
+def _strip_refs_from_value(
+    *, value: CollectionValue, ref_key: str
+) -> CollectionValue: ...
+
+
+@overload
+def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value: ...
+
+
 @beartype
 def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value:
     """Return *value* with ``{"$ref": "name"}`` markers removed at any
@@ -5329,15 +5394,37 @@ def _strip_refs_from_value(*, value: Value, ref_key: str) -> Value:
 
 
 @beartype
+def _resolve_child_refs_for_inference(
+    *,
+    value: CollectionValue,
+    ref_values: Mapping[str, Value] | None,
+    ref_key: str,
+) -> CollectionValue:
+    """Resolve child refs while preserving the root collection shape."""
+    if ref_key is _DISABLED_REF_KEY or isinstance(value, set):
+        return value
+    if ref_values is not None and len(ref_values) > 0:
+        if isinstance(value, list):
+            return _resolve_ref_list_for_preamble(
+                values=value, ref_values=ref_values, ref_key=ref_key
+            )
+        return _resolve_ref_dict_for_preamble(
+            value=value, ref_values=ref_values, ref_key=ref_key
+        )
+    return _strip_refs_from_value(value=value, ref_key=ref_key)
+
+
+@beartype
 def _resolve_refs_for_inference(
     *,
     value: Value,
     ref_values: Mapping[str, Value] | None,
     ref_key: str,
 ) -> Value:
-    """Resolve known refs and remove unknown refs for type inference."""
-    if ref_key is _DISABLED_REF_KEY:
-        return value
+    """Resolve known refs and remove unknown refs for opener inference.
+
+    The caller handles disabled reference processing before reaching here.
+    """
     if ref_values is not None and len(ref_values) > 0:
         resolved = _resolve_ref_for_preamble(
             value=value,
@@ -5386,6 +5473,27 @@ def _resolve_ref_list_for_preamble(
 
 
 @beartype
+def _resolve_ref_dict_for_preamble(
+    *,
+    value: dict[Scalar, Value],
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+) -> dict[Scalar, Value]:
+    """Resolve dictionary children while retaining ordered-map tags."""
+    resolved_dict: dict[Scalar, Value] = {}
+    for key, item in value.items():
+        resolved = _resolve_ref_for_preamble(
+            value=item,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        if resolved.include:
+            resolved_dict[key] = resolved.value
+    # Ordered maps keep their tag through inference (issue #4735).
+    return type(value)(resolved_dict)
+
+
+@beartype
 def _resolve_ref_for_preamble(
     *,
     value: Value,
@@ -5417,21 +5525,11 @@ def _resolve_ref_for_preamble(
             ),
         )
     if isinstance(value, dict):
-        resolved_dict: dict[Scalar, Value] = {}
-        for key, item in value.items():
-            resolved = _resolve_ref_for_preamble(
-                value=item,
-                ref_values=ref_values,
-                ref_key=ref_key,
-            )
-            if resolved.include:
-                resolved_dict[key] = resolved.value
-        # An ordered map is a dict subclass whose tag decides how it is
-        # written and typed, so the rebuilt tree keeps whichever it is
-        # (issue #4735).
         return _PreambleRefResolution(
             include=True,
-            value=type(value)(resolved_dict),
+            value=_resolve_ref_dict_for_preamble(
+                value=value, ref_values=ref_values, ref_key=ref_key
+            ),
         )
     return _PreambleRefResolution(include=True, value=value)
 

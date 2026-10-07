@@ -13,6 +13,7 @@ from typing import (
     Any,
     ClassVar,
     Final,
+    Generic,
     Literal,
     Protocol,
     assert_never,
@@ -22,6 +23,7 @@ from typing import (
 
 import humps
 from beartype import beartype
+from typing_extensions import TypeVar
 
 from literalizer._formatters.collection_openers import (
     SequenceSurrogateSetOpen,
@@ -292,10 +294,20 @@ def validate_call_parameter_names(
             )
 
 
+# Python 3.12 needs a TypeVar to express the default type argument.
+_Declaration_co = TypeVar(
+    "_Declaration_co", bound=str | None, default=str | None, covariant=True
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True)
-class SequenceFormatConfig:
-    """Configuration for a single sequence format."""
+class SequenceFormatConfig(Generic[_Declaration_co]):
+    """Configuration for a sequence format and its declared type.
+
+    Native formats retain their required ``str`` template. The default
+    permits formats with no declaration annotation to use ``None``.
+    """
 
     sequence_open: Callable[[list[Value]], str]
     close: str
@@ -308,7 +320,7 @@ class SequenceFormatConfig:
     typed_opener_fallback: str | None
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
-    declared_type: str | None
+    declared_type: _Declaration_co
     narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
     single_element_template: str | None
     """How a one-element sequence is spelled, if not as the openers.
