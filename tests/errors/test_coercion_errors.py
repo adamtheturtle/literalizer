@@ -79,10 +79,8 @@ def _to_source(
     so the wrapping does not affect whether an error is raised.
     """
     match input_format:
-        case InputFormat.JSON | InputFormat.JSONC:
-            return json.dumps(obj=data)
-        case InputFormat.JSON5:
-            # Valid JSON is valid JSON5.
+        case InputFormat.JSON | InputFormat.JSONC | InputFormat.JSON5:
+            # Valid JSON is valid JSONC and JSON5.
             return json.dumps(obj=data)
         case InputFormat.YAML:
             yaml = require_yaml(yaml=YAML())
