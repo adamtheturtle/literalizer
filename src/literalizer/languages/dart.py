@@ -1157,13 +1157,13 @@ class Dart(metaclass=LanguageCls):
     # the only way to pin the version; `V3` maps to `^3.0.0`.
     language_version: VersionFormats = VersionFormats.V3
     indent: str = "    "
+    skip_null_dict_values: bool = False
 
     null_literal: ClassVar[str] = "null"
     true_literal: ClassVar[str] = "true"
     false_literal: ClassVar[str] = "false"
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
-    skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = True
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False

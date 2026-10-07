@@ -18,7 +18,7 @@ from .case_manifests import (
     case_dir_names_for_variant_axis,
     load_case_manifests,
 )
-from .language_specs import sorted_languages
+from .language_specs import make_spec, sorted_languages
 from .variant_cases import (
     build_multiline_string_context_cases,
     build_variant_cases,
@@ -26,8 +26,8 @@ from .variant_cases import (
     group_variant_cases_by_language,
     one_special_input,
     variant_languages,
+    variants_for_axis,
 )
-from .variant_escape_hatches import build_typed_dict_null_filtering_variants
 from .variant_types import VariantCase
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
@@ -154,16 +154,31 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
 
 
 def test_typed_dict_null_filtering_follows_capability() -> None:
-    """Null-filtering variants select typed dict languages explicitly."""
-    variants = list(build_typed_dict_null_filtering_variants())
-
-    assert len(variants) > 0
-    incapable = [
-        variant
-        for variant in variants
-        if not variant.lang_cls.supports_typed_dict_open
+    """Configured null-filtering variants cover every typed dict
+    language.
+    """
+    variants = variants_for_axis(axis_key="typed_dict_null_filtering")
+    expected = [
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls.supports_typed_dict_open
     ]
-    assert incapable == []
+
+    assert [variant.lang_cls for variant in variants] == expected
+    assert [variant.name for variant in variants] == [
+        f"{lang_cls.__name__}_skip_null_dict_values" for lang_cls in expected
+    ]
+    for variant in variants:
+        spec_cls = type(variant.spec)
+        assert isinstance(spec_cls, literalizer.LanguageCls)
+        assert spec_cls is variant.lang_cls
+        assert variant.spec.skip_null_dict_values is True
+        assert (
+            make_spec(lang_cls=variant.lang_cls).skip_null_dict_values is False
+        )
+        assert make_spec(
+            lang_cls=variant.lang_cls, skip_null_dict_values=False
+        ) == make_spec(lang_cls=variant.lang_cls)
 
 
 def test_multiline_string_variants_follow_capability(

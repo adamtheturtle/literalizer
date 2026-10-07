@@ -13,9 +13,7 @@ unknown name, an unknown plan, an unknown gate kind, or an unknown
 name-template placeholder fails when the registry loads rather than
 when a golden file is built.
 
-An axis whose expansion is genuinely irregular stays as a registered
-escape-hatch builder in :mod:`variant_escape_hatches`.  A ``filtered``
-plan narrows any axis, declared or irregular, to the languages its gates
+A ``filtered`` plan narrows any declared axis to the languages its gates
 admit, so a suite needing a smaller slice of an existing expansion names
 one rather than writing its own builder.  A plan may also start from another
 declared axis, either pairing its own settings with that axis's option
@@ -57,7 +55,6 @@ from .suite_gates import (
     no_gates,
     validate_gate_names,
 )
-from .variant_escape_hatches import ESCAPE_HATCH_VARIANT_AXES
 from .variant_types import Variant
 
 AXES_PATH = Path(__file__).parent / "axes.toml"
@@ -71,9 +68,8 @@ class AxisPlanError(ValueError):
 class AxisResolver(Hashable, Protocol):
     """Expands any variant axis the suite knows, by name.
 
-    A filtered plan narrows another axis, which may be an escape-hatch
-    builder this module cannot see, so callers hand in the suite's own
-    resolver instead.
+    A filtered plan narrows another axis, so callers hand in the suite's
+    own resolver.
     """
 
     def __call__(self, *, axis_key: str) -> list[Variant]:
@@ -961,7 +957,7 @@ def _validate_axis(
             if axis.base == axis_key:
                 msg = f"axis {axis_key!r}: base axis is itself"
                 raise AxisPlanError(msg)
-            if axis.base not in axes.keys() | ESCAPE_HATCH_VARIANT_AXES:
+            if axis.base not in axes:
                 msg = f"axis {axis_key!r}: unknown base axis {axis.base!r}"
                 raise AxisPlanError(msg)
         case (
@@ -1909,9 +1905,8 @@ def variants_for_declared_axis(
     """Return the variants the declared plan for *axis_key* expands
     to.
 
-    A filtered plan narrows another axis, which may itself be an
-    escape-hatch builder, so callers supply the suite's full axis
-    resolver rather than this module reaching back into it.
+    A filtered plan narrows another axis, so callers supply the suite's
+    full axis resolver rather than this module reaching back into it.
     """
     return variants_for_registry_axis(
         path=AXES_PATH,
@@ -1937,7 +1932,7 @@ def variants_for_registry_axis(
         case None:
             msg = (
                 f"{path}: no plan declared for variant axis {axis_key!r}; "
-                "add one here or register an escape-hatch builder"
+                "add one here"
             )
             raise AxisPlanError(msg)
         case _FilteredPlan():

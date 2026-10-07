@@ -280,6 +280,7 @@ unicode
 unmapped
 unparseable
 unresolvable
+untagged
 unterminated
 unzoned
 uv
