@@ -63,8 +63,7 @@ PYTHON = Python(
 
 ALL_FORMATS = list(InputFormat)
 
-# Formats that support None/null values (TOML has no null type).
-FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f != InputFormat.TOML]
+FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f.supports_null]
 
 
 @beartype
