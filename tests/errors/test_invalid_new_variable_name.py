@@ -3,7 +3,7 @@
 The fixed-name rejections are declared in ``tests/errors/rejections``
 and run by ``test_rejections.py``. The remaining tests read reserved
 names from the language itself, rather than applying one manifest name
-to every selected language. Acceptance boundaries use shared goldens.
+to every selected language. Acceptance boundaries use shared golden files.
 """
 
 import re
