@@ -1,27 +1,21 @@
-"""Tests for collection opener helpers.
+"""Collection type inference through public rendering where possible.
 
-These call an opener directly with values assembled in Python, which
-is what makes them useful: the typing they check has to hold for a
-shape the language then refuses, so there is no output for a golden
-file to hold (issue #4699).
+The remaining helper tests cover rejected collection shapes or synthetic
+formatter configurations that the public API cannot exercise (issue #4699).
 """
 
 import pytest
 
-from literalizer import Language
+from literalizer import InputFormat, Language, literalize
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     make_narrowed_empty_form,
     replace_optional_type_name,
     sequence_surrogate_set_open,
 )
-from literalizer._formatters.type_inference import (
-    BeyondI64,
-    WideInt,
-    single_concrete_type,
-)
+from literalizer._formatters.type_inference import BeyondI64, WideInt
 from literalizer._types import OrderedMap
-from literalizer.languages import Cpp, Haxe, Nim, Raku
+from literalizer.languages import Cpp, Go, Haxe, Nim, Raku
 from tests.integration.parsed_values import ParsedValue, Scalar
 
 
@@ -121,8 +115,51 @@ def test_narrowed_empty_form_resolver_fallback(
     assert opener([[1, "two"]]) == "List[Fallback]()"
 
 
+@pytest.mark.parametrize(
+    argnames=(
+        "first_value",
+        "second_value",
+        "expected_type",
+        "expected_first",
+        "expected_second",
+    ),
+    argvalues=[
+        ("1", "2", "int", "1", "2"),
+        ("1", '"two"', "any", "1", '"two"'),
+        ("1", "null", "any", "1", "nil"),
+        ("null", "null", "any", "nil", "nil"),
+    ],
+)
+def test_widened_map_uses_shared_concrete_type(
+    first_value: str,
+    second_value: str,
+    expected_type: str,
+    expected_first: str,
+    expected_second: str,
+) -> None:
+    """Widened maps narrow only when all scalar values share one type."""
+    result = literalize(
+        source=(
+            f'[{{"input": {{"a": {first_value}}}}}, '
+            f'{{"input": {{"b": {second_value}}}}}]'
+        ),
+        input_format=InputFormat.JSON,
+        language=Go(heterogeneous_strategy=Go.heterogeneous_strategies.RECORD),
+    )
+    assert result.code == (
+        "[]Record0{\n"
+        f"\tRecord0{{Input: map[string]{expected_type}"
+        f'{{"a": {expected_first}}}}},\n'
+        f"\tRecord0{{Input: map[string]{expected_type}"
+        f'{{"b": {expected_second}}}}},\n'
+        "}"
+    )
+
+
 def test_integer_type_fallbacks() -> None:
     """Unspecified wider integer types inherit the base integer type."""
+    # Every built-in TypedOpenerConfig supplies beyond_i64_type, so its
+    # absent-value fallback requires a synthetic configuration.
     config = TypedOpenerConfig(
         str_type=None,
         bool_type=None,
@@ -144,21 +181,6 @@ def test_integer_type_fallbacks() -> None:
     )
     assert config.type_name(py_type=WideInt) == "Integer"
     assert config.type_name(py_type=BeyondI64) == "Integer"
-
-
-@pytest.mark.parametrize(
-    argnames=("names", "expected"),
-    argvalues=[
-        (set[str](), None),
-        ({"Integer"}, "Integer"),
-        ({"Any"}, None),
-        ({"Integer", "String"}, None),
-        ({"Any", "Integer"}, None),
-    ],
-)
-def test_shared_concrete_type(names: set[str], expected: str | None) -> None:
-    """A type can narrow only when every value shares a concrete type."""
-    assert single_concrete_type(types=names, fallback_type="Any") == expected
 
 
 @pytest.mark.parametrize(
