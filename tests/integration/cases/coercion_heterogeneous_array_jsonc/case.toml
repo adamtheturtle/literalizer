@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Sampled: Python accepts mixed numeric collections, including integer and float identity, through every input parser."

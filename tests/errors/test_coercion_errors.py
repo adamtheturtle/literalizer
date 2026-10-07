@@ -9,7 +9,9 @@ The input format is the axis here: one datum is serialized into every
 format that can carry it, so the same shape is refused however it
 arrives.  A rejection manifest declares one format per file and writes
 its sources out by hand, which would turn that generated cross product
-into four hand-maintained copies, so these stay written out.  The
+into four hand-maintained copies, so these rejections stay written out.
+The acceptance counterparts use parser-specific golden cases under
+``tests/integration/cases/coercion_*`` to check complete generated output.  The
 rejections that need a YAML tag to express at all -- ordered maps,
 sets and binary -- are declared in ``tests/errors/rejections``.
 """
@@ -33,7 +35,7 @@ from literalizer.exceptions import (
     MixedDictValuesError,
     MixedListValuesError,
 )
-from literalizer.languages import Dhall, Mojo, Python
+from literalizer.languages import Dhall, Mojo
 from tests.yaml_support import as_yaml_parser
 
 type _SourceData = (
@@ -52,15 +54,6 @@ MOJO = Mojo(
     bytes_format=Mojo.bytes_formats.HEX,
     sequence_format=Mojo.sequence_formats.LIST,
 )
-PYTHON = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NEVER,
-)
-
 ALL_FORMATS = list(InputFormat)
 
 FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f.supports_null]
@@ -383,63 +376,3 @@ def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
             pre_indent_level=0,
             include_delimiters=True,
         )
-
-
-# --- Tests that should NOT raise ---
-
-
-@pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_raise_homogeneous_array(input_format: InputFormat) -> None:
-    """Homogeneous array does not raise across all formats."""
-    _ = literalize(
-        source=_to_source(data=[1, 2, 3], input_format=input_format),
-        input_format=input_format,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-
-
-@pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_raise_homogeneous_dict(input_format: InputFormat) -> None:
-    """Homogeneous dict values do not raise across all formats."""
-    _ = literalize(
-        source=_to_source(
-            data={"a": 1, "b": 2},
-            input_format=input_format,
-        ),
-        input_format=input_format,
-        language=MOJO,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-
-
-@pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_raise_heterogeneous_for_language_supporting_it(
-    input_format: InputFormat,
-) -> None:
-    """Heterogeneous data does not raise for languages that support it."""
-    _ = literalize(
-        source=_to_source(data=[1, 2.5, 3], input_format=input_format),
-        input_format=input_format,
-        language=PYTHON,
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
-
-
-@pytest.mark.parametrize(argnames="input_format", argvalues=ALL_FORMATS)
-def test_no_raise_uniform_dict_shapes(input_format: InputFormat) -> None:
-    """Uniform dict shapes do not raise across all formats (Dhall)."""
-    data: _SourceData = [
-        {"type": "create", "name": "a"},
-        {"type": "update", "name": "b"},
-    ]
-    _ = literalize(
-        source=_to_source(data=data, input_format=input_format),
-        input_format=input_format,
-        language=Dhall(),
-        pre_indent_level=0,
-        include_delimiters=True,
-    )
