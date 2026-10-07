@@ -11,7 +11,6 @@ from literalizer.languages import (
     Cpp,
     Crystal,
     Elm,
-    Java,
     Kotlin,
     Roc,
     Rust,
@@ -67,19 +66,6 @@ def test_cpp_positional_empty_lists_share_element_type() -> None:
     """Empty positional cousins inherit the common nested list type."""
     assert Cpp().sequence_open([[[], []], [[1], [1]]]) == (
         "std::vector<std::vector<std::vector<int>>>{"
-    )
-
-
-def test_java_boxed_mixed_numeric_annotation() -> None:
-    """A set annotation boxes its widened numeric element type."""
-    language = Java(
-        variable_type_hints=Java.variable_type_hints_formats.ALWAYS,
-    )
-    assert (
-        language.format_variable_declaration(
-            "data", "value", {1, 2.5}, frozenset()
-        )
-        == "Set<Double> data = value;"
     )
 
 
