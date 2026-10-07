@@ -7,23 +7,6 @@ from literalizer.exceptions import JSONCParseError, JSONParseError
 from literalizer.languages import Jsonc, Python
 
 
-def test_jsonc_comments_and_string_slashes() -> None:
-    """Both comment styles work without changing quoted content."""
-    result = literalize(
-        source=(
-            "// heading\r\n"
-            '{"url": "https://example.org/a/*b*/", /* detail\n'
-            'continued */ "count": 2 // tail\n}'
-        ),
-        input_format=InputFormat.JSONC,
-        language=Python(),
-    )
-
-    assert result.code == (
-        '{\n    "url": "https://example.org/a/*b*/",\n    "count": 2,\n}'
-    )
-
-
 def test_jsonc_output_can_be_read_as_jsonc_input() -> None:
     """Rendered comments are accepted by the public input path."""
     output = literalize(

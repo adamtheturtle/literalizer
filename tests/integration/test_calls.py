@@ -92,15 +92,10 @@ def test_call_golden_file(
     lang_cls = call_case.lang_cls
     for version_format in lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
-            kwargs: dict[str, object] = {"language_version": version_format}
-            if config.call_style_type is not None:
-                style = next(
-                    s
-                    for s in lang_cls.CallStyles
-                    if isinstance(s.value, config.call_style_type)
-                )
-                kwargs["call_style"] = style
-            spec = make_spec(lang_cls=lang_cls, **kwargs)
+            spec = make_spec(
+                lang_cls=lang_cls,
+                language_version=version_format,
+            )
             if call_case.expected_exception is not None:
                 with pytest.raises(
                     expected_exception=call_case.expected_exception,

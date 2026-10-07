@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "plain": [1, 2],
+    "with-dash": "a\nb"
+}
+@end
