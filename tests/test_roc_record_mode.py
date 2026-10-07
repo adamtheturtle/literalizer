@@ -75,16 +75,3 @@ def test_record_mode_rejects_non_record_collections(
             input_format=InputFormat.YAML,
             language=Roc(dict_format=Roc.dict_formats.RECORD),
         )
-
-
-def test_record_mode_formats_epoch_datetime() -> None:
-    """The epoch option keeps its integer value without a tag."""
-    result = literalize(
-        source="event_time = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=Roc(
-            dict_format=Roc.dict_formats.RECORD,
-            datetime_format=Roc.datetime_formats.EPOCH,
-        ),
-    )
-    assert "event_time: 1705321800i128" in result.code

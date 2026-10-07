@@ -30,6 +30,20 @@ reason = "Renders one input under every multiline-string option at once."
 [special_axes.multiline_string_pre_indent]
 reason = "Renders one input at each pre-indent level the suite covers."
 
+# Anonymous records use the same epoch scalar option as named records.
+[axes.anonymous_record_epoch]
+plan = "fixed_overrides"
+name_template = "{lang}_anonymous_record_epoch"
+gates = [
+  { kind = "enum_member_present", option = "dict_format", member = "ANONYMOUS_RECORD" },
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "dict_format", member = "ANONYMOUS_RECORD" },
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
 [axes.annotation_evaluation]
 plan = "every_non_default_member"
 name_template = "{lang}_annotation_evaluation_{format}"
@@ -591,6 +605,46 @@ gates = [
 overrides = [
   { kind = "enum_member", option = "string_format", member = "MULTILINE" },
 ]
+
+# Native record fields keep their scalar representation when alternate
+# datetime, date, or bytes options are selected. Membership in the option
+# enums discovers the languages that can render each combination.
+[axes.native_record_bytes]
+plan = "every_non_default_member"
+name_template = "{lang}_native_record_bytes_{format}"
+option = "bytes_format"
+include_default = true
+gates = [{ kind = "enum_member_present", option = "dict_format", member = "RECORD" }]
+overrides = [{ kind = "enum_member", option = "dict_format", member = "RECORD" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.native_record_epoch]
+plan = "fixed_overrides"
+name_template = "{lang}_native_record_epoch"
+gates = [
+  { kind = "enum_member_present", option = "dict_format", member = "RECORD" },
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "dict_format", member = "RECORD" },
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.native_record_iso_temporal]
+plan = "fixed_overrides"
+name_template = "{lang}_native_record_iso_temporal"
+gates = [
+  { kind = "enum_member_present", option = "dict_format", member = "RECORD" },
+  { kind = "enum_member_present", option = "date_format", member = "ISO" },
+  { kind = "enum_member_present", option = "datetime_format", member = "ISO" },
+]
+overrides = [
+  { kind = "enum_member", option = "dict_format", member = "RECORD" },
+  { kind = "enum_member", option = "date_format", member = "ISO" },
+  { kind = "enum_member", option = "datetime_format", member = "ISO" },
+]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
 
 # Sibling dict values that are themselves maps share one declared value
 # type in the enclosing container, but each inner map otherwise renders

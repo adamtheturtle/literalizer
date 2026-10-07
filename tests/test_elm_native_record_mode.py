@@ -64,32 +64,6 @@ def test_record_mode_rejects_mixed_scalar_list() -> None:
         )
 
 
-def test_record_mode_formats_epoch_datetime() -> None:
-    """Epoch timestamps become bare Elm integers."""
-    result = literalize(
-        source="event_time = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=Elm(
-            dict_format=Elm.dict_formats.RECORD,
-            datetime_format=Elm.datetime_formats.EPOCH,
-        ),
-    )
-    assert "event_time = 1705321800" in result.code
-
-
-def test_record_mode_formats_base64_bytes() -> None:
-    """The alternate bytes option still yields a bare string field."""
-    result = literalize(
-        source="---\npayload: !!binary YWJj\n",
-        input_format=InputFormat.YAML,
-        language=Elm(
-            dict_format=Elm.dict_formats.RECORD,
-            bytes_format=Elm.bytes_formats.BASE64,
-        ),
-    )
-    assert 'payload = "YWJj"' in result.code
-
-
 def test_record_mode_call_argument() -> None:
     """Calls consume the native record expression, not ``Val``."""
     result = literalize_call(

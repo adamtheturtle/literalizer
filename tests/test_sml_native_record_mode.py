@@ -90,32 +90,6 @@ def test_record_mode_curried_call_uses_native_argument() -> None:
     assert 'name = "Ada"' in result.code
 
 
-def test_record_mode_epoch_uses_sml_negation() -> None:
-    """A pre-1970 epoch keeps SML's tilde negation syntax."""
-    result = literalize(
-        source="when: 1969-12-31T23:59:59Z\n",
-        input_format=InputFormat.YAML,
-        language=Sml(
-            dict_format=Sml.dict_formats.RECORD,
-            datetime_format=Sml.datetime_formats.EPOCH,
-        ),
-    )
-    assert "when = ~1" in result.code
-
-
-def test_record_mode_positive_epoch() -> None:
-    """Positive epoch timestamps remain ordinary SML integers."""
-    result = literalize(
-        source="when: 1970-01-01T00:00:01Z\n",
-        input_format=InputFormat.YAML,
-        language=Sml(
-            dict_format=Sml.dict_formats.RECORD,
-            datetime_format=Sml.datetime_formats.EPOCH,
-        ),
-    )
-    assert "when = 1" in result.code
-
-
 def test_record_mode_rejects_wide_epoch() -> None:
     """An epoch beyond native int range fails before SML compilation."""
     with pytest.raises(

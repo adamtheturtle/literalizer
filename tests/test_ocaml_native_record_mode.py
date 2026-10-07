@@ -6,7 +6,6 @@ from literalizer import (
     CollectionLayout,
     InputFormat,
     Language,
-    NewVariable,
     literalize,
     literalize_call,
 )
@@ -74,43 +73,6 @@ def test_record_mode_rejects_invalid_type_name() -> None:
                 type_name="Invalid",
             ),
         )
-
-
-def test_record_mode_temporal_string_formats() -> None:
-    """Native record fields use strings for configured ISO dates."""
-    result = literalize(
-        source=(
-            "birthday = 2024-01-15\n"
-            "moment = 2024-01-15T12:30:00Z\n"
-            "at = 09:30:00\n"
-        ),
-        input_format=InputFormat.TOML,
-        language=OCaml(
-            dict_format=OCaml.dict_formats.RECORD,
-            date_format=OCaml.date_formats.ISO,
-            datetime_format=OCaml.datetime_formats.ISO,
-        ),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "birthday : string" in result.code
-    assert "moment : string" in result.code
-    assert "at : string" in result.code
-
-
-def test_record_mode_epoch_datetime() -> None:
-    """Epoch datetime values use a concrete int field."""
-    result = literalize(
-        source="moment = 2024-01-15T12:30:00Z\n",
-        input_format=InputFormat.TOML,
-        language=OCaml(
-            dict_format=OCaml.dict_formats.RECORD,
-            datetime_format=OCaml.datetime_formats.EPOCH,
-        ),
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-    assert "moment : int" in result.code
 
 
 def test_record_mode_conflicts_with_json_value() -> None:
