@@ -1,0 +1,11 @@
+schema_version = 1
+# Empty positional siblings must borrow the populated sibling's element type.
+languages = ["Cpp"]
+languages_reason = "This regression exercises C++ positional vector type inference; other backends do not uniformly support the nested empty/non-empty sibling shape."
+suites = ["base", "combined"]
+
+[base_context]
+collection_layout = "multiline"
+
+[[variants]]
+axis = "language_version"

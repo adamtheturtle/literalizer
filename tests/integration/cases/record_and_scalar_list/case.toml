@@ -1,0 +1,6 @@
+schema_version = 1
+# RECORD mode must retain a general list type when a scalar accompanies a record.
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
