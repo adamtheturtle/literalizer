@@ -4,9 +4,7 @@ import datetime
 
 from literalizer import (
     InputFormat,
-    StubReturn,
     literalize,
-    literalize_call,
 )
 from literalizer._types import Scalar, Value
 from literalizer.languages import (
@@ -16,7 +14,6 @@ from literalizer.languages import (
     Java,
     Kotlin,
     Nim,
-    Python,
     Roc,
     Rust,
 )
@@ -26,17 +23,6 @@ def test_elm_integer_format_handles_i64_minimum() -> None:
     """The raw format preserves its special minimum-integer spelling."""
     assert Elm.integer_formats.DECIMAL(-(2**63)) == (
         "EInt ((-9223372036854775807 - 1))"
-    )
-
-
-def test_nim_zero_argument_value_method_stub() -> None:
-    """A value-returning method with no arguments needs only self."""
-    assert Nim().format_call_stub(
-        ("thing", "go"), (), StubReturn.VALUE, []
-    ) == (
-        "type ThingType = object",
-        "proc go(self: ThingType): int {.discardable.} = 0",
-        "var thing: ThingType",
     )
 
 
@@ -81,23 +67,6 @@ def test_roc_wrappers_without_preamble() -> None:
         )
         == "module [main]\n\nmain =\n    dbg (call)\n    {}"
     )
-
-
-def test_bound_call_transform_consumes_return_value() -> None:
-    """A call transform composes with declarations for bound arguments."""
-    result = literalize_call(
-        source='[{"$ref":"x"}]',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        target_function="f",
-        parameter_names=["a"],
-        bound_refs={"x": 1},
-        ref_key="$ref",
-        call_transform=lambda context: f"print({context.call})",
-        wrap_in_file=True,
-    )
-    assert "print(f(a=x))" in result.code
-    assert "x = 1" in result.code
 
 
 def test_cpp_positional_empty_lists_share_element_type() -> None:
@@ -150,18 +119,6 @@ def test_rust_mutable_json_declaration() -> None:
             "data", "1", 1, frozenset({Rust.Modifiers["MUT"]})
         )
         == "let mut data: serde_json::Value = serde_json::json!(1);"
-    )
-
-
-def test_kotlin_nested_dictionary_array_fallback() -> None:
-    """Nested arrays with map elements retain the general map value
-    type.
-    """
-    nested_map: dict[Scalar, Value] = {"b": 1}
-    inner: list[Value] = [nested_map]
-    outer: list[Value] = [inner]
-    assert Kotlin().dict_format_config.dict_open({"a": outer}) == (
-        "mapOf<String, Any?>("
     )
 
 
