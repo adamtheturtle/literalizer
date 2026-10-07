@@ -1,13 +1,19 @@
 schema_version = 1
 summary = """
-Elm Int precision tops out at 2**53 - 1 in either direction, so an
-integer just past that range is refused rather than silently rounded
-(#3683).
+Elm's supported safe integer range is -(2**53 - 1) to 2**53 - 1.
+Both decimal and hexadecimal formats reject values outside it (#3683),
+including the signed 64-bit minimum previously special-cased by the
+raw formatter (#5196).
 """
 exceptions = ["UnrepresentableIntegerError"]
 languages = ["Elm"]
+option = "integer_format"
 
 [call]
 api = "literalize"
-sources = ["9007199254740992", "-9007199254740992"]
+sources = [
+  "9007199254740992",
+  "-9007199254740992",
+  "-9223372036854775808",
+]
 input_format = "json"

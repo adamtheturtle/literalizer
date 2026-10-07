@@ -37,7 +37,6 @@ from literalizer._formatters.format_floats import (
     format_float_scientific,
 )
 from literalizer._formatters.format_integers import (
-    I64_MIN,
     format_integer_hex,
     make_overflow_fallback_formatter,
     raise_for_unrepresentable_int,
@@ -232,9 +231,7 @@ def _apply_elm_integer_formatter(
     value: int, prefix: str, base: Callable[[int], str]
 ) -> str:
     """Format an integer with a constructor prefix."""
-    formatted = "(-9223372036854775807 - 1)"
-    if value != I64_MIN:
-        formatted = base(value)
+    formatted = base(value)
     if value < 0:
         return f"{prefix}Int ({formatted})"
     return f"{prefix}Int {formatted}"
@@ -1745,6 +1742,9 @@ class Elm(metaclass=LanguageCls):
                 prefix=self.constructor_prefix,
                 base=_INT_BASE[self.integer_format.name],
             )
+        # Elm's JavaScript target uses numbers with limited integer
+        # precision. Changing a literal's spelling cannot extend the safe
+        # range, so validate every rendering mode here (#3683, #5196).
         return make_overflow_fallback_formatter(
             base=base_formatter,
             min_value=-(2**53 - 1),
