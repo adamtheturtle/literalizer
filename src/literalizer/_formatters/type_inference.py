@@ -10,6 +10,40 @@ from literalizer._types import OrderedMap, Scalar, Value
 
 
 @beartype
+def replace_positional_empty_lists(
+    *, lists: Sequence[list[Value]]
+) -> list[list[Value]]:
+    """Borrow populated cousins for type inference without changing data.
+
+    Only matching positions in equal-length lists share exemplars. Walk
+    those positions recursively so enclosing containers share the type.
+    """
+    normalized = [list(items) for items in lists]
+    if len(lists) <= 1 or len({len(items) for items in lists}) != 1:
+        return normalized
+    for position in range(len(normalized[0])):
+        cousins = [items[position] for items in normalized]
+        if not all(isinstance(cousin, list) for cousin in cousins):
+            continue
+        populated = [
+            cousin
+            for cousin in cousins
+            if isinstance(cousin, list) and bool(cousin)
+        ]
+        if len(populated) == 0:
+            continue
+        populated = replace_positional_empty_lists(lists=populated)
+        replacements = iter(populated)
+        for items in normalized:
+            cousin = items[position]
+            if isinstance(cousin, list) and bool(cousin):
+                items[position] = next(replacements)
+            else:
+                items[position] = populated[0]
+    return normalized
+
+
+@beartype
 @dataclass(frozen=True)
 class ListType:
     """Represents a homogeneous list element type for type inference.
