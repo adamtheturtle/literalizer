@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go widens disjoint nested maps to map[string]int when all values share the concrete integer type."
+
+[[variants]]
+axis = "record_nested_map_fallback"

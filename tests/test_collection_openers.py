@@ -6,7 +6,7 @@ formatter configurations that the public API cannot exercise (issue #4699).
 
 import pytest
 
-from literalizer import InputFormat, Language, literalize
+from literalizer import Language
 from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     make_narrowed_empty_form,
@@ -15,7 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.type_inference import BeyondI64, WideInt
 from literalizer._types import OrderedMap
-from literalizer.languages import Cpp, Go, Haxe, Nim, Raku
+from literalizer.languages import Cpp, Haxe, Nim, Raku
 from tests.integration.parsed_values import ParsedValue, Scalar
 
 
@@ -113,47 +113,6 @@ def test_narrowed_empty_form_resolver_fallback(
     )
     assert opener([[1]]) == f"List[{expected_type}]()"
     assert opener([[1, "two"]]) == "List[Fallback]()"
-
-
-@pytest.mark.parametrize(
-    argnames=(
-        "first_value",
-        "second_value",
-        "expected_type",
-        "expected_first",
-        "expected_second",
-    ),
-    argvalues=[
-        ("1", "2", "int", "1", "2"),
-        ("1", '"two"', "any", "1", '"two"'),
-        ("1", "null", "any", "1", "nil"),
-        ("null", "null", "any", "nil", "nil"),
-    ],
-)
-def test_widened_map_uses_shared_concrete_type(
-    first_value: str,
-    second_value: str,
-    expected_type: str,
-    expected_first: str,
-    expected_second: str,
-) -> None:
-    """Widened maps narrow only when all scalar values share one type."""
-    result = literalize(
-        source=(
-            f'[{{"input": {{"a": {first_value}}}}}, '
-            f'{{"input": {{"b": {second_value}}}}}]'
-        ),
-        input_format=InputFormat.JSON,
-        language=Go(heterogeneous_strategy=Go.heterogeneous_strategies.RECORD),
-    )
-    assert result.code == (
-        "[]Record0{\n"
-        f"\tRecord0{{Input: map[string]{expected_type}"
-        f'{{"a": {expected_first}}}}},\n'
-        f"\tRecord0{{Input: map[string]{expected_type}"
-        f'{{"b": {expected_second}}}}},\n'
-        "}"
-    )
 
 
 def test_integer_type_fallbacks() -> None:
