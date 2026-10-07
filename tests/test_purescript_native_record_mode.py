@@ -1,5 +1,7 @@
 """Public API coverage for opt-in PureScript records."""
 
+from textwrap import dedent
+
 import pytest
 
 from literalizer import InputFormat, literalize, literalize_call
@@ -88,4 +90,20 @@ def test_record_mode_call_argument() -> None:
         parameter_names=("item",),
         wrap_in_file=True,
     )
-    assert "consume ({ x: 1 })" in result.code
+    assert result.code == dedent(
+        text="""\
+        module Check where
+
+
+        import Prelude
+        consume :: Val -> Unit
+        consume _ = unit
+
+
+        main :: Unit
+        main =
+            let
+                _ = consume ({ x: 1 })
+            in
+            unit"""
+    )

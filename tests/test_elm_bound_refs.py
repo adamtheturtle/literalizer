@@ -6,6 +6,7 @@ declared in a case file (issue #4699).
 """
 
 import datetime
+from textwrap import dedent
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Elm
@@ -25,5 +26,20 @@ def test_bare_time_bound_ref_uses_string_constructor() -> None:
         wrap_in_file=True,
     )
 
-    assert "type Val\n    = EStr String" in result.code
-    assert 'value = EStr "01:02:03"' in result.code
+    assert result.code == dedent(
+        text="""\
+        module Check exposing (..)
+
+
+        type Val
+            = EStr String
+            | EDict (List ( String, Val ))
+
+
+        value : Val
+        value = EStr "01:02:03"
+        out : Val
+        out = EDict [
+            ("x", value)
+            ]"""
+    )

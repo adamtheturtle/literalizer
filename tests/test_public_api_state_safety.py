@@ -6,6 +6,7 @@ once, neither of which a case file can declare (issue #4699).
 
 import datetime
 from concurrent.futures import ThreadPoolExecutor
+from textwrap import dedent
 
 import pytest
 
@@ -27,7 +28,12 @@ def test_time_key_in_public_substitution_uses_time_formatter() -> None:
         },
     )
 
-    assert "datetime.time(hour=1, minute=2, second=3): 1" in result.bare_code
+    assert result.bare_code == dedent(
+        text="""\
+        {
+            "value": {datetime.time(hour=1, minute=2, second=3): 1},
+        }"""
+    )
 
 
 def test_cyclic_supplemental_values_raise_typed_error() -> None:

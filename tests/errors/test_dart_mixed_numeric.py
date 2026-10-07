@@ -1,5 +1,7 @@
 """Dart mixed-numeric container validation."""
 
+from textwrap import dedent
+
 import pytest
 
 from literalizer import InputFormat, literalize
@@ -25,4 +27,10 @@ def test_dart_mixed_numeric_set_keeps_integer_identity() -> None:
         input_format=InputFormat.YAML,
         language=Dart(),
     )
-    assert "9007199254740993" in result.code
+    assert result.code == dedent(
+        text="""\
+        {
+            1.5,
+            9007199254740993,
+        }"""
+    )
