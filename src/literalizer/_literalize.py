@@ -50,6 +50,7 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
     int_widening_tier,
     record_shape_for_dict,
+    replace_positional_empty_lists,
     set_sort_key,
 )
 from literalizer._language import (
@@ -623,6 +624,7 @@ class _RenderContext:
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
+    sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
     empty_container_overrides: Mapping[int, str]
     list_int_formatters: Mapping[int, Callable[[int], str]]
@@ -653,6 +655,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            sequence_open_overrides=self.sequence_open_overrides,
             dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             list_int_formatters=self.list_int_formatters,
@@ -686,6 +689,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            sequence_open_overrides=self.sequence_open_overrides,
             dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             list_int_formatters=self.list_int_formatters,
@@ -712,6 +716,7 @@ class _RenderContext:
             wrap_ids=self.wrap_ids,
             tuple_list_ids=self.tuple_list_ids,
             dict_open_overrides=self.dict_open_overrides,
+            sequence_open_overrides=self.sequence_open_overrides,
             dict_int_formatters=self.dict_int_formatters,
             empty_container_overrides=self.empty_container_overrides,
             list_int_formatters=self.list_int_formatters,
@@ -894,6 +899,12 @@ def _accumulate_positional_empty_list_overrides(
             replacement = narrowed_empty_sequence(non_empty_lists)
             for empty_list in empty_lists:
                 _ = out.setdefault(id(empty_list), replacement)
+        elif len(empty_lists) > 0:
+            known = {out[id(item)] for item in empty_lists if id(item) in out}
+            if len(known) == 1:
+                (replacement,) = known
+                for empty_list in empty_lists:
+                    _ = out.setdefault(id(empty_list), replacement)
         if len(non_empty_lists) > 0:
             _accumulate_positional_empty_list_overrides(
                 sibling_lists=non_empty_lists,
@@ -2017,19 +2028,65 @@ def _compute_sequence_open_override(
 
     fallback = spec.sequence_open([])
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
-        same_length = len({len(sibling) for sibling in lists}) == 1
-        has_positional_empty_mix = same_length and any(
-            any(_is_value_list(item) and len(item) == 0 for item in position)
-            and any(_is_value_list(item) and bool(item) for item in position)
-            for position in zip(*lists, strict=True)
-        )
-        if has_positional_empty_mix:
-            normalized_lists = _replace_positional_empty_lists(lists=lists)
+        normalized_lists = replace_positional_empty_lists(lists=lists)
+        if normalized_lists != lists:
             return spec.sequence_open(
                 [item for sibling in normalized_lists for item in sibling]
             )
         return None
     return fallback
+
+
+@beartype
+def _collect_sequence_open_overrides(
+    *, data: Value, spec: Language
+) -> dict[int, str]:
+    """Keep content-derived sequence types consistent through cousins."""
+    overrides: dict[int, str] = {}
+
+    def _visit(value: Value) -> None:
+        """Find sibling groups in lists and map values."""
+        if isinstance(value, list):
+            children = value
+        elif isinstance(value, dict):
+            children = list(value.values())
+        else:
+            return
+        lists = [child for child in children if _is_value_list(child)]
+        _accumulate_sequence_open_overrides(
+            lists=lists, spec=spec, out=overrides
+        )
+        for child in children:
+            _visit(value=child)
+
+    _visit(value=data)
+    return overrides
+
+
+@beartype
+def _accumulate_sequence_open_overrides(
+    *, lists: Sequence[list[Value]], spec: Language, out: dict[int, str]
+) -> None:
+    """Reconcile siblings and their matching nested list positions."""
+    if len(lists) <= 1:
+        return
+    normalized = replace_positional_empty_lists(lists=lists)
+    if normalized != lists:
+        opener = _compute_sequence_open_override(items=lists, spec=spec)
+        if opener is not None and (
+            spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
+        ):
+            for sibling in lists:
+                _ = out.setdefault(id(sibling), opener)
+    populated = [sibling for sibling in lists if bool(sibling)]
+    if len({len(sibling) for sibling in populated}) != 1:
+        return
+    for position in zip(*populated, strict=True):
+        cousins = [item for item in position if _is_value_list(item)]
+        if len(cousins) == len(position):
+            _accumulate_sequence_open_overrides(
+                lists=cousins, spec=spec, out=out
+            )
 
 
 # Two scalars of incompatible types, used to probe whether a language's
@@ -2045,30 +2102,6 @@ _FALLBACK_PROBE: list[Value] = [1, "probe"]
 def _is_value_list(value: Value, /) -> TypeGuard[list[Value]]:
     """Narrow a parsed value to its recursively typed list form."""
     return isinstance(value, list)
-
-
-@beartype
-def _replace_positional_empty_lists(
-    *, lists: Sequence[list[Value]]
-) -> list[list[Value]]:
-    """Replace empty positional cousins with a non-empty type exemplar."""
-    normalized = [list(items) for items in lists]
-    for position in range(len(normalized[0])):
-        cousins = [items[position] for items in normalized]
-        exemplar = next(
-            (
-                cousin
-                for cousin in cousins
-                if _is_value_list(cousin) and bool(cousin)
-            ),
-            None,
-        )
-        if exemplar is None:
-            continue
-        for items in normalized:
-            if _is_value_list(items[position]) and not bool(items[position]):
-                items[position] = exemplar
-    return normalized
 
 
 @beartype
@@ -2693,7 +2726,12 @@ def _dict_open_for_ref_inference(
 def _sequence_open_for_ref_inference(
     *, data: list[Value], ctx: _RenderContext
 ) -> str:
-    """Return the sequence opener using resolved refs when needed."""
+    """Return the sequence opener using sibling types and resolved
+    refs.
+    """
+    override = ctx.sequence_open_overrides.get(id(data))
+    if override is not None:
+        return override
     inferred = _opener_inference_value(data=data, ctx=ctx)
     effective_inferred_3 = data
     if len(inferred) > 0:
@@ -3405,6 +3443,7 @@ class _RecordContextFormatting:
     wrap_ids: frozenset[int]
     tuple_list_ids: frozenset[int]
     dict_open_overrides: Mapping[int, str]
+    sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
     empty_overrides: Mapping[int, str]
     list_int_formatters: Mapping[int, Callable[[int], str]]
@@ -3456,6 +3495,9 @@ def _record_context_formatting(
         wrap_ids=wrap_ids,
         tuple_list_ids=tuple_list_ids,
         dict_open_overrides=dict_open_overrides,
+        sequence_open_overrides=_collect_sequence_open_overrides(
+            data=data, spec=language
+        ),
         dict_int_formatters=_collect_dict_int_formatters(
             data=data,
             spec=language,
@@ -3538,6 +3580,7 @@ def _build_render_context(
         wrap_ids=frozenset[int](),
         tuple_list_ids=frozenset[int](),
         dict_open_overrides={},
+        sequence_open_overrides={},
         dict_int_formatters={},
         empty_overrides={},
         list_int_formatters={},
@@ -3566,6 +3609,15 @@ def _build_render_context(
                 id_map=inference_id_map,
             ),
             **context.dict_open_overrides,
+        },
+        sequence_open_overrides={
+            **_source_container_id_mapping(
+                inferred_mapping=_collect_sequence_open_overrides(
+                    data=inference_data, spec=language
+                ),
+                id_map=inference_id_map,
+            ),
+            **context.sequence_open_overrides,
         },
         dict_int_formatters={
             **_source_container_id_mapping(
@@ -5711,6 +5763,9 @@ def _format_single_call_arg(
         # already reconcile sibling dict types across slots via
         # ``_compute_call_slot_overrides``, so this map stays empty here.
         dict_open_overrides={},
+        sequence_open_overrides=_collect_sequence_open_overrides(
+            data=value, spec=language
+        ),
         dict_int_formatters=_collect_dict_int_formatters(
             data=value, spec=language
         ),
@@ -7501,6 +7556,9 @@ def _render_zip_literal(
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
             data=value, spec=language, ref_key=disabled_ref_key()
+        ),
+        sequence_open_overrides=_collect_sequence_open_overrides(
+            data=value, spec=language
         ),
         dict_int_formatters=_collect_dict_int_formatters(
             data=value, spec=language

@@ -79,6 +79,7 @@ from literalizer._formatters.type_inference import (
     collect_record_shapes,
     infer_element_type,
     record_shape_for_dict,
+    replace_positional_empty_lists,
     set_sort_key,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
@@ -899,12 +900,6 @@ def _collect_unique_cpp_types(
 
 
 @beartype
-def _is_cpp_value_list(value: Value, /) -> TypeGuard[list[Value]]:
-    """Narrow a parsed value to a recursively typed list."""
-    return isinstance(value, list)
-
-
-@beartype
 def _infer_cpp_collection_element(
     *, items: list[Value], type_ctx: _CppTypeCtx
 ) -> type | ListType | DictType | None:
@@ -968,34 +963,12 @@ def _compute_element_type_for_items(
                 if cpp_type is not None:
                     return cpp_type
     sibling_lists = [item for item in items if isinstance(item, list)]
-    if (
-        not type_ctx.tuple_strategy
-        and len(sibling_lists) == len(items)
-        and len({len(item) for item in sibling_lists}) == 1
-        and bool(sibling_lists[0])
-        and any(
-            any(
-                _is_cpp_value_list(item) and len(item) == 0
-                for item in position
+    if not type_ctx.tuple_strategy and len(sibling_lists) == len(items):
+        normalized_lists = replace_positional_empty_lists(lists=sibling_lists)
+        if normalized_lists != sibling_lists:
+            return _compute_element_type_for_items(
+                items=list(normalized_lists), type_ctx=type_ctx
             )
-            and any(_is_cpp_value_list(item) and item for item in position)
-            for position in zip(*sibling_lists, strict=True)
-        )
-    ):
-        positional_types = [
-            _compute_element_type_for_items(
-                items=list(position), type_ctx=type_ctx
-            )
-            for position in zip(*sibling_lists, strict=True)
-        ]
-        if len(set(positional_types)) == 1:
-            inner = positional_types[0]
-        else:
-            inner = type_ctx.variant_type(positional_types)
-        return type_ctx.sequence_type(
-            inner=inner,
-            length=len(sibling_lists[0]),
-        )
     variant_int_type = type_ctx.int_resolver(
         _collect_direct_ints(items=items),
     )
