@@ -105,3 +105,27 @@ def test_record_shape_names_are_snapshotted() -> None:
     names[frozenset({"d", "e"})] = "DeltaEcho"
 
     assert render() == before_mutation
+
+
+def test_unrelated_reference_values_preserve_set_rendering() -> None:
+    """Unused caller-owned bindings do not change a set's rendering."""
+    source = "!!set\n1:\n2:\n"
+    ref_values = {"unused": [3]}
+    language = Python()
+    expected = literalize(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=language,
+        ref_key="$ref",
+    )
+
+    result = literalize(
+        source=source,
+        input_format=InputFormat.YAML,
+        language=language,
+        ref_key="$ref",
+        ref_values=ref_values,
+    )
+
+    assert result == expected
+    assert ref_values == {"unused": [3]}

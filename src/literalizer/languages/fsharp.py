@@ -15,7 +15,6 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
-from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -1610,8 +1609,7 @@ class FSharp(metaclass=LanguageCls):
     @cached_property
     def _sequence_declared_type(self) -> str:
         """Resolved declared type for sequence values."""
-        raw_declared = self.sequence_format.value.declared_type
-        return (value_or_default(value=raw_declared, default="Val")).replace(
+        return self.sequence_format.value.declared_type.replace(
             "Val", self.type_name
         )
 

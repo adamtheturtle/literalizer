@@ -15,7 +15,6 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
-from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -1226,15 +1225,16 @@ class Sml(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+        fmt: SequenceFormatConfig = self.sequence_format.value
         if self.dict_format is type(self.dict_format).RECORD:
             return dataclasses.replace(
-                self.sequence_format.value,
+                fmt,
                 sequence_open=fixed_open(open_str="["),
                 supports_heterogeneity=False,
                 declared_type=None,
             )
         return dataclasses.replace(
-            self.sequence_format.value,
+            fmt,
             sequence_open=fixed_open(
                 open_str=f"{self.constructor_prefix}List [",
             ),
@@ -1390,10 +1390,11 @@ class Sml(metaclass=LanguageCls):
         """Shared SML variable declaration formatter."""
         if self.dict_format is type(self.dict_format).RECORD:
             return lambda name, value, _data: f"val {name} = {value}"
-        _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
-            value_or_default(value=_raw_declared, default="val_t")
-        ).replace("val_t", self.type_name)
+            self.sequence_format.value.declared_type.replace(
+                "val_t", self.type_name
+            )
+        )
         return _build_sml_declaration(
             sequence_declared_type=_sequence_declared_type,
             scalar_declared_type=self.type_name,

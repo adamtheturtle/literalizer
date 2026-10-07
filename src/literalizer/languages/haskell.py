@@ -2525,8 +2525,9 @@ class Haskell(metaclass=LanguageCls):
         if self._json_type_active:
             return _AESON_VALUE_SEQUENCE_CONFIG
         if self.dict_format is type(self.dict_format).RECORD:
+            fmt: SequenceFormatConfig = self.sequence_format.value
             return dataclasses.replace(
-                self.sequence_format.value,
+                fmt,
                 sequence_open=fixed_open(open_str="["),
                 supports_heterogeneity=False,
                 declared_type=None,

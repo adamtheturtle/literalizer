@@ -15,7 +15,6 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
-from literalizer._formatters.fallbacks import value_or_default
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
     datetime_ymdhms_formatter,
@@ -1242,7 +1241,7 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        fmt = self.sequence_format.value
+        fmt: SequenceFormatConfig = self.sequence_format.value
         if self._json_type_active:
             _yojson_open = fixed_open(open_str="`List [")
             return dataclasses.replace(fmt, sequence_open=_yojson_open)
@@ -1429,10 +1428,11 @@ class OCaml(metaclass=LanguageCls):
                 scalar_declared_type=_YOJSON_SAFE_T,
                 entry_formatter=self._entry_formatter,
             )
-        _raw_declared = self.sequence_format.value.declared_type
         _sequence_declared_type = (
-            value_or_default(value=_raw_declared, default="val_t")
-        ).replace("val_t", self.type_name)
+            self.sequence_format.value.declared_type.replace(
+                "val_t", self.type_name
+            )
+        )
         return _build_ocaml_declaration(
             sequence_declared_type=_sequence_declared_type,
             scalar_declared_type=self.type_name,
