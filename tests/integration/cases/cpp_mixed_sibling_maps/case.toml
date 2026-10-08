@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Cpp"]
+languages_reason = "C++ content-derived variant alternatives must agree with differently typed sibling maps beside a scalar."
+suites = ["base"]
+
+[[variants]]
+axis = "language_version"
