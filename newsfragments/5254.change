@@ -1,0 +1,1 @@
+Preserve labels for underscore-prefixed Swift call parameters in generated stubs.

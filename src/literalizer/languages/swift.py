@@ -244,7 +244,9 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
 
 
 @beartype
-def _swift_param(*, name: str, accepts_nil: bool) -> str:
+def _swift_param(
+    *, name: str, accepts_nil: bool, is_wrapper_parameter: bool
+) -> str:
     """Format a single Swift parameter for a stub signature.
 
     When *accepts_nil* is ``True`` the parameter type is ``Any?`` with
@@ -254,7 +256,7 @@ def _swift_param(*, name: str, accepts_nil: bool) -> str:
     type_and_default = "Any = 0"
     if accepts_nil:
         type_and_default = "Any? = nil"
-    if name.startswith("_"):
+    if is_wrapper_parameter:
         return f"_ {name}: {type_and_default}"
     return f"{name}: {type_and_default}"
 
@@ -289,7 +291,12 @@ def _swift_call_stub(
     """Return Swift stub declarations for a call name."""
     accepts_nil = _swift_args_contain_nil(args=args)
     param_list = ", ".join(
-        _swift_param(name=p, accepts_nil=accepts_nil) for p in params
+        _swift_param(
+            name=p,
+            accepts_nil=accepts_nil,
+            is_wrapper_parameter=len(args) == 0 and p.startswith("_"),
+        )
+        for p in params
     )
     if len(parts) == 1:
         return (
