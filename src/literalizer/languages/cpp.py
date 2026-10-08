@@ -3662,8 +3662,8 @@ class Cpp(metaclass=LanguageCls):
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
-    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
-        passthrough_set_entry
+    format_set_entry: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(passthrough_set_entry)
     )
     """Callable that formats a set entry."""
 
