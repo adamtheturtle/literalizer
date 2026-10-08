@@ -5030,6 +5030,10 @@ def literalize_bound_refs(
         wrap_in_file=True,
         bound_ref_names=frozenset(bound_refs),
     )
+    used_ref_names = _collect_ref_names(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    )
+    ordered_names = [name for name in ordered_names if name in used_ref_names]
     declaration_form = variable_form
     if isinstance(declaration_form, BothVariableForms):
         declaration_form = NewVariable(
@@ -8078,6 +8082,12 @@ def literalize_call_parsed(
         values=bound_refs,
         argument_name="bound_refs",
     )
+    used_ref_names = _collect_ref_names(value=data, ref_key=ref_key)
+    materialized_bound_refs = {
+        name: value
+        for name, value in materialized_bound_refs.items()
+        if name in used_ref_names
+    }
     materialized_ref_values: Mapping[str, Value] = {
         **materialized_bound_refs,
         **explicit_ref_values,
