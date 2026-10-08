@@ -1509,7 +1509,6 @@ class Crystal(metaclass=LanguageCls):
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CRYSTAL_RECORD_MAP_TYPE}{{",
         )
