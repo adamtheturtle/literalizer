@@ -141,6 +141,7 @@ def main() -> None:
         program=program,
         steps=[
             # Bound a stalled platform fetch, compilation, or execution.
+            # Retry once only after timeout cleanup, never after an error.
             roundtrip_common.TimedStep(
                 args=[roc, "run", "--linker=legacy", "main.roc"],
                 failure_label="roc run error",

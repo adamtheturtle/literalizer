@@ -289,7 +289,7 @@ def _run_step(
     tmpdir: Path,
     program: str,
 ) -> subprocess.CompletedProcess[str]:
-    """Run a step and fail after a cleaned-up timeout."""
+    """Run a step and retry once after a cleaned-up timeout."""
     if not isinstance(step, TimedStep):
         return subprocess.run(
             args=list(step.args),
@@ -299,16 +299,20 @@ def _run_step(
             cwd=tmpdir,
             encoding="utf-8",
         )
-    try:
-        return _run_timed_attempt(
-            label=label,
-            step=step,
-            tmpdir=tmpdir,
-            program=program,
-            attempt="1/1",
-        )
-    except subprocess.TimeoutExpired:
-        sys.exit(1)
+    # Retry once only after timeout cleanup. Completed subprocesses
+    # return immediately, leaving exit and JSON checks to execute.
+    for attempt in ("1/2", "2/2"):
+        try:
+            return _run_timed_attempt(
+                label=label,
+                step=step,
+                tmpdir=tmpdir,
+                program=program,
+                attempt=attempt,
+            )
+        except subprocess.TimeoutExpired:
+            continue
+    sys.exit(1)
 
 
 def execute(
@@ -330,7 +334,7 @@ def execute(
     failing step's stdout/stderr and a dump of *program*.
 
     A :class:`TimedStep` logs each attempt and its timeout diagnostics,
-    terminates the process tree on timeout, and fails. Completed
+    terminates the process tree on timeout, and retries once. Completed
     subprocesses are never retried, even if their output fails verification.
 
     On success, the *last* step's stdout is passed to :func:`verify`
