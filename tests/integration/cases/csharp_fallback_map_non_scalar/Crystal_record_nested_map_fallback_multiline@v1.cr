@@ -1,6 +1,6 @@
 module Fixture_csharp_fallback_map_non_scalar_Crystal_record_nested_map_fallback_multiline
 extend self
-alias LiteralizerRecordValue = Bool | Float64 | Int128 | Int32 | Int64 | String | Nil
+alias LiteralizerRecordValue = Array(Int32) | Bool | Float64 | Int128 | Int32 | Int64 | String | Nil
 record Record0, name : String, payload : Hash(String, LiteralizerRecordValue)
 my_data = [
     Record0.new(

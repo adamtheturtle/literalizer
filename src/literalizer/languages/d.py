@@ -1379,11 +1379,24 @@ class D(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
             split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open="JSONValue([",
+        )
+
+        def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
+            """Convert a fallback-map array value to its JSON carrier."""
+            if isinstance(raw_value, list) and len(raw_value) == 0:
+                return _D_EMPTY_JSON_ARRAY
+            return f"JSONValue({formatted})"
+
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior, wrap_non_scalar=_wrap_non_scalar
+            ),
         )
 
     @cached_property

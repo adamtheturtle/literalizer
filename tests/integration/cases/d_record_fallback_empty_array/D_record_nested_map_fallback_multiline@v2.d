@@ -6,10 +6,7 @@ auto my_data = [
         "one",
         JSONValue([
             "scalar": JSONValue(1),
-            "items": JSONValue([
-                2,
-                3,
-            ]),
+            "items": parseJSON("[]"),
         ]),
     ),
     Record0(
