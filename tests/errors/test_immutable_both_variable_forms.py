@@ -71,7 +71,7 @@ from literalizer.languages import Cpp, CSharp, Java
             dedent(
                 text="""\
                 using System;
-                static int[] my_val = (
+                static (int, int) my_val = (
                     1,
                     2
                 );

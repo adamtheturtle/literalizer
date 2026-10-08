@@ -1,1 +1,1 @@
-static object[] p = new Playlist();
+static ValueTuple p = new Playlist();
