@@ -645,6 +645,12 @@ def _cpp_array_type(
             effective_cpp_array_type = _cpp_array_type(
                 items=entry_item, type_ctx=type_ctx
             )
+        elif isinstance(entry_item, dict):
+            effective_cpp_array_type = _compute_cpp_type(
+                item=entry_item,
+                element_to_type=element_to_type,
+                type_ctx=type_ctx,
+            )
         else:
             effective_cpp_array_type = element_to_type(type(entry_item))
         collected_element_types.append(effective_cpp_array_type)
