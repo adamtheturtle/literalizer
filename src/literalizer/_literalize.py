@@ -4099,6 +4099,12 @@ class _ReferenceBindingLanguage(Protocol):
     reference.
     """
 
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Return imports needed for an identifier binding."""
+        ...
+
     def format_reference_variable_declaration(
         self,
         name: str,
@@ -4705,6 +4711,14 @@ def literalize_apply_form(
     data_dependent_preamble = language.data_dependent_preamble(
         pre_form.data_for_preamble
     )
+    if _extract_call_arg_ref_name(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    ) is not None and isinstance(language, _ReferenceBindingLanguage):
+        data_dependent_preamble = (
+            language.reference_binding_data_dependent_preamble(
+                pre_form.data_for_preamble
+            )
+        )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
