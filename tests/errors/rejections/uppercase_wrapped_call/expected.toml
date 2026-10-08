@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[InvalidCallTargetError]
+"Roc['DoThing']" = "Roc cannot use call target 'DoThing': component 'DoThing' cannot name a declaration in the generated file"
+"Roc['Playlist.new']" = "Roc cannot use call target 'Playlist.new': component 'Playlist' is not a valid identifier"
+"V['DoThing']" = "V cannot use call target 'DoThing': component 'DoThing' cannot name a declaration in the generated file"
+"V['Playlist.new']" = "V cannot use call target 'Playlist.new': component 'Playlist' cannot name a declaration in the generated file"
