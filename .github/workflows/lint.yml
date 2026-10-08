@@ -23,7 +23,6 @@ concurrency:
 jobs:
   pre-commit:
     strategy:
-      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         # We select hooks by prek group (defined via ``groups:`` in
@@ -1859,7 +1858,6 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
-      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2004,7 +2002,6 @@ jobs:
 
   lint-cpp:
     strategy:
-      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
