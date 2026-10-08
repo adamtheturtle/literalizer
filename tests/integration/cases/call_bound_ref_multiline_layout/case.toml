@@ -6,8 +6,8 @@ target_function = "f"
 parameter_names = ["value"]
 per_element = false
 collection_layout = "multiline"
-languages = ["Haskell", "Python"]
-languages_reason = "Haskell layout requires each multiline call to have a single do-block bind; Python is a representative for multiline bound-ref layout."
+languages = ["Haskell", "Mojo", "Python"]
+languages_reason = "Haskell checks do-block layout for multiline bound references; Mojo checks explicit copies of owned nested lists; Python checks multiline bound-ref layout."
 
 [call.ref_declarations]
 ref_data = "[[1, 2], [3, 4]]"

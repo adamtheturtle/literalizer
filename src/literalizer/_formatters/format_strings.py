@@ -232,6 +232,7 @@ def format_string_concat_control(
     quote_escape: str,
     control_char_template: str,
     concat_operator: str,
+    escape_delete_and_c1: bool,
 ) -> Callable[[str], str]:
     """Return a string formatter that splits on control characters and
     concatenates parts with a language-specific operator.
@@ -249,6 +250,7 @@ def format_string_concat_control(
             quote_escape="''",
             control_char_template="achar({})",
             concat_operator=" // ",
+            escape_delete_and_c1=False,
         )
         format_string("hello")  # => "'hello'"
     """
@@ -263,6 +265,7 @@ def format_string_concat_control(
             control_char_template=control_char_template,
             concat_operator=concat_operator,
             empty=empty,
+            escape_delete_and_c1=escape_delete_and_c1,
         )
 
     return _format
@@ -277,18 +280,30 @@ def _apply_concat_control(
     control_char_template: str,
     concat_operator: str,
     empty: str,
+    escape_delete_and_c1: bool,
 ) -> str:
     """Format a string with control character concatenation."""
     control_char_threshold = 32
+    delete_code_point = 127
+    c1_control_start = 128
+    c1_control_end = 159
     parts: list[str] = []
-    for segment in re.split(
-        pattern=r"([\x00-\x1f\x85\u2028\u2029])", string=value
-    ):
+    pattern = r"([\x00-\x1f\x85\u2028\u2029])"
+    if escape_delete_and_c1:
+        pattern = r"([\x00-\x1f\x7f-\x9f\u2028\u2029])"
+    for segment in re.split(pattern=pattern, string=value):
         if segment == "":
             continue
-        if len(segment) == 1 and ord(segment) < control_char_threshold:
+        if len(segment) == 1 and (
+            ord(segment) < control_char_threshold
+            or (escape_delete_and_c1 and ord(segment) == delete_code_point)
+        ):
             parts.append(control_char_template.format(ord(segment)))
-        elif segment in "\x85\u2028\u2029":
+        elif segment in "\x85\u2028\u2029" or (
+            escape_delete_and_c1
+            and len(segment) == 1
+            and c1_control_start <= ord(segment) <= c1_control_end
+        ):
             parts.extend(
                 control_char_template.format(byte)
                 for byte in segment.encode(encoding="utf-8")

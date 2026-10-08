@@ -18,11 +18,3 @@ input_format = "yaml"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
-
-[[accepts]]
-languages = ["Python"]
-reason = """
-Python annotates a record field with the type it holds and does not
-declare the record ahead of its values, so two shapes sharing a key
-set need no single field type.
-"""

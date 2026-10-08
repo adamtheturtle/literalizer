@@ -1,5 +1,5 @@
 schema_version = 1
-languages = ["Rust"]
+languages = ["Python", "Rust"]
 languages_reason = "Rust-specific: only its LAZY_STATIC declarations carry an inferred annotation, and the empty map is typed from its non-empty sibling."
 suites = ["base"]
 

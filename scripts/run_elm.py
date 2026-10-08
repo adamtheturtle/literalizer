@@ -4,6 +4,7 @@ runtime errors that survive the compile-only check.
 
 import functools
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -20,7 +21,7 @@ from scripts.elm_common import (
     worker_elm_home,
 )
 
-# Wrap ``Check.my_data`` in a ``Platform.worker`` so loading the compiled
+# Wrap the fixture root in a ``Platform.worker`` so loading the compiled
 # JavaScript evaluates the fixture's top-level value, surfacing runtime
 # crashes such as ``Debug.todo`` or references that pass type-checking
 # but fail at evaluation.
@@ -34,7 +35,7 @@ import Platform
 main : Program () () Never
 main =
     Platform.worker
-        { init = \\_ -> forceData Check.my_data
+        { init = \\_ -> forceData Check.ROOT_NAME
         , update = \\_ m -> ( m, Cmd.none )
         , subscriptions = \\_ -> Sub.none
         }
@@ -92,15 +93,30 @@ def _run_fixture(
         # checking for the ``_call`` suffix that selects the call-mode driver.
         logical_stem = src.stem.split(sep="@", maxsplit=1)[0]
         is_call = logical_stem.endswith("_call")
-        effective_data = _MAIN_ELM
-        if is_call:
-            effective_data = _CALL_MAIN_ELM
+        source = src.read_text(encoding="utf-8")
+        effective_data = _CALL_MAIN_ELM
+        if not is_call:
+            # Bound references precede the root declaration. Select the last
+            # top-level value binding, using its rendered identifier.
+            bindings = [
+                match.group(1)
+                for match in re.finditer(
+                    pattern=r"^([a-z][A-Za-z0-9_]*)\s*=",
+                    string=source,
+                    flags=re.MULTILINE,
+                )
+            ]
+            if len(bindings) == 0:
+                msg = f"{filename}: no top-level Elm root binding found\n"
+                _ = sys.stderr.write(msg)
+                return True
+            effective_data = _MAIN_ELM.replace("ROOT_NAME", bindings[-1])
         _ = main_path.write_text(
             data=effective_data,
             encoding="utf-8",
         )
         _ = check_path.write_text(
-            data=src.read_text(encoding="utf-8"),
+            data=source,
             encoding="utf-8",
         )
         compile_result = run_elm_make(
