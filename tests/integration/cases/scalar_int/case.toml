@@ -22,3 +22,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "modifiers"
+
+[[variants]]
+axis = "json_type_modifiers"
