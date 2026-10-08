@@ -1,0 +1,7 @@
+[[_]]
+type = "create"
+name = "a"
+
+[[_]]
+type = "update"
+name = "b"
