@@ -1,0 +1,11 @@
+* existing
+@code javascript
+1
+@end
+* my_data
+@code javascript
+[
+    0,
+    [[existing]]
+]
+@end

@@ -1,4 +1,2 @@
 schema_version = 1
 suites = ["base"]
-languages = ["JavaScript"]
-languages_reason = "JavaScript renders naive datetimes from local calendar components."

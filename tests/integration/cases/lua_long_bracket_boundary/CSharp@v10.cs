@@ -1,0 +1,7 @@
+using System;
+var my_data = (
+    "]",
+    "a]",
+    "a]=",
+    "a]b"
+);

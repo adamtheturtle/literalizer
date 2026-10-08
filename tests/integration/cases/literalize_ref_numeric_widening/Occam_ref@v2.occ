@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT FLOATING_VALUE IS 1.5:
+    VAL MOBILE LIT INTEGER_VALUE IS 2.0:
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        FLOATING_VALUE,
+        INTEGER_VALUE
+    ]):
+    SEQ
+        SKIP
+:

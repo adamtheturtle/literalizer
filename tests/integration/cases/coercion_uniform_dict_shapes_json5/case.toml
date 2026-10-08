@@ -1,4 +1,2 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Dhall"]
-languages_reason = "Sampled: Dhall rejects mismatched record shapes, so uniform record lists must remain accepted through every input parser."

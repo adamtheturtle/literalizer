@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Cpp"]
-languages_reason = "C++ nested vector types retain their default element type when every positional cousin is empty."
 suites = ["base", "combined"]
 
 [base_context]

@@ -1,0 +1,25 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "comma_hash"; MOBILE LIT(lit.str; MOBILE []BYTE "a,#b")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "comma_space_hash"; MOBILE LIT(lit.str; MOBILE []BYTE "trail, # comment")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "escaped_quote"; MOBILE LIT(lit.str; MOBILE []BYTE "quote \" and , #")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "next_line"; MOBILE LIT(lit.str; MOBILE []BYTE "x    y")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "line_separator"; MOBILE LIT(lit.str; MOBILE []BYTE "x     y")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "paragraph_separator"; MOBILE LIT(lit.str; MOBILE []BYTE "x     y"))
+    ]):
+    SEQ
+        SKIP
+:

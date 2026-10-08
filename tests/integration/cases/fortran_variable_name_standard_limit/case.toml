@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Fortran"]
-languages_reason = "Fortran accepts variable names up to its 63-character standard limit."
 suites = ["base"]
 
 [base_context]

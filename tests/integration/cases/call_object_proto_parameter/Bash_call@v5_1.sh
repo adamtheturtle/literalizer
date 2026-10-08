@@ -1,0 +1,2 @@
+capture() { :; }
+capture 1

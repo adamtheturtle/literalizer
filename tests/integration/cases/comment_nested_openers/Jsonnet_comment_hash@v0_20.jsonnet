@@ -1,0 +1,4 @@
+{
+    # nested openers /* and {- remain
+    x: 1,
+}

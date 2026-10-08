@@ -1,3 +1,3 @@
 def f(*_args: object, **_kwargs: object) -> object: ...
 x = 1
-repr(f(a=x))
+f(a=x)

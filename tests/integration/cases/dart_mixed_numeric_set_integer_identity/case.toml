@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Dart"]
-languages_reason = "Dart mixed numeric sets infer num and preserve an integer beyond exact double precision."
 suites = ["base"]

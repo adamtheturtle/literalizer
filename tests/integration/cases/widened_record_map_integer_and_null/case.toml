@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["Go"]
-languages_reason = "Go must keep map[string]any when a disjoint nested map contains nil beside an integer value."
 
 [[variants]]
 axis = "record_nested_map_fallback"

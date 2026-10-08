@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "alpha": [2, []],
+    "beta": [5, ["x"]]
+}
+@end

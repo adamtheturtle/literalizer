@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["V"]
-languages_reason = "Sampled: V is an arbitrary representative; precedence is language-independent."
 
 [ref.value_sources]
 x = "[1, 2]"

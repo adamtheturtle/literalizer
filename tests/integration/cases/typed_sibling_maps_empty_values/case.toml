@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Rust", "V"]
-languages_reason = "Sampled: these typed-map backends accept matching empty-map value types in sibling maps."
 suites = ["base"]

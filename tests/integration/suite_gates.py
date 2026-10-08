@@ -22,6 +22,7 @@ import literalizer
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
+    ModifierPresentGate,
     SpecFieldPresentGate,
     language_gate_admits,
 )
@@ -66,7 +67,6 @@ def _empty_container_type_hint_strategy(
 
 
 METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
-    "language_id": lambda metadata: metadata.language_id,
     "empty_container_type_hint_heterogeneous_strategy": (
         _empty_container_type_hint_strategy
     ),
@@ -200,6 +200,7 @@ type SuiteGate = Annotated[
     | NonDefaultKwargGate
     | SpecFieldPresentGate
     | EnumMemberPresentGate
+    | ModifierPresentGate
     | MetadataFieldGate
     | SpecConfigFieldPresentGate
     | BehaviorFlagGate,
@@ -269,6 +270,7 @@ def gate_admits(
             CapabilityFlagGate()
             | SpecFieldPresentGate()
             | EnumMemberPresentGate()
+            | ModifierPresentGate()
         ):
             admits = language_gate_admits(
                 gate=gate,

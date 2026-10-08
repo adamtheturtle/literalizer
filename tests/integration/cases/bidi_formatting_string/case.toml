@@ -1,15 +1,4 @@
 schema_version = 1
-languages = [
-  "D",
-  "Dart",
-  "Elixir",
-  "JavaScript",
-  "Python",
-  "R",
-  "Rust",
-  "TypeScript",
-]
-languages_reason = "These toolchains reject a raw bidirectional formatting character in source: rustc and the D compiler deny it, Elixir raises a syntax error, the R parser refuses it outright, the Dart analyzer warns, and JavaScript/TypeScript tooling plus Python linters flag Trojan Source risk in string literals."
 suites = ["base"]
 
 [[variants]]

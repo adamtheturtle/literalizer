@@ -1,0 +1,10 @@
+pub type GVal {
+  GInt(Int)
+  GList(List(GVal))
+}
+pub fn process(_value: a) -> Nil { Nil }
+
+pub fn main() {
+  process(GInt(1))
+  process(GInt(2))
+}

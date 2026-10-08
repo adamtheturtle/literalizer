@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["PureScript", "Sml"]
-languages_reason = "Curried calls must accept parenthesized native record arguments."
 target_function = "consume"
 parameter_names = ["item"]
 per_element = true

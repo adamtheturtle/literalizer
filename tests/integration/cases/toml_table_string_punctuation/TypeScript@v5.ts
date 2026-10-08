@@ -1,0 +1,9 @@
+const my_data: Record<string, string> = {
+  "comma_hash": "a,#b",
+  "comma_space_hash": "trail, # comment",
+  "escaped_quote": "quote \" and , #",
+  "next_line": "xy",
+  "line_separator": "x\u2028y",
+  "paragraph_separator": "x\u2029y",
+};
+export {};

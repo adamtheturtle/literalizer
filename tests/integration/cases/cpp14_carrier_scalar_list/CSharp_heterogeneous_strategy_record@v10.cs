@@ -1,0 +1,9 @@
+class Check {
+    public static void Main() {
+var my_data = new object[] {
+    1,
+    "a",
+    2.5
+};
+    }
+}

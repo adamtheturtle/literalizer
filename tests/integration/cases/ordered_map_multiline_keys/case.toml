@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["JavaScript", "TypeScript"]
-languages_reason = "Template-string ordered-map keys need computed property syntax in JavaScript and TypeScript."
 
 [[variants]]
 axis = "multiline_string"

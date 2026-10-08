@@ -2,11 +2,10 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+gates = [{ kind = "modifier_present", modifier = "PUBLIC" }]
 target_function = "process"
 parameter_names = ["item"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
 variable_modifiers = ["PUBLIC"]
-languages = ["Java", "CSharp"]
-languages_reason = "These languages require explicit call-result types on class fields."

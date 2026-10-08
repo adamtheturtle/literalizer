@@ -1,0 +1,6 @@
+Imports System.Collections.Generic
+Module Check
+    Dim my_data = New Object() {
+        New Dictionary(Of String, Object) From {{"", "external_value"}}
+    }
+End Module

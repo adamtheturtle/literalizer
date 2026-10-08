@@ -4,8 +4,6 @@ owner = "literalize-call"
 # Keep ref_values non-empty while an unknown marker is stripped from a
 # nested list during type inference.
 [call]
-languages = ["Haskell"]
-languages_reason = "Sampled: Haskell is an arbitrary representative; marker stripping is language-independent."
 target_function = "process"
 parameter_names = ["data"]
 per_element = false

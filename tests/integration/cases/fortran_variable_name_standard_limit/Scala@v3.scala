@@ -1,0 +1,3 @@
+object Fixture_fortran_variable_name_standard_limit_Scala {
+val vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 1
+}

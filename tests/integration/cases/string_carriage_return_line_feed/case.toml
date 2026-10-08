@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Bash", "CommonLisp", "Raku"]
-languages_reason = "These are the only back ends that embed a carriage return in a string literal rather than escaping it, so they are the only ones whose emitted line can end in one."
 suites = ["base"]
 
 [[variants]]

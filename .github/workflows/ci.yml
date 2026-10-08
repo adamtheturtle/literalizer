@@ -9,6 +9,7 @@ on:
     types: [opened, synchronize, reopened]
   schedule:
     - cron: 0 1 * * *
+  workflow_dispatch: {}
 
 permissions: {}
 
@@ -22,6 +23,8 @@ concurrency:
 jobs:
   build:
     strategy:
+      # Keep all measurements when an expanded case fails.
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]

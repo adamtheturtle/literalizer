@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Fortran"]
-languages_reason = "Fortran alone continues a string literal across source lines."
 suites = ["base", "combined"]

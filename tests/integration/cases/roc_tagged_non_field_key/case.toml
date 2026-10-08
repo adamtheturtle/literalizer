@@ -1,4 +1,2 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Roc"]
-languages_reason = "Roc's default tagged maps preserve keys rejected by its native-record mode."

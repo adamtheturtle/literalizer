@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["Swift"]
-languages_reason = "Swift tuple-record validation must accept scalar leaves without generating nested record declarations."
 
 [[variants]]
 axis = "record_tuple_sequence"

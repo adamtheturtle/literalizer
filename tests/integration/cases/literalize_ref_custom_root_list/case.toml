@@ -4,8 +4,6 @@ owner = "literalize-ref"
 [ref]
 ref_key = "reference"
 variable_form = "both"
-languages = ["Nim"]
-languages_reason = "Nim must preserve a resolved root reference without JSON conversion."
 
 [ref.value_sources]
 whole = '[1, 2]'

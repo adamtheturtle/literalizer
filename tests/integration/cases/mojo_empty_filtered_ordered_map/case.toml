@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Mojo"]
-languages_reason = "A Mojo-specific rendering: the sole null entry filters out, leaving an empty typed list."
 suites = ["base"]

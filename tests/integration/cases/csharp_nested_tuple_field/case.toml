@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["CSharp"]
-languages_reason = "C# field annotations must match tuple syntax, including ValueTuple.Create for empty and single-element sequences."
 
 [[variants]]
 axis = "modifiers"

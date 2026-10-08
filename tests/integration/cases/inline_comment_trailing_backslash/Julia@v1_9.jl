@@ -1,0 +1,4 @@
+my_data = Dict(
+    "a" => 1,  # inline ending backslash \ .
+    "b" => 2,
+)

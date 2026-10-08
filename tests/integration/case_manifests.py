@@ -8,7 +8,7 @@ import string
 import tomllib
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Annotated, Literal, Self, get_args
+from typing import Annotated, Literal, get_args
 
 from beartype import beartype
 from pydantic import (
@@ -23,7 +23,6 @@ from pydantic import (
 
 import literalizer
 from literalizer import ValueInput
-from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input
 from .language_metadata import language_metadata
@@ -223,17 +222,6 @@ def _to_call_transform(value: object, /) -> object:
 # type is still checked.
 type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
 type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
-_LANGUAGES_BY_NAME = {
-    lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES
-}
-type ManifestLanguage = Annotated[
-    literalizer.LanguageCls,
-    BeforeValidator(func=_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
-]
-type ManifestLanguages = Annotated[
-    tuple[ManifestLanguage, ...],
-    Field(strict=False),
-]
 type CallTransformTemplate = Annotated[
     InstanceOf[CallTransform], BeforeValidator(func=_to_call_transform)
 ]
@@ -321,44 +309,23 @@ class LanguageSelection(  # noqa: NOD001
     frozen=True,
     strict=True,
 ):
-    """How one manifest table narrows the languages it renders under.
+    """Select languages through the capabilities a case requires.
 
-    ``gates`` names the property the narrowing follows from, so a case
-    that a language qualifies for by gaining that property picks it up
-    without being edited.  ``languages`` names the languages outright,
-    for a narrowing no property expresses -- a syntax quirk only one
-    language has, or a deliberate one-language sample of a rendering
-    that does not vary -- and pairs with ``languages_reason``, which
-    says which of those it is.  Naming both would state the same
-    narrowing twice, so a table declares at most one.
-
-    A gate reads the language default spec: a case selects languages,
-    where a variant axis selects the specs its overrides build.
+    A gate reads the language default spec, while a variant axis gates
+    the specs its overrides build. An ungated case admits every language.
     """
 
-    languages: ManifestLanguages = ()
-    languages_reason: Annotated[str, Field(min_length=1)] | None = None
     gates: list[SuiteGate] = Field(default_factory=no_gates)
 
     @model_validator(mode="after")
-    def _validate_language_selection(self) -> Self:
-        """Reject a narrowing stated twice, or stated without a
-        reason.
-        """
-        if len(self.languages) > 0 and bool(self.gates):
-            msg = "declare either languages or gates, not both"
-            raise ValueError(msg)
-        if bool(self.languages) != (self.languages_reason is not None):
-            msg = "languages and languages_reason require each other"
-            raise ValueError(msg)
+    def _validate_language_selection(self) -> LanguageSelection:
+        """Reject gates whose names no registry answers to."""
         validate_gate_names(subject="gates", gates=self.gates)
         return self
 
     @beartype
     def admits_language(self, *, lang_cls: literalizer.LanguageCls) -> bool:
         """Return whether this narrowing selects *lang_cls*."""
-        if len(self.languages) > 0:
-            return lang_cls in self.languages
         return gates_admit(
             gates=self.gates,
             lang_cls=lang_cls,
@@ -819,8 +786,6 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         schema_version=data.schema_version,
         input=input_info,
         selection=LanguageSelection(
-            languages=data.languages,
-            languages_reason=data.languages_reason,
             gates=data.gates,
         ),
         suites=frozenset(data.suites),

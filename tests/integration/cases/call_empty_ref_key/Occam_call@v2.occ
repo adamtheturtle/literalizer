@@ -1,0 +1,22 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC consume (VAL MOBILE LIT value)
+    SKIP
+:
+PROC main ()
+    VAL MOBILE LIT external_value IS 1:
+    consume(external_value)
+    SEQ
+        SKIP
+:

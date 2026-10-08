@@ -1,11 +1,8 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Scala"]
-languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
 
 [ref]
-languages = ["Scala"]
-languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]

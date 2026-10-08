@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Haskell"]
-languages_reason = "Haskell-specific: hexadecimal escapes consume following digits, so `\\&` must terminate each escape before the adjacent character."
 suites = ["base", "combined"]

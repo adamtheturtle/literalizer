@@ -1,0 +1,17 @@
+* empty_values
+@code javascript
+[]
+@end
+* integer_values
+@code javascript
+[
+    1
+]
+@end
+* my_data
+@code javascript
+[
+    empty_values,
+    integer_values
+]
+@end

@@ -7,5 +7,3 @@ parameter_names = []
 per_element = true
 call_transform = "{call}"
 wrap_in_file = true
-languages = ["Nim"]
-languages_reason = "Nim method stubs must retain self when returning a value without other arguments."

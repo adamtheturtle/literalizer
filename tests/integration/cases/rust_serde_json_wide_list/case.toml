@@ -1,7 +1,5 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Rust"]
-languages_reason = "Rust's serde_json::json! macro needs a raised recursion limit for wide collections."
 
 [[variants]]
 axis = "json_type"

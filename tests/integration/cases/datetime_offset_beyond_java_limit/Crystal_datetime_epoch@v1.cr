@@ -1,0 +1,4 @@
+module Fixture_datetime_offset_beyond_java_limit_Crystal_datetime_epoch
+extend self
+my_data = 1592136060
+end

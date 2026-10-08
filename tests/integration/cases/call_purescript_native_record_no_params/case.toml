@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["PureScript"]
-languages_reason = "PureScript native-record stubs quantify argument types only when parameters are present."
 target_function = "consume"
 parameter_names = []
 per_element = true

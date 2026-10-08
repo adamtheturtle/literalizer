@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    {"outer": {"inner": {"x": 1}}},
+    {"outer": {"inner": {}}}
+]
+@end

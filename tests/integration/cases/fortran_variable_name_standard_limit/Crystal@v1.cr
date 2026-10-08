@@ -1,0 +1,4 @@
+module Fixture_fortran_variable_name_standard_limit_Crystal
+extend self
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 1
+end

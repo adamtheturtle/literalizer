@@ -1,0 +1,5 @@
+const my_data: Record<string, number> = {
+  "minimum": -0b10000000000000000000000000000000,
+  "below": -0b10110010110100000101111000000000,
+};
+export {};

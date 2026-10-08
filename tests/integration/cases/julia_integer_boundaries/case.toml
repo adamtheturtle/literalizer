@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Julia"]
-languages_reason = "Sampled: Julia represents i64 boundary handling while the integer-format axis covers formatter choices for every language."
 suites = ["base"]
 
 [[variants]]

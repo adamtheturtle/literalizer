@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["PureScript"]
-languages_reason = "PureScript native records widen values beyond Int32 to exact Number literals."
 
 [[variants]]
 axis = "native_record"

@@ -1,0 +1,4 @@
+const my_data = {
+  "_": [1, 2, 3],
+};
+export {};

@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "half"; MOBILE LIT(lit.str; MOBILE []BYTE "1979-05-27T07:32:00.500000")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "milli"; MOBILE LIT(lit.str; MOBILE []BYTE "1979-05-27T07:32:00.100000")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "max_milli"; MOBILE LIT(lit.str; MOBILE []BYTE "1979-05-27T07:32:00.999000")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "whole"; MOBILE LIT(lit.str; MOBILE []BYTE "1979-05-27T07:32:00"))
+    ]):
+    SEQ
+        SKIP
+:

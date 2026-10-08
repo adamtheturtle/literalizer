@@ -1,0 +1,7 @@
+module Fixture_coercion_homogeneous_dict_jsonc_Crystal
+extend self
+my_data = {
+    "a" => 1,
+    "b" => 2,
+}
+end

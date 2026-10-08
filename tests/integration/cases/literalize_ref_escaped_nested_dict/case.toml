@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Python"]
-languages_reason = "Sampled: JSON escape decoding must find nested reference markers and preserve ordinary escaped strings."
 
 [ref.value_sources]
 existing = "1"

@@ -1,8 +1,6 @@
 schema_version = 1
 input = "input.json"
 owner = "variant"
-languages = ["Erlang"]
-languages_reason = "The Erlang lexer rejects literal U+FFFE and U+FFFF source characters."
 
 [[variants]]
 axis = "erlang_noncharacter_string"

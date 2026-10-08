@@ -1,0 +1,13 @@
+* string_map
+@code javascript
+{
+    "k": "s"
+}
+@end
+* my_data
+@code javascript
+[
+    string_map,
+    {"k": 1}
+]
+@end

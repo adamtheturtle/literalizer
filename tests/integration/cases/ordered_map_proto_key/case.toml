@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["JavaScript", "TypeScript"]
-languages_reason = "ECMAScript ordered object literals give __proto__ setter semantics."
 suites = ["base"]
 
 [[variants]]

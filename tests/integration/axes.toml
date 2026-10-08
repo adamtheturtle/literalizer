@@ -859,13 +859,10 @@ overrides = [
 ]
 
 [axes.scala3_record_keyword_fields]
-# Scala 3 soft-keyword field syntax is a language-specific grammar case,
-# rather than a cross-language rendering capability.
+# Soft-keyword fields exercise every available RECORD strategy.
 plan = "fixed_overrides"
 name_template = "{lang}_scala3_record_keyword_fields"
-gates = [
-  { kind = "metadata_field", field = "language_id", value = "scala" },
-]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
@@ -1022,7 +1019,7 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_record_sequence_{format}"
 primary_axis = "sequence"
-gates = [{ kind = "metadata_field", field = "language_id", value = "rust" }]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
@@ -1184,7 +1181,6 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_epoch_datetime_list"
 gates = [
-  { kind = "metadata_field", field = "language_id", value = "occam" },
   { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
 ]
 overrides = [
@@ -1325,25 +1321,21 @@ overrides = [
 plan = "every_non_default_member"
 name_template = "{lang}_i64_min_integer_format_{format}"
 option = "integer_format"
-gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
 
 [axes.nim_i64_min_record_integer_format]
 plan = "cross_product"
 name_template = "{lang}_i64_min_record_integer_format_{tag}_{secondary}"
-gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 secondaries = [{ tag = "integer", option = "integer_format" }]
 
 [axes.csharp_fallback_map_non_scalar]
-# This locks in C#'s System.Text.Json fallback syntax for nested non-scalars;
-# no cross-language capability denotes that language-specific spelling.
+# Nested non-scalars exercise every available RECORD strategy.
 plan = "fixed_overrides"
 name_template = "{lang}_fallback_map_non_scalar"
-gates = [
-  { kind = "metadata_field", field = "language_id", value = "csharp" },
-]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]

@@ -1,0 +1,4 @@
+module Fixture_bare_string_Crystal_no_variable_form_bare_string
+extend self
+"text"
+end

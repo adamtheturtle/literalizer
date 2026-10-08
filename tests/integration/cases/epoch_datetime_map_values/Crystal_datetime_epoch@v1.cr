@@ -1,0 +1,7 @@
+module Fixture_epoch_datetime_map_values_Crystal_datetime_epoch
+extend self
+my_data = {
+    "within_i32" => 1705320000,
+    "beyond_i32" => 4085195400,
+}
+end

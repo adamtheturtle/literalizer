@@ -269,9 +269,13 @@ def _expected_call_shape_exception(
         or bound_refs_wrap
         or isinstance(effective_style.value, literalizer.KeywordCallStyle)
     )
-    if rejects_reserved_parameters and any(
-        name in lang_cls.reserved_variable_identifiers
-        for name in config.parameter_names
+    if (
+        rejects_reserved_parameters
+        and lang_cls.declares_call_parameter_names
+        and any(
+            name in lang_cls.reserved_variable_identifiers
+            for name in config.parameter_names
+        )
     ):
         return InvalidCallParameterNameError
     innermost_target_function = config.target_function.split(sep=".")[-1]

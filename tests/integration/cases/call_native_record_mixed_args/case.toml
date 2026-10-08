@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["PureScript"]
-languages_reason = "PureScript native-record stubs need independent polymorphic parameter types across calls."
 target_function = "consume"
 parameter_names = ["item", "count", "label"]
 per_element = true

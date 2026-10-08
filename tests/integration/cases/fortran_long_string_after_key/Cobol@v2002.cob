@@ -1,0 +1,8 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 MY-DATA.
+    05 F-LONG-STR PIC X(300) VALUE "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".
+PROCEDURE DIVISION.
+    STOP RUN.
