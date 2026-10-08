@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
@@ -374,7 +375,9 @@ def _crystal_int_field_type(*, value: int) -> str:
 
 
 @beartype
-def _crystal_record_field_identifier(key: str, /) -> str:
+def _crystal_record_field_identifier(
+    key: str, /, *, reserved_identifiers: frozenset[str]
+) -> str:
     """Return the Crystal ``record`` field name for a dict *key*.
 
     Crystal field identifiers are the dict keys verbatim (no case
@@ -385,6 +388,8 @@ def _crystal_record_field_identifier(key: str, /) -> str:
     if key == "initialize":
         msg = "Crystal record field name 'initialize' is reserved"
         raise UnrepresentableInputError(msg)
+    if key in reserved_identifiers or key == "as":
+        return f"{key}_"
     return key
 
 
@@ -1495,7 +1500,10 @@ class Crystal(metaclass=LanguageCls):
         return RecordRenderer(
             name_prefix=self.record_struct_name_prefix,
             record_shape_names=_CRYSTAL_NO_RECORD_SHAPE_NAMES,
-            field_identifier=_crystal_record_field_identifier,
+            field_identifier=functools.partial(
+                _crystal_record_field_identifier,
+                reserved_identifiers=self.reserved_variable_identifiers,
+            ),
             field_identifier_key=identity_field_identifier_key,
             field_type=self._crystal_record_field_type,
             render_declaration=_crystal_render_record_declaration,
