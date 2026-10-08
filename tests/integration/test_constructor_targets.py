@@ -82,7 +82,7 @@ def _golden_path(
 @pytest.mark.parametrize(
     argnames="lang_cls",
     argvalues=sorted_languages(),
-    ids=[lang_cls.__name__ for lang_cls in sorted_languages()],
+    ids=lambda lang_cls: lang_cls.__name__,
 )
 def test_constructor_targets_golden_file(
     *,
@@ -221,7 +221,7 @@ _BINDING_CASES = _constructor_binding_cases()
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=_BINDING_CASES,
-    ids=[case.name for case in _BINDING_CASES],
+    ids=lambda case: case.name,
 )
 def test_constructor_binding_golden_file(
     *,

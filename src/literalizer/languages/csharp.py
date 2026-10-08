@@ -333,6 +333,7 @@ def _csharp_common_element_type(
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
+    tuple_sequences: bool,
 ) -> str:
     """Return the common C# type for a list of elements."""
     if len(items) == 0:
@@ -343,6 +344,7 @@ def _csharp_common_element_type(
             date_hint=date_hint,
             datetime_hint=datetime_hint,
             dict_value_type=dict_value_type,
+            tuple_sequences=tuple_sequences,
         )
         for item in items
     }
@@ -360,6 +362,7 @@ def _csharp_type_hint(
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
+    tuple_sequences: bool,
 ) -> str:
     """Return the C# declared type for *data*."""
     match data:
@@ -369,6 +372,7 @@ def _csharp_type_hint(
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
+                tuple_sequences=tuple_sequences,
             )
             return f"Dictionary<string, {val_type}>"
         case set():
@@ -377,14 +381,35 @@ def _csharp_type_hint(
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
+                tuple_sequences=tuple_sequences,
             )
             return f"HashSet<{elem}>"
+        case list() if tuple_sequences:
+            element_types = [
+                _csharp_type_hint(
+                    data=item,
+                    date_hint=date_hint,
+                    datetime_hint=datetime_hint,
+                    dict_value_type=dict_value_type,
+                    tuple_sequences=tuple_sequences,
+                )
+                for item in data
+            ]
+            match len(element_types):
+                case 0:
+                    hint = "ValueTuple"
+                case 1:
+                    hint = f"ValueTuple<{element_types[0]}>"
+                case _:
+                    hint = f"({', '.join(element_types)})"
+            return hint
         case list():
             elem = _csharp_common_element_type(
                 items=data,
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
+                tuple_sequences=tuple_sequences,
             )
             return f"{elem}[]"
         case _:
@@ -405,6 +430,7 @@ def _format_csharp_declaration(
     date_hint: str,
     datetime_hint: str,
     dict_value_type: str,
+    tuple_sequences: bool,
 ) -> str:
     """Format a C# variable declaration, applying modifiers when set.
 
@@ -428,6 +454,7 @@ def _format_csharp_declaration(
         date_hint=date_hint,
         datetime_hint=datetime_hint,
         dict_value_type=dict_value_type,
+        tuple_sequences=tuple_sequences,
     )
     return f"{prefix}{hint} {name} = {value};"
 
@@ -2315,6 +2342,7 @@ class CSharp(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is str:
                 datetime_hint = "string"
         dict_value_type = self.default_dict_value_type
+        tuple_sequences = self.sequence_format is self.sequence_formats.TUPLE
 
         def _formatter(
             name: str,
@@ -2333,6 +2361,7 @@ class CSharp(metaclass=LanguageCls):
                 date_hint=date_hint,
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
+                tuple_sequences=tuple_sequences,
             )
 
         return _formatter

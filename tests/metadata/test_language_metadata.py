@@ -52,7 +52,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_language_metadata_is_declared_by_each_language(
     *,
@@ -98,7 +98,7 @@ def test_variant_metadata_fields_have_no_defaults() -> None:
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_language_version_is_non_empty_string(
     *,
@@ -112,7 +112,7 @@ def test_language_version_is_non_empty_string(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_pygments_name_is_valid(
     *,
@@ -127,7 +127,7 @@ def test_pygments_name_is_valid(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_protocol_properties_accessible(
     *,
@@ -184,7 +184,7 @@ def test_language_protocol_members_are_not_class_level_none() -> None:
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_format_enumeration_properties(
     language_cls: LanguageCls,
@@ -242,7 +242,7 @@ class _HasRecordStructNamePrefix(Protocol):
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_supports_record_struct_name_prefix_matches_constructor(
     *,
@@ -276,7 +276,7 @@ class _HasRecordShapeNames(Protocol):
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_supports_record_shape_names_matches_constructor(
     *,
@@ -297,7 +297,7 @@ def test_supports_record_shape_names_matches_constructor(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_record_shape_name_declaration_property_is_boolean(
     *,
@@ -325,7 +325,7 @@ def test_supported_ref_cases_independent_of_identifier_cases() -> None:
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_identifier_cases_are_supported_ref_cases(
     *,

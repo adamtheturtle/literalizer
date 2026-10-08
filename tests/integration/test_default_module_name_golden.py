@@ -22,7 +22,7 @@ _LANGUAGES = [
 @pytest.mark.parametrize(
     argnames="lang_cls",
     argvalues=_LANGUAGES,
-    ids=[lang_cls.__name__ for lang_cls in _LANGUAGES],
+    ids=lambda lang_cls: lang_cls.__name__,
 )
 def test_default_module_name_golden(
     *,
