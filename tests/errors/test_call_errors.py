@@ -15,6 +15,7 @@ import pytest
 from literalizer import (
     BothVariableForms,
     InputFormat,
+    Language,
     literalize,
 )
 from literalizer._language import validate_call_parameter_names
@@ -68,7 +69,7 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
 
 @pytest.mark.parametrize(argnames="language", argvalues=[Haskell(), Norg()])
 def test_literalize_wrap_in_file_without_variable_not_supported_raises(
-    language: Haskell | Norg,
+    language: Language,
 ) -> None:
     """``wrap_in_file=True, variable_form=None`` raises for languages
     that cannot represent a bare value at file scope.
