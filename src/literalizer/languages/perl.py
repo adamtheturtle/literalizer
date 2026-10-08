@@ -112,16 +112,16 @@ from literalizer._types import Value
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
-_PERL_MIN_NORMAL_FLOAT = float.fromhex("0x1.0p-1022")
+_PERL_MAX_NUMERIC_TOKEN_LENGTH = 250
 
 
 @beartype
 def _format_perl_float_fixed(value: float) -> str:
     """Keep tiny fixed-point values within Perl's token limit."""
-    magnitude = abs(value)
-    if 0 < magnitude <= _PERL_MIN_NORMAL_FLOAT:
+    rendered = format_float_fixed(value=value)
+    if len(rendered) > _PERL_MAX_NUMERIC_TOKEN_LENGTH:
         return format_float_scientific(value=value)
-    return format_float_fixed(value=value)
+    return rendered
 
 
 @beartype

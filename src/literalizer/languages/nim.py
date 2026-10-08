@@ -2175,11 +2175,26 @@ class Nim(metaclass=LanguageCls):
             self._heterogeneous_variant_date_type,
             self._heterogeneous_variant_datetime_type,
         )
+        base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
+
+        def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+            """Keep nested fallback-map payloads in the recursive
+            carrier.
+            """
+            wrap_ids = set(base_compute_wrap_ids(data))
+            _close_nim_object_variant_wrap_ids(
+                item=data, ancestor_wrapped=False, wrap_ids=wrap_ids
+            )
+            return frozenset(wrap_ids)
+
         return dataclasses.replace(
             strategy,
             behavior=dataclasses.replace(
                 strategy.behavior,
+                compute_wrap_ids=_compute_wrap_ids,
                 wrap_scalar=variant_behavior.wrap_scalar,
+                wrap_non_scalar=variant_behavior.wrap_non_scalar,
+                wrap_empty_container=variant_behavior.wrap_empty_container,
                 widens_nested_maps_by_wrapping_scalars=True,
             ),
         )

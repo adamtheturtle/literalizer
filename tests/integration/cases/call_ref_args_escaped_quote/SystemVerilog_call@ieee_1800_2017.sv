@@ -13,6 +13,6 @@ module main;
 task process(input _VVal v); endtask
 initial begin
 static _VVal my_str = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a\"b"};
-process(my_str);
+void'(process(my_str));
 end
 endmodule

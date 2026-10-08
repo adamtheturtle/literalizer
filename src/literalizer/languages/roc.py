@@ -766,7 +766,7 @@ class Roc(metaclass=LanguageCls):
         re.Pattern[str] | None
     ] = None
     accepts_type_name_call_target = True
-    declares_type_name_call_target = True
+    declares_type_name_call_target = False
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
         frozenset()
@@ -777,7 +777,7 @@ class Roc(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    new_variable_name_syntax = NewVariableNameSyntax.ASCII
+    new_variable_name_syntax = NewVariableNameSyntax.LOWER_LETTER_ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

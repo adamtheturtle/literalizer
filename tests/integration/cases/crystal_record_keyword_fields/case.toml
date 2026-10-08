@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Crystal"]
+languages_reason = "Crystal record macro declarations must rename Crystal keyword fields."
+
+[[variants]]
+axis = "record_keyword_field"

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ root references to trivial RECORD structs must avoid ineffective moves."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+first = '{"child":{"value":1}}'

@@ -42,9 +42,8 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-using LiteralizerRecordValue = Value;
 struct Record1 { std::string kind; std::string pr_id; };
-struct Record0 { std::string name; Record1 input; std::map<std::string, LiteralizerRecordValue> expected; };
+struct Record0 { std::string name; Record1 input; std::map<std::string, std::string> expected; };
 int main() {
 auto my_data = std::vector<Record0>{
     Record0{
@@ -54,8 +53,8 @@ auto my_data = std::vector<Record0>{
             "pr_1",
         },
         {
-            {"pr_id", Value{"pr_1"}},
-            {"status", Value{"draft"}},
+            {"pr_id", "pr_1"},
+            {"status", "draft"},
         },
     },
     Record0{
@@ -65,7 +64,7 @@ auto my_data = std::vector<Record0>{
             "pr_1",
         },
         {
-            {"error", Value{"invalid_operation"}},
+            {"error", "invalid_operation"},
         },
     },
 };

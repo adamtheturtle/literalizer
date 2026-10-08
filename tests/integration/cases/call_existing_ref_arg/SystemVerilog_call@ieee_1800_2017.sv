@@ -13,6 +13,6 @@ module main;
 task process(input _VVal value); endtask
 initial begin
 static _VVal existing = _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""};
-process(existing);
+void'(process(existing));
 end
 endmodule

@@ -3675,8 +3675,6 @@ def _build_render_context(
         ref_key=ref_key,
     )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
-    if alias_record_ids is not None:
-        alias_record_ids(inference_id_map)
     wrap_ids = _source_container_ids(
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
         id_map=inference_id_map,
@@ -3686,6 +3684,8 @@ def _build_render_context(
         # language's type-inference cache. Restore the composition-wide record
         # context before any opener or field type reads that cache.
         check_data(data=record_context_data, spec=language)
+    if alias_record_ids is not None:
+        alias_record_ids(inference_id_map)
     tuple_list_ids = _source_container_ids(
         inferred_ids=_compute_tuple_list_ids(
             data=inference_data,
@@ -4014,6 +4014,15 @@ def _literalize_impl(
                 ref_case=ref_case,
                 language=language,
             )
+            ref_value = None
+            if ref_values is not None:
+                ref_value = ref_values.get(raw_ref_name)
+            if ref_value is not None:
+                compute_record_shapes = (
+                    language.heterogeneous_behavior.compute_record_shapes
+                )
+                if compute_record_shapes is not None:
+                    _ = compute_record_shapes(ref_value)
             identifier = _format_literal_ref_identifier(
                 raw_ref_name=raw_ref_name,
                 ref_name=ref_name,
@@ -5270,7 +5279,13 @@ def _literalize_value_binding(
         language=language,
         has_variable_declaration=True,
     )
-    data_dependent_preamble = language.data_dependent_preamble(value)
+    preamble_data = value
+    if (
+        record_context_data is not None
+        and language.heterogeneous_behavior.render_record_literal is not None
+    ):
+        preamble_data = record_context_data
+    data_dependent_preamble = language.data_dependent_preamble(preamble_data)
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5826,6 +5841,16 @@ def _compute_call_arg_ref_consume_inhibited_names(
     """
     if len(ref_values) == 0:
         return frozenset[str]()
+    compute_record_shapes = (
+        language.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        resolved_values = _resolve_ref_list_for_preamble(
+            values=elements,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        _ = compute_record_shapes(resolved_values)
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
     for element in elements:

@@ -106,6 +106,20 @@ _COBOL_PIC_S9_18_MAX = 10**18 - 1
 _COBOL_PIC_S9_18_MIN = -_COBOL_PIC_S9_18_MAX
 
 
+_COBOL_MAX_NUMERIC_LITERAL_DIGITS = 38
+
+
+@beartype
+def _format_cobol_float_fixed(value: float) -> str:
+    """Keep fixed-point literals within COBOL's 38-digit limit."""
+    rendered = format_float_fixed(value=value)
+    if sum(character.isdigit() for character in rendered) > (
+        _COBOL_MAX_NUMERIC_LITERAL_DIGITS
+    ):
+        return format_float_scientific(value=value)
+    return rendered
+
+
 @beartype
 def _format_string_cobol(value: str) -> str:
     """Format a COBOL alphanumeric string literal.
@@ -1436,7 +1450,7 @@ class Cobol(metaclass=LanguageCls):
 
         REPR = enum.member(value=format_float_repr)
         SCIENTIFIC = enum.member(value=format_float_scientific)
-        FIXED = enum.member(value=format_float_fixed)
+        FIXED = enum.member(value=_format_cobol_float_fixed)
 
     class IntegerFormats(enum.Enum):
         """Integer format options."""

@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ native arrays retain the ownership of their scalar element types."
+heterogeneous_strategy = "RECORD"
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+trivial = '{"values":[1,2]}'
+nested = '{"nested":[[1,2],[3,4]]}'
