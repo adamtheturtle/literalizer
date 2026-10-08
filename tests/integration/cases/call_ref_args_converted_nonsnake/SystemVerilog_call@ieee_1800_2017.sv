@@ -22,7 +22,7 @@ static _VVal my_other[] = '{
     _VVal'{tag: _VVAL_INT, i: 5, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_INT, i: 6, r: 0.0, s: ""}
 };
-process(my_var, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-process(my_other, _VVal'{tag: _VVAL_INT, i: 7, r: 0.0, s: ""});
+void'(process(my_var, _VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}));
+void'(process(my_other, _VVal'{tag: _VVAL_INT, i: 7, r: 0.0, s: ""}));
 end
 endmodule

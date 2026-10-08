@@ -12,7 +12,7 @@ typedef struct {
 module main;
 task process(); endtask
 initial begin
-process();
-process();
+void'(process());
+void'(process());
 end
 endmodule

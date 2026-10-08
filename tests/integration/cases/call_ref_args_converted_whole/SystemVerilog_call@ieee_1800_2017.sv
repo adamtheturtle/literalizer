@@ -17,6 +17,6 @@ static _VVal my_var[] = '{
     _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""}
 };
-process(my_var);
+void'(process(my_var));
 end
 endmodule

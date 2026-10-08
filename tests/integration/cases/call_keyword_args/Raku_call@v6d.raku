@@ -1,5 +1,5 @@
 class ThrottlerType { method check(*@a, *%kw) {} }
-my $throttler = ThrottlerType.new;
+my $throttler = ThrottlerType.bless;
 sub emit(*@a, *%kw) {}
 emit($throttler.check('user_1', 1000.0e0));
 emit($throttler.check('user_2', 2000.5e0));

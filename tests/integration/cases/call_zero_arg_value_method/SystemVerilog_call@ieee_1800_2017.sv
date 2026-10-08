@@ -10,12 +10,13 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-class ThrottlerType_;
-    task check(); endtask
+class ThingType_;
+    function _VVal go();
+        go = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
+    endfunction
 endclass
-ThrottlerType_ throttler = new();
+ThingType_ thing = new();
 initial begin
-void'(throttler.check());
-void'(throttler.check());
+void'(thing.go());
 end
 endmodule
