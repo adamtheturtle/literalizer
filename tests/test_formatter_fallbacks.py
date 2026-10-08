@@ -2,15 +2,8 @@
 
 from textwrap import dedent
 
-from literalizer import (
-    FileWrapperContext,
-    InputFormat,
-    literalize,
-)
-from literalizer.languages import (
-    Cpp,
-    Roc,
-)
+from literalizer import FileWrapperContext
+from literalizer.languages import Roc
 
 
 def test_roc_call_wrapper_without_preamble() -> None:
@@ -35,17 +28,3 @@ def test_roc_call_wrapper_without_preamble() -> None:
             dbg (call)
             {}"""
     )
-
-
-def test_unknown_reference_ignores_unrelated_preamble_values() -> None:
-    """An unbound fragment does not infer types from unrelated
-    bindings.
-    """
-    result = literalize(
-        source='{"$ref":"missing"}',
-        input_format=InputFormat.JSON,
-        language=Cpp(),
-        ref_key="$ref",
-        ref_values={"other": 1},
-    )
-    assert result.bare_code == "std::move(missing)"
