@@ -48,6 +48,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 
 [dependency-groups]
 dev = [
+    { include-group = "roundtrip" },
     "actionlint-py==1.7.12.25",
     "beartype==0.23.0rc2",
     "check-manifest==0.51",
@@ -67,7 +68,6 @@ dev = [
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
     "prek==0.5.4",
-    "pydantic==2.13.5",
     "pydocstringformatter==1.0.0",
     "pygments==2.21.0",
     "pylint[spelling]==4.1.2",
@@ -136,6 +136,9 @@ benchmark = [
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
+]
+roundtrip = [
+    "pydantic==2.13.5",
 ]
 
 [tool.setuptools]

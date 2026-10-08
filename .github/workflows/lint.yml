@@ -770,7 +770,8 @@ jobs:
         # Bound a stalled round-trip independently of the 30-minute job
         # allowance (issue 5205).
         timeout-minutes: 5
-        run: uv run python -m scripts.run_roc_roundtrip
+        # Install the runtime and helper dependencies without dev tools.
+        run: uv run --no-default-groups --group roundtrip python -m scripts.run_roc_roundtrip
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
