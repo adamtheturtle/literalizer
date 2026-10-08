@@ -437,6 +437,22 @@ def _format_scalar_integer(
 
 
 @beartype
+def _format_scalar_datetime(
+    *,
+    value: datetime.datetime,
+    spec: Language,
+    int_formatter: Callable[[int], str] | None,
+) -> str:
+    """Format a datetime with the selected epoch override."""
+    if (
+        int_formatter is not None
+        and spec.datetime_format.value.type_produced is int
+    ):
+        return int_formatter(datetime_epoch_seconds(value=value))
+    return spec.format_datetime(value)
+
+
+@beartype
 def _format_scalar(
     *,
     value: Scalar,
@@ -468,13 +484,9 @@ def _format_scalar(
         case bytes():
             result = spec.format_bytes(value)
         case datetime.datetime():
-            if (
-                int_formatter is not None
-                and spec.datetime_format.value.type_produced is int
-            ):
-                result = int_formatter(datetime_epoch_seconds(value=value))
-            else:
-                result = spec.format_datetime(value)
+            result = _format_scalar_datetime(
+                value=value, spec=spec, int_formatter=int_formatter
+            )
         case datetime.time():
             result = spec.format_time(value)
         case _:
