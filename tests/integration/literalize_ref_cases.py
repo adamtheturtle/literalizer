@@ -249,6 +249,11 @@ def run_literalize_ref_golden_case(
                 config.heterogeneous_strategy
             ],
         )
+    if config.sequence_format is not None:
+        spec = dataclasses.replace(
+            spec,
+            sequence_format=lang_cls.SequenceFormats[config.sequence_format],
+        )
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )

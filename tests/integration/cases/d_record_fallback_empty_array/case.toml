@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["D"]
+languages_reason = "D fallback maps need a typed JSONValue array carrier for empty raw array literals."
+
+[[variants]]
+axis = "record_nested_map_fallback"

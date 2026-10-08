@@ -64,6 +64,7 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import record_shape_for_dict
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -185,9 +186,8 @@ def _format_json_string(value: str) -> str:
 _CRYSTAL_JSON_ANY = "JSON::Any"
 _CRYSTAL_RECORD_MAP_VALUE = "LiteralizerRecordValue"
 _CRYSTAL_RECORD_MAP_TYPE = f"Hash(String, {_CRYSTAL_RECORD_MAP_VALUE})"
-_CRYSTAL_RECORD_MAP_ALIAS = (
-    f"alias {_CRYSTAL_RECORD_MAP_VALUE} = "
-    "Bool | Float64 | Int128 | Int32 | Int64 | String | Nil"
+_CRYSTAL_RECORD_MAP_SCALAR_TYPES = frozenset(
+    {"Bool", "Float64", "Int128", "Int32", "Int64", "String", "Nil"}
 )
 
 
@@ -1477,7 +1477,7 @@ class Crystal(metaclass=LanguageCls):
         :meth:`_crystal_type_for_value`.  A record-eligible dict with no
         ``record_name`` was widened out of record inference because its
         nested sibling maps cannot share one shape; it uses a ``Hash``
-        over the generated native scalar union (#2919).  A set or
+        over the generated native value union (#2919).  A set or
         genuinely non-record dict field remains out of scope for the
         base ``RECORD`` port (the cross-language decision is tracked in
         #2317).
@@ -1839,8 +1839,21 @@ class Crystal(metaclass=LanguageCls):
         ) -> tuple[str, ...]:
             """Record declaration lines precede scalar body lines."""
             alias: tuple[str, ...]
-            if len(self._record_strategy.behavior.compute_wrap_ids(data)) > 0:
-                alias = (_CRYSTAL_RECORD_MAP_ALIAS,)
+            wrap_ids = self._record_strategy.behavior.compute_wrap_ids(data)
+            if len(wrap_ids) > 0:
+                value_types = set(_CRYSTAL_RECORD_MAP_SCALAR_TYPES)
+                value_types.update(
+                    self._crystal_type_for_value(value)
+                    for value in iter_wrapped_values(
+                        data=data, wrap_ids=wrap_ids
+                    )
+                )
+                alias = (
+                    (
+                        f"alias {_CRYSTAL_RECORD_MAP_VALUE} = "
+                        f"{_crystal_union(value_types)}"
+                    ),
+                )
             else:
                 alias = ()
             return alias + record_preamble(data) + scalar_body(types, data)

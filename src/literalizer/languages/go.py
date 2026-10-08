@@ -69,7 +69,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     single_concrete_type,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -1298,7 +1298,7 @@ class Go(metaclass=LanguageCls):
         """
         if self.record_map_value_typing is RecordMapValueTypings.WIDE:
             return None
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
         if len(scalars) == 0:
             return None
         scalar_types = {

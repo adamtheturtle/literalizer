@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ native arrays of owning elements must retain their record move."
+heterogeneous_strategy = "RECORD"
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+first = '{"labels":["owned"]}'
