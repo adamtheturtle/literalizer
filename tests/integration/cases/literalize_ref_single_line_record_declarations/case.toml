@@ -1,11 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["C", "Scala", "V"]
-languages_reason = "C, Scala and V cover single-line native record references."
+languages = ["C", "Python", "Scala", "V"]
+languages_reason = "C, Python, Scala and V cover single-line native record references."
 
 [ref]
-languages = ["C", "Scala", "V"]
-languages_reason = "C, Scala and V cover single-line native record references."
+languages = ["C", "Python", "Scala", "V"]
+languages_reason = "C, Python, Scala and V cover single-line native record references."
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]

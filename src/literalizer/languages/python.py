@@ -398,6 +398,7 @@ def _format_inline_type_hint_declaration(
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
         join_union=join_union,
+        record_name_for_value=None,
     )
     return f"{name}: {hint} = {value}"
 
@@ -576,10 +577,15 @@ def _python_type_hint(
     default_dict_value_type: str,
     default_dict_key_type: str,
     join_union: Callable[[list[str]], str],
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
     """
+    if record_name_for_value is not None:
+        record_name = record_name_for_value(data)
+        if record_name is not None:
+            return record_name
     recurse = functools.partial(
         _python_type_hint,
         bytes_hint=bytes_hint,
@@ -594,6 +600,7 @@ def _python_type_hint(
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
         join_union=join_union,
+        record_name_for_value=record_name_for_value,
     )
 
     match data:
@@ -628,7 +635,7 @@ def _python_type_hint(
                 elements=data,
                 recurse=recurse,
                 sort=False,
-                merge_dicts=True,
+                merge_dicts=record_name_for_value is None,
                 default_type=default_sequence_element_type,
                 join_union=join_union,
             )
@@ -1791,6 +1798,9 @@ class Python(metaclass=LanguageCls):
                 default_dict_value_type=self.default_dict_value_type,
                 default_dict_key_type=self.default_dict_key_type,
                 join_union=join_union,
+                record_name_for_value=(
+                    self._record_strategy.record_name_for_value
+                ),
             )
 
         return _field_type
@@ -1813,7 +1823,7 @@ class Python(metaclass=LanguageCls):
             field_type=self._record_field_type,
             render_declaration=self._python_render_declaration,
             render_literal=_python_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
@@ -1824,7 +1834,6 @@ class Python(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=False,
                 widen_unrecordizable_nested_sibling_maps=False,
                 derecordized_map_open=None,
             )

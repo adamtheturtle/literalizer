@@ -839,9 +839,7 @@ class D(metaclass=LanguageCls):
         """Set type options for D."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(
-                fixed_open(open_str="JSONValue([")
-            ),
+            set_open=sequence_surrogate_set_open(open_str="JSONValue(["),
             close="])",
             empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
@@ -1381,7 +1379,6 @@ class D(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open="JSONValue([",
         )

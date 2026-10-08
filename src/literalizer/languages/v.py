@@ -136,6 +136,33 @@ _format_string = make_backslash_string_formatter(
 
 
 @beartype
+def _v_empty_array_rank(value: Value, /) -> int | None:
+    """Infer the rank of a uniform array tree containing only empty leaves."""
+    if not isinstance(value, list):
+        return None
+    if len(value) == 0:
+        return 1
+    ranks = {_v_empty_array_rank(item) for item in value}
+    if len(ranks) != 1:
+        return None
+    (rank,) = ranks
+    if rank is None:
+        return None
+    return rank + 1
+
+
+@beartype
+def _format_v_empty_array_entry(original: Value, formatted: str, /) -> str:
+    """Name the type of nested empty arrays that V cannot infer
+    together.
+    """
+    rank = _v_empty_array_rank(original)
+    if rank is None or rank == 1 or f"[]{_V_IFACE_NAME}{{}}" not in formatted:
+        return formatted
+    return f"{'[]' * rank}{_V_IFACE_NAME}({formatted})"
+
+
+@beartype
 def _format_v_bytes_hex(value: bytes) -> str:
     """Format hexadecimal bytes through V's string formatter."""
     return _format_string(value=value.hex())
@@ -1248,7 +1275,11 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
-        """Format a sequence entry."""
+        """Format an entry with an explicit rank for nested empty
+        arrays.
+        """
+        if self.heterogeneous_strategy.name == "ERROR":
+            return _format_v_empty_array_entry
         return passthrough_sequence_entry
 
     @cached_property
@@ -1386,7 +1417,6 @@ class V(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
         )

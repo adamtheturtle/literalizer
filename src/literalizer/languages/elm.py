@@ -14,7 +14,6 @@ from beartype import beartype
 from literalizer._checks import reject_negative_zero
 from literalizer._formatters.collection_openers import (
     fixed_open,
-    replace_optional_type_name,
 )
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
@@ -1790,11 +1789,7 @@ class Elm(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             return _base_declaration
 
-        _raw_declared = self.sequence_format.value.declared_type
         _type_name = self.type_name
-        _sequence_declared_type = replace_optional_type_name(
-            template=_raw_declared, placeholder="Val", type_name=self.type_name
-        )
 
         @beartype
         def _elm_declaration(
@@ -1805,11 +1800,7 @@ class Elm(metaclass=LanguageCls):
         ) -> str:
             """Format a variable declaration with type annotation."""
             base = _base_declaration(name, value, data, _modifiers)
-            decl_type: str | None
-            decl_type = _type_name
-            if isinstance(data, list):
-                decl_type = _sequence_declared_type
-            return f"{name} : {decl_type}\n{base}"
+            return f"{name} : {_type_name}\n{base}"
 
         return _elm_declaration
 

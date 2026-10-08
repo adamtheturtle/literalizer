@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Cpp"]
-languages_reason = "C++ content-derived nested vector types must agree with literals whose empty lists borrow a populated positional cousin type."
+languages = ["Cpp", "V"]
+languages_reason = "C++ and V nested array types must agree with empty literals that borrow a populated positional cousin type."
 suites = ["base", "combined"]
 
 [base_context]

@@ -6,7 +6,7 @@ def main():
         "_": "_",
     }
     var my_data = List([
-        val_x^,
-        val_y^,
+        val_x.copy(),
+        val_y.copy(),
     ])
     _ = my_data
