@@ -215,12 +215,9 @@ def _constructor_binding_cases() -> list[_ConstructorBindingCase]:
     ]
 
 
-_BINDING_CASES = _constructor_binding_cases()
-
-
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=_BINDING_CASES,
+    argvalues=_constructor_binding_cases(),
     ids=lambda case: case.name,
 )
 def test_constructor_binding_golden_file(

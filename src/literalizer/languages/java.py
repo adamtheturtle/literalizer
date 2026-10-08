@@ -882,10 +882,27 @@ def _format_java_json_declaration(
     name: str,
     _value: str,
     data: Value,
-    _modifiers: frozenset[enum.Enum],
+    modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a JsonNode declaration backed by ``readTree``."""
-    return f"JsonNode {name} = {_java_read_tree_expression(data=data)};"
+    """Format a local JsonNode declaration backed by ``readTree``.
+
+    Raises:
+        IncompatibleFormatsError: If modifiers require field scope,
+            where the checked parsing exception cannot be declared.
+    """
+    prefix = _java_modifier_prefix(modifiers=modifiers)
+    if _is_java_class_field(modifiers):
+        msg = (
+            "Java json_type renders data through ObjectMapper.readTree(...) "
+            "and does not support class-field modifiers "
+            "(public, private, protected, static), which require handling "
+            "the checked parsing exception in a field initializer. "
+            "Remove these modifiers to use a local declaration."
+        )
+        raise IncompatibleFormatsError(msg)
+    return (
+        f"{prefix}JsonNode {name} = {_java_read_tree_expression(data=data)};"
+    )
 
 
 @beartype
@@ -1608,13 +1625,10 @@ class Java(metaclass=LanguageCls):
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
 
-        ``readTree(...)`` is a checked-exception call wrapped in a
-        method whose signature gains ``throws Exception``.  Class-field
-        forms (``public static final ...``) have no equivalent place to
-        declare that exception without synthesizing a static initializer
-        block, so a ``RECORD`` strategy is also unsupported because it
-        would mix the JsonNode rendering with auto-generated ``record``
-        declarations.  Both are rejected up front instead.
+        A ``RECORD`` strategy would mix JsonNode rendering with
+        auto-generated typed ``record`` declarations. Class-field
+        modifiers are rejected separately when formatting a JSON
+        declaration because ``readTree(...)`` throws a checked exception.
         """
         if not self._json_type_active:
             return

@@ -18,6 +18,7 @@ project = _pyproject_config.name
 author = _pyproject_config.author
 
 extensions = [
+    "myst_parser",
     "sphinx_copybutton",
     "sphinx_jinja",
     "sphinx.ext.autodoc",
@@ -28,9 +29,10 @@ extensions = [
 ]
 
 # Render the unreleased ``newsfragments/`` entries into
-# ``docs/source/unreleased.rst`` so the Sphinx spelling, doc-build and
+# ``docs/source/unreleased.md`` so the Sphinx spelling, doc-build and
 # link-checking gates cover the prose before it is assembled into
-# CHANGELOG.rst at release time.  ``include_empty=True`` makes the page
+# the versioned Markdown notes at release time.
+# ``include_empty=True`` makes the page
 # show the "No significant changes." placeholder line between releases
 # instead of an empty section (which would otherwise be a document
 # with no body).

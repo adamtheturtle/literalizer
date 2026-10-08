@@ -45,17 +45,16 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
 # call target names while naming no variable at all, so a
 # ``NewVariable`` there is refused for a different reason (issue
 # #4549).
-_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES = tuple(
-    language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
-    if len(language_cls.reserved_variable_identifiers) > 0
-    and language_cls.supports_variable_names
-)
 
 
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_LANGUAGES_WITH_RESERVED_NEW_VARIABLE_NAMES,
+    argvalues=tuple(
+        language_cls
+        for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
+        if len(language_cls.reserved_variable_identifiers) > 0
+        and language_cls.supports_variable_names
+    ),
     ids=lambda language_cls: language_cls.__name__,
 )
 def test_all_declared_reserved_names_raise(
@@ -94,16 +93,13 @@ def test_all_declared_reserved_names_raise(
                 )
 
 
-_RECORD_PREFIX_LANGUAGES = tuple(
-    language_cls
-    for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
-    if language_cls.supports_record_struct_name_prefix
-)
-
-
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_RECORD_PREFIX_LANGUAGES,
+    argvalues=tuple(
+        language_cls
+        for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
+        if language_cls.supports_record_struct_name_prefix
+    ),
     ids=lambda language_cls: language_cls.__name__,
 )
 def test_generated_record_name_is_reserved_for_record_strategy(

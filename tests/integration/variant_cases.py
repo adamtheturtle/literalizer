@@ -79,13 +79,29 @@ def build_json_type_variable_form_cases(
 
     Redefinition-supporting declaration styles exercise a declaration and
     assignment together.  Languages without such a style instead exercise
-    their existing-variable form once.
+    their existing-variable form once. A final modifier also exercises a
+    local immutable JSON declaration without reassignment.
     """
     cases: list[VariantCase] = []
     for json_variant in variants_for_axis(axis_key="json_type"):
         spec = json_variant.spec
         if not isinstance(spec, HasJsonType):
             raise NotImplementedError
+        for modifier in spec.modifiers:
+            if modifier.name == "FINAL":
+                name = f"{json_variant.name}_final"
+                cases.append(
+                    VariantCase(
+                        variant_name=name,
+                        variant=dataclasses.replace(json_variant, name=name),
+                        case_dir_name=case_dir_name,
+                        variable_form=literalizer.NewVariable(
+                            name="my_data",
+                            modifiers=frozenset({modifier}),
+                        ),
+                        pre_indent_level=0,
+                    )
+                )
         if json_variant.lang_cls.language_id == "cpp":
             name = f"{json_variant.name}_variable_multiline"
             cases.append(

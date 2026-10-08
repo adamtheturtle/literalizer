@@ -41,9 +41,10 @@ Running tests
 Changelog entries
 -----------------
 
-Describe each user-facing change in a news fragment at :file:`newsfragments/<issue>.change`.
-The ``.change`` suffix is the only fragment type towncrier is configured to consume; a fragment with any other suffix (such as ``.fix`` or ``.feature``) is silently ignored at release time.
-The release workflow assembles the fragments into ``CHANGELOG.rst`` and the GitHub release notes, then deletes them.
+Describe each user-facing change in a news fragment at :file:`newsfragments/<issue>.change.md`.
+Write fragments in Markdown using the ``.change.md`` suffix.
+Towncrier rejects invalid fragment names at release time.
+The release workflow assembles the fragments into ``CHANGELOG.md`` and the GitHub release notes, then deletes them.
 Do not re-add a fragment that a release has already consumed, for example when merging ``main`` into a long-running branch.
 
 Golden case manifests
