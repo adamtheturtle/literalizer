@@ -69,7 +69,7 @@ The default module-name suite checks each constructor's public default across it
    suites = ["default-module-name"]
    gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
 
-Its input lives beside the manifest, while its goldens remain under :file:`tests/integration/default_module_names/`.
+Its input lives beside the manifest, while its golden files remain under :file:`tests/integration/default_module_names/`.
 Those files retain the default module names; regular compiler fixtures use unique names derived from their paths.
 
 A variant-only case declares its specialized owner and the axes that consume it.
