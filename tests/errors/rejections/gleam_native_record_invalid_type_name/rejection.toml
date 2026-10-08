@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Generated Gleam record constructors require an uppercase type name."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Gleam"]
+
+[call]
+api = "literalize"
+sources = ['{"x":1}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "dict_format", member = "RECORD" },
+  { kind = "text", kwarg = "type_name", value = "lowercase" },
+]

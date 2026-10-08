@@ -1,0 +1,23 @@
+schema_version = 1
+summary = """
+Concrete Gleam and OCaml records require valid field names and concrete
+field types. Empty records, nulls, empty lists, and records nested two
+list levels deep cannot be typed in this mode.
+"""
+exceptions = ["UnrepresentableInputError"]
+languages = ["Gleam", "OCaml"]
+
+[call]
+api = "literalize"
+sources = [
+  '{"bad-key":1}',
+  '{"let":1}',
+  '{}',
+  '{"x":null}',
+  '{"x":[]}',
+  '{"x":[[{"y":1}]]}',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "dict_format", member = "RECORD" },
+]

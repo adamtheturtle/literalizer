@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "OCaml array sequences cannot supply the list types of record fields."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["OCaml"]
+
+[call]
+api = "literalize"
+sources = ['{"x":[1]}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "dict_format", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]
