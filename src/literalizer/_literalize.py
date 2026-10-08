@@ -2044,6 +2044,18 @@ def _compute_sequence_open_override(
     if len(openers) <= 1:
         return None
 
+    pooled = [item for sibling in lists for item in sibling]
+    if infer_element_type(items=pooled) in {
+        int,
+        WideInt,
+        BeyondI64,
+        float,
+        MixedNumeric,
+    }:
+        numeric_opener = spec.sequence_open(pooled)
+        if numeric_opener == spec.sequence_open(pooled + pooled):
+            return numeric_opener
+
     fallback = spec.sequence_open([])
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
         normalized_lists = replace_positional_empty_lists(lists=lists)
@@ -2089,10 +2101,19 @@ def _accumulate_sequence_open_overrides(
     if len(lists) <= 1:
         return
     normalized = replace_positional_empty_lists(lists=lists)
-    if normalized != lists:
+    pooled = [item for sibling in lists for item in sibling]
+    numeric = infer_element_type(items=pooled) in {
+        int,
+        WideInt,
+        BeyondI64,
+        float,
+        MixedNumeric,
+    } and spec.sequence_open(pooled) == spec.sequence_open(pooled + pooled)
+    if numeric or normalized != lists:
         opener = _compute_sequence_open_override(items=lists, spec=spec)
         if opener is not None and (
-            spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
+            numeric
+            or spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
         ):
             for sibling in lists:
                 _ = out.setdefault(id(sibling), opener)
@@ -2552,6 +2573,7 @@ def _wrap_body(
     spec: Language,
     line_prefix: str,
     dict_open_override: str | None,
+    sequence_open_override: str | None,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = ""
@@ -2583,7 +2605,10 @@ def _wrap_body(
         case _:
             sequence_cfg = spec.sequence_format_config
             template = sequence_cfg.single_element_template
-            if template is not None and len(data) == 1:
+            if sequence_open_override is not None:
+                open_str = sequence_open_override
+                close_str = sequence_cfg.close
+            elif template is not None and len(data) == 1:
                 open_str, _, close_str = template.partition("{items}")
             else:
                 open_str = spec.sequence_open(data)
@@ -3765,6 +3790,7 @@ def _prepare_root_render(
 
     if (
         ref_key is _DISABLED_REF_KEY
+        and record_context_data is None
         and raw_yaml_data is None
         and toml_comment_doc is None
     ):
@@ -3839,6 +3865,7 @@ def _format_root_collection(
         spec=language,
         line_prefix=line_prefix,
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
+        sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
 
 
