@@ -3,6 +3,6 @@ def main():
         "_": "_",
     }
     var my_data = {
-        "key": my_var^,
+        "key": my_var.copy(),
     }
     _ = my_data

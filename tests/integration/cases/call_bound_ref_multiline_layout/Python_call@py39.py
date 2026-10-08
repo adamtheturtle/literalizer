@@ -1,5 +1,5 @@
 def f(*_args: object, **_kwargs: object) -> object: ...
-x = (
+ref_data = (
     (
         1,
         2,
@@ -11,6 +11,6 @@ x = (
 )
 f(value=(
     (
-        x,
+        ref_data,
     ),
 ))

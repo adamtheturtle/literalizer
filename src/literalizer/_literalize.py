@@ -7454,8 +7454,7 @@ def _compose_call_with_bound_ref_declarations(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
-    stub_arg_values: Sequence[Value]
-    stub_arg_values = [data_for_preamble]
+    stub_arg_values: Sequence[Value] = [[data_for_preamble]]
     if per_element and isinstance(data_for_preamble, list):
         stub_arg_values = data_for_preamble
     collected_decl_results: list[LiteralizeResult] = []

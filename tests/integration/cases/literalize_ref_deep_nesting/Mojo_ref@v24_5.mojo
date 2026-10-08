@@ -12,7 +12,7 @@ def main():
     var my_data = {
         "a": {
             "b": {
-                "c": deep^,
+                "c": deep.copy(),
             },
         },
     }
