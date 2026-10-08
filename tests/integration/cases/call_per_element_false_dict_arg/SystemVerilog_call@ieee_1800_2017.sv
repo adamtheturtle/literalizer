@@ -12,6 +12,6 @@ typedef struct {
 module main;
 task process(input _VVal value); endtask
 initial begin
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"a\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"b\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"x\"}}}"});
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VKV'{k: \"a\", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}, _VKV'{k: \"b\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"x\"}}}"}));
 end
 endmodule

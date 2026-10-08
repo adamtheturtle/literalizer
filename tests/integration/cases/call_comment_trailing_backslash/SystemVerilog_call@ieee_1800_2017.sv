@@ -12,7 +12,7 @@ typedef struct {
 module main;
 task process(input _VVal value); endtask
 initial begin
-process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});  // trail \ .
-process(_VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""});  // second
+void'(process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));  // trail \ .
+void'(process(_VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}));  // second
 end
 endmodule

@@ -21,8 +21,8 @@ class ObjType_;
 endclass
 ObjType_ obj = new();
 initial begin
-obj.api.client.post(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"});
-obj.api.client.post(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-obj.api.client.post(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""});
+void'(obj.api.client.post(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}));
+void'(obj.api.client.post(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}));
+void'(obj.api.client.post(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}));
 end
 endmodule

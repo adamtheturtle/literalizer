@@ -15,7 +15,7 @@ class ThrottlerType_;
 endclass
 ThrottlerType_ throttler = new();
 initial begin
-throttler.check();
-throttler.check();
+void'(throttler.check());
+void'(throttler.check());
 end
 endmodule

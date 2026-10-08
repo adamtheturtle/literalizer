@@ -13,6 +13,6 @@ module main;
 task process(input _VVal data); endtask
 initial begin
 static _VVal unknown_value[] = '{};
-process(unknown_value);
+void'(process(unknown_value));
 end
 endmodule

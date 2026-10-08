@@ -703,7 +703,7 @@ class V(metaclass=LanguageCls):
         re.Pattern[str] | None
     ] = None
     accepts_type_name_call_target = True
-    declares_type_name_call_target = True
+    declares_type_name_call_target = False
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
         frozenset()

@@ -15,7 +15,7 @@ function _VVal process();
 endfunction
 task emit(input _VVal _arg); endtask
 initial begin
-emit(process());
-emit(process());
+void'(emit(process()));
+void'(emit(process()));
 end
 endmodule

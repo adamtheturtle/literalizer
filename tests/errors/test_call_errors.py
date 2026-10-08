@@ -15,11 +15,12 @@ import pytest
 from literalizer import (
     BothVariableForms,
     InputFormat,
+    Language,
     literalize,
 )
 from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import WrapInFileWithoutVariableNotSupportedError
-from literalizer.languages import Elm, Haskell, Python
+from literalizer.languages import Elm, Haskell, Norg, Python
 
 
 def test_call_parameter_validation_requires_language_metaclass() -> None:
@@ -66,23 +67,25 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
         )
 
 
-def test_literalize_wrap_in_file_without_variable_not_supported_raises() -> (
-    None
-):
+@pytest.mark.parametrize(argnames="language", argvalues=[Haskell(), Norg()])
+def test_literalize_wrap_in_file_without_variable_not_supported_raises(
+    language: Language,
+) -> None:
     """``wrap_in_file=True, variable_form=None`` raises for languages
     that cannot represent a bare value at file scope.
     """
     with pytest.raises(
         expected_exception=WrapInFileWithoutVariableNotSupportedError,
         match=(
-            r"^Haskell cannot wrap a bare value \(without a variable_form\) "
+            rf"^{type(language).__name__} cannot wrap a bare value "
+            r"\(without a variable_form\) "
             r"at file scope$"
         ),
     ):
         _ = literalize(
             source="42",
             input_format=InputFormat.JSON,
-            language=Haskell(),
+            language=language,
             variable_form=None,
             wrap_in_file=True,
         )

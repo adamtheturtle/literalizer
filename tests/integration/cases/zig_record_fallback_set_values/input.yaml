@@ -1,0 +1,9 @@
+- name: one
+  payload:
+    scalar: 1
+    items: !!set
+      2: null
+      3: null
+- name: two
+  payload:
+    other: 2

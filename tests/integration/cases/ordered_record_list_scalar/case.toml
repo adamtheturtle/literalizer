@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++ ordered-map alternatives must name the native record list type rendered in the std::variant initializer."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"

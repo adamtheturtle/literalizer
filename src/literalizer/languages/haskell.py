@@ -5,7 +5,6 @@ import datetime
 import enum
 import itertools
 import re
-import textwrap
 import unicodedata
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -195,6 +194,7 @@ def _build_haskell_call_stub_lines(
     stub_return: StubReturn,
     type_name: str,
     curried: bool,
+    is_wrapper_stub: bool,
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
     if stub_return is StubReturn.VALUE:
@@ -207,7 +207,6 @@ def _build_haskell_call_stub_lines(
     # starting with ``_`` and receive the (already typed) result of
     # another call. Declare them with a polymorphic argument so GHC
     # never needs to default the wrapped expression's type.
-    is_wrapper_stub = len(params) == 1 and params[0].startswith("_")
     effective_curried = curried and not is_wrapper_stub
     arg_type = _haskell_arg_type_str(
         params=params, type_name=type_name, curried=effective_curried
@@ -283,7 +282,7 @@ def _build_haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
         stub_return: StubReturn,
-        _args: Sequence[Value],
+        args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
         """Delegate to module-level implementation."""
@@ -293,6 +292,11 @@ def _build_haskell_call_stub(
             stub_return=stub_return,
             type_name=type_name,
             curried=curried,
+            is_wrapper_stub=(
+                len(params) == 1
+                and params[0].startswith("_")
+                and len(args) == 0
+            ),
         )
 
     return _haskell_call_stub
@@ -1677,7 +1681,7 @@ class Haskell(metaclass=LanguageCls):
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
-    wrap_in_file_tolerates_pre_indent = True
+    wrap_in_file_tolerates_pre_indent = False
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -1730,7 +1734,6 @@ class Haskell(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
@@ -1771,6 +1774,10 @@ class Haskell(metaclass=LanguageCls):
             "type",
             "where",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+        - (_HASKELL_PRELUDE_BINDINGS | frozenset({"main"}))
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
@@ -2268,8 +2275,13 @@ class Haskell(metaclass=LanguageCls):
         """
         body_preamble = context.body_preamble
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
-        indented_calls = textwrap.indent(
-            text=calls, prefix=f"{self.indent}_ <- "
+        indented_calls = "\n".join(
+            f"{self.indent}_ <- {statement}".replace("\n", f"\n{self.indent}")
+            for statement in split_statements(
+                content=calls,
+                quotes='"',
+                line_comment_prefixes=("--",),
+            )
         )
         declaration_block = "\n".join(declarations)
         effective_declaration_block = ""

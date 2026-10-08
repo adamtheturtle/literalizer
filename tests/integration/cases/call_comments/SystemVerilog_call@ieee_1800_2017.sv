@@ -13,8 +13,8 @@ module main;
 task process(input _VVal value); endtask
 initial begin
 // Test cases
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"});  // single word
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello world"});  // two words
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}));  // single word
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello world"}));  // two words
 // trailing comment
 end
 endmodule

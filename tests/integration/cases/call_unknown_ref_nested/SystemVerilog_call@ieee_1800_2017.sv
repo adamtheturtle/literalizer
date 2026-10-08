@@ -14,6 +14,6 @@ task process(input _VVal known_value, input _VVal nested_missing); endtask
 initial begin
 static _VVal known_value = _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""};
 static _VVal unknown_value = _VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""};
-process(known_value, unknown_value);
+void'(process(known_value, unknown_value));
 end
 endmodule

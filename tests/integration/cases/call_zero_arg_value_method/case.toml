@@ -7,5 +7,5 @@ parameter_names = []
 per_element = true
 call_transform = "{call}"
 wrap_in_file = true
-languages = ["Nim"]
-languages_reason = "Nim method stubs must retain self when returning a value without other arguments."
+languages = ["Nim", "SystemVerilog"]
+languages_reason = "Nim methods must retain self; SystemVerilog must explicitly discard non-void returns."
