@@ -1,1 +1,1 @@
-private protected ValueTuple p = new Playlist();
+private protected object p = new Playlist();

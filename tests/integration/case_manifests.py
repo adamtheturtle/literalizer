@@ -587,6 +587,7 @@ class CallCaseSpec(  # noqa: NOD001
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
     variable_form: CallVariableForm | None = None
+    variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     # When set (only meaningful with ``wrap_in_file=True`` and a
     # ``variable_form``), emit a golden for a language only when its
     # ``variable_form`` output is byte-identical to its output under

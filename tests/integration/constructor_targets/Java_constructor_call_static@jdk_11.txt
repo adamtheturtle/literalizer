@@ -1,1 +1,1 @@
-static Object[] p = new Playlist();
+static Object p = new Playlist();
