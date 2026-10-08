@@ -66,6 +66,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -899,6 +900,8 @@ class Elm(metaclass=LanguageCls):
             The default preserves the generated ``Val`` representation.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
@@ -1330,8 +1333,7 @@ class Elm(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an Elm value declaration in a module.
 
@@ -1343,6 +1345,8 @@ class Elm(metaclass=LanguageCls):
         :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
         standalone comments in that path.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         if variable_name == "":
@@ -1365,7 +1369,7 @@ class Elm(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Elm declarations and call expressions in a module.
 
@@ -1379,6 +1383,7 @@ class Elm(metaclass=LanguageCls):
         :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
         standalone comments in that path.
         """
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         let_lines: list[str] = []
@@ -1396,7 +1401,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
@@ -1883,8 +1888,7 @@ class Elm(metaclass=LanguageCls):
     def wrap_call_variable_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a call-result variable binding in an Elm module.
 
@@ -1896,7 +1900,7 @@ class Elm(metaclass=LanguageCls):
         call.  *content* is the single-line ``name = call …`` binding
         produced by :attr:`format_call_variable_declaration`.
         """
-        del variable_name  # the binding text already carries the name
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         let_lines = [f"{let_indent}{line}" for line in content.split(sep="\n")]

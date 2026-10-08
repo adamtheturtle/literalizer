@@ -64,6 +64,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -275,6 +276,8 @@ class JavaScript(metaclass=LanguageCls):
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -779,21 +782,20 @@ class JavaScript(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid file, as an expression if unbound."""
+        variable_name = context.variable_name
         return wrap_in_file_noop(
             content=parenthesize_bare_object(
                 content=content,
                 variable_name=variable_name,
             ),
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = wrap_combined_in_file_noop_static
 
     date_format: DateFormats = DateFormats.JS

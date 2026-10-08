@@ -66,6 +66,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -563,6 +564,8 @@ class TypeScript(metaclass=LanguageCls):
               e.g. ``[1, 2, 3] as const``.  TypeScript infers
               per-element types instead of a union array type.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -1217,10 +1220,11 @@ class TypeScript(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=parenthesize_bare_object(
                 content=content,
@@ -1234,14 +1238,12 @@ class TypeScript(metaclass=LanguageCls):
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap TypeScript declaration + assignment as a module."""
         return TypeScript.wrap_in_file(
             content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     date_format: DateFormats = DateFormats.JS

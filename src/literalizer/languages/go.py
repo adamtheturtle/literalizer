@@ -84,6 +84,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -529,6 +530,8 @@ class Go(metaclass=LanguageCls):
               then declare the field identically, so one input's
               literals compile against the other's ``struct``.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -1008,10 +1011,11 @@ class Go(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Go declaration in ``func main()``."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1025,14 +1029,12 @@ class Go(metaclass=LanguageCls):
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Go declaration + assignment in ``func main()``."""
         return Go.wrap_in_file(
             content=declaration + "\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     date_format: DateFormats = DateFormats.GO

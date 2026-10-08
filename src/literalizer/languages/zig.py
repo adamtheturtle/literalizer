@@ -79,6 +79,7 @@ from literalizer._language import (
     DatetimeFormatConfig,
     DatetimeFormatEnum,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -734,6 +735,8 @@ else:
 class Zig(metaclass=LanguageCls):
     """Zig language specification."""
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1135,10 +1138,11 @@ class Zig(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Zig declaration in a main function."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         json_mode = self._json_type_active
         # Detect ``var``/``const`` on the caller's declaration, before
         # injecting the JSON-mode arena ``var`` body preamble (which

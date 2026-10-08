@@ -656,6 +656,7 @@ def run_call_golden_case(
     result = call_outcome.result
     # Build stub declarations for undefined names.
     body_stubs: list[str] = []
+    class_stubs: list[str] = []
     preamble_stubs: list[str] = []
     if config.call_transform is not None:
         stub_return = literalizer.StubReturn.VALUE
@@ -668,6 +669,14 @@ def run_call_golden_case(
     )
     body_stubs.extend(
         spec.format_call_stub(
+            target_function_parts,
+            config.parameter_names,
+            stub_return,
+            call_arg_values,
+        ),
+    )
+    class_stubs.extend(
+        spec.format_call_class_scope_stub(
             target_function_parts,
             config.parameter_names,
             stub_return,
@@ -701,6 +710,14 @@ def run_call_golden_case(
                 (),
             ),
         )
+        class_stubs.extend(
+            spec.format_call_class_scope_stub(
+                wrapper_name_parts,
+                config.transform_stub_param_names,
+                literalizer.StubReturn.VOID,
+                (),
+            ),
+        )
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
                 wrapper_name_parts,
@@ -724,6 +741,7 @@ def run_call_golden_case(
         declarations=decl_results,
         call=result,
         extra_body_preamble=tuple(body_stubs),
+        extra_class_preamble=tuple(class_stubs),
         extra_preamble=tuple(preamble_stubs),
     )
     check_golden(

@@ -52,6 +52,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -599,6 +600,8 @@ else:
 class Fortran(metaclass=LanguageCls):
     """Fortran language specification."""
 
+    format_call_class_scope_stub = default_format_call_stub
+
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
@@ -1075,8 +1078,7 @@ class Fortran(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Fortran variable declaration or call block in a program.
 
@@ -1086,6 +1088,8 @@ class Fortran(metaclass=LanguageCls):
         holds internal-procedure stubs that go in the ``contains`` section
         after the executable statements in *content*.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = _wrap_fortran_source_lines(content)
         if variable_name != "":
             content = prepend_body_preamble(
@@ -1119,12 +1123,13 @@ class Fortran(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Fortran declaration + assignment in separate
         subroutines.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -1166,8 +1171,7 @@ class Fortran(metaclass=LanguageCls):
     def wrap_call_variable_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a call-result variable binding in a Fortran program.
 
@@ -1182,11 +1186,9 @@ class Fortran(metaclass=LanguageCls):
         :meth:`wrap_in_file`, which places *content* in the program body
         and the stubs in ``contains``.
         """
-        del variable_name  # the binding text already carries the name
         return self.wrap_in_file(
             content=content,
-            variable_name="",
-            body_preamble=body_preamble,
+            context=dataclasses.replace(context, variable_name=""),
         )
 
     date_format: DateFormats = DateFormats.ISO
@@ -1358,7 +1360,7 @@ class Fortran(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Fortran call stubs and variable declarations alongside
         calls.
@@ -1384,8 +1386,7 @@ class Fortran(metaclass=LanguageCls):
         content = "\n".join(body_parts)
         return self.wrap_in_file(
             content=content,
-            variable_name="",
-            body_preamble=body_preamble,
+            context=dataclasses.replace(context, variable_name=""),
         )
 
     @staticmethod

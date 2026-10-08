@@ -56,6 +56,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -76,6 +77,7 @@ from literalizer._language import (
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
+    default_format_call_stub,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -666,6 +668,8 @@ class Dhall(metaclass=LanguageCls):
     backticks, since Dhall labels only allow printable ASCII.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1052,8 +1056,7 @@ class Dhall(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid Dhall file.
 
@@ -1066,17 +1069,17 @@ class Dhall(metaclass=LanguageCls):
         whose content already ends with the ``in <varname>`` clause
         produced by the variable form.
         """
+        variable_name = context.variable_name
         wrapped = wrap_in_file_noop(
             content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
         if variable_name == "":
             wrapped += "\nin {=}"
         return wrapped
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
@@ -1249,7 +1252,7 @@ class Dhall(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Join declarations and calls into a Dhall let-chain.
 
@@ -1260,8 +1263,7 @@ class Dhall(metaclass=LanguageCls):
         content = "\n".join((*declarations, calls))
         return self.wrap_in_file(
             content=content,
-            variable_name="",
-            body_preamble=body_preamble,
+            context=dataclasses.replace(context, variable_name=""),
         )
 
     @cached_property

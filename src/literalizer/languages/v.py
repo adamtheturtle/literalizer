@@ -81,6 +81,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -102,6 +103,7 @@ from literalizer._language import (
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_statement,
+    default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
@@ -660,6 +662,8 @@ class V(metaclass=LanguageCls):
               declaration, e.g. ``mut x := value``.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1161,10 +1165,11 @@ class V(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a V declaration in ``fn main()``."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,

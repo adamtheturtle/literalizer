@@ -60,6 +60,7 @@ from literalizer._language import (
     CommandCallStyle,
     DottedCommandCallStyle,
     FileSection,
+    FileWrapperContext,
     IdentifierCase,
     KeywordCallStyle,
     Language,
@@ -136,8 +137,7 @@ class _SupportsCallVariableWrapInFile(Protocol):
     def wrap_call_variable_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a call-result variable binding in a complete file."""
         ...
@@ -401,6 +401,25 @@ class BothVariableForms:
 
 
 VariableForm = NewVariable | ExistingVariable | BothVariableForms
+
+
+@beartype
+def _file_wrapper_context(
+    *,
+    variable_form: VariableForm | None,
+    body_preamble: tuple[str, ...],
+    class_preamble: tuple[str, ...],
+) -> FileWrapperContext:
+    """Keep declaration metadata available after rendering the binding."""
+    modifiers = frozenset[enum.Enum]()
+    if isinstance(variable_form, (NewVariable, BothVariableForms)):
+        modifiers = variable_form.modifiers
+    return FileWrapperContext(
+        variable_name="" if variable_form is None else variable_form.name,
+        modifiers=modifiers,
+        body_preamble=body_preamble,
+        class_preamble=class_preamble,
+    )
 
 
 @beartype
@@ -4647,13 +4666,13 @@ def literalize_apply_form(
             preamble=preamble,
             data_dependent_entries=data_dependent_preamble,
         )
-        effective_variable_name = ""
-        if variable_name is not None and variable_name != "":
-            effective_variable_name = variable_name
         wrapped = language.wrap_in_file(
             content=content,
-            variable_name=(effective_variable_name),
-            body_preamble=scoped.body + computed.body,
+            context=_file_wrapper_context(
+                variable_form=variable_form,
+                body_preamble=scoped.body + computed.body,
+                class_preamble=(),
+            ),
         )
         if len(scoped.file_scope) > 0:
             wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
@@ -4757,8 +4776,11 @@ def literalize_both_forms(
     wrapped = language.wrap_combined_in_file(
         declaration=declaration.declaration_code,
         assignment=assignment.bare_code,
-        variable_name=variable_form.name,
-        body_preamble=decl_preamble,
+        context=_file_wrapper_context(
+            variable_form=variable_form,
+            body_preamble=decl_preamble,
+            class_preamble=(),
+        ),
     )
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
@@ -4783,7 +4805,7 @@ class _BoundRefComposition:
     declarations: tuple[LiteralizeResult, ...]
     main_result: LiteralizeResult
     assignment_result: LiteralizeResult | None
-    main_variable_name: str
+    variable_form: NewVariable | ExistingVariable | BothVariableForms
 
 
 @beartype
@@ -5012,7 +5034,7 @@ def literalize_bound_refs(
         declarations=tuple(decl_results),
         main_result=main_result,
         assignment_result=assignment_result,
-        main_variable_name=variable_form.name,
+        variable_form=variable_form,
     )
     return _compose_bound_refs(
         language=language,
@@ -5176,18 +5198,21 @@ def _compose_bound_refs(
         ),
     )
     body_preamble = scoped.body + unified_body_preamble
+    context = _file_wrapper_context(
+        variable_form=composition.variable_form,
+        body_preamble=body_preamble,
+        class_preamble=(),
+    )
     if composition.assignment_result is None:
         wrapped = language.wrap_in_file(
             content=sequenced_content,
-            variable_name=composition.main_variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
     else:
         wrapped = language.wrap_combined_in_file(
             declaration=sequenced_content,
             assignment=composition.assignment_result.bare_code,
-            variable_name=composition.main_variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
@@ -7241,12 +7266,12 @@ def _wrap_call_in_file(
     body_stubs = language.format_call_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
+    class_stubs = language.format_call_class_scope_stub(
+        target_function_parts, parameter_names, stub_return, arg_values
+    )
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
-    wrap_variable_name = ""
-    if variable_form is not None:
-        wrap_variable_name = variable_form.name
     wrap_in_file_hook = language.wrap_in_file
     if variable_form is not None and isinstance(
         language, _SupportsCallVariableWrapInFile
@@ -7272,8 +7297,13 @@ def _wrap_call_in_file(
         )
     wrapped = wrap_in_file_hook(
         content=result,
-        variable_name=wrap_variable_name,
-        body_preamble=call_binding_body_preamble + body_stubs + computed_body,
+        context=_file_wrapper_context(
+            variable_form=variable_form,
+            body_preamble=call_binding_body_preamble
+            + body_stubs
+            + computed_body,
+            class_preamble=class_stubs,
+        ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
     if variable_form is not None:
@@ -7363,6 +7393,9 @@ def _compose_call_with_bound_ref_declarations(
     body_stubs = language.format_call_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
+    class_stubs = language.format_call_class_scope_stub(
+        target_function_parts, parameter_names, stub_return, stub_arg_values
+    )
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
@@ -7371,6 +7404,7 @@ def _compose_call_with_bound_ref_declarations(
         declarations=decl_results,
         call=call_result,
         extra_body_preamble=body_stubs,
+        extra_class_preamble=class_stubs,
         extra_preamble=preamble_stubs,
     )
 
@@ -8087,6 +8121,7 @@ def literalize_call_with_declarations(
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
     extra_body_preamble: tuple[str, ...],
+    extra_class_preamble: tuple[str, ...],
     extra_preamble: tuple[str, ...],
 ) -> LiteralizeResult:
     r"""Render N ref declarations and a call into one coherent file.
@@ -8127,6 +8162,8 @@ def literalize_call_with_declarations(
         extra_body_preamble: Additional body-preamble lines to append
             after the unified body preamble (e.g. a caller-supplied
             no-op stub for the called function).  Defaults to ``()``.
+        extra_class_preamble: Supporting declarations explicitly placed
+            as members of the wrapper class. Defaults to ``()``.
         extra_preamble: Additional header-preamble entries to append
             after the unified header preamble (e.g. the stub's own
             import lines).  Defaults to ``()``.
@@ -8256,8 +8293,12 @@ def literalize_call_with_declarations(
     wrapped = language.wrap_calls_with_declarations(
         declarations=tuple(d.bare_code for d in declarations),
         calls=call.bare_code,
-        body_preamble=(
-            scoped.body + unified_body_preamble + extra_body_preamble
+        context=_file_wrapper_context(
+            variable_form=None,
+            body_preamble=scoped.body
+            + unified_body_preamble
+            + extra_body_preamble,
+            class_preamble=extra_class_preamble,
         ),
     )
     if len(scoped.file_scope) > 0:

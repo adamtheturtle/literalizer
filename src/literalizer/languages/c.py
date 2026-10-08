@@ -79,6 +79,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -921,6 +922,8 @@ else:
 class C(metaclass=LanguageCls):
     """C language specification."""
 
+    format_call_class_scope_stub = default_format_call_stub
+
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
     module_name_shares_variable_scope = False
@@ -1431,10 +1434,11 @@ class C(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a C declaration in a main function."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1451,8 +1455,7 @@ class C(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap C declaration + assignment in a function.
 
@@ -1460,11 +1463,11 @@ class C(metaclass=LanguageCls):
         assignment so the initial value is not a dead store flagged by
         clang-tidy's ``clang-analyzer-deadcode.DeadStores`` check.
         """
+        variable_name = context.variable_name
         mid_use = f"(void){variable_name};\n"
         return self.wrap_in_file(
             content=f"{declaration}\n{mid_use}{assignment}",
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     date_format: DateFormats = DateFormats.ISO

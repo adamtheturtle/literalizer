@@ -419,11 +419,11 @@ def build_variant_cases() -> list[VariantCase]:
             )
         )
 
-    modifier_inputs = tuple(
-        case_dir_name
+    modifier_inputs = {
+        case_dir_name: entry.context
         for case_dir_name, entry in entries
         if entry.axis == "modifiers"
-    )
+    }
     modifier_sequence_inputs = {
         entry.suffix.removeprefix("_"): case_dir_name
         for case_dir_name, entry in entries
@@ -432,7 +432,7 @@ def build_variant_cases() -> list[VariantCase]:
     cases.extend(
         case
         for case in build_modifier_variant_cases(
-            case_dir_names=modifier_inputs,
+            case_contexts=modifier_inputs,
             sequence_case_dirs=modifier_sequence_inputs,
         )
         if selection_by_case[case.case_dir_name].admits_language(

@@ -81,6 +81,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -104,6 +105,7 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
     default_format_call_statement,
+    default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
@@ -1691,6 +1693,8 @@ class Haskell(metaclass=LanguageCls):
             keys must be strings so they remain valid JSON object keys.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -2223,10 +2227,11 @@ class Haskell(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Haskell variable binding in a module."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         if variable_name == "":
             # Call mode: bare expressions are not valid at module
@@ -2268,7 +2273,7 @@ class Haskell(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a sequence of top-level *declarations* alongside a
         block of bare call expressions.
@@ -2281,6 +2286,7 @@ class Haskell(metaclass=LanguageCls):
         which would otherwise force the bindings into a ``do``-block
         where they would need ``let`` injection.
         """
+        body_preamble = context.body_preamble
         preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
         indented_calls = textwrap.indent(
             text=calls, prefix=f"{self.indent}_ <- "
@@ -2300,7 +2306,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.HASKELL

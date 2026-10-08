@@ -3,6 +3,7 @@
 from textwrap import dedent
 
 from literalizer import (
+    FileWrapperContext,
     InputFormat,
     NewVariable,
     literalize,
@@ -20,7 +21,14 @@ def test_roc_call_wrapper_without_preamble() -> None:
     # Only the wrapper itself accepts a call with no stub or declarations.
     language = Roc()
     assert language.wrap_calls_with_declarations(
-        declarations=(), calls="call", body_preamble=()
+        declarations=(),
+        calls="call",
+        context=FileWrapperContext(
+            variable_name="",
+            modifiers=frozenset(),
+            body_preamble=(),
+            class_preamble=(),
+        ),
     ) == dedent(
         text="""\
         module [main]

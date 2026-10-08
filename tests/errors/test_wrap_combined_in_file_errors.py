@@ -4,7 +4,7 @@ forms.
 
 import pytest
 
-from literalizer import LanguageCls
+from literalizer import FileWrapperContext, LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -42,6 +42,10 @@ def test_wrap_combined_in_file_unsupported_raises(
         _ = language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",
-            variable_name="x",
-            body_preamble=(),
+            context=FileWrapperContext(
+                variable_name="x",
+                modifiers=frozenset(),
+                body_preamble=(),
+                class_preamble=(),
+            ),
         )

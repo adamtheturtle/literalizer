@@ -1,0 +1,3 @@
+Fix Java and C# file wrappers for ``BothVariableForms`` with class-field modifiers by placing reassignment in an initializer or constructor.
+
+Pass declaration modifiers and scoped preambles to language file-wrapper hooks through ``FileWrapperContext``. Class-member call stubs now use ``format_call_class_scope_stub`` and compositions accept ``extra_class_preamble``.
