@@ -1572,6 +1572,16 @@ def _compute_dict_open_override(
     if len(openers) <= 1:
         return None
 
+    # A mixed collection can name each map's narrow type as a distinct
+    # union alternative. Widening those literals to a content-derived
+    # union would no longer match the enclosing alternatives (issue #5238).
+    # Homogeneous map collections and stable fallback types still need
+    # their sibling maps to share one widened opener.
+    if infer_element_type(items=items) is None and not _dict_widening_applies(
+        spec=spec
+    ):
+        return None
+
     # Types differ: combine all values to infer the widened type.
     # Use the unfiltered dicts so that ``None`` values contribute
     # "unknown type" to the widening — otherwise a dict that filters
