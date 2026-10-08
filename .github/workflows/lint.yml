@@ -767,6 +767,9 @@ jobs:
       # platform tarball pinned in
       # `scripts/run_roc_roundtrip.py`.
       - name: Roc roundtrip
+        # Bound a stalled round-trip independently of the 30-minute job
+        # allowance (issue 5205).
+        timeout-minutes: 5
         run: uv run python -m scripts.run_roc_roundtrip
 
   # Octave is a practical CI substitute, but it does not support
