@@ -2055,9 +2055,12 @@ class CSharp(metaclass=LanguageCls):
             empty = f"new {element_type}[] {{}}"
 
         def _narrowed_empty_form(
-            _siblings: Sequence[list[Value]],
+            siblings: Sequence[list[Value]],
         ) -> str:
-            """Return the C# typed empty literal for this format."""
+            """Return an empty literal matching its sibling array type."""
+            if self.sequence_format is self.sequence_formats.ARRAY:
+                items = [item for sibling in siblings for item in sibling]
+                return self.sequence_open(items) + base.close
             return empty
 
         return dataclasses.replace(
