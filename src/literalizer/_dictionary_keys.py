@@ -1,4 +1,4 @@
-"""String-key rendering shared by the recursive and document renderers."""
+"""String-key formatting shared by recursive and document rendering."""
 
 from collections.abc import Callable
 from typing import Protocol, runtime_checkable
