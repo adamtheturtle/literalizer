@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++ arrays of scalar record fields require value initialization when another field has a nontrivial default constructor."
+
+[[variants]]
+axis = "record_array_sequence"
