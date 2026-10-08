@@ -137,7 +137,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
     IncompatibleFormatsError,
@@ -2305,7 +2305,7 @@ class CSharp(metaclass=LanguageCls):
             default_key_type=self.default_dict_key_type,
         )
 
-        def _open(value: OrderedMap) -> str:
+        def _open(value: dict[Scalar, Value]) -> str:
             """Render the ordered-map opener from its semantic type."""
             return self._ordered_map_type(value).opener
 
