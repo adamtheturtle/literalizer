@@ -1,0 +1,15 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableInputError]
+"Gleam['{\"bad-key\":1}']" = "Gleam record mode cannot represent field 'bad-key'"
+"Gleam['{\"let\":1}']" = "Gleam record mode cannot represent field 'let'"
+"Gleam['{}']" = "Gleam record mode cannot represent empty records"
+"Gleam['{\"x\":null}']" = "Gleam record mode cannot represent NoneType"
+"Gleam['{\"x\":[]}']" = "Gleam record mode cannot infer empty list element types"
+"Gleam['{\"x\":[[{\"y\":1}]]}']" = "Gleam record mode cannot type dict"
+"OCaml['{\"bad-key\":1}']" = "OCaml record mode cannot represent field 'bad-key'"
+"OCaml['{\"let\":1}']" = "OCaml record mode cannot represent field 'let'"
+"OCaml['{}']" = "OCaml record mode cannot represent empty records"
+"OCaml['{\"x\":null}']" = "OCaml record mode cannot represent NoneType"
+"OCaml['{\"x\":[]}']" = "OCaml record mode cannot infer empty list element types"
+"OCaml['{\"x\":[[{\"y\":1}]]}']" = "OCaml record mode cannot type dict"

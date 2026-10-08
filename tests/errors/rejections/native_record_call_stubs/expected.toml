@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[IncompatibleFormatsError]
+Gleam = "Gleam record mode cannot infer concrete call stub types"
+OCaml = "OCaml record mode cannot infer concrete call stub types"
