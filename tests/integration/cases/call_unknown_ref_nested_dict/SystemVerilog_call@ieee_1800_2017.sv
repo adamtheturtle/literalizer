@@ -15,6 +15,6 @@ initial begin
 static _VKV my_list[] = '{
     _VKV'{k: "unused", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "value"}}
 };
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"inner\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"my_list\\\\\\\"}}}\\\"}}\"}}"});
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"'{_VKV'{k: \\\\\\\"inner\\\\\\\", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\\\\\"my_list\\\\\\\"}}}\\\"}}\"}}"}));
 end
 endmodule

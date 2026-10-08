@@ -12,8 +12,8 @@ typedef struct {
 module main;
 task process(input _VVal value); endtask
 initial begin
-process("09:30:00");
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T00:00:00+00:00"});
-process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+void'(process("09:30:00"));
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T00:00:00+00:00"}));
+void'(process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
 end
 endmodule

@@ -15,6 +15,6 @@ initial begin
 static _VVal unknown_value[] = '{
     _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}
 };
-process(unknown_value);
+void'(process(unknown_value));
 end
 endmodule

@@ -75,7 +75,6 @@ from literalizer._language import (
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier_consumable,
-    default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
     default_sequence_binding_declarations,
@@ -249,6 +248,12 @@ _format_sv_entry_iso = _build_sv_entry_formatter(datetime_as_int=False)
 
 
 _SV_NULL = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
+
+
+@beartype
+def _sv_format_call_statement(expression: str, /) -> str:
+    """Explicitly discard the result of a task or function call."""
+    return f"void'({expression.removesuffix(';')});"
 
 
 @beartype
@@ -824,7 +829,9 @@ class SystemVerilog(metaclass=LanguageCls):
 
     validate_call_arg = default_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    format_call_statement: ClassVar["staticmethod[[str], str]"] = staticmethod(
+        _sv_format_call_statement
+    )
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
