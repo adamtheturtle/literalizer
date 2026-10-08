@@ -285,6 +285,7 @@ The remaining languages differ only in the emitted form and a few extra constrai
      - ``JACKSON_JSON_NODE``
      - ``new ObjectMapper().readTree("...")`` yielding ``JsonNode``
      - ``RECORD`` ``heterogeneous_strategy`` rejected.
+       Declarations support local ``final`` bindings but reject ``public``, ``private``, ``protected``, and ``static`` modifiers because field initializers cannot declare Jackson's checked parsing exception.
    * - Kotlin
      - ``KOTLINX_JSON_ELEMENT``
      - ``Json.parseToJsonElement("...")`` yielding ``JsonElement``

@@ -1,0 +1,1 @@
+Java Jackson JSON declarations preserve the ``final`` modifier and reject class-field modifiers with ``IncompatibleFormatsError`` instead of silently dropping them and emitting invalid initializers.
