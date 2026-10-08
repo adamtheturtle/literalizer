@@ -10,4 +10,4 @@ languages = ["Haskell", "Python"]
 languages_reason = "Haskell layout requires each multiline call to have a single do-block bind; Python is a representative for multiline bound-ref layout."
 
 [call.ref_declarations]
-x = "[[1, 2], [3, 4]]"
+ref_data = "[[1, 2], [3, 4]]"
