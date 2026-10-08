@@ -65,6 +65,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -739,12 +740,12 @@ class Raku(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    wrap_in_file: ClassVar[
-        "staticmethod[[str, str, tuple[str, ...]], str]"
-    ] = wrap_in_file_noop_static
+    wrap_in_file: ClassVar["staticmethod[[str, FileWrapperContext], str]"] = (
+        wrap_in_file_noop_static
+    )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = wrap_combined_in_file_noop_static
 
     date_format: DateFormats = DateFormats.RAKU
@@ -838,6 +839,8 @@ class Raku(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _raku_call_stub
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

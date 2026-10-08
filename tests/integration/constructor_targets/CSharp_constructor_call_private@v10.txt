@@ -1,1 +1,1 @@
-private object[] p = new Playlist();
+private ValueTuple p = new Playlist();

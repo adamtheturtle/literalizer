@@ -57,6 +57,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FileSection,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -1109,6 +1110,8 @@ class Cobol(metaclass=LanguageCls):
     sequences / dicts become group items with 05-level sub-items.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1620,8 +1623,7 @@ class Cobol(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a COBOL variable declaration or call block in a program.
 
@@ -1636,6 +1638,8 @@ class Cobol(metaclass=LanguageCls):
         the node pointers and literal items and its PROCEDURE half the
         ``CALL`` statements that build the tree.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         if len(decode_file_sections(content)) > 0:
             sections = _split_cjson_payload(content)
             indented = textwrap.indent(
@@ -1672,8 +1676,7 @@ class Cobol(metaclass=LanguageCls):
     def wrap_combined_in_file(
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap COBOL declaration and assignment in a complete program.
 
@@ -1685,7 +1688,7 @@ class Cobol(metaclass=LanguageCls):
         markers in *declaration* are the reliable discriminator, so this
         stays a :func:`staticmethod`.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         if len(decode_file_sections(declaration)) > 0:
             decl_sections = _split_cjson_payload(declaration)
             assign_sections = _split_cjson_payload(assignment)

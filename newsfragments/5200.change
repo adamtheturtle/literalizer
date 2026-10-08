@@ -1,0 +1,1 @@
+Fix C# class-field declarations to annotate tuple sequences with tuple types, including empty, single-element, and nested tuples.

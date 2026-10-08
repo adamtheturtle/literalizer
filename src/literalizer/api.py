@@ -69,6 +69,7 @@ def literalize_call_with_declarations(
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
     extra_body_preamble: tuple[str, ...] = (),
+    extra_class_preamble: tuple[str, ...] = (),
     extra_preamble: tuple[str, ...] = (),
 ) -> LiteralizeResult:
     r"""Compose declarations and a call into one complete source file.
@@ -77,8 +78,9 @@ def literalize_call_with_declarations(
     *call* must be a result returned by :func:`literalize_call`, all rendered
     with *language*.  Their header and body preambles are reconciled across
     the combined data before :meth:`Language.wrap_calls_with_declarations`
-    assembles the file.  *extra_body_preamble* and *extra_preamble* let a
-    caller include supporting definitions required by its surrounding file.
+    assembles the file. *extra_body_preamble*, *extra_class_preamble*, and
+    *extra_preamble* place supporting definitions in the statement body,
+    wrapper class, and file header respectively.
 
     Prefer :func:`literalize_call` with ``bound_refs=...`` and
     ``wrap_in_file=True`` when it can declare every reference directly.  This
@@ -90,6 +92,7 @@ def literalize_call_with_declarations(
         declarations=declarations,
         call=call,
         extra_body_preamble=extra_body_preamble,
+        extra_class_preamble=extra_class_preamble,
         extra_preamble=extra_preamble,
     )
 

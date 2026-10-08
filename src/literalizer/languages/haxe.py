@@ -58,6 +58,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -255,6 +256,8 @@ class Haxe(metaclass=LanguageCls):
               e.g. ``"2024-01-15T12:30:00"``.
             * ``datetime_formats.EPOCH`` — Unix timestamp integer.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -753,8 +756,7 @@ class Haxe(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid Haxe file.
 
@@ -764,7 +766,7 @@ class Haxe(metaclass=LanguageCls):
         closures inside a function body, so call stubs are emitted as
         local declarations rather than file-scope types.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         inner = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -782,7 +784,7 @@ class Haxe(metaclass=LanguageCls):
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

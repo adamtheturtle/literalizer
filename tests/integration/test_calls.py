@@ -76,10 +76,7 @@ def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
 @pytest.mark.parametrize(
     argnames="call_case",
     argvalues=discover_call_cases(),
-    ids=[
-        f"{c.config.case_dir_name}/{c.lang_cls.__name__}"
-        for c in discover_call_cases()
-    ],
+    ids=lambda case: f"{case.config.case_dir_name}/{case.lang_cls.__name__}",
 )
 def test_call_golden_file(
     call_case: CallCase,
@@ -131,10 +128,7 @@ def test_call_golden_file(
 @pytest.mark.parametrize(
     argnames="call_variant_case",
     argvalues=build_call_variant_cases(),
-    ids=[
-        f"{c.config.case_dir_name}/{c.variant.name}"
-        for c in build_call_variant_cases()
-    ],
+    ids=lambda case: f"{case.config.case_dir_name}/{case.variant.name}",
 )
 def test_call_variant_golden_file(
     call_variant_case: CallVariantCase,

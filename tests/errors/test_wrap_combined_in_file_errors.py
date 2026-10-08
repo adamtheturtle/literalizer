@@ -4,7 +4,7 @@ forms.
 
 import pytest
 
-from literalizer import LanguageCls
+from literalizer import FileWrapperContext, LanguageCls
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -31,7 +31,7 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
-    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_wrap_combined_in_file_unsupported_raises(
     *,
@@ -42,6 +42,10 @@ def test_wrap_combined_in_file_unsupported_raises(
         _ = language_cls().wrap_combined_in_file(
             declaration="x = 1",
             assignment="x = 2",
-            variable_name="x",
-            body_preamble=(),
+            context=FileWrapperContext(
+                variable_name="x",
+                modifiers=frozenset(),
+                body_preamble=(),
+                class_preamble=(),
+            ),
         )

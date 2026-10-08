@@ -53,6 +53,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -749,24 +750,27 @@ class Ada(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Ada call stubs and variable declarations alongside calls.
 
         Stubs and variable declarations go in the declarative section;
         call expressions go in the executable section.
         """
+        body_preamble = context.body_preamble
         return self.wrap_in_file(
             content=calls,
-            variable_name="",
-            body_preamble=(*body_preamble, *declarations),
+            context=dataclasses.replace(
+                context,
+                variable_name="",
+                body_preamble=(*body_preamble, *declarations),
+            ),
         )
 
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an Ada object declaration or call block inside a procedure.
 
@@ -781,6 +785,8 @@ class Ada(metaclass=LanguageCls):
         goes in the declarative section and *content* (calls) goes in
         the executable section.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
@@ -813,8 +819,7 @@ class Ada(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Ada declaration + assignment in a single procedure.
 
@@ -825,7 +830,7 @@ class Ada(metaclass=LanguageCls):
         Putting both in one procedure keeps the variable in scope so
         the fixture compiles and runs end-to-end.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -979,6 +984,8 @@ class Ada(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _ada_call_stub
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

@@ -68,6 +68,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -595,7 +596,7 @@ def _build_purescript_call_stub_lines(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
-    type_name: str,
+    type_name: str | None,
 ) -> tuple[str, ...]:
     """Return PureScript stub declarations for a call name.
 
@@ -603,9 +604,17 @@ def _build_purescript_call_stub_lines(
     """
     del stub_return
 
+    quantifier = ""
+    if type_name is None:
+        parameter_types = [f"a{index}" for index in range(len(params))]
+        if len(parameter_types) > 0:
+            quantifier = f"forall {' '.join(parameter_types)}. "
+    else:
+        parameter_types = [type_name] * len(params)
+
     if len(parts) == 1:
         name = parts[0]
-        sig = " -> ".join([*[type_name] * len(params), "Unit"])
+        sig = quantifier + " -> ".join([*parameter_types, "Unit"])
         lhs = " ".join([name, *["_"] * len(params)])
         return (f"{name} :: {sig}", f"{lhs} = unit")
 
@@ -617,7 +626,7 @@ def _build_purescript_call_stub_lines(
         func_type = "Unit"
         func_body = "unit"
     else:
-        arg_types = " -> ".join(type_name for _ in params)
+        arg_types = " -> ".join(parameter_types)
         func_type = f"{arg_types} -> Unit"
         wildcards = " ".join("_" for _ in params)
         func_body = f"\\{wildcards} -> unit"
@@ -628,17 +637,17 @@ def _build_purescript_call_stub_lines(
         inner_type = f"{{ {field} :: {inner_type} }}"
         inner_val = f"{{ {field}: {inner_val} }}"
 
-    return (f"{root} :: {inner_type}", f"{root} = {inner_val}")
+    return (f"{root} :: {quantifier}{inner_type}", f"{root} = {inner_val}")
 
 
 @beartype
 def _build_purescript_call_stub(
-    type_name: str,
+    type_name: str | None,
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
 ]:
-    """Build a call stub factory that uses *type_name* for parameter types."""
+    """Build stubs using *type_name*, or independent type variables."""
 
     @beartype
     def _purescript_call_stub(
@@ -1110,6 +1119,8 @@ class PureScript(metaclass=LanguageCls):
             valid string-keyed fields.  The default preserves the
             generated tagged ``Val`` representation.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -1584,7 +1595,7 @@ class PureScript(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap declarations and calls in a PureScript module.
 
@@ -1592,6 +1603,7 @@ class PureScript(metaclass=LanguageCls):
         expressions are bound inside a ``let … in unit`` block so that
         bare expressions are not required at the top level.
         """
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         declaration_block = "\n".join(declarations)
         decl_part = ""
@@ -1612,10 +1624,11 @@ class PureScript(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         if variable_name == "":
             return _build_purescript_call_output(
@@ -1634,7 +1647,7 @@ class PureScript(metaclass=LanguageCls):
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
@@ -1750,7 +1763,11 @@ class PureScript(metaclass=LanguageCls):
 
         Under :attr:`json_type` the stub's parameter types are ``Json``
         rather than the generated ``Val`` ADT.
+        Native-record mode uses independent universally quantified types
+        so each ignored argument can have its own native type.
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _build_purescript_call_stub(type_name=None)
         stub_type_name = "Json"
         if not self._json_type_active:
             stub_type_name = self.type_name

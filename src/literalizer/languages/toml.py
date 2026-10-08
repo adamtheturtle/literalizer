@@ -58,6 +58,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -210,6 +211,8 @@ class Toml(metaclass=LanguageCls):
     Dates and datetimes are rendered as unquoted TOML native date /
     datetime literals, which are a distinct TOML type.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -578,14 +581,14 @@ class Toml(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code as a valid TOML document.
 
         A top-level mapping declaration is rendered as a TOML table rather
         than a multiline inline table, whose newlines TOML 1.0 forbids.
         """
+        variable_name = context.variable_name
         mapping_prefix = f"{variable_name} = {{\n"
         if variable_name != "" and content.startswith(mapping_prefix):
             entries = content[len(mapping_prefix) :].removesuffix("\n}")
@@ -609,12 +612,11 @@ class Toml(metaclass=LanguageCls):
             return f"[{variable_name}]\n" + "\n".join(table_lines)
         return wrap_in_file_noop(
             content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.TOML

@@ -187,7 +187,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
 @pytest.mark.parametrize(
     argnames="manifest",
     argvalues=_MANIFESTS,
-    ids=[manifest.name for manifest in _MANIFESTS],
+    ids=lambda manifest: manifest.name,
 )
 def test_rejection_messages(
     manifest: RejectionManifest,
@@ -231,7 +231,7 @@ def test_rejection_messages(
 @pytest.mark.parametrize(
     argnames="manifest",
     argvalues=_MANIFESTS,
-    ids=[manifest.name for manifest in _MANIFESTS],
+    ids=lambda manifest: manifest.name,
 )
 def test_accepting_languages_still_accept(
     manifest: RejectionManifest,

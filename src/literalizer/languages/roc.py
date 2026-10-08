@@ -63,6 +63,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -751,6 +752,8 @@ class Roc(metaclass=LanguageCls):
             native records.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1138,8 +1141,7 @@ class Roc(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Roc value declaration in a module.
 
@@ -1165,6 +1167,8 @@ class Roc(metaclass=LanguageCls):
         (``List``/``Dict``/``Set``) self-reference for the compiler to
         consider load-bearing.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         exposed = "main"
         if variable_name != "":
             exposed = variable_name
@@ -1202,7 +1206,7 @@ class Roc(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Roc declarations and call expressions in a module.
 
@@ -1211,6 +1215,7 @@ class Roc(metaclass=LanguageCls):
         alias and call stubs; only the top-level call lines inside
         ``main`` are wrapped in ``dbg (...)``.
         """
+        body_preamble = context.body_preamble
         decl_block = ""
         if len(declarations) > 0:
             decl_block = "\n".join(declarations) + "\n"
@@ -1227,7 +1232,7 @@ class Roc(metaclass=LanguageCls):
         return f"module [main]\n\n{preamble_str}{decl_block}{main_block}"
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

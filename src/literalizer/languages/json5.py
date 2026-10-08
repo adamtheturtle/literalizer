@@ -50,6 +50,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -152,6 +153,8 @@ class Json5(metaclass=LanguageCls):
     Dates and datetimes are rendered as quoted ISO 8601 strings because
     JSON5 has no native date type.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -487,12 +490,12 @@ class Json5(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    wrap_in_file: ClassVar[
-        "staticmethod[[str, str, tuple[str, ...]], str]"
-    ] = wrap_in_file_noop_static
+    wrap_in_file: ClassVar["staticmethod[[str, FileWrapperContext], str]"] = (
+        wrap_in_file_noop_static
+    )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

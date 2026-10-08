@@ -64,6 +64,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatBuilder,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -321,6 +322,8 @@ class VisualBasic(metaclass=LanguageCls):
     *before* the collection — or before the variable declaration when a
     variable name is supplied.
     """
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -849,8 +852,7 @@ class VisualBasic(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
 
@@ -862,7 +864,7 @@ class VisualBasic(metaclass=LanguageCls):
         arguments are invoked by the fixture linter so the calls
         still execute.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         has_stubs = any(
             line.startswith(("Function ", "Class ")) for line in body_preamble
         )
@@ -894,10 +896,11 @@ class VisualBasic(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap VB.NET declaration + assignment in separate Subs."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
