@@ -1,5 +1,5 @@
-"""Python multiline goldens preserve the values declared by their
-inputs.
+"""Python multiline golden fixtures preserve their declared input
+values.
 """
 
 import ast

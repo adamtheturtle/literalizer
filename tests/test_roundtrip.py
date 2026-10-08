@@ -140,7 +140,7 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
 
 
 # Root, nested-list, and declaration/assignment multiline cases live in
-# tests/integration/cases/multiline_string*. Their Python goldens also undergo
+# tests/integration/cases/multiline_string*. Their Python fixtures also undergo
 # value-preservation checks in test_multiline_string_roundtrip.py. Keep this
 # fragment test because its caller supplies the enclosing indented block.
 def test_multiline_string_pre_indent_round_trip() -> None:
