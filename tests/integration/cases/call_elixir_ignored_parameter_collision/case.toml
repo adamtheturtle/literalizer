@@ -6,5 +6,5 @@ target_function = "f"
 parameter_names = ["x", "_x"]
 per_element = true
 wrap_in_file = true
-languages = ["Elixir"]
+languages = ["Elixir", "Swift"]
 languages_reason = "Elixir alone prefixes generated stub parameters with underscores."

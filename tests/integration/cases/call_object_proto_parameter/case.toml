@@ -5,5 +5,5 @@ owner = "literalize-call"
 target_function = "capture"
 parameter_names = ["__proto__"]
 per_element = true
-languages = ["JavaScript", "TypeScript"]
+languages = ["JavaScript", "Swift", "TypeScript"]
 languages_reason = "ECMAScript object literals give __proto__ setter semantics."
