@@ -4105,6 +4105,12 @@ class _ReferenceBindingLanguage(Protocol):
         """Return imports needed for an identifier binding."""
         ...
 
+    def reference_declaration_imports(
+        self, entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Retain imports used by already rendered declarations."""
+        ...
+
     def format_reference_variable_declaration(
         self,
         name: str,
@@ -5260,8 +5266,17 @@ def _compose_bound_refs(
         if entry not in d.data_dependent_preamble
         or entry in unified_data_dependent_entries
     )
+    reference_imports: tuple[str, ...] = ()
+    if isinstance(language, _ReferenceBindingLanguage):
+        reference_imports = language.reference_declaration_imports(
+            tuple(
+                entry
+                for declaration in decl_results
+                for entry in declaration.data_dependent_preamble
+            )
+        )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + main_result.preamble
+        entries=declaration_preamble + reference_imports + main_result.preamble
     )
     scoped = _scope_preamble_for_wrap(
         language=language,

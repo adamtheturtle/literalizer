@@ -2588,6 +2588,13 @@ class Nim(metaclass=LanguageCls):
         """A bare identifier binding uses no JSON constructors."""
         return ()
 
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep imports required by each rendered bound value."""
+        return tuple(entry for entry in entries if entry.startswith("import "))
+
     def format_reference_variable_declaration(
         self,
         name: str,
